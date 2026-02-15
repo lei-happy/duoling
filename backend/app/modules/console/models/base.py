@@ -24,5 +24,5 @@ class PlatformModelBase(PlatformBase):
         DateTime, server_default=func.now(), onupdate=func.now(), comment="更新时间"
     )
     is_deleted: Mapped[int] = mapped_column(
-        SmallInteger, default=0, comment="是否删除 0-否 1-是"
+        SmallInteger, default=0, server_default="0", comment="是否删除 0-否 1-是"
     )

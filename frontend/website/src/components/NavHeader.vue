@@ -217,6 +217,7 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   backdrop-filter: none;
 
   &:hover {
+    background: linear-gradient(135deg, var(--color-accent), var(--color-primary)) !important;
     box-shadow: 0 4px 16px rgba(29, 78, 216, 0.3);
   }
 }

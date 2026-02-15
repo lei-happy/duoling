@@ -6,14 +6,22 @@
         <div class="grid-lines"></div>
         <div class="glow glow-1"></div>
         <div class="glow glow-2"></div>
+        <div class="particles">
+          <div
+            v-for="p in particles"
+            :key="p.id"
+            class="particle"
+            :style="p.style"
+          />
+        </div>
       </div>
       <div class="container hero-content">
         <div class="hero-badge scroll-animate">
           <span class="badge-dot"></span>
-          AI 驱动的汽车物流管理平台
+          AI 驱动的汽车物流管理系统
         </div>
         <h1 class="scroll-animate" data-delay="100">
-          智途，汽车物流企业的<span class="gradient-text">AI操作系统</span>
+          智途-汽车物流企业的<span class="gradient-text">AI操作系统</span>
         </h1>
         <p class="hero-desc scroll-animate" data-delay="200">
           让整车运输更智能。从主机厂发运到经销商交付，以AI技术重新定义汽车物流效率，帮助每一家轿运企业实现业务在线化、财务数字化、经营智能化。
@@ -118,6 +126,22 @@
 import { useScrollAnimation } from '@/composables/useScrollAnimation'
 
 useScrollAnimation()
+
+/* 生成粒子数据 */
+const particles = Array.from({ length: 30 }, (_, i) => {
+  const size = Math.random() * 3 + 1
+  return {
+    id: i,
+    style: {
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      width: `${size}px`,
+      height: `${size}px`,
+      animationDelay: `${Math.random() * 8}s`,
+      animationDuration: `${Math.random() * 6 + 6}s`,
+    },
+  }
+})
 
 /* ---------- SVG 插画 ---------- */
 const svgDispatch = `<svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -320,7 +344,7 @@ const advantages = [
   background: var(--color-primary);
   top: -10%;
   right: -5%;
-  animation: float 8s ease-in-out infinite;
+  animation: float 8s ease-in-out infinite, glow-color-1 10s ease-in-out infinite;
 }
 
 .glow-2 {
@@ -329,12 +353,56 @@ const advantages = [
   background: var(--color-accent);
   bottom: -10%;
   left: -5%;
-  animation: float 10s ease-in-out infinite reverse;
+  animation: float 10s ease-in-out infinite reverse, glow-color-2 12s ease-in-out infinite;
+}
+
+@keyframes glow-color-1 {
+  0%, 100% { background: #1d4ed8; }
+  33% { background: #7c3aed; }
+  66% { background: #2563eb; }
+}
+
+@keyframes glow-color-2 {
+  0%, 100% { background: #2563eb; }
+  33% { background: #db2777; }
+  66% { background: #0891b2; }
 }
 
 @keyframes float {
   0%, 100% { transform: translate(0, 0); }
   50% { transform: translate(30px, -30px); }
+}
+
+/* 粒子动效 */
+.particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  animation: particle-rise linear infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes particle-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-100vh) scale(0.5);
+    opacity: 0;
+  }
 }
 
 .hero-content {
@@ -381,7 +449,7 @@ const advantages = [
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 50%, #38bdf8 100%);
+  background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6, #fb923c, #34d399);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

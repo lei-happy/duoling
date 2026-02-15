@@ -133,7 +133,7 @@ def seed_platform_data():
                      sort_order=20, app_type="platform"),
                 Menu(parent_id=system_menu.id, menu_name="数据字典",
                      menu_code="system:dict", menu_type=0,
-                     path="/system/dict", component="/system/dict/index",
+                     path="/system/dictionary", component="/system/dictionary/index",
                      sort_order=30, app_type="platform"),
                 Menu(parent_id=system_menu.id, menu_name="操作日志",
                      menu_code="system:log", menu_type=0,
@@ -248,6 +248,15 @@ def seed_platform_data():
                 DictItem(dict_id=d3.id, dict_code="order_status", item_name="已签收", item_value="4", sort_order=40),
                 DictItem(dict_id=d3.id, dict_code="order_status", item_name="已完成", item_value="5", sort_order=50),
                 DictItem(dict_id=d3.id, dict_code="order_status", item_name="已取消", item_value="6", sort_order=60),
+            ])
+
+            # 性别字典
+            d4 = Dict(dict_code="sex", dict_name="性别", sort_order=30, status=1)
+            session.add(d4)
+            session.flush()
+            session.add_all([
+                DictItem(dict_id=d4.id, dict_code="sex", item_name="男", item_value="男", sort_order=0),
+                DictItem(dict_id=d4.id, dict_code="sex", item_name="女", item_value="女", sort_order=10),
             ])
             print("[OK] 数据字典已创建")
         else:
