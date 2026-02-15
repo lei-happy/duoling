@@ -9,6 +9,28 @@
         <router-link to="/" @click="mobileOpen = false">首页</router-link>
         <router-link to="/features" @click="mobileOpen = false">产品功能</router-link>
         <router-link to="/pricing" @click="mobileOpen = false">价格方案</router-link>
+        <router-link to="/changelog" @click="mobileOpen = false">更新记录</router-link>
+        <el-popover
+          placement="bottom"
+          :width="200"
+          trigger="click"
+          popper-class="qrcode-popover"
+        >
+          <template #reference>
+            <span class="nav-link-popover" @click="mobileOpen = false">下载</span>
+          </template>
+          <div class="qrcode-content">
+            <img
+              v-show="!qrcodeError"
+              src="/qrcode-miniprogram.jpg"
+              alt="微信小程序二维码"
+              class="qrcode-img"
+              @error="onQrcodeError"
+            />
+            <p v-if="!qrcodeError" class="qrcode-tip">扫码使用小程序</p>
+            <p v-else class="qrcode-tip qrcode-placeholder">请将二维码图片放置于 public/qrcode-miniprogram.png</p>
+          </div>
+        </el-popover>
         <router-link to="/about" @click="mobileOpen = false">关于我们</router-link>
       </nav>
       <div class="nav-actions">
@@ -31,9 +53,14 @@ const clientLoginUrl = (import.meta.env.VITE_CLIENT_URL || 'http://localhost:517
 
 const isScrolled = ref(false)
 const mobileOpen = ref(false)
+const qrcodeError = ref(false)
 
 function onScroll() {
   isScrolled.value = window.scrollY > 40
+}
+
+function onQrcodeError() {
+  qrcodeError.value = true
 }
 
 onMounted(() => {
@@ -164,10 +191,24 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
 .nav-links {
   flex: 1;
   display: flex;
+  align-items: center;
   gap: 36px;
   margin-left: 56px;
 
-  a {
+  .nav-link-popover {
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 4px 0;
+    color: rgba(255, 255, 255, 0.75);
+    transition: color 0.25s;
+
+    &:hover {
+      color: #fff;
+    }
+  }
+
+  a, .nav-link-popover {
     font-size: 15px;
     font-weight: 500;
     transition: color 0.25s;
@@ -189,6 +230,15 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
     &.router-link-exact-active::after {
       width: 100%;
     }
+  }
+
+}
+
+.scrolled .nav-links .nav-link-popover {
+  color: var(--color-text);
+
+  &:hover {
+    color: var(--color-primary);
   }
 }
 

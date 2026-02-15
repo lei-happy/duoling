@@ -55,10 +55,12 @@
             :data-delay="idx * 100"
           >
             <div class="feature-illustration" v-html="item.svg"></div>
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.desc }}</p>
-            <div class="feature-tags">
-              <span v-for="tag in item.tags" :key="tag">{{ tag }}</span>
+            <div class="feature-content">
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.desc }}</p>
+              <div class="feature-tags">
+                <span v-for="tag in item.tags" :key="tag">{{ tag }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -525,6 +527,9 @@ const advantages = [
 }
 
 .feature-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
   padding: 36px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
@@ -535,6 +540,11 @@ const advantages = [
     border-color: var(--color-primary-light);
     box-shadow: var(--shadow-lg), 0 0 0 1px rgba(29, 78, 216, 0.06);
     transform: translateY(-4px);
+  }
+
+  .feature-content {
+    flex: 1;
+    min-width: 0;
   }
 
   h3 {
@@ -553,9 +563,8 @@ const advantages = [
 }
 
 .feature-illustration {
-  width: 100%;
-  max-width: 200px;
-  margin-bottom: 20px;
+  flex: 0 0 140px;
+  width: 140px;
 
   :deep(svg) {
     width: 100%;
@@ -733,18 +742,21 @@ const advantages = [
   .features-grid {
     grid-template-columns: 1fr;
   }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-  }
-
-  .why-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 768px) {
+  .feature-card {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .feature-illustration {
+    flex: none;
+    width: 100%;
+    max-width: 160px;
+    margin: 0 auto;
+  }
+
   .hero {
     padding: 120px 0 60px;
     min-height: auto;
@@ -762,6 +774,15 @@ const advantages = [
   .hero-actions {
     flex-direction: column;
     align-items: center;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .why-grid {
+    grid-template-columns: 1fr;
   }
 
   .features-section,

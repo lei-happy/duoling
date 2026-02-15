@@ -7,6 +7,7 @@ from app.modules.console.models.permission import RoleMenu
 from app.modules.console.models.user_role import UserRole
 from app.modules.console.models.product_version import ProductVersion
 from app.modules.console.models.tenant_product import TenantProduct
+from app.modules.console.models.changelog import Changelog
 from app.modules.console.models.dict import Dict, DictItem
 from app.modules.console.models.feedback import Feedback
 from app.modules.console.models.operation_log import OperationLog
@@ -21,6 +22,7 @@ __all__ = [
     "UserRole",
     "ProductVersion",
     "TenantProduct",
+    "Changelog",
     "Dict",
     "DictItem",
     "Feedback",

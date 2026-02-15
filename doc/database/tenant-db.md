@@ -10,23 +10,29 @@
 
 ## 表清单
 
-| 序号 | 表名 | 说明 |
-|------|------|------|
-| 1 | biz_user | 业务用户表 |
-| 2 | biz_role | 业务角色表 |
-| 3 | biz_menu | 业务菜单表 |
-| 4 | biz_role_menu | 角色菜单关联表 |
-| 5 | biz_user_role | 用户角色关联表 |
-| 6 | biz_department | 组织架构/部门表 |
-| 7 | biz_vehicle | 车辆信息表 |
-| 8 | biz_driver | 驾驶员信息表 |
-| 9 | biz_customer | 客户信息表 |
-| 10 | biz_route | 路线表 |
-| 11 | biz_order | 运单表 |
+| 序号 | 表名 | 说明 | ORM 模型 | 模型状态 |
+|------|------|------|----------|----------|
+| 1 | biz_user | 业务用户表 | `BizUser` | ✅ 已实现 |
+| 2 | biz_role | 业务角色表 | `BizRole` | ✅ 已实现 |
+| 3 | biz_menu | 业务菜单表 | `BizMenu` | ✅ 已实现 |
+| 4 | biz_role_menu | 角色菜单关联表 | - | ⚠️ 仅有 SQL，ORM 模型待补充 |
+| 5 | biz_user_role | 用户角色关联表 | - | ⚠️ 仅有 SQL，ORM 模型待补充 |
+| 6 | biz_department | 组织架构/部门表 | - | ⚠️ 仅有 SQL，ORM 模型待补充 |
+| 7 | biz_vehicle | 车辆信息表 | `Vehicle` | ✅ 已实现 |
+| 8 | biz_driver | 驾驶员信息表 | `Driver` | ✅ 已实现 |
+| 9 | biz_customer | 客户信息表 | `Customer` | ✅ 已实现 |
+| 10 | biz_route | 路线表 | `Route` | ✅ 已实现 |
+| 11 | biz_order | 运单表 | `Order` | ✅ 已实现 |
+
+共 **11** 张表（SQL 建表脚本完整），其中 **8 个** 有 ORM 模型（定义于 `backend/app/modules/client/models/`），**3 个** 关联/部门表仅有 SQL 建表脚本，ORM 模型待补充。
+
+> **待办**：需补充 `biz_role_menu`、`biz_user_role`、`biz_department` 三个表对应的 SQLAlchemy ORM 模型文件，并在 `models/__init__.py` 中注册导出。
 
 ## 建表 SQL
 
 完整建表 SQL 模板见：[sql/zt_biz_template.sql](sql/zt_biz_template.sql)
+
+> 注意：实际部署时由后端 SQLAlchemy ORM 自动创建表结构（`metadata.create_all`）。SQL 文件仅用于文档记录和手动初始化场景。由于 `biz_role_menu`、`biz_user_role`、`biz_department` 缺少 ORM 模型，当前自动建表可能遗漏这 3 张表，需优先补充模型。
 
 ## 表关系说明
 
@@ -35,11 +41,13 @@
 - `biz_user.department_id` 关联 `biz_department`
 - `biz_vehicle.department_id` 关联 `biz_department`
 - `biz_driver.user_id` 关联 `biz_user`
+- `biz_driver.department_id` 关联 `biz_department`
 - `biz_order` 关联 `biz_vehicle`、`biz_driver`、`biz_customer`、`biz_route`
 
 ## 初始数据
 
-新租户数据库创建时，自动插入以下初始数据：
-- 默认角色：管理员、操作员、驾驶员
-- 默认部门：总公司 → 运营部 / 车队部 / 财务部
+新租户数据库创建时，自动插入以下初始数据（见 SQL 模板末尾）：
+
+- 默认角色：管理员（admin）、操作员（operator）、驾驶员（driver）
+- 默认部门：总公司（HQ）→ 运营部（OP）/ 车队部（FL）/ 财务部（FI）
 - 企业超管账号（由平台在创建租户时指定）

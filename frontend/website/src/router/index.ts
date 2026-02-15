@@ -32,6 +32,12 @@ const router = createRouter({
       name: 'About',
       component: () => import('@/views/About.vue'),
       meta: { title: '关于我们' }
+    },
+    {
+      path: '/changelog',
+      name: 'Changelog',
+      component: () => import('@/views/Changelog.vue'),
+      meta: { title: '更新记录' }
     }
   ],
   scrollBehavior() {

@@ -10,6 +10,11 @@ export function getProductVersions() {
   return request.get('/product/versions');
 }
 
+/** 获取产品更新记录列表（分页） */
+export function getChangelog(params?: { page?: number; page_size?: number }) {
+  return request.get('/changelog', { params });
+}
+
 /** 企业自助注册 */
 export function registerTenant(data: {
   tenant_name: string;

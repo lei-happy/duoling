@@ -148,6 +148,10 @@ def seed_platform_data():
                      menu_code="product:auth", menu_type=0,
                      path="/product/auth", component="/product/auth/index",
                      sort_order=10, app_type="platform"),
+                Menu(parent_id=product_menu.id, menu_name="更新记录",
+                     menu_code="product:changelog", menu_type=0,
+                     path="/product/changelog", component="/product/changelog/index",
+                     sort_order=20, app_type="platform"),
             ]
             session.add_all(sub_menus)
             session.flush()
@@ -160,6 +164,27 @@ def seed_platform_data():
                 app_type="platform", is_deleted=0
             ).all()
             print("[SKIP] 平台菜单已存在")
+            # 补充：更新记录菜单（若不存在）
+            product_menu = session.query(Menu).filter_by(
+                menu_code="product", app_type="platform", is_deleted=0
+            ).first()
+            changelog_menu = session.query(Menu).filter_by(
+                menu_code="product:changelog", app_type="platform", is_deleted=0
+            ).first()
+            if product_menu and not changelog_menu:
+                m = Menu(
+                    parent_id=product_menu.id, menu_name="更新记录",
+                    menu_code="product:changelog", menu_type=0,
+                    path="/product/changelog", component="/product/changelog/index",
+                    sort_order=20, app_type="platform",
+                )
+                session.add(m)
+                session.flush()
+                all_menus.append(m)
+                # 超级管理员关联新菜单
+                if role_admin:
+                    session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
+                print("[OK] 更新记录菜单已补充")
 
         # ---- 4. 角色-菜单关联（super_admin 关联所有平台菜单）----
         existing_role_menu = session.query(RoleMenu).filter_by(

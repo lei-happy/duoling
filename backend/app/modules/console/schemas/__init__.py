@@ -14,6 +14,9 @@ from app.modules.console.schemas.role import (
 from app.modules.console.schemas.product_version import (
     ProductVersionCreate, ProductVersionUpdate, ProductVersionOut,
 )
+from app.modules.console.schemas.changelog import (
+    ChangelogCreate, ChangelogUpdate, ChangelogOut,
+)
 
 __all__ = [
     "LoginRequest", "LoginResponse",
@@ -22,4 +25,5 @@ __all__ = [
     "MenuCreate", "MenuUpdate", "MenuOut",
     "RoleCreate", "RoleUpdate", "RoleOut", "RoleMenuUpdate",
     "ProductVersionCreate", "ProductVersionUpdate", "ProductVersionOut",
+    "ChangelogCreate", "ChangelogUpdate", "ChangelogOut",
 ]

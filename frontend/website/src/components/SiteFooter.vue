@@ -20,7 +20,7 @@
             <h4>支持</h4>
             <a href="#">帮助中心</a>
             <a href="#">API 文档</a>
-            <a href="#">更新日志</a>
+            <router-link to="/changelog">更新记录</router-link>
           </div>
           <div class="link-group">
             <h4>公司</h4>

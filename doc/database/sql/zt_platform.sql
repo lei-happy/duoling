@@ -256,7 +256,26 @@ CREATE TABLE IF NOT EXISTS `sys_feedback` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='意见反馈表';
 
 -- ============================================================
--- 12. 操作日志表
+-- 12. 产品更新日志表
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `sys_changelog` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `version` VARCHAR(50) NOT NULL COMMENT '版本号（如 v1.2.0）',
+  `title` VARCHAR(200) NOT NULL COMMENT '更新标题',
+  `content` TEXT DEFAULT NULL COMMENT '更新内容（Markdown 格式）',
+  `release_date` DATE NOT NULL COMMENT '发布日期',
+  `sort_order` SMALLINT NOT NULL DEFAULT 0 COMMENT '排序号（越大越靠前）',
+  `status` SMALLINT NOT NULL DEFAULT 1 COMMENT '状态 0-停用 1-已发布',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted` SMALLINT NOT NULL DEFAULT 0 COMMENT '是否删除 0-否 1-是',
+  PRIMARY KEY (`id`),
+  KEY `idx_release_date` (`release_date`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='产品更新日志表';
+
+-- ============================================================
+-- 13. 操作日志表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `sys_operation_log` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
