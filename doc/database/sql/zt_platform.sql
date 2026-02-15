@@ -42,18 +42,18 @@ CREATE TABLE IF NOT EXISTS `sys_tenant` (
 
 -- ============================================================
 -- 2. 平台用户表
+-- 说明：用户唯一性由 phone 保证，用户与企业的关联通过 sys_user_tenant 表实现
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `sys_user` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `username` VARCHAR(50) NOT NULL COMMENT '用户名',
   `password` VARCHAR(255) NOT NULL COMMENT '密码（bcrypt哈希）',
   `real_name` VARCHAR(50) DEFAULT NULL COMMENT '真实姓名',
-  `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',
+  `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号（唯一）',
   `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
   `avatar` VARCHAR(255) DEFAULT NULL COMMENT '头像URL',
   `gender` SMALLINT NOT NULL DEFAULT 0 COMMENT '性别 0-未知 1-男 2-女',
-  `user_type` SMALLINT NOT NULL DEFAULT 1 COMMENT '用户类型 0-平台管理员 1-租户管理员 2-租户用户 3-驾驶员',
-  `tenant_code` VARCHAR(32) DEFAULT NULL COMMENT '所属租户编码（平台管理员为空）',
+  `user_type` SMALLINT NOT NULL DEFAULT 2 COMMENT '用户类型 0-平台管理员（其余值仅做默认标记，实际角色由 sys_user_tenant 决定）',
   `status` SMALLINT NOT NULL DEFAULT 1 COMMENT '状态 0-停用 1-正常',
   `remark` TEXT DEFAULT NULL COMMENT '备注',
   `force_change_pwd` SMALLINT NOT NULL DEFAULT 0 COMMENT '是否强制修改密码 0-否 1-是',
@@ -63,8 +63,27 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
   `is_deleted` SMALLINT NOT NULL DEFAULT 0 COMMENT '是否删除 0-否 1-是',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_username` (`username`),
-  KEY `idx_tenant_code` (`tenant_code`)
+  UNIQUE KEY `uk_phone` (`phone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='平台用户表';
+
+-- ============================================================
+-- 2.1 用户企业关联表
+-- 说明：同一用户可关联多个企业，每个企业中有独立的角色类型和状态
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `sys_user_tenant` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户ID',
+  `tenant_code` VARCHAR(32) NOT NULL COMMENT '企业编码',
+  `user_type` SMALLINT NOT NULL DEFAULT 2 COMMENT '角色类型 1-租户管理员 2-租户用户 3-驾驶员',
+  `status` SMALLINT NOT NULL DEFAULT 1 COMMENT '状态 0-停用 1-正常',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted` SMALLINT NOT NULL DEFAULT 0 COMMENT '是否删除 0-否 1-是',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_tenant` (`user_id`, `tenant_code`),
+  KEY `idx_tenant_code` (`tenant_code`),
+  KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户企业关联表';
 
 -- ============================================================
 -- 3. 角色表

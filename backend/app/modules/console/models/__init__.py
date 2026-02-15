@@ -1,5 +1,6 @@
 from app.modules.console.models.tenant import Tenant
 from app.modules.console.models.user import User
+from app.modules.console.models.user_tenant import UserTenant
 from app.modules.console.models.role import Role
 from app.modules.console.models.menu import Menu
 from app.modules.console.models.permission import RoleMenu
@@ -13,6 +14,7 @@ from app.modules.console.models.operation_log import OperationLog
 __all__ = [
     "Tenant",
     "User",
+    "UserTenant",
     "Role",
     "Menu",
     "RoleMenu",

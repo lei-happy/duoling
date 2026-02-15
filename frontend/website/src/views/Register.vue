@@ -120,12 +120,17 @@
                 <span class="credential-label">登录账号</span>
                 <span class="credential-value">{{ form.contact_phone }}</span>
               </div>
-              <div class="credential-row">
+              <!-- 新用户：显示初始密码 -->
+              <div v-if="!isExistingUser" class="credential-row">
                 <span class="credential-label">初始密码</span>
                 <span class="credential-value">123456</span>
               </div>
             </div>
-            <p class="credential-tip">首次登录后系统将要求您修改密码</p>
+            <!-- 不同用户类型的提示 -->
+            <p v-if="isExistingUser" class="credential-tip credential-tip-info">
+              该手机号已注册过账号，请使用已有密码直接登录
+            </p>
+            <p v-else class="credential-tip">首次登录后系统将要求您修改密码</p>
             <div class="success-actions">
               <el-button class="success-btn-outline" @click="goHome">返回首页</el-button>
               <el-button type="primary" class="success-btn" @click="goLogin">立即登录</el-button>
@@ -157,6 +162,7 @@ const referrerCode = ref<string | undefined>(
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const showSuccess = ref(false)
+const isExistingUser = ref(false)
 
 const form = reactive({
   tenant_name: '',
@@ -193,13 +199,15 @@ async function handleSubmit() {
 
   loading.value = true
   try {
-    await registerTenant({
+    const res = await registerTenant({
       tenant_name: form.tenant_name,
       contact_person: form.contact_person,
       contact_phone: form.contact_phone,
       contact_email: form.contact_email || undefined,
       referrer_code: referrerCode.value || undefined,
     })
+    // 检测后端返回的 is_existing_user 标记
+    isExistingUser.value = res?.data?.data?.is_existing_user === true
     showSuccess.value = true
   } catch (err: any) {
     const msg = err?.response?.data?.detail || '注册失败，请稍后重试'
@@ -512,6 +520,10 @@ function goHome() {
   font-size: 13px;
   color: #f59e0b;
   margin-bottom: 24px;
+}
+
+.credential-tip-info {
+  color: #3b82f6;
 }
 
 .success-actions {

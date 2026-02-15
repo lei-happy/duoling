@@ -16,6 +16,7 @@ from app.common.utils import hash_password
 from app.modules.console.models.tenant import Tenant
 from app.modules.console.models.tenant_product import TenantProduct
 from app.modules.console.models.user import User
+from app.modules.console.models.user_tenant import UserTenant
 from app.modules.console.schemas.tenant import (
     TenantCreate, TenantUpdate, TenantOut, TenantListOut,
     TenantProductCreate, TenantProductOut,
@@ -32,13 +33,16 @@ class TenantService:
     @staticmethod
     async def create_tenant(
         db: AsyncSession, data: TenantCreate
-    ) -> Tenant:
+    ) -> Tuple[Tenant, bool]:
         """
         创建新租户
         1. 生成租户编码
         2. 创建租户记录
         3. 创建租户独立数据库
-        4. 创建租户管理员账号
+        4. 关联或创建管理员账号
+
+        返回: (tenant, is_existing_user)
+            is_existing_user=True 表示管理员账号已存在（手机号已注册过）
         """
         # 检查企业名称是否重复
         existing = await db.execute(
@@ -91,24 +95,54 @@ class TenantService:
             logger.error(f"创建租户数据库失败: {e}")
             tenant.db_initialized = 0
 
-        # 创建租户管理员账号
-        admin_user = User(
-            username=f"admin_{tenant_code}",
-            password=hash_password("123456"),
-            real_name=data.contactPerson or "管理员",
-            phone=data.contactPhone,
-            email=data.contactEmail,
-            user_type=1,  # 租户管理员
+        # ---- 管理员账号：按手机号查找已有用户 ----
+        is_existing_user = False
+        admin_user = None
+
+        if data.contactPhone:
+            result = await db.execute(
+                select(User).where(
+                    User.phone == data.contactPhone,
+                    User.is_deleted == 0,
+                )
+            )
+            admin_user = result.scalar_one_or_none()
+
+        if admin_user:
+            # 已有用户 —— 复用，不创建新 User
+            is_existing_user = True
+            logger.info(
+                f"手机号 {data.contactPhone} 已存在用户 {admin_user.username}，"
+                f"复用该用户关联新企业 {tenant_code}"
+            )
+        else:
+            # 新用户 —— 创建 User
+            admin_user = User(
+                username=f"admin_{tenant_code}",
+                password=hash_password("123456"),
+                real_name=data.contactPerson or "管理员",
+                phone=data.contactPhone,
+                email=data.contactEmail,
+                user_type=2,  # 非平台管理员（具体角色由 UserTenant 决定）
+                status=1,
+                force_change_pwd=1,  # 首次登录强制修改密码
+            )
+            db.add(admin_user)
+            await db.flush()
+
+        # 创建用户-企业关联
+        user_tenant = UserTenant(
+            user_id=admin_user.id,
             tenant_code=tenant_code,
+            user_type=1,  # 租户管理员
             status=1,
-            force_change_pwd=1,  # 首次登录强制修改密码
         )
-        db.add(admin_user)
+        db.add(user_tenant)
 
         await db.flush()
         logger.info(f"新租户已创建: {tenant_code} - {data.tenantName}")
 
-        return tenant
+        return tenant, is_existing_user
 
     @staticmethod
     async def page_tenants(

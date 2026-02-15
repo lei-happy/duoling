@@ -38,7 +38,8 @@ async def get_user_info(
 ):
     """获取当前登录用户信息（含角色、菜单/权限）"""
     user_info = await AuthService.get_user_info(
-        db, current_user.user_id, app_type="client"
+        db, current_user.user_id, app_type="client",
+        tenant_code=current_user.tenant_code,
     )
     return success(data=user_info.model_dump())
 

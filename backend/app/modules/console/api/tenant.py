@@ -59,7 +59,7 @@ async def create_tenant(
     _: TokenData = Depends(get_current_user),
 ):
     """创建租户（注册企业）"""
-    tenant = await TenantService.create_tenant(db, data)
+    tenant, _is_existing_user = await TenantService.create_tenant(db, data)
     return success(data=TenantOut.from_model(tenant).model_dump(), message="创建成功")
 
 

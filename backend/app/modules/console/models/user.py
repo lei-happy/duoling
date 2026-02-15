@@ -1,6 +1,7 @@
 """
 平台用户表
-存储平台管理员和各租户管理员的账号信息
+存储所有用户的账号信息（用户唯一性由 phone 保证）
+用户与企业的关联通过 sys_user_tenant 表实现
 """
 
 from typing import Optional
@@ -25,7 +26,7 @@ class User(PlatformModelBase):
         String(50), nullable=True, comment="真实姓名"
     )
     phone: Mapped[Optional[str]] = mapped_column(
-        String(20), nullable=True, comment="手机号"
+        String(20), nullable=True, unique=True, comment="手机号（唯一）"
     )
     email: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, comment="邮箱"
@@ -37,10 +38,8 @@ class User(PlatformModelBase):
         SmallInteger, default=0, comment="性别 0-未知 1-男 2-女"
     )
     user_type: Mapped[int] = mapped_column(
-        SmallInteger, default=1, comment="用户类型 0-平台管理员 1-租户管理员 2-租户用户 3-驾驶员"
-    )
-    tenant_code: Mapped[Optional[str]] = mapped_column(
-        String(32), nullable=True, index=True, comment="所属租户编码（平台管理员为空）"
+        SmallInteger, default=2,
+        comment="用户类型 0-平台管理员（其余值仅做默认标记，实际角色由 sys_user_tenant 决定）"
     )
     status: Mapped[int] = mapped_column(
         SmallInteger, default=1, comment="状态 0-停用 1-正常"

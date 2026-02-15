@@ -40,7 +40,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to) => {
-  document.title = `${to.meta.title || '智途'} - 智途物流车队综合操作系统`;
+  document.title = `智途·轿运物流AI操作系统`;
 });
 
 export default router;

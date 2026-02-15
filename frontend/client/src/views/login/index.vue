@@ -35,9 +35,14 @@
               />
             </el-form-item>
             <el-form-item>
-              <el-checkbox v-model="form.remember">
-                {{ t('login.remember') }}
-              </el-checkbox>
+              <div style="display: flex; justify-content: space-between; width: 100%">
+                <el-checkbox v-model="form.remember">
+                  {{ t('login.remember') }}
+                </el-checkbox>
+                <a class="forgot-pwd-link" @click.prevent="showForgotPwdDialog = true">
+                  忘记密码？
+                </a>
+              </div>
             </el-form-item>
             <el-form-item>
               <el-button
@@ -82,6 +87,31 @@
           <el-icon class="tenant-item-arrow"><ArrowRight /></el-icon>
         </div>
       </div>
+    </el-dialog>
+
+    <!-- 忘记密码提示弹窗 -->
+    <el-dialog
+      v-model="showForgotPwdDialog"
+      title="忘记密码"
+      width="420px"
+      center
+    >
+      <div class="forgot-pwd-content">
+        <div class="forgot-pwd-icon">
+          <el-icon :size="48" color="#1681fd"><Lock /></el-icon>
+        </div>
+        <p class="forgot-pwd-text">
+          如果您忘记了登录密码，请联系您的企业管理员<br>或系统管理员进行密码重置。
+        </p>
+        <p class="forgot-pwd-hint">
+          后续版本将支持手机短信验证码自助找回密码
+        </p>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="showForgotPwdDialog = false" style="width: 100%">
+          我知道了
+        </el-button>
+      </template>
     </el-dialog>
 
     <!-- 强制修改密码弹窗 -->
@@ -140,7 +170,7 @@
 <script lang="ts" setup>
   import { ref, reactive, computed } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
-  import { OfficeBuilding, ArrowRight } from '@element-plus/icons-vue';
+  import { OfficeBuilding, ArrowRight, Lock } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import { UserOutlined, LockOutlined } from '@/components/icons';
   import PageFooter from '@/layout/components/page-footer.vue';
@@ -187,6 +217,11 @@
       ]
     };
   });
+
+  // ============================================================
+  // 忘记密码
+  // ============================================================
+  const showForgotPwdDialog = ref(false);
 
   // ============================================================
   // 企业选择
@@ -393,6 +428,41 @@
     margin: 0;
     font-weight: normal;
     letter-spacing: 4px;
+  }
+
+  /* 忘记密码链接 */
+  .forgot-pwd-link {
+    font-size: 13px;
+    color: #1681fd;
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 32px;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  /* 忘记密码弹窗 */
+  .forgot-pwd-content {
+    text-align: center;
+    padding: 10px 0;
+  }
+
+  .forgot-pwd-icon {
+    margin-bottom: 16px;
+  }
+
+  .forgot-pwd-text {
+    font-size: 15px;
+    color: #334155;
+    line-height: 1.8;
+    margin-bottom: 12px;
+  }
+
+  .forgot-pwd-hint {
+    font-size: 13px;
+    color: #94a3b8;
   }
 
   /* 企业选择列表 */
