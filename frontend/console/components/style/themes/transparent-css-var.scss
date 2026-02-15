@@ -1,0 +1,49 @@
+/** 透明主题(css-var 模式) */
+@use 'element-plus/theme-chalk/src/mixins/_var.scss' as el;
+@use './transparent.scss' as *;
+@use './theme-util.scss' as *;
+@use '../util.scss' as *;
+$transparent-selector: 'html.is-transparent' !default;
+
+@include set-theme-var($transparent-selector, $ele-transparent);
+
+#{$transparent-selector} {
+  @include set-ele-var('skin-bg', $ele-transparent);
+
+  & {
+    @include el.set-component-css-var(
+      'border-color',
+      (
+        '': hsla(0, 0%, 60%, 0.28),
+        'light': hsla(0, 0%, 60%, 0.24),
+        'lighter': hsla(0, 0%, 60%, 0.2),
+        'extra-light': hsla(0, 0%, 60%, 0.16)
+      )
+    );
+
+    @include el.set-component-css-var(
+      'fill-color',
+      (
+        '': hsla(0, 0%, 60%, 0.2),
+        'light': hsla(0, 0%, 60%, 0.1),
+        'lighter': hsla(0, 0%, 60%, 0.08),
+        'blank': $bg-transparent
+      )
+    );
+
+    @include el.set-component-css-var(
+      'bg-color',
+      (
+        'overlay': eleVar('skin-bg', 'overlay')
+      )
+    );
+  }
+
+  body {
+    background: eleVar('skin-bg', 'wallpaper');
+  }
+}
+
+$transparent-dark-selector: 'html.is-transparent.dark' !default;
+
+@include set-theme-var($transparent-dark-selector, $ele-transparent-dark);

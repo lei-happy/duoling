@@ -1,0 +1,10 @@
+"use strict";
+require("element-plus/es/components/scrollbar/style/index");
+require("element-plus/es/components/icon/style/index");
+require("../../ele-menus/style/index");
+require("../../ele-breadcrumb/style/index");
+require("../../ele-backtop/style/index");
+require("../../ele-tab-wrap/style/index");
+require("../../ele-tab-tool/style/index");
+require("../../ele-tabs/style/index");
+require("./index.scss");

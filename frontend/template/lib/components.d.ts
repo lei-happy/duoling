@@ -1,0 +1,11 @@
+export * from './core-components';
+export { default as EleBarCode } from './ele-bar-code/index';
+export { default as EleCountUp } from './ele-count-up/index';
+export { default as EleCropper } from './ele-cropper/index';
+export { default as EleCropperModal } from './ele-cropper-modal/index';
+export { default as EleCrud } from './ele-crud/index';
+export { default as EleCrudBuilder } from './ele-crud-builder/index';
+export { default as EleMapPicker } from './ele-map-picker/index';
+export { default as EleProForm } from './ele-pro-form/index';
+export { default as EleProFormBuilder } from './ele-pro-form-builder/index';
+export { default as EleXgPlayer } from './ele-xg-player/index';

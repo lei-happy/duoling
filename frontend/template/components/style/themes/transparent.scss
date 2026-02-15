@@ -1,0 +1,110 @@
+/** 透明主题 */
+@use 'sass:map';
+@use '../util.scss' as *;
+$bg-transparent: transparent !default;
+$backdrop-filter: blur(18px) !default;
+
+$ele-transparent: () !default;
+$ele-transparent: map.deep-merge(
+  (
+    'skin-bg': (
+      'wallpaper': $bg-transparent,
+      'header': hsla(0, 0%, 60%, 0.2),
+      'sidebar': hsla(0, 0%, 60%, 0.2),
+      'card': hsla(0, 0%, 60%, 0.2),
+      'overlay': hsla(0, 0%, 60%, 0.4),
+      'tooltip': hsla(0, 0%, 18%, 0.8)
+    ),
+    'layout': (
+      'bg': $bg-transparent
+    ),
+    'header': (
+      'bg': eleVar('skin-bg', 'header')
+    ),
+    'sidebar': (
+      'bg': eleVar('skin-bg', 'sidebar'),
+      'mobile-bg': eleVar('skin-bg', 'overlay')
+    ),
+    'card': (
+      'bg': eleVar('skin-bg', 'card')
+    ),
+    'table': (
+      'tr-bg': $bg-transparent,
+      'fixed-backdrop-filter': $backdrop-filter
+    ),
+    'pro-table': (
+      'full-bg': eleVar('skin-bg', 'overlay')
+    ),
+    'table-select': (
+      'tr-bg': $bg-transparent
+    ),
+    'bottom-bar': (
+      'bg': eleVar('skin-bg', 'card')
+    ),
+    'scrollbar': (
+      'color': hsla(0, 0%, 68%, 0.4),
+      'hover-color': hsla(0, 0%, 68%, 0.68)
+    ),
+    'menu-thumb': (
+      'color': hsla(0, 0%, 68%, 0.4),
+      'hover-color': hsla(0, 0%, 68%, 0.68)
+    ),
+    'menu': (
+      'bg': $bg-transparent
+    ),
+    'segmented': (
+      'bg': elVar('fill-color', 'light')
+    ),
+    'tab': (
+      'bg': eleVar('skin-bg', 'card')
+    ),
+    'step': (
+      'bg': none,
+      'backdrop-filter': blur(3px)
+    ),
+    'backtop': (
+      'bg': eleVar('skin-bg', 'card')
+    ),
+    'message': (
+      'bg': eleVar('skin-bg', 'overlay')
+    ),
+    'viewer': (
+      'bg': radial-gradient(
+          #{elVar('text-color', 'placeholder')} 8%,
+          $bg-transparent 8%
+        )
+        center / 16px 16px repeat
+    ),
+    'pro-form-builder': (
+      'group-label-bg': none,
+      'group-label-backdrop-filter': $backdrop-filter
+    ),
+    'checkbox': (
+      'bg': $bg-transparent
+    ),
+    'radio': (
+      'bg': $bg-transparent
+    ),
+    'tooltip': (
+      'bg': eleVar('skin-bg', 'tooltip')
+    ),
+    'textarea': (
+      'count-bg': $bg-transparent,
+      'count-backdrop-filter': $backdrop-filter
+    )
+  ),
+  $ele-transparent
+);
+
+$ele-transparent-dark: () !default;
+$ele-transparent-dark: map.deep-merge(
+  (
+    'header': (
+      'shadow': 0 1px 4px rgba(0, 0, 0, 0.2)
+    ),
+    'sidebar': (
+      'shadow': 1px 0 3px rgba(0, 0, 0, 0.2)
+    )
+  ),
+  $ele-transparent-dark
+);

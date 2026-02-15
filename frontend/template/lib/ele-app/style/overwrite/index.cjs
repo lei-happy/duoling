@@ -1,0 +1,17 @@
+"use strict";
+require("./autocomplete/index");
+require("./backtop/index");
+require("./cascader/index");
+require("./checkbox/index");
+require("./color-picker/index");
+require("./date-picker/index");
+require("./descriptions/index");
+require("./input/index");
+require("./message-box/index");
+require("./notification/index");
+require("./popper/index");
+require("./radio/index");
+require("./select/index");
+require("./tag/index");
+require("./tree/index");
+require("./tree-select/index");

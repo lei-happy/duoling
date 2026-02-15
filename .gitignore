@@ -1,0 +1,61 @@
+# ============================================================
+# 智途(ZhiTu) Git 忽略文件
+# ============================================================
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.whl
+venv/
+.venv/
+env/
+
+# ---- Node.js ----
+node_modules/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---- 构建产物 ----
+frontend/console/dist/
+frontend/client/dist/
+frontend/console/es/
+frontend/console/lib/
+frontend/client/es/
+frontend/client/lib/
+
+# ---- IDE ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ---- 环境配置 ----
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ---- 日志 ----
+logs/
+*.log
+
+# ---- 缓存 ----
+.cache/
+.vite/
+.pytest_cache/
+.mypy_cache/
+
+# ---- Docker ----
+docker-compose.override.yml

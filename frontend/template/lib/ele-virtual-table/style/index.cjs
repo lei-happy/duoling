@@ -1,0 +1,10 @@
+"use strict";
+require("element-plus/es/components/table-v2/style/index");
+require("element-plus/es/components/checkbox/style/index");
+require("element-plus/es/components/checkbox-group/style/index");
+require("element-plus/es/components/empty/style/index");
+require("element-plus/es/components/icon/style/index");
+require("element-plus/es/components/scrollbar/style/index");
+require("element-plus/es/components/button/style/index");
+require("../../ele-tooltip/style/index");
+require("./index.scss");

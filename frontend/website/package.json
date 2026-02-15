@@ -1,0 +1,25 @@
+{
+  "name": "zhitu-website",
+  "version": "0.1.0",
+  "description": "智途(ZhiTu) - 产品官网",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host --port 5175",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.5.22",
+    "vue-router": "^4.5.1",
+    "element-plus": "^2.11.7",
+    "@element-plus/icons-vue": "^2.3.2",
+    "axios": "^1.12.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7",
+    "vue-tsc": "^3.1.0",
+    "sass": "^1.93.2"
+  }
+}

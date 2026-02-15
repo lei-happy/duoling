@@ -1,0 +1,12 @@
+// 圆角主题
+import './rounded.scss';
+// 暗黑主题
+import './dark.scss';
+// 皮肤背景
+import './transparent.scss';
+// 简约主题
+import 'ele-admin-plus/es/style/themes/simple.scss';
+import 'ele-admin-plus/es/style/themes/simple-dark.scss';
+// 现代主题
+import 'ele-admin-plus/es/style/themes/modern.scss';
+import 'ele-admin-plus/es/style/themes/modern-dark.scss';

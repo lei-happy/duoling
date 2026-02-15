@@ -1,0 +1,121 @@
+@use '../../style/themes/default.scss' as *;
+@use '../../style/util.scss' as *;
+
+.ele-cropper {
+  .ele-cropper-main {
+    display: flex;
+  }
+
+  .ele-cropper-image {
+    flex: 1;
+    height: 300px;
+    box-sizing: border-box;
+    position: relative;
+
+    & > img {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  }
+
+  .ele-cropper-image,
+  .ele-cropper-image > .cropper-container,
+  .ele-cropper-image > .cropper-container > .cropper-wrap-box,
+  .ele-cropper-image > .cropper-container > .cropper-drag-box {
+    border-radius: elVar('border-radius', 'base');
+  }
+
+  .ele-cropper-image > .cropper-container > .cropper-wrap-box,
+  .ele-cropper-image > .cropper-container > .cropper-drag-box {
+    overflow: hidden;
+  }
+
+  .ele-cropper-previews {
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 0;
+  }
+
+  .ele-cropper-preview {
+    margin-top: 16px;
+    display: inline-block;
+    box-sizing: border-box;
+    border-radius: elVar('border-radius', 'base');
+    border: 1px solid elVar('border-color', 'light');
+    vertical-align: top;
+    overflow: hidden;
+
+    &.is-circle {
+      border-radius: 50%;
+    }
+  }
+}
+
+@media screen and (max-width: #{$mobile-max-width}) {
+  .ele-cropper.is-responsive .ele-cropper-previews {
+    display: none;
+  }
+}
+
+/* 操作按钮 */
+.ele-cropper-tools {
+  margin-top: 6px;
+
+  .el-upload-list {
+    display: none;
+  }
+}
+
+.ele-cropper-tool-item {
+  margin: 10px 10px 0 0;
+  vertical-align: top;
+
+  &:last-child {
+    margin-right: 0;
+  }
+
+  & > .ele-cropper-tool-upload {
+    float: left;
+  }
+
+  .ele-cropper-tool-upload {
+    line-height: 0;
+    display: inline-block;
+  }
+}
+
+.ele-cropper-tool {
+  padding: 0 10px;
+
+  &:not(.ele-cropper-ok) > i + span {
+    display: none;
+  }
+
+  &.ele-cropper-ok > .el-icon + span {
+    margin-left: 4px;
+  }
+}
+
+.ele-cropper-ok {
+  padding-left: 10px;
+  padding-right: 10px;
+  border-left: none;
+  border-right: none;
+}
+
+.ele-cropper-upload {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-right: none;
+}
+
+@media screen and (max-width: #{$mobile-max-width}) {
+  .ele-cropper.is-responsive .ele-cropper-tool-item:not(:last-child) {
+    margin-right: 6px;
+  }
+}

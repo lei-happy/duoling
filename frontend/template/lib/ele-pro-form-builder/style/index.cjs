@@ -1,0 +1,14 @@
+"use strict";
+require("element-plus/es/components/empty/style/index");
+require("element-plus/es/components/icon/style/index");
+require("element-plus/es/components/button/style/index");
+require("element-plus/es/components/input/style/index");
+require("element-plus/es/components/switch/style/index");
+require("../../ele-split-panel/style/index");
+require("../../ele-tab-bar/style/index");
+require("../../ele-pro-form/style/index");
+require("../../ele-modal/style/index");
+require("../../ele-tree-table/style/index");
+require("../../ele-select/style/index");
+require("../../ele-dropdown/style/index");
+require("./index.scss");

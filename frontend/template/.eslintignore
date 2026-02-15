@@ -1,0 +1,8 @@
+public
+src/assets
+dist
+node_modules
+es
+lib
+typings
+vetur

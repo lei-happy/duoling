@@ -1,0 +1,10 @@
+"use strict";
+require("element-plus/es/components/dropdown/style/index");
+require("element-plus/es/components/dropdown-menu/style/index");
+require("element-plus/es/components/dropdown-item/style/index");
+require("element-plus/es/components/icon/style/index");
+require("element-plus/es/components/scrollbar/style/index");
+require("element-plus/es/components/button-group/style/index");
+require("element-plus/es/components/button/style/index");
+require("../../ele-tooltip/style/index");
+require("./index.scss");

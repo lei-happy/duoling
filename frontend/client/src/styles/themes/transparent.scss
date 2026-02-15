@@ -1,0 +1,41 @@
+/** 透明主题(css-var) */
+@use 'ele-admin-plus/es/style/util.scss' as *;
+@use 'ele-admin-plus/es/style/themes/transparent-css-var.scss' as *;
+
+html.is-transparent {
+  /* 登录界面背景修改 */
+  div.login-wrapper {
+    background: none;
+  }
+
+  /* 编辑器组件背景修改 */
+  body .tox.tox-tinymce.tox-fullscreen/* ,
+  .ele-bytemd-wrap .bytemd.bytemd-fullscreen */ {
+    background: eleVar('skin-bg', 'overlay');
+  }
+}
+
+/* 主题抽屉常用布局封面修改 */
+html.is-transparent .ele-setting-layout-list:not(.ele-setting-skin-list),
+html.ele-theme-simple .ele-setting-layout-list:not(.ele-setting-skin-list),
+html.ele-theme-simple-dark .ele-setting-layout-list {
+  .ele-setting-layout-item-cover .ele-setting-layout-cover-bg-dark {
+    background: elVar('bg-color');
+
+    & + div {
+      border-left: 1px solid elVar('border-color', 'lighter');
+    }
+
+    &
+      + .ele-setting-layout-cover-bg-light:not(
+        .ele-setting-layout-cover-border-lighter
+      ) {
+      border-top: 1px solid elVar('border-color', 'lighter');
+    }
+  }
+
+  .ele-setting-layout-item-cover .ele-setting-layout-cover-bg-primary {
+    background: elVar('bg-color');
+    border-bottom: 1px solid elVar('border-color', 'lighter');
+  }
+}

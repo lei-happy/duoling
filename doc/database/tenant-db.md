@@ -1,0 +1,45 @@
+# 租户业务库（zt_biz_{code}）数据库设计
+
+## 概述
+
+每个企业客户拥有独立的业务数据库，存储该企业的用户、组织、车辆、驾驶员、运单等业务数据。
+
+**数据库命名**：
+- 开发环境：`zt_biz_{tenant_code}_ci`（如 `zt_biz_1001_ci`）
+- 生产环境：`zt_biz_{tenant_code}`（如 `zt_biz_1001`）
+
+## 表清单
+
+| 序号 | 表名 | 说明 |
+|------|------|------|
+| 1 | biz_user | 业务用户表 |
+| 2 | biz_role | 业务角色表 |
+| 3 | biz_menu | 业务菜单表 |
+| 4 | biz_role_menu | 角色菜单关联表 |
+| 5 | biz_user_role | 用户角色关联表 |
+| 6 | biz_department | 组织架构/部门表 |
+| 7 | biz_vehicle | 车辆信息表 |
+| 8 | biz_driver | 驾驶员信息表 |
+| 9 | biz_customer | 客户信息表 |
+| 10 | biz_route | 路线表 |
+| 11 | biz_order | 运单表 |
+
+## 建表 SQL
+
+完整建表 SQL 模板见：[sql/zt_biz_template.sql](sql/zt_biz_template.sql)
+
+## 表关系说明
+
+- `biz_user` 通过 `biz_user_role` 关联 `biz_role`（多对多）
+- `biz_role` 通过 `biz_role_menu` 关联 `biz_menu`（多对多）
+- `biz_user.department_id` 关联 `biz_department`
+- `biz_vehicle.department_id` 关联 `biz_department`
+- `biz_driver.user_id` 关联 `biz_user`
+- `biz_order` 关联 `biz_vehicle`、`biz_driver`、`biz_customer`、`biz_route`
+
+## 初始数据
+
+新租户数据库创建时，自动插入以下初始数据：
+- 默认角色：管理员、操作员、驾驶员
+- 默认部门：总公司 → 运营部 / 车队部 / 财务部
+- 企业超管账号（由平台在创建租户时指定）
