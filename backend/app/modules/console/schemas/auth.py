@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field
 
 class LoginRequest(BaseModel):
     """登录请求"""
-    username: str
+    username: str                       # 手机号或用户名
     password: str
-    tenant_code: Optional[str] = None  # 客户端登录需要提供租户编码
+    tenant_code: Optional[str] = None   # 多企业选择时第二步传入
 
 
 class LoginResponse(BaseModel):
@@ -30,6 +30,25 @@ class LoginUserInfo(BaseModel):
     user_type: int
     tenant_code: Optional[str] = None
     roles: List[str] = []
+    force_change_pwd: int = 0
+
+
+class TenantOption(BaseModel):
+    """多企业选择项"""
+    tenantCode: str = Field(description="企业编码")
+    tenantName: str = Field(description="企业名称")
+
+
+class MultiTenantResponse(BaseModel):
+    """多企业选择响应（需要用户选择进入哪个企业）"""
+    needSelectTenant: bool = True
+    tenants: List[TenantOption] = []
+
+
+class ChangePasswordRequest(BaseModel):
+    """修改密码请求"""
+    oldPassword: str = Field(description="旧密码")
+    newPassword: str = Field(description="新密码", min_length=6)
 
 
 # ============================================================

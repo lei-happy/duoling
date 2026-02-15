@@ -4,14 +4,28 @@ import type { User } from '../../system/user/model';
  * 登录参数
  */
 export interface LoginParam {
-  /** 账号 */
+  /** 手机号或用户名 */
   username?: string;
   /** 密码 */
   password?: string;
-  /** 租户编码（客户端登录必填） */
+  /** 租户编码（多企业选择时第二步传入） */
   tenant_code?: string;
   /** 是否记住密码 */
   remember?: boolean;
+}
+
+/**
+ * 登录用户信息
+ */
+export interface LoginUserInfo {
+  user_id?: number;
+  username?: string;
+  real_name?: string;
+  avatar?: string;
+  user_type?: number;
+  tenant_code?: string;
+  roles?: string[];
+  force_change_pwd?: number;
 }
 
 /**
@@ -25,7 +39,21 @@ export interface LoginResult {
   /** 过期时间（秒） */
   expires_in?: number;
   /** 用户信息 */
-  user?: User;
+  user?: LoginUserInfo;
+  /** 是否需要选择企业 */
+  needSelectTenant?: boolean;
+  /** 可选企业列表 */
+  tenants?: TenantOption[];
+}
+
+/**
+ * 企业选择项
+ */
+export interface TenantOption {
+  /** 企业编码 */
+  tenantCode: string;
+  /** 企业名称 */
+  tenantName: string;
 }
 
 /**

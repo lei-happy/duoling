@@ -48,6 +48,9 @@ class User(PlatformModelBase):
     remark: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="备注"
     )
+    force_change_pwd: Mapped[int] = mapped_column(
+        SmallInteger, default=0, comment="是否强制修改密码 0-否 1-是"
+    )
     theme_config: Mapped[Optional[dict]] = mapped_column(
         JSON, nullable=True, comment="用户主题配置（JSON格式）"
     )

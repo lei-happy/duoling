@@ -12,6 +12,7 @@
         <router-link to="/about" @click="mobileOpen = false">关于我们</router-link>
       </nav>
       <div class="nav-actions">
+        <a :href="clientLoginUrl" target="_blank" class="login-link">登录</a>
         <router-link to="/register">
           <el-button type="primary" class="register-btn">免费注册</el-button>
         </router-link>
@@ -25,6 +26,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+
+const clientLoginUrl = (import.meta.env.VITE_CLIENT_URL || 'http://localhost:5174') + '/login'
 
 const isScrolled = ref(false)
 const mobileOpen = ref(false)
@@ -191,6 +194,24 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
 
 .nav-actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  .login-link {
+    font-size: 15px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.25s;
+
+    &:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
 
   .register-btn {
     border-radius: 8px;
@@ -211,6 +232,15 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
 }
 
 /* 滚动后按钮样式 */
+.scrolled .nav-actions .login-link {
+  color: var(--color-text);
+
+  &:hover {
+    color: var(--color-primary);
+    background: rgba(29, 78, 216, 0.06);
+  }
+}
+
 .scrolled .nav-actions .register-btn {
   color: #fff !important;
   border: none !important;

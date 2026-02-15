@@ -85,29 +85,6 @@
             />
           </el-form-item>
 
-          <el-form-item label="选择版本" prop="version_code">
-            <el-radio-group v-model="form.version_code" class="version-radio-group">
-              <el-radio value="free" class="version-radio">
-                <div class="version-label">
-                  <span class="version-name">免费版</span>
-                  <span class="version-price">¥0/月</span>
-                </div>
-              </el-radio>
-              <el-radio value="pro" class="version-radio">
-                <div class="version-label">
-                  <span class="version-name">专业版</span>
-                  <span class="version-price">¥799/月</span>
-                </div>
-              </el-radio>
-              <el-radio value="flagship" class="version-radio">
-                <div class="version-label">
-                  <span class="version-name">旗舰版</span>
-                  <span class="version-price">¥4,999/月</span>
-                </div>
-              </el-radio>
-            </el-radio-group>
-          </el-form-item>
-
           <el-form-item>
             <el-button
               type="primary"
@@ -128,7 +105,7 @@
         <el-dialog
           v-model="showSuccess"
           title=""
-          width="420px"
+          width="460px"
           :show-close="false"
           :close-on-click-modal="false"
           center
@@ -137,10 +114,22 @@
           <div class="success-content">
             <div class="success-icon">✓</div>
             <h3>注册成功！</h3>
-            <p>您的企业账户已创建成功，我们的客户经理将在 24 小时内与您联系。</p>
-            <router-link to="/">
-              <el-button type="primary" class="success-btn">返回首页</el-button>
-            </router-link>
+            <p>您的企业账户已创建成功，请使用以下信息登录客户端：</p>
+            <div class="credential-box">
+              <div class="credential-row">
+                <span class="credential-label">登录账号</span>
+                <span class="credential-value">{{ form.contact_phone }}</span>
+              </div>
+              <div class="credential-row">
+                <span class="credential-label">初始密码</span>
+                <span class="credential-value">123456</span>
+              </div>
+            </div>
+            <p class="credential-tip">首次登录后系统将要求您修改密码</p>
+            <div class="success-actions">
+              <el-button class="success-btn-outline" @click="goHome">返回首页</el-button>
+              <el-button type="primary" class="success-btn" @click="goLogin">立即登录</el-button>
+            </div>
           </div>
         </el-dialog>
       </div>
@@ -150,12 +139,15 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { registerTenant } from '@/api'
 
 const route = useRoute()
+const router = useRouter()
+
+const clientLoginUrl = (import.meta.env.VITE_CLIENT_URL || 'http://localhost:5174') + '/login'
 
 /** 从 URL 参数获取推荐码（如 /register?ref=1001） */
 const referrerCode = ref<string | undefined>(
@@ -171,7 +163,6 @@ const form = reactive({
   contact_person: '',
   contact_phone: '',
   contact_email: '',
-  version_code: 'free',
 })
 
 const rules: FormRules = {
@@ -207,7 +198,6 @@ async function handleSubmit() {
       contact_person: form.contact_person,
       contact_phone: form.contact_phone,
       contact_email: form.contact_email || undefined,
-      version_code: form.version_code,
       referrer_code: referrerCode.value || undefined,
     })
     showSuccess.value = true
@@ -217,6 +207,16 @@ async function handleSubmit() {
   } finally {
     loading.value = false
   }
+}
+
+/** 跳转到客户端登录 */
+function goLogin() {
+  window.open(clientLoginUrl, '_blank')
+}
+
+/** 返回首页 */
+function goHome() {
+  router.push('/')
 }
 </script>
 
@@ -410,66 +410,6 @@ async function handleSubmit() {
   }
 }
 
-.version-radio-group {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-
-  :deep(.el-radio) {
-    flex: 1;
-    margin-right: 0;
-    height: auto;
-  }
-
-  :deep(.el-radio__input) {
-    display: none;
-  }
-
-  :deep(.el-radio__label) {
-    padding: 0;
-    width: 100%;
-  }
-}
-
-.version-radio {
-  :deep(.el-radio__label) {
-    display: block;
-  }
-}
-
-.version-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 16px 12px;
-  border: 2px solid var(--color-border);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: center;
-
-  .version-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--color-text);
-  }
-
-  .version-price {
-    font-size: 13px;
-    color: var(--color-text-secondary);
-  }
-}
-
-.version-radio :deep(.el-radio__input.is-checked) + .el-radio__label .version-label {
-  border-color: var(--color-primary);
-  background: rgba(29, 78, 216, 0.04);
-
-  .version-name {
-    color: var(--color-primary);
-  }
-}
-
 .submit-btn {
   width: 100%;
   height: 48px !important;
@@ -528,11 +468,56 @@ async function handleSubmit() {
   margin-bottom: 12px;
 }
 
-.success-content p {
+.success-content > p {
   font-size: 15px;
   color: var(--color-text-secondary);
   line-height: 1.6;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
+}
+
+.credential-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px 24px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.credential-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid #e2e8f0;
+  }
+}
+
+.credential-label {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.credential-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  font-family: 'SF Mono', 'Menlo', monospace;
+  letter-spacing: 0.5px;
+}
+
+.credential-tip {
+  font-size: 13px;
+  color: #f59e0b;
+  margin-bottom: 24px;
+}
+
+.success-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
 }
 
 .success-btn {
@@ -541,6 +526,12 @@ async function handleSubmit() {
   font-weight: 600 !important;
   background: linear-gradient(135deg, var(--color-primary), var(--color-accent)) !important;
   border: none !important;
+}
+
+.success-btn-outline {
+  border-radius: 10px !important;
+  padding: 10px 32px !important;
+  font-weight: 600 !important;
 }
 
 /* ========== 响应式 ========== */

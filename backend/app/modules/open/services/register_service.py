@@ -18,7 +18,8 @@ class RegisterService:
         """
         企业自助注册
         1. 创建租户（复用 TenantService）
-        2. 返回注册结果
+        2. 自动激活为正常状态（免费版）
+        3. 返回注册结果
         """
         # 确定来源渠道
         source_channel = "referral" if data.referrer_code else "website"
@@ -31,17 +32,25 @@ class RegisterService:
             contactEmail=data.contact_email,
             province=data.province,
             city=data.city,
-            remark=f"自助注册，申请版本: {data.version_code}",
+            remark="官网自助注册 - 免费版",
             sourceChannel=source_channel,
             referrerCode=data.referrer_code,
         )
         tenant = await TenantService.create_tenant(db, tenant_data)
 
+        # 自动激活：官网注册直接设为正常状态，用户可立即登录
+        tenant.status = 1
+        await db.flush()
+
         admin_username = f"admin_{tenant.tenant_code}"
-        logger.info(f"企业自助注册成功: {tenant.tenant_code} - {data.tenant_name} (渠道: {source_channel})")
+        logger.info(
+            f"企业自助注册成功: {tenant.tenant_code} - {data.tenant_name} "
+            f"(渠道: {source_channel}, 已自动激活)"
+        )
 
         return RegisterResponse(
             tenant_code=tenant.tenant_code,
             tenant_name=tenant.tenant_name,
             admin_username=admin_username,
+            admin_phone=data.contact_phone,
         )

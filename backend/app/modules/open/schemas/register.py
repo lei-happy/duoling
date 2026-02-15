@@ -14,9 +14,6 @@ class RegisterRequest(BaseModel):
     contact_email: Optional[str] = None  # 联系邮箱
     province: Optional[str] = None
     city: Optional[str] = None
-    admin_username: Optional[str] = None  # 管理员用户名（默认自动生成）
-    admin_password: Optional[str] = None  # 管理员密码（默认 123456）
-    version_code: str = "basic"    # 申请的产品版本
     referrer_code: Optional[str] = None  # 推荐人企业编码（从URL参数 ?ref=xxx 传入）
 
 
@@ -25,4 +22,5 @@ class RegisterResponse(BaseModel):
     tenant_code: str               # 分配的企业编码
     tenant_name: str               # 企业名称
     admin_username: str            # 管理员用户名
-    message: str = "注册成功，请使用管理员账号登录客户端"
+    admin_phone: str               # 管理员手机号（即联系电话，可用于登录）
+    message: str = "注册成功，默认密码为 123456，首次登录后请修改密码"

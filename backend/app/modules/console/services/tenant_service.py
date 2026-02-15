@@ -101,6 +101,7 @@ class TenantService:
             user_type=1,  # 租户管理员
             tenant_code=tenant_code,
             status=1,
+            force_change_pwd=1,  # 首次登录强制修改密码
         )
         db.add(admin_user)
 
