@@ -37,6 +37,12 @@
         <h2>企业注册</h2>
         <p class="form-subtitle">填写以下信息，立即创建您的企业账户</p>
 
+        <!-- 推荐注册提示 -->
+        <div v-if="referrerCode" class="referral-tip">
+          <span class="referral-icon">🤝</span>
+          来自企业推荐（推荐码：{{ referrerCode }}）
+        </div>
+
         <el-form
           ref="formRef"
           :model="form"
@@ -144,9 +150,17 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { registerTenant } from '@/api'
+
+const route = useRoute()
+
+/** 从 URL 参数获取推荐码（如 /register?ref=1001） */
+const referrerCode = ref<string | undefined>(
+  (route.query.ref as string) || undefined
+)
 
 const formRef = ref<FormInstance>()
 const loading = ref(false)
@@ -194,6 +208,7 @@ async function handleSubmit() {
       contact_phone: form.contact_phone,
       contact_email: form.contact_email || undefined,
       version_code: form.version_code,
+      referrer_code: referrerCode.value || undefined,
     })
     showSuccess.value = true
   } catch (err: any) {
@@ -362,6 +377,24 @@ async function handleSubmit() {
   font-size: 15px;
   color: var(--color-text-secondary);
   margin-bottom: 36px;
+}
+
+.referral-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 10px;
+  font-size: 14px;
+  color: #16a34a;
+  font-weight: 500;
+
+  .referral-icon {
+    font-size: 18px;
+  }
 }
 
 .register-form {

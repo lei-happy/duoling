@@ -30,6 +30,10 @@ async def client_login(
 @router.get("/user-info")
 async def get_user_info(
     current_user: TokenData = Depends(get_current_user),
+    db: AsyncSession = Depends(get_platform_db),
 ):
-    """获取当前登录用户信息"""
-    return success(data=current_user.model_dump())
+    """获取当前登录用户信息（含角色、菜单/权限）"""
+    user_info = await AuthService.get_user_info(
+        db, current_user.user_id, app_type="client"
+    )
+    return success(data=user_info.model_dump())

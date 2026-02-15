@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS `sys_tenant` (
   `db_initialized` SMALLINT NOT NULL DEFAULT 0 COMMENT '数据库是否已初始化 0-否 1-是',
   `expire_time` DATETIME DEFAULT NULL COMMENT '授权到期时间',
   `remark` TEXT DEFAULT NULL COMMENT '备注',
+  `source_channel` VARCHAR(50) DEFAULT NULL COMMENT '来源渠道: website-官网注册 console-后台录入 referral-企业推荐',
+  `referrer_code` VARCHAR(50) DEFAULT NULL COMMENT '推荐人企业编码（来源为referral时记录）',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `is_deleted` SMALLINT NOT NULL DEFAULT 0 COMMENT '是否删除 0-否 1-是',

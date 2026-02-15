@@ -66,40 +66,23 @@
   /** 表格列配置 */
   const columns = ref<Columns>([
     {
-      type: 'selection',
-      columnKey: 'selection',
-      width: 50,
-      align: 'center',
-      showOverflowTooltip: false
-    },
-    {
-      type: 'index',
-      columnKey: 'index',
-      width: 50,
-      align: 'center'
-    },
-    {
       prop: 'roleName',
       label: '角色名称',
-      sortable: 'custom',
       minWidth: 120
     },
     {
       prop: 'roleCode',
       label: '角色标识',
-      sortable: 'custom',
       minWidth: 120
     },
     {
       prop: 'comments',
       label: '备注',
-      sortable: 'custom',
       minWidth: 140
     },
     {
       prop: 'createTime',
       label: '创建时间',
-      sortable: 'custom',
       width: 180,
       align: 'center'
     },

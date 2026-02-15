@@ -18,6 +18,14 @@
             @keyup.enter="submit"
             @submit.prevent=""
           >
+            <el-form-item prop="tenant_code">
+              <el-input
+                clearable
+                v-model="form.tenant_code"
+                placeholder="请输入企业编码"
+                :prefix-icon="HomeOutlined"
+              />
+            </el-form-item>
             <el-form-item prop="username">
               <el-input
                 clearable
@@ -62,7 +70,7 @@
   import { ref, reactive, computed } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
-  import { UserOutlined, LockOutlined } from '@/components/icons';
+  import { UserOutlined, LockOutlined, HomeOutlined } from '@/components/icons';
   import PageFooter from '@/layout/components/page-footer.vue';
   import { useLogin } from '@/utils/use-login';
   import { useI18n } from 'vue-i18n';
@@ -79,6 +87,7 @@
 
   /** 表单数据 */
   const form = reactive({
+    tenant_code: '',
     username: '',
     password: '',
     remember: true
@@ -87,6 +96,14 @@
   /** 表单验证规则 */
   const rules = computed<FormRules>(() => {
     return {
+      tenant_code: [
+        {
+          required: true,
+          message: '请输入企业编码',
+          type: 'string',
+          trigger: 'blur'
+        }
+      ],
       username: [
         {
           required: true,
@@ -153,7 +170,7 @@
       :deep(.ele-card-body) {
         display: flex;
         padding: 0;
-        height: 462px;
+        height: 520px;
       }
     }
   }

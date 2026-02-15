@@ -3,7 +3,7 @@
 """
 
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 
 class RegisterRequest(BaseModel):
@@ -17,6 +17,7 @@ class RegisterRequest(BaseModel):
     admin_username: Optional[str] = None  # 管理员用户名（默认自动生成）
     admin_password: Optional[str] = None  # 管理员密码（默认 123456）
     version_code: str = "basic"    # 申请的产品版本
+    referrer_code: Optional[str] = None  # 推荐人企业编码（从URL参数 ?ref=xxx 传入）
 
 
 class RegisterResponse(BaseModel):

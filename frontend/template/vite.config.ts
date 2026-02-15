@@ -17,6 +17,7 @@ export default defineConfig(({ /* command, */ mode }) => {
   // 别名配置
   const alias = {
     '@/': resolve('src') + '/',
+    '@shared/': resolve('../components') + '/',
     'vue-i18n': 'vue-i18n/dist/vue-i18n.cjs.js',
     'ele-admin-plus/es': resolve('components'),
     'ele-admin-plus': resolve('components')

@@ -17,6 +17,7 @@ export function registerTenant(data: {
   contact_phone: string;
   contact_email?: string;
   version_code?: string;
+  referrer_code?: string;
 }) {
   return request.post('/register', data);
 }

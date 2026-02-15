@@ -63,3 +63,9 @@ class Tenant(PlatformModelBase):
     remark: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="备注"
     )
+    source_channel: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, comment="来源渠道: website-官网注册 console-后台录入 referral-企业推荐"
+    )
+    referrer_code: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, comment="推荐人企业编码（来源为referral时记录）"
+    )

@@ -23,12 +23,16 @@
     "skipLibCheck": true,
     "paths": {
       "@/*": ["src/*"],
+      "@shared/*": ["../components/*"],
       "ele-admin-plus/es/*": ["components/*"],
       "ele-admin-plus/es": ["components/index"],
       "ele-admin-plus": ["components/index"]
     }
   },
   "include": [
+    "../components/**/*.ts",
+    "../components/**/*.d.ts",
+    "../components/**/*.vue",
     "components/**/*.ts",
     "components/**/*.d.ts",
     "components/**/*.tsx",

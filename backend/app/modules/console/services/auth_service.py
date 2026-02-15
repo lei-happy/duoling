@@ -3,7 +3,7 @@
 处理登录、Token签发、用户信息/菜单/权限查询
 """
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Optional, List
 
 from sqlalchemy import select
@@ -19,6 +19,7 @@ from app.modules.console.models.user_role import UserRole
 from app.modules.console.models.role import Role
 from app.modules.console.models.menu import Menu
 from app.modules.console.models.permission import RoleMenu
+from app.modules.console.models.tenant import Tenant
 from app.modules.console.schemas.auth import (
     LoginRequest, LoginResponse, LoginUserInfo,
     UserInfoOut, UserRoleOut, UserMenuOut,
@@ -97,6 +98,28 @@ class AuthService:
         if not request.tenant_code:
             raise AuthException("请提供企业编码")
 
+        # 检查租户状态
+        tenant_result = await db.execute(
+            select(Tenant).where(
+                Tenant.tenant_code == request.tenant_code,
+                Tenant.is_deleted == 0,
+            )
+        )
+        tenant = tenant_result.scalar_one_or_none()
+        if not tenant:
+            raise AuthException("企业不存在")
+        if tenant.status == 0:
+            raise AuthException("企业已被停用，请联系管理员")
+        if tenant.status == 2:
+            raise AuthException("企业尚未开通，请联系管理员")
+        if tenant.status == 3:
+            raise AuthException("企业授权已过期，请联系管理员续期")
+        if tenant.expire_time and tenant.expire_time < datetime.now():
+            # 自动标记为过期
+            tenant.status = 3
+            await db.flush()
+            raise AuthException("企业授权已过期，请联系管理员续期")
+
         # 查询用户（租户管理员在平台库中）
         result = await db.execute(
             select(User).where(
@@ -159,10 +182,14 @@ class AuthService:
     # ============================================================
 
     @staticmethod
-    async def get_user_info(db: AsyncSession, user_id: int) -> UserInfoOut:
+    async def get_user_info(
+        db: AsyncSession, user_id: int, app_type: str = "platform"
+    ) -> UserInfoOut:
         """
         获取完整的用户信息，包括角色和菜单/权限列表
         供 /auth/user-info 接口使用
+
+        :param app_type: "platform" 返回管理后台菜单，"client" 返回客户端菜单
         """
         # 1. 查询用户
         result = await db.execute(
@@ -176,8 +203,8 @@ class AuthService:
         roles = await AuthService._get_user_roles(db, user_id)
         role_codes = [r.role_code for r in roles]
 
-        # 3. 查询菜单
-        menus = await AuthService._get_user_menus(db, user_id, role_codes)
+        # 3. 查询菜单（根据 app_type 区分平台/客户端）
+        menus = await AuthService._get_user_menus(db, user_id, role_codes, app_type)
 
         # 4. 组装输出（字段名对齐前端 EleAdminPlus）
         gender_map = {0: None, 1: "男", 2: "女"}
@@ -218,19 +245,25 @@ class AuthService:
 
     @staticmethod
     async def _get_user_menus(
-        db: AsyncSession, user_id: int, role_codes: List[str]
+        db: AsyncSession, user_id: int, role_codes: List[str],
+        app_type: str = "platform"
     ) -> List[Menu]:
         """
         获取用户可访问的菜单列表
-        - super_admin 角色返回所有平台菜单
+        - super_admin / tenant_admin 角色返回对应 app_type 的所有菜单
         - 其他角色通过 role_menu 关联查询
         """
-        if "super_admin" in role_codes:
-            # 超级管理员：返回所有平台菜单
+        is_admin = (
+            "super_admin" in role_codes
+            or (app_type == "client" and "tenant_admin" in role_codes)
+        )
+
+        if is_admin:
+            # 管理员：返回对应 app_type 的所有菜单
             result = await db.execute(
                 select(Menu)
                 .where(
-                    Menu.app_type == "platform",
+                    Menu.app_type == app_type,
                     Menu.status == 1,
                     Menu.is_deleted == 0,
                 )
@@ -245,7 +278,7 @@ class AuthService:
                 .join(UserRole, UserRole.role_id == Role.id)
                 .where(
                     UserRole.user_id == user_id,
-                    Menu.app_type == "platform",
+                    Menu.app_type == app_type,
                     Menu.status == 1,
                     Menu.is_deleted == 0,
                     RoleMenu.is_deleted == 0,
