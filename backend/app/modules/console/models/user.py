@@ -4,7 +4,7 @@
 """
 
 from typing import Optional
-from sqlalchemy import String, SmallInteger, Text
+from sqlalchemy import String, SmallInteger, Text, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.modules.console.models.base import PlatformModelBase
@@ -47,4 +47,7 @@ class User(PlatformModelBase):
     )
     remark: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="备注"
+    )
+    theme_config: Mapped[Optional[dict]] = mapped_column(
+        JSON, nullable=True, comment="用户主题配置（JSON格式）"
     )

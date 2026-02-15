@@ -62,6 +62,7 @@
   } from '@/components/icons';
   import { doWithTransition } from '@/utils/common';
   import { useThemeStore } from '@/store/modules/theme';
+  import { useUserStore } from '@/store/modules/user';
   import HeaderUser from './header-user.vue';
   import HeaderNotice from './header-notice.vue';
   import I18nIcon from './i18n-icon.vue';
@@ -127,6 +128,7 @@
     );
   };
 
-  /** 显示主题配置提示 */
-  const showTip = ref(true);
+  /** 显示主题配置提示（如果用户已自定义过主题则不再提示） */
+  const userStore = useUserStore();
+  const showTip = ref(!userStore.info?.themeConfig);
 </script>

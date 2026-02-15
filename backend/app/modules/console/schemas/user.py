@@ -1,59 +1,70 @@
 """
 用户管理 Schemas
+字段名对齐前端 EleAdminPlus User 接口（camelCase）
 """
 
 from typing import Optional, List
-from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
-class UserCreate(BaseModel):
-    """创建用户"""
-    username: str
-    password: str
-    real_name: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    gender: int = 0
-    user_type: int = 1
-    tenant_code: Optional[str] = None
-    role_ids: List[int] = []
-    remark: Optional[str] = None
-
-
-class UserUpdate(BaseModel):
-    """更新用户"""
-    real_name: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    avatar: Optional[str] = None
-    gender: Optional[int] = None
-    status: Optional[int] = None
-    role_ids: Optional[List[int]] = None
-    remark: Optional[str] = None
+class UserRoleItem(BaseModel):
+    """用户关联的角色"""
+    roleId: int
+    roleCode: str
+    roleName: str
 
 
 class UserOut(BaseModel):
     """用户输出"""
-    id: int
+    userId: int
     username: str
-    real_name: Optional[str] = None
+    nickname: Optional[str] = None
+    avatar: Optional[str] = None
+    sex: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+    status: Optional[int] = None
+    organizationId: Optional[int] = None
+    organizationName: Optional[str] = None
+    roles: List[UserRoleItem] = []
+    createTime: Optional[str] = None
+
+
+class UserCreate(BaseModel):
+    """新增用户"""
+    username: str
+    password: Optional[str] = "123456"
+    nickname: Optional[str] = None
     avatar: Optional[str] = None
-    gender: int
-    user_type: int
-    tenant_code: Optional[str] = None
+    sex: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    organizationId: Optional[int] = None
+    roles: Optional[List[int]] = None  # 角色 ID 列表
+    status: int = 0
+
+
+class UserUpdate(BaseModel):
+    """修改用户"""
+    userId: int
+    username: Optional[str] = None
+    nickname: Optional[str] = None
+    avatar: Optional[str] = None
+    sex: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    organizationId: Optional[int] = None
+    roles: Optional[List[int]] = None
+    status: Optional[int] = None
+
+
+class UserStatusUpdate(BaseModel):
+    """修改用户状态"""
+    userId: int
     status: int
-    remark: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-    roles: List[str] = []
-
-    model_config = {"from_attributes": True}
 
 
-class UpdatePasswordRequest(BaseModel):
-    """修改密码"""
-    old_password: str
-    new_password: str
+class UserPasswordUpdate(BaseModel):
+    """重置密码"""
+    userId: int
+    password: str = "123456"

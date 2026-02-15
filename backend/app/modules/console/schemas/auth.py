@@ -69,5 +69,11 @@ class UserInfoOut(BaseModel):
     email: Optional[str] = Field(default=None, description="邮箱")
     sex: Optional[str] = Field(default=None, description="性别")
     status: Optional[int] = Field(default=None, description="状态")
+    themeConfig: Optional[dict] = Field(default=None, description="用户主题配置")
     roles: List[UserRoleOut] = Field(default_factory=list, description="角色列表")
     authorities: List[UserMenuOut] = Field(default_factory=list, description="菜单/权限列表")
+
+
+class UpdateThemeConfigRequest(BaseModel):
+    """更新主题配置请求"""
+    themeConfig: Optional[dict] = Field(default=None, description="用户主题配置（JSON格式）")

@@ -2,111 +2,130 @@
 用户管理接口
 """
 
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Query
+from typing import Optional, List
+from fastapi import APIRouter, Depends, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_platform_db, get_current_user
 from app.core.security import TokenData
-from app.common.response import success, fail
-from app.modules.console.schemas.user import UserCreate, UserUpdate, UserOut, UpdatePasswordRequest
+from app.common.response import success
+from app.modules.console.schemas.user import (
+    UserCreate, UserUpdate, UserStatusUpdate, UserPasswordUpdate,
+)
 from app.modules.console.services.user_service import UserService
 
 router = APIRouter()
 
 
-@router.get("")
-async def list_users(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=200),
-    keyword: Optional[str] = None,
-    user_type: Optional[int] = None,
-    tenant_code: Optional[str] = None,
-    status: Optional[int] = None,
+@router.get("/page")
+async def page_users(
+    page: int = Query(1),
+    limit: int = Query(20),
+    username: Optional[str] = Query(None),
+    nickname: Optional[str] = Query(None),
+    phone: Optional[str] = Query(None),
+    status: Optional[int] = Query(None),
+    sex: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_platform_db),
-    current_user: TokenData = Depends(get_current_user),
+    _: TokenData = Depends(get_current_user),
 ):
-    """获取用户列表"""
-    items, total = await UserService.get_user_list(
-        db, page=page, page_size=page_size,
-        keyword=keyword, user_type=user_type,
-        tenant_code=tenant_code, status=status,
+    """分页查询用户"""
+    result = await UserService.page_users(
+        db, page, limit, username, nickname, phone, status, sex
     )
-    return success(data={
-        "list": [UserOut.model_validate(u).model_dump() for u in items],
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    })
+    return success(data=result)
+
+
+@router.get("/existence")
+async def check_existence(
+    field: str = Query("username"),
+    value: str = Query(...),
+    userId: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_platform_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """检查用户名是否已存在"""
+    exists = await UserService.check_existence(db, field, value, userId)
+    return success(data=exists)
 
 
 @router.get("/{user_id}")
 async def get_user(
     user_id: int,
     db: AsyncSession = Depends(get_platform_db),
-    current_user: TokenData = Depends(get_current_user),
+    _: TokenData = Depends(get_current_user),
 ):
-    """获取用户详情"""
-    user = await UserService.get_user_by_id(db, user_id)
-    if not user:
-        return fail("用户不存在")
-    return success(data=UserOut.model_validate(user).model_dump())
+    """根据 ID 查询用户"""
+    result = await UserService.get_user(db, user_id)
+    return success(data=result.model_dump())
+
+
+@router.get("")
+async def list_users(
+    username: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_platform_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """查询用户列表"""
+    items = await UserService.list_users(db, username)
+    return success(data=[item.model_dump() for item in items])
 
 
 @router.post("")
-async def create_user(
+async def add_user(
     data: UserCreate,
     db: AsyncSession = Depends(get_platform_db),
-    current_user: TokenData = Depends(get_current_user),
+    _: TokenData = Depends(get_current_user),
 ):
-    """创建用户"""
-    user = await UserService.create_user(db, data)
-    return success(data=UserOut.model_validate(user).model_dump(), message="创建成功")
+    """新增用户"""
+    await UserService.create_user(db, data)
+    await db.commit()
+    return success(message="添加成功")
 
 
-@router.put("/{user_id}")
+@router.put("")
 async def update_user(
-    user_id: int,
     data: UserUpdate,
     db: AsyncSession = Depends(get_platform_db),
-    current_user: TokenData = Depends(get_current_user),
+    _: TokenData = Depends(get_current_user),
 ):
-    """更新用户"""
-    user = await UserService.update_user(db, user_id, data)
-    return success(data=UserOut.model_validate(user).model_dump(), message="更新成功")
+    """修改用户"""
+    await UserService.update_user(db, data)
+    await db.commit()
+    return success(message="修改成功")
 
 
-@router.delete("/{user_id}")
-async def delete_user(
-    user_id: int,
+@router.delete("/batch")
+async def batch_delete_users(
+    ids: List[int] = Body(..., embed=False),
     db: AsyncSession = Depends(get_platform_db),
-    current_user: TokenData = Depends(get_current_user),
+    _: TokenData = Depends(get_current_user),
 ):
-    """删除用户"""
-    await UserService.delete_user(db, user_id)
+    """批量删除用户"""
+    await UserService.batch_delete(db, ids)
+    await db.commit()
     return success(message="删除成功")
 
 
-@router.put("/{user_id}/reset-password")
-async def reset_password(
-    user_id: int,
+@router.put("/status")
+async def update_user_status(
+    data: UserStatusUpdate,
     db: AsyncSession = Depends(get_platform_db),
-    current_user: TokenData = Depends(get_current_user),
+    _: TokenData = Depends(get_current_user),
 ):
-    """重置用户密码（管理员操作，重置为 123456）"""
-    await UserService.reset_password(db, user_id, "123456")
-    return success(message="密码已重置为 123456")
+    """修改用户状态"""
+    await UserService.update_status(db, data.userId, data.status)
+    await db.commit()
+    return success(message="修改成功")
 
 
-@router.put("/me/password")
-async def update_my_password(
-    data: UpdatePasswordRequest,
+@router.put("/password")
+async def reset_user_password(
+    data: UserPasswordUpdate,
     db: AsyncSession = Depends(get_platform_db),
-    current_user: TokenData = Depends(get_current_user),
+    _: TokenData = Depends(get_current_user),
 ):
-    """修改当前用户密码"""
-    await UserService.update_password(
-        db, current_user.user_id, data.old_password, data.new_password
-    )
-    return success(message="密码修改成功")
+    """重置密码"""
+    await UserService.reset_password(db, data.userId, data.password)
+    await db.commit()
+    return success(message="重置成功")

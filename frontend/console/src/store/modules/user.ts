@@ -7,6 +7,8 @@ import { formatUserMenu } from '@/utils/menu-util';
 import defaultAvatarUrl from '@/assets/avatar.png';
 import type { User } from '@/api/system/user/model';
 import { getUserInfo } from '@/api/layout';
+import { useThemeStore } from './theme';
+import { cacheSetting } from '@/utils/theme-util';
 
 /**
  * 登录用户状态管理
@@ -38,6 +40,21 @@ export const useUserStore = defineStore('user', {
           parentIdField: 'parentId'
         });
         const userMenuResult: UserMenuResult = formatUserMenu(userMenu);
+        // 从服务端恢复主题配置（服务端优先于本地缓存）
+        if (userInfo.themeConfig && Object.keys(userInfo.themeConfig).length > 0) {
+          const themeStore = useThemeStore();
+          const serverConfig = userInfo.themeConfig;
+          // 将服务端配置写入 localStorage 缓存
+          cacheSetting(serverConfig);
+          // 同步到 themeStore 状态（排除 skinConfig，它有特殊处理逻辑）
+          Object.keys(serverConfig).forEach((key) => {
+            if (key !== 'skinConfig' && typeof serverConfig[key] !== 'undefined') {
+              (themeStore as any)[key] = serverConfig[key];
+            }
+          });
+          // 恢复主题视觉效果
+          themeStore.recoverTheme();
+        }
         // 数据更新到状态管理中
         this.setInfo(userInfo);
         this.setAuthorities(

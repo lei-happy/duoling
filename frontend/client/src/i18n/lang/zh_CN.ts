@@ -8,9 +8,9 @@ export const zh_CN = {
     },
     footer: {
       website: '官网',
-      document: '文档',
-      authorization: '授权',
-      copyright: 'Copyright © 2025 武汉易云智科技有限公司'
+      document: '帮助手册',
+      authorization: '',
+      copyright: 'Copyright © 2026 北京智途科技有限公司'
     },
     logout: {
       title: '系统提示',

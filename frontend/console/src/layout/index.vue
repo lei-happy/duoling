@@ -126,8 +126,8 @@
     <template v-if="footer" #footer>
       <page-footer />
     </template>
-    <!-- 清新主题菜单图标使用图片 -->
-    <template v-if="isSimpleTheme" #icon="{ icon }">
+    <!-- 菜单图标：支持自定义 SVG 及清新主题图片 -->
+    <template #icon="{ icon }">
       <menu-icon :icon="icon" img-class="el-icon" />
     </template>
     <template v-if="isSimpleTheme" #tabHome>

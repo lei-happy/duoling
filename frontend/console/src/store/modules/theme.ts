@@ -29,6 +29,7 @@ import {
   SKIN_THEME_CONFIG_EXCLUDES,
   changeTheme
 } from '@/utils/theme-util';
+import { saveThemeConfig } from '@/api/layout';
 import { tabStateProps } from './tab';
 
 /**
@@ -296,6 +297,8 @@ export const useThemeStore = defineStore('theme', {
       } else if (prop === 'responsive') {
         changeResponsive(value); // 切换移动端响应式
       }
+      // 同步主题配置到服务端
+      this.syncThemeToServer();
     },
     /**
      * 重置
@@ -312,6 +315,8 @@ export const useThemeStore = defineStore('theme', {
       changeRoundedTheme(this.roundedTheme);
       changeWeakMode(this.weakMode);
       changeTheme(this.color, this.darkMode, this.skinConfig);
+      // 重置后同步到服务端（保存为 null 表示恢复默认）
+      saveThemeConfig(null);
     },
     /**
      * 恢复主题
@@ -363,6 +368,14 @@ export const useThemeStore = defineStore('theme', {
       );
       obj.layoutName = this.layoutName;
       cacheSetting(obj);
+      this.syncThemeToServer();
+    },
+    /**
+     * 将当前主题配置同步到服务端（防抖）
+     */
+    syncThemeToServer() {
+      const cache = getCacheSetting();
+      saveThemeConfig(cache);
     }
   }
 });

@@ -2,7 +2,7 @@
 <template>
   <ele-text type="placeholder" class="ele-footer">
     <el-space :size="24">
-      <el-link underline="never" href="https://eleadmin.com" target="_blank">
+      <el-link underline="never" href="https://www.zhitu.com" target="_blank">
         {{ t('layout.footer.website') }}
       </el-link>
       <el-link
@@ -12,13 +12,13 @@
       >
         {{ t('layout.footer.document') }}
       </el-link>
-      <el-link
+      <!-- <el-link
         underline="never"
         href="https://eleadmin.com/goods/11"
         target="_blank"
       >
         {{ t('layout.footer.authorization') }}
-      </el-link>
+      </el-link> -->
     </el-space>
     <div>{{ t('layout.footer.copyright') }}</div>
   </ele-text>

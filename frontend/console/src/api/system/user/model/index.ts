@@ -34,6 +34,8 @@ export interface User {
   sexName?: string;
   /** 机构名称 */
   organizationName?: string;
+  /** 用户主题配置 */
+  themeConfig?: Record<string, any>;
   /** 角色列表 */
   roles?: Role[];
   /** 权限列表 */

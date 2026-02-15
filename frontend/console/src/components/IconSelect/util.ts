@@ -420,7 +420,7 @@ export function getIconSelectData(lang: IconSelectLocale) {
 }
 
 /**
- * 清新主题图标图片地址数据
+ * 清新主题图标图片地址数据（PNG）
  */
 export const imgIconUrls: Record<string, string> = import.meta.glob(
   '/src/assets/menu-icons/*.png',
@@ -436,6 +436,35 @@ export const imgIconUrls: Record<string, string> = import.meta.glob(
 export const imgIconNames = Object.keys(imgIconUrls).map((name) =>
   name.slice(0, name.lastIndexOf('.')).replace('/src/assets/menu-icons/', '')
 );
+
+/**
+ * 自定义 SVG 图标地址数据
+ * 通过 import.meta.glob 加载 /src/assets/menu-icons/*.svg
+ * key: '/src/assets/menu-icons/xxx.svg' -> value: resolved URL
+ */
+export const svgIconUrls: Record<string, string> = import.meta.glob(
+  '/src/assets/menu-icons/*.svg',
+  {
+    import: 'default',
+    eager: true
+  }
+);
+
+/**
+ * 自定义 SVG 图标名称列表
+ */
+export const svgIconNames = Object.keys(svgIconUrls).map((name) =>
+  name.slice(0, name.lastIndexOf('.')).replace('/src/assets/menu-icons/', '')
+);
+
+/**
+ * 根据图标名称获取自定义 SVG 图标 URL
+ * @param iconName 图标名称（不含扩展名）
+ * @returns SVG URL 或 undefined
+ */
+export function getSvgIconUrl(iconName: string): string | undefined {
+  return svgIconUrls[`/src/assets/menu-icons/${iconName}.svg`];
+}
 
 /**
  * 判断是否是清新主题

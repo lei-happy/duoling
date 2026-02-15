@@ -2,164 +2,256 @@
 用户管理服务
 """
 
-from typing import Optional, Tuple, List
+from typing import Optional, List, Tuple
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
-from app.common.utils import hash_password, verify_password
+from app.common.utils import hash_password
 from app.modules.console.models.user import User
-from app.modules.console.models.user_role import UserRole
 from app.modules.console.models.role import Role
-from app.modules.console.schemas.user import UserCreate, UserUpdate
+from app.modules.console.models.user_role import UserRole
+from app.modules.console.schemas.user import (
+    UserOut, UserCreate, UserUpdate, UserRoleItem,
+)
+
+
+SEX_MAP = {0: None, 1: "男", 2: "女"}
+SEX_REVERSE = {"男": 1, "女": 2}
 
 
 class UserService:
     """用户管理服务"""
 
     @staticmethod
-    async def create_user(db: AsyncSession, data: UserCreate) -> User:
-        """创建用户"""
-        # 检查用户名唯一性
+    async def _get_user_roles(db: AsyncSession, user_id: int) -> List[UserRoleItem]:
+        """获取用户的角色列表"""
+        result = await db.execute(
+            select(Role)
+            .join(UserRole, UserRole.role_id == Role.id)
+            .where(UserRole.user_id == user_id, Role.is_deleted == 0)
+        )
+        roles = result.scalars().all()
+        return [
+            UserRoleItem(roleId=r.id, roleCode=r.role_code, roleName=r.role_name)
+            for r in roles
+        ]
+
+    @staticmethod
+    async def _to_out(db: AsyncSession, u: User) -> UserOut:
+        """将 ORM 模型转换为输出"""
+        roles = await UserService._get_user_roles(db, u.id)
+        return UserOut(
+            userId=u.id,
+            username=u.username,
+            nickname=u.real_name,
+            avatar=u.avatar,
+            sex=SEX_MAP.get(u.gender),
+            phone=u.phone,
+            email=u.email,
+            status=u.status,
+            organizationId=None,
+            organizationName=None,
+            roles=roles,
+            createTime=u.created_at.strftime("%Y-%m-%d %H:%M:%S") if u.created_at else None,
+        )
+
+    @staticmethod
+    async def page_users(
+        db: AsyncSession,
+        page: int = 1,
+        limit: int = 20,
+        username: Optional[str] = None,
+        nickname: Optional[str] = None,
+        phone: Optional[str] = None,
+        status: Optional[int] = None,
+        sex: Optional[str] = None,
+    ) -> dict:
+        """分页查询用户"""
+        query = select(User).where(User.is_deleted == 0)
+        if username:
+            query = query.where(User.username.contains(username))
+        if nickname:
+            query = query.where(User.real_name.contains(nickname))
+        if phone:
+            query = query.where(User.phone.contains(phone))
+        if status is not None:
+            query = query.where(User.status == status)
+        if sex:
+            gender = SEX_REVERSE.get(sex)
+            if gender is not None:
+                query = query.where(User.gender == gender)
+
+        count_q = select(func.count()).select_from(query.subquery())
+        total_result = await db.execute(count_q)
+        count = total_result.scalar() or 0
+
+        query = query.order_by(User.id.desc())
+        query = query.offset((page - 1) * limit).limit(limit)
+        result = await db.execute(query)
+        items = result.scalars().all()
+
+        out_list = []
+        for u in items:
+            out_list.append(await UserService._to_out(db, u))
+
+        return {
+            "list": [item.model_dump() for item in out_list],
+            "count": count,
+        }
+
+    @staticmethod
+    async def list_users(
+        db: AsyncSession,
+        username: Optional[str] = None,
+    ) -> List[UserOut]:
+        """查询用户列表（不分页）"""
+        query = select(User).where(User.is_deleted == 0)
+        if username:
+            query = query.where(User.username.contains(username))
+        query = query.order_by(User.id.desc())
+        result = await db.execute(query)
+        items = result.scalars().all()
+        out_list = []
+        for u in items:
+            out_list.append(await UserService._to_out(db, u))
+        return out_list
+
+    @staticmethod
+    async def get_user(db: AsyncSession, user_id: int) -> UserOut:
+        """根据 ID 查询用户"""
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == 0)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise BizException("用户不存在")
+        return await UserService._to_out(db, user)
+
+    @staticmethod
+    async def create_user(db: AsyncSession, data: UserCreate) -> None:
+        """新增用户"""
+        # 检查用户名是否已存在
         existing = await db.execute(
             select(User).where(User.username == data.username, User.is_deleted == 0)
         )
         if existing.scalar_one_or_none():
             raise BizException("用户名已存在")
 
+        gender = SEX_REVERSE.get(data.sex, 0) if data.sex else 0
         user = User(
             username=data.username,
-            password=hash_password(data.password),
-            real_name=data.real_name,
+            password=hash_password(data.password or "123456"),
+            real_name=data.nickname,
+            avatar=data.avatar,
+            gender=gender,
             phone=data.phone,
             email=data.email,
-            gender=data.gender,
-            user_type=data.user_type,
-            tenant_code=data.tenant_code,
-            status=1,
-            remark=data.remark,
+            user_type=0,  # 平台用户
+            status=data.status if data.status is not None else 1,
         )
         db.add(user)
         await db.flush()
 
         # 关联角色
-        if data.role_ids:
-            for role_id in data.role_ids:
+        if data.roles:
+            for role_id in data.roles:
                 db.add(UserRole(user_id=user.id, role_id=role_id))
             await db.flush()
 
-        return user
-
     @staticmethod
-    async def get_user_list(
-        db: AsyncSession,
-        page: int = 1,
-        page_size: int = 20,
-        keyword: Optional[str] = None,
-        user_type: Optional[int] = None,
-        tenant_code: Optional[str] = None,
-        status: Optional[int] = None,
-    ) -> Tuple[List[User], int]:
-        """获取用户列表（分页）"""
-        query = select(User).where(User.is_deleted == 0)
+    async def update_user(db: AsyncSession, data: UserUpdate) -> None:
+        """修改用户"""
+        result = await db.execute(
+            select(User).where(User.id == data.userId, User.is_deleted == 0)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise BizException("用户不存在")
 
-        if keyword:
-            query = query.where(
-                User.username.contains(keyword)
-                | User.real_name.contains(keyword)
-                | User.phone.contains(keyword)
+        if data.username is not None:
+            # 检查用户名唯一性
+            dup = await db.execute(
+                select(User).where(
+                    User.username == data.username,
+                    User.id != data.userId,
+                    User.is_deleted == 0,
+                )
             )
-        if user_type is not None:
-            query = query.where(User.user_type == user_type)
-        if tenant_code:
-            query = query.where(User.tenant_code == tenant_code)
-        if status is not None:
-            query = query.where(User.status == status)
+            if dup.scalar_one_or_none():
+                raise BizException("用户名已存在")
+            user.username = data.username
+        if data.nickname is not None:
+            user.real_name = data.nickname
+        if data.avatar is not None:
+            user.avatar = data.avatar
+        if data.sex is not None:
+            user.gender = SEX_REVERSE.get(data.sex, 0)
+        if data.phone is not None:
+            user.phone = data.phone
+        if data.email is not None:
+            user.email = data.email
+        if data.status is not None:
+            user.status = data.status
 
-        # 总数
-        count_query = select(func.count()).select_from(query.subquery())
-        total_result = await db.execute(count_query)
-        total = total_result.scalar() or 0
+        # 更新角色
+        if data.roles is not None:
+            # 删除旧关联
+            await db.execute(
+                delete(UserRole).where(UserRole.user_id == data.userId)
+            )
+            # 新增关联
+            for role_id in data.roles:
+                db.add(UserRole(user_id=data.userId, role_id=role_id))
 
-        # 分页
-        query = query.order_by(User.id.desc())
-        query = query.offset((page - 1) * page_size).limit(page_size)
-        result = await db.execute(query)
-        items = list(result.scalars().all())
-
-        return items, total
+        await db.flush()
 
     @staticmethod
-    async def get_user_by_id(db: AsyncSession, user_id: int) -> Optional[User]:
-        """根据ID获取用户"""
+    async def batch_delete(db: AsyncSession, user_ids: List[int]) -> None:
+        """批量删除用户（软删除）"""
+        result = await db.execute(
+            select(User).where(User.id.in_(user_ids), User.is_deleted == 0)
+        )
+        users = result.scalars().all()
+        for u in users:
+            u.is_deleted = 1
+        await db.flush()
+
+    @staticmethod
+    async def update_status(db: AsyncSession, user_id: int, status: int) -> None:
+        """修改用户状态"""
         result = await db.execute(
             select(User).where(User.id == user_id, User.is_deleted == 0)
         )
-        return result.scalar_one_or_none()
-
-    @staticmethod
-    async def update_user(
-        db: AsyncSession, user_id: int, data: UserUpdate
-    ) -> Optional[User]:
-        """更新用户"""
-        user = await UserService.get_user_by_id(db, user_id)
+        user = result.scalar_one_or_none()
         if not user:
             raise BizException("用户不存在")
-
-        update_data = data.model_dump(exclude_unset=True)
-        role_ids = update_data.pop("role_ids", None)
-
-        for key, value in update_data.items():
-            setattr(user, key, value)
-
-        # 更新角色关联
-        if role_ids is not None:
-            # 删除旧关联
-            old_roles = await db.execute(
-                select(UserRole).where(UserRole.user_id == user_id)
-            )
-            for ur in old_roles.scalars().all():
-                await db.delete(ur)
-            # 添加新关联
-            for role_id in role_ids:
-                db.add(UserRole(user_id=user_id, role_id=role_id))
-
+        user.status = status
         await db.flush()
-        return user
 
     @staticmethod
-    async def delete_user(db: AsyncSession, user_id: int) -> bool:
-        """删除用户（软删除）"""
-        user = await UserService.get_user_by_id(db, user_id)
-        if not user:
-            raise BizException("用户不存在")
-        user.is_deleted = 1
-        await db.flush()
-        return True
-
-    @staticmethod
-    async def reset_password(
-        db: AsyncSession, user_id: int, new_password: str
-    ) -> bool:
+    async def reset_password(db: AsyncSession, user_id: int, password: str) -> None:
         """重置密码"""
-        user = await UserService.get_user_by_id(db, user_id)
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == 0)
+        )
+        user = result.scalar_one_or_none()
         if not user:
             raise BizException("用户不存在")
-        user.password = hash_password(new_password)
+        user.password = hash_password(password)
         await db.flush()
-        return True
 
     @staticmethod
-    async def update_password(
-        db: AsyncSession, user_id: int, old_password: str, new_password: str
+    async def check_existence(
+        db: AsyncSession, field: str, value: str, user_id: Optional[int] = None
     ) -> bool:
-        """修改密码"""
-        user = await UserService.get_user_by_id(db, user_id)
-        if not user:
-            raise BizException("用户不存在")
-        if not verify_password(old_password, user.password):
-            raise BizException("原密码错误")
-        user.password = hash_password(new_password)
-        await db.flush()
-        return True
+        """检查字段是否已存在"""
+        if field == "username":
+            query = select(User).where(User.username == value, User.is_deleted == 0)
+        else:
+            return False
+        if user_id:
+            query = query.where(User.id != user_id)
+        result = await db.execute(query)
+        return result.scalar_one_or_none() is not None

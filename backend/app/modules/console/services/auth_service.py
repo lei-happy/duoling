@@ -22,6 +22,7 @@ from app.modules.console.models.permission import RoleMenu
 from app.modules.console.schemas.auth import (
     LoginRequest, LoginResponse, LoginUserInfo,
     UserInfoOut, UserRoleOut, UserMenuOut,
+    UpdateThemeConfigRequest,
 )
 
 
@@ -189,6 +190,7 @@ class AuthService:
             email=user.email,
             sex=gender_map.get(user.gender),
             status=user.status,
+            themeConfig=user.theme_config,
             roles=[
                 UserRoleOut(
                     roleId=r.id,
@@ -252,3 +254,24 @@ class AuthService:
                 .distinct()
             )
         return list(result.scalars().all())
+
+    # ============================================================
+    # 用户主题配置（/auth/user-theme 使用）
+    # ============================================================
+
+    @staticmethod
+    async def update_theme_config(
+        db: AsyncSession, user_id: int, request: UpdateThemeConfigRequest
+    ) -> None:
+        """
+        更新用户主题配置
+        """
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == 0)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise AuthException("用户不存在")
+
+        user.theme_config = request.themeConfig
+        await db.commit()

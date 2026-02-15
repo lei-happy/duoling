@@ -57,16 +57,17 @@
       <el-row :gutter="16">
         <el-col :sm="12" :xs="24">
           <el-form-item label="菜单图标" prop="icon">
-            <icon-select
+            <el-input
               clearable
-              filterable="popper"
-              :popper-width="460"
-              :popper-height="388"
-              :popper-options="{ strategy: 'fixed' }"
-              placeholder="请选择图标"
+              :maxlength="50"
               v-model="form.icon"
               :disabled="form.menuType === 2"
-            />
+              placeholder="请输入图标名称（如 dashboard）"
+            >
+              <template v-if="form.icon" #prefix>
+                <menu-icon-preview :icon="form.icon" />
+              </template>
+            </el-input>
           </el-form-item>
           <el-form-item prop="path">
             <template #label>
@@ -204,7 +205,7 @@
   import { EleMessage, isExternalLink, useModal } from 'ele-admin-plus';
   import { QuestionCircleOutlined } from '@/components/icons';
   import { useFormData } from '@/utils/use-form-data';
-  import IconSelect from '@/components/IconSelect/index.vue';
+  import MenuIconPreview from '@/components/IconSelect/components/menu-icon.vue';
   import MenuSelect from './menu-select.vue';
   import { addMenu, updateMenu } from '@/api/system/menu';
   import type { Menu } from '@/api/system/menu/model';
