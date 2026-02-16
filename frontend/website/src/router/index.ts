@@ -45,7 +45,7 @@ const router = createRouter({
   }
 });
 
-router.beforeEach((to) => {
+router.beforeEach((_to) => {
   document.title = `智途·轿运物流AI操作系统`;
 });
 
