@@ -149,10 +149,11 @@ setup_mysql() {
         log_warn "MySQL 服务似乎未运行，请检查服务状态"
     fi
 
-    # 从 .env 读取数据库密码
-    source "$DEPLOY_DIR/.env"
-    DB_PASS="${DB_PASSWORD:-zhitu2026}"
-    DB_USR="${DB_USER:-root}"
+    # 安全读取 .env 中的数据库配置（避免 source 执行特殊字符）
+    DB_PASS=$(grep -E '^DB_PASSWORD=' "$DEPLOY_DIR/.env" | head -1 | cut -d'=' -f2- | tr -d '"'"'")
+    DB_USR=$(grep -E '^DB_USER=' "$DEPLOY_DIR/.env" | head -1 | cut -d'=' -f2- | tr -d '"'"'")
+    DB_PASS="${DB_PASS:-zhitu2026}"
+    DB_USR="${DB_USR:-root}"
 
     log_info "请确保 MySQL 允许来自 Docker 网段 (172.17.0.0/16) 的连接"
     log_info "如果 MySQL 绑定了 127.0.0.1，需要修改 /etc/my.cnf 中的 bind-address"
@@ -246,8 +247,8 @@ build_and_start() {
 request_ssl() {
     log_info "申请 Let's Encrypt SSL 证书..."
 
-    source "$DEPLOY_DIR/.env"
-    EMAIL="${CERTBOT_EMAIL:-admin@zhitu.me}"
+    EMAIL=$(grep -E '^CERTBOT_EMAIL=' "$DEPLOY_DIR/.env" | head -1 | cut -d'=' -f2- | tr -d '"'"'")
+    EMAIL="${EMAIL:-admin@zhitu.me}"
 
     # 构建 certbot 域名参数
     DOMAIN_ARGS=""
