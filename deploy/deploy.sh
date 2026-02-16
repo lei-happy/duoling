@@ -13,6 +13,9 @@
 
 set -e
 
+# 确保 PATH 完整（sudo 可能会重置 PATH 导致找不到 git 等命令）
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+
 # ---- 配置变量 ----
 PROJECT_NAME="zhitu"
 PROJECT_DIR="/opt/zhitu"
@@ -47,6 +50,36 @@ check_env_file() {
         log_info "请先复制并修改配置: cp $DEPLOY_DIR/.env.production $DEPLOY_DIR/.env"
         exit 1
     fi
+}
+
+# ============================================================
+# 安装基础工具（git、curl 等）
+# ============================================================
+install_base_tools() {
+    log_info "检查并安装基础工具..."
+    local need_install=""
+
+    command -v git &> /dev/null || need_install="$need_install git"
+    command -v curl &> /dev/null || need_install="$need_install curl"
+    command -v openssl &> /dev/null || need_install="$need_install openssl"
+
+    if [ -n "$need_install" ]; then
+        log_info "安装缺失工具:$need_install"
+        yum install -y $need_install
+    fi
+    log_info "基础工具就绪 (git=$(git --version 2>/dev/null | awk '{print $3}'))"
+}
+
+# ============================================================
+# 获取服务器公网 IP
+# ============================================================
+get_public_ip() {
+    local ip=""
+    ip=$(curl -s --connect-timeout 3 https://myip.ipip.net 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1) \
+    || ip=$(curl -s --connect-timeout 3 https://ip.cn/api/index?type=0 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1) \
+    || ip=$(curl -s --connect-timeout 3 ifconfig.me 2>/dev/null) \
+    || ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+    echo "${ip:-未知}"
 }
 
 # ============================================================
@@ -131,9 +164,22 @@ setup_mysql() {
 }
 
 # ============================================================
-# 克隆代码仓库
+# 克隆/更新代码仓库
 # ============================================================
 clone_repo() {
+    if ! command -v git &> /dev/null; then
+        if [ -d "$PROJECT_DIR/deploy" ]; then
+            log_warn "git 未安装，但项目代码已存在，跳过代码更新"
+            log_warn "后续请安装 git (yum install -y git) 以便使用 update 命令"
+            cd "$PROJECT_DIR"
+            return
+        else
+            log_error "git 未安装且项目代码不存在，无法继续"
+            log_info "请先安装 git: yum install -y git"
+            exit 1
+        fi
+    fi
+
     if [ -d "$PROJECT_DIR/.git" ]; then
         log_info "项目目录已存在，拉取最新代码..."
         cd "$PROJECT_DIR"
@@ -292,19 +338,23 @@ cmd_init() {
     echo "  智途(ZhiTu) 生产环境首次部署"
     echo "============================================================"
     echo ""
-    log_info "服务器 IP: $(curl -s --connect-timeout 5 ifconfig.me 2>/dev/null || echo '获取失败')"
+
+    # Step 1: 安装基础工具（git、curl 等）
+    install_base_tools
+
+    log_info "服务器 IP: $(get_public_ip)"
     echo ""
 
-    # Step 1: 安装 Docker
+    # Step 2: 安装 Docker
     install_docker
 
-    # Step 2: 配置防火墙
+    # Step 3: 配置防火墙
     setup_firewall
 
-    # Step 3: 克隆代码
+    # Step 4: 克隆/更新代码
     clone_repo
 
-    # Step 4: 检查环境变量配置
+    # Step 5: 检查环境变量配置
     if [ ! -f "$DEPLOY_DIR/.env" ]; then
         log_info "创建环境变量配置文件..."
         cp "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/.env"
@@ -322,19 +372,19 @@ cmd_init() {
     fi
     check_env_file
 
-    # Step 5: 配置 MySQL
+    # Step 6: 配置 MySQL
     setup_mysql
 
-    # Step 6: 生成临时证书
+    # Step 7: 生成临时证书
     create_dummy_cert
 
-    # Step 7: 构建并启动
+    # Step 8: 构建并启动
     build_and_start
 
-    # Step 8: 初始化数据库
+    # Step 9: 初始化数据库
     init_database
 
-    # Step 9: 申请 SSL 证书
+    # Step 10: 申请 SSL 证书
     echo ""
     log_info "是否现在申请 SSL 证书？(需要域名已解析到本服务器)"
     read -p "输入 y 继续，n 跳过 [y/n]: " ssl_choice
@@ -373,7 +423,12 @@ cmd_update() {
     cd "$PROJECT_DIR"
 
     # 拉取最新代码
-    git pull origin master
+    if command -v git &> /dev/null; then
+        git pull origin master
+    else
+        log_error "未找到 git，请先安装: yum install -y git"
+        exit 1
+    fi
     log_info "代码已更新"
 
     # 重新构建并启动
