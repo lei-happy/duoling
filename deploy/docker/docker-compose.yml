@@ -1,92 +1,90 @@
-version: "3.8"
-
 # ============================================================
-# 智途(ZhiTu) Docker Compose
-# 线上部署使用，本地开发直接用 Windows 终端启动服务
+# 智途(ZhiTu) Docker Compose - 生产环境
+# MySQL 使用宿主机已安装的实例，不在 Docker 中运行
 # ============================================================
 
 services:
-  # ---- MySQL 数据库 ----
-  mysql:
-    image: mysql:8.0
-    container_name: zhitu-mysql
-    restart: unless-stopped
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-zhitu2026}
-      MYSQL_CHARSET: utf8mb4
-      MYSQL_COLLATION: utf8mb4_unicode_ci
-      TZ: Asia/Shanghai
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --default-authentication-plugin=mysql_native_password
-      - --max-connections=500
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # ---- Redis 缓存 ----
   redis:
     image: redis:7-alpine
     container_name: zhitu-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ---- 后端服务（线上部署） ----
+  # ---- 后端 API 服务 ----
   backend:
     build:
-      context: ../../backend
-      dockerfile: ../deploy/docker/Dockerfile.backend
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.backend
     container_name: zhitu-backend
     restart: unless-stopped
-    ports:
-      - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8000
+      - APP_SECRET_KEY=${APP_SECRET_KEY:-change-me-in-production}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-me-in-production}
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
       - DB_SUFFIX=
-      - PLATFORM_DB_HOST=mysql
-      - PLATFORM_DB_PASSWORD=${MYSQL_ROOT_PASSWORD:-zhitu2026}
-      - TENANT_DB_HOST=mysql
-      - TENANT_DB_PASSWORD=${MYSQL_ROOT_PASSWORD:-zhitu2026}
+      - PLATFORM_DB_HOST=host.docker.internal
+      - PLATFORM_DB_PORT=3306
+      - PLATFORM_DB_USER=${DB_USER:-root}
+      - PLATFORM_DB_PASSWORD=${DB_PASSWORD:-zhitu2026}
+      - PLATFORM_DB_NAME=zt_platform
+      - TENANT_DB_HOST=host.docker.internal
+      - TENANT_DB_PORT=3306
+      - TENANT_DB_USER=${DB_USER:-root}
+      - TENANT_DB_PASSWORD=${DB_PASSWORD:-zhitu2026}
+      - TENANT_DB_PREFIX=zt_biz_
       - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_PASSWORD=
+      - CORS_ORIGINS=${CORS_ORIGINS:-["https://www.zhitu.me","https://console.zhitu.me","https://wuliu.zhitu.me"]}
+      - LOG_LEVEL=INFO
+      - LOG_DIR=logs
+    volumes:
+      - backend_logs:/app/logs
     depends_on:
-      mysql:
-        condition: service_healthy
       redis:
         condition: service_healthy
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; r = httpx.get('http://localhost:8000/health'); r.raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
-  # ---- Nginx 反向代理 ----
+  # ---- Nginx 反向代理 + 静态文件服务 ----
   nginx:
-    image: nginx:alpine
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.nginx
     container_name: zhitu-nginx
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ../nginx:/etc/nginx/conf.d
+      - /opt/zhitu/certbot/www:/var/www/certbot:ro
+      - /opt/zhitu/certbot/conf:/etc/letsencrypt:ro
     depends_on:
       - backend
 
 volumes:
-  mysql_data:
-    driver: local
   redis_data:
+    driver: local
+  backend_logs:
     driver: local
