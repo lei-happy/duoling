@@ -23,6 +23,9 @@ COPY frontend/website/ .
 # 复制共享组件到正确的相对路径（@shared/ -> ../components）
 COPY frontend/components/ /build/components/
 
+# 让共享组件能解析到 node_modules（向上查找到 /build/node_modules）
+RUN ln -s /build/website/node_modules /build/node_modules
+
 # 构建
 RUN npm run build
 
@@ -44,6 +47,9 @@ COPY frontend/console/ .
 # 复制共享组件到正确的相对路径（@shared/ -> ../components）
 COPY frontend/components/ /build/components/
 
+# 让共享组件能解析到 node_modules（向上查找到 /build/node_modules）
+RUN ln -s /build/console/node_modules /build/node_modules
+
 # 使用 vite build 构建应用（非组件库打包）
 RUN npm run build:app
 
@@ -64,6 +70,9 @@ COPY frontend/client/ .
 
 # 复制共享组件到正确的相对路径（@shared/ -> ../components）
 COPY frontend/components/ /build/components/
+
+# 让共享组件能解析到 node_modules（向上查找到 /build/node_modules）
+RUN ln -s /build/client/node_modules /build/node_modules
 
 # 使用 vite build 构建应用（非组件库打包）
 RUN npm run build:app
