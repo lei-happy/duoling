@@ -20,9 +20,8 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 PROJECT_NAME="zhitu"
 PROJECT_DIR="/opt/zhitu"
 DEPLOY_DIR="$PROJECT_DIR/deploy/docker"
-CERTBOT_DIR="/opt/zhitu/certbot"
-GIT_REPO="https://gitee.com/happylei/zhitu.git"  # 请修改为实际仓库地址
-DOMAINS="zhitu.me www.zhitu.me console.zhitu.me wuliu.zhitu.me api.zhitu.me"
+SSL_DIR="/opt/zhitu/ssl"
+GIT_REPO="https://gitee.com/happylei/zhitu.git"
 
 # 颜色输出
 RED='\033[0;31m'
@@ -194,24 +193,40 @@ clone_repo() {
 }
 
 # ============================================================
-# 生成自签名临时证书（首次启动用，certbot 后会替换）
+# 检查/生成 SSL 证书
+# 所有域名使用阿里云购买的证书，缺失的生成临时自签名证书
 # ============================================================
-create_dummy_cert() {
-    if [ -f "$CERTBOT_DIR/conf/live/zhitu.me/fullchain.pem" ]; then
-        log_info "SSL 证书已存在，跳过临时证书生成"
-        return
+setup_ssl() {
+    local SSL_DIR="/opt/zhitu/ssl"
+    mkdir -p "$SSL_DIR"
+
+    local ALL_DOMAINS="zhitu.me console.zhitu.me wuliu.zhitu.me api.zhitu.me"
+    local missing=0
+
+    for domain in $ALL_DOMAINS; do
+        if [ -f "$SSL_DIR/$domain.pem" ] && [ -f "$SSL_DIR/$domain.key" ]; then
+            log_info "SSL 证书已就绪: $domain"
+        else
+            log_warn "$domain 证书未找到，生成临时自签名证书（浏览器会提示不安全）"
+            openssl req -x509 -nodes -newkey rsa:2048 -days 30 \
+                -keyout "$SSL_DIR/$domain.key" \
+                -out "$SSL_DIR/$domain.pem" \
+                -subj "/CN=$domain" 2>/dev/null
+            missing=$((missing + 1))
+        fi
+    done
+
+    if [ $missing -gt 0 ]; then
+        echo ""
+        log_warn "有 $missing 个域名使用临时证书，请上传阿里云购买的证书到 $SSL_DIR/"
+        log_info "证书文件命名规则:"
+        echo "  $SSL_DIR/zhitu.me.pem         + zhitu.me.key"
+        echo "  $SSL_DIR/console.zhitu.me.pem  + console.zhitu.me.key"
+        echo "  $SSL_DIR/wuliu.zhitu.me.pem    + wuliu.zhitu.me.key"
+        echo "  $SSL_DIR/api.zhitu.me.pem      + api.zhitu.me.key"
+        echo ""
+        log_info "上传后执行: docker exec zhitu-nginx nginx -s reload"
     fi
-
-    log_info "生成临时自签名证书..."
-    mkdir -p "$CERTBOT_DIR/conf/live/zhitu.me"
-    mkdir -p "$CERTBOT_DIR/www"
-
-    openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
-        -keyout "$CERTBOT_DIR/conf/live/zhitu.me/privkey.pem" \
-        -out "$CERTBOT_DIR/conf/live/zhitu.me/fullchain.pem" \
-        -subj "/CN=zhitu.me" 2>/dev/null
-
-    log_info "临时证书已生成（仅用于首次启动 Nginx）"
 }
 
 # ============================================================
@@ -242,72 +257,14 @@ build_and_start() {
 }
 
 # ============================================================
-# 申请 SSL 证书（Let's Encrypt）
+# 重载 SSL 证书（上传新证书后调用）
 # ============================================================
-request_ssl() {
-    log_info "申请 Let's Encrypt SSL 证书..."
-
-    EMAIL=$(grep -E '^CERTBOT_EMAIL=' "$DEPLOY_DIR/.env" | head -1 | cut -d'=' -f2- | tr -d '"'"'")
-    EMAIL="${EMAIL:-admin@zhitu.me}"
-
-    # 构建 certbot 域名参数
-    DOMAIN_ARGS=""
-    for domain in $DOMAINS; do
-        DOMAIN_ARGS="$DOMAIN_ARGS -d $domain"
-    done
-
-    # 删除临时证书
-    rm -rf "$CERTBOT_DIR/conf/live/zhitu.me"
-    rm -rf "$CERTBOT_DIR/conf/archive/zhitu.me"
-    rm -rf "$CERTBOT_DIR/conf/renewal/zhitu.me.conf"
-
-    # 使用 webroot 模式申请证书
-    docker run --rm \
-        -v "$CERTBOT_DIR/www:/var/www/certbot" \
-        -v "$CERTBOT_DIR/conf:/etc/letsencrypt" \
-        certbot/certbot certonly \
-        --webroot -w /var/www/certbot \
-        $DOMAIN_ARGS \
-        --email "$EMAIL" \
-        --agree-tos \
-        --no-eff-email \
-        --force-renewal
-
-    if [ $? -eq 0 ]; then
-        log_info "SSL 证书申请成功！"
-        # 重载 Nginx 使新证书生效
-        docker exec zhitu-nginx nginx -s reload
-        log_info "Nginx 已重载，SSL 证书已生效"
-    else
-        log_error "SSL 证书申请失败，请检查域名 DNS 解析是否正确"
-        log_info "确保以下域名都已解析到本服务器:"
-        for domain in $DOMAINS; do
-            echo "  $domain -> $(curl -s ifconfig.me)"
-        done
-        exit 1
-    fi
-}
-
-# ============================================================
-# 设置 SSL 证书自动续期
-# ============================================================
-setup_ssl_renewal() {
-    log_info "配置 SSL 证书自动续期..."
-
-    # 创建续期脚本
-    cat > /opt/zhitu/renew-cert.sh <<'RENEW_EOF'
-#!/bin/bash
-docker run --rm \
-    -v /opt/zhitu/certbot/www:/var/www/certbot \
-    -v /opt/zhitu/certbot/conf:/etc/letsencrypt \
-    certbot/certbot renew --quiet
-docker exec zhitu-nginx nginx -s reload 2>/dev/null || true
-RENEW_EOF
-    chmod +x /opt/zhitu/renew-cert.sh
-
-    # 添加 crontab（每天凌晨 3 点检查续期）
-    (crontab -l 2>/dev/null | grep -v "renew-cert"; echo "0 3 * * * /opt/zhitu/renew-cert.sh >> /opt/zhitu/certbot/renewal.log 2>&1") | crontab -
-    log_info "已添加 crontab 定时任务，每天 03:00 自动检查证书续期"
+reload_ssl() {
+    log_info "检查证书文件..."
+    setup_ssl
+    log_info "重载 Nginx..."
+    docker exec zhitu-nginx nginx -s reload
+    log_info "SSL 证书已生效"
 }
 
 # ============================================================
@@ -376,25 +333,14 @@ cmd_init() {
     # Step 6: 配置 MySQL
     setup_mysql
 
-    # Step 7: 生成临时证书
-    create_dummy_cert
+    # Step 7: 检查/生成 SSL 证书
+    setup_ssl
 
     # Step 8: 构建并启动
     build_and_start
 
     # Step 9: 初始化数据库
     init_database
-
-    # Step 10: 申请 SSL 证书
-    echo ""
-    log_info "是否现在申请 SSL 证书？(需要域名已解析到本服务器)"
-    read -p "输入 y 继续，n 跳过 [y/n]: " ssl_choice
-    if [ "$ssl_choice" = "y" ] || [ "$ssl_choice" = "Y" ]; then
-        request_ssl
-        setup_ssl_renewal
-    else
-        log_warn "跳过 SSL 证书申请，之后可运行: bash deploy.sh ssl"
-    fi
 
     echo ""
     echo "============================================================"
@@ -454,9 +400,7 @@ cmd_update() {
 # ============================================================
 cmd_ssl() {
     check_root "ssl"
-    check_env_file
-    request_ssl
-    setup_ssl_renewal
+    reload_ssl
 }
 
 # ============================================================
@@ -558,7 +502,7 @@ case "${1:-}" in
         echo "命令:"
         echo "  init      首次完整部署（安装 Docker、配置、构建、启动）"
         echo "  update    日常更新（拉取代码、重新构建、重启服务）"
-        echo "  ssl       申请/续期 SSL 证书"
+        echo "  ssl       检查并重载 SSL 证书（上传新证书后执行）"
         echo "  db-init   初始化数据库（创建表结构和种子数据）"
         echo "  logs      查看日志（可指定服务: logs backend / logs nginx）"
         echo "  status    查看服务状态"

@@ -78,8 +78,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - /opt/zhitu/certbot/www:/var/www/certbot:ro
-      - /opt/zhitu/certbot/conf:/etc/letsencrypt:ro
+      - /opt/zhitu/ssl:/etc/nginx/ssl:ro
     depends_on:
       - backend
 
