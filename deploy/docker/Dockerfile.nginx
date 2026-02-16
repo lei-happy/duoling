@@ -11,6 +11,7 @@
 # ============================================================
 FROM node:20-alpine AS website-builder
 
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 WORKDIR /build/website
 
 # 安装依赖（利用 Docker 缓存）
@@ -26,8 +27,8 @@ COPY frontend/components/ /build/components/
 # 让共享组件能解析到 node_modules（向上查找到 /build/node_modules）
 RUN ln -s /build/website/node_modules /build/node_modules
 
-# 构建
-RUN npm run build
+# 构建（显式设置堆内存上限）
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 
 # ============================================================
@@ -35,6 +36,7 @@ RUN npm run build
 # ============================================================
 FROM node:20-alpine AS console-builder
 
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 WORKDIR /build/console
 
 # 安装依赖
@@ -50,8 +52,8 @@ COPY frontend/components/ /build/components/
 # 让共享组件能解析到 node_modules（向上查找到 /build/node_modules）
 RUN ln -s /build/console/node_modules /build/node_modules
 
-# 使用 vite build 构建应用（非组件库打包）
-RUN npm run build:app
+# 使用 vite build 构建应用（显式设置堆内存上限）
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build:app
 
 
 # ============================================================
@@ -59,6 +61,7 @@ RUN npm run build:app
 # ============================================================
 FROM node:20-alpine AS client-builder
 
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 WORKDIR /build/client
 
 # 安装依赖
@@ -74,8 +77,8 @@ COPY frontend/components/ /build/components/
 # 让共享组件能解析到 node_modules（向上查找到 /build/node_modules）
 RUN ln -s /build/client/node_modules /build/node_modules
 
-# 使用 vite build 构建应用（非组件库打包）
-RUN npm run build:app
+# 使用 vite build 构建应用（显式设置堆内存上限）
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build:app
 
 
 # ============================================================
