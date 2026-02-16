@@ -230,14 +230,16 @@ export const useThemeStore = defineStore('theme', {
         this.darkMode = dark;
         obj.darkMode = this.darkMode;
       }
-      // 同步修改主题色
-      const skinColor =
-        (this.darkMode
-          ? this.skinConfig?.darkConfig?.color
-          : this.skinConfig?.color) ?? null;
-      if (skinColor != null && skinColor !== this.color) {
-        this.color = skinColor;
-        obj.color = this.color;
+      // 同步修改主题色（仅在选择/切换皮肤时，切换暗黑模式时不覆盖用户自定义色）
+      if (dark == null) {
+        const skinColor =
+          (this.darkMode
+            ? this.skinConfig?.darkConfig?.color
+            : this.skinConfig?.color) ?? null;
+        if (skinColor != null && skinColor !== this.color) {
+          this.color = skinColor;
+          obj.color = this.color;
+        }
       }
       if (syncSkin) {
         // 同步修改皮肤背景中的主题状态配置

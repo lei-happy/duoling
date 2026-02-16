@@ -2,6 +2,8 @@
 产品更新日志管理接口
 """
 
+from typing import Optional
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +22,7 @@ router = APIRouter()
 async def list_changelogs(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=200),
-    status: int | None = Query(None, description="状态筛选 0-停用 1-已发布"),
+    status: Optional[int] = Query(None, description="状态筛选 0-停用 1-已发布"),
     db: AsyncSession = Depends(get_platform_db),
     current_user: TokenData = Depends(get_current_user),
 ):
