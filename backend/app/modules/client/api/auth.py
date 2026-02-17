@@ -11,6 +11,7 @@ from app.common.response import success
 from app.modules.console.schemas.auth import (
     LoginRequest, LoginResponse, MultiTenantResponse,
     ChangePasswordRequest, RefreshTokenRequest,
+    UpdateThemeConfigRequest,
 )
 from app.modules.console.services.auth_service import AuthService
 
@@ -63,3 +64,14 @@ async def change_password(
     """修改密码（首次登录强制修改）"""
     await AuthService.change_password(db, current_user.user_id, request)
     return success(message="密码修改成功")
+
+
+@router.put("/user-theme")
+async def update_user_theme(
+    request: UpdateThemeConfigRequest,
+    current_user: TokenData = Depends(get_current_user),
+    db: AsyncSession = Depends(get_platform_db),
+):
+    """保存当前登录用户的主题配置"""
+    await AuthService.update_theme_config(db, current_user.user_id, request)
+    return success(message="保存成功")

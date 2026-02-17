@@ -468,6 +468,7 @@
   ) => {
     if (tabStateProps.includes(prop as TabStateProp)) {
       tabStore.setValue(prop as TabStateProp, value);
+      themeStore.syncThemeToServer();
       return;
     }
     themeStore.setValue(prop as ThemeStateProp, value).catch((e) => {
