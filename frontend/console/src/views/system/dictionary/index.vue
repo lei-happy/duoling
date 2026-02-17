@@ -260,34 +260,24 @@
   /** 表格列配置 */
   const columns = ref<Columns>([
     {
-      type: 'selection',
-      columnKey: 'selection',
-      width: 50,
-      align: 'center'
-    },
-    {
       prop: 'dictDataName',
       label: '字典数据名',
-      sortable: 'custom',
       minWidth: 120
     },
     {
       prop: 'dictDataCode',
       label: '字典数据值',
-      sortable: 'custom',
       minWidth: 120
     },
     {
       prop: 'sortNumber',
       label: '排序号',
-      sortable: 'custom',
       width: 100,
       align: 'center'
     },
     {
       prop: 'createTime',
       label: '创建时间',
-      sortable: 'custom',
       width: 180,
       align: 'center'
     },

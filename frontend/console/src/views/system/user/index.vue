@@ -248,34 +248,19 @@
   /** 表格列配置 */
   const columns = ref<Columns>([
     {
-      type: 'selection',
-      columnKey: 'selection',
-      width: 50,
-      align: 'center'
-    },
-    {
-      type: 'index',
-      columnKey: 'index',
-      width: 50,
-      align: 'center'
-    },
-    {
       prop: 'username',
       label: '用户账号',
-      sortable: 'custom',
       minWidth: 110
     },
     {
       prop: 'nickname',
       label: '用户名',
-      sortable: 'custom',
       minWidth: 110,
       slot: 'nickname'
     },
     {
       prop: 'sexName',
       label: '性别',
-      sortable: 'custom',
       width: 90,
       align: 'center'
     },
@@ -290,7 +275,6 @@
     {
       prop: 'createTime',
       label: '创建时间',
-      sortable: 'custom',
       width: 180,
       align: 'center'
     },
@@ -299,7 +283,6 @@
       label: '状态',
       width: 90,
       align: 'center',
-      sortable: 'custom',
       slot: 'status',
       formatter: (row) => (row.status == 0 ? '正常' : '冻结')
     },
