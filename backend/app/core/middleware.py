@@ -40,7 +40,9 @@ class TenantMiddleware(BaseHTTPMiddleware):
     # 不需要租户识别的路径前缀
     SKIP_PATHS = (
         "/api/console/auth/login",
+        "/api/console/auth/refresh",
         "/api/client/auth/login",
+        "/api/client/auth/refresh",
         "/api/open/",
         "/docs",
         "/redoc",

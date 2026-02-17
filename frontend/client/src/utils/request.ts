@@ -8,8 +8,55 @@ import { LOGIN_PATH, LAYOUT_PATH, TOKEN_HEADER_NAME } from '@/config/setting';
 import type { ApiResult } from '@/api';
 import router from '@/router';
 import { isWhiteList } from '@/router/routes';
-import { getToken, setToken } from './token-util';
+import { getToken, setToken, getRefreshToken, setRefreshToken, removeRefreshToken } from './token-util';
 import { goLogin, showExpiredLogout, toURLSearch } from './common';
+
+/** 是否正在刷新token */
+let isRefreshing = false;
+/** 等待刷新token的请求队列 */
+let pendingRequests: Array<{
+  resolve: (token: string) => void;
+  reject: (error: any) => void;
+}> = [];
+
+/**
+ * 处理等待队列中的请求
+ */
+function processPendingRequests(token: string | null, error?: any) {
+  pendingRequests.forEach(({ resolve, reject }) => {
+    if (token) {
+      resolve(token);
+    } else {
+      reject(error);
+    }
+  });
+  pendingRequests = [];
+}
+
+/**
+ * 使用 refresh token 刷新 access token
+ */
+async function doRefreshToken(): Promise<string | null> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    return null;
+  }
+  try {
+    const res = await axios.post<ApiResult<any>>(
+      `${import.meta.env.VITE_API_URL}/auth/refresh`,
+      { refresh_token: refreshToken }
+    );
+    if (res.data?.code === 0 && res.data.data) {
+      const { access_token, refresh_token } = res.data.data;
+      setToken(access_token);
+      setRefreshToken(refresh_token);
+      return access_token;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * 请求拦截处理
@@ -31,33 +78,61 @@ export function requestInterceptor(config: InternalAxiosRequestConfig<any>) {
 }
 
 /**
+ * 处理401未授权响应，尝试刷新token
+ * @returns 新的token，或null（刷新失败）
+ */
+function handleUnauthorized(): Promise<string | null> {
+  if (isRefreshing) {
+    return new Promise((resolve, reject) => {
+      pendingRequests.push({ resolve, reject });
+    });
+  }
+
+  isRefreshing = true;
+  return doRefreshToken()
+    .then((newToken) => {
+      processPendingRequests(newToken);
+      return newToken;
+    })
+    .catch((error) => {
+      processPendingRequests(null, error);
+      return null;
+    })
+    .finally(() => {
+      isRefreshing = false;
+    });
+}
+
+/**
+ * 跳转到登录页
+ */
+function redirectToLogin(toRoute?: any) {
+  const { path, fullPath } = toRoute || unref(router.currentRoute);
+  if (!isWhiteList(path)) {
+    if (path == LAYOUT_PATH || toRoute) {
+      goLogin(path == LAYOUT_PATH ? void 0 : fullPath, true);
+    } else if (path !== LOGIN_PATH) {
+      showExpiredLogout(fullPath);
+    }
+  }
+}
+
+/**
  * 响应拦截处理
  */
 export function responseInterceptor(res: AxiosResponse<ApiResult<unknown>>) {
-  // 登录过期处理
-  if (res.data?.code === 401 || (res.data?.code === 403 && !getToken())) {
-    const toRoute = (res.config as any).toRoute;
-    const { path, fullPath } = toRoute || unref(router.currentRoute);
-    if (!isWhiteList(path)) {
-      if (path == LAYOUT_PATH || toRoute) {
-        goLogin(path == LAYOUT_PATH ? void 0 : fullPath, true);
-      } else if (path !== LOGIN_PATH) {
-        showExpiredLogout(fullPath);
-      }
-    }
-    return res.data.message;
+  // 非401直接返回
+  if (res.data?.code !== 401 && !(res.data?.code === 403 && !getToken())) {
+    return;
   }
-  // 续期token
-  const newToken = res.headers['authorization'];
-  if (newToken) {
-    setToken(newToken);
-  }
+  // 401 由上层拦截器通过 refresh 逻辑处理
+  return res.data.message;
 }
 
 /**
  * 错误信息处理
  */
-export function getErrorMessage(message) {
+export function getErrorMessage(message: string) {
   if (message == 'Network Error') {
     return '后端接口连接异常';
   }
@@ -79,11 +154,32 @@ const service = axios.create({
  * 添加响应拦截器
  */
 service.interceptors.response.use(
-  (res: AxiosResponse<ApiResult<unknown>>) => {
-    const errorMessage = responseInterceptor(res);
-    if (errorMessage) {
-      return Promise.reject(new Error(errorMessage));
+  async (res: AxiosResponse<ApiResult<unknown>>) => {
+    // 检测401/403过期
+    if (res.data?.code === 401 || (res.data?.code === 403 && !getToken())) {
+      const toRoute = (res.config as any).toRoute;
+      // 标记当前请求避免无限重试
+      if ((res.config as any)._retried) {
+        redirectToLogin(toRoute);
+        return Promise.reject(new Error(res.data.message));
+      }
+
+      // 尝试刷新token
+      const newToken = await handleUnauthorized();
+      if (newToken) {
+        // 使用新token重试原请求
+        const config = res.config;
+        config.headers[TOKEN_HEADER_NAME] = `Bearer ${newToken}`;
+        (config as any)._retried = true;
+        return service(config);
+      }
+
+      // 刷新失败，跳转登录
+      removeRefreshToken();
+      redirectToLogin(toRoute);
+      return Promise.reject(new Error(res.data.message));
     }
+
     return res;
   },
   (error) => {

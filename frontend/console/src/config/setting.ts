@@ -16,6 +16,9 @@ export const REDIRECT_PATH = '/redirect';
 /** token本地缓存的名称 */
 export const TOKEN_CACHE_NAME = 'token';
 
+/** refresh token本地缓存的名称 */
+export const REFRESH_TOKEN_CACHE_NAME = 'refresh_token';
+
 /** 主题配置本地缓存的名称 */
 export const THEME_CACHE_NAME = 'theme';
 

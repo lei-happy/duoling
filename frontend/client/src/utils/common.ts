@@ -2,7 +2,7 @@ import type { Router } from 'vue-router';
 import type { Action } from 'element-plus';
 import { ElMessageBox } from 'element-plus';
 import { LOGIN_PATH } from '@/config/setting';
-import { removeToken } from '@/utils/token-util';
+import { removeToken, removeRefreshToken } from '@/utils/token-util';
 import router from '@/router';
 
 /**
@@ -12,6 +12,7 @@ import router from '@/router';
  */
 export function goLogin(from?: string, route?: boolean) {
   removeToken();
+  removeRefreshToken();
   if (route) {
     router.push({
       path: LOGIN_PATH,

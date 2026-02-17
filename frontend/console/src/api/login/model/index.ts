@@ -18,6 +18,8 @@ export interface LoginParam {
 export interface LoginResult {
   /** token */
   access_token?: string;
+  /** refresh token */
+  refresh_token?: string;
   /** token类型 */
   token_type?: string;
   /** 过期时间（秒） */

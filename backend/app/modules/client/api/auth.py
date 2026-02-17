@@ -10,7 +10,7 @@ from app.core.security import TokenData
 from app.common.response import success
 from app.modules.console.schemas.auth import (
     LoginRequest, LoginResponse, MultiTenantResponse,
-    ChangePasswordRequest,
+    ChangePasswordRequest, RefreshTokenRequest,
 )
 from app.modules.console.services.auth_service import AuthService
 
@@ -28,6 +28,16 @@ async def client_login(
     当手机号对应多个企业时，返回企业选择列表
     """
     result = await AuthService.client_login(db, request)
+    return success(data=result.model_dump())
+
+
+@router.post("/refresh")
+async def refresh_token(
+    request: RefreshTokenRequest,
+    db: AsyncSession = Depends(get_platform_db),
+):
+    """刷新 Token"""
+    result = await AuthService.refresh_token(db, request)
     return success(data=result.model_dump())
 
 

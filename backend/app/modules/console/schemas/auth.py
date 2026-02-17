@@ -16,6 +16,7 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     """登录响应"""
     access_token: str
+    refresh_token: str
     token_type: str = "Bearer"
     expires_in: int
     user: "LoginUserInfo"
@@ -43,6 +44,19 @@ class MultiTenantResponse(BaseModel):
     """多企业选择响应（需要用户选择进入哪个企业）"""
     needSelectTenant: bool = True
     tenants: List[TenantOption] = []
+
+
+class RefreshTokenRequest(BaseModel):
+    """刷新 Token 请求"""
+    refresh_token: str = Field(description="Refresh Token")
+
+
+class RefreshTokenResponse(BaseModel):
+    """刷新 Token 响应"""
+    access_token: str
+    refresh_token: str
+    token_type: str = "Bearer"
+    expires_in: int
 
 
 class ChangePasswordRequest(BaseModel):

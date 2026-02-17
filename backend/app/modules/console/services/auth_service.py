@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
 from app.core.config import get_settings
-from app.core.security import TokenData, create_access_token
+from app.core.security import TokenData, create_access_token, create_refresh_token, decode_refresh_token
 from app.common.utils import verify_password, hash_password
 from app.common.exceptions import AuthException
 from app.modules.console.models.user import User
@@ -25,7 +25,7 @@ from app.modules.console.models.tenant import Tenant
 from app.modules.console.schemas.auth import (
     LoginRequest, LoginResponse, LoginUserInfo,
     TenantOption, MultiTenantResponse,
-    ChangePasswordRequest,
+    ChangePasswordRequest, RefreshTokenRequest, RefreshTokenResponse,
     UserInfoOut, UserRoleOut, UserMenuOut,
     UpdateThemeConfigRequest,
 )
@@ -79,9 +79,11 @@ class AuthService:
             roles=[r.role_code for r in roles],
         )
         access_token = create_access_token(token_data)
+        refresh_token = create_refresh_token(token_data)
 
         return LoginResponse(
             access_token=access_token,
+            refresh_token=refresh_token,
             expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             user=LoginUserInfo(
                 user_id=user.id,
@@ -220,9 +222,11 @@ class AuthService:
             roles=[r.role_code for r in roles],
         )
         access_token = create_access_token(token_data)
+        refresh_token = create_refresh_token(token_data)
 
         return LoginResponse(
             access_token=access_token,
+            refresh_token=refresh_token,
             expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             user=LoginUserInfo(
                 user_id=user.id,
@@ -234,6 +238,56 @@ class AuthService:
                 roles=[r.role_code for r in roles],
                 force_change_pwd=user.force_change_pwd,
             ),
+        )
+
+    # ============================================================
+    # 刷新 Token
+    # ============================================================
+
+    @staticmethod
+    async def refresh_token(
+        db: AsyncSession, request: RefreshTokenRequest
+    ) -> RefreshTokenResponse:
+        """
+        使用 refresh_token 签发新的 access_token + refresh_token
+        """
+        token_data = decode_refresh_token(request.refresh_token)
+        if not token_data:
+            raise AuthException("Refresh Token 无效或已过期，请重新登录")
+
+        # 查询用户是否仍然有效
+        result = await db.execute(
+            select(User).where(
+                User.id == token_data.user_id,
+                User.is_deleted == 0,
+                User.status == 1,
+            )
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise AuthException("用户不存在或已停用，请重新登录")
+
+        # 获取角色
+        roles = await AuthService._get_user_roles(
+            db, user.id, token_data.tenant_code
+        )
+
+        # 签发新的 token 对
+        settings = get_settings()
+        new_token_data = TokenData(
+            user_id=user.id,
+            username=user.username,
+            user_type=token_data.user_type,
+            tenant_code=token_data.tenant_code,
+            roles=[r.role_code for r in roles],
+        )
+        new_access_token = create_access_token(new_token_data)
+        new_refresh_token = create_refresh_token(new_token_data)
+
+        return RefreshTokenResponse(
+            access_token=new_access_token,
+            refresh_token=new_refresh_token,
+            expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
 
     # ============================================================

@@ -2,7 +2,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { ElMessageBox } from 'element-plus';
 import { EleMessage } from 'ele-admin-plus';
-import { getToken, setToken, removeToken } from '@/utils/token-util';
+import { getToken, setToken, removeToken, setRefreshToken, removeRefreshToken } from '@/utils/token-util';
 import { goLogin } from '@/utils/common';
 import { usePageTab } from '@/utils/use-page-tab';
 import { useUserStore } from '@/store/modules/user';
@@ -72,6 +72,7 @@ export function useLogin() {
 
     EleMessage.success({ message: result.message, plain: true });
     setToken(token, data.remember);
+    setRefreshToken(loginData?.refresh_token, data.remember);
     clearData();
 
     // 检查是否需要强制修改密码
@@ -91,6 +92,7 @@ export function useLogin() {
   const logout = async () => {
     await logoutApi();
     removeToken();
+    removeRefreshToken();
     //clearData();
     goLogin(void 0, false);
   };
