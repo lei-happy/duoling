@@ -177,13 +177,15 @@
             callback();
             return;
           }
-          checkExistence('username', value)
-            .then(() => {
-              callback(new Error('账号已经存在'));
+          checkExistence('username', value, form.userId)
+            .then((exists: boolean) => {
+              if (exists) {
+                callback(new Error('账号已经存在'));
+              } else {
+                callback();
+              }
             })
-            .catch(() => {
-              callback();
-            });
+            .catch(() => callback());
         }
       }
     ],
@@ -258,6 +260,22 @@
     closeModal();
   };
 
+  /** 构建提交数据：将 roles 转为角色 ID 数组，与后端 UserCreate/UserUpdate 一致 */
+  const buildPayload = () => {
+    const roles = form.roles;
+    const roleIds = Array.isArray(roles)
+      ? roles.map((r: any) => (typeof r === 'object' && r && 'roleId' in r ? r.roleId : r))
+      : undefined;
+    const orgId = form.organizationId;
+    const organizationId =
+      orgId === '' || orgId === null || orgId === undefined
+        ? undefined
+        : typeof orgId === 'string'
+          ? parseInt(orgId, 10)
+          : orgId;
+    return { ...form, roles: roleIds, organizationId: Number.isNaN(organizationId) ? undefined : organizationId };
+  };
+
   /** 保存编辑 */
   const save = () => {
     formRef.value?.validate?.((valid) => {
@@ -266,7 +284,7 @@
       }
       loading.value = true;
       const saveOrUpdate = isUpdate.value ? updateUser : addUser;
-      saveOrUpdate(form)
+      saveOrUpdate(buildPayload())
         .then((msg) => {
           loading.value = false;
           EleMessage.success({ message: msg, plain: true });

@@ -68,8 +68,8 @@ class UserService:
         status: Optional[int] = None,
         sex: Optional[str] = None,
     ) -> dict:
-        """分页查询用户"""
-        query = select(User).where(User.is_deleted == 0)
+        """分页查询用户（仅平台管理员 user_type=0）"""
+        query = select(User).where(User.is_deleted == 0, User.user_type == 0)
         if username:
             query = query.where(User.username.contains(username))
         if nickname:
@@ -106,8 +106,8 @@ class UserService:
         db: AsyncSession,
         username: Optional[str] = None,
     ) -> List[UserOut]:
-        """查询用户列表（不分页）"""
-        query = select(User).where(User.is_deleted == 0)
+        """查询用户列表（不分页，仅平台管理员 user_type=0）"""
+        query = select(User).where(User.is_deleted == 0, User.user_type == 0)
         if username:
             query = query.where(User.username.contains(username))
         query = query.order_by(User.id.desc())
