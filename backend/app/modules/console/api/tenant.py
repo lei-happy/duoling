@@ -13,6 +13,7 @@ from app.common.response import success, fail
 from app.modules.console.schemas.tenant import (
     TenantCreate, TenantUpdate, TenantStatusUpdate, TenantOut,
     TenantProductCreate, TenantProductOut,
+    TenantFollowPoolUpdate,
 )
 from app.modules.console.services.tenant_service import TenantService
 
@@ -29,14 +30,33 @@ async def page_tenants(
     limit: int = Query(20),
     keyword: Optional[str] = Query(None),
     status: Optional[int] = Query(None),
+    lifecycle: Optional[str] = Query(None, description="生命周期: new/trial/follow_up/paid/churned/all"),
+    versionCode: Optional[str] = Query(None, description="版本编码筛选(付费客户): pro/enterprise"),
+    expireWarning: bool = Query(False, description="仅显示到期预警客户"),
     db: AsyncSession = Depends(get_platform_db),
     _: TokenData = Depends(get_current_user),
 ):
     """分页查询租户"""
     result = await TenantService.page_tenants(
-        db, page=page, limit=limit, keyword=keyword, status=status
+        db, page=page, limit=limit, keyword=keyword, status=status,
+        lifecycle=lifecycle, version_code=versionCode,
+        expire_warning=expireWarning,
     )
     return success(data=result)
+
+
+# ============================================================
+# 生命周期统计（放在 /{tenant_id} 之前避免路由冲突）
+# ============================================================
+
+@router.get("/stats")
+async def tenant_stats(
+    db: AsyncSession = Depends(get_platform_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """各生命周期阶段客户数量统计"""
+    stats = await TenantService.lifecycle_stats(db)
+    return success(data=stats)
 
 
 @router.get("/{tenant_id}")
@@ -94,6 +114,32 @@ async def update_tenant_status(
     """更新租户状态（启用/停用）"""
     await TenantService.update_status(db, data.id, data.status)
     return success(message="操作成功")
+
+
+@router.post("/check-expirations")
+async def check_expirations(
+    db: AsyncSession = Depends(get_platform_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """手动触发过期检查"""
+    affected = await TenantService.check_expirations(db)
+    return success(data={"affected": affected}, message=f"检查完成，{affected} 个客户状态已更新")
+
+
+# ============================================================
+# 跟进池
+# ============================================================
+
+@router.put("/follow-pool")
+async def update_follow_pool(
+    data: TenantFollowPoolUpdate,
+    db: AsyncSession = Depends(get_platform_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """标记/移出跟进池"""
+    await TenantService.update_follow_pool(db, data)
+    action = "已加入跟进池" if data.inFollowPool == 1 else "已移出跟进池"
+    return success(message=action)
 
 
 # ============================================================

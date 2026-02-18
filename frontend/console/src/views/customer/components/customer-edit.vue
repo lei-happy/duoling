@@ -1,4 +1,4 @@
-<!-- 企业编辑弹窗 -->
+<!-- 客户编辑弹窗 -->
 <template>
   <ele-modal
     form
@@ -133,12 +133,11 @@
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
   import { useFormData } from '@/utils/use-form-data';
-  import { addTenant, updateTenant } from '@/api/tenant';
-  import type { Tenant } from '@/api/tenant/model';
+  import { addCustomer, updateCustomer } from '@/api/customer';
+  import type { Customer } from '@/api/customer/model';
 
   const props = defineProps<{
-    /** 修改回显的数据 */
-    data?: Tenant | null;
+    data?: Customer | null;
   }>();
 
   const emit = defineEmits<{
@@ -147,17 +146,11 @@
 
   const { modalProps, closeModal } = useModal();
 
-  /** 是否是修改 */
   const isUpdate = ref(false);
-
-  /** 提交状态 */
   const loading = ref(false);
-
-  /** 表单组件 */
   const formRef = ref<FormInstance | null>(null);
 
-  /** 表单数据 */
-  const [form, _resetFields, assignFields] = useFormData<Tenant>({
+  const [form, _resetFields, assignFields] = useFormData<Customer>({
     id: void 0,
     tenantName: '',
     shortName: '',
@@ -172,7 +165,6 @@
     sourceChannel: ''
   });
 
-  /** 表单验证规则 */
   const rules = reactive<FormRules>({
     tenantName: [
       {
@@ -184,19 +176,17 @@
     ]
   });
 
-  /** 关闭弹窗 */
   const handleCancel = () => {
     closeModal();
   };
 
-  /** 保存编辑 */
   const handleSave = () => {
     formRef.value?.validate?.((valid) => {
       if (!valid) {
         return;
       }
       loading.value = true;
-      const saveOrUpdate = isUpdate.value ? updateTenant : addTenant;
+      const saveOrUpdate = isUpdate.value ? updateCustomer : addCustomer;
       saveOrUpdate(form)
         .then((msg) => {
           loading.value = false;
@@ -211,10 +201,8 @@
     });
   };
 
-  /** 修改赋值 */
   if (props.data) {
     assignFields(props.data);
-    // 判断是否为修改：有 id 才是修改；新建时也可能传入初始数据（如 sourceChannel）
     isUpdate.value = !!props.data.id;
   }
 </script>

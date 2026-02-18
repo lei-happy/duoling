@@ -43,7 +43,7 @@
 <script lang="ts" setup>
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
-  import type { TenantParam } from '@/api/tenant/model';
+  import type { TenantParam } from '@/api/customer/model';
 
   const emit = defineEmits<{
     (e: 'search', where?: TenantParam): void;

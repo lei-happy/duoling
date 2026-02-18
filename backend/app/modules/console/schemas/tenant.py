@@ -112,6 +112,8 @@ class TenantListOut(BaseModel):
     expireTime: Optional[str] = None
     sourceChannel: Optional[str] = None
     referrerCode: Optional[str] = None
+    inFollowPool: int = 0
+    followRemark: Optional[str] = None
     createTime: Optional[str] = None
 
     @classmethod
@@ -129,8 +131,17 @@ class TenantListOut(BaseModel):
             expireTime=t.expire_time.strftime("%Y-%m-%d %H:%M:%S") if t.expire_time else None,
             sourceChannel=t.source_channel,
             referrerCode=t.referrer_code,
+            inFollowPool=t.in_follow_pool,
+            followRemark=t.follow_remark,
             createTime=t.created_at.strftime("%Y-%m-%d %H:%M:%S") if t.created_at else None,
         )
+
+
+class TenantFollowPoolUpdate(BaseModel):
+    """跟进池操作"""
+    id: int = Field(description="租户ID")
+    inFollowPool: int = Field(description="是否加入跟进池 0-移出 1-加入")
+    followRemark: Optional[str] = Field(default=None, description="跟进备注")
 
 
 # ============================================================

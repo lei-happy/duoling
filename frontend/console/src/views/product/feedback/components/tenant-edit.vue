@@ -133,8 +133,8 @@
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
   import { useFormData } from '@/utils/use-form-data';
-  import { addTenant, updateTenant } from '@/api/tenant';
-  import type { Tenant } from '@/api/tenant/model';
+  import { addTenant, updateTenant } from '@/api/customer';
+  import type { Tenant } from '@/api/customer/model';
 
   const props = defineProps<{
     /** 修改回显的数据 */

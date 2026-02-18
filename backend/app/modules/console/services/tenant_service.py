@@ -3,9 +3,9 @@
 """
 
 from typing import Optional, Tuple, List
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, exists, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
@@ -15,16 +15,33 @@ from app.common.exceptions import BizException
 from app.common.utils import hash_password
 from app.modules.console.models.tenant import Tenant
 from app.modules.console.models.tenant_product import TenantProduct
+from app.modules.console.models.product_version import ProductVersion
 from app.modules.console.models.user import User
 from app.modules.console.models.user_tenant import UserTenant
 from app.modules.console.schemas.tenant import (
     TenantCreate, TenantUpdate, TenantOut, TenantListOut,
     TenantProductCreate, TenantProductOut,
+    TenantFollowPoolUpdate,
 )
 
 
 class TenantService:
     """租户管理服务"""
+
+    @staticmethod
+    def _active_product_exists(version_code_filter=None, exclude_basic=False):
+        """生成有效授权的 EXISTS 子查询条件"""
+        conds = [
+            TenantProduct.tenant_id == Tenant.id,
+            TenantProduct.is_deleted == 0,
+            TenantProduct.status == 1,
+            or_(TenantProduct.end_time.is_(None), TenantProduct.end_time > datetime.now()),
+        ]
+        if version_code_filter:
+            conds.append(TenantProduct.version_code == version_code_filter)
+        if exclude_basic:
+            conds.append(TenantProduct.version_code != "basic")
+        return exists(select(TenantProduct.id).where(*conds))
 
     # ============================================================
     # 租户 CRUD
@@ -76,7 +93,7 @@ class TenantService:
             city=data.city,
             address=data.address,
             license_no=data.licenseNo,
-            status=2,  # 待审核
+            status=1,  # 注册即激活
             db_name=db_name,
             remark=data.remark,
             source_channel=data.sourceChannel or "console",
@@ -139,6 +156,27 @@ class TenantService:
         )
         db.add(user_tenant)
 
+        # 自动开通 basic 版本
+        basic_ver = await db.execute(
+            select(ProductVersion).where(
+                ProductVersion.version_code == "basic",
+                ProductVersion.status == 1,
+                ProductVersion.is_deleted == 0,
+            )
+        )
+        basic_version = basic_ver.scalar_one_or_none()
+        if basic_version:
+            basic_product = TenantProduct(
+                tenant_id=tenant.id,
+                tenant_code=tenant_code,
+                version_id=basic_version.id,
+                version_code="basic",
+                start_time=datetime.now(),
+                end_time=None,
+                status=1,
+            )
+            db.add(basic_product)
+
         await db.flush()
         logger.info(f"新租户已创建: {tenant_code} - {data.tenantName}")
 
@@ -151,6 +189,9 @@ class TenantService:
         limit: int = 20,
         keyword: Optional[str] = None,
         status: Optional[int] = None,
+        lifecycle: Optional[str] = None,
+        version_code: Optional[str] = None,
+        expire_warning: bool = False,
     ) -> dict:
         """分页查询租户（返回前端 ele-pro-table 期望的格式）"""
         query = select(Tenant).where(Tenant.is_deleted == 0)
@@ -163,6 +204,31 @@ class TenantService:
             )
         if status is not None:
             query = query.where(Tenant.status == status)
+
+        # 生命周期筛选
+        if lifecycle == "new":
+            cutoff = datetime.now() - timedelta(days=30)
+            query = query.where(Tenant.status == 1, Tenant.created_at >= cutoff)
+        elif lifecycle == "trial":
+            has_basic_active = TenantService._active_product_exists(version_code_filter="basic")
+            has_paid_active = TenantService._active_product_exists(exclude_basic=True)
+            query = query.where(Tenant.status == 1, has_basic_active, ~has_paid_active)
+        elif lifecycle == "follow_up":
+            query = query.where(Tenant.in_follow_pool == 1)
+        elif lifecycle == "paid":
+            has_paid_active = TenantService._active_product_exists(exclude_basic=True)
+            query = query.where(Tenant.status == 1, has_paid_active)
+            if version_code:
+                version_cond = TenantService._active_product_exists(version_code_filter=version_code)
+                query = query.where(version_cond)
+            if expire_warning:
+                warning_deadline = datetime.now() + timedelta(days=30)
+                query = query.where(
+                    Tenant.expire_time.isnot(None),
+                    Tenant.expire_time <= warning_deadline,
+                )
+        elif lifecycle == "churned":
+            query = query.where(Tenant.status.in_([0, 3]))
 
         # 总数
         count_q = select(func.count()).select_from(query.subquery())
@@ -246,11 +312,46 @@ class TenantService:
 
     @staticmethod
     async def update_status(db: AsyncSession, tenant_id: int, status: int) -> None:
-        """更新租户状态"""
+        """更新租户状态（重新激活时自动补齐 basic 授权）"""
         tenant = await TenantService.get_tenant_by_id(db, tenant_id)
         if not tenant:
             raise BizException("租户不存在")
         tenant.status = status
+
+        # 重新激活时确保有 basic 授权
+        if status == 1:
+            now = datetime.now()
+            basic_result = await db.execute(
+                select(TenantProduct).where(
+                    TenantProduct.tenant_id == tenant_id,
+                    TenantProduct.version_code == "basic",
+                    TenantProduct.is_deleted == 0,
+                    TenantProduct.status == 1,
+                    or_(TenantProduct.end_time.is_(None), TenantProduct.end_time > now),
+                )
+            )
+            if not basic_result.scalar_one_or_none():
+                basic_ver = await db.execute(
+                    select(ProductVersion).where(
+                        ProductVersion.version_code == "basic",
+                        ProductVersion.status == 1,
+                        ProductVersion.is_deleted == 0,
+                    )
+                )
+                basic_version = basic_ver.scalar_one_or_none()
+                if basic_version:
+                    basic_product = TenantProduct(
+                        tenant_id=tenant_id,
+                        tenant_code=tenant.tenant_code,
+                        version_id=basic_version.id,
+                        version_code="basic",
+                        start_time=now,
+                        end_time=None,
+                        status=1,
+                    )
+                    db.add(basic_product)
+                    logger.info(f"租户 {tenant.tenant_code} 重新激活，已自动补齐 basic 授权")
+
         await db.flush()
 
     @staticmethod
@@ -274,6 +375,52 @@ class TenantService:
         tenant.is_deleted = 1
         await db.flush()
         return True
+
+    # ============================================================
+    # 跟进池
+    # ============================================================
+
+    @staticmethod
+    async def update_follow_pool(
+        db: AsyncSession, data: TenantFollowPoolUpdate
+    ) -> None:
+        """标记/移出跟进池"""
+        tenant = await TenantService.get_tenant_by_id(db, data.id)
+        if not tenant:
+            raise BizException("租户不存在")
+        tenant.in_follow_pool = data.inFollowPool
+        if data.followRemark is not None:
+            tenant.follow_remark = data.followRemark
+        await db.flush()
+
+    # ============================================================
+    # 生命周期统计
+    # ============================================================
+
+    @staticmethod
+    async def lifecycle_stats(db: AsyncSession) -> dict:
+        """各生命周期阶段客户数量"""
+        base = select(func.count()).where(Tenant.is_deleted == 0)
+        cutoff = datetime.now() - timedelta(days=30)
+
+        has_basic_active = TenantService._active_product_exists(version_code_filter="basic")
+        has_paid_active = TenantService._active_product_exists(exclude_basic=True)
+
+        new_q = base.where(Tenant.status == 1, Tenant.created_at >= cutoff)
+        trial_q = base.where(Tenant.status == 1, has_basic_active, ~has_paid_active)
+        follow_q = base.where(Tenant.in_follow_pool == 1)
+        paid_q = base.where(Tenant.status == 1, has_paid_active)
+        churned_q = base.where(Tenant.status.in_([0, 3]))
+        total_q = base
+
+        results = {}
+        for key, q in [
+            ("new", new_q), ("trial", trial_q), ("followUp", follow_q),
+            ("paid", paid_q), ("churned", churned_q), ("all", total_q),
+        ]:
+            r = await db.execute(q)
+            results[key] = r.scalar() or 0
+        return results
 
     # ============================================================
     # 租户产品授权
@@ -334,15 +481,17 @@ class TenantService:
         )
         db.add(product)
 
-        # 同步更新租户状态为正常 + 到期时间
-        if tenant.status == 2:  # 待审核 -> 正常
-            tenant.status = 1
         if end_time:
-            # 取所有授权中最晚的到期时间作为租户到期时间
             if tenant.expire_time is None or end_time > tenant.expire_time:
                 tenant.expire_time = end_time
 
+        # 过期客户开通版本时自动恢复
+        if tenant.status == 3:
+            tenant.status = 1
+            logger.info(f"租户 {tenant.tenant_code} 已过期，开通新版本后自动恢复为正常状态")
+
         await db.flush()
+        await db.refresh(product)
         logger.info(f"租户 {tenant.tenant_code} 已开通产品版本: {data.versionCode}")
         return product
 
@@ -365,22 +514,85 @@ class TenantService:
         product.is_deleted = 1
         await db.flush()
 
-        # 重新计算租户到期时间
+        tenant = await TenantService.get_tenant_by_id(db, tenant_id)
+        if not tenant:
+            return
+
+        # 重新计算租户到期时间并同步状态
+        now = datetime.now()
         remaining = await db.execute(
             select(TenantProduct).where(
                 TenantProduct.tenant_id == tenant_id,
                 TenantProduct.is_deleted == 0,
+                TenantProduct.status == 1,
             )
         )
         remaining_products = remaining.scalars().all()
-        tenant = await TenantService.get_tenant_by_id(db, tenant_id)
-        if tenant:
-            if not remaining_products:
+
+        active_products = [
+            p for p in remaining_products
+            if p.end_time is None or p.end_time > now
+        ]
+
+        if not active_products:
+            tenant.expire_time = None
+            if tenant.status == 1:
+                tenant.status = 3
+                logger.info(f"租户 {tenant.tenant_code} 已无有效授权，状态设为已过期")
+        else:
+            max_end = None
+            for p in active_products:
+                if p.end_time and (max_end is None or p.end_time > max_end):
+                    max_end = p.end_time
+            tenant.expire_time = max_end
+
+        await db.flush()
+
+    # ============================================================
+    # 过期检查
+    # ============================================================
+
+    @staticmethod
+    async def check_expirations(db: AsyncSession) -> int:
+        """检查过期授权，更新客户状态，返回受影响数量"""
+        now = datetime.now()
+        affected = 0
+
+        # 查找 status=1 且 expire_time 已过期的客户
+        result = await db.execute(
+            select(Tenant).where(
+                Tenant.is_deleted == 0,
+                Tenant.status == 1,
+                Tenant.expire_time.isnot(None),
+                Tenant.expire_time < now,
+            )
+        )
+        tenants = result.scalars().all()
+
+        for tenant in tenants:
+            # 检查是否还有其他有效授权
+            prod_result = await db.execute(
+                select(TenantProduct).where(
+                    TenantProduct.tenant_id == tenant.id,
+                    TenantProduct.is_deleted == 0,
+                    TenantProduct.status == 1,
+                    or_(TenantProduct.end_time.is_(None), TenantProduct.end_time > now),
+                )
+            )
+            active_products = prod_result.scalars().all()
+            has_active_basic = any(p.version_code == "basic" for p in active_products)
+            has_active_paid = any(p.version_code != "basic" for p in active_products)
+
+            if not has_active_paid and has_active_basic:
+                # 仅剩 basic 有效 → 客户回到免费体验，清空 expire_time
                 tenant.expire_time = None
-            else:
-                max_end = None
-                for p in remaining_products:
-                    if p.end_time and (max_end is None or p.end_time > max_end):
-                        max_end = p.end_time
-                tenant.expire_time = max_end
-            await db.flush()
+                affected += 1
+                logger.info(f"租户 {tenant.tenant_code} 付费授权已过期，回退为免费体验")
+            elif not active_products:
+                # 无任何有效授权 → 设为已过期
+                tenant.status = 3
+                affected += 1
+                logger.info(f"租户 {tenant.tenant_code} 所有授权已过期，状态设为已过期")
+
+        await db.flush()
+        return affected

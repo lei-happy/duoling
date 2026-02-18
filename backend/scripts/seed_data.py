@@ -90,9 +90,9 @@ def seed_platform_data():
                      menu_type=0, path="/dashboard",
                      component="/dashboard/workplace/index",
                      icon="HomeFilled", sort_order=0, app_type="platform"),
-                Menu(parent_id=0, menu_name="租户管理", menu_code="tenant",
-                     menu_type=0, path="/tenant",
-                     icon="OfficeBuilding", sort_order=10, app_type="platform"),
+                Menu(parent_id=0, menu_name="客户运营中心", menu_code="customer",
+                     menu_type=0, path="/customer",
+                     icon="DataAnalysis", sort_order=10, app_type="platform"),
                 Menu(parent_id=0, menu_name="系统管理", menu_code="system",
                      menu_type=0, path="/system",
                      icon="Setting", sort_order=20, app_type="platform"),
@@ -104,20 +104,36 @@ def seed_platform_data():
             session.flush()
 
             # 子菜单（页面，menu_type=0）
-            tenant_menu = next(m for m in menus if m.menu_code == "tenant")
+            customer_menu = next(m for m in menus if m.menu_code == "customer")
             system_menu = next(m for m in menus if m.menu_code == "system")
             product_menu = next(m for m in menus if m.menu_code == "product")
 
             sub_menus = [
-                # 租户管理子菜单
-                Menu(parent_id=tenant_menu.id, menu_name="企业列表",
-                     menu_code="tenant:list", menu_type=0,
-                     path="/tenant/list", component="/tenant/list/index",
+                # 客户运营中心子菜单
+                Menu(parent_id=customer_menu.id, menu_name="新注册客户",
+                     menu_code="customer:new", menu_type=0,
+                     path="/customer/new", component="/customer/new/index",
                      sort_order=0, app_type="platform"),
-                Menu(parent_id=tenant_menu.id, menu_name="意见反馈",
-                     menu_code="tenant:feedback", menu_type=0,
-                     path="/tenant/feedback", component="/tenant/feedback/index",
+                Menu(parent_id=customer_menu.id, menu_name="免费体验客户",
+                     menu_code="customer:trial", menu_type=0,
+                     path="/customer/trial", component="/customer/trial/index",
                      sort_order=10, app_type="platform"),
+                Menu(parent_id=customer_menu.id, menu_name="跟进池",
+                     menu_code="customer:follow-up", menu_type=0,
+                     path="/customer/follow-up", component="/customer/follow-up/index",
+                     sort_order=20, app_type="platform"),
+                Menu(parent_id=customer_menu.id, menu_name="付费客户",
+                     menu_code="customer:paid", menu_type=0,
+                     path="/customer/paid", component="/customer/paid/index",
+                     sort_order=30, app_type="platform"),
+                Menu(parent_id=customer_menu.id, menu_name="流失客户",
+                     menu_code="customer:churned", menu_type=0,
+                     path="/customer/churned", component="/customer/churned/index",
+                     sort_order=40, app_type="platform"),
+                Menu(parent_id=customer_menu.id, menu_name="全量客户",
+                     menu_code="customer:all", menu_type=0,
+                     path="/customer/all", component="/customer/all/index",
+                     sort_order=50, app_type="platform"),
                 # 系统管理子菜单
                 Menu(parent_id=system_menu.id, menu_name="用户管理",
                      menu_code="system:user", menu_type=0,

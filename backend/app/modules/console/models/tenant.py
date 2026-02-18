@@ -49,7 +49,7 @@ class Tenant(PlatformModelBase):
         String(100), nullable=True, comment="营业执照号"
     )
     status: Mapped[int] = mapped_column(
-        SmallInteger, default=2, comment="状态 0-停用 1-正常 2-待审核 3-已过期"
+        SmallInteger, default=1, comment="状态 0-停用 1-正常 3-已过期"
     )
     db_name: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, comment="租户数据库名称"
@@ -68,4 +68,10 @@ class Tenant(PlatformModelBase):
     )
     referrer_code: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, comment="推荐人企业编码（来源为referral时记录）"
+    )
+    in_follow_pool: Mapped[int] = mapped_column(
+        SmallInteger, default=0, comment="是否在跟进池 0-否 1-是"
+    )
+    follow_remark: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True, comment="跟进备注"
     )

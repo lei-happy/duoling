@@ -1,4 +1,4 @@
-<!-- 企业产品授权弹窗 -->
+<!-- 客户产品授权弹窗 -->
 <template>
   <ele-modal
     :width="680"
@@ -102,16 +102,15 @@
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
   import {
-    listTenantProducts,
-    assignTenantProduct,
-    removeTenantProduct,
+    listCustomerProducts,
+    assignCustomerProduct,
+    removeCustomerProduct,
     listProductVersions
-  } from '@/api/tenant';
-  import type { Tenant, TenantProduct, TenantProductCreate } from '@/api/tenant/model';
+  } from '@/api/customer';
+  import type { Customer, CustomerProduct, CustomerProductCreate } from '@/api/customer/model';
 
   const props = defineProps<{
-    /** 当前企业数据 */
-    data?: Tenant | null;
+    data?: Customer | null;
   }>();
 
   const emit = defineEmits<{
@@ -120,39 +119,29 @@
 
   const { modalProps, closeModal } = useModal();
 
-  /** 表单组件 */
   const formRef = ref<FormInstance | null>(null);
-
-  /** 已授权产品列表 */
-  const productList = ref<TenantProduct[]>([]);
+  const productList = ref<CustomerProduct[]>([]);
   const listLoading = ref(false);
-
-  /** 可选产品版本列表 */
   const versionList = ref<any[]>([]);
-
-  /** 提交状态 */
   const submitLoading = ref(false);
 
-  /** 新增授权表单 */
-  const form = reactive<TenantProductCreate & { versionId: number | undefined }>({
+  const form = reactive<CustomerProductCreate & { versionId: number | undefined }>({
     versionId: undefined,
     versionCode: '',
     startTime: undefined,
     endTime: undefined
   });
 
-  /** 表单验证规则 */
   const rules = reactive<FormRules>({
     versionId: [
       { required: true, message: '请选择产品版本', trigger: 'change' }
     ]
   });
 
-  /** 加载已授权产品列表 */
   const loadProducts = () => {
     if (!props.data?.id) return;
     listLoading.value = true;
-    listTenantProducts(props.data.id)
+    listCustomerProducts(props.data.id)
       .then((list) => {
         listLoading.value = false;
         productList.value = list || [];
@@ -163,7 +152,6 @@
       });
   };
 
-  /** 加载可选产品版本 */
   const loadVersions = () => {
     listProductVersions()
       .then((list) => {
@@ -174,7 +162,6 @@
       });
   };
 
-  /** 版本选择变更 */
   const handleVersionChange = (val: number) => {
     const found = versionList.value.find((v) => v.id === val);
     if (found) {
@@ -182,10 +169,9 @@
     }
   };
 
-  /** 取消授权 */
-  const handleRemove = (row: TenantProduct) => {
+  const handleRemove = (row: CustomerProduct) => {
     if (!props.data?.id || !row.id) return;
-    removeTenantProduct(props.data.id, row.id)
+    removeCustomerProduct(props.data.id, row.id)
       .then((msg) => {
         EleMessage.success({ message: msg, plain: true });
         loadProducts();
@@ -196,17 +182,15 @@
       });
   };
 
-  /** 关闭弹窗 */
   const handleCancel = () => {
     closeModal();
   };
 
-  /** 提交开通授权 */
   const handleSubmit = () => {
     formRef.value?.validate?.((valid) => {
       if (!valid || !props.data?.id) return;
       submitLoading.value = true;
-      assignTenantProduct(props.data.id, {
+      assignCustomerProduct(props.data.id, {
         versionId: form.versionId!,
         versionCode: form.versionCode,
         startTime: form.startTime,
@@ -215,7 +199,6 @@
         .then((msg) => {
           submitLoading.value = false;
           EleMessage.success({ message: msg, plain: true });
-          // 重置表单
           form.versionId = undefined;
           form.versionCode = '';
           form.startTime = undefined;
@@ -231,7 +214,6 @@
     });
   };
 
-  /** 初始化 */
   onMounted(() => {
     loadProducts();
     loadVersions();

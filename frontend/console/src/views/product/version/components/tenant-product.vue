@@ -106,8 +106,8 @@
     assignTenantProduct,
     removeTenantProduct,
     listProductVersions
-  } from '@/api/tenant';
-  import type { Tenant, TenantProduct, TenantProductCreate } from '@/api/tenant/model';
+  } from '@/api/customer';
+  import type { Tenant, TenantProduct, TenantProductCreate } from '@/api/customer/model';
 
   const props = defineProps<{
     /** 当前企业数据 */

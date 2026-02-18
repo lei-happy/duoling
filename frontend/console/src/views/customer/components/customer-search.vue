@@ -1,4 +1,4 @@
-<!-- 企业搜索表单 -->
+<!-- 客户搜索表单 -->
 <template>
   <ele-card search-form>
     <el-form @keyup.enter="search" @submit.prevent="">
@@ -11,7 +11,13 @@
             clearable
           />
         </el-col>
-        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+        <el-col
+          v-if="showStatus"
+          :lg="6"
+          :md="8"
+          :sm="12"
+          :xs="24"
+        >
           <floating-label
             label="请选择状态"
             type="select"
@@ -20,7 +26,6 @@
           >
             <el-option label="正常" :value="1" />
             <el-option label="停用" :value="0" />
-            <el-option label="待审核" :value="2" />
             <el-option label="已过期" :value="3" />
           </floating-label>
         </el-col>
@@ -43,24 +48,31 @@
 <script lang="ts" setup>
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
-  import type { TenantParam } from '@/api/tenant/model';
+  import type { CustomerParam } from '@/api/customer/model';
+
+  withDefaults(
+    defineProps<{
+      showStatus?: boolean;
+    }>(),
+    { showStatus: true }
+  );
 
   const emit = defineEmits<{
-    (e: 'search', where?: TenantParam): void;
+    (e: 'search', where?: CustomerParam): void;
   }>();
 
-  /** 表单数据 */
-  const [form, resetFields] = useFormData<TenantParam>({
+  const [form, resetFields] = useFormData<CustomerParam>({
     keyword: '',
     status: void 0
   });
 
-  /** 搜索 */
   const search = () => {
-    emit('search', { ...form });
+    const where: Partial<CustomerParam> = {};
+    if (form.keyword) where.keyword = form.keyword;
+    if (form.status !== undefined) where.status = form.status;
+    emit('search', Object.keys(where).length ? where : undefined);
   };
 
-  /** 重置 */
   const reset = () => {
     resetFields();
     search();

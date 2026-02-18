@@ -70,8 +70,8 @@
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import TenantSearch from './components/tenant-search.vue';
-  import { pageTenants, removeTenants, updateTenantStatus } from '@/api/tenant';
-  import type { Tenant, TenantParam } from '@/api/tenant/model';
+  import { pageTenants, removeTenants, updateTenantStatus } from '@/api/customer';
+  import type { Tenant, TenantParam } from '@/api/customer/model';
 
   defineOptions({ name: 'TenantList' });
 
