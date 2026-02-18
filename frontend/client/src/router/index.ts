@@ -6,7 +6,7 @@ import type { _RouteLocationBase } from 'vue-router';
 import { createRouter, createWebHistory } from 'vue-router';
 import { LOGIN_PATH, REDIRECT_PATH, LAYOUT_PATH } from '@/config/setting';
 import { useUserStore } from '@/store/modules/user';
-import { getToken } from '@/utils/token-util';
+import { getToken, removeToken, removeRefreshToken } from '@/utils/token-util';
 import { setPageTitle } from '@/utils/page-title-util';
 import { getRouteTitle } from '@/i18n/use-locale';
 import { routes, getMenuRoutes, isWhiteList } from './routes';
@@ -51,6 +51,13 @@ router.beforeEach(async (to) => {
         router.addRoute(r);
       });
       return { ...to, replace: true };
+    }
+    // token失效且刷新失败，清除token并跳转登录
+    if (getToken()) {
+      removeToken();
+      removeRefreshToken();
+      const query = to.path === LAYOUT_PATH ? {} : { from: encodeURIComponent(to.fullPath) };
+      return { path: LOGIN_PATH, query };
     }
   }
 });

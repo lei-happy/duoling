@@ -39,6 +39,13 @@ export function removeToken() {
 }
 
 /**
+ * 判断当前token是否存储在localStorage中（即用户选择了"记住我"）
+ */
+export function isRememberToken(): boolean {
+  return localStorage.getItem(TOKEN_CACHE_NAME) !== null;
+}
+
+/**
  * 获取缓存的refresh token
  */
 export function getRefreshToken(): string | null {

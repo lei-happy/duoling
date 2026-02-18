@@ -8,7 +8,7 @@ import { LOGIN_PATH, LAYOUT_PATH, TOKEN_HEADER_NAME } from '@/config/setting';
 import type { ApiResult } from '@/api';
 import router from '@/router';
 import { isWhiteList } from '@/router/routes';
-import { getToken, setToken, getRefreshToken, setRefreshToken, removeRefreshToken } from './token-util';
+import { getToken, setToken, getRefreshToken, setRefreshToken, removeRefreshToken, isRememberToken } from './token-util';
 import { goLogin, showExpiredLogout, toURLSearch } from './common';
 
 /** 是否正在刷新token */
@@ -48,8 +48,9 @@ async function doRefreshToken(): Promise<string | null> {
     );
     if (res.data?.code === 0 && res.data.data) {
       const { access_token, refresh_token } = res.data.data;
-      setToken(access_token);
-      setRefreshToken(refresh_token);
+      const remember = isRememberToken();
+      setToken(access_token, remember);
+      setRefreshToken(refresh_token, remember);
       return access_token;
     }
     return null;
@@ -155,26 +156,22 @@ const service = axios.create({
  */
 service.interceptors.response.use(
   async (res: AxiosResponse<ApiResult<unknown>>) => {
-    // 检测401/403过期
+    // 检测业务码401/403过期
     if (res.data?.code === 401 || (res.data?.code === 403 && !getToken())) {
       const toRoute = (res.config as any).toRoute;
-      // 标记当前请求避免无限重试
       if ((res.config as any)._retried) {
         redirectToLogin(toRoute);
         return Promise.reject(new Error(res.data.message));
       }
 
-      // 尝试刷新token
       const newToken = await handleUnauthorized();
       if (newToken) {
-        // 使用新token重试原请求
         const config = res.config;
         config.headers[TOKEN_HEADER_NAME] = `Bearer ${newToken}`;
         (config as any)._retried = true;
         return service(config);
       }
 
-      // 刷新失败，跳转登录
       removeRefreshToken();
       redirectToLogin(toRoute);
       return Promise.reject(new Error(res.data.message));
@@ -182,7 +179,29 @@ service.interceptors.response.use(
 
     return res;
   },
-  (error) => {
+  async (error) => {
+    // 处理 HTTP 401 状态码（token过期）
+    if (error.response?.status === 401) {
+      const config = error.config;
+      const toRoute = config?.toRoute;
+
+      if (config?._retried) {
+        redirectToLogin(toRoute);
+        return Promise.reject(error);
+      }
+
+      const newToken = await handleUnauthorized();
+      if (newToken) {
+        config.headers[TOKEN_HEADER_NAME] = `Bearer ${newToken}`;
+        config._retried = true;
+        return service(config);
+      }
+
+      removeRefreshToken();
+      redirectToLogin(toRoute);
+      return Promise.reject(error);
+    }
+
     console.error(error);
     return Promise.reject(new Error(getErrorMessage(error.message)));
   }
