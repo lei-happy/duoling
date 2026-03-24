@@ -1,6 +1,5 @@
 --数据库名称：zt_platform
 --表名称：sys_regions
-
 CREATE TABLE `sys_regions` (
   `code` bigint unsigned NOT NULL COMMENT '区划代码',
   `name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '名称',
