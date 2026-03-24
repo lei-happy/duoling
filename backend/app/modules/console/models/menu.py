@@ -44,7 +44,10 @@ class Menu(PlatformModelBase):
     status: Mapped[int] = mapped_column(
         SmallInteger, default=1, comment="状态 0-停用 1-正常"
     )
-    # 菜单归属：platform-平台菜单 / console-管理后台菜单 / client-客户端菜单
     app_type: Mapped[str] = mapped_column(
         String(20), default="platform", comment="归属应用 platform/console/client"
+    )
+    feature_code: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, index=True,
+        comment="关联功能编码，用于产品版本控制菜单可见性"
     )

@@ -4,10 +4,13 @@
 设计思路：
 - 平台主库（zt_platform）：全局唯一，应用启动时创建引擎
 - 租户业务库（zt_biz_{tenant_code}）：按需动态创建引擎，连接池缓存
+
+渐进式表初始化：
+- 模型通过 __table_tier__ 标记层级 ("core" / "business" / "premium")
+- 注册时只建 core 层表，业务表在版本开通时按需创建
 """
 
-from typing import Dict, Optional, AsyncGenerator
-from contextlib import asynccontextmanager
+from typing import Dict, List, Optional, AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
@@ -16,7 +19,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
 )
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import text
+from sqlalchemy import text, inspect as sa_inspect
 from loguru import logger
 
 from app.core.config import get_settings
@@ -49,6 +52,25 @@ class DatabaseManager:
         self._tenant_engines: Dict[str, AsyncEngine] = {}
         self._tenant_session_factories: Dict[str, async_sessionmaker] = {}
 
+    # ---- 表层级工具 ----
+
+    @staticmethod
+    def get_tables_by_tier(tier: str) -> list:
+        """按 __table_tier__ 获取 Table 对象列表"""
+        tables = []
+        for mapper in TenantBase.registry.mappers:
+            cls = mapper.class_
+            table_tier = getattr(cls, "__table_tier__", "core")
+            if table_tier == tier:
+                tables.append(cls.__table__)
+        return tables
+
+    @staticmethod
+    def get_tables_by_names(table_names: List[str]) -> list:
+        """按表名获取 Table 对象列表"""
+        all_tables = TenantBase.metadata.sorted_tables
+        return [t for t in all_tables if t.name in table_names]
+
     # ---- 平台库 ----
 
     async def init_platform_db(self) -> None:
@@ -68,6 +90,12 @@ class DatabaseManager:
             expire_on_commit=False,
         )
         logger.info(f"平台数据库引擎已初始化: {settings.PLATFORM_DB_NAME}")
+
+    @property
+    def platform_engine(self) -> AsyncEngine:
+        if not self._platform_engine:
+            raise RuntimeError("平台数据库未初始化，请先调用 init_platform_db()")
+        return self._platform_engine
 
     async def get_platform_session(self) -> AsyncGenerator[AsyncSession, None]:
         """获取平台库 Session（用于依赖注入）"""
@@ -122,25 +150,69 @@ class DatabaseManager:
 
     async def create_tenant_database(self, tenant_code: str) -> None:
         """
-        为新租户创建独立数据库并初始化表结构
-        注意：此操作需要 MySQL 用户有 CREATE DATABASE 权限
+        为新租户创建独立数据库并初始化 core 层表结构。
+        仅创建 __table_tier__="core" 的表，业务表通过 ensure_tenant_tables 按需创建。
         """
         settings = get_settings()
         db_name = settings.tenant_database_name(tenant_code)
 
-        # 使用平台库引擎执行 CREATE DATABASE
-        async with self._platform_engine.begin() as conn:
+        async with self.platform_engine.begin() as conn:
             await conn.execute(
                 text(f"CREATE DATABASE IF NOT EXISTS `{db_name}` "
                      f"CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
             )
         logger.info(f"租户数据库已创建: {db_name}")
 
-        # 在新库中创建表结构
+        core_tables = self.get_tables_by_tier("core")
         engine = self._get_or_create_tenant_engine(tenant_code)
         async with engine.begin() as conn:
-            await conn.run_sync(TenantBase.metadata.create_all)
-        logger.info(f"租户数据库表结构已初始化: {db_name}")
+            await conn.run_sync(
+                lambda sync_conn: TenantBase.metadata.create_all(
+                    sync_conn, tables=core_tables
+                )
+            )
+        logger.info(
+            f"租户数据库 core 层表已初始化: {db_name} "
+            f"({len(core_tables)} 张表)"
+        )
+
+    async def ensure_tenant_tables(
+        self,
+        tenant_code: str,
+        table_names: List[str],
+    ) -> List[str]:
+        """
+        确保租户库中存在指定的表，不存在则创建。
+        用于版本开通时按需初始化业务表。
+        返回本次新建的表名列表。
+        """
+        tables_to_create = self.get_tables_by_names(table_names)
+        if not tables_to_create:
+            return []
+
+        engine = self._get_or_create_tenant_engine(tenant_code)
+
+        async with engine.connect() as conn:
+            existing = await conn.run_sync(
+                lambda sync_conn: sa_inspect(sync_conn).get_table_names()
+            )
+
+        missing = [t for t in tables_to_create if t.name not in existing]
+        if not missing:
+            return []
+
+        async with engine.begin() as conn:
+            await conn.run_sync(
+                lambda sync_conn: TenantBase.metadata.create_all(
+                    sync_conn, tables=missing
+                )
+            )
+
+        created = [t.name for t in missing]
+        logger.info(
+            f"租户 {tenant_code} 按需创建业务表: {created}"
+        )
+        return created
 
     # ---- 清理 ----
 

@@ -14,6 +14,7 @@ class Driver(TenantModelBase):
     """驾驶员信息"""
     __tablename__ = "biz_driver"
     __table_args__ = {"comment": "驾驶员信息表"}
+    __table_tier__ = "business"
 
     user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="关联的用户ID"

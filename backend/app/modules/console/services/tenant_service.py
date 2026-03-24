@@ -5,7 +5,7 @@
 from typing import Optional, Tuple, List
 from datetime import datetime, timedelta
 
-from sqlalchemy import select, func, exists, or_
+from sqlalchemy import select, func, exists, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
@@ -102,11 +102,16 @@ class TenantService:
         db.add(tenant)
         await db.flush()
 
-        # 创建租户独立数据库
+        # 创建租户独立数据库（仅 core 层表）
         try:
-            # 确保 client models 已导入，以便 TenantBase.metadata 包含所有表
             import app.modules.client.models  # noqa: F401
             await db_manager.create_tenant_database(tenant_code)
+            await TenantService._init_tenant_seed_data(
+                tenant_code,
+                admin_name=data.contactPerson or "管理员",
+                admin_phone=data.contactPhone,
+                admin_email=data.contactEmail,
+            )
             tenant.db_initialized = 1
         except Exception as e:
             logger.error(f"创建租户数据库失败: {e}")
@@ -147,14 +152,25 @@ class TenantService:
             db.add(admin_user)
             await db.flush()
 
-        # 创建用户-企业关联
-        user_tenant = UserTenant(
-            user_id=admin_user.id,
-            tenant_code=tenant_code,
-            user_type=1,  # 租户管理员
-            status=1,
+        # 创建用户-企业关联（检查是否已存在）
+        existing_ut = await db.execute(
+            select(UserTenant).where(
+                UserTenant.user_id == admin_user.id,
+                UserTenant.tenant_code == tenant_code,
+            )
         )
-        db.add(user_tenant)
+        ut_record = existing_ut.scalar_one_or_none()
+        if ut_record:
+            ut_record.user_type = 1
+            ut_record.status = 1
+            ut_record.is_deleted = 0
+        else:
+            db.add(UserTenant(
+                user_id=admin_user.id,
+                tenant_code=tenant_code,
+                user_type=1,
+                status=1,
+            ))
 
         # 自动开通 basic 版本
         basic_ver = await db.execute(
@@ -181,6 +197,169 @@ class TenantService:
         logger.info(f"新租户已创建: {tenant_code} - {data.tenantName}")
 
         return tenant, is_existing_user
+
+    @staticmethod
+    async def _init_tenant_seed_data(
+        tenant_code: str,
+        admin_name: str = "管理员",
+        admin_phone: Optional[str] = None,
+        admin_email: Optional[str] = None,
+    ) -> None:
+        """
+        在租户库中插入种子数据：默认角色、部门、管理员及关联。
+        通过平台库同步地区数据到 biz_region。
+        """
+        from app.modules.client.models.biz_role import BizRole
+        from app.modules.client.models.biz_department import BizDepartment
+        from app.modules.client.models.biz_user import BizUser
+        from app.modules.client.models.biz_user_role import BizUserRole
+
+        engine = db_manager._get_or_create_tenant_engine(tenant_code)
+        session_factory = db_manager._tenant_session_factories[tenant_code]
+
+        async with session_factory() as session:
+            try:
+                # 默认角色
+                roles = [
+                    BizRole(role_code="admin", role_name="管理员", sort_order=0, status=1),
+                    BizRole(role_code="operator", role_name="操作员", sort_order=10, status=1),
+                    BizRole(role_code="driver", role_name="驾驶员", sort_order=20, status=1),
+                ]
+                session.add_all(roles)
+                await session.flush()
+
+                # 默认部门
+                hq = BizDepartment(parent_id=0, dept_name="总公司", dept_code="HQ", sort_order=0, status=1)
+                session.add(hq)
+                await session.flush()
+                sub_depts = [
+                    BizDepartment(parent_id=hq.id, dept_name="运营部", dept_code="OP", sort_order=0, status=1),
+                    BizDepartment(parent_id=hq.id, dept_name="车队部", dept_code="FL", sort_order=10, status=1),
+                    BizDepartment(parent_id=hq.id, dept_name="财务部", dept_code="FI", sort_order=20, status=1),
+                ]
+                session.add_all(sub_depts)
+                await session.flush()
+
+                # 管理员用户
+                admin_user = BizUser(
+                    username=f"admin_{tenant_code}",
+                    password=hash_password("123456"),
+                    real_name=admin_name,
+                    phone=admin_phone,
+                    email=admin_email,
+                    user_type=1,
+                    department=hq.dept_name,
+                    status=1,
+                )
+                session.add(admin_user)
+                await session.flush()
+
+                # 管理员-角色关联
+                admin_role = roles[0]
+                user_role = BizUserRole(user_id=admin_user.id, role_id=admin_role.id)
+                session.add(user_role)
+
+                await session.commit()
+                logger.info(f"租户 {tenant_code} 种子数据已初始化")
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"租户 {tenant_code} 种子数据初始化失败: {e}")
+                raise
+
+        # 同步地区数据（从平台 sys_regions 到租户 biz_region）
+        try:
+            await TenantService._sync_region_data(tenant_code)
+        except Exception as e:
+            logger.warning(f"租户 {tenant_code} 地区数据同步失败（非致命）: {e}")
+
+    @staticmethod
+    async def _sync_region_data(tenant_code: str) -> None:
+        """从平台 sys_regions 同步地区数据到租户库 biz_region"""
+        settings = get_settings()
+        platform_db = settings.platform_database_name
+
+        engine = db_manager._get_or_create_tenant_engine(tenant_code)
+        async with engine.begin() as conn:
+            result = await conn.execute(text("SELECT COUNT(*) FROM biz_region"))
+            if (result.scalar() or 0) > 0:
+                logger.info(f"租户 {tenant_code} biz_region 已有数据，跳过同步")
+                return
+
+            # 先检查 sys_regions 表的列结构，动态映射到 biz_region
+            cols_result = await conn.execute(text(
+                f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS "
+                f"WHERE TABLE_SCHEMA = :db AND TABLE_NAME = 'sys_regions' "
+                f"ORDER BY ORDINAL_POSITION"
+            ), {"db": platform_db})
+            source_cols = [row[0] for row in cols_result]
+            logger.info(f"sys_regions 列: {source_cols}")
+
+            # biz_region 目标列 -> sys_regions 可能的源列名映射
+            col_candidates = {
+                "code": ["code", "region_code", "area_code"],
+                "name": ["name", "region_name", "area_name"],
+                "parent_code": ["parent_code", "parent_id", "pid", "pcode"],
+                "level": ["level", "region_level", "deep", "depth", "type"],
+                "sort_order": ["sort_order", "sort", "order_num"],
+                "status": ["status"],
+            }
+
+            mapping = {}
+            for target, candidates in col_candidates.items():
+                for c in candidates:
+                    if c in source_cols:
+                        mapping[target] = c
+                        break
+
+            if "code" not in mapping or "name" not in mapping:
+                logger.error(
+                    f"sys_regions 列名无法映射到 biz_region，"
+                    f"源列: {source_cols}，已匹配: {mapping}"
+                )
+                return
+
+            # 构建动态 INSERT ... SELECT
+            target_cols = list(mapping.keys())
+            source_exprs = []
+            for t in target_cols:
+                src_col = mapping[t]
+                if t in ("code", "parent_code"):
+                    source_exprs.append(f"CAST(`{src_col}` AS CHAR)")
+                else:
+                    source_exprs.append(f"`{src_col}`")
+
+            # 缺失的列提供默认值
+            if "parent_code" not in mapping:
+                target_cols.append("parent_code")
+                source_exprs.append("NULL")
+            if "level" not in mapping:
+                target_cols.append("level")
+                source_exprs.append("1")
+            if "sort_order" not in mapping:
+                target_cols.append("sort_order")
+                source_exprs.append("0")
+            if "status" not in mapping:
+                target_cols.append("status")
+                source_exprs.append("1")
+
+            # is_deleted 必须显式赋值（biz_region 表该列可能无 DB 级默认值）
+            target_cols.append("is_deleted")
+            source_exprs.append("0")
+
+            # 构建 WHERE 条件：仅同步未删除的地区记录
+            where_clause = ""
+            if "is_deleted" in source_cols:
+                where_clause = " WHERE `is_deleted` = 0"
+
+            insert_sql = (
+                f"INSERT INTO biz_region ({', '.join(target_cols)}) "
+                f"SELECT {', '.join(source_exprs)} "
+                f"FROM `{platform_db}`.sys_regions{where_clause}"
+            )
+            logger.info(f"地区同步 SQL: {insert_sql}")
+            await conn.execute(text(insert_sql))
+
+        logger.info(f"租户 {tenant_code} 地区数据已从平台同步")
 
     @staticmethod
     async def page_tenants(
@@ -493,7 +672,39 @@ class TenantService:
         await db.flush()
         await db.refresh(product)
         logger.info(f"租户 {tenant.tenant_code} 已开通产品版本: {data.versionCode}")
+
+        # 按版本功能清单按需创建租户库业务表
+        try:
+            await TenantService._ensure_version_tables(
+                db, tenant.tenant_code, data.versionId
+            )
+        except Exception as e:
+            logger.warning(
+                f"租户 {tenant.tenant_code} 版本 {data.versionCode} 业务表创建失败（非致命）: {e}"
+            )
+
         return product
+
+    @staticmethod
+    async def _ensure_version_tables(
+        db: AsyncSession, tenant_code: str, version_id: int
+    ) -> None:
+        """根据版本功能清单，在租户库中按需创建业务表"""
+        from app.modules.console.services.product_feature_service import ProductFeatureService
+
+        import app.modules.client.models  # noqa: F401
+
+        required_tables = await ProductFeatureService.get_required_tables_by_version_id(
+            db, version_id
+        )
+        if not required_tables:
+            return
+
+        created = await db_manager.ensure_tenant_tables(tenant_code, required_tables)
+        if created:
+            logger.info(
+                f"租户 {tenant_code} 版本开通，新建业务表: {created}"
+            )
 
     @staticmethod
     async def remove_product(

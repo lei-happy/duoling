@@ -14,6 +14,7 @@ class Order(TenantModelBase):
     """运单"""
     __tablename__ = "biz_order"
     __table_args__ = {"comment": "运单表"}
+    __table_tier__ = "business"
 
     order_no: Mapped[str] = mapped_column(
         String(50), unique=True, nullable=False, comment="运单号"

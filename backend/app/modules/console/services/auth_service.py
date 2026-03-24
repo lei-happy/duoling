@@ -22,6 +22,8 @@ from app.modules.console.models.role import Role
 from app.modules.console.models.menu import Menu
 from app.modules.console.models.permission import RoleMenu
 from app.modules.console.models.tenant import Tenant
+from app.modules.console.models.tenant_product import TenantProduct
+from app.modules.console.services.product_feature_service import ProductFeatureService
 from app.modules.console.schemas.auth import (
     LoginRequest, LoginResponse, LoginUserInfo,
     TenantOption, MultiTenantResponse,
@@ -375,8 +377,10 @@ class AuthService:
         roles = await AuthService._get_user_roles(db, user_id, tenant_code)
         role_codes = [r.role_code for r in roles]
 
-        # 3. 查询菜单（根据 app_type 区分平台/客户端）
-        menus = await AuthService._get_user_menus(db, user_id, role_codes, app_type)
+        # 3. 查询菜单（根据 app_type 区分平台/客户端，client 端按产品版本过滤）
+        menus = await AuthService._get_user_menus(
+            db, user_id, role_codes, app_type, tenant_code=tenant_code
+        )
 
         # 4. 组装输出（字段名对齐前端 EleAdminPlus）
         gender_map = {0: None, 1: "男", 2: "女"}
@@ -418,32 +422,50 @@ class AuthService:
     @staticmethod
     async def _get_user_menus(
         db: AsyncSession, user_id: int, role_codes: List[str],
-        app_type: str = "platform"
+        app_type: str = "platform",
+        tenant_code: Optional[str] = None,
     ) -> List[Menu]:
         """
-        获取用户可访问的菜单列表
-        - super_admin / tenant_admin 角色返回对应 app_type 的所有菜单
-        - 其他角色通过 role_menu 关联查询
+        获取用户可访问的菜单列表。
+        client 端额外根据企业产品版本的功能清单过滤菜单。
         """
-        is_admin = (
-            "super_admin" in role_codes
-            or (app_type == "client" and "tenant_admin" in role_codes)
-        )
+        # Client 端：先获取企业版本对应的 feature_code 列表
+        allowed_feature_codes = None
+        if app_type == "client" and tenant_code:
+            try:
+                allowed_feature_codes = await AuthService._get_tenant_feature_codes(
+                    db, tenant_code
+                )
+            except Exception as e:
+                logger.warning(f"获取企业版本功能清单失败，跳过版本过滤: {e}")
+                allowed_feature_codes = None
+
+        is_admin = "super_admin" in role_codes
+
+        # Client 端：通过 sys_user_tenant.user_type 判断是否为租户管理员
+        if not is_admin and app_type == "client" and tenant_code:
+            ut_result = await db.execute(
+                select(UserTenant.user_type).where(
+                    UserTenant.user_id == user_id,
+                    UserTenant.tenant_code == tenant_code,
+                    UserTenant.is_deleted == 0,
+                )
+            )
+            ut_type = ut_result.scalar()
+            if ut_type == 1:
+                is_admin = True
 
         if is_admin:
-            # 管理员：返回对应 app_type 的所有菜单
-            result = await db.execute(
+            query = (
                 select(Menu)
                 .where(
                     Menu.app_type == app_type,
                     Menu.status == 1,
                     Menu.is_deleted == 0,
                 )
-                .order_by(Menu.sort_order, Menu.id)
             )
         else:
-            # 普通角色：通过 user_role -> role -> role_menu -> menu 查询
-            result = await db.execute(
+            query = (
                 select(Menu)
                 .join(RoleMenu, RoleMenu.menu_id == Menu.id)
                 .join(Role, Role.id == RoleMenu.role_id)
@@ -455,10 +477,46 @@ class AuthService:
                     Menu.is_deleted == 0,
                     RoleMenu.is_deleted == 0,
                 )
-                .order_by(Menu.sort_order, Menu.id)
                 .distinct()
             )
+
+        # 按产品版本过滤（仅 client 且已配置功能清单时生效）
+        if allowed_feature_codes is not None and len(allowed_feature_codes) > 0:
+            from sqlalchemy import or_
+            query = query.where(
+                or_(
+                    Menu.feature_code.in_(allowed_feature_codes),
+                    Menu.feature_code.is_(None),
+                )
+            )
+
+        query = query.order_by(Menu.sort_order, Menu.id)
+        result = await db.execute(query)
         return list(result.scalars().all())
+
+    @staticmethod
+    async def _get_tenant_feature_codes(
+        db: AsyncSession, tenant_code: str
+    ) -> List[str]:
+        """获取企业所有有效版本对应的 feature_code 列表"""
+        from sqlalchemy import or_
+
+        now = datetime.now()
+        result = await db.execute(
+            select(TenantProduct.version_id).where(
+                TenantProduct.tenant_code == tenant_code,
+                TenantProduct.is_deleted == 0,
+                TenantProduct.status == 1,
+                or_(TenantProduct.end_time.is_(None), TenantProduct.end_time > now),
+            )
+        )
+        version_ids = list(result.scalars().all())
+        if not version_ids:
+            return []
+
+        return await ProductFeatureService.get_feature_codes_by_version_ids(
+            db, version_ids
+        )
 
     # ============================================================
     # 用户主题配置（/auth/user-theme 使用）

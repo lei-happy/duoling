@@ -51,11 +51,14 @@ def init_tenant_database(tenant_code: str):
     engine.dispose()
     print(f"[OK] 数据库 {db_name} 已创建")
 
-    # 2. 在新库中创建表结构
+    # 2. 在新库中创建 core 层表结构
+    from app.core.database import DatabaseManager
+    core_tables = DatabaseManager.get_tables_by_tier("core")
     tenant_engine = create_engine(settings.tenant_db_url_sync(tenant_code))
-    TenantBase.metadata.create_all(tenant_engine)
+    TenantBase.metadata.create_all(tenant_engine, tables=core_tables)
     tenant_engine.dispose()
-    print(f"[OK] 租户库 {db_name} 表结构已初始化")
+    table_names = [t.name for t in core_tables]
+    print(f"[OK] 租户库 {db_name} core 层表已初始化: {table_names}")
 
     return db_name
 

@@ -14,6 +14,7 @@ class Customer(TenantModelBase):
     """客户"""
     __tablename__ = "biz_customer"
     __table_args__ = {"comment": "客户表"}
+    __table_tier__ = "business"
 
     customer_name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="客户名称"

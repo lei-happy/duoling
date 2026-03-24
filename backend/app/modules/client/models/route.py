@@ -13,6 +13,7 @@ class Route(TenantModelBase):
     """路线"""
     __tablename__ = "biz_route"
     __table_args__ = {"comment": "路线表"}
+    __table_tier__ = "business"
 
     route_name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="路线名称"

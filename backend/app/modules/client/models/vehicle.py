@@ -14,6 +14,7 @@ class Vehicle(TenantModelBase):
     """车辆信息"""
     __tablename__ = "biz_vehicle"
     __table_args__ = {"comment": "车辆信息表"}
+    __table_tier__ = "business"
 
     plate_number: Mapped[str] = mapped_column(
         String(20), unique=True, nullable=False, comment="车牌号"

@@ -16,6 +16,7 @@ from app.modules.console.api.product_version import router as product_version_ro
 from app.modules.console.api.changelog import router as changelog_router
 from app.modules.console.api.dict import router as dict_router
 from app.modules.console.api.dict_data import router as dict_data_router
+from app.modules.console.api.product_feature import router as product_feature_router
 
 router = APIRouter()
 
@@ -27,9 +28,7 @@ router.include_router(role_router, prefix="/system/role", tags=["角色管理"])
 router.include_router(role_menu_router, prefix="/system/role-menu", tags=["角色菜单"])
 router.include_router(org_router, prefix="/system/organization", tags=["组织架构"])
 router.include_router(product_version_router, prefix="/product-version", tags=["管理后台-产品版本"])
+router.include_router(product_feature_router, prefix="/product-feature", tags=["管理后台-功能清单"])
 router.include_router(changelog_router, prefix="/changelog", tags=["管理后台-更新记录"])
 router.include_router(dict_router, prefix="/system/dictionary", tags=["数据字典"])
 router.include_router(dict_data_router, prefix="/system/dictionary-data", tags=["字典数据"])
-
-# 后续在此处注册更多管理后台路由
-# router.include_router(log_router, prefix="/log", tags=["管理后台-操作日志"])
