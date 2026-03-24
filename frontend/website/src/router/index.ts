@@ -46,7 +46,7 @@ const router = createRouter({
 });
 
 router.beforeEach((_to) => {
-  document.title = `智途·轿运物流AI操作系统`;
+  document.title = `智途 - 让每一台车的利润都看得清楚`;
 });
 
 export default router;

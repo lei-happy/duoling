@@ -9,7 +9,7 @@
       <div class="container hero-content">
         <h1 class="scroll-animate">价格方案</h1>
         <p class="scroll-animate" data-delay="100">
-          灵活的版本选择，从免费体验到旗舰 AI，满足不同规模轿运企业需求
+          简单透明的定价，选择适合你车队规模的方案
         </p>
       </div>
     </section>
@@ -30,14 +30,9 @@
               <h3>{{ plan.name }}</h3>
               <p class="plan-desc">{{ plan.desc }}</p>
               <div class="plan-price">
-                <template v-if="plan.price === 0">
-                  <span class="price-value">免费</span>
-                </template>
-                <template v-else>
-                  <span class="price-currency">¥</span>
-                  <span class="price-value">{{ plan.price.toLocaleString() }}</span>
-                  <span class="price-period">/月</span>
-                </template>
+                <span class="price-currency">¥</span>
+                <span class="price-value">{{ plan.price.toLocaleString() }}</span>
+                <span class="price-period">/年</span>
               </div>
             </div>
             <div class="plan-features">
@@ -54,7 +49,7 @@
               </div>
             </div>
             <div class="plan-action">
-              <router-link v-if="plan.action.link" :to="plan.action.link">
+              <router-link :to="plan.action.link">
                 <el-button
                   :type="plan.recommended ? 'primary' : 'default'"
                   size="large"
@@ -64,13 +59,6 @@
                   {{ plan.action.text }}
                 </el-button>
               </router-link>
-              <el-button
-                v-else
-                size="large"
-                class="plan-btn"
-              >
-                {{ plan.action.text }}
-              </el-button>
             </div>
           </div>
         </div>
@@ -119,58 +107,45 @@ function toggleFaq(idx: number) {
 
 const plans = [
   {
-    name: '免费版',
-    desc: '适合产品体验及少量整车发运任务',
-    price: 0,
+    name: '标准版',
+    desc: '适合中小规模轿运车队，覆盖核心利润管理能力',
+    price: 4999,
     recommended: false,
     features: [
-      { text: '基础运单发运在线化', included: true },
-      { text: '运单状态实时跟踪', included: true },
-      { text: '最多 3 台板车管理', included: true },
-      { text: '基础数据统计', included: true },
-      { text: '财务费用管理', included: false },
-      { text: '在途路线追踪', included: false },
-      { text: 'VIN 码批量管理', included: false },
-      { text: 'AI 智能助理', included: false },
-      { text: '高级 BI 报表', included: false },
-      { text: '专属客户经理', included: false },
-    ],
-    action: { text: '立即体验', link: '/register' },
-  },
-  {
-    name: '基础版',
-    desc: '适合中小规模轿运企业日常运营管理',
-    price: 799,
-    recommended: false,
-    features: [
-      { text: '基础运单发运在线化', included: true },
-      { text: '运单状态实时跟踪', included: true },
-      { text: '不限板车数量管理', included: true },
-      { text: '基础数据统计', included: true },
-      { text: '财务费用管理', included: true },
-      { text: '在途路线追踪', included: true },
-      { text: 'VIN 码批量管理', included: true },
-      { text: 'AI 智能助理', included: false },
-      { text: '高级 BI 报表', included: false },
+      { text: '单车利润核算', included: true },
+      { text: '运单全流程管理', included: true },
+      { text: '基础线路盈亏分析', included: true },
+      { text: '客户管理', included: true },
+      { text: '成本录入与统计', included: true },
+      { text: '基础数据报表', included: true },
+      { text: '在线客服支持', included: true },
+      { text: '线路盈利能力排名', included: false },
+      { text: '客户利润深度分析', included: false },
+      { text: '成本结构智能拆解', included: false },
+      { text: '高级 BI 数据看板', included: false },
+      { text: '报价优化建议', included: false },
       { text: '专属客户经理', included: false },
     ],
     action: { text: '立即开通', link: '/register' },
   },
   {
-    name: '旗舰版',
-    desc: '适合追求智能化运营的大中型轿运企业',
-    price: 4999,
+    name: '高级版',
+    desc: '适合追求精细化经营的中大型车队',
+    price: 9999,
     recommended: true,
     features: [
-      { text: '基础运单发运在线化', included: true },
-      { text: '运单状态实时跟踪', included: true },
-      { text: '不限板车数量管理', included: true },
-      { text: '基础数据统计', included: true },
-      { text: '财务费用管理', included: true },
-      { text: '在途路线追踪', included: true },
-      { text: 'VIN 码批量管理', included: true },
-      { text: 'AI 智能助理', included: true },
-      { text: '高级 BI 报表', included: true },
+      { text: '单车利润核算', included: true },
+      { text: '运单全流程管理', included: true },
+      { text: '基础线路盈亏分析', included: true },
+      { text: '客户管理', included: true },
+      { text: '成本录入与统计', included: true },
+      { text: '基础数据报表', included: true },
+      { text: '在线客服支持', included: true },
+      { text: '线路盈利能力排名', included: true },
+      { text: '客户利润深度分析', included: true },
+      { text: '成本结构智能拆解（油/路/人）', included: true },
+      { text: '高级 BI 数据看板', included: true },
+      { text: '报价优化建议', included: true },
       { text: '专属客户经理', included: true },
     ],
     action: { text: '立即开通', link: '/register' },
@@ -179,12 +154,12 @@ const plans = [
 
 const faqs = [
   {
-    q: '免费版有使用时间限制吗？',
-    a: '没有。免费版可以长期使用，不限使用时长。我们希望您能充分体验整车运输管理的数字化流程，在确认价值后再选择升级。',
+    q: '可以先试用再决定吗？',
+    a: '当然可以。我们提供免费试用期，您可以充分体验核心功能后再决定是否订阅。',
   },
   {
-    q: '可以随时升级或降级版本吗？',
-    a: '当然可以。您可以根据业务发展需要，随时在系统内一键升级到更高版本。降级将在当前计费周期结束后生效。',
+    q: '标准版和高级版的核心区别是什么？',
+    a: '标准版覆盖单车利润核算和基础线路分析，满足日常经营需求；高级版在此基础上增加深度利润分析、报价优化建议、BI 数据看板等高级能力，帮助您做更精细化的经营决策。',
   },
   {
     q: '数据安全如何保障？',
@@ -192,15 +167,15 @@ const faqs = [
   },
   {
     q: '是否支持对接主机厂系统？',
-    a: '支持。我们提供标准 API 接口，可与主机厂 DMS、TMS 等系统对接，实现运输指令自动接收。旗舰版用户可享受专属技术对接支持。',
+    a: '支持。高级版提供标准 API 接口，可与主机厂 DMS、TMS 等系统对接，实现运输指令自动接收，并配备专属技术对接支持。',
   },
   {
-    q: '多少台板车适合用 Pro 版？',
-    a: 'Pro 版不限制板车数量，适合 3 台以上板车的轿运企业。如果您的车队规模较大且需要 AI 调度与高级分析能力，建议选择旗舰版。',
+    q: '可以随时升级版本吗？',
+    a: '可以。您可以根据业务发展需要，随时在系统内升级到高级版，差价按剩余时长折算。',
   },
   {
     q: '如何获取技术支持？',
-    a: '免费版提供在线文档和社区支持；Pro 版提供工作日在线客服支持；旗舰版配备专属客户经理，提供 7×24 小时技术响应。',
+    a: '标准版提供在线客服支持；高级版配备专属客户经理，提供 7×24 小时技术响应。',
   },
 ]
 </script>
@@ -270,9 +245,11 @@ const faqs = [
 
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
   align-items: start;
+  max-width: 880px;
+  margin: 0 auto;
 }
 
 .pricing-card {

@@ -7,7 +7,7 @@
             <span class="logo-icon">Z</span>
             <span class="logo-text">智途</span>
           </div>
-          <p class="footer-slogan">汽车物流企业的AI操作系统<br>让整车运输更智能</p>
+          <p class="footer-slogan">轿运车队的利润管理专家<br>让每一公里都不白跑</p>
         </div>
         <div class="footer-links">
           <div class="link-group">
@@ -31,7 +31,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; {{ currentYear }} 智途(ZhiTu) - 汽车物流企业的AI操作系统 · 让整车运输更智能</p>
+        <p>&copy; {{ currentYear }} 智途(ZhiTu) - 轿运车队的利润管理专家</p>
       </div>
     </div>
   </footer>
