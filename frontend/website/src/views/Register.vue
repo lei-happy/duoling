@@ -8,24 +8,36 @@
         <div class="glow glow-2"></div>
       </div>
       <div class="brand-content">
-        <router-link to="/" class="brand-logo">
-          <span class="logo-icon">Z</span>
-          <span class="logo-text">智途</span>
-        </router-link>
-        <h1>开启整车运输<br>数字化之旅</h1>
-        <p>免费注册，即刻体验 AI 驱动的汽车物流管理平台</p>
+        <div class="brand-header">
+          <router-link
+            to="/"
+            class="register-back"
+            aria-label="返回官网首页"
+            title="返回官网"
+          >
+            <el-icon :size="16"><ArrowLeft /></el-icon>
+          </router-link>
+          <router-link to="/" class="brand-logo">
+            <span class="logo-icon">Z</span>
+            <span class="logo-text">智途</span>
+          </router-link>
+        </div>
+        <h1>让每一台车、每一公里的利润都看得清楚</h1>
+        <p class="brand-lead">
+          免费注册，几分钟即可启用。我们帮轿运企业建立「利润确定性」——单车利润、线路盈亏、客户报价，有据可依。
+        </p>
         <div class="brand-features">
           <div class="brand-feature-item">
             <span class="bf-check">✓</span>
-            <span>30秒快速注册，无需安装部署</span>
+            <span>快速开通，云端即用，无需本地部署</span>
           </div>
           <div class="brand-feature-item">
             <span class="bf-check">✓</span>
-            <span>免费版永久免费，随时可升级</span>
+            <span>标准版 / 高级版按年计费，方案透明可选</span>
           </div>
           <div class="brand-feature-item">
             <span class="bf-check">✓</span>
-            <span>银行级数据加密，安全无忧</span>
+            <span>企业独立数据库，数据安全可追溯，独立权限管控</span>
           </div>
         </div>
       </div>
@@ -53,36 +65,39 @@
           @submit.prevent="handleSubmit"
         >
           <el-form-item label="企业名称" prop="tenant_name">
-            <el-input
-              v-model="form.tenant_name"
-              placeholder="请输入企业全称"
-              prefix-icon="OfficeBuilding"
-            />
+            <el-input v-model="form.tenant_name" placeholder="请输入企业全称">
+              <template #prefix>
+                <el-icon class="input-prefix-icon"><OfficeBuilding /></el-icon>
+              </template>
+            </el-input>
           </el-form-item>
 
           <el-form-item label="联系人" prop="contact_person">
-            <el-input
-              v-model="form.contact_person"
-              placeholder="请输入联系人姓名"
-              prefix-icon="User"
-            />
+            <el-input v-model="form.contact_person" placeholder="请输入联系人姓名">
+              <template #prefix>
+                <el-icon class="input-prefix-icon"><User /></el-icon>
+              </template>
+            </el-input>
           </el-form-item>
 
           <el-form-item label="手机号" prop="contact_phone">
             <el-input
               v-model="form.contact_phone"
               placeholder="请输入手机号码"
-              prefix-icon="Phone"
               maxlength="11"
-            />
+            >
+              <template #prefix>
+                <el-icon class="input-prefix-icon"><Phone /></el-icon>
+              </template>
+            </el-input>
           </el-form-item>
 
           <el-form-item label="邮箱（选填）" prop="contact_email">
-            <el-input
-              v-model="form.contact_email"
-              placeholder="请输入电子邮箱"
-              prefix-icon="Message"
-            />
+            <el-input v-model="form.contact_email" placeholder="请输入电子邮箱">
+              <template #prefix>
+                <el-icon class="input-prefix-icon"><Message /></el-icon>
+              </template>
+            </el-input>
           </el-form-item>
 
           <el-form-item>
@@ -146,6 +161,13 @@
 import { ref, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import {
+  ArrowLeft,
+  OfficeBuilding,
+  User,
+  Phone,
+  Message,
+} from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { registerTenant } from '@/api'
 
@@ -234,6 +256,33 @@ function goHome() {
   min-height: 100vh;
 }
 
+/* 左侧品牌区内返回（与 Logo 同行） */
+.register-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.35);
+    color: #fff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.85);
+    outline-offset: 2px;
+  }
+}
+
 /* ========== 左侧品牌区 ========== */
 .register-brand {
   flex: 0 0 480px;
@@ -290,21 +339,27 @@ function goHome() {
   color: #fff;
 }
 
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
 .brand-logo {
   display: flex;
   align-items: center;
   gap: 8px;
   text-decoration: none;
-  margin-bottom: 48px;
 
   .logo-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(8px);
     color: #fff;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 800;
     display: flex;
     align-items: center;
@@ -312,51 +367,55 @@ function goHome() {
   }
 
   .logo-text {
-    font-size: 22px;
+    font-size: 19px;
     font-weight: 700;
     color: #fff;
   }
 }
 
 .brand-content h1 {
-  font-size: 36px;
+  font-size: 26px;
   font-weight: 800;
-  line-height: 1.3;
-  margin-bottom: 16px;
+  line-height: 1.35;
+  margin-bottom: 14px;
+  letter-spacing: -0.02em;
 }
 
-.brand-content > p {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.6;
-  margin-bottom: 40px;
+.brand-lead {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.65;
+  margin-bottom: 32px;
+  max-width: 380px;
 }
 
 .brand-features {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .brand-feature-item {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.8);
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .bf-check {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.12);
   color: #34d399;
-  font-size: 12px;
+  font-size: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-top: 1px;
 }
 
 /* ========== 右侧表单区 ========== */
@@ -415,6 +474,11 @@ function goHome() {
   :deep(.el-input__wrapper) {
     border-radius: 10px;
     padding: 4px 12px;
+  }
+
+  .input-prefix-icon {
+    font-size: 18px;
+    color: var(--color-text-muted);
   }
 }
 
@@ -557,7 +621,11 @@ function goHome() {
   }
 
   .brand-content h1 {
-    font-size: 28px;
+    font-size: 22px;
+  }
+
+  .brand-lead {
+    max-width: none;
   }
 }
 
@@ -576,13 +644,21 @@ function goHome() {
     text-align: center;
   }
 
+  .brand-header {
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
   .brand-logo {
     justify-content: center;
-    margin-bottom: 32px;
   }
 
   .brand-features {
     align-items: center;
+    text-align: left;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .register-form-area {
