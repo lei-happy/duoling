@@ -1,0 +1,30 @@
+--数据库名称：zt_platform
+--表名称：sys_tenant
+CREATE TABLE `sys_tenant` (
+  `tenant_code` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '租户编码（唯一标识）',
+  `tenant_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '企业名称',
+  `short_name` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '企业简称',
+  `contact_person` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '联系人',
+  `contact_phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '联系电话',
+  `contact_email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '联系邮箱',
+  `province` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '省份',
+  `city` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '城市',
+  `address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '详细地址',
+  `logo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '企业Logo URL',
+  `license_no` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '营业执照号',
+  `status` smallint NOT NULL COMMENT '状态 0-停用 1-正常 2-待审核 3-已过期',
+  `db_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '租户数据库名称',
+  `db_initialized` smallint NOT NULL COMMENT '数据库是否已初始化 0-否 1-是',
+  `expire_time` datetime DEFAULT NULL COMMENT '授权到期时间',
+  `remark` text COLLATE utf8mb4_unicode_ci COMMENT '备注',
+  `source_channel` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '来源渠道: website-官网注册 console-后台录入 referral-企业推荐',
+  `referrer_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '推荐人企业编码（来源为referral时记录）',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `created_at` datetime NOT NULL DEFAULT (now()) COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT (now()) COMMENT '更新时间',
+  `is_deleted` smallint NOT NULL COMMENT '是否删除 0-否 1-是',
+  `in_follow_pool` smallint NOT NULL DEFAULT '0' COMMENT '是否在跟进池 0-否 1-是',
+  `follow_remark` text COLLATE utf8mb4_unicode_ci COMMENT '跟进备注',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tenant_code` (`tenant_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='租户/企业信息表';
