@@ -47,11 +47,10 @@
       <div class="container">
         <div class="cta-card scroll-animate">
           <h2>体验全部功能</h2>
-          <p>免费注册，立即解锁整车运输数字化管理新体验</p>
+          <p>解锁整车运输数字化管理新体验</p>
           <router-link to="/register">
             <el-button type="primary" size="large" class="cta-btn">
-              免费注册
-              <span class="btn-arrow">→</span>
+              立即注册
             </el-button>
           </router-link>
         </div>

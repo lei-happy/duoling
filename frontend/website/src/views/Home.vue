@@ -24,7 +24,7 @@
           让每一台车、每一公里的<span class="gradient-text">利润都看得清楚</span>
         </h1>
         <p class="hero-desc scroll-animate" data-delay="200">
-          我们不是卖系统，我们帮轿运企业建立"利润确定性"——看清每单赚没赚、每条线路值不值、每个客户划不划算。
+          助力轿运企业建立“利润确定性”——看清每单赚没赚、每条线路值不值、每个客户划不划算。
         </p>
         <div class="hero-actions scroll-animate" data-delay="300">
           <router-link to="/register">
@@ -64,7 +64,7 @@
       <div class="container">
         <h2 class="section-title scroll-animate">智途帮你做到的四件事</h2>
         <p class="section-subtitle scroll-animate" data-delay="100">
-          不是给你一套系统，而是帮你建立利润确定性
+          不是给你一套系统，而是帮你建立“利润确定性”
         </p>
         <div class="solutions-grid">
           <div
@@ -89,7 +89,7 @@
       <div class="container">
         <h2 class="section-title scroll-animate">用结果说话</h2>
         <p class="section-subtitle scroll-animate" data-delay="100">
-          不讲功能模块，只看实际产出
+          不做功能堆叠，只看实际结果
         </p>
         <div class="capabilities-grid">
           <div
@@ -138,12 +138,10 @@
     <section class="cta-section">
       <div class="container">
         <div class="cta-card scroll-animate">
-          <h2>从今天开始，看清你的每一分利润</h2>
-          <p>免费注册，3 分钟开始使用，看看你的车队利润到底怎么样</p>
+          <h2>从今天开始，让每一分利润都看得清楚</h2>
           <router-link to="/register">
             <el-button type="primary" size="large" class="cta-btn">
-              免费体验
-              <span class="btn-arrow">→</span>
+              立即注册
             </el-button>
           </router-link>
         </div>

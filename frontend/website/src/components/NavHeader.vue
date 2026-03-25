@@ -10,27 +10,6 @@
         <router-link to="/features" @click="mobileOpen = false">产品功能</router-link>
         <router-link to="/pricing" @click="mobileOpen = false">价格方案</router-link>
         <router-link to="/changelog" @click="mobileOpen = false">更新记录</router-link>
-        <el-popover
-          placement="bottom"
-          :width="200"
-          trigger="click"
-          popper-class="qrcode-popover"
-        >
-          <template #reference>
-            <span class="nav-link-popover" @click="mobileOpen = false">下载</span>
-          </template>
-          <div class="qrcode-content">
-            <img
-              v-show="!qrcodeError"
-              src="/qrcode-miniprogram.jpg"
-              alt="微信小程序二维码"
-              class="qrcode-img"
-              @error="onQrcodeError"
-            />
-            <p v-if="!qrcodeError" class="qrcode-tip">扫码使用小程序</p>
-            <p v-else class="qrcode-tip qrcode-placeholder">请将二维码图片放置于 public/qrcode-miniprogram.png</p>
-          </div>
-        </el-popover>
         <router-link to="/about" @click="mobileOpen = false">关于我们</router-link>
       </nav>
       <div class="nav-actions">

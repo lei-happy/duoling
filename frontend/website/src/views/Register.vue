@@ -47,7 +47,7 @@
     <div class="register-form-area">
       <div class="form-container">
         <h2>企业注册</h2>
-        <p class="form-subtitle">填写以下信息，立即创建您的企业账户</p>
+        <p class="form-subtitle">填写以下信息，立即创建您的企业账号</p>
 
         <!-- 推荐注册提示 -->
         <div v-if="referrerCode" class="referral-tip">
