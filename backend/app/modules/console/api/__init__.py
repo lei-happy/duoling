@@ -17,6 +17,7 @@ from app.modules.console.api.changelog import router as changelog_router
 from app.modules.console.api.dict import router as dict_router
 from app.modules.console.api.dict_data import router as dict_data_router
 from app.modules.console.api.product_feature import router as product_feature_router
+from app.modules.console.api.client_menu import router as client_menu_router
 
 router = APIRouter()
 
@@ -32,3 +33,4 @@ router.include_router(product_feature_router, prefix="/product-feature", tags=["
 router.include_router(changelog_router, prefix="/changelog", tags=["管理后台-更新记录"])
 router.include_router(dict_router, prefix="/system/dictionary", tags=["数据字典"])
 router.include_router(dict_data_router, prefix="/system/dictionary-data", tags=["字典数据"])
+router.include_router(client_menu_router, prefix="/system/client-menu", tags=["客户端菜单管理"])

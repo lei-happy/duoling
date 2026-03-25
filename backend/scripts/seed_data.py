@@ -147,6 +147,10 @@ def seed_platform_data():
                      menu_code="system:menu", menu_type=0,
                      path="/system/menu", component="/system/menu/index",
                      sort_order=20, app_type="platform"),
+                Menu(parent_id=system_menu.id, menu_name="客户端菜单",
+                     menu_code="system:client-menu", menu_type=0,
+                     path="/system/client-menu", component="/system/client-menu/index",
+                     sort_order=25, app_type="platform"),
                 Menu(parent_id=system_menu.id, menu_name="数据字典",
                      menu_code="system:dict", menu_type=0,
                      path="/system/dictionary", component="/system/dictionary/index",
@@ -201,6 +205,27 @@ def seed_platform_data():
                 if role_admin:
                     session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
                 print("[OK] 更新记录菜单已补充")
+
+            # 补充：客户端菜单管理（若不存在）
+            system_menu = session.query(Menu).filter_by(
+                menu_code="system", app_type="platform", is_deleted=0
+            ).first()
+            client_menu_mgr = session.query(Menu).filter_by(
+                menu_code="system:client-menu", app_type="platform", is_deleted=0
+            ).first()
+            if system_menu and not client_menu_mgr:
+                m = Menu(
+                    parent_id=system_menu.id, menu_name="客户端菜单",
+                    menu_code="system:client-menu", menu_type=0,
+                    path="/system/client-menu", component="/system/client-menu/index",
+                    sort_order=25, app_type="platform",
+                )
+                session.add(m)
+                session.flush()
+                all_menus.append(m)
+                if role_admin:
+                    session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
+                print("[OK] 客户端菜单管理已补充")
 
         # ---- 4. 角色-菜单关联（super_admin 关联所有平台菜单）----
         existing_role_menu = session.query(RoleMenu).filter_by(

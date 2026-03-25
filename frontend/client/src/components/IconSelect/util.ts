@@ -438,6 +438,25 @@ export const imgIconNames = Object.keys(imgIconUrls).map((name) =>
 );
 
 /**
+ * 自定义 SVG 图标地址数据
+ */
+export const svgIconUrls: Record<string, string> = import.meta.glob(
+  '/src/assets/menu-icons/*.svg',
+  {
+    import: 'default',
+    eager: true
+  }
+);
+
+export const svgIconNames = Object.keys(svgIconUrls).map((name) =>
+  name.slice(0, name.lastIndexOf('.')).replace('/src/assets/menu-icons/', '')
+);
+
+export function getSvgIconUrl(iconName: string): string | undefined {
+  return svgIconUrls[`/src/assets/menu-icons/${iconName}.svg`];
+}
+
+/**
  * 判断是否是清新主题
  */
 export function useIsSimpleTheme() {
