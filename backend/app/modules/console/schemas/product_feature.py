@@ -4,10 +4,18 @@
 
 from typing import Optional, List
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
+
+_camel_config = ConfigDict(
+    alias_generator=to_camel,
+    populate_by_name=True,
+)
 
 
 class ProductFeatureCreate(BaseModel):
+    model_config = _camel_config
+
     feature_code: str
     feature_name: str
     module: Optional[str] = None
@@ -17,6 +25,8 @@ class ProductFeatureCreate(BaseModel):
 
 
 class ProductFeatureUpdate(BaseModel):
+    model_config = _camel_config
+
     feature_name: Optional[str] = None
     module: Optional[str] = None
     description: Optional[str] = None
@@ -26,6 +36,12 @@ class ProductFeatureUpdate(BaseModel):
 
 
 class ProductFeatureOut(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True,
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
+
     id: int
     feature_code: str
     feature_name: str
@@ -37,16 +53,18 @@ class ProductFeatureOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 class VersionFeatureAssign(BaseModel):
     """批量分配功能到版本"""
+    model_config = _camel_config
+
     version_id: int
     feature_ids: List[int]
 
 
 class VersionFeatureOut(BaseModel):
+    model_config = _camel_config
+
     id: int
     version_id: int
     feature_id: int

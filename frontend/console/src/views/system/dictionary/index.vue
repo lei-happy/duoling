@@ -138,6 +138,7 @@
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import { SearchOutlined, BookOutlined } from '@/components/icons';
   import { useMobile } from '@/utils/use-mobile';
+  import { useDictStore } from '@/store/modules/dict';
   import DictDataSearch from './components/dict-data-search.vue';
   import { listDictionaries, removeDictionary } from '@/api/system/dictionary';
   import type { Dictionary } from '@/api/system/dictionary/model';
@@ -155,6 +156,14 @@
 
   const { openModal } = useModal();
   const { mobile } = useMobile();
+  const dictStore = useDictStore();
+
+  const invalidateDictCache = () => {
+    const code = current.value?.dictCode;
+    if (code) {
+      dictStore.setDicts(void 0, code);
+    }
+  };
 
   /** 分割面板是否折叠 */
   const collapse = ref(mobile.value);
@@ -244,6 +253,9 @@
           .then((msg) => {
             loading.close();
             EleMessage.success({ message: msg, plain: true });
+            if (row.dictCode) {
+              dictStore.setDicts(void 0, row.dictCode);
+            }
             query();
           })
           .catch((e) => {
@@ -319,7 +331,10 @@
       componentProps: {
         data: row,
         dictId: current.value?.dictId,
-        onDone: () => reload()
+        onDone: () => {
+          invalidateDictCache();
+          reload();
+        }
       }
     });
   };
@@ -345,6 +360,7 @@
           .then((msg) => {
             loading.close();
             EleMessage.success({ message: msg, plain: true });
+            invalidateDictCache();
             reload();
           })
           .catch((e) => {

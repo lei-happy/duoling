@@ -52,15 +52,19 @@
     getVersionFeatures,
     assignVersionFeatures
   } from '@/api/product';
+  import { useDictData } from '@/utils/use-dict-data';
+  import { DICT_CODE_PRODUCT_MODULE } from '@/api/product/model';
   import type { ProductFeature } from '@/api/product/model';
 
-  const MODULE_LABELS: Record<string, string> = {
-    base: '基础模块',
-    resource: '资源管理',
-    biz: '业务模块',
-    finance: '财务模块',
-    bi: '数据分析'
-  };
+  const [moduleDicts] = useDictData([DICT_CODE_PRODUCT_MODULE]);
+
+  const moduleLabels = computed<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const d of moduleDicts.value) {
+      map[d.dictDataCode] = d.dictDataName;
+    }
+    return map;
+  });
 
   const props = defineProps<{
     data: { id: number; versionName?: string };
@@ -92,14 +96,15 @@
       if (!map.has(mod)) map.set(mod, []);
       map.get(mod)!.push(f);
     }
-    const order = Object.keys(MODULE_LABELS);
+    const labels = moduleLabels.value;
+    const order = moduleDicts.value.map((d) => d.dictDataCode);
     const result: FeatureGroup[] = [];
     for (const mod of order) {
       const features = map.get(mod);
       if (features?.length) {
         result.push({
           module: mod,
-          label: MODULE_LABELS[mod] || mod,
+          label: labels[mod] || mod,
           features
         });
       }
@@ -108,7 +113,7 @@
       if (!order.includes(mod)) {
         result.push({
           module: mod,
-          label: MODULE_LABELS[mod] || mod,
+          label: labels[mod] || mod,
           features
         });
       }

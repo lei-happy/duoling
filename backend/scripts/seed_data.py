@@ -164,6 +164,10 @@ def seed_platform_data():
                      menu_code="product:version", menu_type=0,
                      path="/product/version", component="/product/version/index",
                      sort_order=0, app_type="platform"),
+                Menu(parent_id=product_menu.id, menu_name="功能模块",
+                     menu_code="product:feature", menu_type=0,
+                     path="/product/feature", component="/product/feature/index",
+                     sort_order=5, app_type="platform"),
                 Menu(parent_id=product_menu.id, menu_name="授权管理",
                      menu_code="product:auth", menu_type=0,
                      path="/product/auth", component="/product/auth/index",
@@ -205,6 +209,24 @@ def seed_platform_data():
                 if role_admin:
                     session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
                 print("[OK] 更新记录菜单已补充")
+
+            # 补充：功能模块菜单（若不存在）
+            feature_menu = session.query(Menu).filter_by(
+                menu_code="product:feature", app_type="platform", is_deleted=0
+            ).first()
+            if product_menu and not feature_menu:
+                m = Menu(
+                    parent_id=product_menu.id, menu_name="功能模块",
+                    menu_code="product:feature", menu_type=0,
+                    path="/product/feature", component="/product/feature/index",
+                    sort_order=5, app_type="platform",
+                )
+                session.add(m)
+                session.flush()
+                all_menus.append(m)
+                if role_admin:
+                    session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
+                print("[OK] 功能模块菜单已补充")
 
             # 补充：客户端菜单管理（若不存在）
             system_menu = session.query(Menu).filter_by(
@@ -324,9 +346,38 @@ def seed_platform_data():
                 DictItem(dict_id=d4.id, dict_code="sex", item_name="男", item_value="男", sort_order=0),
                 DictItem(dict_id=d4.id, dict_code="sex", item_name="女", item_value="女", sort_order=10),
             ])
+
+            # 产品模块字典
+            d5 = Dict(dict_code="product_module", dict_name="产品模块", sort_order=40, status=1)
+            session.add(d5)
+            session.flush()
+            session.add_all([
+                DictItem(dict_id=d5.id, dict_code="product_module", item_name="基础模块", item_value="base", sort_order=0),
+                DictItem(dict_id=d5.id, dict_code="product_module", item_name="资源管理", item_value="resource", sort_order=10),
+                DictItem(dict_id=d5.id, dict_code="product_module", item_name="业务模块", item_value="biz", sort_order=20),
+                DictItem(dict_id=d5.id, dict_code="product_module", item_name="财务模块", item_value="finance", sort_order=30),
+                DictItem(dict_id=d5.id, dict_code="product_module", item_name="数据分析", item_value="bi", sort_order=40),
+            ])
             print("[OK] 数据字典已创建")
         else:
             print("[SKIP] 数据字典已存在")
+
+            # 补充：产品模块字典（若不存在）
+            existing_pm = session.query(Dict).filter_by(
+                dict_code="product_module", is_deleted=0
+            ).first()
+            if not existing_pm:
+                d5 = Dict(dict_code="product_module", dict_name="产品模块", sort_order=40, status=1)
+                session.add(d5)
+                session.flush()
+                session.add_all([
+                    DictItem(dict_id=d5.id, dict_code="product_module", item_name="基础模块", item_value="base", sort_order=0),
+                    DictItem(dict_id=d5.id, dict_code="product_module", item_name="资源管理", item_value="resource", sort_order=10),
+                    DictItem(dict_id=d5.id, dict_code="product_module", item_name="业务模块", item_value="biz", sort_order=20),
+                    DictItem(dict_id=d5.id, dict_code="product_module", item_name="财务模块", item_value="finance", sort_order=30),
+                    DictItem(dict_id=d5.id, dict_code="product_module", item_name="数据分析", item_value="bi", sort_order=40),
+                ])
+                print("[OK] 产品模块字典已补充")
 
         session.commit()
 

@@ -56,7 +56,7 @@
               <el-option
                 v-for="v in versionList"
                 :key="v.id"
-                :label="`${v.version_name}（${v.version_code}）`"
+                :label="`${v.versionName}（${v.versionCode}）`"
                 :value="v.id"
               />
             </el-select>
@@ -165,7 +165,7 @@
   const handleVersionChange = (val: number) => {
     const found = versionList.value.find((v) => v.id === val);
     if (found) {
-      form.versionCode = found.version_code;
+      form.versionCode = found.versionCode;
     }
   };
 

@@ -1,3 +1,6 @@
+/** 产品模块字典编码，通过数据字典管理 */
+export const DICT_CODE_PRODUCT_MODULE = 'product_module';
+
 export interface ProductVersion {
   id?: number;
   versionCode?: string;

@@ -26,7 +26,7 @@ async def list_features(
 ):
     """获取功能清单列表"""
     items = await ProductFeatureService.list_features(db, module=module, status=status)
-    return success(data=[ProductFeatureOut.model_validate(f).model_dump() for f in items])
+    return success(data=[ProductFeatureOut.model_validate(f).model_dump(by_alias=True) for f in items])
 
 
 @router.post("")
@@ -37,7 +37,7 @@ async def create_feature(
 ):
     """创建功能项"""
     feature = await ProductFeatureService.create_feature(db, data)
-    return success(data=ProductFeatureOut.model_validate(feature).model_dump())
+    return success(data=ProductFeatureOut.model_validate(feature).model_dump(by_alias=True))
 
 
 @router.put("/{feature_id}")
@@ -49,7 +49,7 @@ async def update_feature(
 ):
     """更新功能项"""
     feature = await ProductFeatureService.update_feature(db, feature_id, data)
-    return success(data=ProductFeatureOut.model_validate(feature).model_dump())
+    return success(data=ProductFeatureOut.model_validate(feature).model_dump(by_alias=True))
 
 
 @router.delete("/{feature_id}")

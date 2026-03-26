@@ -4,11 +4,19 @@
 
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
+
+_camel_config = ConfigDict(
+    alias_generator=to_camel,
+    populate_by_name=True,
+)
 
 
 class ProductVersionCreate(BaseModel):
     """创建产品版本"""
+    model_config = _camel_config
+
     version_code: str
     version_name: str
     description: Optional[str] = None
@@ -21,6 +29,8 @@ class ProductVersionCreate(BaseModel):
 
 class ProductVersionUpdate(BaseModel):
     """更新产品版本"""
+    model_config = _camel_config
+
     version_name: Optional[str] = None
     description: Optional[str] = None
     features: Optional[dict] = None
@@ -33,6 +43,12 @@ class ProductVersionUpdate(BaseModel):
 
 class ProductVersionOut(BaseModel):
     """产品版本输出"""
+    model_config = ConfigDict(
+        from_attributes=True,
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
+
     id: int
     version_code: str
     version_name: str
@@ -45,5 +61,3 @@ class ProductVersionOut(BaseModel):
     status: int
     created_at: datetime
     updated_at: datetime
-
-    model_config = {"from_attributes": True}

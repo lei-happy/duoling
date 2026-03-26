@@ -26,7 +26,7 @@ async def list_versions(
     """获取产品版本列表"""
     items, total = await ProductVersionService.get_version_list(db, page, page_size)
     return success(data={
-        "list": [ProductVersionOut.model_validate(v).model_dump() for v in items],
+        "list": [ProductVersionOut.model_validate(v).model_dump(by_alias=True) for v in items],
         "total": total,
         "page": page,
         "page_size": page_size,
@@ -43,7 +43,7 @@ async def get_version(
     version = await ProductVersionService.get_version_by_id(db, version_id)
     if not version:
         return fail("产品版本不存在")
-    return success(data=ProductVersionOut.model_validate(version).model_dump())
+    return success(data=ProductVersionOut.model_validate(version).model_dump(by_alias=True))
 
 
 @router.post("")
@@ -55,7 +55,7 @@ async def create_version(
     """创建产品版本"""
     version = await ProductVersionService.create_version(db, data)
     return success(
-        data=ProductVersionOut.model_validate(version).model_dump(),
+        data=ProductVersionOut.model_validate(version).model_dump(by_alias=True),
         message="创建成功",
     )
 
@@ -70,7 +70,7 @@ async def update_version(
     """更新产品版本"""
     version = await ProductVersionService.update_version(db, version_id, data)
     return success(
-        data=ProductVersionOut.model_validate(version).model_dump(),
+        data=ProductVersionOut.model_validate(version).model_dump(by_alias=True),
         message="更新成功",
     )
 

@@ -113,13 +113,13 @@ class ProductFeatureService:
         return [
             {
                 "id": vf.id,
-                "version_id": vf.version_id,
-                "feature_id": vf.feature_id,
+                "versionId": vf.version_id,
+                "featureId": vf.feature_id,
                 "status": vf.status,
-                "feature_code": pf.feature_code,
-                "feature_name": pf.feature_name,
+                "featureCode": pf.feature_code,
+                "featureName": pf.feature_name,
                 "module": pf.module,
-                "required_tables": pf.required_tables,
+                "requiredTables": pf.required_tables,
             }
             for vf, pf in rows
         ]

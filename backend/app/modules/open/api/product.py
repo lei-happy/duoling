@@ -25,4 +25,4 @@ async def list_product_versions(
         .order_by(ProductVersion.sort_order)
     )
     items = result.scalars().all()
-    return success(data=[ProductVersionOut.model_validate(v).model_dump() for v in items])
+    return success(data=[ProductVersionOut.model_validate(v).model_dump(by_alias=True) for v in items])
