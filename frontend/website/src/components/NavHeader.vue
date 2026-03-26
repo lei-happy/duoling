@@ -32,14 +32,9 @@ const clientLoginUrl = (import.meta.env.VITE_CLIENT_URL || 'http://localhost:517
 
 const isScrolled = ref(false)
 const mobileOpen = ref(false)
-const qrcodeError = ref(false)
 
 function onScroll() {
   isScrolled.value = window.scrollY > 40
-}
-
-function onQrcodeError() {
-  qrcodeError.value = true
 }
 
 onMounted(() => {
