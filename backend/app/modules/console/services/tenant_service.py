@@ -420,8 +420,35 @@ class TenantService:
         result = await db.execute(query)
         items = list(result.scalars().all())
 
+        # 按版本筛选时，用该版本的最后到期时间替代租户整体到期时间
+        version_expire_map: dict = {}
+        if version_code and items:
+            tenant_ids = [t.id for t in items]
+            ve_result = await db.execute(
+                select(
+                    TenantProduct.tenant_id,
+                    func.max(TenantProduct.end_time).label("max_end_time")
+                ).where(
+                    TenantProduct.tenant_id.in_(tenant_ids),
+                    TenantProduct.version_code == version_code,
+                    TenantProduct.is_deleted == 0,
+                    TenantProduct.status == 1,
+                ).group_by(TenantProduct.tenant_id)
+            )
+            version_expire_map = {
+                row.tenant_id: row.max_end_time for row in ve_result
+            }
+
+        out_list = []
+        for t in items:
+            item = TenantListOut.from_model(t).model_dump()
+            if version_code and t.id in version_expire_map:
+                ve = version_expire_map[t.id]
+                item["expireTime"] = ve.strftime("%Y-%m-%d %H:%M:%S") if ve else None
+            out_list.append(item)
+
         return {
-            "list": [TenantListOut.from_model(t).model_dump() for t in items],
+            "list": out_list,
             "count": count,
         }
 
@@ -629,17 +656,6 @@ class TenantService:
         if not tenant:
             raise BizException("租户不存在")
 
-        # 检查是否已授权相同版本
-        existing = await db.execute(
-            select(TenantProduct).where(
-                TenantProduct.tenant_id == tenant_id,
-                TenantProduct.version_id == data.versionId,
-                TenantProduct.is_deleted == 0,
-            )
-        )
-        if existing.scalar_one_or_none():
-            raise BizException("该产品版本已授权，请勿重复开通")
-
         # 解析时间
         start_time = None
         end_time = None
@@ -647,6 +663,49 @@ class TenantService:
             start_time = datetime.strptime(data.startTime, "%Y-%m-%d %H:%M:%S")
         if data.endTime:
             end_time = datetime.strptime(data.endTime, "%Y-%m-%d %H:%M:%S")
+
+        if start_time and end_time and start_time >= end_time:
+            raise BizException("授权开始时间必须早于到期时间")
+
+        # 校验授权时间范围不能与已有授权产生交叉
+        existing_result = await db.execute(
+            select(TenantProduct).where(
+                TenantProduct.tenant_id == tenant_id,
+                TenantProduct.is_deleted == 0,
+                TenantProduct.status == 1,
+            )
+        )
+        existing_products = existing_result.scalars().all()
+
+        for ep in existing_products:
+            if not start_time or not end_time or not ep.start_time or not ep.end_time:
+                continue
+            if start_time < ep.end_time and end_time > ep.start_time:
+                raise BizException(
+                    f"授权时间与已有授权冲突（{ep.version_code}: "
+                    f"{ep.start_time.strftime('%Y-%m-%d')} ~ "
+                    f"{ep.end_time.strftime('%Y-%m-%d')}）"
+                )
+
+        # 校验授权时间线不能存在空档期
+        if start_time and end_time:
+            all_periods = [
+                (ep.start_time, ep.end_time)
+                for ep in existing_products
+                if ep.start_time and ep.end_time
+            ]
+            all_periods.append((start_time, end_time))
+            all_periods.sort(key=lambda x: x[0])
+            for i in range(len(all_periods) - 1):
+                cur_end = all_periods[i][1]
+                nxt_start = all_periods[i + 1][0]
+                if nxt_start > cur_end:
+                    raise BizException(
+                        f"授权时间存在空档期（"
+                        f"{cur_end.strftime('%Y-%m-%d %H:%M:%S')} ~ "
+                        f"{nxt_start.strftime('%Y-%m-%d %H:%M:%S')}），"
+                        f"请确保授权时间连续无断档"
+                    )
 
         # 创建授权记录
         product = TenantProduct(
@@ -656,6 +715,8 @@ class TenantService:
             version_code=data.versionCode,
             start_time=start_time,
             end_time=end_time,
+            grant_type=data.grantType,
+            grant_remark=data.grantRemark,
             status=1,
         )
         db.add(product)

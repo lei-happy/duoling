@@ -5,7 +5,6 @@ import type {
   CustomerParam,
   CustomerProduct,
   CustomerProductCreate,
-  FollowPoolUpdate,
   LifecycleStats
 } from './model';
 
@@ -77,20 +76,6 @@ export async function updateCustomerStatus(data: {
   status: number;
 }) {
   const res = await request.put<ApiResult<unknown>>('/tenant/status', data);
-  if (res.data.code === 0) {
-    return res.data.message;
-  }
-  return Promise.reject(new Error(res.data.message));
-}
-
-/**
- * 标记/移出跟进池
- */
-export async function updateFollowPool(data: FollowPoolUpdate) {
-  const res = await request.put<ApiResult<unknown>>(
-    '/tenant/follow-pool',
-    data
-  );
   if (res.data.code === 0) {
     return res.data.message;
   }

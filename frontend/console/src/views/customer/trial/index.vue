@@ -1,4 +1,4 @@
-<!-- 免费体验客户 -->
+<!-- 试用期客户 -->
 <template>
   <ele-page>
     <customer-search
@@ -8,6 +8,7 @@
     <customer-table
       ref="tableRef"
       lifecycle="trial"
+      :show-add-button="true"
     />
   </ele-page>
 </template>

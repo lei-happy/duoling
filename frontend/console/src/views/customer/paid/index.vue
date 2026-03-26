@@ -38,10 +38,10 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, reactive, onMounted } from 'vue';
+  import { ref, computed, nextTick, onMounted } from 'vue';
   import CustomerSearch from '../components/customer-search.vue';
   import CustomerTable from '../components/customer-table.vue';
-  import { pageCustomers } from '@/api/customer';
+  import { pageCustomers, listProductVersions } from '@/api/customer';
   import type { CustomerParam } from '@/api/customer/model';
 
   defineOptions({ name: 'CustomerPaid' });
@@ -49,24 +49,32 @@
   const tableRef = ref<InstanceType<typeof CustomerTable> | null>(null);
   const activeTab = ref('all');
 
-  const tabCounts = reactive({ all: 0, pro: 0, enterprise: 0, warning: 0 });
+  interface TabItem {
+    name: string;
+    label: string;
+    versionCode?: string;
+    count: number;
+  }
 
-  const tabs = computed(() => [
-    { name: 'all', label: '全部', count: tabCounts.all },
-    { name: 'pro', label: '专业版', count: tabCounts.pro },
-    { name: 'enterprise', label: '旗舰版', count: tabCounts.enterprise },
-    { name: 'warning', label: '到期预警', count: tabCounts.warning }
+  const versionTabs = ref<TabItem[]>([]);
+
+  const tabs = computed<TabItem[]>(() => [
+    { name: 'all', label: '全部', count: tabCountMap.value.all ?? 0 },
+    ...versionTabs.value,
+    { name: 'warning', label: '到期预警', count: tabCountMap.value.warning ?? 0 }
   ]);
 
+  const tabCountMap = ref<Record<string, number>>({});
+
   const currentVersionCode = computed(() => {
-    if (activeTab.value === 'pro') return 'pro';
-    if (activeTab.value === 'enterprise') return 'enterprise';
-    return undefined;
+    const tab = tabs.value.find((t) => t.name === activeTab.value);
+    return tab?.versionCode;
   });
 
-  const switchTab = (name: string) => {
+  const switchTab = async (name: string) => {
     if (activeTab.value === name) return;
     activeTab.value = name;
+    await nextTick();
     tableRef.value?.reload?.({ page: 1 });
   };
 
@@ -74,26 +82,51 @@
     tableRef.value?.reload?.({ where, page: 1 });
   };
 
+  const loadVersionTabs = async () => {
+    try {
+      const list = await listProductVersions();
+      versionTabs.value = (list || [])
+        .filter((v: any) => v.status === 1)
+        .map((v: any) => ({
+          name: v.versionCode,
+          label: v.versionName,
+          versionCode: v.versionCode,
+          count: 0
+        }));
+    } catch {
+      // ignore
+    }
+  };
+
   const loadTabCounts = async () => {
     try {
-      const queries = [
-        { key: 'all' as const, params: { lifecycle: 'paid', page: 1, limit: 1 } },
-        { key: 'pro' as const, params: { lifecycle: 'paid', versionCode: 'pro', page: 1, limit: 1 } },
-        { key: 'enterprise' as const, params: { lifecycle: 'paid', versionCode: 'enterprise', page: 1, limit: 1 } },
-        { key: 'warning' as const, params: { lifecycle: 'paid', expireWarning: true, page: 1, limit: 1 } }
+      const queries: { key: string; params: CustomerParam }[] = [
+        { key: 'all', params: { lifecycle: 'paid', page: 1, limit: 1 } },
+        ...versionTabs.value.map((t) => ({
+          key: t.name,
+          params: { lifecycle: 'paid', versionCode: t.versionCode, page: 1, limit: 1 } as CustomerParam
+        })),
+        { key: 'warning', params: { lifecycle: 'paid', expireWarning: true, page: 1, limit: 1 } }
       ];
       const results = await Promise.all(
         queries.map((q) => pageCustomers(q.params).catch(() => ({ count: 0 })))
       );
+      const map: Record<string, number> = {};
       queries.forEach((q, i) => {
-        tabCounts[q.key] = (results[i] as any)?.count ?? 0;
+        map[q.key] = (results[i] as any)?.count ?? 0;
+      });
+      tabCountMap.value = map;
+
+      versionTabs.value.forEach((t) => {
+        t.count = map[t.name] ?? 0;
       });
     } catch {
       // ignore
     }
   };
 
-  onMounted(() => {
+  onMounted(async () => {
+    await loadVersionTabs();
     loadTabCounts();
   });
 </script>

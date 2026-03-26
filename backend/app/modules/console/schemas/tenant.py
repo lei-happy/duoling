@@ -154,6 +154,8 @@ class TenantProductCreate(BaseModel):
     versionCode: str = Field(description="产品版本编码")
     startTime: Optional[str] = Field(default=None, description="授权开始时间 YYYY-MM-DD HH:MM:SS")
     endTime: Optional[str] = Field(default=None, description="授权到期时间 YYYY-MM-DD HH:MM:SS")
+    grantType: Optional[str] = Field(default=None, description="开通类型(数据字典 grant_type)")
+    grantRemark: Optional[str] = Field(default=None, description="开通备注")
 
 
 class TenantProductOut(BaseModel):
@@ -165,6 +167,8 @@ class TenantProductOut(BaseModel):
     versionCode: str
     startTime: Optional[str] = None
     endTime: Optional[str] = None
+    grantType: Optional[str] = None
+    grantRemark: Optional[str] = None
     status: int
     createTime: Optional[str] = None
 
@@ -179,6 +183,8 @@ class TenantProductOut(BaseModel):
             versionCode=p.version_code,
             startTime=p.start_time.strftime("%Y-%m-%d %H:%M:%S") if p.start_time else None,
             endTime=p.end_time.strftime("%Y-%m-%d %H:%M:%S") if p.end_time else None,
+            grantType=p.grant_type,
+            grantRemark=p.grant_remark,
             status=p.status,
             createTime=p.created_at.strftime("%Y-%m-%d %H:%M:%S") if p.created_at else None,
         )

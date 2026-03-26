@@ -12,8 +12,9 @@ CREATE TABLE `sys_tenant_product` (
   `created_at` datetime NOT NULL DEFAULT (now()) COMMENT '创建时间',
   `updated_at` datetime NOT NULL DEFAULT (now()) COMMENT '更新时间',
   `is_deleted` smallint NOT NULL COMMENT '是否删除 0-否 1-是',
+  `grant_type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '开通类型(数据字典 grant_type)',
+  `grant_remark` text COLLATE utf8mb4_unicode_ci COMMENT '开通备注',
   PRIMARY KEY (`id`),
   KEY `ix_sys_tenant_product_tenant_code` (`tenant_code`),
   KEY `ix_sys_tenant_product_tenant_id` (`tenant_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='租户产品版本授权表'
-
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='租户产品版本授权表';

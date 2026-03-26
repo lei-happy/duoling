@@ -110,30 +110,18 @@ def seed_platform_data():
 
             sub_menus = [
                 # 客户运营中心子菜单
-                Menu(parent_id=customer_menu.id, menu_name="新注册客户",
-                     menu_code="customer:new", menu_type=0,
-                     path="/customer/new", component="/customer/new/index",
-                     sort_order=0, app_type="platform"),
-                Menu(parent_id=customer_menu.id, menu_name="免费体验客户",
+                Menu(parent_id=customer_menu.id, menu_name="试用期客户",
                      menu_code="customer:trial", menu_type=0,
                      path="/customer/trial", component="/customer/trial/index",
-                     sort_order=10, app_type="platform"),
-                Menu(parent_id=customer_menu.id, menu_name="跟进池",
-                     menu_code="customer:follow-up", menu_type=0,
-                     path="/customer/follow-up", component="/customer/follow-up/index",
-                     sort_order=20, app_type="platform"),
+                     sort_order=0, app_type="platform"),
                 Menu(parent_id=customer_menu.id, menu_name="付费客户",
                      menu_code="customer:paid", menu_type=0,
                      path="/customer/paid", component="/customer/paid/index",
-                     sort_order=30, app_type="platform"),
+                     sort_order=10, app_type="platform"),
                 Menu(parent_id=customer_menu.id, menu_name="流失客户",
                      menu_code="customer:churned", menu_type=0,
                      path="/customer/churned", component="/customer/churned/index",
-                     sort_order=40, app_type="platform"),
-                Menu(parent_id=customer_menu.id, menu_name="全量客户",
-                     menu_code="customer:all", menu_type=0,
-                     path="/customer/all", component="/customer/all/index",
-                     sort_order=50, app_type="platform"),
+                     sort_order=20, app_type="platform"),
                 # 系统管理子菜单
                 Menu(parent_id=system_menu.id, menu_name="用户管理",
                      menu_code="system:user", menu_type=0,
@@ -248,6 +236,43 @@ def seed_platform_data():
                 if role_admin:
                     session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
                 print("[OK] 客户端菜单管理已补充")
+
+            # 迁移：客户运营中心菜单精简（移除旧菜单，更新保留菜单）
+            customer_menu = session.query(Menu).filter_by(
+                menu_code="customer", app_type="platform", is_deleted=0
+            ).first()
+            if customer_menu:
+                deprecated_codes = ["customer:new", "customer:follow-up", "customer:all"]
+                for code in deprecated_codes:
+                    old_menu = session.query(Menu).filter_by(
+                        menu_code=code, app_type="platform", is_deleted=0
+                    ).first()
+                    if old_menu:
+                        old_menu.is_deleted = 1
+                        session.query(RoleMenu).filter_by(menu_id=old_menu.id).delete()
+                        print(f"[OK] 已移除旧菜单: {old_menu.menu_name} ({code})")
+
+                trial_menu = session.query(Menu).filter_by(
+                    menu_code="customer:trial", app_type="platform", is_deleted=0
+                ).first()
+                if trial_menu and trial_menu.menu_name != "试用期客户":
+                    trial_menu.menu_name = "试用期客户"
+                    trial_menu.sort_order = 0
+                    print("[OK] 已更新菜单: 免费体验客户 -> 试用期客户")
+
+                paid_menu = session.query(Menu).filter_by(
+                    menu_code="customer:paid", app_type="platform", is_deleted=0
+                ).first()
+                if paid_menu and paid_menu.sort_order != 10:
+                    paid_menu.sort_order = 10
+
+                churned_menu = session.query(Menu).filter_by(
+                    menu_code="customer:churned", app_type="platform", is_deleted=0
+                ).first()
+                if churned_menu and churned_menu.sort_order != 20:
+                    churned_menu.sort_order = 20
+
+                session.flush()
 
         # ---- 4. 角色-菜单关联（super_admin 关联所有平台菜单）----
         existing_role_menu = session.query(RoleMenu).filter_by(

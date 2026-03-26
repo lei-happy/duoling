@@ -46,19 +46,19 @@
           {{ channelText(row.sourceChannel) }}
         </el-tag>
       </template>
+      <template #trialRemaining="{ row }">
+        <el-tag
+          :type="getTrialRemainingType(row)"
+          size="small"
+          :disable-transitions="true"
+        >
+          {{ getTrialRemainingText(row) }}
+        </el-tag>
+      </template>
       <template #expireTime="{ row }">
         <span :class="{ 'expire-warning': isExpireWarning(row) }">
           {{ row.expireTime || '-' }}
         </span>
-      </template>
-      <template #inFollowPool="{ row }">
-        <el-tag
-          :type="row.inFollowPool === 1 ? 'warning' : 'info'"
-          size="small"
-          :disable-transitions="true"
-        >
-          {{ row.inFollowPool === 1 ? '跟进中' : '未跟进' }}
-        </el-tag>
       </template>
       <template #action="{ row }">
         <div class="action-wrapper">
@@ -108,12 +108,11 @@
   import {
     pageCustomers,
     removeCustomers,
-    updateCustomerStatus,
-    updateFollowPool
+    updateCustomerStatus
   } from '@/api/customer';
   import type { Customer, CustomerParam } from '@/api/customer/model';
 
-  export type LifecycleType = 'new' | 'trial' | 'follow_up' | 'paid' | 'churned' | 'all';
+  export type LifecycleType = 'trial' | 'paid' | 'churned';
 
   const props = withDefaults(
     defineProps<{
@@ -167,14 +166,11 @@
 
   const mergedColumns = computed<Columns>(() => {
     const cols = [...baseColumns];
-    if (props.lifecycle === 'follow_up') {
+    if (props.lifecycle === 'trial') {
       const insertIdx = cols.findIndex((c) => c.prop === 'expireTime');
       cols.splice(insertIdx, 0, {
-        prop: 'followRemark', label: '跟进备注', minWidth: 140
-      });
-      cols.splice(insertIdx, 0, {
-        prop: 'inFollowPool', label: '跟进状态', width: 100, align: 'center',
-        slot: 'inFollowPool'
+        columnKey: 'trialRemaining', label: '试用剩余', width: 110, align: 'center',
+        slot: 'trialRemaining'
       });
     }
     return cols;
@@ -196,7 +192,7 @@
       ...where,
       ...orders,
       ...pages,
-      lifecycle: props.lifecycle === 'all' ? undefined : props.lifecycle,
+      lifecycle: props.lifecycle,
       versionCode: props.versionCode,
       expireWarning: props.expireWarning || undefined
     };
@@ -254,28 +250,38 @@
 
   const MAX_INLINE_ACTIONS = 2;
 
+  const getTrialRemainingDays = (row: Customer) => {
+    if (!row.expireTime) return -1;
+    const expire = new Date(row.expireTime).getTime();
+    const now = Date.now();
+    return Math.ceil((expire - now) / (24 * 60 * 60 * 1000));
+  };
+
+  const getTrialRemainingText = (row: Customer) => {
+    const days = getTrialRemainingDays(row);
+    if (days < 0) return '已到期';
+    if (days === 0) return '今天到期';
+    return `${days}天`;
+  };
+
+  const getTrialRemainingType = (row: Customer) => {
+    const days = getTrialRemainingDays(row);
+    if (days < 0) return 'info';
+    if (days <= 3) return 'danger';
+    if (days <= 7) return 'warning';
+    return 'success';
+  };
+
   const getActionItems = (row: Customer) => {
     const items: any[] = [];
 
     items.push({ preset: 'edit', onClick: () => openEdit(row) });
 
-    if (props.lifecycle === 'new' || props.lifecycle === 'trial') {
-      items.push({ title: '加入跟进池', onClick: () => toggleFollowPool(row, 1) });
-    }
-
     if (props.lifecycle === 'trial') {
       items.push({ title: '升级版本', onClick: () => openProduct(row) });
     }
 
-    if (props.lifecycle === 'follow_up') {
-      items.push({ title: '移出跟进池', onClick: () => toggleFollowPool(row, 0) });
-    }
-
-    if (
-      props.lifecycle !== 'follow_up' &&
-      props.lifecycle !== 'new' &&
-      props.lifecycle !== 'trial'
-    ) {
+    if (props.lifecycle === 'paid') {
       items.push({ title: '授权管理', onClick: () => openProduct(row) });
     }
 
@@ -285,8 +291,6 @@
 
     if (row.status === 1 && props.lifecycle !== 'churned') {
       items.push({ title: '停用', danger: true, onClick: () => toggleStatus(row, 0) });
-    } else if (row.status === 0 && props.lifecycle !== 'churned') {
-      items.push({ title: '启用', onClick: () => toggleStatus(row, 1) });
     }
 
     return items;
@@ -327,30 +331,6 @@
       .then(() => {
         const loading = EleMessage.loading({ message: '请求中..', plain: true });
         updateCustomerStatus({ id: row.id!, status })
-          .then((msg) => {
-            loading.close();
-            EleMessage.success({ message: msg, plain: true });
-            reload();
-            emit('reload');
-          })
-          .catch((e) => {
-            loading.close();
-            EleMessage.error({ message: e.message, plain: true });
-          });
-      })
-      .catch(() => {});
-  };
-
-  const toggleFollowPool = (row: Customer, inFollowPool: number) => {
-    const action = inFollowPool === 1 ? '加入跟进池' : '移出跟进池';
-    ElMessageBox.confirm(
-      `确定要将"${row.tenantName}"${action}吗?`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
-      .then(() => {
-        const loading = EleMessage.loading({ message: '请求中..', plain: true });
-        updateFollowPool({ id: row.id!, inFollowPool })
           .then((msg) => {
             loading.close();
             EleMessage.success({ message: msg, plain: true });

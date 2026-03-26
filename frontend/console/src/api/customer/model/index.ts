@@ -42,10 +42,6 @@ export interface Customer {
   sourceChannel?: string;
   /** 推荐人企业编码 */
   referrerCode?: string;
-  /** 是否在跟进池 0-否 1-是 */
-  inFollowPool?: number;
-  /** 跟进备注 */
-  followRemark?: string;
   /** 创建时间 */
   createTime?: string;
 }
@@ -58,36 +54,21 @@ export interface CustomerParam extends PageParam {
   keyword?: string;
   /** 状态 */
   status?: number | string;
-  /** 生命周期: new/trial/follow_up/paid/churned/all */
+  /** 生命周期: trial/paid/churned */
   lifecycle?: string;
-  /** 版本编码筛选(付费客户): pro/enterprise */
+  /** 版本编码筛选(付费客户): standard/pro/enterprise */
   versionCode?: string;
   /** 仅显示到期预警客户 */
   expireWarning?: boolean;
 }
 
 /**
- * 跟进池操作参数
- */
-export interface FollowPoolUpdate {
-  /** 客户ID */
-  id: number;
-  /** 是否加入跟进池 0-移出 1-加入 */
-  inFollowPool: number;
-  /** 跟进备注 */
-  followRemark?: string;
-}
-
-/**
  * 生命周期统计
  */
 export interface LifecycleStats {
-  new: number;
   trial: number;
-  followUp: number;
   paid: number;
   churned: number;
-  all: number;
 }
 
 /**
@@ -104,10 +85,16 @@ export interface CustomerProduct {
   versionId?: number;
   /** 产品版本编码 */
   versionCode?: string;
+  /** 产品版本名称 */
+  versionName?: string;
   /** 授权开始时间 */
   startTime?: string;
   /** 授权到期时间 */
   endTime?: string;
+  /** 开通类型(数据字典 grant_type) */
+  grantType?: string;
+  /** 开通备注 */
+  grantRemark?: string;
   /** 状态 */
   status?: number;
   /** 创建时间 */
@@ -126,6 +113,10 @@ export interface CustomerProductCreate {
   startTime?: string;
   /** 授权到期时间 */
   endTime?: string;
+  /** 开通类型(数据字典 grant_type) */
+  grantType?: string;
+  /** 开通备注 */
+  grantRemark?: string;
 }
 
 // 兼容别名，供其他模块平滑迁移

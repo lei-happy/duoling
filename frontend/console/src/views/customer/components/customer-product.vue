@@ -1,8 +1,8 @@
 <!-- 客户产品授权弹窗 -->
 <template>
   <ele-modal
-    :width="680"
-    title="产品授权管理"
+    :width="780"
+    title=""
     position="center"
     :body-style="{
       padding: '16px 20px',
@@ -10,19 +10,44 @@
     }"
     v-bind="modalProps"
   >
-    <div style="margin-bottom: 16px">
-      <ele-text type="placeholder">
-        企业：{{ data?.tenantName }}（{{ data?.tenantCode }}）
-      </ele-text>
-    </div>
+    <template #header>
+      <span style="color: var(--el-color-primary); font-weight: 600">{{ data?.tenantName }}</span>
+      <span style="color: var(--el-text-color-secondary); font-size: 13px; margin: 0 4px">（{{ data?.tenantCode }}）</span>
+      <span>授权管理</span>
+    </template>
     <!-- 已授权的产品列表 -->
-    <el-table :data="productList" border stripe :loading="listLoading" size="small">
-      <el-table-column prop="versionCode" label="版本编码" width="140" />
-      <el-table-column prop="startTime" label="授权开始" width="170" />
-      <el-table-column prop="endTime" label="授权到期" width="170" />
-      <el-table-column label="操作" width="80" align="center">
+    <el-table
+      :data="productList"
+      border
+      stripe
+      :loading="listLoading"
+      size="small"
+      style="width: 100%"
+    >
+      <el-table-column label="产品版本" min-width="120">
+        <template #default="{ row }">
+          {{ getVersionName(row.versionCode) || row.versionCode }}
+          <span style="color: var(--el-text-color-placeholder); margin-left: 4px; font-size: 12px">{{ row.versionCode }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="startTime" label="授权开始" min-width="140"/>
+      <el-table-column prop="endTime" label="授权到期" min-width="140" />
+      <el-table-column label="开通类型" min-width="100" align="center">
+        <template #default="{ row }">
+          <dict-data
+            v-if="row.grantType"
+            code="grant_type"
+            type="tag"
+            v-model="row.grantType"
+          />
+          <span v-else style="color: var(--el-text-color-placeholder)">-</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="grantRemark" label="开通备注" min-width="120" show-overflow-tooltip />
+      <el-table-column label="操作" width="80" align="center" fixed="right">
         <template #default="{ row }">
           <el-popconfirm
+            v-if="canRemove(row)"
             title="确定要取消此授权吗？"
             @confirm="handleRemove(row)"
           >
@@ -30,75 +55,104 @@
               <el-button type="danger" link size="small">取消</el-button>
             </template>
           </el-popconfirm>
+          <span v-else style="color: var(--el-text-color-placeholder)">-</span>
         </template>
       </el-table-column>
     </el-table>
 
-    <!-- 新增授权表单 -->
-    <el-divider content-position="left">开通新授权</el-divider>
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      @submit.prevent=""
-      size="default"
-    >
-      <el-row :gutter="16">
-        <el-col :span="24">
-          <el-form-item label="产品版本" prop="versionId">
-            <el-select
-              v-model="form.versionId"
-              placeholder="请选择产品版本"
-              style="width: 100%"
-              @change="handleVersionChange"
-            >
-              <el-option
-                v-for="v in versionList"
-                :key="v.id"
-                :label="`${v.versionName}（${v.versionCode}）`"
-                :value="v.id"
+    <!-- 新增授权：折叠交互 -->
+    <div v-if="!showForm" style="margin-top: 16px; text-align: center">
+      <el-button type="primary" plain @click="handleShowForm">
+        <el-icon style="margin-right: 4px"><Plus /></el-icon>新增授权
+      </el-button>
+    </div>
+    <template v-else>
+      <el-divider content-position="left">开通新授权</el-divider>
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="100px"
+        @submit.prevent=""
+        size="default"
+      >
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="产品版本" prop="versionId">
+              <el-select
+                v-model="form.versionId"
+                placeholder="请选择产品版本"
+                style="width: 100%"
+                @change="handleVersionChange"
+              >
+                <el-option
+                  v-for="v in versionList"
+                  :key="v.id"
+                  :label="`${v.versionName}（${v.versionCode}）`"
+                  :value="v.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="开通类型" prop="grantType">
+              <dict-data
+                code="grant_type"
+                type="select"
+                v-model="form.grantType"
+                placeholder="请选择开通类型"
               />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="授权开始">
-            <el-date-picker
-              v-model="form.startTime"
-              type="datetime"
-              placeholder="选择开始时间"
-              value-format="YYYY-MM-DD HH:mm:ss"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="授权到期">
-            <el-date-picker
-              v-model="form.endTime"
-              type="datetime"
-              placeholder="选择到期时间"
-              value-format="YYYY-MM-DD HH:mm:ss"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
-    <template #footer>
-      <btn-items
-        :items="[
-          { preset: 'cancel', onClick: () => handleCancel() },
-          { title: '开通授权', type: 'primary', loading: submitLoading, onClick: () => handleSubmit() }
-        ]"
-      />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="授权开始" prop="startTime">
+              <el-date-picker
+                v-model="form.startTime"
+                type="datetime"
+                placeholder="选择开始时间"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                style="width: 100%"
+                disabled
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="授权到期" prop="endTime">
+              <el-date-picker
+                v-model="form.endTime"
+                type="datetime"
+                placeholder="选择到期时间"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="开通备注">
+              <el-input
+                v-model="form.grantRemark"
+                type="textarea"
+                :rows="2"
+                placeholder="请输入开通备注（选填）"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <div style="text-align: right">
+          <el-button @click="handleCollapseForm">取消</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="handleSubmit">
+            开通授权
+          </el-button>
+        </div>
+      </el-form>
     </template>
+
   </ele-modal>
 </template>
 
 <script lang="ts" setup>
   import { ref, reactive, onMounted } from 'vue';
+  import { Plus } from '@element-plus/icons-vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
   import {
@@ -107,7 +161,7 @@
     removeCustomerProduct,
     listProductVersions
   } from '@/api/customer';
-  import type { Customer, CustomerProduct, CustomerProductCreate } from '@/api/customer/model';
+  import type { Customer, CustomerProduct } from '@/api/customer/model';
 
   const props = defineProps<{
     data?: Customer | null;
@@ -117,26 +171,46 @@
     (e: 'done'): void;
   }>();
 
-  const { modalProps, closeModal } = useModal();
+  const { modalProps } = useModal();
 
   const formRef = ref<FormInstance | null>(null);
   const productList = ref<CustomerProduct[]>([]);
   const listLoading = ref(false);
   const versionList = ref<any[]>([]);
   const submitLoading = ref(false);
+  const showForm = ref(false);
 
-  const form = reactive<CustomerProductCreate & { versionId: number | undefined }>({
-    versionId: undefined,
+  const createEmptyForm = () => ({
+    versionId: undefined as number | undefined,
     versionCode: '',
-    startTime: undefined,
-    endTime: undefined
+    startTime: undefined as string | undefined,
+    endTime: undefined as string | undefined,
+    grantType: undefined as string | undefined,
+    grantRemark: undefined as string | undefined
   });
+
+  const form = reactive(createEmptyForm());
 
   const rules = reactive<FormRules>({
     versionId: [
       { required: true, message: '请选择产品版本', trigger: 'change' }
+    ],
+    grantType: [
+      { required: true, message: '请选择开通类型', trigger: 'change' }
+    ],
+    startTime: [
+      { required: true, message: '请选择授权开始时间', trigger: 'change' }
+    ],
+    endTime: [
+      { required: true, message: '请选择授权到期时间', trigger: 'change' }
     ]
   });
+
+  const getVersionName = (code?: string) => {
+    if (!code) return '';
+    const found = versionList.value.find((v) => v.versionCode === code);
+    return found?.versionName || '';
+  };
 
   const loadProducts = () => {
     if (!props.data?.id) return;
@@ -169,6 +243,15 @@
     }
   };
 
+  const canRemove = (row: CustomerProduct) => {
+    if (!row.endTime || !productList.value.length) return true;
+    const maxEndTime = productList.value.reduce((latest, p) => {
+      if (!p.endTime) return latest;
+      return p.endTime > latest ? p.endTime : latest;
+    }, '');
+    return row.endTime === maxEndTime;
+  };
+
   const handleRemove = (row: CustomerProduct) => {
     if (!props.data?.id || !row.id) return;
     removeCustomerProduct(props.data.id, row.id)
@@ -182,8 +265,29 @@
       });
   };
 
-  const handleCancel = () => {
-    closeModal();
+  const addDays = (dateStr: string, days: number) => {
+    const d = new Date(dateStr.replace(/-/g, '/'));
+    d.setDate(d.getDate() + days);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  };
+
+  const handleShowForm = () => {
+    const latestEndTime = productList.value.reduce((latest, p) => {
+      if (!p.endTime) return latest;
+      return p.endTime > latest ? p.endTime : latest;
+    }, '');
+    Object.assign(form, createEmptyForm());
+    if (latestEndTime) {
+      form.startTime = latestEndTime;
+      form.endTime = addDays(latestEndTime, 10);
+    }
+    showForm.value = true;
+  };
+
+  const handleCollapseForm = () => {
+    showForm.value = false;
+    Object.assign(form, createEmptyForm());
   };
 
   const handleSubmit = () => {
@@ -194,16 +298,15 @@
         versionId: form.versionId!,
         versionCode: form.versionCode,
         startTime: form.startTime,
-        endTime: form.endTime
+        endTime: form.endTime,
+        grantType: form.grantType,
+        grantRemark: form.grantRemark
       })
         .then((msg) => {
           submitLoading.value = false;
           EleMessage.success({ message: msg, plain: true });
-          form.versionId = undefined;
-          form.versionCode = '';
-          form.startTime = undefined;
-          form.endTime = undefined;
-          formRef.value?.clearValidate?.();
+          showForm.value = false;
+          Object.assign(form, createEmptyForm());
           loadProducts();
           emit('done');
         })
