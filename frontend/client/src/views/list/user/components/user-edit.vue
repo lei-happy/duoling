@@ -156,13 +156,19 @@
         type: 'string',
         trigger: 'blur',
         validator: (_rule: any, value: string, callback: any) => {
+          if (!value || value.length < 4) {
+            callback();
+            return;
+          }
           checkExistence('username', value, props.data?.userId)
-            .then(() => {
-              callback(new Error('账号已经存在'));
+            .then((exists) => {
+              if (exists) {
+                callback(new Error('账号已经存在'));
+              } else {
+                callback();
+              }
             })
-            .catch(() => {
-              callback();
-            });
+            .catch(() => callback());
         }
       }
     ],

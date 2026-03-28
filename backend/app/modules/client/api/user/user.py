@@ -6,13 +6,16 @@ from typing import Optional, List
 from fastapi import APIRouter, Body, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_tenant_db, get_current_user
+from app.core.dependencies import get_tenant_db, get_platform_db, get_current_user
+from app.core.security import TokenData
 from app.common.response import success
+from app.common.exceptions import TenantException
 from app.modules.client.schemas.user.user import (
     BizUserCreate, BizUserUpdate, BizUserOut,
     BizUserStatusUpdate, BizUserResetPassword,
 )
 from app.modules.client.services.user.user_service import BizUserService
+from app.modules.client.services.user.platform_user_sync import BizPlatformUserSync
 
 router = APIRouter()
 
@@ -80,10 +83,16 @@ async def get_user(
 async def create_user(
     data: BizUserCreate,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    pdb: AsyncSession = Depends(get_platform_db),
+    current: TokenData = Depends(get_current_user),
 ):
     """创建员工"""
+    if not current.tenant_code:
+        raise TenantException("缺少租户信息，无法同步登录账号")
     user = await BizUserService.create_user(db, data)
+    await BizPlatformUserSync.sync_employee_create(
+        pdb, db, current.tenant_code, user.id, data.roleIds
+    )
     roles = await BizUserService._get_user_roles(db, user.id)
     dept_name = await BizUserService._get_dept_name(db, user.department_id)
     return success(data=BizUserOut.from_model(user, roles=roles, dept_name=dept_name).model_dump())
@@ -93,10 +102,16 @@ async def create_user(
 async def update_user(
     data: BizUserUpdate,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    pdb: AsyncSession = Depends(get_platform_db),
+    current: TokenData = Depends(get_current_user),
 ):
     """更新员工"""
+    if not current.tenant_code:
+        raise TenantException("缺少租户信息，无法同步登录账号")
     user = await BizUserService.update_user(db, data.userId, data)
+    await BizPlatformUserSync.sync_employee_update(
+        pdb, db, current.tenant_code, user.id, data.roleIds
+    )
     roles = await BizUserService._get_user_roles(db, user.id)
     dept_name = await BizUserService._get_dept_name(db, user.department_id)
     return success(data=BizUserOut.from_model(user, roles=roles, dept_name=dept_name).model_dump())
@@ -106,10 +121,16 @@ async def update_user(
 async def update_user_status(
     data: BizUserStatusUpdate,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    pdb: AsyncSession = Depends(get_platform_db),
+    current: TokenData = Depends(get_current_user),
 ):
     """修改员工状态"""
+    if not current.tenant_code:
+        raise TenantException("缺少租户信息，无法同步登录账号")
     await BizUserService.update_status(db, data.userId, data.status)
+    await BizPlatformUserSync.sync_employee_status(
+        pdb, db, current.tenant_code, data.userId, data.status
+    )
     return success()
 
 
@@ -117,10 +138,16 @@ async def update_user_status(
 async def reset_password(
     data: BizUserResetPassword,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    pdb: AsyncSession = Depends(get_platform_db),
+    current: TokenData = Depends(get_current_user),
 ):
     """重置员工密码"""
+    if not current.tenant_code:
+        raise TenantException("缺少租户信息，无法同步登录账号")
     await BizUserService.reset_password(db, data.userId, data.password)
+    await BizPlatformUserSync.sync_employee_password(
+        pdb, db, current.tenant_code, data.userId, data.password
+    )
     return success(message="密码重置成功")
 
 
@@ -128,10 +155,17 @@ async def reset_password(
 async def batch_delete_users(
     data: List[int] = Body(..., embed=False),
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    pdb: AsyncSession = Depends(get_platform_db),
+    current: TokenData = Depends(get_current_user),
 ):
     """批量删除员工"""
+    if not current.tenant_code:
+        raise TenantException("缺少租户信息，无法同步登录账号")
     await BizUserService.batch_delete_users(db, data)
+    for uid in data:
+        await BizPlatformUserSync.sync_employee_remove(
+            pdb, db, current.tenant_code, uid
+        )
     return success()
 
 
@@ -139,8 +173,14 @@ async def batch_delete_users(
 async def delete_user(
     user_id: int,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    pdb: AsyncSession = Depends(get_platform_db),
+    current: TokenData = Depends(get_current_user),
 ):
     """删除员工"""
+    if not current.tenant_code:
+        raise TenantException("缺少租户信息，无法同步登录账号")
     await BizUserService.delete_user(db, user_id)
+    await BizPlatformUserSync.sync_employee_remove(
+        pdb, db, current.tenant_code, user_id
+    )
     return success()

@@ -149,17 +149,18 @@ export async function importUsers(file: File) {
 
 /**
  * 检查用户是否存在
+ * @returns 已存在返回 true，不存在返回 false
  */
 export async function checkExistence(
   field: string,
   value: string,
   id?: number
-) {
-  const res = await request.get<ApiResult<unknown>>('/system/user/existence', {
+): Promise<boolean> {
+  const res = await request.get<ApiResult<boolean>>('/system/user/existence', {
     params: { field, value, id }
   });
   if (res.data.code === 0) {
-    return res.data.message;
+    return res.data.data ?? false;
   }
-  return Promise.reject(new Error(res.data.message));
+  return Promise.reject(new Error(res.data.message || '请求失败'));
 }

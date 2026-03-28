@@ -339,7 +339,11 @@ class AuthService:
         query = (
             select(Role)
             .join(UserRole, UserRole.role_id == Role.id)
-            .where(UserRole.user_id == user_id, Role.is_deleted == 0)
+            .where(
+                UserRole.user_id == user_id,
+                UserRole.is_deleted == 0,
+                Role.is_deleted == 0,
+            )
         )
         if tenant_code is not None:
             # 只返回当前企业的租户角色 + 平台公共角色
@@ -472,6 +476,7 @@ class AuthService:
                 .join(UserRole, UserRole.role_id == Role.id)
                 .where(
                     UserRole.user_id == user_id,
+                    UserRole.is_deleted == 0,
                     Menu.app_type == app_type,
                     Menu.status == 1,
                     Menu.is_deleted == 0,

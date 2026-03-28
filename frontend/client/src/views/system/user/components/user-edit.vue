@@ -28,12 +28,12 @@
               :disabled="isUpdate"
             />
           </el-form-item>
-          <el-form-item label="用户名" prop="nickname">
+          <el-form-item label="姓名" prop="nickname">
             <el-input
               clearable
               :maxlength="20"
               v-model="form.nickname"
-              placeholder="请输入用户名"
+              placeholder="请输入姓名"
             />
           </el-form-item>
           <el-form-item label="性别" prop="sex">
@@ -177,20 +177,26 @@
             callback();
             return;
           }
-          checkExistence('username', value)
-            .then(() => {
-              callback(new Error('账号已经存在'));
+          if (!value || value.length < 4) {
+            callback();
+            return;
+          }
+          checkExistence('username', value, form.userId)
+            .then((exists) => {
+              if (exists) {
+                callback(new Error('账号已经存在'));
+              } else {
+                callback();
+              }
             })
-            .catch(() => {
-              callback();
-            });
+            .catch(() => callback());
         }
       }
     ],
     nickname: [
       {
         required: true,
-        message: '请输入用户名',
+        message: '请输入姓名',
         type: 'string',
         trigger: 'blur'
       }
