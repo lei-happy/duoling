@@ -385,6 +385,12 @@ cmd_update() {
     export DOCKER_BUILDKIT=1
     export COMPOSE_DOCKER_CLI_BUILD=1
 
+    # 清理 BuildKit 构建缓存（docker image prune 不会清这层）。
+    # 避免 nginx 多阶段构建复用旧层导致线上前端仍是旧页面。
+    # 若仍不生效，可临时执行: docker compose build --no-cache && docker compose up -d
+    log_info "清理 Docker 构建缓存..."
+    docker builder prune -f 2>/dev/null || log_warn "builder prune 跳过（可能为旧版 Docker 或未启用 BuildKit）"
+
     docker compose up -d --build
     log_info "服务已重启"
 
