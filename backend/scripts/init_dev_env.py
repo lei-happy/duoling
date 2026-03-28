@@ -317,10 +317,10 @@ def step7_seed_tenant_data():
     settings = get_settings()
     tenant_engine = create_engine(settings.tenant_db_url_sync(DEV_TENANT_CODE))
 
-    from app.modules.client.models.biz_role import BizRole
-    from app.modules.client.models.biz_department import BizDepartment
-    from app.modules.client.models.biz_user import BizUser
-    from app.modules.client.models.biz_user_role import BizUserRole
+    from app.modules.client.models.role.biz_role import BizRole
+    from app.modules.client.models.organization.biz_department import BizDepartment
+    from app.modules.client.models.user.biz_user import BizUser
+    from app.modules.client.models.user.biz_user_role import BizUserRole
 
     with Session(tenant_engine) as session:
         existing_user = session.query(BizUser).filter_by(

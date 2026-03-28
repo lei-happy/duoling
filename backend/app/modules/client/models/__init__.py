@@ -8,12 +8,12 @@
 """
 
 # ---- Tier 1: Core (注册即创建) ----
-from app.modules.client.models.biz_user import BizUser
-from app.modules.client.models.biz_role import BizRole
-from app.modules.client.models.biz_menu import BizMenu
-from app.modules.client.models.biz_department import BizDepartment
-from app.modules.client.models.biz_user_role import BizUserRole
-from app.modules.client.models.biz_role_menu import BizRoleMenu
+from app.modules.client.models.user.biz_user import BizUser
+from app.modules.client.models.role.biz_role import BizRole
+from app.modules.client.models.role.biz_menu import BizMenu
+from app.modules.client.models.organization.biz_department import BizDepartment
+from app.modules.client.models.user.biz_user_role import BizUserRole
+from app.modules.client.models.role.biz_role_menu import BizRoleMenu
 from app.modules.client.models.biz_region import BizRegion
 from app.modules.client.models.biz_operation_log import BizOperationLog
 from app.modules.client.models.biz_dict import BizDict, BizDictItem

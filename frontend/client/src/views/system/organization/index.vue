@@ -24,6 +24,13 @@
             ]"
           />
         </template>
+        <template #organizationType="{ row }">
+          <dict-data
+            type="text"
+            code="organization_type"
+            :model-value="row.organizationType"
+          />
+        </template>
         <template #action="{ row }">
           <btn-items
             divider
@@ -84,10 +91,11 @@
       minWidth: 160
     },
     {
-      prop: 'organizationTypeName',
+      prop: 'organizationType',
       label: '机构类型',
       minWidth: 100,
-      align: 'center'
+      align: 'center',
+      slot: 'organizationType'
     },
     {
       prop: 'sortNumber',

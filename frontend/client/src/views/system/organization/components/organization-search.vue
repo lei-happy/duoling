@@ -48,7 +48,6 @@
   /** 表单数据 */
   const [form, resetFields] = useFormData<OrganizationParam>({
     organizationName: '',
-    organizationFullName: '',
     organizationType: void 0
   });
 

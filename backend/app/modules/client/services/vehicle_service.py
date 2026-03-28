@@ -86,6 +86,7 @@ class VehicleService:
         )
         db.add(vehicle)
         await db.flush()
+        await db.refresh(vehicle)
         return vehicle
 
     @staticmethod
@@ -125,6 +126,7 @@ class VehicleService:
                 setattr(vehicle, model_field, val)
 
         await db.flush()
+        await db.refresh(vehicle)
         return vehicle
 
     @staticmethod

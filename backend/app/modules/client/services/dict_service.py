@@ -47,6 +47,7 @@ class BizDictService:
         )
         db.add(d)
         await db.flush()
+        await db.refresh(d)
         return d
 
     @staticmethod
@@ -75,6 +76,7 @@ class BizDictService:
                 setattr(d, mf, val)
 
         await db.flush()
+        await db.refresh(d)
         return d
 
     @staticmethod
@@ -121,6 +123,7 @@ class BizDictService:
         )
         db.add(item)
         await db.flush()
+        await db.refresh(item)
         return item
 
     @staticmethod
@@ -150,6 +153,7 @@ class BizDictService:
                 setattr(item, mf, val)
 
         await db.flush()
+        await db.refresh(item)
         return item
 
     @staticmethod

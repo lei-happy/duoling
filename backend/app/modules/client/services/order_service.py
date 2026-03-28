@@ -83,6 +83,7 @@ class OrderService:
         )
         db.add(order)
         await db.flush()
+        await db.refresh(order)
         return order
 
     @staticmethod
@@ -119,6 +120,7 @@ class OrderService:
                 setattr(order, mf, val)
 
         await db.flush()
+        await db.refresh(order)
         return order
 
     @staticmethod
@@ -145,6 +147,7 @@ class OrderService:
             order.actual_arrive_time = now
 
         await db.flush()
+        await db.refresh(order)
         return order
 
     @staticmethod

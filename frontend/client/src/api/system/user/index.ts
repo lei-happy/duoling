@@ -41,10 +41,24 @@ export async function getUser(id: number) {
 }
 
 /**
+ * 转换用户表单数据为接口格式
+ */
+function transformUserData(data: User) {
+  const { roles, ...rest } = data;
+  return {
+    ...rest,
+    roleIds: roles?.map((r) => r.roleId).filter(Boolean)
+  };
+}
+
+/**
  * 添加用户
  */
 export async function addUser(data: User) {
-  const res = await request.post<ApiResult<unknown>>('/system/user', data);
+  const res = await request.post<ApiResult<unknown>>(
+    '/system/user',
+    transformUserData(data)
+  );
   if (res.data.code === 0) {
     return res.data.message;
   }
@@ -55,7 +69,10 @@ export async function addUser(data: User) {
  * 修改用户
  */
 export async function updateUser(data: User) {
-  const res = await request.put<ApiResult<unknown>>('/system/user', data);
+  const res = await request.put<ApiResult<unknown>>(
+    '/system/user',
+    transformUserData(data)
+  );
   if (res.data.code === 0) {
     return res.data.message;
   }

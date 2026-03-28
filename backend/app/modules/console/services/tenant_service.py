@@ -209,10 +209,11 @@ class TenantService:
         在租户库中插入种子数据：默认角色、部门、管理员及关联。
         通过平台库同步地区数据到 biz_region。
         """
-        from app.modules.client.models.biz_role import BizRole
-        from app.modules.client.models.biz_department import BizDepartment
-        from app.modules.client.models.biz_user import BizUser
-        from app.modules.client.models.biz_user_role import BizUserRole
+        from app.modules.client.models.role.biz_role import BizRole
+        from app.modules.client.models.organization.biz_department import BizDepartment
+        from app.modules.client.models.user.biz_user import BizUser
+        from app.modules.client.models.user.biz_user_role import BizUserRole
+        from app.modules.client.models.biz_dict import BizDict, BizDictItem
 
         engine = db_manager._get_or_create_tenant_engine(tenant_code)
         session_factory = db_manager._tenant_session_factories[tenant_code]
@@ -248,8 +249,8 @@ class TenantService:
                     phone=admin_phone,
                     email=admin_email,
                     user_type=1,
-                    department=hq.dept_name,
-                    status=1,
+                    department_id=hq.id,
+                    status=0,
                 )
                 session.add(admin_user)
                 await session.flush()
@@ -258,6 +259,37 @@ class TenantService:
                 admin_role = roles[0]
                 user_role = BizUserRole(user_id=admin_user.id, role_id=admin_role.id)
                 session.add(user_role)
+
+                # 基础字典数据
+                dict_defs = [
+                    ("sex", "性别", 0, [
+                        ("男", "男", 0),
+                        ("女", "女", 10),
+                    ]),
+                    ("organization_type", "机构类型", 10, [
+                        ("总部", "headquarters", 0),
+                        ("分公司", "branch", 10),
+                        ("部门", "department", 20),
+                        ("车队", "fleet", 30),
+                    ]),
+                ]
+                for dict_code, dict_name, sort_order, items in dict_defs:
+                    d = BizDict(
+                        dict_code=dict_code,
+                        dict_name=dict_name,
+                        sort_order=sort_order,
+                        status=1,
+                    )
+                    session.add(d)
+                    await session.flush()
+                    for item_name, item_value, item_sort in items:
+                        session.add(BizDictItem(
+                            dict_id=d.id,
+                            dict_code=dict_code,
+                            item_name=item_name,
+                            item_value=item_value,
+                            sort_order=item_sort,
+                        ))
 
                 await session.commit()
                 logger.info(f"租户 {tenant_code} 种子数据已初始化")

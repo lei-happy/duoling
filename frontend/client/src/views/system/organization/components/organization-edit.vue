@@ -30,14 +30,6 @@
               placeholder="请输入机构名称"
             />
           </el-form-item>
-          <el-form-item label="机构全称" prop="organizationFullName">
-            <el-input
-              clearable
-              :maxlength="100"
-              v-model="form.organizationFullName"
-              placeholder="请输入机构全称"
-            />
-          </el-form-item>
           <el-form-item label="机构代码">
             <el-input
               clearable
@@ -127,7 +119,6 @@
     organizationId: void 0,
     parentId: props.organizationId,
     organizationName: '',
-    organizationFullName: '',
     organizationCode: '',
     organizationType: void 0,
     sortNumber: void 0,
@@ -140,14 +131,6 @@
       {
         required: true,
         message: '请输入机构名称',
-        type: 'string',
-        trigger: 'blur'
-      }
-    ],
-    organizationFullName: [
-      {
-        required: true,
-        message: '请输入机构全称',
         type: 'string',
         trigger: 'blur'
       }

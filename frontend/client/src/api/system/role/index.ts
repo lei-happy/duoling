@@ -77,11 +77,11 @@ export async function removeRoles(data: (number | undefined)[]) {
 }
 
 /**
- * 获取角色分配的菜单
+ * 获取角色分配的菜单（全部菜单带 checked 标记）
  */
 export async function listRoleMenus(roleId?: number) {
   const res = await request.get<ApiResult<Menu[]>>(
-    `/system/role-menu/${roleId}`
+    `/system/role/${roleId}/menus`
   );
   if (res.data.code === 0) {
     return res.data.data;
@@ -94,8 +94,8 @@ export async function listRoleMenus(roleId?: number) {
  */
 export async function updateRoleMenus(roleId?: number, data?: number[]) {
   const res = await request.put<ApiResult<unknown>>(
-    `/system/role-menu/${roleId}`,
-    data
+    `/system/role/${roleId}/menus`,
+    { menuIds: data }
   );
   if (res.data.code === 0) {
     return res.data.message;

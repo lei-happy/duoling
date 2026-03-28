@@ -79,6 +79,7 @@ class RouteService:
         )
         db.add(route)
         await db.flush()
+        await db.refresh(route)
         return route
 
     @staticmethod
@@ -112,6 +113,7 @@ class RouteService:
                 setattr(route, model_field, val)
 
         await db.flush()
+        await db.refresh(route)
         return route
 
     @staticmethod

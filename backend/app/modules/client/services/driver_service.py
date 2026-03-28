@@ -85,6 +85,7 @@ class DriverService:
         )
         db.add(driver)
         await db.flush()
+        await db.refresh(driver)
         return driver
 
     @staticmethod
@@ -124,6 +125,7 @@ class DriverService:
                 setattr(driver, model_field, val)
 
         await db.flush()
+        await db.refresh(driver)
         return driver
 
     @staticmethod

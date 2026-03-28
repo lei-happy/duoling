@@ -79,6 +79,7 @@ class CustomerService:
         )
         db.add(customer)
         await db.flush()
+        await db.refresh(customer)
         return customer
 
     @staticmethod
@@ -111,6 +112,7 @@ class CustomerService:
                 setattr(customer, model_field, val)
 
         await db.flush()
+        await db.refresh(customer)
         return customer
 
     @staticmethod

@@ -10,8 +10,6 @@ export interface Organization {
   parentId?: number;
   /** 机构名称 */
   organizationName?: string;
-  /** 机构全称 */
-  organizationFullName?: string;
   /** 机构代码 */
   organizationCode?: string;
   /** 机构类型(字典) */
@@ -34,8 +32,6 @@ export interface Organization {
 export interface OrganizationParam extends PageParam {
   /** 机构名称 */
   organizationName?: string;
-  /** 机构全称 */
-  organizationFullName?: string;
   /** 机构类型(字典) */
   organizationType?: string;
 }
