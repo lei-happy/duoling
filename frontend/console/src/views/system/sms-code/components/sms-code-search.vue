@@ -1,59 +1,59 @@
 <!-- 搜索表单 -->
 <template>
   <ele-card search-form>
-    <el-form label-width="72px" @keyup.enter="search" @submit.prevent="">
-      <el-row :gutter="16">
-        <el-col :lg="6" :md="12" :sm="12" :xs="24">
-          <el-form-item label="手机号">
-            <el-input
-              clearable
-              v-model.trim="form.phone"
-              placeholder="请输入"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :lg="6" :md="12" :sm="12" :xs="24">
-          <el-form-item label="用途">
-            <el-select
-              clearable
-              v-model="form.purpose"
-              placeholder="全部"
-              class="ele-fluid"
-            >
-              <el-option label="验证码登录" :value="1" />
-              <el-option label="重置密码" :value="2" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :lg="6" :md="12" :sm="12" :xs="24">
-          <el-form-item label="状态">
-            <el-select
-              clearable
-              v-model="form.status"
-              placeholder="全部"
-              class="ele-fluid"
-            >
-              <el-option label="未使用" :value="0" />
-              <el-option label="已使用" :value="1" />
-              <el-option label="已过期" :value="2" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :lg="8" :md="18" :sm="17" :xs="24">
-          <el-form-item label="创建时间">
-            <el-date-picker
-              unlink-panels
-              type="daterange"
-              v-model="dateRange"
-              range-separator="-"
-              value-format="YYYY-MM-DD"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              class="ele-fluid"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :lg="4" :md="6" :sm="7" :xs="24">
+    <el-form
+      class="sms-code-search-form"
+      label-width="0"
+      @keyup.enter="search"
+      @submit.prevent=""
+    >
+      <div class="sms-code-search-fields">
+        <div class="sms-code-search-field">
+          <floating-label
+            label="请输入手机号"
+            type="input"
+            v-model.trim="form.phone"
+            clearable
+          />
+        </div>
+        <div class="sms-code-search-field">
+          <floating-label
+            label="请选择用途"
+            type="select"
+            v-model="form.purpose"
+            clearable
+          >
+            <el-option label="验证码登录" :value="1" />
+            <el-option label="重置密码" :value="2" />
+          </floating-label>
+        </div>
+        <div class="sms-code-search-field">
+          <floating-label
+            label="请选择状态"
+            type="select"
+            v-model="form.status"
+            clearable
+          >
+            <el-option label="未使用" :value="0" />
+            <el-option label="已使用" :value="1" />
+            <el-option label="已过期" :value="2" />
+          </floating-label>
+        </div>
+        <div class="sms-code-search-field sms-code-search-field--range">
+          <floating-label
+            label="创建时间"
+            type="date"
+            date-type="daterange"
+            v-model="dateRange"
+            range-separator="-"
+            value-format="YYYY-MM-DD"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            :unlink-panels="true"
+            clearable
+          />
+        </div>
+        <div class="sms-code-search-field sms-code-search-field--actions">
           <el-form-item label-width="0px">
             <btn-items
               :wrap="false"
@@ -63,14 +63,15 @@
               ]"
             />
           </el-form-item>
-        </el-col>
-      </el-row>
+        </div>
+      </div>
     </el-form>
   </ele-card>
 </template>
 
 <script lang="ts" setup>
   import { ref } from 'vue';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import type { SmsCodeParam } from '@/api/system/sms-code/model';
 
@@ -106,3 +107,39 @@
     search();
   };
 </script>
+
+<style lang="scss" scoped>
+  .sms-code-search-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+  }
+
+  .sms-code-search-field {
+    flex: 1 1 200px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .sms-code-search-field--range {
+    flex: 2 1 280px;
+    min-width: 0;
+  }
+
+  .sms-code-search-field--actions {
+    flex: 0 0 auto;
+    margin-left: auto;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+    :deep(.el-form-item) {
+      margin-bottom: 0;
+    }
+  }
+
+  .sms-code-search-form {
+    margin-bottom: 0;
+  }
+</style>

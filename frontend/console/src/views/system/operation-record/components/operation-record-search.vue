@@ -1,39 +1,37 @@
 <!-- 搜索表单 -->
 <template>
   <ele-card search-form>
-    <el-form label-width="72px" @keyup.enter="search" @submit.prevent="">
+    <el-form label-width="0" @keyup.enter="search" @submit.prevent="">
       <el-row :gutter="16">
         <el-col :lg="6" :md="12" :sm="12" :xs="24">
-          <el-form-item label="用户账号">
-            <el-input
-              clearable
-              v-model.trim="form.username"
-              placeholder="请输入"
-            />
-          </el-form-item>
+          <floating-label
+            label="请输入用户账号"
+            type="input"
+            v-model.trim="form.username"
+            clearable
+          />
         </el-col>
         <el-col :lg="6" :md="12" :sm="12" :xs="24">
-          <el-form-item label="操作模块">
-            <el-input
-              clearable
-              v-model.trim="form.module"
-              placeholder="请输入"
-            />
-          </el-form-item>
+          <floating-label
+            label="请输入操作模块"
+            type="input"
+            v-model.trim="form.module"
+            clearable
+          />
         </el-col>
         <el-col :lg="8" :md="18" :sm="17" :xs="24">
-          <el-form-item label="操作时间">
-            <el-date-picker
-              unlink-panels
-              type="datetimerange"
-              v-model="dateRange"
-              range-separator="-"
-              value-format="YYYY-MM-DD HH:mm:ss"
-              start-placeholder="开始时间"
-              end-placeholder="结束时间"
-              class="ele-fluid"
-            />
-          </el-form-item>
+          <floating-label
+            label="操作时间"
+            type="date"
+            date-type="datetimerange"
+            v-model="dateRange"
+            range-separator="-"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            :unlink-panels="true"
+            clearable
+          />
         </el-col>
         <el-col :lg="4" :md="6" :sm="7" :xs="24">
           <el-form-item label-width="0px">
@@ -53,6 +51,7 @@
 
 <script lang="ts" setup>
   import { ref } from 'vue';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import type { OperationRecordParam } from '@/api/system/operation-record/model';
 

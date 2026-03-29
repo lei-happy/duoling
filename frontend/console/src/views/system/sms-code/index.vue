@@ -16,17 +16,6 @@
         :where="defaultWhere"
         cache-key="SystemSmsCodeTable"
       >
-        <template #toolbar>
-          <btn-items
-            :items="[
-              {
-                preset: 'export',
-                props: { type: 'primary' },
-                onClick: () => exportData()
-              }
-            ]"
-          />
-        </template>
         <template #purpose="{ row }">
           <el-tag
             v-if="row.purpose === 1"
@@ -109,28 +98,19 @@
 
   const columns = ref<Columns>([
     {
-      type: 'index',
-      columnKey: 'index',
-      width: 50,
-      align: 'center'
-    },
-    {
       prop: 'phone',
       label: '手机号',
-      sortable: 'custom',
       minWidth: 120
     },
     {
       prop: 'code',
       label: '验证码',
-      sortable: 'custom',
       minWidth: 90,
       align: 'center'
     },
     {
       prop: 'purpose',
       label: '用途',
-      sortable: 'custom',
       width: 120,
       slot: 'purpose',
       align: 'center',
@@ -139,7 +119,6 @@
     {
       prop: 'status',
       label: '状态',
-      sortable: 'custom',
       width: 100,
       slot: 'status',
       align: 'center',
@@ -148,20 +127,17 @@
     {
       prop: 'expireAt',
       label: '过期时间',
-      sortable: 'custom',
       width: 180,
       align: 'center'
     },
     {
       prop: 'clientIp',
       label: '请求IP',
-      sortable: 'custom',
       minWidth: 120
     },
     {
       prop: 'createdAt',
       label: '创建时间',
-      sortable: 'custom',
       width: 180,
       align: 'center'
     }

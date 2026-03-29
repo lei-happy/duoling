@@ -1,24 +1,22 @@
 <!-- 搜索表单 -->
 <template>
-  <el-form label-width="84px" @keyup.enter="search" @submit.prevent="">
+  <el-form label-width="0" @keyup.enter="search" @submit.prevent="">
     <el-row :gutter="16">
       <el-col :lg="8" :md="8" :sm="12" :xs="24">
-        <el-form-item label="字典数据名">
-          <el-input
-            clearable
-            v-model.trim="form.dictDataName"
-            placeholder="请输入"
-          />
-        </el-form-item>
+        <floating-label
+          label="请输入字典数据名"
+          type="input"
+          v-model.trim="form.dictDataName"
+          clearable
+        />
       </el-col>
       <el-col :lg="8" :md="8" :sm="12" :xs="24">
-        <el-form-item label="字典数据值">
-          <el-input
-            clearable
-            v-model.trim="form.dictDataCode"
-            placeholder="请输入"
-          />
-        </el-form-item>
+        <floating-label
+          label="请输入字典数据值"
+          type="input"
+          v-model.trim="form.dictDataCode"
+          clearable
+        />
       </el-col>
       <el-col :lg="8" :md="8" :sm="12" :xs="24">
         <el-form-item label-width="0px">
@@ -36,6 +34,7 @@
 </template>
 
 <script lang="ts" setup>
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import type { DictionaryDataParam } from '@/api/system/dictionary-data/model';
 
