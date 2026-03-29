@@ -7,10 +7,6 @@
           <h4 class="login-subtitle">物流车队综合操作系统</h4>
         </div>
         <div class="login-body">
-          <ele-text type="heading" style="font-size: 24px; margin-bottom: 18px">
-            {{ t('login.title') }}
-          </ele-text>
-
           <!-- 登录方式 Tab -->
           <div class="login-tabs">
             <span
@@ -102,20 +98,10 @@
                 <el-button
                   size="large"
                   :disabled="smsCooldown > 0"
-                  @click="handleSendCode(smsForm.phone, 1)"
+                  @click="handleSendCode(1)"
                 >
                   {{ smsCooldown > 0 ? `${smsCooldown}s` : '获取验证码' }}
                 </el-button>
-              </div>
-            </el-form-item>
-            <el-form-item>
-              <div style="display: flex; justify-content: space-between; width: 100%">
-                <el-checkbox v-model="smsForm.remember">
-                  {{ t('login.remember') }}
-                </el-checkbox>
-                <a class="forgot-pwd-link" @click.prevent="showForgotPwdDialog = true">
-                  忘记密码？
-                </a>
               </div>
             </el-form-item>
             <el-form-item>
@@ -228,7 +214,7 @@
   // 验证码登录
   // ============================================================
   const smsFormRef = ref<FormInstance | null>(null);
-  const smsForm = reactive({ phone: '', code: '', remember: true });
+  const smsForm = reactive({ phone: '', code: '' });
   const smsRules = computed<FormRules>(() => ({
     phone: [
       { required: true, message: '请输入手机号', type: 'string', trigger: 'blur' },
@@ -252,13 +238,14 @@
     return timer;
   };
 
-  const handleSendCode = async (phone: string, purpose: number) => {
-    if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
-      EleMessage.error({ message: '请输入正确的手机号', plain: true });
+  const handleSendCode = async (purpose: number) => {
+    try {
+      await smsFormRef.value?.validateField('phone');
+    } catch {
       return;
     }
     try {
-      await sendSmsCode(phone, purpose);
+      await sendSmsCode(smsForm.phone, purpose);
       EleMessage.success({ message: '验证码已发送', plain: true });
       if (smsTimer) clearInterval(smsTimer);
       smsTimer = startCooldown(smsCooldown);
@@ -271,7 +258,7 @@
     smsFormRef.value?.validate?.((valid) => {
       if (!valid) return;
       loading.value = true;
-      smsLogin(smsForm.phone, smsForm.code, smsForm.remember)
+      smsLogin(smsForm.phone, smsForm.code, true)
         .catch((e: Error) => {
           loading.value = false;
           EleMessage.error({ message: e.message, plain: true });
@@ -320,8 +307,9 @@
   }));
 
   const handleSendForgotCode = async () => {
-    if (!forgotForm.phone || !/^1[3-9]\d{9}$/.test(forgotForm.phone)) {
-      EleMessage.error({ message: '请输入正确的手机号', plain: true });
+    try {
+      await forgotFormRef.value?.validateField('phone');
+    } catch {
       return;
     }
     try {
@@ -452,10 +440,11 @@
     align-items: center;
     gap: 12px;
     margin-bottom: 20px;
+    min-height: 36px;
   }
 
   .login-tab {
-    font-size: 14px;
+    font-size: 17px;
     color: #94a3b8;
     cursor: pointer;
     transition: color 0.2s;
@@ -472,7 +461,7 @@
 
   .login-tab-divider {
     color: #e2e8f0;
-    font-size: 14px;
+    font-size: 17px;
   }
 
   .forgot-pwd-link {
