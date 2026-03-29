@@ -139,6 +139,10 @@ def seed_platform_data():
                      menu_code="system:client-menu", menu_type=0,
                      path="/system/client-menu", component="/system/client-menu/index",
                      sort_order=25, app_type="platform"),
+                Menu(parent_id=system_menu.id, menu_name="短信验证码",
+                     menu_code="system:sms-code", menu_type=0,
+                     path="/system/sms-code", component="/system/sms-code/index",
+                     sort_order=27, app_type="platform"),
                 Menu(parent_id=system_menu.id, menu_name="数据字典",
                      menu_code="system:dict", menu_type=0,
                      path="/system/dictionary", component="/system/dictionary/index",
@@ -236,6 +240,24 @@ def seed_platform_data():
                 if role_admin:
                     session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
                 print("[OK] 客户端菜单管理已补充")
+
+            # 补充：短信验证码（若不存在）
+            sms_code_menu = session.query(Menu).filter_by(
+                menu_code="system:sms-code", app_type="platform", is_deleted=0
+            ).first()
+            if system_menu and not sms_code_menu:
+                m = Menu(
+                    parent_id=system_menu.id, menu_name="短信验证码",
+                    menu_code="system:sms-code", menu_type=0,
+                    path="/system/sms-code", component="/system/sms-code/index",
+                    sort_order=27, app_type="platform",
+                )
+                session.add(m)
+                session.flush()
+                all_menus.append(m)
+                if role_admin:
+                    session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
+                print("[OK] 短信验证码菜单已补充")
 
             # 迁移：客户运营中心菜单精简（移除旧菜单，更新保留菜单）
             customer_menu = session.query(Menu).filter_by(
