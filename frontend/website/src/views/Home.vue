@@ -495,12 +495,12 @@ const caseMetrics = [
   letter-spacing: -0.02em;
 }
 
-.gradient-text {
-  background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6, #fb923c, #34d399);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+// .gradient-text {
+//   background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6, #fb923c, #34d399);
+//   -webkit-background-clip: text;
+//   -webkit-text-fill-color: transparent;
+//   background-clip: text;
+// }
 
 .hero-desc {
   font-size: 17px;
