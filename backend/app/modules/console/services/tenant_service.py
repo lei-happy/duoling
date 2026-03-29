@@ -2,7 +2,7 @@
 租户管理服务
 """
 
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Callable, Awaitable
 from datetime import datetime, timedelta
 
 from sqlalchemy import select, func, exists, or_, text
@@ -23,6 +23,9 @@ from app.modules.console.schemas.tenant import (
     TenantProductCreate, TenantProductOut,
     TenantFollowPoolUpdate,
 )
+
+# on_progress(step_key, message, percent)
+TenantCreateProgressCallback = Optional[Callable[[str, str, int], Awaitable[None]]]
 
 
 class TenantService:
@@ -49,7 +52,9 @@ class TenantService:
 
     @staticmethod
     async def create_tenant(
-        db: AsyncSession, data: TenantCreate
+        db: AsyncSession,
+        data: TenantCreate,
+        on_progress: TenantCreateProgressCallback = None,
     ) -> Tuple[Tenant, bool]:
         """
         创建新租户
@@ -60,7 +65,13 @@ class TenantService:
 
         返回: (tenant, is_existing_user)
             is_existing_user=True 表示管理员账号已存在（手机号已注册过）
+
+        on_progress: 可选，官网异步注册时上报阶段进度 (step_key, message, percent)
         """
+        async def _emit(step_key: str, message: str, percent: int) -> None:
+            if on_progress:
+                await on_progress(step_key, message, percent)
+
         # 检查企业名称是否重复
         existing = await db.execute(
             select(Tenant).where(
@@ -101,16 +112,20 @@ class TenantService:
         )
         db.add(tenant)
         await db.flush()
+        await _emit("tenant_record", "创建企业信息", 15)
 
         # 创建租户独立数据库（仅 core 层表）
         try:
             import app.modules.client.models  # noqa: F401
+            await _emit("tenant_database", "初始化数据库结构", 28)
             await db_manager.create_tenant_database(tenant_code)
+            await _emit("seed_data", "初始化基础数据（角色、部门、字典）", 42)
             await TenantService._init_tenant_seed_data(
                 tenant_code,
                 admin_name=data.contactPerson or "管理员",
                 admin_phone=data.contactPhone,
                 admin_email=data.contactEmail,
+                on_progress=on_progress,
             )
             tenant.db_initialized = 1
         except Exception as e:
@@ -118,6 +133,7 @@ class TenantService:
             tenant.db_initialized = 0
 
         # ---- 管理员账号：按手机号查找已有用户 ----
+        await _emit("admin_binding", "关联管理员账号与产品授权", 78)
         is_existing_user = False
         admin_user = None
 
@@ -193,6 +209,7 @@ class TenantService:
             db.add(basic_product)
 
         await db.flush()
+        await _emit("done", "开户完成", 100)
         logger.info(f"新租户已创建: {tenant_code} - {data.tenantName}")
 
         return tenant, is_existing_user
@@ -203,6 +220,7 @@ class TenantService:
         admin_name: str = "管理员",
         admin_phone: Optional[str] = None,
         admin_email: Optional[str] = None,
+        on_progress: TenantCreateProgressCallback = None,
     ) -> None:
         """
         在租户库中插入种子数据：默认角色、部门、管理员及关联。
@@ -298,6 +316,8 @@ class TenantService:
 
         # 同步地区数据（从平台 sys_regions 到租户 biz_region）
         try:
+            if on_progress:
+                await on_progress("region_sync", "同步地区数据", 58)
             await TenantService._sync_region_data(tenant_code)
         except Exception as e:
             logger.warning(f"租户 {tenant_code} 地区数据同步失败（非致命）: {e}")

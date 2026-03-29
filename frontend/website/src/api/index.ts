@@ -15,7 +15,7 @@ export function getChangelog(params?: { page?: number; page_size?: number }) {
   return request.get('/changelog', { params });
 }
 
-/** 企业自助注册 */
+/** 企业自助注册（立即返回 task_id，需轮询进度） */
 export function registerTenant(data: {
   tenant_name: string;
   contact_person: string;
@@ -24,4 +24,9 @@ export function registerTenant(data: {
   referrer_code?: string;
 }) {
   return request.post('/register', data);
+}
+
+/** 查询企业注册任务进度 */
+export function getRegisterProgress(taskId: string) {
+  return request.get(`/register/progress/${encodeURIComponent(taskId)}`);
 }

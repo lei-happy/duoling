@@ -116,6 +116,27 @@
           注册即表示您同意 <a href="#">服务条款</a> 和 <a href="#">隐私政策</a>
         </p>
 
+        <!-- 开户进度（不可关闭，直至成功或失败） -->
+        <el-dialog
+          v-model="showProgress"
+          title="正在开通企业账号"
+          width="460px"
+          :show-close="false"
+          :close-on-press-escape="false"
+          :close-on-click-modal="false"
+          class="progress-dialog"
+        >
+          <div class="progress-content">
+            <p class="progress-hint">{{ progressMessage }}</p>
+            <el-progress
+              :percentage="Math.min(100, Math.max(0, progressPercent))"
+              :stroke-width="10"
+              striped
+              striped-flow
+            />
+          </div>
+        </el-dialog>
+
         <!-- 注册成功弹窗 -->
         <el-dialog
           v-model="showSuccess"
@@ -169,7 +190,7 @@ import {
   Message,
 } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { registerTenant } from '@/api'
+import { registerTenant, getRegisterProgress } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -183,8 +204,13 @@ const referrerCode = ref<string | undefined>(
 
 const formRef = ref<FormInstance>()
 const loading = ref(false)
+const showProgress = ref(false)
+const progressMessage = ref('正在提交…')
+const progressPercent = ref(0)
 const showSuccess = ref(false)
 const isExistingUser = ref(false)
+
+const POLL_INTERVAL_MS = 1500
 
 const form = reactive({
   tenant_name: '',
@@ -210,6 +236,10 @@ const rules: FormRules = {
   ],
 }
 
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms))
+}
+
 async function handleSubmit() {
   if (!formRef.value) return
 
@@ -220,6 +250,9 @@ async function handleSubmit() {
   }
 
   loading.value = true
+  showProgress.value = true
+  progressMessage.value = '正在提交…'
+  progressPercent.value = 0
   try {
     const res = await registerTenant({
       tenant_name: form.tenant_name,
@@ -228,14 +261,62 @@ async function handleSubmit() {
       contact_email: form.contact_email || undefined,
       referrer_code: referrerCode.value || undefined,
     })
-    // 检测后端返回的 is_existing_user 标记
-    isExistingUser.value = res?.data?.data?.is_existing_user === true
-    showSuccess.value = true
+    const payload = res?.data
+    if (payload?.code !== 0) {
+      ElMessage.error(payload?.message || '注册失败，请稍后重试')
+      return
+    }
+    const taskId = payload?.data?.task_id as string | undefined
+    if (!taskId) {
+      ElMessage.error('注册响应异常，请稍后重试')
+      return
+    }
+
+    progressMessage.value = '即将开始初始化企业基础数据…'
+    const maxPolls = 800
+    for (let poll = 0; poll < maxPolls; poll++) {
+      const progRes = await getRegisterProgress(taskId)
+      const prog = progRes?.data
+      if (prog?.code !== 0) {
+        ElMessage.error(prog?.message || '查询进度失败')
+        return
+      }
+      const p = prog.data as {
+        status: string
+        message: string
+        percent: number
+        result?: { is_existing_user?: boolean }
+        error_message?: string | null
+      }
+      progressMessage.value = p.message || '处理中…'
+      progressPercent.value = typeof p.percent === 'number' ? p.percent : 0
+
+      if (p.status === 'success' && p.result) {
+        isExistingUser.value = p.result.is_existing_user === true
+        showProgress.value = false
+        showSuccess.value = true
+        return
+      }
+      if (p.status === 'failed') {
+        const err =
+          p.error_message && p.error_message !== 'timeout'
+            ? p.error_message
+            : p.message || '注册失败，请稍后重试'
+        ElMessage.error(err)
+        return
+      }
+      await sleep(POLL_INTERVAL_MS)
+    }
+    ElMessage.error('注册处理超时，请稍后重试或联系客服')
   } catch (err: any) {
-    const msg = err?.response?.data?.detail || '注册失败，请稍后重试'
+    const msg =
+      err?.response?.data?.message ||
+      err?.response?.data?.detail ||
+      '注册失败，请稍后重试'
     ElMessage.error(msg)
   } finally {
     loading.value = false
+    showProgress.value = false
   }
 }
 
@@ -285,7 +366,8 @@ function goHome() {
 
 /* ========== 左侧品牌区 ========== */
 .register-brand {
-  flex: 0 0 480px;
+  flex: 1 1 58%;
+  min-width: 480px;
   position: relative;
   background: var(--gradient-hero);
   display: flex;
@@ -386,7 +468,7 @@ function goHome() {
   color: rgba(255, 255, 255, 0.62);
   line-height: 1.65;
   margin-bottom: 32px;
-  max-width: 380px;
+  max-width: 460px;
 }
 
 .brand-features {
@@ -420,17 +502,18 @@ function goHome() {
 
 /* ========== 右侧表单区 ========== */
 .register-form-area {
-  flex: 1;
+  flex: 1 1 42%;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 40px 48px;
   background: var(--color-bg);
 }
 
 .form-container {
   width: 100%;
-  max-width: 460px;
+  max-width: 400px;
 
   h2 {
     font-size: 28px;
@@ -496,6 +579,24 @@ function goHome() {
     transform: translateY(-1px);
     box-shadow: 0 4px 20px rgba(29, 78, 216, 0.35) !important;
   }
+}
+
+.progress-dialog {
+  :deep(.el-dialog__header) {
+    padding-bottom: 8px;
+  }
+}
+
+.progress-content {
+  padding: 8px 0 4px;
+}
+
+.progress-hint {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  margin: 0 0 20px;
+  line-height: 1.5;
+  min-height: 1.5em;
 }
 
 .form-footer {
@@ -613,7 +714,17 @@ function goHome() {
 /* ========== 响应式 ========== */
 @media (max-width: 1024px) {
   .register-brand {
-    flex: 0 0 360px;
+    flex: 1 1 50%;
+    min-width: 400px;
+  }
+
+  .register-form-area {
+    flex: 1 1 50%;
+    padding: 40px 32px;
+  }
+
+  .form-container {
+    max-width: 380px;
   }
 
   .brand-content {
