@@ -263,7 +263,7 @@ class AuthService:
         校验验证码 → 查 sys_user → 多租户选择 → 签发 JWT
         """
         from app.modules.open.services.sms_service import SmsService, PURPOSE_LOGIN
-        await SmsService.verify_code(db, phone, code, PURPOSE_LOGIN)
+        await SmsService.verify_code(db, phone, code, PURPOSE_LOGIN, consume=False)
 
         result = await db.execute(
             select(User).where(
@@ -314,6 +314,7 @@ class AuthService:
 
         if len(active_pairs) == 1:
             ut, tenant = active_pairs[0]
+            await SmsService.verify_code(db, phone, code, PURPOSE_LOGIN)
             return await AuthService._build_login_response(
                 db, user, tenant.tenant_code, ut.user_type
             )
@@ -330,6 +331,7 @@ class AuthService:
 
         if active_pairs:
             ut, tenant = active_pairs[0]
+            await SmsService.verify_code(db, phone, code, PURPOSE_LOGIN)
             return await AuthService._build_login_response(
                 db, user, tenant.tenant_code, ut.user_type
             )

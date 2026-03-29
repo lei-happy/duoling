@@ -149,10 +149,11 @@ class SmsService:
         phone: str,
         code: str,
         purpose: int,
+        consume: bool = True,
     ) -> SmsCode:
         """
         校验验证码：匹配手机号 + 验证码 + 用途，检查有效期和使用状态。
-        校验通过后标记为已使用。
+        consume=True 时校验通过后标记为已使用；consume=False 时仅校验不消费。
         """
         result = await db.execute(
             select(SmsCode).where(
@@ -174,8 +175,9 @@ class SmsService:
             await db.flush()
             raise BizException("验证码已过期，请重新获取")
 
-        record.status = 1
-        await db.flush()
+        if consume:
+            record.status = 1
+            await db.flush()
         return record
 
     @staticmethod
