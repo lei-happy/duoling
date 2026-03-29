@@ -17,11 +17,10 @@ class UserRoleItem(BaseModel):
 class UserOut(BaseModel):
     """用户输出"""
     userId: int
-    username: str
+    phone: str
     nickname: Optional[str] = None
     avatar: Optional[str] = None
     sex: Optional[str] = None
-    phone: Optional[str] = None
     email: Optional[str] = None
     status: Optional[int] = None
     organizationId: Optional[int] = None
@@ -32,26 +31,24 @@ class UserOut(BaseModel):
 
 class UserCreate(BaseModel):
     """新增用户"""
-    username: str
+    phone: str
     password: Optional[str] = "123456"
     nickname: Optional[str] = None
     avatar: Optional[str] = None
     sex: Optional[str] = None
-    phone: Optional[str] = None
     email: Optional[str] = None
     organizationId: Optional[int] = None
-    roles: Optional[List[int]] = None  # 角色 ID 列表
+    roles: Optional[List[int]] = None
     status: int = 0
 
 
 class UserUpdate(BaseModel):
     """修改用户"""
     userId: int
-    username: Optional[str] = None
+    phone: Optional[str] = None
     nickname: Optional[str] = None
     avatar: Optional[str] = None
     sex: Optional[str] = None
-    phone: Optional[str] = None
     email: Optional[str] = None
     organizationId: Optional[int] = None
     roles: Optional[List[int]] = None

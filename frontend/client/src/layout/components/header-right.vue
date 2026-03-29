@@ -14,6 +14,10 @@
   <layout-tool :class="{ 'hidden-sm-and-down': tabBar && tabInHeader }">
     <header-notice />
   </layout-tool>
+  <!-- 租户切换 -->
+  <layout-tool>
+    <tenant-switch />
+  </layout-tool>
   <!-- 用户信息 -->
   <layout-tool>
     <header-user />
@@ -64,6 +68,7 @@
   import { useThemeStore } from '@/store/modules/theme';
   import HeaderUser from './header-user.vue';
   import HeaderNotice from './header-notice.vue';
+  import TenantSwitch from './tenant-switch.vue';
   import I18nIcon from './i18n-icon.vue';
   import IconOutline from './covers/icon-outline.vue';
 

@@ -8,8 +8,8 @@ import type { Menu } from '../../menu/model';
 export interface User {
   /** 用户id */
   userId?: number;
-  /** 账号 */
-  username?: string;
+  /** 手机号 */
+  phone?: string;
   /** 密码 */
   password?: string;
   /** 昵称 */
@@ -18,8 +18,6 @@ export interface User {
   avatar?: string;
   /** 性别(字典) */
   sex?: string;
-  /** 手机号 */
-  phone?: string;
   /** 邮箱 */
   email?: string;
   /** 出生日期 */
@@ -52,8 +50,6 @@ export interface User {
  * 用户搜索条件
  */
 export interface UserParam extends PageParam {
-  /** 账号 */
-  username?: string;
   /** 昵称 */
   nickname?: string;
   /** 性别(字典) */

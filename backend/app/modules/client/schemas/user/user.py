@@ -11,11 +11,10 @@ from pydantic import BaseModel
 class BizUserCreate(BaseModel):
     model_config = {"extra": "ignore"}
 
-    username: str
+    phone: str
     password: str = "123456"
     nickname: Optional[str] = None
     realName: Optional[str] = None
-    phone: Optional[str] = None
     email: Optional[str] = None
     sex: Optional[str] = None
     organizationId: Optional[int] = None
@@ -44,9 +43,8 @@ class BizUserUpdate(BaseModel):
 
 class BizUserOut(BaseModel):
     userId: int
-    username: str
+    phone: str
     nickname: Optional[str] = None
-    phone: Optional[str] = None
     email: Optional[str] = None
     avatar: Optional[str] = None
     sex: Optional[str] = None
@@ -67,9 +65,8 @@ class BizUserOut(BaseModel):
         sex_val = gender_map.get(m.gender)
         return cls(
             userId=m.id,
-            username=m.username,
-            nickname=m.nickname or m.real_name,
             phone=m.phone,
+            nickname=m.nickname or m.real_name,
             email=m.email,
             avatar=m.avatar,
             sex=sex_val,

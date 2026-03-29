@@ -14,8 +14,8 @@ class BizUser(TenantModelBase):
     __tablename__ = "biz_user"
     __table_args__ = {"comment": "企业用户表"}
 
-    username: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, comment="用户名"
+    phone: Mapped[str] = mapped_column(
+        String(20), unique=True, nullable=False, comment="手机号（登录标识，租户内唯一）"
     )
     password: Mapped[str] = mapped_column(
         String(255), nullable=False, comment="密码（bcrypt哈希）"
@@ -25,9 +25,6 @@ class BizUser(TenantModelBase):
     )
     nickname: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, comment="昵称"
-    )
-    phone: Mapped[Optional[str]] = mapped_column(
-        String(20), nullable=True, comment="手机号"
     )
     email: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, comment="邮箱"
@@ -45,7 +42,7 @@ class BizUser(TenantModelBase):
         BigInteger, nullable=True, comment="所属部门ID"
     )
     status: Mapped[int] = mapped_column(
-        SmallInteger, default=1, comment="状态 0-正常 1-停用"
+        SmallInteger, default=1, comment="状态 0-停用 1-正常"
     )
     remark: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="备注"

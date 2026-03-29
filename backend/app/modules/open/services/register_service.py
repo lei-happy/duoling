@@ -42,13 +42,11 @@ class RegisterService:
         tenant.status = 1
         await db.flush()
 
-        admin_username = f"admin_{tenant.tenant_code}"
         logger.info(
             f"企业自助注册成功: {tenant.tenant_code} - {data.tenant_name} "
             f"(渠道: {source_channel}, 已自动激活, 已有用户: {is_existing_user})"
         )
 
-        # 根据是否已有用户返回不同提示
         if is_existing_user:
             message = "注册成功，该手机号已注册过账号，请使用已有密码登录"
         else:
@@ -57,7 +55,6 @@ class RegisterService:
         return RegisterResponse(
             tenant_code=tenant.tenant_code,
             tenant_name=tenant.tenant_name,
-            admin_username=admin_username,
             admin_phone=data.contact_phone,
             is_existing_user=is_existing_user,
             message=message,

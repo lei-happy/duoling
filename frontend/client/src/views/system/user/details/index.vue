@@ -35,9 +35,6 @@
             </el-avatar>
           </div>
         </el-descriptions-item>
-        <el-descriptions-item label="用户账号">
-          <div>{{ form.username }}</div>
-        </el-descriptions-item>
         <el-descriptions-item label="性别">
           <div>{{ form.sexName }}</div>
         </el-descriptions-item>
@@ -93,7 +90,6 @@
   const form = reactive<User>({
     userId: Number(route.params.id),
     avatar: void 0,
-    username: '',
     nickname: '',
     sexName: '',
     phone: '',

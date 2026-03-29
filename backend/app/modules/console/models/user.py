@@ -16,17 +16,14 @@ class User(PlatformModelBase):
     __tablename__ = "sys_user"
     __table_args__ = {"comment": "平台用户表"}
 
-    username: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, comment="用户名"
+    phone: Mapped[str] = mapped_column(
+        String(20), unique=True, nullable=False, comment="手机号（登录标识，全平台唯一）"
     )
     password: Mapped[str] = mapped_column(
         String(255), nullable=False, comment="密码（bcrypt哈希）"
     )
     real_name: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, comment="真实姓名"
-    )
-    phone: Mapped[Optional[str]] = mapped_column(
-        String(20), nullable=True, unique=True, comment="手机号（唯一）"
     )
     email: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, comment="邮箱"

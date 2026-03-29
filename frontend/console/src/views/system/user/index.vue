@@ -248,9 +248,9 @@
   /** 表格列配置 */
   const columns = ref<Columns>([
     {
-      prop: 'username',
-      label: '用户账号',
-      minWidth: 110
+      prop: 'phone',
+      label: '手机号',
+      minWidth: 120
     },
     {
       prop: 'nickname',

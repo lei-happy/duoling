@@ -21,9 +21,8 @@ router = APIRouter()
 async def page_users(
     page: int = Query(1),
     limit: int = Query(20),
-    username: Optional[str] = Query(None),
-    nickname: Optional[str] = Query(None),
     phone: Optional[str] = Query(None),
+    nickname: Optional[str] = Query(None),
     status: Optional[int] = Query(None),
     sex: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_platform_db),
@@ -31,14 +30,14 @@ async def page_users(
 ):
     """分页查询用户"""
     result = await UserService.page_users(
-        db, page, limit, username, nickname, phone, status, sex
+        db, page, limit, phone, nickname, status, sex
     )
     return success(data=result)
 
 
 @router.get("/existence")
 async def check_existence(
-    field: str = Query("username"),
+    field: str = Query("phone"),
     value: str = Query(...),
     userId: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_platform_db),
@@ -62,12 +61,12 @@ async def get_user(
 
 @router.get("")
 async def list_users(
-    username: Optional[str] = Query(None),
+    phone: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_platform_db),
     _: TokenData = Depends(get_current_user),
 ):
     """查询用户列表"""
-    items = await UserService.list_users(db, username)
+    items = await UserService.list_users(db, phone)
     return success(data=[item.model_dump() for item in items])
 
 

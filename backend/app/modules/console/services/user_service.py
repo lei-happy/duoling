@@ -44,11 +44,10 @@ class UserService:
         roles = await UserService._get_user_roles(db, u.id)
         return UserOut(
             userId=u.id,
-            username=u.username,
+            phone=u.phone,
             nickname=u.real_name,
             avatar=u.avatar,
             sex=SEX_MAP.get(u.gender),
-            phone=u.phone,
             email=u.email,
             status=u.status,
             organizationId=None,
@@ -62,20 +61,17 @@ class UserService:
         db: AsyncSession,
         page: int = 1,
         limit: int = 20,
-        username: Optional[str] = None,
-        nickname: Optional[str] = None,
         phone: Optional[str] = None,
+        nickname: Optional[str] = None,
         status: Optional[int] = None,
         sex: Optional[str] = None,
     ) -> dict:
         """分页查询用户（仅平台管理员 user_type=0）"""
         query = select(User).where(User.is_deleted == 0, User.user_type == 0)
-        if username:
-            query = query.where(User.username.contains(username))
-        if nickname:
-            query = query.where(User.real_name.contains(nickname))
         if phone:
             query = query.where(User.phone.contains(phone))
+        if nickname:
+            query = query.where(User.real_name.contains(nickname))
         if status is not None:
             query = query.where(User.status == status)
         if sex:
@@ -104,12 +100,12 @@ class UserService:
     @staticmethod
     async def list_users(
         db: AsyncSession,
-        username: Optional[str] = None,
+        phone: Optional[str] = None,
     ) -> List[UserOut]:
         """查询用户列表（不分页，仅平台管理员 user_type=0）"""
         query = select(User).where(User.is_deleted == 0, User.user_type == 0)
-        if username:
-            query = query.where(User.username.contains(username))
+        if phone:
+            query = query.where(User.phone.contains(phone))
         query = query.order_by(User.id.desc())
         result = await db.execute(query)
         items = result.scalars().all()
@@ -132,29 +128,26 @@ class UserService:
     @staticmethod
     async def create_user(db: AsyncSession, data: UserCreate) -> None:
         """新增用户"""
-        # 检查用户名是否已存在
         existing = await db.execute(
-            select(User).where(User.username == data.username, User.is_deleted == 0)
+            select(User).where(User.phone == data.phone, User.is_deleted == 0)
         )
         if existing.scalar_one_or_none():
-            raise BizException("用户名已存在")
+            raise BizException("该手机号已存在")
 
         gender = SEX_REVERSE.get(data.sex, 0) if data.sex else 0
         user = User(
-            username=data.username,
+            phone=data.phone,
             password=hash_password(data.password or "123456"),
             real_name=data.nickname,
             avatar=data.avatar,
             gender=gender,
-            phone=data.phone,
             email=data.email,
-            user_type=0,  # 平台用户
+            user_type=0,
             status=data.status if data.status is not None else 1,
         )
         db.add(user)
         await db.flush()
 
-        # 关联角色
         if data.roles:
             for role_id in data.roles:
                 db.add(UserRole(user_id=user.id, role_id=role_id))
@@ -170,38 +163,32 @@ class UserService:
         if not user:
             raise BizException("用户不存在")
 
-        if data.username is not None:
-            # 检查用户名唯一性
+        if data.phone is not None:
             dup = await db.execute(
                 select(User).where(
-                    User.username == data.username,
+                    User.phone == data.phone,
                     User.id != data.userId,
                     User.is_deleted == 0,
                 )
             )
             if dup.scalar_one_or_none():
-                raise BizException("用户名已存在")
-            user.username = data.username
+                raise BizException("该手机号已存在")
+            user.phone = data.phone
         if data.nickname is not None:
             user.real_name = data.nickname
         if data.avatar is not None:
             user.avatar = data.avatar
         if data.sex is not None:
             user.gender = SEX_REVERSE.get(data.sex, 0)
-        if data.phone is not None:
-            user.phone = data.phone
         if data.email is not None:
             user.email = data.email
         if data.status is not None:
             user.status = data.status
 
-        # 更新角色
         if data.roles is not None:
-            # 删除旧关联
             await db.execute(
                 delete(UserRole).where(UserRole.user_id == data.userId)
             )
-            # 新增关联
             for role_id in data.roles:
                 db.add(UserRole(user_id=data.userId, role_id=role_id))
 
@@ -247,8 +234,8 @@ class UserService:
         db: AsyncSession, field: str, value: str, user_id: Optional[int] = None
     ) -> bool:
         """检查字段是否已存在"""
-        if field == "username":
-            query = select(User).where(User.username == value, User.is_deleted == 0)
+        if field == "phone":
+            query = select(User).where(User.phone == value, User.is_deleted == 0)
         else:
             return False
         if user_id:

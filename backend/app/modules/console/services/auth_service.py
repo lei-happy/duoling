@@ -3,7 +3,6 @@
 处理登录、Token签发、用户信息/菜单/权限查询
 """
 
-import re
 from datetime import datetime, timedelta
 from typing import Optional, List, Union
 
@@ -29,11 +28,8 @@ from app.modules.console.schemas.auth import (
     TenantOption, MultiTenantResponse,
     ChangePasswordRequest, RefreshTokenRequest, RefreshTokenResponse,
     UserInfoOut, UserRoleOut, UserMenuOut,
-    UpdateThemeConfigRequest,
+    UpdateThemeConfigRequest, SwitchTenantRequest,
 )
-
-# 手机号正则（中国大陆）
-_PHONE_RE = re.compile(r"^1[3-9]\d{9}$")
 
 
 class AuthService:
@@ -44,38 +40,42 @@ class AuthService:
         db: AsyncSession, request: LoginRequest
     ) -> LoginResponse:
         """
-        平台管理后台登录
+        平台管理后台登录（手机号 + 密码）
         仅允许平台管理员（user_type=0）登录
         """
-        # 查询用户
         result = await db.execute(
             select(User).where(
-                User.username == request.username,
+                User.phone == request.phone,
                 User.is_deleted == 0,
             )
         )
         user = result.scalar_one_or_none()
         if not user:
-            raise AuthException("用户名或密码错误")
+            logger.warning(f"平台登录失败: 手机号 {request.phone} 未找到匹配用户")
+            raise AuthException("手机号或密码错误")
 
         if user.user_type != 0:
+            logger.warning(
+                f"平台登录失败: 用户 {user.phone}(id={user.id}) user_type={user.user_type}，非平台管理员"
+            )
             raise AuthException("无权登录管理后台")
 
         if user.status != 1:
+            logger.warning(
+                f"平台登录失败: 用户 {user.phone}(id={user.id}) status={user.status}，账号已停用"
+            )
             raise AuthException("账号已被停用")
 
-        # 验证密码
         if not verify_password(request.password, user.password):
-            raise AuthException("用户名或密码错误")
+            logger.warning(f"平台登录失败: 用户 {user.phone}(id={user.id}) 密码校验不通过")
+            raise AuthException("手机号或密码错误")
 
-        # 获取角色
         roles = await AuthService._get_user_roles(db, user.id)
 
-        # 签发 Token
         settings = get_settings()
         token_data = TokenData(
             user_id=user.id,
-            username=user.username,
+            phone=user.phone,
             user_type=user.user_type,
             tenant_code=None,
             roles=[r.role_code for r in roles],
@@ -89,7 +89,7 @@ class AuthService:
             expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             user=LoginUserInfo(
                 user_id=user.id,
-                username=user.username,
+                phone=user.phone,
                 real_name=user.real_name,
                 avatar=user.avatar,
                 user_type=user.user_type,
@@ -99,7 +99,7 @@ class AuthService:
         )
 
     # ============================================================
-    # 客户端登录（手机号/用户名 + 多企业选择）
+    # 客户端登录（手机号 + 多企业选择）
     # ============================================================
 
     @staticmethod
@@ -107,45 +107,34 @@ class AuthService:
         db: AsyncSession, request: LoginRequest
     ) -> Union[LoginResponse, MultiTenantResponse]:
         """
-        客户端登录
-        - username 字段自动检测是手机号还是用户名
+        客户端登录（手机号 + 密码）
         - 通过 sys_user_tenant 查找用户关联的所有企业
         - 多企业时返回选择列表，tenant_code 为第二步传入
         """
-        account = request.username.strip()
-        is_phone = bool(_PHONE_RE.match(account))
+        phone = request.phone.strip()
 
-        # Step 1: 查找用户（phone 唯一，最多一条）
-        if is_phone:
-            query = select(User).where(
-                User.phone == account,
+        result = await db.execute(
+            select(User).where(
+                User.phone == phone,
                 User.is_deleted == 0,
                 User.status == 1,
             )
-        else:
-            query = select(User).where(
-                User.username == account,
-                User.is_deleted == 0,
-                User.status == 1,
-            )
-
-        result = await db.execute(query)
+        )
         user = result.scalar_one_or_none()
 
         if not user:
-            raise AuthException("账号或密码错误")
+            logger.warning(f"客户端登录失败: 手机号 {phone} 未找到匹配用户")
+            raise AuthException("手机号或密码错误")
 
-        # Step 2: 验证密码
         if not verify_password(request.password, user.password):
-            raise AuthException("账号或密码错误")
+            logger.warning(f"客户端登录失败: 用户 {phone}(id={user.id}) 密码校验不通过")
+            raise AuthException("手机号或密码错误")
 
-        # Step 3: 通过 sys_user_tenant 查找该用户关联的所有企业
         ut_query = select(UserTenant).where(
             UserTenant.user_id == user.id,
             UserTenant.status == 1,
             UserTenant.is_deleted == 0,
         )
-        # 如果指定了 tenant_code（多企业选择第二步），精确过滤
         if request.tenant_code:
             ut_query = ut_query.where(UserTenant.tenant_code == request.tenant_code)
 
@@ -155,8 +144,7 @@ class AuthService:
         if not user_tenants:
             raise AuthException("您的企业账号尚未激活或已过期，请联系管理员")
 
-        # Step 4: 逐一检查 sys_tenant 状态，过滤出活跃企业
-        active_pairs: List[tuple] = []  # (user_tenant, tenant)
+        active_pairs: List[tuple] = []
         for ut in user_tenants:
             tenant_result = await db.execute(
                 select(Tenant).where(
@@ -168,7 +156,6 @@ class AuthService:
             if not tenant:
                 continue
             if tenant.status not in (1,):
-                # 0-停用, 2-待审核, 3-已过期 均跳过
                 continue
             if tenant.expire_time and tenant.expire_time < datetime.now():
                 tenant.status = 3
@@ -179,7 +166,6 @@ class AuthService:
         if not active_pairs:
             raise AuthException("您的企业账号尚未激活或已过期，请联系管理员")
 
-        # Step 5: 根据匹配数量决定返回
         if len(active_pairs) == 1:
             ut, tenant = active_pairs[0]
             return await AuthService._build_login_response(
@@ -196,14 +182,13 @@ class AuthService:
             ]
             return MultiTenantResponse(tenants=tenants)
 
-        # 已指定 tenant_code → 应只剩一个
         if active_pairs:
             ut, tenant = active_pairs[0]
             return await AuthService._build_login_response(
                 db, user, tenant.tenant_code, ut.user_type
             )
 
-        raise AuthException("账号或密码错误")
+        raise AuthException("手机号或密码错误")
 
     @staticmethod
     async def _build_login_response(
@@ -218,7 +203,7 @@ class AuthService:
         settings = get_settings()
         token_data = TokenData(
             user_id=user.id,
-            username=user.username,
+            phone=user.phone,
             user_type=user_type,
             tenant_code=tenant_code,
             roles=[r.role_code for r in roles],
@@ -232,7 +217,7 @@ class AuthService:
             expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             user=LoginUserInfo(
                 user_id=user.id,
-                username=user.username,
+                phone=user.phone,
                 real_name=user.real_name,
                 avatar=user.avatar,
                 user_type=user_type,
@@ -240,6 +225,86 @@ class AuthService:
                 roles=[r.role_code for r in roles],
                 force_change_pwd=user.force_change_pwd,
             ),
+        )
+
+    # ============================================================
+    # 切换租户
+    # ============================================================
+
+    @staticmethod
+    async def get_user_tenants(
+        db: AsyncSession, user_id: int
+    ) -> List[TenantOption]:
+        """获取用户关联的所有有效租户列表"""
+        ut_result = await db.execute(
+            select(UserTenant).where(
+                UserTenant.user_id == user_id,
+                UserTenant.status == 1,
+                UserTenant.is_deleted == 0,
+            )
+        )
+        user_tenants = list(ut_result.scalars().all())
+
+        tenants: List[TenantOption] = []
+        for ut in user_tenants:
+            tenant_result = await db.execute(
+                select(Tenant).where(
+                    Tenant.tenant_code == ut.tenant_code,
+                    Tenant.is_deleted == 0,
+                    Tenant.status == 1,
+                )
+            )
+            tenant = tenant_result.scalar_one_or_none()
+            if not tenant:
+                continue
+            if tenant.expire_time and tenant.expire_time < datetime.now():
+                continue
+            tenants.append(TenantOption(
+                tenantCode=tenant.tenant_code,
+                tenantName=tenant.tenant_name,
+            ))
+        return tenants
+
+    @staticmethod
+    async def switch_tenant(
+        db: AsyncSession, user_id: int, request: SwitchTenantRequest
+    ) -> LoginResponse:
+        """切换到目标租户，签发新的 Token"""
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == 0, User.status == 1)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise AuthException("用户不存在或已停用")
+
+        ut_result = await db.execute(
+            select(UserTenant).where(
+                UserTenant.user_id == user_id,
+                UserTenant.tenant_code == request.tenant_code,
+                UserTenant.status == 1,
+                UserTenant.is_deleted == 0,
+            )
+        )
+        ut = ut_result.scalar_one_or_none()
+        if not ut:
+            raise AuthException("您无权访问该企业")
+
+        tenant_result = await db.execute(
+            select(Tenant).where(
+                Tenant.tenant_code == request.tenant_code,
+                Tenant.is_deleted == 0,
+                Tenant.status == 1,
+            )
+        )
+        tenant = tenant_result.scalar_one_or_none()
+        if not tenant:
+            raise AuthException("企业不存在或已停用")
+
+        if tenant.expire_time and tenant.expire_time < datetime.now():
+            raise AuthException("企业授权已过期")
+
+        return await AuthService._build_login_response(
+            db, user, tenant.tenant_code, ut.user_type
         )
 
     # ============================================================
@@ -257,7 +322,6 @@ class AuthService:
         if not token_data:
             raise AuthException("Refresh Token 无效或已过期，请重新登录")
 
-        # 查询用户是否仍然有效
         result = await db.execute(
             select(User).where(
                 User.id == token_data.user_id,
@@ -269,16 +333,14 @@ class AuthService:
         if not user:
             raise AuthException("用户不存在或已停用，请重新登录")
 
-        # 获取角色
         roles = await AuthService._get_user_roles(
             db, user.id, token_data.tenant_code
         )
 
-        # 签发新的 token 对
         settings = get_settings()
         new_token_data = TokenData(
             user_id=user.id,
-            username=user.username,
+            phone=user.phone,
             user_type=token_data.user_type,
             tenant_code=token_data.tenant_code,
             roles=[r.role_code for r in roles],
@@ -313,20 +375,17 @@ class AuthService:
         if not user:
             raise AuthException("用户不存在")
 
-        # 验证旧密码
         if not verify_password(request.oldPassword, user.password):
             raise AuthException("旧密码错误")
 
-        # 新旧密码不能相同
         if request.oldPassword == request.newPassword:
             raise AuthException("新密码不能与旧密码相同")
 
-        # 更新密码
         user.password = hash_password(request.newPassword)
         user.force_change_pwd = 0
         await db.commit()
 
-        logger.info(f"用户 {user.username} 已修改密码")
+        logger.info(f"用户 {user.phone} 已修改密码")
 
     @staticmethod
     async def _get_user_roles(
@@ -346,7 +405,6 @@ class AuthService:
             )
         )
         if tenant_code is not None:
-            # 只返回当前企业的租户角色 + 平台公共角色
             query = query.where(
                 (Role.tenant_code == tenant_code) | (Role.tenant_code.is_(None))
             )
@@ -369,7 +427,6 @@ class AuthService:
         :param app_type: "platform" 返回管理后台菜单，"client" 返回客户端菜单
         :param tenant_code: 传入时按企业过滤角色
         """
-        # 1. 查询用户
         result = await db.execute(
             select(User).where(User.id == user_id, User.is_deleted == 0)
         )
@@ -377,23 +434,19 @@ class AuthService:
         if not user:
             raise AuthException("用户不存在")
 
-        # 2. 查询角色（按企业过滤）
         roles = await AuthService._get_user_roles(db, user_id, tenant_code)
         role_codes = [r.role_code for r in roles]
 
-        # 3. 查询菜单（根据 app_type 区分平台/客户端，client 端按产品版本过滤）
         menus = await AuthService._get_user_menus(
             db, user_id, role_codes, app_type, tenant_code=tenant_code
         )
 
-        # 4. 组装输出（字段名对齐前端 EleAdminPlus）
         gender_map = {0: None, 1: "男", 2: "女"}
         return UserInfoOut(
             userId=user.id,
-            username=user.username,
+            phone=user.phone,
             nickname=user.real_name,
             avatar=user.avatar,
-            phone=user.phone,
             email=user.email,
             sex=gender_map.get(user.gender),
             status=user.status,
@@ -433,7 +486,6 @@ class AuthService:
         获取用户可访问的菜单列表。
         client 端额外根据企业产品版本的功能清单过滤菜单。
         """
-        # Client 端：先获取企业版本对应的 feature_code 列表
         allowed_feature_codes = None
         if app_type == "client" and tenant_code:
             try:
@@ -446,7 +498,6 @@ class AuthService:
 
         is_admin = "super_admin" in role_codes
 
-        # Client 端：通过 sys_user_tenant.user_type 判断是否为租户管理员
         if not is_admin and app_type == "client" and tenant_code:
             ut_result = await db.execute(
                 select(UserTenant.user_type).where(
@@ -485,7 +536,6 @@ class AuthService:
                 .distinct()
             )
 
-        # 按产品版本过滤（仅 client 且已配置功能清单时生效）
         if allowed_feature_codes is not None and len(allowed_feature_codes) > 0:
             from sqlalchemy import or_
             query = query.where(

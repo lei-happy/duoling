@@ -27,23 +27,20 @@ class BizUserService:
         db: AsyncSession,
         page: int = 1,
         limit: int = 20,
-        username: Optional[str] = None,
-        nickname: Optional[str] = None,
         phone: Optional[str] = None,
+        nickname: Optional[str] = None,
         status: Optional[int] = None,
         organization_id: Optional[int] = None,
     ) -> dict:
         base = select(BizUser).where(BizUser.is_deleted == 0)
 
-        if username:
-            base = base.where(BizUser.username.contains(username))
+        if phone:
+            base = base.where(BizUser.phone.contains(phone))
         if nickname:
             base = base.where(
                 (BizUser.nickname.contains(nickname)) |
                 (BizUser.real_name.contains(nickname))
             )
-        if phone:
-            base = base.where(BizUser.phone.contains(phone))
         if status is not None:
             base = base.where(BizUser.status == status)
         if organization_id is not None:
@@ -162,21 +159,20 @@ class BizUserService:
     async def create_user(db: AsyncSession, data: BizUserCreate) -> BizUser:
         existing = await db.execute(
             select(BizUser).where(
-                BizUser.username == data.username,
+                BizUser.phone == data.phone,
                 BizUser.is_deleted == 0,
             )
         )
         if existing.scalar_one_or_none():
-            raise BizException(f"用户名 {data.username} 已存在")
+            raise BizException(f"手机号 {data.phone} 已存在")
 
         gender = SEX_TO_GENDER.get(data.sex, 0) if data.sex else 0
 
         user = BizUser(
-            username=data.username,
+            phone=data.phone,
             password=hash_password(data.password),
             real_name=data.realName or data.nickname,
             nickname=data.nickname,
-            phone=data.phone,
             email=data.email,
             gender=gender,
             user_type=data.userType,
@@ -214,6 +210,15 @@ class BizUserService:
         if data.realName is not None:
             user.real_name = data.realName
         if data.phone is not None:
+            dup = await db.execute(
+                select(BizUser).where(
+                    BizUser.phone == data.phone,
+                    BizUser.id != user_id,
+                    BizUser.is_deleted == 0,
+                )
+            )
+            if dup.scalar_one_or_none():
+                raise BizException("该手机号已存在")
             user.phone = data.phone
         if data.email is not None:
             user.email = data.email
@@ -275,7 +280,7 @@ class BizUserService:
             user = result.scalar_one_or_none()
             if user:
                 if user.user_type == 1:
-                    raise BizException(f"管理员账号 {user.username} 无法删除")
+                    raise BizException(f"管理员账号 {user.phone} 无法删除")
                 user.is_deleted = 1
         await db.flush()
 

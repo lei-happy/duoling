@@ -3,10 +3,10 @@
   <el-form label-width="72px" @keyup.enter="search" @submit.prevent="">
     <el-row :gutter="16">
       <el-col :lg="6" :md="12" :sm="12" :xs="24">
-        <el-form-item label="用户账号">
+        <el-form-item label="手机号">
           <el-input
             clearable
-            v-model.trim="form.username"
+            v-model.trim="form.phone"
             placeholder="请输入"
           />
         </el-form-item>
@@ -56,7 +56,7 @@
 
   /** 表单数据 */
   const [form, resetFields] = useFormData<UserParam>({
-    username: '',
+    phone: '',
     nickname: '',
     sex: void 0
   });

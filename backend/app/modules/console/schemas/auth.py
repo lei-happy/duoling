@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 class LoginRequest(BaseModel):
     """登录请求"""
-    username: str                       # 手机号或用户名
+    phone: str                          # 手机号
     password: str
     tenant_code: Optional[str] = None   # 多企业选择时第二步传入
 
@@ -25,7 +25,7 @@ class LoginResponse(BaseModel):
 class LoginUserInfo(BaseModel):
     """登录用户信息"""
     user_id: int
-    username: str
+    phone: str
     real_name: Optional[str] = None
     avatar: Optional[str] = None
     user_type: int
@@ -65,6 +65,11 @@ class ChangePasswordRequest(BaseModel):
     newPassword: str = Field(description="新密码", min_length=6)
 
 
+class SwitchTenantRequest(BaseModel):
+    """切换租户请求"""
+    tenant_code: str = Field(description="目标租户编码")
+
+
 # ============================================================
 # /auth/user-info 接口返回格式
 # 字段名对齐前端 EleAdminPlus 期望
@@ -95,10 +100,9 @@ class UserRoleOut(BaseModel):
 class UserInfoOut(BaseModel):
     """用户信息输出（/auth/user-info 返回）"""
     userId: int = Field(description="用户ID")
-    username: str = Field(description="用户名")
+    phone: str = Field(description="手机号")
     nickname: Optional[str] = Field(default=None, description="昵称/真实姓名")
     avatar: Optional[str] = Field(default=None, description="头像")
-    phone: Optional[str] = Field(default=None, description="手机号")
     email: Optional[str] = Field(default=None, description="邮箱")
     sex: Optional[str] = Field(default=None, description="性别")
     status: Optional[int] = Field(default=None, description="状态")

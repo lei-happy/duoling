@@ -260,10 +260,10 @@
       align: 'center'
     },
     {
-      prop: 'username',
-      label: '用户账号',
+      prop: 'phone',
+      label: '手机号',
       sortable: 'custom',
-      minWidth: 110
+      minWidth: 120
     },
     {
       prop: 'nickname',

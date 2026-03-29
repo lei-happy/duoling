@@ -21,7 +21,6 @@ class RegisterResponse(BaseModel):
     """企业自助注册响应"""
     tenant_code: str               # 分配的企业编码
     tenant_name: str               # 企业名称
-    admin_username: str            # 管理员用户名
-    admin_phone: str               # 管理员手机号（即联系电话，可用于登录）
+    admin_phone: str               # 管理员手机号（登录标识）
     is_existing_user: bool = False  # 手机号是否已存在（True=老用户、False=新用户）
     message: str = "注册成功，默认密码为 123456，首次登录后请修改密码"

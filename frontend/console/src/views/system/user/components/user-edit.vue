@@ -19,15 +19,6 @@
           <el-form-item label="所属机构">
             <organization-select v-model="form.organizationId" />
           </el-form-item>
-          <el-form-item label="用户账号" prop="username">
-            <el-input
-              clearable
-              :maxlength="20"
-              v-model="form.username"
-              placeholder="请输入用户账号"
-              :disabled="isUpdate"
-            />
-          </el-form-item>
           <el-form-item label="用户名" prop="nickname">
             <el-input
               clearable
@@ -141,7 +132,6 @@
   /** 表单数据 */
   const [form, _resetFields, assignFields] = useFormData<User>({
     userId: void 0,
-    username: '',
     nickname: '',
     sex: void 0,
     roles: [],
@@ -156,39 +146,6 @@
 
   /** 表单验证规则 */
   const rules = reactive<FormRules>({
-    username: [
-      {
-        required: true,
-        message: '请输入用户账号',
-        type: 'string',
-        trigger: 'blur'
-      },
-      {
-        min: 4,
-        message: '账号长度最少为4位',
-        type: 'string',
-        trigger: 'blur'
-      },
-      {
-        type: 'string',
-        trigger: 'blur',
-        validator: (_rule: any, value: string, callback: any) => {
-          if (isUpdate.value) {
-            callback();
-            return;
-          }
-          checkExistence('username', value, form.userId)
-            .then((exists: boolean) => {
-              if (exists) {
-                callback(new Error('账号已经存在'));
-              } else {
-                callback();
-              }
-            })
-            .catch(() => callback());
-        }
-      }
-    ],
     nickname: [
       {
         required: true,
@@ -251,6 +208,25 @@
         message: '手机号格式不正确',
         type: 'string',
         trigger: 'blur'
+      },
+      {
+        type: 'string',
+        trigger: 'blur',
+        validator: (_rule: any, value: string, callback: any) => {
+          if (!value || !phoneReg.test(value)) {
+            callback();
+            return;
+          }
+          checkExistence('phone', value, form.userId)
+            .then((exists: boolean) => {
+              if (exists) {
+                callback(new Error('该手机号已存在'));
+              } else {
+                callback();
+              }
+            })
+            .catch(() => callback());
+        }
       }
     ]
   });

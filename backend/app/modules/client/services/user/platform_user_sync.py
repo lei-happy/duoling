@@ -1,6 +1,7 @@
 """
 员工（biz_user）与平台账号（sys_user / sys_user_tenant / sys_user_role）同步。
 使客户端登录（仅认平台库）与租户员工管理一致。
+同步以手机号（phone）作为关联标识。
 """
 
 from __future__ import annotations
@@ -46,14 +47,28 @@ class BizPlatformUserSync:
         return r.scalar_one_or_none()
 
     @staticmethod
-    async def _find_platform_user_for_tenant(
-        pdb: AsyncSession, tenant_code: str, username: str
+    async def _find_platform_user_by_phone(
+        pdb: AsyncSession, phone: str
     ) -> Optional[User]:
+        """通过手机号查找平台用户"""
+        r = await pdb.execute(
+            select(User).where(
+                User.phone == phone,
+                User.is_deleted == 0,
+            )
+        )
+        return r.scalar_one_or_none()
+
+    @staticmethod
+    async def _find_platform_user_for_tenant(
+        pdb: AsyncSession, tenant_code: str, phone: str
+    ) -> Optional[User]:
+        """通过手机号查找在指定租户下的平台用户"""
         r = await pdb.execute(
             select(User)
             .join(UserTenant, UserTenant.user_id == User.id)
             .where(
-                User.username == username,
+                User.phone == phone,
                 UserTenant.tenant_code == tenant_code,
                 User.is_deleted == 0,
                 UserTenant.is_deleted == 0,
@@ -141,7 +156,6 @@ class BizPlatformUserSync:
         await BizPlatformUserSync._clear_mirrored_user_roles(
             pdb, platform_user.id, tenant_code
         )
-        # 租户管理员走 UserTenant.user_type==1 全量菜单分支，不依赖 sys_user_role
         if biz_user.user_type == 1:
             await pdb.flush()
             return
@@ -169,31 +183,16 @@ class BizPlatformUserSync:
             raise BizException("用户不存在")
 
         rids = list(role_ids or [])
-        platform_user: Optional[User] = None
 
-        if bu.phone:
-            pr = await pdb.execute(
-                select(User).where(User.phone == bu.phone, User.is_deleted == 0)
-            )
-            platform_user = pr.scalar_one_or_none()
-            if platform_user and platform_user.username != bu.username:
-                raise BizException(
-                    f"该手机号已绑定平台账号，登录用户名须为：{platform_user.username}"
-                )
+        platform_user = await BizPlatformUserSync._find_platform_user_by_phone(
+            pdb, bu.phone
+        )
 
         if platform_user is None:
-            ur = await pdb.execute(
-                select(User).where(User.username == bu.username, User.is_deleted == 0)
-            )
-            existing_u = ur.scalar_one_or_none()
-            if existing_u:
-                raise BizException("该登录账号在平台已存在，请更换用户名")
-
             platform_user = User(
-                username=bu.username,
+                phone=bu.phone,
                 password=bu.password,
                 real_name=bu.real_name or bu.nickname,
-                phone=bu.phone,
                 email=bu.email,
                 gender=bu.gender,
                 user_type=2,
@@ -248,7 +247,7 @@ class BizPlatformUserSync:
             raise BizException("用户不存在")
 
         pu = await BizPlatformUserSync._find_platform_user_for_tenant(
-            pdb, tenant_code, bu.username
+            pdb, tenant_code, bu.phone
         )
         if not pu:
             await BizPlatformUserSync.sync_employee_create(
@@ -256,16 +255,15 @@ class BizPlatformUserSync:
             )
             return
 
-        if bu.phone:
-            other = await pdb.execute(
-                select(User).where(
-                    User.phone == bu.phone,
-                    User.is_deleted == 0,
-                    User.id != pu.id,
-                )
+        other = await pdb.execute(
+            select(User).where(
+                User.phone == bu.phone,
+                User.is_deleted == 0,
+                User.id != pu.id,
             )
-            if other.scalar_one_or_none():
-                raise BizException("该手机号已被其他平台用户使用")
+        )
+        if other.scalar_one_or_none():
+            raise BizException("该手机号已被其他平台用户使用")
 
         pu.real_name = bu.real_name or bu.nickname
         pu.phone = bu.phone
@@ -314,7 +312,7 @@ class BizPlatformUserSync:
         if not bu:
             raise BizException("用户不存在")
         pu = await BizPlatformUserSync._find_platform_user_for_tenant(
-            pdb, tenant_code, bu.username
+            pdb, tenant_code, bu.phone
         )
         if not pu:
             return
@@ -344,7 +342,7 @@ class BizPlatformUserSync:
         if not bu:
             raise BizException("用户不存在")
         pu = await BizPlatformUserSync._find_platform_user_for_tenant(
-            pdb, tenant_code, bu.username
+            pdb, tenant_code, bu.phone
         )
         if not pu:
             return
@@ -364,7 +362,7 @@ class BizPlatformUserSync:
         if not bu:
             return
         pu = await BizPlatformUserSync._find_platform_user_for_tenant(
-            pdb, tenant_code, bu.username
+            pdb, tenant_code, bu.phone
         )
         if not pu:
             return

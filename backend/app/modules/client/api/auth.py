@@ -11,7 +11,7 @@ from app.common.response import success
 from app.modules.console.schemas.auth import (
     LoginRequest, LoginResponse, MultiTenantResponse,
     ChangePasswordRequest, RefreshTokenRequest,
-    UpdateThemeConfigRequest,
+    UpdateThemeConfigRequest, SwitchTenantRequest,
 )
 from app.modules.console.services.auth_service import AuthService
 
@@ -24,8 +24,7 @@ async def client_login(
     db: AsyncSession = Depends(get_platform_db),
 ):
     """
-    客户端登录
-    支持手机号/用户名 + 密码登录
+    客户端登录（手机号 + 密码）
     当手机号对应多个企业时，返回企业选择列表
     """
     result = await AuthService.client_login(db, request)
@@ -53,6 +52,27 @@ async def get_user_info(
         tenant_code=current_user.tenant_code,
     )
     return success(data=user_info.model_dump())
+
+
+@router.get("/user-tenants")
+async def get_user_tenants(
+    current_user: TokenData = Depends(get_current_user),
+    db: AsyncSession = Depends(get_platform_db),
+):
+    """获取当前用户关联的所有有效租户列表"""
+    tenants = await AuthService.get_user_tenants(db, current_user.user_id)
+    return success(data=[t.model_dump() for t in tenants])
+
+
+@router.post("/switch-tenant")
+async def switch_tenant(
+    request: SwitchTenantRequest,
+    current_user: TokenData = Depends(get_current_user),
+    db: AsyncSession = Depends(get_platform_db),
+):
+    """切换到目标租户，返回新的 Token"""
+    result = await AuthService.switch_tenant(db, current_user.user_id, request)
+    return success(data=result.model_dump())
 
 
 @router.put("/password")

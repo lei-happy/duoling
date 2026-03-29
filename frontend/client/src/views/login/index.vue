@@ -18,11 +18,11 @@
             @keyup.enter="submit"
             @submit.prevent=""
           >
-            <el-form-item prop="username">
+            <el-form-item prop="phone">
               <el-input
                 clearable
-                v-model="form.username"
-                placeholder="请输入手机号或用户名"
+                v-model="form.phone"
+                placeholder="请输入手机号"
                 :prefix-icon="UserOutlined"
               />
             </el-form-item>
@@ -191,7 +191,7 @@
 
   /** 表单数据 */
   const form = reactive({
-    username: '',
+    phone: '',
     password: '',
     remember: true
   });
@@ -199,11 +199,16 @@
   /** 表单验证规则 */
   const rules = computed<FormRules>(() => {
     return {
-      username: [
+      phone: [
         {
           required: true,
-          message: '请输入手机号或用户名',
+          message: '请输入手机号',
           type: 'string',
+          trigger: 'blur'
+        },
+        {
+          pattern: /^1[3-9]\d{9}$/,
+          message: '请输入正确的手机号',
           trigger: 'blur'
         }
       ],
@@ -235,7 +240,7 @@
     loading.value = true;
     try {
       const result = await login({
-        username: form.username,
+        phone: form.phone,
         password: form.password,
         tenant_code: tenantCode,
         remember: form.remember

@@ -15,7 +15,7 @@ from app.core.config import get_settings
 class TokenData(BaseModel):
     """Token 载荷数据"""
     user_id: int
-    username: str
+    phone: str
     user_type: int           # 用户类型（平台管理员/租户管理员/普通用户/驾驶员）
     tenant_code: Optional[str] = None  # 租户编码（平台管理员为 None）
     roles: list[str] = []    # 角色编码列表

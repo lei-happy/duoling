@@ -24,9 +24,8 @@ router = APIRouter()
 async def page_users(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
-    username: Optional[str] = Query(None),
-    nickname: Optional[str] = Query(None),
     phone: Optional[str] = Query(None),
+    nickname: Optional[str] = Query(None),
     status: Optional[int] = Query(None),
     organizationId: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_tenant_db),
@@ -35,8 +34,8 @@ async def page_users(
     """分页查询员工列表"""
     result = await BizUserService.page_users(
         db, page=page, limit=limit,
-        username=username, nickname=nickname,
-        phone=phone, status=status,
+        phone=phone, nickname=nickname,
+        status=status,
         organization_id=organizationId,
     )
     return success(data=result)

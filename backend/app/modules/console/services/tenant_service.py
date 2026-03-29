@@ -134,20 +134,19 @@ class TenantService:
             # 已有用户 —— 复用，不创建新 User
             is_existing_user = True
             logger.info(
-                f"手机号 {data.contactPhone} 已存在用户 {admin_user.username}，"
+                f"手机号 {data.contactPhone} 已存在用户(id={admin_user.id})，"
                 f"复用该用户关联新企业 {tenant_code}"
             )
         else:
             # 新用户 —— 创建 User
             admin_user = User(
-                username=f"admin_{tenant_code}",
                 password=hash_password("123456"),
                 real_name=data.contactPerson or "管理员",
                 phone=data.contactPhone,
                 email=data.contactEmail,
-                user_type=2,  # 非平台管理员（具体角色由 UserTenant 决定）
+                user_type=2,
                 status=1,
-                force_change_pwd=1,  # 首次登录强制修改密码
+                force_change_pwd=1,
             )
             db.add(admin_user)
             await db.flush()
@@ -243,7 +242,6 @@ class TenantService:
 
                 # 管理员用户
                 admin_user = BizUser(
-                    username=f"admin_{tenant_code}",
                     password=hash_password("123456"),
                     real_name=admin_name,
                     phone=admin_phone,

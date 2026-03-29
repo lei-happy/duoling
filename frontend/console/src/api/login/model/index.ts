@@ -4,8 +4,8 @@ import type { User } from '../../system/user/model';
  * 登录参数
  */
 export interface LoginParam {
-  /** 账号 */
-  username?: string;
+  /** 手机号 */
+  phone?: string;
   /** 密码 */
   password?: string;
   /** 是否记住密码 */
