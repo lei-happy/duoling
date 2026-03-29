@@ -10,7 +10,23 @@
           <ele-text type="heading" style="font-size: 24px; margin-bottom: 18px">
             {{ t('login.title') }}
           </ele-text>
+
+          <!-- 登录方式 Tab -->
+          <div class="login-tabs">
+            <span
+              :class="['login-tab', { active: loginMode === 'password' }]"
+              @click="loginMode = 'password'"
+            >密码登录</span>
+            <span class="login-tab-divider">|</span>
+            <span
+              :class="['login-tab', { active: loginMode === 'sms' }]"
+              @click="loginMode = 'sms'"
+            >验证码登录</span>
+          </div>
+
+          <!-- 密码登录表单 -->
           <el-form
+            v-if="loginMode === 'password'"
             ref="formRef"
             size="large"
             :model="form"
@@ -56,6 +72,64 @@
               </el-button>
             </el-form-item>
           </el-form>
+
+          <!-- 验证码登录表单 -->
+          <el-form
+            v-else
+            ref="smsFormRef"
+            size="large"
+            :model="smsForm"
+            :rules="smsRules"
+            @keyup.enter="submitSms"
+            @submit.prevent=""
+          >
+            <el-form-item prop="phone">
+              <el-input
+                clearable
+                v-model="smsForm.phone"
+                placeholder="请输入手机号"
+                :prefix-icon="UserOutlined"
+              />
+            </el-form-item>
+            <el-form-item prop="code">
+              <div style="display: flex; gap: 10px; width: 100%">
+                <el-input
+                  v-model="smsForm.code"
+                  placeholder="请输入验证码"
+                  :prefix-icon="LockOutlined"
+                  style="flex: 1"
+                />
+                <el-button
+                  size="large"
+                  :disabled="smsCooldown > 0"
+                  @click="handleSendCode(smsForm.phone, 1)"
+                >
+                  {{ smsCooldown > 0 ? `${smsCooldown}s` : '获取验证码' }}
+                </el-button>
+              </div>
+            </el-form-item>
+            <el-form-item>
+              <div style="display: flex; justify-content: space-between; width: 100%">
+                <el-checkbox v-model="smsForm.remember">
+                  {{ t('login.remember') }}
+                </el-checkbox>
+                <a class="forgot-pwd-link" @click.prevent="showForgotPwdDialog = true">
+                  忘记密码？
+                </a>
+              </div>
+            </el-form-item>
+            <el-form-item>
+              <el-button
+                size="large"
+                type="primary"
+                :loading="loading"
+                style="width: 100%"
+                @click="submitSms"
+              >
+                {{ t('login.login') }}
+              </el-button>
+            </el-form-item>
+          </el-form>
         </div>
       </ele-card>
     </div>
@@ -89,27 +163,46 @@
       </div>
     </el-dialog>
 
-    <!-- 忘记密码提示弹窗 -->
+    <!-- 忘记密码弹窗 -->
     <el-dialog
       v-model="showForgotPwdDialog"
-      title="忘记密码"
+      title="重置密码"
       width="420px"
       center
+      @close="resetForgotPwdForm"
     >
-      <div class="forgot-pwd-content">
-        <div class="forgot-pwd-icon">
-          <el-icon :size="48" color="#1681fd"><Lock /></el-icon>
-        </div>
-        <p class="forgot-pwd-text">
-          如果您忘记了登录密码，请联系您的企业管理员<br>或系统管理员进行密码重置。
-        </p>
-        <p class="forgot-pwd-hint">
-          后续版本将支持手机短信验证码自助找回密码
-        </p>
-      </div>
+      <el-form
+        ref="forgotFormRef"
+        :model="forgotForm"
+        :rules="forgotRules"
+        label-width="80px"
+        @submit.prevent=""
+      >
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="forgotForm.phone" placeholder="请输入注册手机号" />
+        </el-form-item>
+        <el-form-item label="验证码" prop="code">
+          <div style="display: flex; gap: 10px; width: 100%">
+            <el-input v-model="forgotForm.code" placeholder="请输入验证码" style="flex: 1" />
+            <el-button
+              :disabled="forgotCooldown > 0"
+              @click="handleSendForgotCode"
+            >
+              {{ forgotCooldown > 0 ? `${forgotCooldown}s` : '获取验证码' }}
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input show-password v-model="forgotForm.newPassword" placeholder="请输入新密码（至少6位）" />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input show-password v-model="forgotForm.confirmPassword" placeholder="请再次输入新密码" />
+        </el-form-item>
+      </el-form>
       <template #footer>
-        <el-button type="primary" @click="showForgotPwdDialog = false" style="width: 100%">
-          我知道了
+        <el-button @click="showForgotPwdDialog = false">取消</el-button>
+        <el-button type="primary" :loading="forgotLoading" @click="submitForgotPwd">
+          确认重置
         </el-button>
       </template>
     </el-dialog>
@@ -170,81 +263,148 @@
 <script lang="ts" setup>
   import { ref, reactive, computed } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
-  import { OfficeBuilding, ArrowRight, Lock } from '@element-plus/icons-vue';
+  import { OfficeBuilding, ArrowRight } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import { UserOutlined, LockOutlined } from '@/components/icons';
   import PageFooter from '@/layout/components/page-footer.vue';
   import { useLogin } from '@/utils/use-login';
-  import { changePassword } from '@/api/login';
+  import {
+    sendSmsCode, changePassword, resetPasswordBySms
+  } from '@/api/login';
   import type { TenantOption } from '@/api/login/model';
   import { useI18n } from 'vue-i18n';
   const PROJECT_NAME = import.meta.env.VITE_APP_NAME;
 
-  const { login, checkLogin, goHome } = useLogin();
+  const { login, smsLogin, checkLogin, goHome } = useLogin();
   const { t } = useI18n();
 
-  /** 表单 */
-  const formRef = ref<FormInstance | null>(null);
-
-  /** 加载状态 */
+  const loginMode = ref<'password' | 'sms'>('password');
   const loading = ref(false);
 
-  /** 表单数据 */
-  const form = reactive({
-    phone: '',
-    password: '',
-    remember: true
-  });
+  // ============================================================
+  // 密码登录
+  // ============================================================
+  const formRef = ref<FormInstance | null>(null);
+  const form = reactive({ phone: '', password: '', remember: true });
+  const rules = computed<FormRules>(() => ({
+    phone: [
+      { required: true, message: '请输入手机号', type: 'string', trigger: 'blur' },
+      { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+    ],
+    password: [
+      { required: true, message: t('login.password'), type: 'string', trigger: 'blur' }
+    ]
+  }));
 
-  /** 表单验证规则 */
-  const rules = computed<FormRules>(() => {
-    return {
-      phone: [
-        {
-          required: true,
-          message: '请输入手机号',
-          type: 'string',
-          trigger: 'blur'
-        },
-        {
-          pattern: /^1[3-9]\d{9}$/,
-          message: '请输入正确的手机号',
-          trigger: 'blur'
-        }
-      ],
-      password: [
-        {
-          required: true,
-          message: t('login.password'),
-          type: 'string',
-          trigger: 'blur'
-        }
-      ]
-    };
-  });
+  const submit = () => {
+    formRef.value?.validate?.((valid) => {
+      if (!valid) return;
+      loading.value = true;
+      login(form)
+        .then((result) => {
+          loading.value = false;
+          if (result.needSelectTenant && result.tenants?.length) {
+            tenantList.value = result.tenants;
+            showTenantDialog.value = true;
+            pendingLoginMode.value = 'password';
+          } else if (result.forceChangePwd) {
+            showChangePwdDialog.value = true;
+          }
+        })
+        .catch((e: Error) => {
+          loading.value = false;
+          EleMessage.error({ message: e.message, plain: true });
+        });
+    });
+  };
 
   // ============================================================
-  // 忘记密码
+  // 验证码登录
   // ============================================================
-  const showForgotPwdDialog = ref(false);
+  const smsFormRef = ref<FormInstance | null>(null);
+  const smsForm = reactive({ phone: '', code: '', remember: true });
+  const smsRules = computed<FormRules>(() => ({
+    phone: [
+      { required: true, message: '请输入手机号', type: 'string', trigger: 'blur' },
+      { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+    ],
+    code: [
+      { required: true, message: '请输入验证码', type: 'string', trigger: 'blur' },
+      { pattern: /^\d{6}$/, message: '验证码为6位数字', trigger: 'blur' }
+    ]
+  }));
+
+  const smsCooldown = ref(0);
+
+  const startCooldown = (target: typeof smsCooldown) => {
+    target.value = 60;
+    const timer = setInterval(() => {
+      target.value--;
+      if (target.value <= 0) clearInterval(timer);
+    }, 1000);
+    return timer;
+  };
+
+  const handleSendCode = async (phone: string, purpose: number) => {
+    if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
+      EleMessage.error({ message: '请输入正确的手机号', plain: true });
+      return;
+    }
+    try {
+      await sendSmsCode(phone, purpose);
+      EleMessage.success({ message: '验证码已发送', plain: true });
+      startCooldown(smsCooldown);
+    } catch (e: any) {
+      EleMessage.error({ message: e.message, plain: true });
+    }
+  };
+
+  const submitSms = () => {
+    smsFormRef.value?.validate?.((valid) => {
+      if (!valid) return;
+      loading.value = true;
+      smsLogin(smsForm.phone, smsForm.code, undefined, smsForm.remember)
+        .then((result) => {
+          loading.value = false;
+          if (result.needSelectTenant && result.tenants?.length) {
+            tenantList.value = result.tenants;
+            showTenantDialog.value = true;
+            pendingLoginMode.value = 'sms';
+          } else if (result.forceChangePwd) {
+            showChangePwdDialog.value = true;
+          }
+        })
+        .catch((e: Error) => {
+          loading.value = false;
+          EleMessage.error({ message: e.message, plain: true });
+        });
+    });
+  };
 
   // ============================================================
   // 企业选择
   // ============================================================
   const showTenantDialog = ref(false);
   const tenantList = ref<TenantOption[]>([]);
+  const pendingLoginMode = ref<'password' | 'sms'>('password');
 
-  /** 选择企业后重新登录 */
   const selectTenant = async (tenantCode: string) => {
     showTenantDialog.value = false;
     loading.value = true;
     try {
-      const result = await login({
-        phone: form.phone,
-        password: form.password,
-        tenant_code: tenantCode,
-        remember: form.remember
-      });
+      let result;
+      if (pendingLoginMode.value === 'sms') {
+        result = await smsLogin(
+          smsForm.phone, smsForm.code, tenantCode, smsForm.remember
+        );
+      } else {
+        result = await login({
+          phone: form.phone,
+          password: form.password,
+          tenant_code: tenantCode,
+          remember: form.remember
+        });
+      }
       if (result.forceChangePwd) {
         showChangePwdDialog.value = true;
       }
@@ -263,9 +423,7 @@
   const pwdFormRef = ref<FormInstance | null>(null);
 
   const pwdForm = reactive({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    oldPassword: '', newPassword: '', confirmPassword: ''
   });
 
   const pwdRules = computed<FormRules>(() => ({
@@ -291,7 +449,6 @@
     ]
   }));
 
-  /** 提交修改密码 */
   const submitChangePwd = () => {
     pwdFormRef.value?.validate?.((valid) => {
       if (!valid) return;
@@ -314,37 +471,84 @@
   };
 
   // ============================================================
-  // 登录提交
+  // 忘记密码
   // ============================================================
+  const showForgotPwdDialog = ref(false);
+  const forgotLoading = ref(false);
+  const forgotFormRef = ref<FormInstance | null>(null);
+  const forgotCooldown = ref(0);
 
-  /** 提交 */
-  const submit = () => {
-    formRef.value?.validate?.((valid) => {
-      if (!valid) {
-        return;
-      }
-      loading.value = true;
-      login(form)
-        .then((result) => {
-          loading.value = false;
-          if (result.needSelectTenant && result.tenants?.length) {
-            // 多企业选择
-            tenantList.value = result.tenants;
-            showTenantDialog.value = true;
-          } else if (result.forceChangePwd) {
-            // 强制修改密码
-            showChangePwdDialog.value = true;
+  const forgotForm = reactive({
+    phone: '', code: '', newPassword: '', confirmPassword: ''
+  });
+
+  const forgotRules = computed<FormRules>(() => ({
+    phone: [
+      { required: true, message: '请输入手机号', trigger: 'blur' },
+      { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+    ],
+    code: [
+      { required: true, message: '请输入验证码', trigger: 'blur' },
+      { pattern: /^\d{6}$/, message: '验证码为6位数字', trigger: 'blur' }
+    ],
+    newPassword: [
+      { required: true, message: '请输入新密码', trigger: 'blur' },
+      { min: 6, message: '密码长度至少6位', trigger: 'blur' }
+    ],
+    confirmPassword: [
+      { required: true, message: '请再次输入新密码', trigger: 'blur' },
+      {
+        validator: (_rule: any, value: string, callback: any) => {
+          if (value !== forgotForm.newPassword) {
+            callback(new Error('两次输入的密码不一致'));
+          } else {
+            callback();
           }
-          // 其他情况（单企业直接登录）已在 use-login 中处理跳转
+        },
+        trigger: 'blur'
+      }
+    ]
+  }));
+
+  const handleSendForgotCode = async () => {
+    if (!forgotForm.phone || !/^1[3-9]\d{9}$/.test(forgotForm.phone)) {
+      EleMessage.error({ message: '请输入正确的手机号', plain: true });
+      return;
+    }
+    try {
+      await sendSmsCode(forgotForm.phone, 2);
+      EleMessage.success({ message: '验证码已发送', plain: true });
+      startCooldown(forgotCooldown);
+    } catch (e: any) {
+      EleMessage.error({ message: e.message, plain: true });
+    }
+  };
+
+  const submitForgotPwd = () => {
+    forgotFormRef.value?.validate?.((valid) => {
+      if (!valid) return;
+      forgotLoading.value = true;
+      resetPasswordBySms(forgotForm.phone, forgotForm.code, forgotForm.newPassword)
+        .then(() => {
+          forgotLoading.value = false;
+          showForgotPwdDialog.value = false;
+          EleMessage.success({ message: '密码重置成功，请使用新密码登录', plain: true });
         })
         .catch((e: Error) => {
-          loading.value = false;
+          forgotLoading.value = false;
           EleMessage.error({ message: e.message, plain: true });
         });
     });
   };
 
-  /** 如果已登录直接进入首页 */
+  const resetForgotPwdForm = () => {
+    forgotForm.phone = '';
+    forgotForm.code = '';
+    forgotForm.newPassword = '';
+    forgotForm.confirmPassword = '';
+    forgotCooldown.value = 0;
+  };
+
   checkLogin();
 </script>
 
@@ -414,7 +618,6 @@
     }
   }
 
-  /* 标题 */
   .login-title {
     color: rgba(255, 255, 255, 0.98);
     font-size: 28px;
@@ -435,7 +638,34 @@
     letter-spacing: 4px;
   }
 
-  /* 忘记密码链接 */
+  .login-tabs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .login-tab {
+    font-size: 14px;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s;
+
+    &.active {
+      color: #1681fd;
+      font-weight: 600;
+    }
+
+    &:hover {
+      color: #1681fd;
+    }
+  }
+
+  .login-tab-divider {
+    color: #e2e8f0;
+    font-size: 14px;
+  }
+
   .forgot-pwd-link {
     font-size: 13px;
     color: #1681fd;
@@ -448,29 +678,6 @@
     }
   }
 
-  /* 忘记密码弹窗 */
-  .forgot-pwd-content {
-    text-align: center;
-    padding: 10px 0;
-  }
-
-  .forgot-pwd-icon {
-    margin-bottom: 16px;
-  }
-
-  .forgot-pwd-text {
-    font-size: 15px;
-    color: #334155;
-    line-height: 1.8;
-    margin-bottom: 12px;
-  }
-
-  .forgot-pwd-hint {
-    font-size: 13px;
-    color: #94a3b8;
-  }
-
-  /* 企业选择列表 */
   .tenant-list {
     display: flex;
     flex-direction: column;
@@ -528,7 +735,6 @@
     flex-shrink: 0;
   }
 
-  /* 小屏幕适应 */
   @media screen and (max-width: 680px) {
     .login-wrapper {
       background: #fff;

@@ -6,7 +6,7 @@ import { getToken, setToken, removeToken, setRefreshToken, removeRefreshToken } 
 import { goLogin } from '@/utils/common';
 import { usePageTab } from '@/utils/use-page-tab';
 import { useUserStore } from '@/store/modules/user';
-import { login as loginApi, logout as logoutApi } from '@/api/login';
+import { login as loginApi, smsLogin as smsLoginApi, logout as logoutApi } from '@/api/login';
 import type { LoginParam, LoginResult, TenantOption } from '@/api/login/model';
 
 /** 登录结果类型 */
@@ -87,6 +87,45 @@ export function useLogin() {
   };
 
   /**
+   * 验证码登录
+   */
+  const smsLogin = async (
+    phone: string,
+    code: string,
+    tenantCode?: string,
+    remember: boolean = true
+  ): Promise<LoginActionResult> => {
+    const result = await smsLoginApi(phone, code, tenantCode);
+    const loginData = result.data as LoginResult | undefined;
+
+    if (loginData?.needSelectTenant && loginData.tenants?.length) {
+      return {
+        success: false,
+        needSelectTenant: true,
+        tenants: loginData.tenants
+      };
+    }
+
+    const token = loginData?.access_token;
+    if (!token) {
+      return Promise.reject(new Error(result.message || '登录失败'));
+    }
+
+    EleMessage.success({ message: result.message, plain: true });
+    setToken(token, remember);
+    setRefreshToken(loginData?.refresh_token, remember);
+    clearData();
+
+    const forceChangePwd = loginData?.user?.force_change_pwd === 1;
+    if (forceChangePwd) {
+      return { success: true, forceChangePwd: true };
+    }
+
+    goHome();
+    return { success: true };
+  };
+
+  /**
    * 退出登录
    */
   const logout = async () => {
@@ -134,6 +173,7 @@ export function useLogin() {
 
   return {
     login,
+    smsLogin,
     logout,
     checkLogin,
     goHome,

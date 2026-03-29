@@ -101,20 +101,6 @@ export async function updateUserStatus(userId?: number, status?: number) {
 }
 
 /**
- * 重置用户密码
- */
-export async function updateUserPassword(userId?: number, password = '123456') {
-  const res = await request.put<ApiResult<unknown>>('/system/user/password', {
-    userId,
-    password
-  });
-  if (res.data.code === 0) {
-    return res.data.message;
-  }
-  return Promise.reject(new Error(res.data.message));
-}
-
-/**
  * 导入用户
  */
 export async function importUsers(file: File) {

@@ -299,22 +299,6 @@ class BizUserService:
         await db.flush()
 
     @staticmethod
-    async def reset_password(
-        db: AsyncSession, user_id: int, new_password: str = "123456"
-    ) -> None:
-        result = await db.execute(
-            select(BizUser).where(
-                BizUser.id == user_id,
-                BizUser.is_deleted == 0,
-            )
-        )
-        user = result.scalar_one_or_none()
-        if not user:
-            raise BizException("用户不存在")
-        user.password = hash_password(new_password)
-        await db.flush()
-
-    @staticmethod
     async def check_existence(
         db: AsyncSession, field: str, value: str, exclude_id: Optional[int] = None
     ) -> bool:

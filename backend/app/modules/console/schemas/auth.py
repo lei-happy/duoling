@@ -46,6 +46,13 @@ class MultiTenantResponse(BaseModel):
     tenants: List[TenantOption] = []
 
 
+class SmsLoginRequest(BaseModel):
+    """验证码登录请求"""
+    phone: str = Field(description="手机号")
+    code: str = Field(description="验证码")
+    tenant_code: Optional[str] = Field(default=None, description="企业编码（多企业选择时传入）")
+
+
 class RefreshTokenRequest(BaseModel):
     """刷新 Token 请求"""
     refresh_token: str = Field(description="Refresh Token")

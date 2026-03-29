@@ -331,25 +331,6 @@ class BizPlatformUserSync:
         await pdb.flush()
 
     @staticmethod
-    async def sync_employee_password(
-        pdb: AsyncSession,
-        tenant_db: AsyncSession,
-        tenant_code: str,
-        biz_user_id: int,
-        plain_password: str,
-    ) -> None:
-        bu = await BizPlatformUserSync._load_biz_user(tenant_db, biz_user_id)
-        if not bu:
-            raise BizException("用户不存在")
-        pu = await BizPlatformUserSync._find_platform_user_for_tenant(
-            pdb, tenant_code, bu.phone
-        )
-        if not pu:
-            return
-        pu.password = hash_password(plain_password)
-        await pdb.flush()
-
-    @staticmethod
     async def sync_employee_remove(
         pdb: AsyncSession,
         tenant_db: AsyncSession,

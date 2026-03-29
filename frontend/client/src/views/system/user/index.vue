@@ -117,15 +117,9 @@
                     preset: 'more',
                     dropdownItems: [
                       {
-                        title: '重置密码',
-                        icon: LockOutlined,
-                        onClick: () => handleUpdatePassword(row)
-                      },
-                      {
                         title: '删除用户',
                         icon: DeleteOutlined,
                         danger: true,
-                        divided: true,
                         onClick: () => remove(row)
                       }
                     ]
@@ -154,8 +148,7 @@
   import {
     CityOutlined,
     SearchOutlined,
-    DeleteOutlined,
-    LockOutlined
+    DeleteOutlined
   } from '@/components/icons';
   import { usePageTab } from '@/utils/use-page-tab';
   import { useMobile } from '@/utils/use-mobile';
@@ -166,7 +159,6 @@
     pageUsers,
     removeUsers,
     updateUserStatus,
-    updateUserPassword,
     listUsers
   } from '@/api/system/user';
   import type { User, UserParam } from '@/api/system/user/model';
@@ -397,31 +389,6 @@
       .catch((e) => {
         EleMessage.error({ message: e.message, plain: true });
       });
-  };
-
-  /** 修改密码 */
-  const handleUpdatePassword = (row: User) => {
-    ElMessageBox.prompt(`请输入用户"${row.nickname}"的新密码：`, '重置密码', {
-      inputPattern: /^[\S]{5,18}$/,
-      inputErrorMessage: '密码必须为5-18位非空白字符',
-      draggable: true
-    })
-      .then(({ value }) => {
-        const loading = EleMessage.loading({
-          message: '请求中..',
-          plain: true
-        });
-        updateUserPassword(row.userId, value)
-          .then((msg) => {
-            loading.close();
-            EleMessage.success({ message: msg, plain: true });
-          })
-          .catch((e) => {
-            loading.close();
-            EleMessage.error({ message: e.message, plain: true });
-          });
-      })
-      .catch(() => {});
   };
 
   /** 导出和打印全部数据的数据源 */

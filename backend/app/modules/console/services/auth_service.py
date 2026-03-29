@@ -99,6 +99,65 @@ class AuthService:
         )
 
     # ============================================================
+    # 平台管理后台验证码登录
+    # ============================================================
+
+    @staticmethod
+    async def platform_sms_login(
+        db: AsyncSession, phone: str, code: str
+    ) -> LoginResponse:
+        """
+        平台管理后台验证码登录
+        校验验证码 → 查 sys_user (user_type==0) → 签发 JWT
+        """
+        from app.modules.open.services.sms_service import SmsService, PURPOSE_LOGIN
+        await SmsService.verify_code(db, phone, code, PURPOSE_LOGIN)
+
+        result = await db.execute(
+            select(User).where(
+                User.phone == phone,
+                User.is_deleted == 0,
+            )
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise AuthException("该手机号未注册")
+
+        if user.user_type != 0:
+            raise AuthException("无权登录管理后台")
+
+        if user.status != 1:
+            raise AuthException("账号已被停用")
+
+        roles = await AuthService._get_user_roles(db, user.id)
+
+        settings = get_settings()
+        token_data = TokenData(
+            user_id=user.id,
+            phone=user.phone,
+            user_type=user.user_type,
+            tenant_code=None,
+            roles=[r.role_code for r in roles],
+        )
+        access_token = create_access_token(token_data)
+        refresh_token = create_refresh_token(token_data)
+
+        return LoginResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            user=LoginUserInfo(
+                user_id=user.id,
+                phone=user.phone,
+                real_name=user.real_name,
+                avatar=user.avatar,
+                user_type=user.user_type,
+                tenant_code=None,
+                roles=[r.role_code for r in roles],
+            ),
+        )
+
+    # ============================================================
     # 客户端登录（手机号 + 多企业选择）
     # ============================================================
 
@@ -189,6 +248,93 @@ class AuthService:
             )
 
         raise AuthException("手机号或密码错误")
+
+    # ============================================================
+    # 客户端验证码登录
+    # ============================================================
+
+    @staticmethod
+    async def client_sms_login(
+        db: AsyncSession, phone: str, code: str,
+        tenant_code: Optional[str] = None,
+    ) -> Union[LoginResponse, MultiTenantResponse]:
+        """
+        客户端验证码登录
+        校验验证码 → 查 sys_user → 多租户选择 → 签发 JWT
+        """
+        from app.modules.open.services.sms_service import SmsService, PURPOSE_LOGIN
+        await SmsService.verify_code(db, phone, code, PURPOSE_LOGIN)
+
+        result = await db.execute(
+            select(User).where(
+                User.phone == phone,
+                User.is_deleted == 0,
+                User.status == 1,
+            )
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise AuthException("该手机号未注册")
+
+        ut_query = select(UserTenant).where(
+            UserTenant.user_id == user.id,
+            UserTenant.status == 1,
+            UserTenant.is_deleted == 0,
+        )
+        if tenant_code:
+            ut_query = ut_query.where(UserTenant.tenant_code == tenant_code)
+
+        ut_result = await db.execute(ut_query)
+        user_tenants = list(ut_result.scalars().all())
+
+        if not user_tenants:
+            raise AuthException("您的企业账号尚未激活或已过期，请联系管理员")
+
+        active_pairs: List[tuple] = []
+        for ut in user_tenants:
+            tenant_result = await db.execute(
+                select(Tenant).where(
+                    Tenant.tenant_code == ut.tenant_code,
+                    Tenant.is_deleted == 0,
+                )
+            )
+            tenant = tenant_result.scalar_one_or_none()
+            if not tenant:
+                continue
+            if tenant.status not in (1,):
+                continue
+            if tenant.expire_time and tenant.expire_time < datetime.now():
+                tenant.status = 3
+                await db.flush()
+                continue
+            active_pairs.append((ut, tenant))
+
+        if not active_pairs:
+            raise AuthException("您的企业账号尚未激活或已过期，请联系管理员")
+
+        if len(active_pairs) == 1:
+            ut, tenant = active_pairs[0]
+            return await AuthService._build_login_response(
+                db, user, tenant.tenant_code, ut.user_type
+            )
+
+        if len(active_pairs) > 1 and not tenant_code:
+            tenants = [
+                TenantOption(
+                    tenantCode=t.tenant_code,
+                    tenantName=t.tenant_name,
+                )
+                for _, t in active_pairs
+            ]
+            return MultiTenantResponse(tenants=tenants)
+
+        if active_pairs:
+            ut, tenant = active_pairs[0]
+            return await AuthService._build_login_response(
+                db, user, tenant.tenant_code, ut.user_type
+            )
+
+        raise AuthException("登录失败")
 
     @staticmethod
     async def _build_login_response(

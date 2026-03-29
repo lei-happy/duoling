@@ -12,6 +12,7 @@ from app.modules.console.models.changelog import Changelog
 from app.modules.console.models.dict import Dict, DictItem
 from app.modules.console.models.feedback import Feedback
 from app.modules.console.models.operation_log import OperationLog
+from app.modules.console.models.sms_code import SmsCode
 
 __all__ = [
     "Tenant",
@@ -30,4 +31,5 @@ __all__ = [
     "DictItem",
     "Feedback",
     "OperationLog",
+    "SmsCode",
 ]

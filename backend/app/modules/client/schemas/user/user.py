@@ -84,8 +84,3 @@ class BizUserOut(BaseModel):
 class BizUserStatusUpdate(BaseModel):
     userId: int
     status: int
-
-
-class BizUserResetPassword(BaseModel):
-    userId: int
-    password: str = "123456"

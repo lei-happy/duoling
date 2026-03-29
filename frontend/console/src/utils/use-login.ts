@@ -6,7 +6,7 @@ import { getToken, setToken, removeToken, setRefreshToken, removeRefreshToken } 
 import { goLogin } from '@/utils/common';
 import { usePageTab } from '@/utils/use-page-tab';
 import { useUserStore } from '@/store/modules/user';
-import { login as loginApi, logout as logoutApi } from '@/api/login';
+import { login as loginApi, smsLogin as smsLoginApi, logout as logoutApi } from '@/api/login';
 import type { LoginParam } from '@/api/login/model';
 
 /**
@@ -47,6 +47,22 @@ export function useLogin() {
     EleMessage.success({ message: result.message, plain: true });
     setToken(token, data.remember);
     setRefreshToken(result.data?.refresh_token, data.remember);
+    clearData();
+    goHome();
+  };
+
+  /**
+   * 验证码登录
+   */
+  const smsLogin = async (phone: string, code: string, remember: boolean = true) => {
+    const result = await smsLoginApi(phone, code);
+    const token = result.data?.access_token;
+    if (!token) {
+      return Promise.reject(new Error(result.message || '登录失败'));
+    }
+    EleMessage.success({ message: result.message, plain: true });
+    setToken(token, remember);
+    setRefreshToken(result.data?.refresh_token, remember);
     clearData();
     goHome();
   };
@@ -99,6 +115,7 @@ export function useLogin() {
 
   return {
     login,
+    smsLogin,
     logout,
     checkLogin,
     goHome,

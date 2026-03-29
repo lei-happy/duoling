@@ -10,7 +10,7 @@ from app.core.dependencies import get_platform_db, get_current_user
 from app.core.security import TokenData
 from app.common.response import success
 from app.modules.console.schemas.user import (
-    UserCreate, UserUpdate, UserStatusUpdate, UserPasswordUpdate,
+    UserCreate, UserUpdate, UserStatusUpdate,
 )
 from app.modules.console.services.user_service import UserService
 
@@ -118,13 +118,3 @@ async def update_user_status(
     return success(message="修改成功")
 
 
-@router.put("/password")
-async def reset_user_password(
-    data: UserPasswordUpdate,
-    db: AsyncSession = Depends(get_platform_db),
-    _: TokenData = Depends(get_current_user),
-):
-    """重置密码"""
-    await UserService.reset_password(db, data.userId, data.password)
-    await db.commit()
-    return success(message="重置成功")

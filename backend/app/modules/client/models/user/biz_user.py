@@ -42,7 +42,7 @@ class BizUser(TenantModelBase):
         BigInteger, nullable=True, comment="所属部门ID"
     )
     status: Mapped[int] = mapped_column(
-        SmallInteger, default=1, comment="状态 0-停用 1-正常"
+        SmallInteger, default=0, comment="状态 0-正常 1-停用"
     )
     remark: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="备注"

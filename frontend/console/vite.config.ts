@@ -74,6 +74,18 @@ export default defineConfig(({ /* command, */ mode }) => {
         : void 0,
       changeOrigin: true
     };
+    // 开放接口（短信验证码等）前缀为 /api/open，与 console/client 不同，需单独代理到同一后端
+    try {
+      const openTarget = new URL(
+        proxyApi.startsWith('http') ? proxyApi : `http://${proxyApi}`
+      );
+      proxy['/api/open'] = {
+        target: `${openTarget.protocol}//${openTarget.host}`,
+        changeOrigin: true
+      };
+    } catch {
+      /* ignore */
+    }
   }
   return {
     resolve: { alias },

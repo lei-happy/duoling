@@ -9,7 +9,7 @@ from app.core.dependencies import get_platform_db, get_current_user
 from app.core.security import TokenData
 from app.common.response import success
 from app.modules.console.schemas.auth import (
-    LoginRequest, LoginResponse, MultiTenantResponse,
+    LoginRequest, SmsLoginRequest, LoginResponse, MultiTenantResponse,
     ChangePasswordRequest, RefreshTokenRequest,
     UpdateThemeConfigRequest, SwitchTenantRequest,
 )
@@ -28,6 +28,21 @@ async def client_login(
     当手机号对应多个企业时，返回企业选择列表
     """
     result = await AuthService.client_login(db, request)
+    return success(data=result.model_dump())
+
+
+@router.post("/sms-login")
+async def client_sms_login(
+    request: SmsLoginRequest,
+    db: AsyncSession = Depends(get_platform_db),
+):
+    """
+    客户端验证码登录
+    当手机号对应多个企业时，返回企业选择列表
+    """
+    result = await AuthService.client_sms_login(
+        db, request.phone, request.code, request.tenant_code
+    )
     return success(data=result.model_dump())
 
 
