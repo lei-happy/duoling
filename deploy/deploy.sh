@@ -278,7 +278,14 @@ init_database() {
     docker compose exec backend python scripts/init_platform_db.py
     log_info "平台数据库表结构已创建"
 
-    # 写入种子数据
+    echo ""
+    log_warn "即将写入种子数据（超级管理员、菜单、字典等），已有数据不会重复插入"
+    read -p "是否继续？(y/N): " confirm
+    if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
+        log_info "跳过种子数据写入"
+        return
+    fi
+
     docker compose exec backend python scripts/seed_data.py
     log_info "种子数据已写入（超级管理员: admin / admin123）"
 
