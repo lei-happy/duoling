@@ -243,10 +243,10 @@ build_and_start() {
     docker compose up -d --build
 
     log_info "等待服务启动..."
-    sleep 10
+    sleep 15
 
-    # 检查服务状态
-    if docker compose ps | grep -q "running"; then
+    # 检查服务状态（兼容 Compose V2 输出 "Up" 和 V1 输出 "running"）
+    if docker compose ps | grep -qiE "(running|Up)"; then
         log_info "所有服务已启动"
         docker compose ps
     else
