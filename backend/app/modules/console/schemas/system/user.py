@@ -59,3 +59,5 @@ class UserStatusUpdate(BaseModel):
     """修改用户状态"""
     userId: int
     status: int
+
+
