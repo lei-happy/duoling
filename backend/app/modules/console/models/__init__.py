@@ -1,18 +1,18 @@
-from app.modules.console.models.tenant import Tenant
-from app.modules.console.models.user import User
-from app.modules.console.models.user_tenant import UserTenant
-from app.modules.console.models.role import Role
-from app.modules.console.models.menu import Menu
-from app.modules.console.models.permission import RoleMenu
-from app.modules.console.models.user_role import UserRole
-from app.modules.console.models.product_version import ProductVersion
-from app.modules.console.models.tenant_product import TenantProduct
-from app.modules.console.models.product_feature import ProductFeature, VersionFeature
-from app.modules.console.models.changelog import Changelog
-from app.modules.console.models.dict import Dict, DictItem
-from app.modules.console.models.feedback import Feedback
-from app.modules.console.models.operation_log import OperationLog
-from app.modules.console.models.sms_code import SmsCode
+from app.modules.console.models.tenant.tenant import Tenant
+from app.modules.console.models.system.user import User
+from app.modules.console.models.system.user_tenant import UserTenant
+from app.modules.console.models.system.role import Role
+from app.modules.console.models.system.menu import Menu
+from app.modules.console.models.system.permission import RoleMenu
+from app.modules.console.models.system.user_role import UserRole
+from app.modules.console.models.product.product_version import ProductVersion
+from app.modules.console.models.tenant.tenant_product import TenantProduct
+from app.modules.console.models.product.product_feature import ProductFeature, VersionFeature
+from app.modules.console.models.changelog.changelog import Changelog
+from app.modules.console.models.dictionary.dict_model import Dict, DictItem
+from app.modules.console.models.common.feedback import Feedback
+from app.modules.console.models.common.operation_log import OperationLog
+from app.modules.console.models.sms.sms_code import SmsCode
 
 __all__ = [
     "Tenant",

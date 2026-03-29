@@ -14,13 +14,13 @@ from app.core.config import get_settings
 from app.common.utils import hash_password
 
 # 导入模型
-from app.modules.console.models.user import User
-from app.modules.console.models.role import Role
-from app.modules.console.models.user_role import UserRole
-from app.modules.console.models.menu import Menu
-from app.modules.console.models.permission import RoleMenu
-from app.modules.console.models.product_version import ProductVersion
-from app.modules.console.models.dict import Dict, DictItem
+from app.modules.console.models.system.user import User
+from app.modules.console.models.system.role import Role
+from app.modules.console.models.system.user_role import UserRole
+from app.modules.console.models.system.menu import Menu
+from app.modules.console.models.system.permission import RoleMenu
+from app.modules.console.models.product.product_version import ProductVersion
+from app.modules.console.models.dictionary.dict_model import Dict, DictItem
 
 
 def seed_platform_data():

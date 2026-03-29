@@ -13,9 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import db_manager
 from app.common.exceptions import BizException
-from app.modules.console.models.tenant import Tenant
-from app.modules.console.schemas.tenant import TenantCreate
-from app.modules.console.services.tenant_service import TenantService
+from app.modules.console.models.tenant.tenant import Tenant
+from app.modules.console.schemas.tenant.tenant import TenantCreate
+from app.modules.console.services.tenant.tenant_service import TenantService
 from app.modules.open.models.open_register_task import OpenRegisterTask
 from app.modules.open.schemas.register import (
     RegisterRequest,

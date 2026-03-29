@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_platform_db
 from app.common.response import success
-from app.modules.console.models.product_version import ProductVersion
-from app.modules.console.schemas.product_version import ProductVersionOut
+from app.modules.console.models.product.product_version import ProductVersion
+from app.modules.console.schemas.product.product_version import ProductVersionOut
 
 router = APIRouter()
 

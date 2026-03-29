@@ -14,9 +14,9 @@ from loguru import logger
 from app.common.exceptions import BizException
 from app.common.utils import hash_password
 from app.core.database import db_manager
-from app.modules.console.models.sms_code import SmsCode
-from app.modules.console.models.user import User
-from app.modules.console.models.user_tenant import UserTenant
+from app.modules.console.models.sms.sms_code import SmsCode
+from app.modules.console.models.system.user import User
+from app.modules.console.models.system.user_tenant import UserTenant
 from app.modules.client.models.user.biz_user import BizUser
 
 SMS_CODE_LENGTH = 6

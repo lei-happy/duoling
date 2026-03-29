@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_platform_db
 from app.common.response import success
-from app.modules.console.schemas.changelog import ChangelogOut
-from app.modules.console.services.changelog_service import ChangelogService
+from app.modules.console.schemas.changelog.changelog import ChangelogOut
+from app.modules.console.services.changelog.changelog_service import ChangelogService
 
 router = APIRouter()
 

@@ -13,12 +13,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
 from app.common.utils import hash_password
-from app.modules.console.models.user import User
-from app.modules.console.models.user_tenant import UserTenant
-from app.modules.console.models.user_role import UserRole
-from app.modules.console.models.role import Role
-from app.modules.console.models.menu import Menu
-from app.modules.console.models.permission import RoleMenu
+from app.modules.console.models.system.user import User
+from app.modules.console.models.system.user_tenant import UserTenant
+from app.modules.console.models.system.user_role import UserRole
+from app.modules.console.models.system.role import Role
+from app.modules.console.models.system.menu import Menu
+from app.modules.console.models.system.permission import RoleMenu
 from app.modules.client.models.user.biz_user import BizUser
 from app.modules.client.models.user.biz_user_role import BizUserRole
 from app.modules.client.models.role.biz_role import BizRole

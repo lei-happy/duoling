@@ -8,12 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import get_platform_db, get_current_user
 from app.core.security import TokenData
 from app.common.response import success
-from app.modules.console.schemas.auth import (
+from app.modules.console.schemas.auth.auth import (
     LoginRequest, SmsLoginRequest, LoginResponse, MultiTenantResponse,
     ChangePasswordRequest, RefreshTokenRequest,
     UpdateThemeConfigRequest, SwitchTenantRequest,
 )
-from app.modules.console.services.auth_service import AuthService
+from app.modules.console.services.auth.auth_service import AuthService
 
 router = APIRouter()
 

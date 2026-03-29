@@ -85,7 +85,7 @@ def step5_create_dev_tenant(reset: bool = False):
     db_name = settings.tenant_database_name(DEV_TENANT_CODE)
 
     with Session(engine) as session:
-        from app.modules.console.models.tenant import Tenant
+        from app.modules.console.models.tenant.tenant import Tenant
 
         existing = session.query(Tenant).filter_by(
             tenant_code=DEV_TENANT_CODE, is_deleted=0
@@ -128,8 +128,8 @@ def step5_create_dev_tenant(reset: bool = False):
         tenant_id = tenant.id
         print(f"[OK] 开发企业已创建: {DEV_TENANT_CODE} (id={tenant_id})")
 
-        from app.modules.console.models.user import User
-        from app.modules.console.models.user_tenant import UserTenant
+        from app.modules.console.models.system.user import User
+        from app.modules.console.models.system.user_tenant import UserTenant
 
         admin_user = session.query(User).filter_by(
             phone=DEV_ADMIN_PHONE, is_deleted=0
@@ -189,7 +189,7 @@ def step5_create_dev_tenant(reset: bool = False):
 
     # 更新 db_initialized
     with Session(engine) as session:
-        from app.modules.console.models.tenant import Tenant
+        from app.modules.console.models.tenant.tenant import Tenant
         tenant = session.query(Tenant).filter_by(
             tenant_code=DEV_TENANT_CODE, is_deleted=0
         ).first()
@@ -210,9 +210,9 @@ def step6_assign_enterprise_version():
     engine = create_engine(settings.platform_db_url_sync)
 
     with Session(engine) as session:
-        from app.modules.console.models.tenant import Tenant
-        from app.modules.console.models.product_version import ProductVersion
-        from app.modules.console.models.tenant_product import TenantProduct
+        from app.modules.console.models.tenant.tenant import Tenant
+        from app.modules.console.models.product.product_version import ProductVersion
+        from app.modules.console.models.tenant.tenant_product import TenantProduct
 
         tenant = session.query(Tenant).filter_by(
             tenant_code=DEV_TENANT_CODE, is_deleted=0
@@ -271,7 +271,7 @@ def step6_assign_enterprise_version():
         session.commit()
 
         # 收集 enterprise 版本需要的全部 business 表
-        from app.modules.console.models.product_feature import ProductFeature, VersionFeature
+        from app.modules.console.models.product.product_feature import ProductFeature, VersionFeature
 
         vf_rows = (
             session.query(ProductFeature.required_tables)

@@ -157,7 +157,7 @@ class BizRoleService:
         菜单来源：平台库 sys_menu (app_type='client')，按企业版本 feature_code 过滤。
         选中状态：租户库 biz_role_menu。
         """
-        from app.modules.console.models.menu import Menu as SysMenu
+        from app.modules.console.models.system.menu import Menu as SysMenu
         from sqlalchemy import or_
 
         checked_ids = set(await BizRoleService.get_role_menu_ids(tenant_db, role_id))
@@ -173,7 +173,7 @@ class BizRoleService:
 
         if tenant_code:
             try:
-                from app.modules.console.services.auth_service import AuthService
+                from app.modules.console.services.auth.auth_service import AuthService
                 feature_codes = await AuthService._get_tenant_feature_codes(
                     platform_db, tenant_code
                 )

@@ -12,9 +12,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from sqlalchemy import create_engine, update
 from sqlalchemy.orm import Session
 from app.core.config import get_settings
-from app.modules.console.models.menu import Menu
-from app.modules.console.models.role import Role
-from app.modules.console.models.permission import RoleMenu
+from app.modules.console.models.system.menu import Menu
+from app.modules.console.models.system.role import Role
+from app.modules.console.models.system.permission import RoleMenu
 
 
 def fix_data():
