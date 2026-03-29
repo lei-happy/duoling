@@ -12,7 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
 from app.common.exceptions import BizException
+from app.common.sms_client import AliyunSmsClient
 from app.common.utils import hash_password
+from app.core.config import get_settings
 from app.core.database import db_manager
 from app.modules.console.models.sms.sms_code import SmsCode
 from app.modules.console.models.system.user import User
@@ -88,8 +90,8 @@ class SmsService:
         client_ip: Optional[str] = None,
     ) -> dict:
         """
-        生成并存储验证码。
-        返回值包含 code 字段，便于开发阶段调试（后续接入短信通道后移除）。
+        生成并存储验证码，通过阿里云短信认证服务发送到用户手机。
+        SMS_ENABLED 关闭时仅落表不发送，返回明文验证码便于开发调试。
         """
         if purpose not in (PURPOSE_LOGIN, PURPOSE_RESET_PASSWORD):
             raise BizException("无效的验证码用途")
@@ -130,7 +132,16 @@ class SmsService:
             f"code={code} expire_at={expire_at}"
         )
 
-        return {"message": "验证码已发送", "code": code}
+        settings = get_settings()
+        if settings.ALIYUN_SMS_ENABLED:
+            try:
+                AliyunSmsClient.send_verify_code(phone, code, purpose)
+            except Exception as e:
+                logger.error(f"短信发送失败，验证码已落表 | phone={phone} error={e}")
+                raise BizException("短信发送失败，请稍后重试")
+            return {"message": "验证码已发送"}
+        else:
+            return {"message": "验证码已发送", "code": code}
 
     @staticmethod
     async def verify_code(

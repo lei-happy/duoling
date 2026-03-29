@@ -56,6 +56,12 @@ class Settings(BaseSettings):
     REDIS_DB: int = 0
     REDIS_PASSWORD: str = ""
 
+    # ---- 阿里云短信认证（DYPNS） ----
+    ALIYUN_ACCESS_KEY_ID: str = ""
+    ALIYUN_ACCESS_KEY_SECRET: str = ""
+    ALIYUN_SMS_SIGN_NAME: str = "速通互联验证码"
+    ALIYUN_SMS_ENABLED: bool = True
+
     # ---- 跨域 ----
     CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:5174"]
 

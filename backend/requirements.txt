@@ -20,6 +20,10 @@ python-multipart>=0.0.12
 # Redis
 redis>=5.2.0
 
+# Aliyun SMS (DYPNS)
+alibabacloud-dypnsapi20170525>=2.0.0
+alibabacloud-tea-openapi>=0.3.0
+
 # Utilities
 python-dotenv>=1.0.1
 loguru>=0.7.3
