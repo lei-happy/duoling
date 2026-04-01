@@ -20,6 +20,9 @@ from app.modules.client.models.biz_dict import BizDict, BizDictItem
 
 # ---- Tier 2: Business (版本开通时创建) ----
 from app.modules.client.models.vehicle import Vehicle
+from app.modules.client.models.vehicle_ext import VehicleExt
+from app.modules.client.models.trailer import Trailer
+from app.modules.client.models.trailer_ext import TrailerExt
 from app.modules.client.models.driver import Driver
 from app.modules.client.models.order import Order
 from app.modules.client.models.route import Route
@@ -39,6 +42,9 @@ __all__ = [
     "BizDictItem",
     # Business
     "Vehicle",
+    "VehicleExt",
+    "Trailer",
+    "TrailerExt",
     "Driver",
     "Order",
     "Route",

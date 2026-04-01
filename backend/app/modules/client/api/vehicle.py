@@ -10,9 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import get_tenant_db, get_current_user
 from app.common.response import success
 from app.modules.client.schemas.vehicle import (
-    VehicleCreate, VehicleUpdate, VehicleOut,
+    VehicleCreate, VehicleUpdate, VehicleStatusUpdate,
 )
 from app.modules.client.services.vehicle_service import VehicleService
+from app.modules.client.services.vehicle_status_service import VehicleStatusService
 
 router = APIRouter()
 
@@ -34,6 +35,16 @@ async def page_vehicles(
     return success(data=data)
 
 
+@router.get("/{vehicle_id}")
+async def get_vehicle(
+    vehicle_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    data = await VehicleService.get_vehicle(db, vehicle_id)
+    return success(data=data.model_dump())
+
+
 @router.post("")
 async def create_vehicle(
     data: VehicleCreate,
@@ -41,7 +52,7 @@ async def create_vehicle(
     _=Depends(get_current_user),
 ):
     vehicle = await VehicleService.create_vehicle(db, data)
-    return success(data=VehicleOut.from_model(vehicle).model_dump())
+    return success(data=vehicle.model_dump())
 
 
 @router.put("/{vehicle_id}")
@@ -52,7 +63,20 @@ async def update_vehicle(
     _=Depends(get_current_user),
 ):
     vehicle = await VehicleService.update_vehicle(db, vehicle_id, data)
-    return success(data=VehicleOut.from_model(vehicle).model_dump())
+    return success(data=vehicle.model_dump())
+
+
+@router.put("/{vehicle_id}/status")
+async def change_vehicle_status(
+    vehicle_id: int,
+    data: VehicleStatusUpdate,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    await VehicleStatusService.change_status(
+        db, vehicle_id, data.status, data.statusSource
+    )
+    return success()
 
 
 @router.delete("/{vehicle_id}")

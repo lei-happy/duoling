@@ -12,6 +12,7 @@ from app.modules.client.api.role import router as role_router
 from app.modules.client.api.dict import router as dict_router
 from app.modules.client.api.dict_data import router as dict_data_router
 from app.modules.client.api.vehicle import router as vehicle_router
+from app.modules.client.api.trailer import router as trailer_router
 from app.modules.client.api.driver import router as driver_router
 from app.modules.client.api.customer import router as customer_router
 from app.modules.client.api.route import router as route_router
@@ -26,6 +27,7 @@ router.include_router(role_router, prefix="/system/role", tags=["客户端-角�
 router.include_router(dict_router, prefix="/system/dictionary", tags=["客户端-数据字典"])
 router.include_router(dict_data_router, prefix="/system/dictionary-data", tags=["客户端-字典数据"])
 router.include_router(vehicle_router, prefix="/resource/vehicle", tags=["客户端-车辆管理"])
+router.include_router(trailer_router, prefix="/resource/trailer", tags=["客户端-挂车管理"])
 router.include_router(driver_router, prefix="/resource/driver", tags=["客户端-驾驶员管理"])
 router.include_router(customer_router, prefix="/resource/customer", tags=["客户端-客户管理"])
 router.include_router(route_router, prefix="/resource/route", tags=["客户端-路线管理"])

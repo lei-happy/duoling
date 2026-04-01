@@ -82,7 +82,7 @@ class DatabaseManager:
             max_overflow=10,
             pool_recycle=3600,
             pool_pre_ping=True,
-            echo=settings.APP_DEBUG,
+            echo=settings.DB_ECHO,
         )
         self._platform_session_factory = async_sessionmaker(
             bind=self._platform_engine,
@@ -121,7 +121,7 @@ class DatabaseManager:
                 max_overflow=5,
                 pool_recycle=3600,
                 pool_pre_ping=True,
-                echo=settings.APP_DEBUG,
+                echo=settings.DB_ECHO,
             )
             self._tenant_engines[tenant_code] = engine
             self._tenant_session_factories[tenant_code] = async_sessionmaker(

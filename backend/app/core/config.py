@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "DEBUG"
     LOG_DIR: str = "logs"
 
+    # ---- 数据库调试 ----
+    DB_ECHO: bool = False
+
     @property
     def platform_database_name(self) -> str:
         """平台库实际数据库名（含环境后缀）"""

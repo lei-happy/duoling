@@ -171,6 +171,28 @@ CLIENT_MENUS = [
                 "icon": "CarOutlined",
                 "sort_order": 0,
                 "feature_code": "resource_vehicle",
+                "children": [
+                    {"menu_name": "查询", "menu_code": "resource:vehicle:list", "menu_type": 1, "sort_order": 0, "feature_code": "resource_vehicle"},
+                    {"menu_name": "新增", "menu_code": "resource:vehicle:add", "menu_type": 1, "sort_order": 1, "feature_code": "resource_vehicle"},
+                    {"menu_name": "编辑", "menu_code": "resource:vehicle:edit", "menu_type": 1, "sort_order": 2, "feature_code": "resource_vehicle"},
+                    {"menu_name": "删除", "menu_code": "resource:vehicle:delete", "menu_type": 1, "sort_order": 3, "feature_code": "resource_vehicle"},
+                ],
+            },
+            {
+                "menu_name": "挂车管理",
+                "menu_code": "resource:trailer",
+                "menu_type": 0,
+                "path": "/resource/trailer",
+                "component": "/resource/trailer/index",
+                "icon": "CarOutlined",
+                "sort_order": 5,
+                "feature_code": "resource_trailer",
+                "children": [
+                    {"menu_name": "查询", "menu_code": "resource:trailer:list", "menu_type": 1, "sort_order": 0, "feature_code": "resource_trailer"},
+                    {"menu_name": "新增", "menu_code": "resource:trailer:add", "menu_type": 1, "sort_order": 1, "feature_code": "resource_trailer"},
+                    {"menu_name": "编辑", "menu_code": "resource:trailer:edit", "menu_type": 1, "sort_order": 2, "feature_code": "resource_trailer"},
+                    {"menu_name": "删除", "menu_code": "resource:trailer:delete", "menu_type": 1, "sort_order": 3, "feature_code": "resource_trailer"},
+                ],
             },
             {
                 "menu_name": "驾驶员管理",

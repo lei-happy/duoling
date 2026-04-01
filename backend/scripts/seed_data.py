@@ -30,12 +30,11 @@ def seed_platform_data():
 
     with Session(engine) as session:
         # ---- 1. 超级管理员 ----
-        existing_admin = session.query(User).filter_by(username="admin").first()
+        existing_admin = session.query(User).filter_by(phone="13800000000").first()
         role_admin = session.query(Role).filter_by(role_code="super_admin").first()
 
         if not existing_admin:
             admin = User(
-                username="admin",
                 password=hash_password("admin123"),
                 real_name="超级管理员",
                 phone="13800000000",
@@ -44,7 +43,7 @@ def seed_platform_data():
             )
             session.add(admin)
             session.flush()
-            print("[OK] 超级管理员已创建 (admin / admin123)")
+            print("[OK] 超级管理员已创建 (13800000000 / admin123)")
 
             # ---- 2. 默认角色 ----
             if not role_admin:

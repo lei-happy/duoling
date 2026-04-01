@@ -9,14 +9,14 @@
         :show-overflow-tooltip="true"
         v-model:selections="selections"
         :highlight-current-row="true"
-        cache-key="ResourceVehicleTable"
+        cache-key="ResourceTrailerTable"
       >
         <template #toolbar>
           <el-form :model="where" class="ele-bg-wrap" inline>
             <el-form-item>
               <el-input
                 v-model="where.keyword"
-                placeholder="车牌号/品牌/型号"
+                placeholder="挂车车牌号"
                 clearable
                 @change="reload"
               />
@@ -30,38 +30,26 @@
               >
                 <el-option label="正常" :value="1" />
                 <el-option label="停用" :value="0" />
-                <el-option label="维修/保养" :value="2" />
-                <el-option label="保险续期" :value="3" />
-                <el-option label="已报废" :value="9" />
               </el-select>
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="openEdit()">
-                新增车辆
+                新增挂车
               </el-button>
             </el-form-item>
           </el-form>
         </template>
-        <template #trailerPlateNumber="{ row }">
-          <span v-if="row.trailerPlateNumber">{{ row.trailerPlateNumber }}</span>
+        <template #vehiclePlateNumber="{ row }">
+          <span v-if="row.vehiclePlateNumber">
+            {{ row.vehiclePlateNumber }}
+          </span>
           <span v-else style="color: #999">—</span>
         </template>
         <template #status="{ row }">
           <el-tag v-if="row.status === 1" type="success" size="small">
             正常
           </el-tag>
-          <el-tag v-else-if="row.status === 0" type="info" size="small">
-            停用
-          </el-tag>
-          <el-tag v-else-if="row.status === 2" type="warning" size="small">
-            维修/保养
-          </el-tag>
-          <el-tag v-else-if="row.status === 3" type="warning" size="small">
-            保险续期
-          </el-tag>
-          <el-tag v-else-if="row.status === 9" type="danger" size="small">
-            已报废
-          </el-tag>
+          <el-tag v-else type="info" size="small">停用</el-tag>
         </template>
         <template #action="{ row }">
           <el-link type="primary" :underline="false" @click="openEdit(row)">
@@ -74,7 +62,7 @@
         </template>
       </ele-pro-table>
     </ele-card>
-    <vehicle-edit
+    <trailer-edit
       v-model:visible="editVisible"
       :data="editData"
       @done="reload"
@@ -91,16 +79,16 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import VehicleEdit from './components/vehicle-edit.vue';
-  import { pageVehicles, removeVehicle } from '@/api/resource/vehicle';
-  import type { Vehicle } from '@/api/resource/vehicle/model';
+  import TrailerEdit from './components/trailer-edit.vue';
+  import { pageTrailers, removeTrailer } from '@/api/resource/trailer';
+  import type { Trailer } from '@/api/resource/trailer/model';
 
-  defineOptions({ name: 'ResourceVehicle' });
+  defineOptions({ name: 'ResourceTrailer' });
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
-  const selections = ref<Vehicle[]>([]);
+  const selections = ref<Trailer[]>([]);
   const editVisible = ref(false);
-  const editData = ref<Vehicle | null>(null);
+  const editData = ref<Trailer | null>(null);
   const where = reactive({
     keyword: '',
     status: undefined as number | undefined
@@ -114,10 +102,8 @@
       align: 'center'
     },
     { type: 'index', columnKey: 'index', width: 50, align: 'center' },
-    { prop: 'plateNumber', label: '车牌号', minWidth: 120 },
-    { prop: 'vehicleType', label: '车辆类型', minWidth: 100 },
-    { prop: 'brand', label: '品牌', minWidth: 80 },
-    { prop: 'model', label: '型号', minWidth: 80 },
+    { prop: 'plateNumber', label: '挂车车牌号', minWidth: 130 },
+    { prop: 'trailerType', label: '挂车类型', minWidth: 110 },
     {
       prop: 'loadCapacity',
       label: '载重(吨)',
@@ -125,27 +111,27 @@
       align: 'center'
     },
     {
-      prop: 'trailerPlateNumber',
-      label: '关联挂车',
+      prop: 'volumeCapacity',
+      label: '容积(m³)',
+      minWidth: 90,
+      align: 'center'
+    },
+    {
+      prop: 'parkingSpots',
+      label: '车位数',
+      minWidth: 80,
+      align: 'center'
+    },
+    {
+      prop: 'vehiclePlateNumber',
+      label: '关联车辆',
       minWidth: 120,
-      slot: 'trailerPlateNumber'
-    },
-    {
-      prop: 'insuranceExpire',
-      label: '保险到期',
-      minWidth: 110,
-      align: 'center'
-    },
-    {
-      prop: 'inspectionExpire',
-      label: '年检到期',
-      minWidth: 110,
-      align: 'center'
+      slot: 'vehiclePlateNumber'
     },
     {
       prop: 'status',
       label: '状态',
-      width: 100,
+      width: 80,
       align: 'center',
       slot: 'status'
     },
@@ -159,7 +145,7 @@
   ]);
 
   const datasource: DatasourceFunction = async ({ page, limit }) => {
-    const res = await pageVehicles({ ...where, page, limit });
+    const res = await pageTrailers({ ...where, page, limit });
     return { list: res?.list ?? [], count: res?.total ?? 0 };
   };
 
@@ -167,14 +153,14 @@
     tableRef.value?.reload?.();
   };
 
-  const openEdit = (row?: Vehicle) => {
+  const openEdit = (row?: Trailer) => {
     editData.value = row ?? null;
     editVisible.value = true;
   };
 
-  const remove = (row: Vehicle) => {
+  const remove = (row: Trailer) => {
     ElMessageBox.confirm(
-      `确定要删除车辆"${row.plateNumber}"吗?`,
+      `确定要删除挂车"${row.plateNumber}"吗?`,
       '系统提示',
       { type: 'warning', draggable: true }
     )
@@ -183,7 +169,7 @@
           message: '请求中..',
           plain: true
         });
-        removeVehicle(row.id!)
+        removeTrailer(row.id!)
           .then((msg) => {
             loading.close();
             EleMessage.success({ message: msg, plain: true });

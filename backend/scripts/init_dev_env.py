@@ -137,7 +137,6 @@ def step5_create_dev_tenant(reset: bool = False):
 
         if not admin_user:
             admin_user = User(
-                username=f"admin_{DEV_TENANT_CODE}",
                 password=hash_password("123456"),
                 real_name=DEV_ADMIN_NAME,
                 phone=DEV_ADMIN_PHONE,
@@ -147,9 +146,9 @@ def step5_create_dev_tenant(reset: bool = False):
             )
             session.add(admin_user)
             session.flush()
-            print(f"[OK] 管理员账号已创建: admin_{DEV_TENANT_CODE} / 123456")
+            print(f"[OK] 管理员账号已创建: {DEV_ADMIN_PHONE} / 123456")
         else:
-            print(f"[SKIP] 管理员账号已存在: {admin_user.username}")
+            print(f"[SKIP] 管理员账号已存在: {admin_user.phone}")
 
         existing_ut = session.query(UserTenant).filter_by(
             user_id=admin_user.id, tenant_code=DEV_TENANT_CODE
@@ -324,7 +323,7 @@ def step7_seed_tenant_data():
 
     with Session(tenant_engine) as session:
         existing_user = session.query(BizUser).filter_by(
-            username=f"admin_{DEV_TENANT_CODE}"
+            phone=DEV_ADMIN_PHONE
         ).first()
         if existing_user:
             print("[SKIP] 租户种子数据已存在")
@@ -355,19 +354,18 @@ def step7_seed_tenant_data():
         print("[OK] 默认部门已创建")
 
         admin_user = BizUser(
-            username=f"admin_{DEV_TENANT_CODE}",
             password=hash_password("123456"),
             real_name=DEV_ADMIN_NAME,
             phone=DEV_ADMIN_PHONE,
             user_type=1,
-            department=hq.dept_name,
+            department_id=hq.id,
             status=1,
         )
         session.add(admin_user)
         session.flush()
 
         session.add(BizUserRole(user_id=admin_user.id, role_id=roles[0].id))
-        print(f"[OK] 管理员 admin_{DEV_TENANT_CODE} 已创建并关联管理员角色")
+        print(f"[OK] 管理员 {DEV_ADMIN_PHONE} 已创建并关联管理员角色")
 
         session.commit()
 
@@ -433,12 +431,12 @@ def main():
     print("=" * 60)
     print(f"\n  客户端登录信息：")
     print(f"    地址: http://localhost:5174")
-    print(f"    账号: admin_{DEV_TENANT_CODE}")
+    print(f"    账号: {DEV_ADMIN_PHONE}")
     print(f"    密码: 123456")
     print(f"    企业: {DEV_TENANT_NAME}")
     print(f"\n  管理后台登录信息：")
     print(f"    地址: http://localhost:5173")
-    print(f"    账号: admin")
+    print(f"    账号: 13800000000")
     print(f"    密码: admin123")
     print()
 

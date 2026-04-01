@@ -1,11 +1,21 @@
 import request from '@/utils/request';
 import type { ApiResult, PageResult } from '@/api';
-import type { Vehicle, VehicleParam } from './model';
+import type { Vehicle, VehicleParam, TrailerOption } from './model';
 
 export async function pageVehicles(params: VehicleParam) {
   const res = await request.get<ApiResult<PageResult<Vehicle>>>(
     '/resource/vehicle',
     { params }
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function getVehicle(id: number) {
+  const res = await request.get<ApiResult<Vehicle>>(
+    `/resource/vehicle/${id}`
   );
   if (res.data.code === 0) {
     return res.data.data;
@@ -41,6 +51,17 @@ export async function removeVehicle(id: number) {
   );
   if (res.data.code === 0) {
     return res.data.message;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function listAvailableTrailers(excludeVehicleId?: number) {
+  const res = await request.get<ApiResult<TrailerOption[]>>(
+    '/resource/trailer/available',
+    { params: { excludeVehicleId } }
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
   }
   return Promise.reject(new Error(res.data.message));
 }

@@ -7,6 +7,7 @@
 #   日常更新:  bash deploy.sh update
 #   仅获SSL:   bash deploy.sh ssl
 #   初始化DB:  bash deploy.sh db-init
+#   同步配置:  bash deploy.sh db-sync
 #   查看日志:  bash deploy.sh logs [service]
 #   查看状态:  bash deploy.sh status
 # ============================================================
@@ -268,6 +269,23 @@ reload_ssl() {
 }
 
 # ============================================================
+# 同步平台配置数据（菜单 + 产品功能模块）
+# 两个脚本均为幂等操作，可安全重复执行：
+#   - seed_client_menus.py     : 清除旧菜单后重新插入
+#   - seed_product_features.py : 存在则更新，不存在则插入
+# ============================================================
+sync_platform_data() {
+    log_info "同步平台配置数据..."
+    cd "$DEPLOY_DIR"
+
+    docker compose exec backend python scripts/seed_product_features.py
+    log_info "产品功能模块已同步"
+
+    docker compose exec backend python scripts/seed_client_menus.py
+    log_info "客户端菜单已同步"
+}
+
+# ============================================================
 # 初始化数据库
 # ============================================================
 init_database() {
@@ -287,7 +305,10 @@ init_database() {
     fi
 
     docker compose exec backend python scripts/seed_data.py
-    log_info "种子数据已写入（超级管理员: admin / admin123）"
+    log_info "种子数据已写入（管理员: 13800000000 / admin123）"
+
+    # 同步菜单和产品功能模块
+    sync_platform_data
 
     echo ""
     log_warn "首次登录后请立即修改默认密码！"
@@ -359,7 +380,7 @@ cmd_init() {
     echo "  客户端:   http://wuliu.zhitu.me"
     echo "  API:      http://api.zhitu.me/docs"
     echo ""
-    echo "  管理员账号: admin"
+    echo "  管理员账号: 13800000000"
     echo "  管理员密码: admin123（请尽快修改！）"
     echo ""
     echo "  查看日志: bash deploy.sh logs"
@@ -401,6 +422,11 @@ cmd_update() {
     docker compose up -d --build
     log_info "服务已重启"
 
+    # 同步菜单和产品功能模块（幂等，每次更新自动执行）
+    log_info "等待后端服务就绪..."
+    sleep 5
+    sync_platform_data
+
     # 清理旧镜像
     docker image prune -f
     log_info "旧镜像已清理"
@@ -422,6 +448,16 @@ cmd_ssl() {
 cmd_db_init() {
     check_root "db-init"
     init_database
+}
+
+# ============================================================
+# 命令: db-sync（同步菜单和产品功能模块）
+# ============================================================
+cmd_db_sync() {
+    check_root "db-sync"
+    check_env_file
+    sync_platform_data
+    log_info "平台配置数据同步完成"
 }
 
 # ============================================================
@@ -495,6 +531,9 @@ case "${1:-}" in
     db-init)
         cmd_db_init
         ;;
+    db-sync)
+        cmd_db_sync
+        ;;
     logs)
         cmd_logs "$@"
         ;;
@@ -514,9 +553,10 @@ case "${1:-}" in
         echo ""
         echo "命令:"
         echo "  init      首次完整部署（安装 Docker、配置、构建、启动）"
-        echo "  update    日常更新（拉取代码、重新构建、重启服务）"
+        echo "  update    日常更新（拉取代码、重新构建、重启服务、同步配置）"
         echo "  ssl       检查并重载 SSL 证书（上传新证书后执行）"
         echo "  db-init   初始化数据库（创建表结构和种子数据）"
+        echo "  db-sync   同步平台配置（更新菜单和产品功能模块）"
         echo "  logs      查看日志（可指定服务: logs backend / logs nginx）"
         echo "  status    查看服务状态"
         echo "  restart   重启所有服务"

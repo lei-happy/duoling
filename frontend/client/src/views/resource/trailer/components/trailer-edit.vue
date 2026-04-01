@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    :title="isEdit ? '编辑车辆' : '新增车辆'"
+    :title="isEdit ? '编辑挂车' : '新增挂车'"
     :model-value="visible"
     @update:model-value="updateVisible"
     width="700px"
@@ -16,52 +16,32 @@
       <el-divider content-position="left">基础信息</el-divider>
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="车牌号" prop="plateNumber">
-            <el-input v-model="form.plateNumber" placeholder="请输入车牌号" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="关联挂车">
-            <el-select
-              v-model="form.trailerId"
-              placeholder="请选择挂车"
-              clearable
-              filterable
-              style="width: 100%"
-            >
-              <el-option
-                v-for="item in trailerOptions"
-                :key="item.id"
-                :label="item.plateNumber"
-                :value="item.id"
-              />
-            </el-select>
+          <el-form-item label="挂车车牌号" prop="plateNumber">
+            <el-input
+              v-model="form.plateNumber"
+              placeholder="请输入挂车车牌号"
+            />
           </el-form-item>
         </el-col>
       </el-row>
       <el-divider content-position="left">详细信息</el-divider>
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="车辆类型">
+          <el-form-item label="挂车类型">
             <el-input
-              v-model="form.vehicleType"
-              placeholder="请输入车辆类型"
+              v-model="form.trailerType"
+              placeholder="请输入挂车类型"
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="品牌">
-            <el-input v-model="form.brand" placeholder="请输入品牌" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="型号">
-            <el-input v-model="form.model" placeholder="请输入型号" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="颜色">
-            <el-input v-model="form.color" placeholder="请输入颜色" />
+          <el-form-item label="轴数">
+            <el-input-number
+              v-model="form.axleCount"
+              :min="1"
+              :max="10"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -84,14 +64,43 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="车架号">
-            <el-input v-model="form.vin" placeholder="请输入VIN" />
+        <el-col :span="8">
+          <el-form-item label="车厢长(m)">
+            <el-input-number
+              v-model="form.length"
+              :min="0"
+              :precision="2"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="车厢宽(m)">
+            <el-input-number
+              v-model="form.width"
+              :min="0"
+              :precision="2"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="车厢高(m)">
+            <el-input-number
+              v-model="form.height"
+              :min="0"
+              :precision="2"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="发动机号">
-            <el-input v-model="form.engineNo" placeholder="请输入发动机号" />
+          <el-form-item label="车位数">
+            <el-input-number
+              v-model="form.parkingSpots"
+              :min="0"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -102,36 +111,6 @@
               value-format="YYYY-MM-DD"
               placeholder="选择日期"
               style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="保险到期">
-            <el-date-picker
-              v-model="form.insuranceExpire"
-              type="date"
-              value-format="YYYY-MM-DD"
-              placeholder="选择日期"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="年检到期">
-            <el-date-picker
-              v-model="form.inspectionExpire"
-              type="date"
-              value-format="YYYY-MM-DD"
-              placeholder="选择日期"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="GPS设备ID">
-            <el-input
-              v-model="form.gpsDeviceId"
-              placeholder="请输入GPS设备ID"
             />
           </el-form-item>
         </el-col>
@@ -160,16 +139,12 @@
   import { ref, reactive, watch, computed } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
-  import {
-    addVehicle,
-    updateVehicle,
-    listAvailableTrailers
-  } from '@/api/resource/vehicle';
-  import type { Vehicle, TrailerOption } from '@/api/resource/vehicle/model';
+  import { addTrailer, updateTrailer } from '@/api/resource/trailer';
+  import type { Trailer } from '@/api/resource/trailer/model';
 
   const props = defineProps<{
     visible: boolean;
-    data: Vehicle | null;
+    data: Trailer | null;
   }>();
 
   const emit = defineEmits<{
@@ -180,30 +155,18 @@
   const isEdit = computed(() => !!props.data?.id);
   const formRef = ref<FormInstance>();
   const loading = ref(false);
-  const form = reactive<Vehicle>({});
-  const trailerOptions = ref<TrailerOption[]>([]);
+  const form = reactive<Trailer>({});
 
   const rules = reactive<FormRules>({
     plateNumber: [
-      { required: true, message: '请输入车牌号', trigger: 'blur' }
+      { required: true, message: '请输入挂车车牌号', trigger: 'blur' }
     ]
   });
-
-  const loadTrailerOptions = async () => {
-    try {
-      const excludeId = isEdit.value ? props.data?.id : undefined;
-      const list = await listAvailableTrailers(excludeId);
-      trailerOptions.value = list ?? [];
-    } catch {
-      trailerOptions.value = [];
-    }
-  };
 
   watch(
     () => props.visible,
     (val) => {
       if (val) {
-        loadTrailerOptions();
         if (props.data) {
           Object.assign(form, props.data);
         } else {
@@ -225,9 +188,9 @@
       loading.value = true;
       try {
         if (isEdit.value) {
-          await updateVehicle(form);
+          await updateTrailer(form);
         } else {
-          await addVehicle(form);
+          await addTrailer(form);
         }
         EleMessage.success({ message: '操作成功', plain: true });
         updateVisible(false);

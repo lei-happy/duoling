@@ -24,8 +24,9 @@ FEATURES = [
     {"feature_code": "base_log", "feature_name": "日志记录", "module": "base", "sort_order": 6, "required_tables": None},
     # 资源模块 (standard 及以上)
     {"feature_code": "resource_manage", "feature_name": "资源管理", "module": "resource", "sort_order": 10, "required_tables": None},
-    {"feature_code": "resource_vehicle", "feature_name": "车辆管理", "module": "resource", "sort_order": 11, "required_tables": '["biz_vehicle"]'},
-    {"feature_code": "resource_driver", "feature_name": "驾驶员管理", "module": "resource", "sort_order": 12, "required_tables": '["biz_driver"]'},
+    {"feature_code": "resource_vehicle", "feature_name": "车辆管理", "module": "resource", "sort_order": 11, "required_tables": '["biz_vehicle", "biz_vehicle_ext"]'},
+    {"feature_code": "resource_trailer", "feature_name": "挂车管理", "module": "resource", "sort_order": 12, "required_tables": '["biz_trailer", "biz_trailer_ext"]'},
+    {"feature_code": "resource_driver", "feature_name": "驾驶员管理", "module": "resource", "sort_order": 13, "required_tables": '["biz_driver"]'},
     {"feature_code": "resource_customer", "feature_name": "客户管理", "module": "resource", "sort_order": 13, "required_tables": '["biz_customer"]'},
     {"feature_code": "resource_route", "feature_name": "路线管理", "module": "resource", "sort_order": 14, "required_tables": '["biz_route"]'},
     # 业务模块 (standard 及以上)
@@ -54,14 +55,14 @@ VERSION_FEATURES = {
     "standard": [
         "base_dashboard", "base_system", "base_organization", "base_user",
         "base_role", "base_dict", "base_log",
-        "resource_manage", "resource_vehicle", "resource_driver",
+        "resource_manage", "resource_vehicle", "resource_trailer", "resource_driver",
         "resource_customer", "resource_route",
         "biz_manage", "biz_order", "biz_dispatch", "biz_tracking", "biz_receipt",
     ],
     "pro": [
         "base_dashboard", "base_system", "base_organization", "base_user",
         "base_role", "base_dict", "base_log",
-        "resource_manage", "resource_vehicle", "resource_driver",
+        "resource_manage", "resource_vehicle", "resource_trailer", "resource_driver",
         "resource_customer", "resource_route",
         "biz_manage", "biz_order", "biz_dispatch", "biz_tracking", "biz_receipt",
         "finance_manage", "finance_receivable", "finance_payable", "finance_reconciliation",
@@ -70,7 +71,7 @@ VERSION_FEATURES = {
     "enterprise": [
         "base_dashboard", "base_system", "base_organization", "base_user",
         "base_role", "base_dict", "base_log",
-        "resource_manage", "resource_vehicle", "resource_driver",
+        "resource_manage", "resource_vehicle", "resource_trailer", "resource_driver",
         "resource_customer", "resource_route",
         "biz_manage", "biz_order", "biz_dispatch", "biz_tracking", "biz_receipt",
         "finance_manage", "finance_receivable", "finance_payable", "finance_reconciliation",
@@ -123,26 +124,38 @@ def main():
         """))
         conn.commit()
 
-        # 插入功能清单
+        # 插入或更新功能清单
         for f in FEATURES:
             result = conn.execute(text(
                 "SELECT id FROM sys_product_feature WHERE feature_code = :code AND is_deleted = 0"
             ), {"code": f["feature_code"]})
-            if result.scalar():
-                print(f"  跳过已存在: {f['feature_code']}")
-                continue
+            existing_id = result.scalar()
             rt = f["required_tables"]
-            conn.execute(text(
-                "INSERT INTO sys_product_feature (feature_code, feature_name, module, sort_order, required_tables) "
-                "VALUES (:code, :name, :module, :sort, :tables)"
-            ), {
-                "code": f["feature_code"],
-                "name": f["feature_name"],
-                "module": f["module"],
-                "sort": f["sort_order"],
-                "tables": rt,
-            })
-            print(f"  插入功能: {f['feature_code']} - {f['feature_name']}")
+            if existing_id:
+                conn.execute(text(
+                    "UPDATE sys_product_feature "
+                    "SET feature_name = :name, module = :module, sort_order = :sort, required_tables = :tables "
+                    "WHERE id = :id"
+                ), {
+                    "id": existing_id,
+                    "name": f["feature_name"],
+                    "module": f["module"],
+                    "sort": f["sort_order"],
+                    "tables": rt,
+                })
+                print(f"  更新功能: {f['feature_code']} (id={existing_id})")
+            else:
+                conn.execute(text(
+                    "INSERT INTO sys_product_feature (feature_code, feature_name, module, sort_order, required_tables) "
+                    "VALUES (:code, :name, :module, :sort, :tables)"
+                ), {
+                    "code": f["feature_code"],
+                    "name": f["feature_name"],
+                    "module": f["module"],
+                    "sort": f["sort_order"],
+                    "tables": rt,
+                })
+                print(f"  插入功能: {f['feature_code']} - {f['feature_name']}")
         conn.commit()
 
         # 建立版本-功能关联
