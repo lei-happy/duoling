@@ -37,7 +37,7 @@ class BizRoleService:
         count = (await db.execute(count_q)).scalar() or 0
 
         result = await db.execute(
-            base.order_by(BizRole.sort_order, BizRole.id)
+            base.order_by(BizRole.id.desc())
             .offset((page - 1) * limit)
             .limit(limit)
         )
@@ -53,7 +53,7 @@ class BizRoleService:
         result = await db.execute(
             select(BizRole)
             .where(BizRole.is_deleted == 0)
-            .order_by(BizRole.sort_order, BizRole.id)
+            .order_by(BizRole.id.desc())
         )
         return [BizRoleOut.from_model(r) for r in result.scalars().all()]
 

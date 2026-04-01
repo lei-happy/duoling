@@ -59,15 +59,6 @@
               class="ele-fluid"
             />
           </el-form-item>
-          <el-form-item v-if="!isUpdate" label="登录密码" prop="password">
-            <el-input
-              show-password
-              type="password"
-              :maxlength="20"
-              v-model="form.password"
-              placeholder="请输入登录密码"
-            />
-          </el-form-item>
           <el-form-item label="状态">
             <el-radio-group v-model="form.status">
               <el-radio :value="0" label="正常" />
@@ -137,7 +128,6 @@
     roles: [],
     email: '',
     phone: '',
-    password: '',
     introduction: '',
     birthday: '',
     organizationId: props.organizationId,
@@ -176,24 +166,6 @@
         message: '邮箱格式不正确',
         type: 'string',
         trigger: 'blur'
-      }
-    ],
-    password: [
-      {
-        required: true,
-        message: '请输入登录密码',
-        type: 'string',
-        trigger: 'blur'
-      },
-      {
-        type: 'string',
-        trigger: 'blur',
-        validator: (_rule: any, value: string, callback: any) => {
-          if (isUpdate.value || /^[\S]{5,18}$/.test(value)) {
-            return callback();
-          }
-          callback(new Error('密码必须为5-18位非空白字符'));
-        }
       }
     ],
     phone: [

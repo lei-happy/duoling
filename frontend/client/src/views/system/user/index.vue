@@ -135,7 +135,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, watch } from 'vue';
+  import { ref, watch, onActivated } from 'vue';
   import { useRouter } from 'vue-router';
   import { ElMessageBox } from 'element-plus';
   import type { ElTree } from 'element-plus';
@@ -414,4 +414,9 @@
 
   /** 查询树数据 */
   query();
+
+  /** 页签切换回来时重新加载部门树 */
+  onActivated(() => {
+    query();
+  });
 </script>

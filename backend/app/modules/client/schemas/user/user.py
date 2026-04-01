@@ -12,7 +12,7 @@ class BizUserCreate(BaseModel):
     model_config = {"extra": "ignore"}
 
     phone: str
-    password: str = "123456"
+    password: Optional[str] = None
     nickname: Optional[str] = None
     realName: Optional[str] = None
     email: Optional[str] = None

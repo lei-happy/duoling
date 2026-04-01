@@ -202,7 +202,6 @@ class BizPlatformUserSync:
             pdb.add(platform_user)
             await pdb.flush()
         else:
-            platform_user.password = bu.password
             platform_user.real_name = bu.real_name or bu.nickname
             platform_user.email = bu.email
             platform_user.gender = bu.gender

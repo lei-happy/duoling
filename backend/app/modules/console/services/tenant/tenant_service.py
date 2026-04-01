@@ -247,13 +247,13 @@ class TenantService:
                 await session.flush()
 
                 # 默认部门
-                hq = BizDepartment(parent_id=0, dept_name="总公司", dept_code="HQ", sort_order=0, status=1)
+                hq = BizDepartment(parent_id=0, dept_name="总公司", dept_code="HQ", dept_type="headquarters", sort_order=0, status=1)
                 session.add(hq)
                 await session.flush()
                 sub_depts = [
-                    BizDepartment(parent_id=hq.id, dept_name="运营部", dept_code="OP", sort_order=0, status=1),
-                    BizDepartment(parent_id=hq.id, dept_name="车队部", dept_code="FL", sort_order=10, status=1),
-                    BizDepartment(parent_id=hq.id, dept_name="财务部", dept_code="FI", sort_order=20, status=1),
+                    BizDepartment(parent_id=hq.id, dept_name="运营部", dept_code="OP", dept_type="department", sort_order=0, status=1),
+                    BizDepartment(parent_id=hq.id, dept_name="车队部", dept_code="FL", dept_type="fleet", sort_order=10, status=1),
+                    BizDepartment(parent_id=hq.id, dept_name="财务部", dept_code="FI", dept_type="department", sort_order=20, status=1),
                 ]
                 session.add_all(sub_depts)
                 await session.flush()

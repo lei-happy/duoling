@@ -7,6 +7,8 @@ from typing import Optional, List
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import secrets
+
 from app.common.exceptions import BizException
 from app.common.utils import hash_password
 from app.modules.client.models.user.biz_user import BizUser
@@ -168,9 +170,10 @@ class BizUserService:
 
         gender = SEX_TO_GENDER.get(data.sex, 0) if data.sex else 0
 
+        raw_password = data.password or secrets.token_urlsafe(16)
         user = BizUser(
             phone=data.phone,
-            password=hash_password(data.password),
+            password=hash_password(raw_password),
             real_name=data.realName or data.nickname,
             nickname=data.nickname,
             email=data.email,
