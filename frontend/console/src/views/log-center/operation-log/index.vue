@@ -1,6 +1,6 @@
 <template>
   <ele-page>
-    <operation-record-search @search="(where) => reload(where, 1)" />
+    <operation-log-search @search="(where) => reload(where, 1)" />
     <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
@@ -9,8 +9,7 @@
         :datasource="datasource"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
-        :default-sort="{ prop: 'createdAt', order: 'descending' }"
-        cache-key="SystemOperationRecordTable"
+        cache-key="LogCenterOperationLogTable"
       >
         <template #status="{ row }">
           <el-tag
@@ -50,18 +49,23 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import OperationRecordSearch from './components/operation-record-search.vue';
-  import { pageOperationRecords } from '@/api/system/operation-record';
+  import OperationLogSearch from './components/operation-log-search.vue';
+  import { pageTenantOperationLogs } from '@/api/log-center';
   import type {
-    OperationRecord,
-    OperationRecordParam
-  } from '@/api/system/operation-record/model';
+    TenantOperationLog,
+    TenantOperationLogParam
+  } from '@/api/log-center/model';
   import { formatDateTime } from '@/utils/date-util';
 
-  defineOptions({ name: 'SystemOperationRecord' });
+  defineOptions({ name: 'LogCenterOperationLog' });
 
-  /** 列表展示：优先真实姓名，否则回退手机号等 */
-  const operatorDisplayName = (row: OperationRecord) => {
+  const tenantDisplayName = (row: TenantOperationLog) => {
+    const name = row.tenantShortName?.trim();
+    if (name) return name;
+    return row.tenantCode?.trim() || '-';
+  };
+
+  const operatorDisplayName = (row: TenantOperationLog) => {
     const name = row.realName?.trim();
     if (name) return name;
     return row.username?.trim() || '-';
@@ -72,6 +76,12 @@
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
 
   const columns = ref<Columns>([
+    {
+      prop: 'tenantCode',
+      label: '租户',
+      minWidth: 120,
+      formatter: (row) => tenantDisplayName(row)
+    },
     {
       prop: 'username',
       label: '操作用户',
@@ -142,7 +152,8 @@
       align: 'center',
       slot: 'action',
       hideInPrint: true,
-      hideInExport: true
+      hideInExport: true,
+      fixed: 'right'
     }
   ]);
 
@@ -152,17 +163,23 @@
     orders,
     filters
   }) => {
-    return pageOperationRecords({ ...where, ...orders, ...filters, ...pages });
+    return pageTenantOperationLogs({
+      ...where,
+      ...orders,
+      ...filters,
+      ...pages
+    });
   };
 
-  const reload = (where?: OperationRecordParam, page?: number) => {
+  const reload = (where?: TenantOperationLogParam, page?: number) => {
     tableRef.value?.reload?.({ where, page });
   };
 
-  const openDetail = (row: OperationRecord) => {
+  const openDetail = (row: TenantOperationLog) => {
     openModal({
-      props: { title: '详情', width: 720 },
-      asyncComponent: () => import('./components/operation-record-detail.vue'),
+      props: { title: '操作日志详情', width: 720 },
+      asyncComponent: () =>
+        import('./components/operation-log-detail.vue'),
       componentProps: { data: row }
     });
   };

@@ -4,7 +4,7 @@
 
 from typing import Optional, List
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
@@ -13,6 +13,22 @@ from app.modules.client.models.user.biz_user import BizUser
 from app.modules.client.schemas.organization.department import (
     DepartmentCreate, DepartmentUpdate, DepartmentOut,
 )
+
+# 与前端表格列 prop 对齐；未指定排序时保持按排序号、id（与历史一致）
+_DEPT_SORT_COLUMNS = {
+    "createTime": BizDepartment.created_at,
+}
+
+
+def _dept_list_order_clauses(sort: Optional[str], order: Optional[str]):
+    col = _DEPT_SORT_COLUMNS.get(sort or "")
+    if col is None:
+        return [BizDepartment.sort_order, BizDepartment.id]
+    direction = (order or "desc").strip().lower()
+    primary = asc(col) if direction == "asc" else desc(col)
+    if col is BizDepartment.created_at:
+        return [primary, BizDepartment.sort_order, BizDepartment.id]
+    return [primary]
 
 
 class DepartmentService:
@@ -53,6 +69,8 @@ class DepartmentService:
         db: AsyncSession,
         organization_name: Optional[str] = None,
         organization_type: Optional[str] = None,
+        sort: Optional[str] = None,
+        order: Optional[str] = None,
     ) -> List[DepartmentOut]:
         """获取全部部门列表（平铺，前端组装树形）"""
         base = select(BizDepartment).where(BizDepartment.is_deleted == 0)
@@ -63,7 +81,7 @@ class DepartmentService:
             base = base.where(BizDepartment.dept_type == organization_type)
 
         result = await db.execute(
-            base.order_by(BizDepartment.sort_order, BizDepartment.id)
+            base.order_by(*_dept_list_order_clauses(sort, order))
         )
         return [DepartmentOut.from_model(d) for d in result.scalars().all()]
 

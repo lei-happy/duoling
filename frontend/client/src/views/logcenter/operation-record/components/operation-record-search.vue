@@ -4,11 +4,11 @@
     <el-form label-width="72px" @keyup.enter="search" @submit.prevent="">
       <el-row :gutter="16">
         <el-col :lg="6" :md="12" :sm="12" :xs="24">
-          <el-form-item label="用户账号">
+          <el-form-item label="操作用户">
             <el-input
               clearable
               v-model.trim="form.username"
-              placeholder="请输入"
+              placeholder="姓名或手机号"
             />
           </el-form-item>
         </el-col>
@@ -28,7 +28,8 @@
               type="datetimerange"
               v-model="dateRange"
               range-separator="-"
-              value-format="YYYY-MM-DD HH:mm:ss"
+              :value-format="DATE_TIME_FORMAT"
+              :format="DATE_TIME_FORMAT"
               start-placeholder="开始时间"
               end-placeholder="结束时间"
               class="ele-fluid"
@@ -54,6 +55,7 @@
 <script lang="ts" setup>
   import { ref } from 'vue';
   import { useFormData } from '@/utils/use-form-data';
+  import { DATE_TIME_FORMAT } from '@/utils/date-util';
   import type { OperationRecordParam } from '@/api/system/operation-record/model';
 
   const emit = defineEmits<{

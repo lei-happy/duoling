@@ -4,10 +4,12 @@
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 
 from app.core.dependencies import get_platform_db, get_current_user
 from app.core.security import TokenData
 from app.common.response import success
+from app.common.operation_log import operation_log
 from app.modules.console.schemas.auth.auth import (
     LoginRequest, SmsLoginRequest, LoginResponse, MultiTenantResponse,
     ChangePasswordRequest, RefreshTokenRequest,
@@ -20,20 +22,20 @@ router = APIRouter()
 
 @router.post("/login")
 async def client_login(
-    request: LoginRequest,
+    login_data: LoginRequest,
     db: AsyncSession = Depends(get_platform_db),
 ):
     """
     客户端登录（手机号 + 密码）
     当手机号对应多个企业时，返回企业选择列表
     """
-    result = await AuthService.client_login(db, request)
+    result = await AuthService.client_login(db, login_data)
     return success(data=result.model_dump())
 
 
 @router.post("/sms-login")
 async def client_sms_login(
-    request: SmsLoginRequest,
+    login_data: SmsLoginRequest,
     db: AsyncSession = Depends(get_platform_db),
 ):
     """
@@ -41,7 +43,7 @@ async def client_sms_login(
     当手机号对应多个企业时，返回企业选择列表
     """
     result = await AuthService.client_sms_login(
-        db, request.phone, request.code, request.tenant_code
+        db, login_data.phone, login_data.code, login_data.tenant_code
     )
     return success(data=result.model_dump())
 
@@ -91,13 +93,15 @@ async def switch_tenant(
 
 
 @router.put("/password")
+@operation_log(module="账号安全", action="修改密码", description="修改登录密码")
 async def change_password(
-    request: ChangePasswordRequest,
+    request: Request,
+    data: ChangePasswordRequest,
     current_user: TokenData = Depends(get_current_user),
     db: AsyncSession = Depends(get_platform_db),
 ):
     """修改密码（首次登录强制修改）"""
-    await AuthService.change_password(db, current_user.user_id, request)
+    await AuthService.change_password(db, current_user.user_id, data)
     return success(message="密码修改成功")
 
 

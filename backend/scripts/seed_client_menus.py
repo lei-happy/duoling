@@ -137,7 +137,7 @@ CLIENT_MENUS = [
                 "menu_code": "system:operation-record",
                 "menu_type": 0,
                 "path": "/system/operation-record",
-                "component": "/system/operation-record/index",
+                "component": "/logcenter/operation-record/index",
                 "icon": "FileTextOutlined",
                 "sort_order": 40,
                 "feature_code": "base_log",

@@ -1,17 +1,21 @@
 import { PageParam } from '@/api';
 
 /**
- * 操作日志
+ * 租户操作日志
  */
-export interface OperationRecord {
-  /** 操作日志id */
+export interface TenantOperationLog {
+  /** 日志ID */
   id?: number;
-  /** 用户id */
+  /** 用户ID */
   userId?: number;
   /** 操作用户名（一般为登录手机号） */
   username?: string;
-  /** 关联 biz_user 的真实姓名，展示时优先于 username */
+  /** 关联租户 biz_user 的真实姓名 */
   realName?: string;
+  /** 租户编码 */
+  tenantCode?: string;
+  /** 关联 sys_tenant.short_name，列表展示优先 */
+  tenantShortName?: string;
   /** 操作模块 */
   module?: string;
   /** 操作类型 */
@@ -20,34 +24,38 @@ export interface OperationRecord {
   description?: string;
   /** 请求方式 */
   requestMethod?: string;
-  /** 请求地址 */
+  /** 请求URL */
   requestUrl?: string;
   /** 请求参数 */
   requestBody?: string;
   /** 响应结果 */
   responseBody?: string;
-  /** ip地址 */
+  /** IP地址 */
   ip?: string;
-  /** 消耗时间, 单位毫秒 */
+  /** 耗时（毫秒） */
   elapsedTime?: number;
-  /** 状态, 1成功, 0失败 */
+  /** 状态 0-失败 1-成功 */
   status?: number;
   /** 操作时间 */
   createdAt?: string;
 }
 
 /**
- * 操作日志搜索条件
+ * 租户操作日志搜索条件
  */
-export interface OperationRecordParam extends PageParam {
+export interface TenantOperationLogParam extends PageParam {
+  /** 租户编码 */
+  tenantCode?: string;
   /** 操作用户名 */
   username?: string;
   /** 操作模块 */
   module?: string;
+  /** 操作类型 */
+  action?: string;
+  /** 状态 */
+  status?: number;
   /** 开始时间 */
   createTimeStart?: string;
   /** 截至时间 */
   createTimeEnd?: string;
-  /** 状态 */
-  status?: number;
 }

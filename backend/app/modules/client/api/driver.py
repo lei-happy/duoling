@@ -6,9 +6,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 
 from app.core.dependencies import get_tenant_db, get_current_user
 from app.common.response import success
+from app.common.operation_log import operation_log
 from app.modules.client.schemas.driver import (
     DriverCreate, DriverUpdate, DriverOut,
 )
@@ -35,7 +37,9 @@ async def page_drivers(
 
 
 @router.post("")
+@operation_log(module="驾驶员管理", action="新增", description="新增驾驶员")
 async def create_driver(
+    request: Request,
     data: DriverCreate,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -45,7 +49,9 @@ async def create_driver(
 
 
 @router.put("/{driver_id}")
+@operation_log(module="驾驶员管理", action="编辑", description="编辑驾驶员")
 async def update_driver(
+    request: Request,
     driver_id: int,
     data: DriverUpdate,
     db: AsyncSession = Depends(get_tenant_db),
@@ -56,7 +62,9 @@ async def update_driver(
 
 
 @router.delete("/{driver_id}")
+@operation_log(module="驾驶员管理", action="删除", description="删除驾驶员")
 async def delete_driver(
+    request: Request,
     driver_id: int,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),

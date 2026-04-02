@@ -2,7 +2,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 
+from app.common.operation_log import operation_log
 from app.core.dependencies import get_tenant_db, get_current_user
 from app.common.response import success
 from app.modules.client.schemas.order import (
@@ -75,7 +77,9 @@ async def page_receipt_orders(
 
 
 @router.post("")
+@operation_log(module="运单管理", action="新增", description="新增运单")
 async def create_order(
+    request: Request,
     data: OrderCreate,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -85,7 +89,9 @@ async def create_order(
 
 
 @router.put("/{order_id}")
+@operation_log(module="运单管理", action="编辑", description="编辑运单")
 async def update_order(
+    request: Request,
     order_id: int,
     data: OrderUpdate,
     db: AsyncSession = Depends(get_tenant_db),
@@ -96,7 +102,9 @@ async def update_order(
 
 
 @router.put("/{order_id}/status")
+@operation_log(module="运单管理", action="状态变更", description="变更运单状态")
 async def update_order_status(
+    request: Request,
     order_id: int,
     data: OrderStatusUpdate,
     db: AsyncSession = Depends(get_tenant_db),
@@ -107,7 +115,9 @@ async def update_order_status(
 
 
 @router.delete("/{order_id}")
+@operation_log(module="运单管理", action="删除", description="删除运单")
 async def delete_order(
+    request: Request,
     order_id: int,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),

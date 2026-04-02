@@ -4,7 +4,7 @@
 
 from typing import Optional, List
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
@@ -13,6 +13,24 @@ from app.modules.client.models.role.biz_role_menu import BizRoleMenu
 from app.modules.client.schemas.role.role import (
     BizRoleCreate, BizRoleUpdate, BizRoleOut,
 )
+
+# 与前端表格列 prop 对齐，仅允许白名单字段参与排序
+_ROLE_SORT_COLUMNS = {
+    "createTime": BizRole.created_at,
+    "roleId": BizRole.id,
+}
+
+
+def _role_list_order_clauses(sort: Optional[str], order: Optional[str]):
+    """解析分页排序，非法或未传时按 id 降序（与历史默认一致）。"""
+    col = _ROLE_SORT_COLUMNS.get(sort or "")
+    if col is None:
+        return [desc(BizRole.id)]
+    direction = (order or "desc").strip().lower()
+    primary = asc(col) if direction == "asc" else desc(col)
+    if col is BizRole.created_at:
+        return [primary, desc(BizRole.id)]
+    return [primary]
 
 
 class BizRoleService:
@@ -24,6 +42,8 @@ class BizRoleService:
         limit: int = 20,
         role_name: Optional[str] = None,
         role_code: Optional[str] = None,
+        sort: Optional[str] = None,
+        order: Optional[str] = None,
     ) -> dict:
         """分页查询角色"""
         base = select(BizRole).where(BizRole.is_deleted == 0)
@@ -37,7 +57,7 @@ class BizRoleService:
         count = (await db.execute(count_q)).scalar() or 0
 
         result = await db.execute(
-            base.order_by(BizRole.id.desc())
+            base.order_by(*_role_list_order_clauses(sort, order))
             .offset((page - 1) * limit)
             .limit(limit)
         )
@@ -49,11 +69,15 @@ class BizRoleService:
         }
 
     @staticmethod
-    async def list_roles(db: AsyncSession) -> List[BizRoleOut]:
+    async def list_roles(
+        db: AsyncSession,
+        sort: Optional[str] = None,
+        order: Optional[str] = None,
+    ) -> List[BizRoleOut]:
         result = await db.execute(
             select(BizRole)
             .where(BizRole.is_deleted == 0)
-            .order_by(BizRole.id.desc())
+            .order_by(*_role_list_order_clauses(sort, order))
         )
         return [BizRoleOut.from_model(r) for r in result.scalars().all()]
 
@@ -116,22 +140,6 @@ class BizRoleService:
         if role.role_code == "admin":
             raise BizException("管理员角色无法删除")
         role.is_deleted = 1
-        await db.flush()
-
-    @staticmethod
-    async def batch_delete_roles(db: AsyncSession, role_ids: List[int]) -> None:
-        for rid in role_ids:
-            result = await db.execute(
-                select(BizRole).where(
-                    BizRole.id == rid,
-                    BizRole.is_deleted == 0,
-                )
-            )
-            role = result.scalar_one_or_none()
-            if role:
-                if role.role_code == "admin":
-                    raise BizException(f"管理员角色 {role.role_name} 无法删除")
-                role.is_deleted = 1
         await db.flush()
 
     @staticmethod

@@ -2,13 +2,15 @@
 企业端角色管理 API
 """
 
-from typing import List, Optional
-from fastapi import APIRouter, Body, Depends, Query
+from typing import Optional
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 
 from app.core.dependencies import get_tenant_db, get_platform_db, get_current_user
 from app.core.security import TokenData
 from app.common.response import success
+from app.common.operation_log import operation_log
 from app.modules.client.schemas.role.role import (
     BizRoleCreate, BizRoleUpdate, BizRoleOut, BizRoleMenuAssign,
 )
@@ -23,6 +25,8 @@ async def page_roles(
     limit: int = Query(20, ge=1, le=100),
     roleName: Optional[str] = Query(None),
     roleCode: Optional[str] = Query(None),
+    sort: Optional[str] = Query(None),
+    order: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
@@ -30,22 +34,27 @@ async def page_roles(
     result = await BizRoleService.page_roles(
         db, page=page, limit=limit,
         role_name=roleName, role_code=roleCode,
+        sort=sort, order=order,
     )
     return success(data=result)
 
 
 @router.get("")
 async def list_roles(
+    sort: Optional[str] = Query(None),
+    order: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     """获取角色列表"""
-    items = await BizRoleService.list_roles(db)
+    items = await BizRoleService.list_roles(db, sort=sort, order=order)
     return success(data=[item.model_dump() for item in items])
 
 
 @router.post("")
+@operation_log(module="角色管理", action="新增", description="新增角色")
 async def create_role(
+    request: Request,
     data: BizRoleCreate,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -56,7 +65,9 @@ async def create_role(
 
 
 @router.put("")
+@operation_log(module="角色管理", action="编辑", description="编辑角色")
 async def update_role(
+    request: Request,
     data: BizRoleUpdate,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -66,19 +77,10 @@ async def update_role(
     return success(data=BizRoleOut.from_model(role).model_dump())
 
 
-@router.delete("/batch")
-async def batch_delete_roles(
-    data: List[int] = Body(..., embed=False),
-    db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
-):
-    """批量删除角色"""
-    await BizRoleService.batch_delete_roles(db, data)
-    return success()
-
-
 @router.delete("/{role_id}")
+@operation_log(module="角色管理", action="删除", description="删除角色")
 async def delete_role(
+    request: Request,
     role_id: int,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -104,7 +106,9 @@ async def get_role_menus(
 
 
 @router.put("/{role_id}/menus")
+@operation_log(module="角色管理", action="分配菜单", description="分配角色菜单权限")
 async def assign_role_menus(
+    request: Request,
     role_id: int,
     data: BizRoleMenuAssign,
     db: AsyncSession = Depends(get_tenant_db),

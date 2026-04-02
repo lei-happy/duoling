@@ -6,7 +6,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 
+from app.common.operation_log import operation_log
 from app.core.dependencies import get_tenant_db, get_current_user
 from app.common.response import success
 from app.modules.client.schemas.customer import (
@@ -35,7 +37,9 @@ async def page_customers(
 
 
 @router.post("")
+@operation_log(module="客户管理", action="新增", description="新增客户")
 async def create_customer(
+    request: Request,
     data: CustomerCreate,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -45,7 +49,9 @@ async def create_customer(
 
 
 @router.put("/{customer_id}")
+@operation_log(module="客户管理", action="编辑", description="编辑客户")
 async def update_customer(
+    request: Request,
     customer_id: int,
     data: CustomerUpdate,
     db: AsyncSession = Depends(get_tenant_db),
@@ -56,7 +62,9 @@ async def update_customer(
 
 
 @router.delete("/{customer_id}")
+@operation_log(module="客户管理", action="删除", description="删除客户")
 async def delete_customer(
+    request: Request,
     customer_id: int,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),

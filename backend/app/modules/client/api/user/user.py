@@ -5,11 +5,13 @@
 from typing import Optional, List
 from fastapi import APIRouter, Body, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 from loguru import logger
 
 from app.core.dependencies import get_tenant_db, get_platform_db, get_current_user
 from app.core.security import TokenData
 from app.common.response import success
+from app.common.operation_log import operation_log
 from app.common.exceptions import TenantException
 from app.modules.client.schemas.user.user import (
     BizUserCreate, BizUserUpdate, BizUserOut,
@@ -101,7 +103,9 @@ async def get_user(
 
 
 @router.post("")
+@operation_log(module="员工管理", action="新增", description="新增员工")
 async def create_user(
+    request: Request,
     data: BizUserCreate,
     db: AsyncSession = Depends(get_tenant_db),
     pdb: AsyncSession = Depends(get_platform_db),
@@ -128,7 +132,9 @@ async def create_user(
 
 
 @router.put("")
+@operation_log(module="员工管理", action="编辑", description="编辑员工")
 async def update_user(
+    request: Request,
     data: BizUserUpdate,
     db: AsyncSession = Depends(get_tenant_db),
     pdb: AsyncSession = Depends(get_platform_db),
@@ -155,7 +161,9 @@ async def update_user(
 
 
 @router.put("/status")
+@operation_log(module="员工管理", action="状态变更", description="变更员工状态")
 async def update_user_status(
+    request: Request,
     data: BizUserStatusUpdate,
     db: AsyncSession = Depends(get_tenant_db),
     pdb: AsyncSession = Depends(get_platform_db),
@@ -180,7 +188,9 @@ async def update_user_status(
 
 
 @router.delete("/batch")
+@operation_log(module="员工管理", action="批量删除", description="批量删除员工")
 async def batch_delete_users(
+    request: Request,
     data: List[int] = Body(..., embed=False),
     db: AsyncSession = Depends(get_tenant_db),
     pdb: AsyncSession = Depends(get_platform_db),
@@ -206,7 +216,9 @@ async def batch_delete_users(
 
 
 @router.delete("/{user_id}")
+@operation_log(module="员工管理", action="删除", description="删除员工")
 async def delete_user(
+    request: Request,
     user_id: int,
     db: AsyncSession = Depends(get_tenant_db),
     pdb: AsyncSession = Depends(get_platform_db),

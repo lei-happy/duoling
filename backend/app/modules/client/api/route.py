@@ -6,9 +6,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 
 from app.core.dependencies import get_tenant_db, get_current_user
 from app.common.response import success
+from app.common.operation_log import operation_log
 from app.modules.client.schemas.route import (
     RouteCreate, RouteUpdate, RouteOut,
 )
@@ -43,7 +45,9 @@ async def list_routes(
 
 
 @router.post("")
+@operation_log(module="路线管理", action="新增", description="新增路线")
 async def create_route(
+    request: Request,
     data: RouteCreate,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -53,7 +57,9 @@ async def create_route(
 
 
 @router.put("/{route_id}")
+@operation_log(module="路线管理", action="编辑", description="编辑路线")
 async def update_route(
+    request: Request,
     route_id: int,
     data: RouteUpdate,
     db: AsyncSession = Depends(get_tenant_db),
@@ -64,7 +70,9 @@ async def update_route(
 
 
 @router.delete("/{route_id}")
+@operation_log(module="路线管理", action="删除", description="删除路线")
 async def delete_route(
+    request: Request,
     route_id: int,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),

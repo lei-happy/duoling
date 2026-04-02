@@ -4,9 +4,11 @@
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 
 from app.core.dependencies import get_tenant_db, get_current_user
 from app.common.response import success
+from app.common.operation_log import operation_log
 from app.modules.client.schemas.dict import (
     BizDictCreate, BizDictUpdate, BizDictOut,
     BizDictItemCreate, BizDictItemUpdate, BizDictItemOut,
@@ -29,7 +31,9 @@ async def list_dicts(
 
 
 @router.post("")
+@operation_log(module="数据字典", action="新增", description="新增字典")
 async def create_dict(
+    request: Request,
     data: BizDictCreate,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -40,7 +44,9 @@ async def create_dict(
 
 
 @router.put("/{dict_id}")
+@operation_log(module="数据字典", action="编辑", description="编辑字典")
 async def update_dict(
+    request: Request,
     dict_id: int,
     data: BizDictUpdate,
     db: AsyncSession = Depends(get_tenant_db),
@@ -52,7 +58,9 @@ async def update_dict(
 
 
 @router.delete("/{dict_id}")
+@operation_log(module="数据字典", action="删除", description="删除字典")
 async def delete_dict(
+    request: Request,
     dict_id: int,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -76,7 +84,9 @@ async def list_dict_items(
 
 
 @router.post("/items")
+@operation_log(module="数据字典", action="新增", description="新增字典项")
 async def create_dict_item(
+    request: Request,
     data: BizDictItemCreate,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -87,7 +97,9 @@ async def create_dict_item(
 
 
 @router.put("/items/{item_id}")
+@operation_log(module="数据字典", action="编辑", description="编辑字典项")
 async def update_dict_item(
+    request: Request,
     item_id: int,
     data: BizDictItemUpdate,
     db: AsyncSession = Depends(get_tenant_db),
@@ -99,7 +111,9 @@ async def update_dict_item(
 
 
 @router.delete("/items/{item_id}")
+@operation_log(module="数据字典", action="删除", description="删除字典项")
 async def delete_dict_item(
+    request: Request,
     item_id: int,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),

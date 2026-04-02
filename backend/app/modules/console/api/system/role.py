@@ -2,8 +2,8 @@
 角色管理接口
 """
 
-from typing import Optional, List
-from fastapi import APIRouter, Depends, Query, Body
+from typing import Optional
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_platform_db, get_current_user
@@ -62,18 +62,6 @@ async def update_role(
     await RoleService.update_role(db, data)
     await db.commit()
     return success(message="修改成功")
-
-
-@router.delete("/batch")
-async def batch_delete_roles(
-    ids: List[int] = Body(..., embed=False),
-    db: AsyncSession = Depends(get_platform_db),
-    _: TokenData = Depends(get_current_user),
-):
-    """批量删除角色"""
-    await RoleService.batch_delete(db, ids)
-    await db.commit()
-    return success(message="删除成功")
 
 
 @router.delete("/{role_id}")

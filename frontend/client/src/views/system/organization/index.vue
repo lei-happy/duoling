@@ -79,15 +79,8 @@
   /** 表格列配置 */
   const columns = ref<Columns>([
     {
-      type: 'index',
-      columnKey: 'index',
-      width: 50,
-      align: 'center'
-    },
-    {
       prop: 'organizationName',
       label: '机构名称',
-      sortable: 'custom',
       minWidth: 160
     },
     {

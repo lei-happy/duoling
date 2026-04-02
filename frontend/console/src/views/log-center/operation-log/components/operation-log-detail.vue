@@ -6,11 +6,14 @@
     :column="mobile ? 1 : 2"
     class="detail-table"
   >
+    <el-descriptions-item label="租户">
+      <div>{{ tenantDisplayName }}</div>
+    </el-descriptions-item>
+    <el-descriptions-item label="租户编码">
+      <div>{{ data.tenantCode || '-' }}</div>
+    </el-descriptions-item>
     <el-descriptions-item label="操作用户">
       <div>{{ operatorDisplayName }}</div>
-    </el-descriptions-item>
-    <el-descriptions-item label="IP地址">
-      <div>{{ data.ip }}</div>
     </el-descriptions-item>
     <el-descriptions-item label="操作模块">
       <div>{{ data.module }}</div>
@@ -21,14 +24,17 @@
     <el-descriptions-item label="操作描述">
       <div>{{ data.description }}</div>
     </el-descriptions-item>
+    <el-descriptions-item label="IP地址">
+      <div>{{ data.ip }}</div>
+    </el-descriptions-item>
     <el-descriptions-item label="操作时间">
       <div>{{ formatDateTime(data.createdAt) }}</div>
     </el-descriptions-item>
-    <el-descriptions-item label="请求方式">
-      <div>{{ data.requestMethod }}</div>
-    </el-descriptions-item>
     <el-descriptions-item label="请求耗时">
       <div v-if="data.elapsedTime != null">{{ data.elapsedTime }}ms</div>
+    </el-descriptions-item>
+    <el-descriptions-item label="请求方式">
+      <div>{{ data.requestMethod }}</div>
     </el-descriptions-item>
     <el-descriptions-item label="请求状态">
       <el-tag
@@ -67,13 +73,19 @@
 <script lang="ts" setup>
   import { computed, reactive } from 'vue';
   import type { EleTooltipProps } from 'ele-admin-plus/es/ele-app/plus';
-  import type { OperationRecord } from '@/api/system/operation-record/model';
+  import type { TenantOperationLog } from '@/api/log-center/model';
   import { formatDateTime } from '@/utils/date-util';
   import { useMobile } from '@/utils/use-mobile';
 
   const props = defineProps<{
-    data: OperationRecord;
+    data: TenantOperationLog;
   }>();
+
+  const tenantDisplayName = computed(() => {
+    const name = props.data?.tenantShortName?.trim();
+    if (name) return name;
+    return props.data?.tenantCode?.trim() || '-';
+  });
 
   const operatorDisplayName = computed(() => {
     const name = props.data?.realName?.trim();

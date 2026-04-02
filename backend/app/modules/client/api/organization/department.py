@@ -5,9 +5,11 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 
 from app.core.dependencies import get_tenant_db, get_current_user
 from app.common.response import success
+from app.common.operation_log import operation_log
 from app.modules.client.schemas.organization.department import (
     DepartmentCreate, DepartmentUpdate, DepartmentOut,
 )
@@ -38,6 +40,8 @@ async def page_departments(
 async def list_departments(
     organizationName: Optional[str] = Query(None),
     organizationType: Optional[str] = Query(None),
+    sort: Optional[str] = Query(None),
+    order: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
@@ -45,6 +49,7 @@ async def list_departments(
     items = await DepartmentService.list_departments(
         db, organization_name=organizationName,
         organization_type=organizationType,
+        sort=sort, order=order,
     )
     return success(data=[item.model_dump() for item in items])
 
@@ -63,7 +68,9 @@ async def get_department_tree(
 
 
 @router.post("")
+@operation_log(module="组织架构", action="新增", description="新增部门")
 async def create_department(
+    request: Request,
     data: DepartmentCreate,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -74,7 +81,9 @@ async def create_department(
 
 
 @router.put("")
+@operation_log(module="组织架构", action="编辑", description="编辑部门")
 async def update_department(
+    request: Request,
     data: DepartmentUpdate,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -85,7 +94,9 @@ async def update_department(
 
 
 @router.delete("/{dept_id}")
+@operation_log(module="组织架构", action="删除", description="删除部门")
 async def delete_department(
+    request: Request,
     dept_id: int,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),

@@ -64,19 +64,6 @@ export async function removeRole(id?: number) {
 }
 
 /**
- * 批量删除角色
- */
-export async function removeRoles(data: (number | undefined)[]) {
-  const res = await request.delete<ApiResult<unknown>>('/system/role/batch', {
-    data
-  });
-  if (res.data.code === 0) {
-    return res.data.message;
-  }
-  return Promise.reject(new Error(res.data.message));
-}
-
-/**
  * 获取角色分配的菜单（全部菜单带 checked 标记）
  */
 export async function listRoleMenus(roleId?: number) {

@@ -145,17 +145,6 @@ class RoleService:
         await db.flush()
 
     @staticmethod
-    async def batch_delete(db: AsyncSession, role_ids: List[int]) -> None:
-        """批量删除角色（软删除）"""
-        result = await db.execute(
-            select(Role).where(Role.id.in_(role_ids), Role.is_deleted == 0)
-        )
-        roles = result.scalars().all()
-        for r in roles:
-            r.is_deleted = 1
-        await db.flush()
-
-    @staticmethod
     async def get_role_menus(db: AsyncSession, role_id: int) -> List[int]:
         """获取角色已分配的菜单 ID 列表"""
         result = await db.execute(

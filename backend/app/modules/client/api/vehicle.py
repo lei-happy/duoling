@@ -6,9 +6,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
 
 from app.core.dependencies import get_tenant_db, get_current_user
 from app.common.response import success
+from app.common.operation_log import operation_log
 from app.modules.client.schemas.vehicle import (
     VehicleCreate, VehicleUpdate, VehicleStatusUpdate,
 )
@@ -46,7 +48,9 @@ async def get_vehicle(
 
 
 @router.post("")
+@operation_log(module="车辆管理", action="新增", description="新增车辆")
 async def create_vehicle(
+    request: Request,
     data: VehicleCreate,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
@@ -56,7 +60,9 @@ async def create_vehicle(
 
 
 @router.put("/{vehicle_id}")
+@operation_log(module="车辆管理", action="编辑", description="编辑车辆")
 async def update_vehicle(
+    request: Request,
     vehicle_id: int,
     data: VehicleUpdate,
     db: AsyncSession = Depends(get_tenant_db),
@@ -67,7 +73,9 @@ async def update_vehicle(
 
 
 @router.put("/{vehicle_id}/status")
+@operation_log(module="车辆管理", action="状态变更", description="变更车辆状态")
 async def change_vehicle_status(
+    request: Request,
     vehicle_id: int,
     data: VehicleStatusUpdate,
     db: AsyncSession = Depends(get_tenant_db),
@@ -80,7 +88,9 @@ async def change_vehicle_status(
 
 
 @router.delete("/{vehicle_id}")
+@operation_log(module="车辆管理", action="删除", description="删除车辆")
 async def delete_vehicle(
+    request: Request,
     vehicle_id: int,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),

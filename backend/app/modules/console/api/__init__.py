@@ -19,6 +19,7 @@ from app.modules.console.api.dictionary.dict_data import router as dict_data_rou
 from app.modules.console.api.product.product_feature import router as product_feature_router
 from app.modules.console.api.product.client_menu import router as client_menu_router
 from app.modules.console.api.sms import router as sms_code_router
+from app.modules.console.api.log_center import router as log_center_router
 
 router = APIRouter()
 
@@ -36,3 +37,4 @@ router.include_router(dict_router, prefix="/system/dictionary", tags=["数据字
 router.include_router(dict_data_router, prefix="/system/dictionary-data", tags=["字典数据"])
 router.include_router(client_menu_router, prefix="/system/client-menu", tags=["客户端菜单管理"])
 router.include_router(sms_code_router, prefix="/system/sms-code", tags=["短信验证码"])
+router.include_router(log_center_router, prefix="/log-center", tags=["日志中心"])
