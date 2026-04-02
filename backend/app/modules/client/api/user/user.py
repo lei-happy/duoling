@@ -28,7 +28,10 @@ async def page_users(
     phone: Optional[str] = Query(None),
     nickname: Optional[str] = Query(None),
     status: Optional[int] = Query(None),
+    sex: Optional[str] = Query(None),
     organizationId: Optional[int] = Query(None),
+    sort: Optional[str] = Query(None),
+    order: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
@@ -37,7 +40,10 @@ async def page_users(
         db, page=page, limit=limit,
         phone=phone, nickname=nickname,
         status=status,
+        sex=sex,
         organization_id=organizationId,
+        sort=sort,
+        order=order,
     )
     return success(data=result)
 
@@ -59,12 +65,27 @@ async def check_existence(
 
 @router.get("")
 async def list_users(
+    phone: Optional[str] = Query(None),
+    nickname: Optional[str] = Query(None),
+    status: Optional[int] = Query(None),
+    sex: Optional[str] = Query(None),
     organizationId: Optional[int] = Query(None),
+    sort: Optional[str] = Query(None),
+    order: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     """查询员工列表（不分页）"""
-    items = await BizUserService.list_users(db, organization_id=organizationId)
+    items = await BizUserService.list_users(
+        db,
+        phone=phone,
+        nickname=nickname,
+        status=status,
+        sex=sex,
+        organization_id=organizationId,
+        sort=sort,
+        order=order,
+    )
     return success(data=items)
 
 

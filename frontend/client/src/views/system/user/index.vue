@@ -65,7 +65,6 @@
             :columns="columns"
             :datasource="datasource"
             :show-overflow-tooltip="true"
-            v-model:selections="selections"
             :highlight-current-row="true"
             :export-config="{ fileName: '用户数据', datasource: exportSource }"
             :print-config="{ datasource: exportSource }"
@@ -76,7 +75,6 @@
               <btn-items
                 :items="[
                   { preset: 'add', onClick: () => openEdit() },
-                  { preset: 'del', onClick: () => remove() },
                   { preset: 'import', onClick: () => openImport() }
                 ]"
               />
@@ -157,7 +155,7 @@
   import type { Organization } from '@/api/system/organization/model';
   import {
     pageUsers,
-    removeUsers,
+    removeUser,
     updateUserStatus,
     listUsers
   } from '@/api/system/user';
@@ -240,34 +238,19 @@
   /** 表格列配置 */
   const columns = ref<Columns>([
     {
-      type: 'selection',
-      columnKey: 'selection',
-      width: 50,
-      align: 'center'
-    },
-    {
-      type: 'index',
-      columnKey: 'index',
-      width: 50,
-      align: 'center'
-    },
-    {
-      prop: 'phone',
-      label: '手机号',
-      sortable: 'custom',
-      minWidth: 120
-    },
-    {
       prop: 'nickname',
-      label: '用户名',
-      sortable: 'custom',
+      label: '姓名',
       minWidth: 110,
       slot: 'nickname'
     },
     {
+      prop: 'phone',
+      label: '手机号',
+      minWidth: 120
+    },
+    {
       prop: 'sexName',
       label: '性别',
-      sortable: 'custom',
       width: 90,
       align: 'center'
     },
@@ -291,7 +274,6 @@
       label: '状态',
       width: 90,
       align: 'center',
-      sortable: 'custom',
       slot: 'status',
       formatter: (row) => (row.status == 0 ? '正常' : '冻结')
     },
@@ -306,9 +288,6 @@
     }
   ]);
 
-  /** 表格选中数据 */
-  const selections = ref<User[]>([]);
-
   /** 表格数据源 */
   const datasource: DatasourceFunction = ({ pages, where, orders }) => {
     return pageUsers({
@@ -321,7 +300,6 @@
 
   /** 搜索 */
   const reload = (where?: UserParam, page?: number) => {
-    selections.value = [];
     tableRef.value?.reload?.({ where, page });
   };
 
@@ -347,15 +325,13 @@
     });
   };
 
-  /** 删除 */
-  const remove = (row?: User) => {
-    const rows = row == null ? selections.value : [row];
-    if (!rows.length) {
-      EleMessage.error({ message: '请至少选择一条数据', plain: true });
+  /** 删除（单行，不支持批量） */
+  const remove = (row: User) => {
+    if (row.userId == null) {
       return;
     }
     ElMessageBox.confirm(
-      `确定要删除“${rows.map((d) => d.nickname).join(', ')}”吗?`,
+      `确定要删除“${row.nickname}”吗?`,
       '系统提示',
       { type: 'warning', draggable: true }
     )
@@ -364,7 +340,7 @@
           message: '请求中..',
           plain: true
         });
-        removeUsers(rows.map((d) => d.userId))
+        removeUser(row.userId)
           .then((msg) => {
             loading.close();
             EleMessage.success({ message: msg, plain: true });

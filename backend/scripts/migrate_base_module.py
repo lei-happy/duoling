@@ -3,6 +3,7 @@
 为已有的租户数据库执行表结构变更：
   1. biz_department: 新增 dept_type 字段
   2. biz_user: department(VARCHAR) → department_id(BIGINT)，新增 nickname 字段
+  3. biz_user: 新增 birthday 字段（出生日期）
 
 用法：
     # 迁移所有租户库
@@ -149,7 +150,23 @@ def migrate_database(engine, db_name: str):
         else:
             print("[SKIP] biz_user.department 列已不存在")
 
-    # 5. 补充字典种子数据
+        # 5. biz_user: birthday
+        if not column_exists(engine, "biz_user", "birthday"):
+            conn.execute(
+                text(
+                    """
+                    ALTER TABLE `biz_user`
+                    ADD COLUMN `birthday` DATE NULL COMMENT '出生日期'
+                    AFTER `gender`;
+                    """
+                )
+            )
+            conn.commit()
+            print("[OK] biz_user: 新增 birthday 列")
+        else:
+            print("[SKIP] biz_user.birthday 已存在")
+
+    # 6. 补充字典种子数据
     print("\n---- 字典种子数据 ----")
     seed_dict_data(engine, db_name)
 
@@ -220,3 +237,8 @@ if __name__ == "__main__":
 # -- 4. biz_user 删除旧的 department 字符串字段
 # ALTER TABLE `biz_user`
 # DROP COLUMN `department`;
+#
+# -- 5. biz_user 出生日期
+# ALTER TABLE `biz_user`
+# ADD COLUMN `birthday` DATE NULL COMMENT '出生日期'
+# AFTER `gender`;

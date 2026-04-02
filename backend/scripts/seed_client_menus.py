@@ -1,8 +1,11 @@
 """
-初始化 Client 端菜单数据到 sys_menu 表
+同步 Client 端菜单数据到 sys_menu 表（upsert 模式）
 
-在平台库 sys_menu 中插入 app_type='client' 的完整菜单树，
-每个菜单标记 feature_code 用于产品版本控制。
+- 新菜单：插入全部字段（含默认 icon、sort_order）
+- 已有菜单：只更新结构字段（path/component/feature_code/menu_type），
+            保留用户在后台自定义的 icon、sort_order、visible
+
+安全说明：此脚本可在生产环境重复执行，不会破坏用户已有的菜单配置。
 
 用法：
     python scripts/seed_client_menus.py
@@ -358,47 +361,79 @@ CLIENT_MENUS = [
 ]
 
 
-def insert_menus(conn, menus, parent_id=0):
-    """递归插入菜单树"""
+def upsert_menus(conn, menus, parent_id=0):
+    """
+    递归同步菜单树（upsert 模式）
+
+    已存在的菜单：只更新结构字段（path/component/feature_code/menu_type/menu_name），
+                  保留用户自定义的 icon、sort_order、visible 不被覆盖。
+    不存在的菜单：使用脚本中的全部默认值插入。
+
+    匹配规则：
+      - 有 menu_code 的菜单：按 menu_code + app_type 匹配（跨父级唯一）
+      - 无 menu_code 的菜单（顶级目录）：按 menu_name + parent_id + app_type 匹配
+    """
     for menu in menus:
         children = menu.pop("children", None)
+        menu_code = menu.get("menu_code")
 
-        # 检查是否已存在
-        result = conn.execute(text(
-            "SELECT id FROM sys_menu WHERE menu_name = :name AND app_type = 'client' "
-            "AND parent_id = :pid AND is_deleted = 0"
-        ), {"name": menu["menu_name"], "pid": parent_id})
-        existing = result.scalar()
-        if existing:
-            print(f"  跳过已存在的菜单: {menu['menu_name']} (id={existing})")
-            if children:
-                insert_menus(conn, children, parent_id=existing)
-            continue
+        if menu_code:
+            result = conn.execute(text(
+                "SELECT id FROM sys_menu "
+                "WHERE menu_code = :code AND app_type = 'client' AND is_deleted = 0"
+            ), {"code": menu_code})
+        else:
+            result = conn.execute(text(
+                "SELECT id FROM sys_menu "
+                "WHERE menu_name = :name AND app_type = 'client' "
+                "AND parent_id = :pid AND is_deleted = 0"
+            ), {"name": menu["menu_name"], "pid": parent_id})
 
-        conn.execute(text(
-            "INSERT INTO sys_menu "
-            "(parent_id, menu_name, menu_code, menu_type, path, component, "
-            "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
-            "VALUES (:parent_id, :menu_name, :menu_code, :menu_type, :path, "
-            ":component, :icon, :sort_order, 1, 1, 'client', :feature_code, 0)"
-        ), {
-            "parent_id": parent_id,
-            "menu_name": menu["menu_name"],
-            "menu_code": menu.get("menu_code"),
-            "menu_type": menu["menu_type"],
-            "path": menu.get("path"),
-            "component": menu.get("component"),
-            "icon": menu.get("icon"),
-            "sort_order": menu.get("sort_order", 0),
-            "feature_code": menu.get("feature_code"),
-        })
+        existing_id = result.scalar()
 
-        result = conn.execute(text("SELECT LAST_INSERT_ID()"))
-        menu_id = result.scalar()
-        print(f"  插入菜单: {menu['menu_name']} (id={menu_id}, feature_code={menu.get('feature_code')})")
+        if existing_id:
+            conn.execute(text(
+                "UPDATE sys_menu SET "
+                "menu_name = :menu_name, menu_code = :menu_code, "
+                "menu_type = :menu_type, path = :path, component = :component, "
+                "feature_code = :feature_code, parent_id = :parent_id "
+                "WHERE id = :id"
+            ), {
+                "id": existing_id,
+                "parent_id": parent_id,
+                "menu_name": menu["menu_name"],
+                "menu_code": menu_code,
+                "menu_type": menu["menu_type"],
+                "path": menu.get("path"),
+                "component": menu.get("component"),
+                "feature_code": menu.get("feature_code"),
+            })
+            menu_id = existing_id
+            print(f"  更新菜单: {menu['menu_name']} (id={menu_id})")
+        else:
+            conn.execute(text(
+                "INSERT INTO sys_menu "
+                "(parent_id, menu_name, menu_code, menu_type, path, component, "
+                "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
+                "VALUES (:parent_id, :menu_name, :menu_code, :menu_type, :path, "
+                ":component, :icon, :sort_order, 1, 1, 'client', :feature_code, 0)"
+            ), {
+                "parent_id": parent_id,
+                "menu_name": menu["menu_name"],
+                "menu_code": menu_code,
+                "menu_type": menu["menu_type"],
+                "path": menu.get("path"),
+                "component": menu.get("component"),
+                "icon": menu.get("icon"),
+                "sort_order": menu.get("sort_order", 0),
+                "feature_code": menu.get("feature_code"),
+            })
+            result = conn.execute(text("SELECT LAST_INSERT_ID()"))
+            menu_id = result.scalar()
+            print(f"  新增菜单: {menu['menu_name']} (id={menu_id}, feature_code={menu.get('feature_code')})")
 
         if children:
-            insert_menus(conn, children, parent_id=menu_id)
+            upsert_menus(conn, children, parent_id=menu_id)
 
 
 def main():
@@ -428,28 +463,15 @@ def main():
             conn.commit()
             print("feature_code 列已添加")
 
-    # 清除旧的 client 菜单后重新插入（修复 menu_type 值）
     import copy
     menus = copy.deepcopy(CLIENT_MENUS)
     with engine.connect() as conn:
-        result = conn.execute(text(
-            "SELECT COUNT(*) FROM sys_menu WHERE app_type = 'client'"
-        ))
-        old_count = result.scalar() or 0
-        if old_count > 0:
-            print(f"\n清除 {old_count} 条旧的 client 菜单数据...")
-            conn.execute(text(
-                "DELETE FROM sys_menu WHERE app_type = 'client'"
-            ))
-            conn.commit()
-
-    with engine.connect() as conn:
-        print("\n开始插入 Client 端菜单...")
-        insert_menus(conn, menus)
+        print("\n开始同步 Client 端菜单...")
+        upsert_menus(conn, menus)
         conn.commit()
 
     engine.dispose()
-    print("\nClient 端菜单初始化完成！")
+    print("\nClient 端菜单同步完成！")
 
 
 if __name__ == "__main__":

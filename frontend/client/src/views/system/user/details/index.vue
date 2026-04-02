@@ -38,6 +38,9 @@
         <el-descriptions-item label="性别">
           <div>{{ form.sexName }}</div>
         </el-descriptions-item>
+        <el-descriptions-item label="出生日期">
+          <div>{{ form.birthday || '—' }}</div>
+        </el-descriptions-item>
         <el-descriptions-item label="手机号">
           <div>{{ form.phone }}</div>
         </el-descriptions-item>
@@ -92,6 +95,7 @@
     avatar: void 0,
     nickname: '',
     sexName: '',
+    birthday: '',
     phone: '',
     roles: [],
     createTime: void 0,

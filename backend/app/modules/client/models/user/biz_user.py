@@ -2,8 +2,9 @@
 企业内部用户表（租户库）
 """
 
+from datetime import date
 from typing import Optional
-from sqlalchemy import String, SmallInteger, BigInteger, Text
+from sqlalchemy import String, SmallInteger, BigInteger, Text, Date
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.modules.client.models.base import TenantModelBase
@@ -34,6 +35,9 @@ class BizUser(TenantModelBase):
     )
     gender: Mapped[int] = mapped_column(
         SmallInteger, default=0, comment="性别 0-未知 1-男 2-女"
+    )
+    birthday: Mapped[Optional[date]] = mapped_column(
+        Date, nullable=True, comment="出生日期"
     )
     user_type: Mapped[int] = mapped_column(
         SmallInteger, default=2, comment="用户类型 1-管理员 2-普通员工 3-驾驶员"

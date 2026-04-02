@@ -2,9 +2,10 @@
 企业端员工管理服务（租户库）
 """
 
+from datetime import date, datetime
 from typing import Optional, List
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import secrets
@@ -21,21 +22,48 @@ from app.modules.client.schemas.user.user import (
 
 SEX_TO_GENDER = {"男": 1, "女": 2}
 
+# 与前端表格列 prop 对齐，仅允许白名单字段参与排序
+_USER_SORT_COLUMNS = {
+    "createTime": BizUser.created_at,
+    "id": BizUser.id,
+}
+
+
+def _user_list_order_clauses(sort: Optional[str], order: Optional[str]):
+    """解析列表/分页排序，非法或未传时按 id 降序（与历史默认一致）。"""
+    col = _USER_SORT_COLUMNS.get(sort or "")
+    if col is None:
+        return [desc(BizUser.id)]
+    direction = (order or "desc").strip().lower()
+    primary = asc(col) if direction == "asc" else desc(col)
+    # 创建时间可能相同，用 id 保证顺序稳定、分页不重复/不漏
+    if col is BizUser.created_at:
+        return [primary, desc(BizUser.id)]
+    return [primary]
+
+
+def _parse_birthday_optional(value: Optional[str]) -> Optional[date]:
+    if value is None or not str(value).strip():
+        return None
+    try:
+        return datetime.strptime(str(value).strip()[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
 
 class BizUserService:
 
     @staticmethod
-    async def page_users(
-        db: AsyncSession,
-        page: int = 1,
-        limit: int = 20,
+    def _apply_user_filters(
+        base,
+        *,
         phone: Optional[str] = None,
         nickname: Optional[str] = None,
         status: Optional[int] = None,
+        sex: Optional[str] = None,
         organization_id: Optional[int] = None,
-    ) -> dict:
-        base = select(BizUser).where(BizUser.is_deleted == 0)
-
+        dept_ids: Optional[List[int]] = None,
+    ):
         if phone:
             base = base.where(BizUser.phone.contains(phone))
         if nickname:
@@ -45,15 +73,46 @@ class BizUserService:
             )
         if status is not None:
             base = base.where(BizUser.status == status)
+        if sex:
+            gender = SEX_TO_GENDER.get(sex)
+            if gender is not None:
+                base = base.where(BizUser.gender == gender)
+        if organization_id is not None and dept_ids is not None:
+            base = base.where(BizUser.department_id.in_(dept_ids))
+        return base
+
+    @staticmethod
+    async def page_users(
+        db: AsyncSession,
+        page: int = 1,
+        limit: int = 20,
+        phone: Optional[str] = None,
+        nickname: Optional[str] = None,
+        status: Optional[int] = None,
+        sex: Optional[str] = None,
+        organization_id: Optional[int] = None,
+        sort: Optional[str] = None,
+        order: Optional[str] = None,
+    ) -> dict:
+        base = select(BizUser).where(BizUser.is_deleted == 0)
+        dept_ids = None
         if organization_id is not None:
             dept_ids = await BizUserService._get_dept_and_children_ids(db, organization_id)
-            base = base.where(BizUser.department_id.in_(dept_ids))
+        base = BizUserService._apply_user_filters(
+            base,
+            phone=phone,
+            nickname=nickname,
+            status=status,
+            sex=sex,
+            organization_id=organization_id,
+            dept_ids=dept_ids,
+        )
 
         count_q = select(func.count()).select_from(base.subquery())
         count = (await db.execute(count_q)).scalar() or 0
 
         result = await db.execute(
-            base.order_by(BizUser.id.desc())
+            base.order_by(*_user_list_order_clauses(sort, order))
             .offset((page - 1) * limit)
             .limit(limit)
         )
@@ -73,15 +132,30 @@ class BizUserService:
     @staticmethod
     async def list_users(
         db: AsyncSession,
+        phone: Optional[str] = None,
+        nickname: Optional[str] = None,
+        status: Optional[int] = None,
+        sex: Optional[str] = None,
         organization_id: Optional[int] = None,
+        sort: Optional[str] = None,
+        order: Optional[str] = None,
     ) -> List[dict]:
         """查询员工列表（不分页，用于导出等场景）"""
         base = select(BizUser).where(BizUser.is_deleted == 0)
+        dept_ids = None
         if organization_id is not None:
             dept_ids = await BizUserService._get_dept_and_children_ids(db, organization_id)
-            base = base.where(BizUser.department_id.in_(dept_ids))
+        base = BizUserService._apply_user_filters(
+            base,
+            phone=phone,
+            nickname=nickname,
+            status=status,
+            sex=sex,
+            organization_id=organization_id,
+            dept_ids=dept_ids,
+        )
 
-        result = await db.execute(base.order_by(BizUser.id.desc()))
+        result = await db.execute(base.order_by(*_user_list_order_clauses(sort, order)))
         users = result.scalars().all()
 
         items = []
@@ -178,6 +252,7 @@ class BizUserService:
             nickname=data.nickname,
             email=data.email,
             gender=gender,
+            birthday=_parse_birthday_optional(data.birthday),
             user_type=data.userType,
             department_id=data.organizationId,
             status=data.status,
@@ -237,6 +312,8 @@ class BizUserService:
             user.status = data.status
         if data.introduction is not None:
             user.remark = data.introduction
+        if "birthday" in data.model_fields_set:
+            user.birthday = _parse_birthday_optional(data.birthday)
 
         if data.roleIds is not None:
             old_roles = await db.execute(

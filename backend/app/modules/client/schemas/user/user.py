@@ -22,6 +22,7 @@ class BizUserCreate(BaseModel):
     roleIds: Optional[List[int]] = None
     status: int = 0
     introduction: Optional[str] = None
+    birthday: Optional[str] = None
 
 
 class BizUserUpdate(BaseModel):
@@ -39,6 +40,7 @@ class BizUserUpdate(BaseModel):
     roleIds: Optional[List[int]] = None
     status: Optional[int] = None
     introduction: Optional[str] = None
+    birthday: Optional[str] = None
 
 
 class BizUserOut(BaseModel):
@@ -54,6 +56,7 @@ class BizUserOut(BaseModel):
     userType: int
     status: int
     introduction: Optional[str] = None
+    birthday: Optional[str] = None
     createTime: Optional[str] = None
     roles: Optional[list] = None
 
@@ -76,6 +79,7 @@ class BizUserOut(BaseModel):
             userType=m.user_type,
             status=m.status,
             introduction=m.remark,
+            birthday=m.birthday.strftime("%Y-%m-%d") if m.birthday else None,
             createTime=m.created_at.strftime("%Y-%m-%d %H:%M:%S") if m.created_at else None,
             roles=roles,
         )

@@ -12,7 +12,7 @@ T = TypeVar("T")
 class ResponseModel(BaseModel, Generic[T]):
     """统一响应体"""
     code: int = 0
-    message: str = "success"
+    message: str = "操作成功"
     data: Optional[T] = None
 
 
@@ -27,11 +27,11 @@ class PageData(BaseModel, Generic[T]):
 class PageResponseModel(BaseModel, Generic[T]):
     """分页响应体"""
     code: int = 0
-    message: str = "success"
+    message: str = "操作成功"
     data: Optional[PageData[T]] = None
 
 
-def success(data: Any = None, message: str = "success") -> dict:
+def success(data: Any = None, message: str = "操作成功") -> dict:
     """成功响应"""
     return {"code": 0, "message": message, "data": data}
 
