@@ -25,6 +25,7 @@
           >
             <el-option label="验证码登录" :value="1" />
             <el-option label="重置密码" :value="2" />
+            <el-option label="企业注册" :value="4" />
           </floating-label>
         </div>
         <div class="sms-code-search-field">

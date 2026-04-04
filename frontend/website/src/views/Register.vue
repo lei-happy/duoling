@@ -55,6 +55,21 @@
           来自企业推荐（推荐码：{{ referrerCode }}）
         </div>
 
+        <el-alert
+          v-if="phoneRegistered"
+          type="warning"
+          :closable="false"
+          show-icon
+          class="registered-alert"
+        >
+          <template #default>
+            <span class="registered-alert-text">该手机号已注册，请前往客户端登录。</span>
+            <el-button type="primary" link class="registered-alert-link" @click="goLogin">
+              立即登录
+            </el-button>
+          </template>
+        </el-alert>
+
         <el-form
           ref="formRef"
           :model="form"
@@ -85,6 +100,8 @@
               v-model="form.contact_phone"
               placeholder="请输入手机号码"
               maxlength="11"
+              @blur="onPhoneBlur"
+              @input="onPhoneInput"
             >
               <template #prefix>
                 <el-icon class="input-prefix-icon"><Phone /></el-icon>
@@ -92,12 +109,24 @@
             </el-input>
           </el-form-item>
 
-          <el-form-item label="邮箱（选填）" prop="contact_email">
-            <el-input v-model="form.contact_email" placeholder="请输入电子邮箱">
-              <template #prefix>
-                <el-icon class="input-prefix-icon"><Message /></el-icon>
-              </template>
-            </el-input>
+          <el-form-item label="短信验证码" prop="sms_code">
+            <div class="sms-code-row">
+              <el-input
+                v-model="form.sms_code"
+                placeholder="请输入6位验证码"
+                maxlength="6"
+                inputmode="numeric"
+              />
+              <el-button
+                :disabled="phoneRegistered || smsCooldown > 0"
+                @click="handleSendCode"
+              >
+                {{ smsCooldown > 0 ? `${smsCooldown}s` : '获取验证码' }}
+              </el-button>
+            </div>
+            <p class="sms-sign-hint">
+              验证码短信签名显示为「速通互联验证码」，请注意查收以此开头的短信。
+            </p>
           </el-form-item>
 
           <el-form-item>
@@ -105,6 +134,7 @@
               type="primary"
               class="submit-btn"
               :loading="loading"
+              :disabled="phoneRegistered"
               @click="handleSubmit"
             >
               {{ loading ? '注册中...' : '立即注册' }}
@@ -179,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -187,10 +217,16 @@ import {
   OfficeBuilding,
   User,
   Phone,
-  Message,
 } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { registerTenant, getRegisterProgress } from '@/api'
+import {
+  registerTenant,
+  getRegisterProgress,
+  sendSmsCode,
+  checkRegisterPhone,
+} from '@/api'
+
+const SMS_PURPOSE_REGISTER = 4
 
 const route = useRoute()
 const router = useRouter()
@@ -209,6 +245,9 @@ const progressMessage = ref('正在提交…')
 const progressPercent = ref(0)
 const showSuccess = ref(false)
 const isExistingUser = ref(false)
+const phoneRegistered = ref(false)
+const smsCooldown = ref(0)
+let smsCooldownTimer: ReturnType<typeof setInterval> | null = null
 
 const POLL_INTERVAL_MS = 1500
 
@@ -216,7 +255,7 @@ const form = reactive({
   tenant_name: '',
   contact_person: '',
   contact_phone: '',
-  contact_email: '',
+  sms_code: '',
 })
 
 const rules: FormRules = {
@@ -229,10 +268,15 @@ const rules: FormRules = {
   ],
   contact_phone: [
     { required: true, message: '请输入手机号码', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' },
+    {
+      pattern: /^1[3-9]\d{9}$/,
+      message: '请输入正确的手机号码',
+      trigger: ['blur', 'change'],
+    },
   ],
-  contact_email: [
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' },
+  sms_code: [
+    { required: true, message: '请输入短信验证码', trigger: 'blur' },
+    { pattern: /^\d{6}$/, message: '验证码为6位数字', trigger: ['blur', 'change'] },
   ],
 }
 
@@ -240,8 +284,72 @@ function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms))
 }
 
+function onPhoneInput() {
+  form.contact_phone = form.contact_phone.replace(/\D/g, '').slice(0, 11)
+  phoneRegistered.value = false
+}
+
+async function onPhoneBlur() {
+  const p = form.contact_phone.trim()
+  if (!/^1[3-9]\d{9}$/.test(p)) {
+    phoneRegistered.value = false
+    return
+  }
+  try {
+    const { registered } = await checkRegisterPhone(p)
+    phoneRegistered.value = registered
+    if (registered) {
+      ElMessage.warning('该手机号已注册，请前往客户端登录')
+    }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '校验手机号失败'
+    ElMessage.error(msg)
+  }
+}
+
+function startSmsCooldown() {
+  if (smsCooldownTimer) {
+    clearInterval(smsCooldownTimer)
+    smsCooldownTimer = null
+  }
+  smsCooldown.value = 60
+  smsCooldownTimer = setInterval(() => {
+    smsCooldown.value -= 1
+    if (smsCooldown.value <= 0 && smsCooldownTimer) {
+      clearInterval(smsCooldownTimer)
+      smsCooldownTimer = null
+    }
+  }, 1000)
+}
+
+onUnmounted(() => {
+  if (smsCooldownTimer) clearInterval(smsCooldownTimer)
+})
+
+async function handleSendCode() {
+  if (phoneRegistered.value || !formRef.value) return
+  try {
+    await formRef.value.validateField('contact_phone')
+  } catch {
+    return
+  }
+  try {
+    await sendSmsCode(form.contact_phone.trim(), SMS_PURPOSE_REGISTER)
+    ElMessage.success('验证码已发送')
+    startSmsCooldown()
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '发送失败'
+    ElMessage.error(msg)
+  }
+}
+
 async function handleSubmit() {
   if (!formRef.value) return
+
+  if (phoneRegistered.value) {
+    ElMessage.warning('该手机号已注册，请前往客户端登录')
+    return
+  }
 
   try {
     await formRef.value.validate()
@@ -254,11 +362,18 @@ async function handleSubmit() {
   progressMessage.value = '正在提交…'
   progressPercent.value = 0
   try {
+    const preCheck = await checkRegisterPhone(form.contact_phone.trim())
+    if (preCheck.registered) {
+      phoneRegistered.value = true
+      ElMessage.warning('该手机号已注册，请前往客户端登录')
+      return
+    }
+
     const res = await registerTenant({
       tenant_name: form.tenant_name,
       contact_person: form.contact_person,
-      contact_phone: form.contact_phone,
-      contact_email: form.contact_email || undefined,
+      contact_phone: form.contact_phone.trim(),
+      sms_code: form.sms_code.trim(),
       referrer_code: referrerCode.value || undefined,
     })
     const payload = res?.data
@@ -527,6 +642,44 @@ function goHome() {
   font-size: 15px;
   color: var(--color-text-secondary);
   margin-bottom: 36px;
+}
+
+.registered-alert {
+  margin-bottom: 20px;
+
+  .registered-alert-text {
+    margin-right: 8px;
+  }
+
+  .registered-alert-link {
+    vertical-align: baseline;
+    padding: 0;
+    height: auto;
+    font-weight: 600;
+  }
+}
+
+.sms-code-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  align-items: center;
+
+  .el-input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .el-button {
+    flex-shrink: 0;
+  }
+}
+
+.sms-sign-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-muted, #64748b);
 }
 
 .referral-tip {

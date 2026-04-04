@@ -27,6 +27,13 @@ SMS_CODE_RESEND_SECONDS = 60
 
 PURPOSE_LOGIN = 1
 PURPOSE_RESET_PASSWORD = 2
+PURPOSE_TENANT_REGISTER = 4
+
+_PURPOSE_LOG_LABEL = {
+    PURPOSE_LOGIN: "登录",
+    PURPOSE_RESET_PASSWORD: "重置密码",
+    PURPOSE_TENANT_REGISTER: "企业注册",
+}
 
 
 class SmsService:
@@ -41,7 +48,19 @@ class SmsService:
         - console + 登录: sys_user WHERE user_type=0
         - client + 登录: sys_user + 至少一条有效的 sys_user_tenant
         - 重置密码: sys_user 存在即可
+        - 企业注册(purpose=4): 手机号须尚未在 sys_user 注册
         """
+        if purpose == PURPOSE_TENANT_REGISTER:
+            result = await db.execute(
+                select(User).where(
+                    User.phone == phone,
+                    User.is_deleted == 0,
+                )
+            )
+            if result.scalar_one_or_none():
+                raise BizException("该手机号已注册，请前往客户端登录")
+            return
+
         if purpose == PURPOSE_LOGIN and app_type == "console":
             result = await db.execute(
                 select(User).where(
@@ -93,7 +112,11 @@ class SmsService:
         生成并存储验证码，通过阿里云短信认证服务发送到用户手机。
         SMS_ENABLED 关闭时仅落表不发送，返回明文验证码便于开发调试。
         """
-        if purpose not in (PURPOSE_LOGIN, PURPOSE_RESET_PASSWORD):
+        if purpose not in (
+            PURPOSE_LOGIN,
+            PURPOSE_RESET_PASSWORD,
+            PURPOSE_TENANT_REGISTER,
+        ):
             raise BizException("无效的验证码用途")
 
         await SmsService._check_phone_exists(db, phone, purpose, app_type)
@@ -126,7 +149,7 @@ class SmsService:
         db.add(sms_code)
         await db.flush()
 
-        purpose_text = "登录" if purpose == PURPOSE_LOGIN else "重置密码"
+        purpose_text = _PURPOSE_LOG_LABEL.get(purpose, str(purpose))
         logger.info(
             f"验证码已生成 | phone={phone} purpose={purpose_text} "
             f"code={code} expire_at={expire_at}"

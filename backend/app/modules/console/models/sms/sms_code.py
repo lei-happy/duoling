@@ -26,7 +26,7 @@ class SmsCode(PlatformBase):
         String(6), nullable=False, comment="验证码（6位数字）"
     )
     purpose: Mapped[int] = mapped_column(
-        SmallInteger, nullable=False, comment="用途 1-验证码登录 2-重置密码"
+        SmallInteger, nullable=False, comment="用途 1-验证码登录 2-重置密码 4-企业注册"
     )
     status: Mapped[int] = mapped_column(
         SmallInteger, default=0, server_default="0", comment="状态 0-未使用 1-已使用 2-已过期"

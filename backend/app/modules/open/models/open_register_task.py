@@ -34,7 +34,7 @@ class OpenRegisterTask(PlatformBase):
     contact_phone: Mapped[str] = mapped_column(
         String(20), nullable=False, index=True, comment="用于并发注册防抖查询"
     )
-    payload_json: Mapped[str] = mapped_column(Text, nullable=False, comment="RegisterRequest JSON")
+    payload_json: Mapped[str] = mapped_column(Text, nullable=False, comment="RegisterPayload JSON")
     result_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="成功时 RegisterResponse JSON")
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="失败原因")
     created_at: Mapped[datetime] = mapped_column(

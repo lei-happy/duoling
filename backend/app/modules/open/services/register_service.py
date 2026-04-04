@@ -14,15 +14,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import db_manager
 from app.common.exceptions import BizException
 from app.modules.console.models.tenant.tenant import Tenant
+from app.modules.console.models.system.user import User
 from app.modules.console.schemas.tenant.tenant import TenantCreate
 from app.modules.console.services.tenant.tenant_service import TenantService
 from app.modules.open.models.open_register_task import OpenRegisterTask
 from app.modules.open.schemas.register import (
-    RegisterRequest,
+    RegisterPayload,
+    RegisterSubmitRequest,
     RegisterResponse,
     RegisterStartResponse,
     RegisterProgressOut,
 )
+from app.modules.open.services.sms_service import SmsService, PURPOSE_TENANT_REGISTER
 
 
 class RegisterService:
@@ -46,7 +49,7 @@ class RegisterService:
             await session.commit()
 
     @staticmethod
-    def _build_response(data: RegisterRequest, tenant, is_existing_user: bool) -> RegisterResponse:
+    def _build_response(data: RegisterPayload, tenant, is_existing_user: bool) -> RegisterResponse:
         if is_existing_user:
             message = "注册成功，该手机号已注册过账号，请使用已有密码登录"
         else:
@@ -60,26 +63,45 @@ class RegisterService:
         )
 
     @staticmethod
+    async def is_phone_registered(db: AsyncSession, phone: str) -> bool:
+        """手机号是否已在平台 sys_user 注册"""
+        result = await db.execute(
+            select(User).where(User.phone == phone, User.is_deleted == 0)
+        )
+        return result.scalar_one_or_none() is not None
+
+    @staticmethod
+    async def assert_phone_not_registered(db: AsyncSession, phone: str) -> None:
+        if await RegisterService.is_phone_registered(db, phone):
+            raise BizException("该手机号已注册，请前往客户端登录")
+
+    @staticmethod
     async def start_register(
         db: AsyncSession,
-        data: RegisterRequest,
+        data: RegisterSubmitRequest,
         background_tasks: BackgroundTasks,
     ) -> RegisterStartResponse:
         """校验后创建任务并投递后台执行"""
+        payload = RegisterPayload.model_validate(
+            data.model_dump(exclude={"sms_code"})
+        )
+
         existing = await db.execute(
             select(Tenant).where(
-                Tenant.tenant_name == data.tenant_name,
+                Tenant.tenant_name == payload.tenant_name,
                 Tenant.is_deleted == 0,
             )
         )
         if existing.scalar_one_or_none():
             raise BizException("企业名称已存在")
 
+        await RegisterService.assert_phone_not_registered(db, payload.contact_phone)
+
         one_hour_ago = datetime.now() - timedelta(hours=1)
         dup_task = await db.execute(
             select(OpenRegisterTask)
             .where(
-                OpenRegisterTask.contact_phone == data.contact_phone,
+                OpenRegisterTask.contact_phone == payload.contact_phone,
                 OpenRegisterTask.status.in_(["pending", "running"]),
                 OpenRegisterTask.is_deleted == 0,
                 OpenRegisterTask.created_at >= one_hour_ago,
@@ -94,6 +116,14 @@ class RegisterService:
             )
             return RegisterStartResponse(task_id=existing_task.id)
 
+        await SmsService.verify_code(
+            db,
+            payload.contact_phone,
+            data.sms_code,
+            PURPOSE_TENANT_REGISTER,
+            consume=True,
+        )
+
         task_id = str(uuid.uuid4())
         task = OpenRegisterTask(
             id=task_id,
@@ -101,8 +131,8 @@ class RegisterService:
             current_step="queued",
             message="即将开始初始化企业基础数据…",
             percent=0,
-            contact_phone=data.contact_phone,
-            payload_json=data.model_dump_json(),
+            contact_phone=payload.contact_phone,
+            payload_json=payload.model_dump_json(),
         )
         db.add(task)
         await db.flush()
@@ -121,7 +151,7 @@ class RegisterService:
             logger.error("平台库未初始化，无法执行注册任务")
             return
 
-        data: Optional[RegisterRequest] = None
+        data: Optional[RegisterPayload] = None
         try:
             async with factory() as session:
                 tr = await session.execute(
@@ -140,7 +170,7 @@ class RegisterService:
                     return
                 if task.status in ("success", "failed"):
                     return
-                data = RegisterRequest.model_validate_json(task.payload_json)
+                data = RegisterPayload.model_validate_json(task.payload_json)
                 task.status = "running"
                 task.current_step = "start"
                 task.message = "正在处理…"
@@ -174,7 +204,7 @@ class RegisterService:
             tenantName=data.tenant_name,
             contactPerson=data.contact_person,
             contactPhone=data.contact_phone,
-            contactEmail=data.contact_email,
+            contactEmail=None,
             province=data.province,
             city=data.city,
             remark="官网自助注册 - 免费版",

@@ -17,8 +17,12 @@ router = APIRouter()
 class SmsSendRequest(BaseModel):
     """发送验证码请求"""
     phone: str = Field(description="手机号")
-    purpose: int = Field(description="用途 1-验证码登录 2-重置密码")
-    app_type: str = Field(description="应用类型 console-管理后台 client-客户端")
+    purpose: int = Field(
+        description="用途 1-验证码登录 2-重置密码 4-官网企业注册"
+    )
+    app_type: str = Field(
+        description="应用类型 console-管理后台 client-客户端 website-官网"
+    )
 
 
 class SmsResetPasswordRequest(BaseModel):

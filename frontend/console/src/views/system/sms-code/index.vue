@@ -33,6 +33,14 @@
           >
             重置密码
           </el-tag>
+          <el-tag
+            v-else-if="row.purpose === 4"
+            size="small"
+            type="success"
+            :disable-transitions="true"
+          >
+            企业注册
+          </el-tag>
           <span v-else>{{ row.purpose }}</span>
         </template>
         <template #status="{ row }">
@@ -92,7 +100,13 @@
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
 
   const purposeText = (p: number) =>
-    p === 1 ? '验证码登录' : p === 2 ? '重置密码' : String(p);
+    p === 1
+      ? '验证码登录'
+      : p === 2
+        ? '重置密码'
+        : p === 4
+          ? '企业注册'
+          : String(p);
   const statusText = (s: number) =>
     s === 0 ? '未使用' : s === 1 ? '已使用' : s === 2 ? '已过期' : String(s);
 

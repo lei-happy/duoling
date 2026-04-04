@@ -1,13 +1,17 @@
 from app.modules.open.schemas.register import (
-    RegisterRequest,
+    RegisterPayload,
+    RegisterSubmitRequest,
     RegisterResponse,
     RegisterStartResponse,
     RegisterProgressOut,
+    RegisterPhoneCheckOut,
 )
 
 __all__ = [
-    "RegisterRequest",
+    "RegisterPayload",
+    "RegisterSubmitRequest",
     "RegisterResponse",
     "RegisterStartResponse",
     "RegisterProgressOut",
+    "RegisterPhoneCheckOut",
 ]

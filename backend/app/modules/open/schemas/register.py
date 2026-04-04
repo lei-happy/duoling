@@ -2,19 +2,41 @@
 企业自助注册 Schemas
 """
 
+import re
 from typing import Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, Field, field_validator
 
 
-class RegisterRequest(BaseModel):
-    """企业自助注册请求"""
-    tenant_name: str               # 企业名称
-    contact_person: str            # 联系人
-    contact_phone: str             # 联系电话
-    contact_email: Optional[str] = None  # 联系邮箱
+_CN_MOBILE = re.compile(r"^1[3-9]\d{9}$")
+
+
+class RegisterPayload(BaseModel):
+    """企业自助注册业务数据（持久化至注册任务，不含短信验证码）"""
+    tenant_name: str
+    contact_person: str
+    contact_phone: str
     province: Optional[str] = None
     city: Optional[str] = None
-    referrer_code: Optional[str] = None  # 推荐人企业编码（从URL参数 ?ref=xxx 传入）
+    referrer_code: Optional[str] = None
+
+    @field_validator("contact_phone")
+    @classmethod
+    def validate_mobile(cls, v: str) -> str:
+        if not _CN_MOBILE.match(v or ""):
+            raise ValueError("请输入正确的手机号码")
+        return v
+
+
+class RegisterSubmitRequest(RegisterPayload):
+    """官网提交注册（含短信验证码，不入库）"""
+    sms_code: str = Field(
+        ...,
+        min_length=6,
+        max_length=6,
+        pattern=r"^\d{6}$",
+        description="短信验证码",
+    )
 
 
 class RegisterResponse(BaseModel):
@@ -39,3 +61,8 @@ class RegisterProgressOut(BaseModel):
     percent: int = 0
     result: Optional[RegisterResponse] = None
     error_message: Optional[str] = None
+
+
+class RegisterPhoneCheckOut(BaseModel):
+    """官网校验手机号是否已在平台注册"""
+    registered: bool = Field(..., description="true 表示已注册，应引导登录")
