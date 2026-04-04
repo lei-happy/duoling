@@ -135,7 +135,13 @@
     </ele-card>
   </ele-page>
 </template>
-
+<style scoped>
+.ele-card-body {
+  :deep(.ele-card-body) {
+    padding: 8px 0 8px 0 !important;
+  }
+}
+</style>
 <script lang="ts" setup>
   import { ref, watch, onActivated } from 'vue';
   import { useRouter } from 'vue-router';
@@ -432,10 +438,3 @@
     query();
   });
 </script>
-
-<style scoped>
-  .user-org-tree-count {
-    font-size: 12px;
-    opacity: 0.65;
-  }
-</style>
