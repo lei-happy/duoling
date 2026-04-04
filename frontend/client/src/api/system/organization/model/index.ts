@@ -10,6 +10,8 @@ export interface Organization {
   parentId?: number;
   /** 机构名称 */
   organizationName?: string;
+  /** 子树内去重员工数（含本部门及子部门） */
+  userCount?: number;
   /** 机构代码 */
   organizationCode?: string;
   /** 机构类型(字典) */

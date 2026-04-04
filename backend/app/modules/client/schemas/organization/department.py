@@ -40,6 +40,7 @@ class DepartmentOut(BaseModel):
     organizationId: int
     parentId: int
     organizationName: str
+    userCount: int = 0
     organizationCode: Optional[str] = None
     organizationType: Optional[str] = None
     leader: Optional[str] = None

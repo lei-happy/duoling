@@ -2,7 +2,7 @@
 组织架构/部门管理服务（租户库）
 """
 
-from typing import Optional, List
+from typing import Optional, List, Dict, Set
 
 from sqlalchemy import select, func, asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +32,57 @@ def _dept_list_order_clauses(sort: Optional[str], order: Optional[str]):
 
 
 class DepartmentService:
+
+    @staticmethod
+    async def _subtree_user_counts(db: AsyncSession) -> Dict[int, int]:
+        dept_result = await db.execute(
+            select(BizDepartment).where(BizDepartment.is_deleted == 0)
+        )
+        dept_rows = list(dept_result.scalars().all())
+        if not dept_rows:
+            return {}
+
+        dept_ids = {d.id for d in dept_rows}
+        children: Dict[int, List[int]] = {}
+        for d in dept_rows:
+            pid = d.parent_id
+            if pid and pid in dept_ids:
+                children.setdefault(pid, []).append(d.id)
+
+        roots = [
+            d.id for d in dept_rows
+            if d.parent_id == 0 or d.parent_id not in dept_ids
+        ]
+
+        user_result = await db.execute(
+            select(BizUser.id, BizUser.department_id).where(
+                BizUser.is_deleted == 0,
+                BizUser.department_id.isnot(None),
+            )
+        )
+        direct: Dict[int, Set[int]] = {did: set() for did in dept_ids}
+        for uid, dep_id in user_result.all():
+            if dep_id in dept_ids:
+                direct[dep_id].add(uid)
+
+        memo: Dict[int, Set[int]] = {}
+
+        def collect(did: int) -> Set[int]:
+            if did in memo:
+                return memo[did]
+            merged: Set[int] = set(direct.get(did, ()))
+            for c in children.get(did, []):
+                merged |= collect(c)
+            memo[did] = merged
+            return merged
+
+        for r in roots:
+            collect(r)
+        for did in dept_ids:
+            if did not in memo:
+                collect(did)
+
+        return {did: len(s) for did, s in memo.items()}
 
     @staticmethod
     async def page_departments(
@@ -83,7 +134,14 @@ class DepartmentService:
         result = await db.execute(
             base.order_by(*_dept_list_order_clauses(sort, order))
         )
-        return [DepartmentOut.from_model(d) for d in result.scalars().all()]
+        counts = await DepartmentService._subtree_user_counts(db)
+        items: List[DepartmentOut] = []
+        for d in result.scalars().all():
+            out = DepartmentOut.from_model(d)
+            items.append(
+                out.model_copy(update={"userCount": counts.get(d.id, 0)})
+            )
+        return items
 
     @staticmethod
     async def get_department_tree(
@@ -112,6 +170,10 @@ class DepartmentService:
                 tree.append(node)
             else:
                 dept_map[d.parent_id]["children"].append(node)
+
+        counts = await DepartmentService._subtree_user_counts(db)
+        for did, node in dept_map.items():
+            node["userCount"] = counts.get(did, 0)
 
         return tree
 

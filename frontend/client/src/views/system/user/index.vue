@@ -42,12 +42,16 @@
             }"
             @node-click="handleNodeClick"
           >
-            <template #default="{ node }">
-              <span class="el-tree-node__label" :title="node.label">
+            <template #default="{ node, data }">
+              <span
+                class="el-tree-node__label"
+                :title="`${node.label} (${data.userCount ?? 0})`"
+              >
                 <el-icon style="margin-right: 4px; vertical-align: -2px">
                   <CityOutlined />
                 </el-icon>
                 <span>{{ node.label }}</span>
+                <span class="user-org-tree-count"> ({{ data.userCount ?? 0 }})</span>
               </span>
             </template>
           </el-tree>
@@ -186,8 +190,26 @@
   /** 树搜索关键字 */
   const keywords = ref('');
 
-  /** 查询树数据 */
-  const query = () => {
+  const findOrgInTree = (
+    nodes: Organization[],
+    id: number
+  ): Organization | undefined => {
+    for (const n of nodes) {
+      if (n.organizationId === id) {
+        return n;
+      }
+      if (n.children?.length) {
+        const hit = findOrgInTree(n.children, id);
+        if (hit) {
+          return hit;
+        }
+      }
+    }
+  };
+
+  /** 查询树数据；preserveSelection 为 true 时在刷新人数后尽量保持当前选中部门 */
+  const query = (preserveSelection?: boolean) => {
+    const prevId = preserveSelection ? current.value?.organizationId : undefined;
     loading.value = true;
     listOrganizations()
       .then((list) => {
@@ -197,7 +219,12 @@
           idField: 'organizationId',
           parentIdField: 'parentId'
         });
-        handleNodeClick(data.value[0]);
+        if (preserveSelection && prevId != null) {
+          const row = findOrgInTree(data.value, prevId);
+          handleNodeClick(row ?? data.value[0]);
+        } else {
+          handleNodeClick(data.value[0]);
+        }
       })
       .catch((e) => {
         loading.value = false;
@@ -311,7 +338,10 @@
       componentProps: {
         data: row,
         organizationId: current.value?.organizationId,
-        onDone: () => reload()
+        onDone: () => {
+          reload();
+          query(true);
+        }
       }
     });
   };
@@ -321,7 +351,12 @@
     openModal({
       custom: true,
       asyncComponent: () => import('./components/user-import.vue'),
-      componentProps: { onDone: () => reload() }
+      componentProps: {
+        onDone: () => {
+          reload();
+          query(true);
+        }
+      }
     });
   };
 
@@ -345,6 +380,7 @@
             loading.close();
             EleMessage.success({ message: msg, plain: true });
             reload();
+            query(true);
           })
           .catch((e) => {
             loading.close();
@@ -396,3 +432,10 @@
     query();
   });
 </script>
+
+<style scoped>
+  .user-org-tree-count {
+    font-size: 12px;
+    opacity: 0.65;
+  }
+</style>
