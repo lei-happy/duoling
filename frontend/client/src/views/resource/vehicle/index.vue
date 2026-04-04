@@ -1,5 +1,6 @@
 <template>
   <ele-page>
+    <vehicle-search @search="onSearch" />
     <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
@@ -12,35 +13,11 @@
         cache-key="ResourceVehicleTable"
       >
         <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="车牌号/品牌/型号"
-                clearable
-                @change="reload"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.status"
-                placeholder="状态"
-                clearable
-                @change="reload"
-              >
-                <el-option label="正常" :value="1" />
-                <el-option label="停用" :value="0" />
-                <el-option label="维修/保养" :value="2" />
-                <el-option label="保险续期" :value="3" />
-                <el-option label="已报废" :value="9" />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="openEdit()">
-                新增车辆
-              </el-button>
-            </el-form-item>
-          </el-form>
+          <btn-items
+            :items="[
+              { preset: 'add', title: '新增车辆', onClick: () => openEdit() }
+            ]"
+          />
         </template>
         <template #trailerPlateNumber="{ row }">
           <span v-if="row.trailerPlateNumber">{{ row.trailerPlateNumber }}</span>
@@ -92,8 +69,9 @@
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import VehicleEdit from './components/vehicle-edit.vue';
+  import VehicleSearch from './components/vehicle-search.vue';
   import { pageVehicles, removeVehicle } from '@/api/resource/vehicle';
-  import type { Vehicle } from '@/api/resource/vehicle/model';
+  import type { Vehicle, VehicleParam } from '@/api/resource/vehicle/model';
 
   defineOptions({ name: 'ResourceVehicle' });
 
@@ -101,19 +79,18 @@
   const selections = ref<Vehicle[]>([]);
   const editVisible = ref(false);
   const editData = ref<Vehicle | null>(null);
-  const where = reactive({
+  const where = reactive<Pick<VehicleParam, 'keyword' | 'status'>>({
     keyword: '',
-    status: undefined as number | undefined
+    status: void 0
   });
 
+  const onSearch = (payload: Pick<VehicleParam, 'keyword' | 'status'>) => {
+    where.keyword = payload.keyword ?? '';
+    where.status = payload.status;
+    tableRef.value?.reload?.({ page: 1 });
+  };
+
   const columns = ref<Columns>([
-    {
-      type: 'selection',
-      columnKey: 'selection',
-      width: 50,
-      align: 'center'
-    },
-    { type: 'index', columnKey: 'index', width: 50, align: 'center' },
     { prop: 'plateNumber', label: '车牌号', minWidth: 120 },
     { prop: 'vehicleType', label: '车辆类型', minWidth: 100 },
     { prop: 'brand', label: '品牌', minWidth: 80 },
@@ -160,7 +137,7 @@
 
   const datasource: DatasourceFunction = async ({ page, limit }) => {
     const res = await pageVehicles({ ...where, page, limit });
-    return { list: res?.list ?? [], count: res?.total ?? 0 };
+    return { list: res?.list ?? [], count: res?.count ?? 0 };
   };
 
   const reload = () => {

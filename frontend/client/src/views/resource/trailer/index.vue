@@ -1,5 +1,6 @@
 <template>
   <ele-page>
+    <trailer-search @search="onSearch" />
     <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
@@ -12,32 +13,11 @@
         cache-key="ResourceTrailerTable"
       >
         <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="挂车车牌号"
-                clearable
-                @change="reload"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.status"
-                placeholder="状态"
-                clearable
-                @change="reload"
-              >
-                <el-option label="正常" :value="1" />
-                <el-option label="停用" :value="0" />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="openEdit()">
-                新增挂车
-              </el-button>
-            </el-form-item>
-          </el-form>
+          <btn-items
+            :items="[
+              { preset: 'add', title: '新增挂车', onClick: () => openEdit() }
+            ]"
+          />
         </template>
         <template #vehiclePlateNumber="{ row }">
           <span v-if="row.vehiclePlateNumber">
@@ -80,8 +60,9 @@
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import TrailerEdit from './components/trailer-edit.vue';
+  import TrailerSearch from './components/trailer-search.vue';
   import { pageTrailers, removeTrailer } from '@/api/resource/trailer';
-  import type { Trailer } from '@/api/resource/trailer/model';
+  import type { Trailer, TrailerParam } from '@/api/resource/trailer/model';
 
   defineOptions({ name: 'ResourceTrailer' });
 
@@ -89,19 +70,18 @@
   const selections = ref<Trailer[]>([]);
   const editVisible = ref(false);
   const editData = ref<Trailer | null>(null);
-  const where = reactive({
+  const where = reactive<Pick<TrailerParam, 'keyword' | 'status'>>({
     keyword: '',
-    status: undefined as number | undefined
+    status: void 0
   });
 
+  const onSearch = (payload: Pick<TrailerParam, 'keyword' | 'status'>) => {
+    where.keyword = payload.keyword ?? '';
+    where.status = payload.status;
+    tableRef.value?.reload?.({ page: 1 });
+  };
+
   const columns = ref<Columns>([
-    {
-      type: 'selection',
-      columnKey: 'selection',
-      width: 50,
-      align: 'center'
-    },
-    { type: 'index', columnKey: 'index', width: 50, align: 'center' },
     { prop: 'plateNumber', label: '挂车车牌号', minWidth: 130 },
     { prop: 'trailerType', label: '挂车类型', minWidth: 110 },
     {
@@ -146,7 +126,7 @@
 
   const datasource: DatasourceFunction = async ({ page, limit }) => {
     const res = await pageTrailers({ ...where, page, limit });
-    return { list: res?.list ?? [], count: res?.total ?? 0 };
+    return { list: res?.list ?? [], count: res?.count ?? 0 };
   };
 
   const reload = () => {

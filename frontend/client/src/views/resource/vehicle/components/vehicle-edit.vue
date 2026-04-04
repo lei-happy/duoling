@@ -10,24 +10,29 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="100px"
+      label-width="0"
       @submit.prevent=""
     >
       <el-divider content-position="left">基础信息</el-divider>
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="车牌号" prop="plateNumber">
-            <el-input v-model="form.plateNumber" placeholder="请输入车牌号" />
+          <el-form-item prop="plateNumber">
+            <floating-label
+              label="请输入车牌号"
+              type="input"
+              v-model.trim="form.plateNumber"
+              clearable
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="关联挂车">
-            <el-select
+          <el-form-item>
+            <floating-label
               v-model="form.trailerId"
-              placeholder="请选择挂车"
+              label="请选择需要关联的挂车"
+              type="select"
+              :filterable="true"
               clearable
-              filterable
-              style="width: 100%"
             >
               <el-option
                 v-for="item in trailerOptions"
@@ -35,113 +40,148 @@
                 :label="item.plateNumber"
                 :value="item.id"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
       </el-row>
       <el-divider content-position="left">详细信息</el-divider>
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="车辆类型">
-            <el-input
-              v-model="form.vehicleType"
-              placeholder="请输入车辆类型"
+          <el-form-item>
+            <floating-label
+              label="请输入车辆类型"
+              type="input"
+              v-model.trim="form.vehicleType"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="品牌">
-            <el-input v-model="form.brand" placeholder="请输入品牌" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="型号">
-            <el-input v-model="form.model" placeholder="请输入型号" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="颜色">
-            <el-input v-model="form.color" placeholder="请输入颜色" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="载重(吨)">
-            <el-input-number
-              v-model="form.loadCapacity"
-              :min="0"
-              :precision="2"
-              style="width: 100%"
+          <el-form-item>
+            <floating-label
+              label="请输入品牌"
+              type="input"
+              v-model.trim="form.brand"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="容积(m³)">
-            <el-input-number
-              v-model="form.volumeCapacity"
-              :min="0"
-              :precision="2"
-              style="width: 100%"
+          <el-form-item>
+            <floating-label
+              label="请输入型号"
+              type="input"
+              v-model.trim="form.model"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="车架号">
-            <el-input v-model="form.vin" placeholder="请输入VIN" />
+          <el-form-item>
+            <floating-label
+              label="请输入颜色"
+              type="input"
+              v-model.trim="form.color"
+              clearable
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="发动机号">
-            <el-input v-model="form.engineNo" placeholder="请输入发动机号" />
+          <el-form-item>
+            <floating-label
+              label="请输入载重(吨)"
+              type="input"
+              input-type="number"
+              v-model="loadCapacityStr"
+              clearable
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="购买日期">
-            <el-date-picker
+          <el-form-item>
+            <floating-label
+              label="请输入容积(m³)"
+              type="input"
+              input-type="number"
+              v-model="volumeCapacityStr"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入车架号"
+              type="input"
+              v-model.trim="form.vin"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入发动机号"
+              type="input"
+              v-model.trim="form.engineNo"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请选择购买日期"
+              type="date"
+              date-type="date"
               v-model="form.purchaseDate"
-              type="date"
               value-format="YYYY-MM-DD"
-              placeholder="选择日期"
-              style="width: 100%"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="保险到期">
-            <el-date-picker
+          <el-form-item>
+            <floating-label
+              label="请选择保险到期日"
+              type="date"
+              date-type="date"
               v-model="form.insuranceExpire"
-              type="date"
               value-format="YYYY-MM-DD"
-              placeholder="选择日期"
-              style="width: 100%"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="年检到期">
-            <el-date-picker
+          <el-form-item>
+            <floating-label
+              label="请选择年检到期日"
+              type="date"
+              date-type="date"
               v-model="form.inspectionExpire"
-              type="date"
               value-format="YYYY-MM-DD"
-              placeholder="选择日期"
-              style="width: 100%"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="GPS设备ID">
-            <el-input
-              v-model="form.gpsDeviceId"
-              placeholder="请输入GPS设备ID"
+          <el-form-item>
+            <floating-label
+              label="请输入GPS设备ID"
+              type="input"
+              v-model.trim="form.gpsDeviceId"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="24">
-          <el-form-item label="备注">
-            <el-input
-              v-model="form.remark"
-              type="textarea"
-              :rows="3"
-              placeholder="请输入备注"
+          <el-form-item>
+            <floating-label
+              label="请输入备注"
+              type="input"
+              input-type="textarea"
+              v-model.trim="form.remark"
+              clearable
             />
           </el-form-item>
         </el-col>
@@ -160,6 +200,7 @@
   import { ref, reactive, watch, computed } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import {
     addVehicle,
     updateVehicle,
@@ -182,6 +223,35 @@
   const loading = ref(false);
   const form = reactive<Vehicle>({});
   const trailerOptions = ref<TrailerOption[]>([]);
+
+  const numToStr = (n: number | undefined | null) =>
+    n != null && !Number.isNaN(Number(n)) ? String(n) : '';
+
+  const loadCapacityStr = computed({
+    get: () => numToStr(form.loadCapacity),
+    set: (v: string) => {
+      const t = v?.trim();
+      if (t === '' || t == null) {
+        form.loadCapacity = void 0;
+        return;
+      }
+      const n = Number(t);
+      form.loadCapacity = Number.isFinite(n) ? Math.round(n * 100) / 100 : void 0;
+    }
+  });
+
+  const volumeCapacityStr = computed({
+    get: () => numToStr(form.volumeCapacity),
+    set: (v: string) => {
+      const t = v?.trim();
+      if (t === '' || t == null) {
+        form.volumeCapacity = void 0;
+        return;
+      }
+      const n = Number(t);
+      form.volumeCapacity = Number.isFinite(n) ? Math.round(n * 100) / 100 : void 0;
+    }
+  });
 
   const rules = reactive<FormRules>({
     plateNumber: [

@@ -10,16 +10,18 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="100px"
+      label-width="0"
       @submit.prevent=""
     >
       <el-divider content-position="left">基础信息</el-divider>
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="挂车车牌号" prop="plateNumber">
-            <el-input
-              v-model="form.plateNumber"
-              placeholder="请输入挂车车牌号"
+          <el-form-item prop="plateNumber">
+            <floating-label
+              label="请输入挂车车牌号"
+              type="input"
+              v-model.trim="form.plateNumber"
+              clearable
             />
           </el-form-item>
         </el-col>
@@ -27,100 +29,112 @@
       <el-divider content-position="left">详细信息</el-divider>
       <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="挂车类型">
-            <el-input
-              v-model="form.trailerType"
-              placeholder="请输入挂车类型"
+          <el-form-item>
+            <floating-label
+              label="请输入挂车类型"
+              type="input"
+              v-model.trim="form.trailerType"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="轴数">
-            <el-input-number
-              v-model="form.axleCount"
-              :min="1"
-              :max="10"
-              style="width: 100%"
+          <el-form-item>
+            <floating-label
+              label="请输入轴数"
+              type="input"
+              input-type="number"
+              v-model="axleCountStr"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="载重(吨)">
-            <el-input-number
-              v-model="form.loadCapacity"
-              :min="0"
-              :precision="2"
-              style="width: 100%"
+          <el-form-item>
+            <floating-label
+              label="请输入载重(吨)"
+              type="input"
+              input-type="number"
+              v-model="loadCapacityStr"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="容积(m³)">
-            <el-input-number
-              v-model="form.volumeCapacity"
-              :min="0"
-              :precision="2"
-              style="width: 100%"
+          <el-form-item>
+            <floating-label
+              label="请输入容积(m³)"
+              type="input"
+              input-type="number"
+              v-model="volumeCapacityStr"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="车厢长(m)">
-            <el-input-number
-              v-model="form.length"
-              :min="0"
-              :precision="2"
-              style="width: 100%"
+          <el-form-item>
+            <floating-label
+              label="请输入车厢长(m)"
+              type="input"
+              input-type="number"
+              v-model="lengthStr"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="车厢宽(m)">
-            <el-input-number
-              v-model="form.width"
-              :min="0"
-              :precision="2"
-              style="width: 100%"
+          <el-form-item>
+            <floating-label
+              label="请输入车厢宽(m)"
+              type="input"
+              input-type="number"
+              v-model="widthStr"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="车厢高(m)">
-            <el-input-number
-              v-model="form.height"
-              :min="0"
-              :precision="2"
-              style="width: 100%"
+          <el-form-item>
+            <floating-label
+              label="请输入车厢高(m)"
+              type="input"
+              input-type="number"
+              v-model="heightStr"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="车位数">
-            <el-input-number
-              v-model="form.parkingSpots"
-              :min="0"
-              style="width: 100%"
+          <el-form-item>
+            <floating-label
+              label="请输入车位数"
+              type="input"
+              input-type="number"
+              v-model="parkingSpotsStr"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="购买日期">
-            <el-date-picker
-              v-model="form.purchaseDate"
+          <el-form-item>
+            <floating-label
+              label="请选择购买日期"
               type="date"
+              date-type="date"
+              v-model="form.purchaseDate"
               value-format="YYYY-MM-DD"
-              placeholder="选择日期"
-              style="width: 100%"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="24">
-          <el-form-item label="备注">
-            <el-input
-              v-model="form.remark"
-              type="textarea"
-              :rows="3"
-              placeholder="请输入备注"
+          <el-form-item>
+            <floating-label
+              label="请输入备注"
+              type="input"
+              input-type="textarea"
+              v-model.trim="form.remark"
+              clearable
             />
           </el-form-item>
         </el-col>
@@ -139,6 +153,7 @@
   import { ref, reactive, watch, computed } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { addTrailer, updateTrailer } from '@/api/resource/trailer';
   import type { Trailer } from '@/api/resource/trailer/model';
 
@@ -156,6 +171,68 @@
   const formRef = ref<FormInstance>();
   const loading = ref(false);
   const form = reactive<Trailer>({});
+
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+
+  const decStr = (key: 'loadCapacity' | 'volumeCapacity' | 'length' | 'width' | 'height') =>
+    computed({
+      get: () => {
+        const n = form[key];
+        return n != null && !Number.isNaN(Number(n)) ? String(n) : '';
+      },
+      set: (v: string) => {
+        const t = v?.trim();
+        if (t === '' || t == null) {
+          form[key] = void 0;
+          return;
+        }
+        const n = Number(t);
+        form[key] = Number.isFinite(n) ? round2(n) : void 0;
+      }
+    });
+
+  const loadCapacityStr = decStr('loadCapacity');
+  const volumeCapacityStr = decStr('volumeCapacity');
+  const lengthStr = decStr('length');
+  const widthStr = decStr('width');
+  const heightStr = decStr('height');
+
+  const axleCountStr = computed({
+    get: () =>
+      form.axleCount != null && !Number.isNaN(Number(form.axleCount))
+        ? String(form.axleCount)
+        : '',
+    set: (v: string) => {
+      const t = v?.trim();
+      if (t === '' || t == null) {
+        form.axleCount = void 0;
+        return;
+      }
+      const n = parseInt(t, 10);
+      if (!Number.isFinite(n)) {
+        form.axleCount = void 0;
+        return;
+      }
+      form.axleCount = Math.min(10, Math.max(1, n));
+    }
+  });
+
+  const parkingSpotsStr = computed({
+    get: () =>
+      form.parkingSpots != null && !Number.isNaN(Number(form.parkingSpots))
+        ? String(form.parkingSpots)
+        : '',
+    set: (v: string) => {
+      const t = v?.trim();
+      if (t === '' || t == null) {
+        form.parkingSpots = void 0;
+        return;
+      }
+      const n = parseInt(t, 10);
+      form.parkingSpots =
+        Number.isFinite(n) && n >= 0 ? n : void 0;
+    }
+  });
 
   const rules = reactive<FormRules>({
     plateNumber: [
