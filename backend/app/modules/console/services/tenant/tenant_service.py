@@ -396,6 +396,10 @@ class TenantService:
             target_cols.append("is_deleted")
             source_exprs.append("0")
 
+            # source=0 标记为系统初始化数据（不可编辑/删除）
+            target_cols.append("source")
+            source_exprs.append("0")
+
             # 构建 WHERE 条件：仅同步未删除的地区记录
             where_clause = ""
             if "is_deleted" in source_cols:

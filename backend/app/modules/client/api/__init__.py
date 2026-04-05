@@ -18,6 +18,7 @@ from app.modules.client.api.customer import router as customer_router
 from app.modules.client.api.route import router as route_router
 from app.modules.client.api.order import router as order_router
 from app.modules.client.api.operation_record import router as operation_record_router
+from app.modules.client.api.region import router as region_router
 
 router = APIRouter()
 
@@ -34,3 +35,4 @@ router.include_router(customer_router, prefix="/resource/customer", tags=["客�
 router.include_router(route_router, prefix="/resource/route", tags=["客户端-路线管理"])
 router.include_router(order_router, prefix="/business/order", tags=["客户端-运单管理"])
 router.include_router(operation_record_router, prefix="/system/operation-record", tags=["客户端-操作记录"])
+router.include_router(region_router, prefix="/basic-data/region", tags=["客户端-地区数据"])

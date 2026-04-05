@@ -282,6 +282,35 @@ CLIENT_MENUS = [
             },
         ],
     },
+    # ---- 基础数据 ----
+    {
+        "menu_name": "基础数据",
+        "menu_code": None,
+        "menu_type": 0,
+        "path": "/basic_data",
+        "component": None,
+        "icon": "AppstoreOutlined",
+        "sort_order": 35,
+        "feature_code": "basic_data",
+        "children": [
+            {
+                "menu_name": "地区数据",
+                "menu_code": "basic_data:regional_data",
+                "menu_type": 0,
+                "path": "/basic_data/regional_data",
+                "component": "/basic_data/regional_data/index",
+                "icon": "EnvironmentOutlined",
+                "sort_order": 0,
+                "feature_code": "basic_data_region",
+                "children": [
+                    {"menu_name": "查询", "menu_code": "basic_data:regional_data:list", "menu_type": 1, "sort_order": 0, "feature_code": "basic_data_region"},
+                    {"menu_name": "新增", "menu_code": "basic_data:regional_data:add", "menu_type": 1, "sort_order": 1, "feature_code": "basic_data_region"},
+                    {"menu_name": "编辑", "menu_code": "basic_data:regional_data:edit", "menu_type": 1, "sort_order": 2, "feature_code": "basic_data_region"},
+                    {"menu_name": "删除", "menu_code": "basic_data:regional_data:delete", "menu_type": 1, "sort_order": 3, "feature_code": "basic_data_region"},
+                ],
+            },
+        ],
+    },
     # ---- 财务管理 ----
     {
         "menu_name": "财务管理",
