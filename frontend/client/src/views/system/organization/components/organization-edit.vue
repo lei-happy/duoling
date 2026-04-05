@@ -11,59 +11,70 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="80px"
+      label-width="0"
       @submit.prevent=""
     >
       <el-row :gutter="16">
         <el-col :sm="12" :xs="24">
-          <el-form-item label="上级机构" prop="parentId">
+          <el-form-item prop="parentId">
             <organization-select
               v-model="form.parentId"
               placeholder="请选择上级机构"
             />
           </el-form-item>
-          <el-form-item label="机构名称" prop="organizationName">
-            <el-input
-              clearable
+          <el-form-item prop="organizationName">
+            <floating-label
+              label="请输入机构名称"
+              type="input"
+              v-model.trim="form.organizationName"
               :maxlength="20"
-              v-model="form.organizationName"
-              placeholder="请输入机构名称"
+              clearable
             />
           </el-form-item>
-          <el-form-item label="机构代码">
-            <el-input
-              clearable
+          <el-form-item>
+            <floating-label
+              label="请输入机构代码"
+              type="input"
+              v-model.trim="form.organizationCode"
               :maxlength="20"
-              v-model="form.organizationCode"
-              placeholder="请输入机构代码"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :sm="12" :xs="24">
-          <el-form-item label="机构类型" prop="organizationType">
-            <dict-data
-              code="organization_type"
+          <el-form-item prop="organizationType">
+            <floating-label
               v-model="form.organizationType"
-              placeholder="请选择机构类型"
+              label="请选择机构类型"
+              type="select"
+              clearable
+            >
+              <el-option
+                v-for="item in organizationTypeDict"
+                :key="item.dictDataCode"
+                :label="item.dictDataName"
+                :value="item.dictDataCode"
+              />
+            </floating-label>
+          </el-form-item>
+          <el-form-item prop="sortNumber">
+            <floating-label
+              label="请输入排序号"
+              type="input"
+              input-type="number"
+              v-model="sortNumberStr"
+              clearable
             />
           </el-form-item>
-          <el-form-item label="排序号" prop="sortNumber">
-            <el-input-number
-              :min="0"
-              :max="99999"
-              v-model="form.sortNumber"
-              placeholder="请输入排序号"
-              controls-position="right"
-              class="ele-fluid"
-            />
-          </el-form-item>
-          <el-form-item label="备注">
-            <el-input
-              :rows="3"
-              type="textarea"
+          <el-form-item>
+            <floating-label
+              label="请输入备注"
+              type="input"
+              input-type="textarea"
+              v-model.trim="form.comments"
               :maxlength="200"
-              v-model="form.comments"
-              placeholder="请输入备注"
+              :show-word-limit="true"
+              clearable
             />
           </el-form-item>
         </el-col>
@@ -81,10 +92,12 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive } from 'vue';
+  import { ref, reactive, computed } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
+  import { useDictData } from '@/utils/use-dict-data';
   import OrganizationSelect from './organization-select.vue';
   import {
     addOrganization,
@@ -105,6 +118,8 @@
 
   const { modalProps, closeModal } = useModal();
 
+  const [organizationTypeDict] = useDictData(['organization_type']);
+
   /** 是否是修改 */
   const isUpdate = ref(false);
 
@@ -123,6 +138,26 @@
     organizationType: void 0,
     sortNumber: void 0,
     comments: ''
+  });
+
+  /** 排序号（与数字校验规则配合的字符串桥接） */
+  const sortNumberStr = computed({
+    get() {
+      const v = form.sortNumber;
+      return v === undefined || v === null ? '' : String(v);
+    },
+    set(s: string) {
+      if (s === '' || s == null) {
+        form.sortNumber = void 0;
+        return;
+      }
+      const n = Number(s);
+      if (Number.isNaN(n)) {
+        form.sortNumber = void 0;
+        return;
+      }
+      form.sortNumber = Math.min(99999, Math.max(0, n));
+    }
   });
 
   /** 表单验证规则 */

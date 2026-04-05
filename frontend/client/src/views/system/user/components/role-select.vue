@@ -1,12 +1,12 @@
 <!-- 角色选择下拉框 -->
 <template>
-  <el-select
-    multiple
-    clearable
+  <floating-label
+    type="select"
+    :multiple="true"
     :model-value="roleIds"
-    :placeholder="placeholder"
-    class="ele-fluid"
-    @update:modelValue="updateValue"
+    :label="placeholder"
+    clearable
+    @update:model-value="updateValue"
   >
     <el-option
       v-for="item in data"
@@ -14,12 +14,13 @@
       :value="(item as any).roleId"
       :label="item.roleName"
     />
-  </el-select>
+  </floating-label>
 </template>
 
 <script lang="ts" setup>
   import { ref, computed } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { listRoles } from '@/api/system/role';
   import type { Role } from '@/api/system/role/model';
 
@@ -40,15 +41,19 @@
   }>();
 
   /** 选中的角色id */
-  const roleIds = computed(() =>
-    props.modelValue?.map?.((d) => d.roleId as number)
+  const roleIds = computed(
+    () => props.modelValue?.map?.((d) => d.roleId as number) ?? []
   );
 
   /** 角色数据 */
   const data = ref<Role[]>([]);
 
   /** 更新选中数据 */
-  const updateValue = (value: number[]) => {
+  const updateValue = (value: number[] | undefined | null) => {
+    if (value == null || !value.length) {
+      emit('update:modelValue', []);
+      return;
+    }
     emit(
       'update:modelValue',
       value.map((v) => ({ roleId: v }))

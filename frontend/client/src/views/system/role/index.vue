@@ -73,7 +73,7 @@
     },
     {
       prop: 'comments',
-      label: '备注',
+      label: '角色描述',
       minWidth: 140
     },
     {

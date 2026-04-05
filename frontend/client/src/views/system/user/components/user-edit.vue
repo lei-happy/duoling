@@ -11,67 +11,86 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="80px"
+      label-width="0"
       @submit.prevent=""
     >
       <el-row :gutter="16">
         <el-col :sm="12" :xs="24">
-          <el-form-item label="所属机构">
+          <el-form-item>
             <organization-select v-model="form.organizationId" />
           </el-form-item>
-          <el-form-item label="姓名" prop="nickname">
-            <el-input
-              clearable
+          <el-form-item prop="nickname">
+            <floating-label
+              label="请输入姓名"
+              type="input"
+              v-model.trim="form.nickname"
               :maxlength="20"
-              v-model="form.nickname"
-              placeholder="请输入姓名"
+              clearable
             />
           </el-form-item>
-          <el-form-item label="性别" prop="sex">
-            <dict-data code="sex" v-model="form.sex" placeholder="请选择性别" />
+          <el-form-item prop="sex">
+            <floating-label
+              v-model="form.sex"
+              label="请选择性别"
+              type="select"
+              clearable
+            >
+              <el-option
+                v-for="item in sexDict"
+                :key="item.dictDataCode"
+                :label="item.dictDataName"
+                :value="item.dictDataCode"
+              />
+            </floating-label>
           </el-form-item>
-          <el-form-item label="角色" prop="roles">
+          <el-form-item prop="roles">
             <role-select v-model="form.roles" />
           </el-form-item>
-          <el-form-item label="邮箱" prop="email">
-            <el-input
-              clearable
+          <el-form-item prop="email">
+            <floating-label
+              label="请输入邮箱"
+              type="input"
+              v-model.trim="form.email"
               :maxlength="100"
-              v-model="form.email"
-              placeholder="请输入邮箱"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :sm="12" :xs="24">
-          <el-form-item label="手机号" prop="phone">
-            <el-input
-              clearable
+          <el-form-item prop="phone">
+            <floating-label
+              label="请输入手机号"
+              type="input"
+              v-model.trim="form.phone"
               :maxlength="11"
-              v-model="form.phone"
-              placeholder="请输入手机号"
+              clearable
             />
           </el-form-item>
-          <el-form-item label="出生日期">
-            <el-date-picker
+          <el-form-item>
+            <floating-label
+              label="请选择出生日期"
+              type="date"
+              date-type="date"
               v-model="form.birthday"
               value-format="YYYY-MM-DD"
-              placeholder="请选择出生日期"
-              class="ele-fluid"
+              clearable
             />
           </el-form-item>
-          <el-form-item label="状态">
+          <el-form-item label="">
             <el-radio-group v-model="form.status">
               <el-radio :value="0" label="正常" />
-              <el-radio :value="1" label="冻结" />
+              <el-radio :value="1" label="停用" />
             </el-radio-group>
           </el-form-item>
-          <el-form-item label="个人简介">
-            <el-input
-              type="textarea"
-              :rows="3"
+          <el-form-item>
+            <floating-label
+              label="请输入个人简介"
+              type="input"
+              input-type="textarea"
+              v-model.trim="form.introduction"
               :maxlength="200"
-              v-model="form.introduction"
-              placeholder="请输入个人简介"
+              :show-word-limit="true"
+              clearable
             />
           </el-form-item>
         </el-col>
@@ -92,7 +111,9 @@
   import { ref, reactive } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage, emailReg, phoneReg, useModal } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
+  import { useDictData } from '@/utils/use-dict-data';
   import RoleSelect from './role-select.vue';
   import OrganizationSelect from '@/views/system/organization/components/organization-select.vue';
   import { addUser, updateUser, checkExistence } from '@/api/system/user';
@@ -110,6 +131,8 @@
   }>();
 
   const { modalProps, closeModal } = useModal();
+
+  const [sexDict] = useDictData(['sex']);
 
   /** 是否是修改 */
   const isUpdate = ref(false);

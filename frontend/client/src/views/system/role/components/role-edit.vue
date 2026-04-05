@@ -11,31 +11,34 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="80px"
+      label-width="0"
       @submit.prevent=""
     >
-      <el-form-item label="角色名称" prop="roleName">
-        <el-input
-          clearable
+      <el-form-item prop="roleName">
+        <floating-label
+          label="请输入角色名称"
+          type="input"
+          v-model.trim="form.roleName"
           :maxlength="20"
-          v-model="form.roleName"
-          placeholder="请输入角色名称"
+          clearable
         />
       </el-form-item>
-      <el-form-item label="角色标识" prop="roleCode">
-        <el-input
-          clearable
+      <el-form-item prop="roleCode">
+        <floating-label
+          label="请输入角色标识"
+          type="input"
+          v-model.trim="form.roleCode"
           :maxlength="20"
-          v-model="form.roleCode"
-          placeholder="请输入角色标识"
+          clearable
         />
       </el-form-item>
-      <el-form-item label="备注">
-        <el-input
-          :rows="4"
-          type="textarea"
-          v-model="form.comments"
-          placeholder="请输入备注"
+      <el-form-item>
+        <floating-label
+          label="请输入角色描述"
+          type="input"
+          input-type="textarea"
+          v-model.trim="form.comments"
+          clearable
         />
       </el-form-item>
     </el-form>
@@ -54,6 +57,7 @@
   import { ref, reactive } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import { addRole, updateRole } from '@/api/system/role';
   import type { Role } from '@/api/system/role/model';
