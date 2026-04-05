@@ -36,13 +36,13 @@
     <el-icon>
       <MoreOutlined />
     </el-icon>
-    <div v-if="showTip" class="ele-theme-setting-tip">
+    <!-- <div v-if="showTip" class="ele-theme-setting-tip">
       <IconOutline />
       <div>
         <div>试试切换布局或主题~</div>
         <IconOutline :width="152" :height="34" />
       </div>
-    </div>
+    </div> -->
   </layout-tool>
 </template>
 
