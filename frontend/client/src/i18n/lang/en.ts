@@ -4,6 +4,7 @@ export const en: Locale = {
   layout: {
     home: 'Home',
     header: {
+      enterprise: 'Enterprise',
       profile: 'Profile',
       password: 'Password',
       logout: 'SignOut'

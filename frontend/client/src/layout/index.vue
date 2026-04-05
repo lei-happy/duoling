@@ -72,7 +72,7 @@
       <img src="@/assets/logo.svg" style="width: 30px; height: 30px" />
     </template>
     <template #logoTitle>
-      <h1>{{ PROJECT_NAME }}</h1>
+      <h1>{{ userStore.displayName || DEFAULT_NAME }}</h1>
     </template>
     <!-- 顶栏左侧按钮 -->
     <template #left="{ sidebar }">
@@ -203,7 +203,7 @@
   import RouterLayout from '@/components/RouterLayout/index.vue';
   import HeaderRight from './components/header-right.vue';
   import PageFooter from './components/page-footer.vue';
-  const PROJECT_NAME = import.meta.env.VITE_APP_NAME;
+  const DEFAULT_NAME = import.meta.env.VITE_APP_NAME;
 
   defineOptions({ name: 'Layout' });
 

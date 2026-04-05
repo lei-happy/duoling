@@ -24,6 +24,21 @@ export const useUserStore = defineStore('user', {
     /** 当前登录用户的角色权限数据 */
     roles: [] as (string | undefined)[] | null | undefined
   }),
+  getters: {
+    /** 是否是企业管理员 */
+    isAdmin(): boolean {
+      return this.info?.userType === 1;
+    },
+    /** 系统显示名称：优先自定义名称 > 企业名称 > 环境变量默认值 */
+    displayName(): string {
+      return (
+        this.info?.systemName ||
+        this.info?.tenantName ||
+        import.meta.env.VITE_APP_NAME ||
+        ''
+      );
+    }
+  },
   actions: {
     /**
      * 请求登录用户的个人信息/权限/角色/菜单

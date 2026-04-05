@@ -4,6 +4,7 @@ export const zh_TW: Locale = {
   layout: {
     home: '主頁',
     header: {
+      enterprise: '企業管理',
       profile: '個人中心',
       password: '修改密碼',
       logout: '安全登出'

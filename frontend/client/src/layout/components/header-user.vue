@@ -1,25 +1,7 @@
 <!-- 用户信息 -->
 <template>
   <ele-dropdown
-    :items="[
-      {
-        title: t('layout.header.profile'),
-        command: 'profile',
-        icon: UserOutlined
-      },
-      {
-        title: t('layout.header.password'),
-        command: 'password',
-        icon: LockOutlined,
-        iconStyle: { transform: 'translateY(-1px)' }
-      },
-      {
-        title: t('layout.header.logout'),
-        command: 'logout',
-        icon: LogoutOutlined,
-        divided: true
-      }
-    ]"
+    :items="dropdownItems"
     :icon-props="{ size: 15 }"
     :popper-options="{
       modifiers: [{ name: 'offset', options: { offset: [0, 5] } }]
@@ -54,7 +36,8 @@
     ArrowDown,
     UserOutlined,
     LockOutlined,
-    LogoutOutlined
+    LogoutOutlined,
+    SettingOutlined
   } from '@/components/icons';
   import { useUserStore } from '@/store/modules/user';
   import { useLogin } from '@/utils/use-login';
@@ -68,10 +51,45 @@
   /** 当前用户信息 */
   const loginUser = computed(() => userStore.info ?? {});
 
+  /** 下拉菜单项 */
+  const dropdownItems = computed(() => {
+    const items: any[] = [];
+    if (userStore.isAdmin) {
+      items.push({
+        title: t('layout.header.enterprise'),
+        command: 'enterprise',
+        icon: SettingOutlined
+      });
+    }
+    items.push(
+      {
+        title: t('layout.header.profile'),
+        command: 'profile',
+        icon: UserOutlined,
+        divided: userStore.isAdmin
+      },
+      {
+        title: t('layout.header.password'),
+        command: 'password',
+        icon: LockOutlined,
+        iconStyle: { transform: 'translateY(-1px)' }
+      },
+      {
+        title: t('layout.header.logout'),
+        command: 'logout',
+        icon: LogoutOutlined,
+        divided: true
+      }
+    );
+    return items;
+  });
+
   /** 用户信息下拉点击 */
   const handleUserDropClick = (command: string) => {
     if (command === 'profile') {
       push('/user/profile');
+    } else if (command === 'enterprise') {
+      push('/enterprise/manage');
     } else if (command === 'logout') {
       showLogoutConfirm();
     } else if (command === 'password') {

@@ -21,6 +21,9 @@ class Tenant(PlatformModelBase):
     tenant_name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="企业名称"
     )
+    system_name: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True, comment="系统自定义名称（客户端左上角显示，为空时显示企业名称）"
+    )
     short_name: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, comment="企业简称"
     )

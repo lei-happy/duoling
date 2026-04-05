@@ -2,6 +2,7 @@ export const zh_CN = {
   layout: {
     home: '主页',
     header: {
+      enterprise: '企业管理',
       profile: '个人中心',
       password: '修改密码',
       logout: '退出登录'

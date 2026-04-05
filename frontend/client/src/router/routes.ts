@@ -40,6 +40,12 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       path: REDIRECT_PATH + '/:path(.*)',
       component: RedirectLayout,
       meta: { hideFooter: true }
+    },
+    // 企业管理（静态路由，不依赖后端菜单）
+    {
+      path: '/enterprise/manage',
+      component: () => import('@/views/enterprise/manage.vue'),
+      meta: { title: '企业管理' }
     }
   ];
   const layoutRoutes: RouteRecordRaw[] = [

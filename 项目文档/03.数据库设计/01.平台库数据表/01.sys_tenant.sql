@@ -3,6 +3,7 @@
 CREATE TABLE `sys_tenant` (
   `tenant_code` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '租户编码（唯一标识）',
   `tenant_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '企业名称',
+  `system_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '系统自定义名称（客户端左上角显示，为空时显示企业名称）',
   `short_name` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '企业简称',
   `contact_person` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '联系人',
   `contact_phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '联系电话',

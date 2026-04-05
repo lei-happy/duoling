@@ -589,6 +589,30 @@ class AuthService:
             db, user_id, role_codes, app_type, tenant_code=tenant_code
         )
 
+        tenant_name = None
+        system_name = None
+        user_type = None
+        if tenant_code:
+            tenant_result = await db.execute(
+                select(Tenant).where(
+                    Tenant.tenant_code == tenant_code,
+                    Tenant.is_deleted == 0,
+                )
+            )
+            tenant = tenant_result.scalar_one_or_none()
+            if tenant:
+                tenant_name = tenant.tenant_name
+                system_name = tenant.system_name
+
+            ut_result = await db.execute(
+                select(UserTenant.user_type).where(
+                    UserTenant.user_id == user_id,
+                    UserTenant.tenant_code == tenant_code,
+                    UserTenant.is_deleted == 0,
+                )
+            )
+            user_type = ut_result.scalar()
+
         gender_map = {0: None, 1: "男", 2: "女"}
         return UserInfoOut(
             userId=user.id,
@@ -599,6 +623,9 @@ class AuthService:
             sex=gender_map.get(user.gender),
             status=user.status,
             themeConfig=user.theme_config,
+            tenantName=tenant_name,
+            systemName=system_name,
+            userType=user_type,
             roles=[
                 UserRoleOut(
                     roleId=r.id,

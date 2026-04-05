@@ -42,6 +42,14 @@ export interface User {
   tellPre?: string;
   /** 联系电话 */
   tell?: string;
+  /** 企业名称 */
+  tenantName?: string;
+  /** 系统自定义名称 */
+  systemName?: string;
+  /** 用户类型 1-管理员 2-用户 3-驾驶员 */
+  userType?: number;
+  /** 主题配置 */
+  themeConfig?: Record<string, any>;
 }
 
 /**
