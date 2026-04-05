@@ -13,6 +13,7 @@ from app.modules.console.models.dictionary.dict_model import Dict, DictItem
 from app.modules.console.models.common.feedback import Feedback
 from app.modules.console.models.common.operation_log import OperationLog
 from app.modules.console.models.sms.sms_code import SmsCode
+from app.modules.console.models.region.sys_region import SysRegion
 
 __all__ = [
     "Tenant",
@@ -32,4 +33,5 @@ __all__ = [
     "Feedback",
     "OperationLog",
     "SmsCode",
+    "SysRegion",
 ]

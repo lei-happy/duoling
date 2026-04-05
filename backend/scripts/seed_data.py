@@ -92,6 +92,9 @@ def seed_platform_data():
                 Menu(parent_id=0, menu_name="客户运营中心", menu_code="customer",
                      menu_type=0, path="/customer",
                      icon="DataAnalysis", sort_order=10, app_type="platform"),
+                Menu(parent_id=0, menu_name="基础数据", menu_code="basic_data",
+                     menu_type=0, path="/basic_data",
+                     icon="AppstoreOutlined", sort_order=15, app_type="platform"),
                 Menu(parent_id=0, menu_name="系统管理", menu_code="system",
                      menu_type=0, path="/system",
                      icon="Setting", sort_order=20, app_type="platform"),
@@ -104,10 +107,18 @@ def seed_platform_data():
 
             # 子菜单（页面，menu_type=0）
             customer_menu = next(m for m in menus if m.menu_code == "customer")
+            basic_data_menu = next(m for m in menus if m.menu_code == "basic_data")
             system_menu = next(m for m in menus if m.menu_code == "system")
             product_menu = next(m for m in menus if m.menu_code == "product")
 
             sub_menus = [
+                # 基础数据子菜单
+                Menu(parent_id=basic_data_menu.id, menu_name="地区数据",
+                     menu_code="basic_data:region", menu_type=0,
+                     path="/basic_data/regional_data",
+                     component="/basic_data/regional_data/index",
+                     icon="EnvironmentOutlined",
+                     sort_order=0, app_type="platform"),
                 # 客户运营中心子菜单
                 Menu(parent_id=customer_menu.id, menu_name="试用期客户",
                      menu_code="customer:trial", menu_type=0,
@@ -294,6 +305,42 @@ def seed_platform_data():
                     churned_menu.sort_order = 20
 
                 session.flush()
+
+            # 补充：基础数据 + 地区数据菜单（若不存在）
+            basic_data_menu = session.query(Menu).filter_by(
+                menu_code="basic_data", app_type="platform", is_deleted=0
+            ).first()
+            if not basic_data_menu:
+                basic_data_menu = Menu(
+                    parent_id=0, menu_name="基础数据",
+                    menu_code="basic_data", menu_type=0,
+                    path="/basic_data",
+                    icon="AppstoreOutlined", sort_order=15, app_type="platform",
+                )
+                session.add(basic_data_menu)
+                session.flush()
+                all_menus.append(basic_data_menu)
+                if role_admin:
+                    session.add(RoleMenu(role_id=role_admin.id, menu_id=basic_data_menu.id))
+                print("[OK] 基础数据菜单已补充")
+
+            region_menu = session.query(Menu).filter_by(
+                menu_code="basic_data:region", app_type="platform", is_deleted=0
+            ).first()
+            if basic_data_menu and not region_menu:
+                region_menu = Menu(
+                    parent_id=basic_data_menu.id, menu_name="地区数据",
+                    menu_code="basic_data:region", menu_type=0,
+                    path="/basic_data/regional_data",
+                    component="/basic_data/regional_data/index",
+                    icon="EnvironmentOutlined", sort_order=0, app_type="platform",
+                )
+                session.add(region_menu)
+                session.flush()
+                all_menus.append(region_menu)
+                if role_admin:
+                    session.add(RoleMenu(role_id=role_admin.id, menu_id=region_menu.id))
+                print("[OK] 地区数据菜单已补充")
 
         # ---- 4. 角色-菜单关联（super_admin 关联所有平台菜单）----
         existing_role_menu = session.query(RoleMenu).filter_by(
