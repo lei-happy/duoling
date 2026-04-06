@@ -31,6 +31,7 @@ class AutohomeSyncService:
                 "delayMs": body.delayMs,
                 "includeInactiveBrands": body.includeInactiveBrands,
                 "fetchSpecs": body.fetchSpecs,
+                "incrementalOnly": body.incrementalOnly,
             }
         row = AutohomeSyncJob(
             job_type=jt,

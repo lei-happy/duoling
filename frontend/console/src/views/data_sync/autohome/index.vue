@@ -44,6 +44,10 @@
             controls-position="right"
           />
         </el-form-item>
+        <el-form-item label="仅增量">
+          <el-switch v-model="incrementalOnly" />
+          <span class="inline-hint">已存在的品牌/车系不更新、不重新下载图片；仍会拉报价页以发现新车系</span>
+        </el-form-item>
         <el-form-item>
           <el-button
             type="danger"
@@ -142,6 +146,7 @@
   const seriesId = ref(4851);
   const maxBrands = ref(0);
   const fullDelayMs = ref(400);
+  const incrementalOnly = ref(false);
   const triggering = ref(false);
   const fullTriggering = ref(false);
   const logVisible = ref(false);
@@ -217,7 +222,8 @@
     try {
       await triggerAutohomeFullSync({
         maxBrands: maxBrands.value,
-        delayMs: fullDelayMs.value
+        delayMs: fullDelayMs.value,
+        incrementalOnly: incrementalOnly.value
       });
       EleMessage.success({
         message: '全量任务已创建，请通过列表与日志查看进度（耗时较长）',

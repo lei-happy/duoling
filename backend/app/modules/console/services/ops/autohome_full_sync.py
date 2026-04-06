@@ -6,6 +6,9 @@
 参配（能源类型、长/宽/高、轴距、轮距、接近/离去角、整备质量等）：
 默认请求 car.autohome.com.cn 车系参配页解析首个代表车型 embedded `var config` JSON；
 若车系页无车型链接则尝试年代子页。可通过任务 payload `fetchSpecs: false` 关闭以缩短耗时。
+
+增量：`incrementalOnly: true` 时，已存在的品牌（autohome_brand_id）不拉 Logo、不写品牌行；
+已存在车系（autohome_series_id）不拉车系图与参配、不写车系行；仍会请求各品牌报价页以发现新车系。
 """
 
 from __future__ import annotations
@@ -14,7 +17,7 @@ import asyncio
 import json
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set, Tuple
 from urllib.parse import urlparse
 
 import httpx
@@ -284,6 +287,31 @@ async def _commit_job(session: AsyncSession, job: AutohomeSyncJob) -> None:
     await session.commit()
 
 
+async def _preload_incremental_sets(
+    session: AsyncSession,
+) -> Tuple[Set[int], Dict[int, int], Set[int]]:
+    """返回：已有汽车之家品牌 ID 集合、autohome_brand_id→本地 brand_id、已有汽车之家车系 ID 集合。"""
+    r = await session.execute(
+        select(BasicdataBrand.autohome_brand_id, BasicdataBrand.brand_id).where(
+            BasicdataBrand.autohome_brand_id.isnot(None)
+        )
+    )
+    brand_autohome_to_local: Dict[int, int] = {}
+    for aid, lid in r.all():
+        if aid is None or lid is None:
+            continue
+        brand_autohome_to_local[int(aid)] = int(lid)
+    existing_brand_ids = set(brand_autohome_to_local.keys())
+
+    r2 = await session.execute(
+        select(BasicdataCarSeries.autohome_series_id).where(
+            BasicdataCarSeries.autohome_series_id.isnot(None)
+        )
+    )
+    existing_series_ids = {int(x) for x in r2.scalars().all() if x is not None}
+    return existing_brand_ids, brand_autohome_to_local, existing_series_ids
+
+
 async def run_full_sync_job(job_id: int) -> None:
     factory = db_manager._platform_session_factory
     if factory is None:
@@ -295,6 +323,7 @@ async def run_full_sync_job(job_id: int) -> None:
         "delayMs": 400,
         "includeInactiveBrands": False,
         "fetchSpecs": True,
+        "incrementalOnly": False,
     }
 
     async with factory() as session:
@@ -319,6 +348,11 @@ async def run_full_sync_job(job_id: int) -> None:
         fetch_specs = fetch_specs.strip().lower() in ("1", "true", "yes")
     fetch_specs = bool(fetch_specs)
 
+    incremental_only = payload.get("incrementalOnly", False)
+    if isinstance(incremental_only, str):
+        incremental_only = incremental_only.strip().lower() in ("1", "true", "yes")
+    incremental_only = bool(incremental_only)
+
     try:
         status, brand_text = await fetch_with_retries(URL_GETBRAND, timeout_sec=60.0)
         if status != 200:
@@ -330,6 +364,11 @@ async def run_full_sync_job(job_id: int) -> None:
             brands = brands[: max(0, int(max_brands))]
 
         total = len(brands)
+
+        existing_brand_ids: Set[int] = set()
+        brand_autohome_to_local: Dict[int, int] = {}
+        existing_series_ids: Set[int] = set()
+
         async with factory() as session:
             job = await _load_job(session, job_id)
             if job:
@@ -337,6 +376,16 @@ async def run_full_sync_job(job_id: int) -> None:
                     job.log_text,
                     f"[full] 待同步品牌数: {total}（含未在售={include_inactive}）",
                 )
+                if incremental_only:
+                    eb, bm, es = await _preload_incremental_sets(session)
+                    existing_brand_ids = eb
+                    brand_autohome_to_local = bm
+                    existing_series_ids = set(es)
+                    job.log_text = _append_log(
+                        job.log_text,
+                        f"[full] 增量模式已开启：库内已有品牌 {len(existing_brand_ids)} 个，"
+                        f"已有车系 {len(existing_series_ids)} 个（仅新增写入，不覆盖已有图片与字段）",
+                    )
                 await _commit_job(session, job)
 
         async with httpx.AsyncClient(
@@ -355,8 +404,9 @@ async def run_full_sync_job(job_id: int) -> None:
                 country = str(_c).strip() if _c else None
                 logo_url = _normalize_media_url(str(b.get("logo") or ""))
 
+                skip_brand_logo = incremental_only and bid in existing_brand_ids
                 logo_rel: Optional[str] = None
-                if logo_url:
+                if not skip_brand_logo and logo_url:
                     img = await _download_bytes(client, logo_url)
                     if img:
                         logo_rel = _save_image_bytes(img, "brand_logo", logo_url)
@@ -380,15 +430,39 @@ async def run_full_sync_job(job_id: int) -> None:
                             await _commit_job(session, job)
 
                 async with factory() as session:
-                    brand_row = await _upsert_brand(
-                        session, bid, bname, country, logo_rel
-                    )
-                    await session.refresh(brand_row)
-                    local_brand_id = brand_row.brand_id
+                    skip_brand_upsert = incremental_only and bid in existing_brand_ids
+                    local_brand_id: Optional[int] = None
+                    if skip_brand_upsert:
+                        local_brand_id = brand_autohome_to_local.get(bid)
+                        if local_brand_id is None:
+                            rid = await session.execute(
+                                select(BasicdataBrand.brand_id).where(
+                                    BasicdataBrand.autohome_brand_id == bid
+                                )
+                            )
+                            lid = rid.scalar_one_or_none()
+                            if lid is not None:
+                                local_brand_id = int(lid)
+                                brand_autohome_to_local[bid] = local_brand_id
+                                existing_brand_ids.add(bid)
 
-                    n_series = 0
+                    if local_brand_id is None:
+                        brand_row = await _upsert_brand(
+                            session, bid, bname, country, logo_rel
+                        )
+                        await session.refresh(brand_row)
+                        local_brand_id = brand_row.brand_id
+                        if incremental_only:
+                            existing_brand_ids.add(bid)
+                            brand_autohome_to_local[bid] = local_brand_id
+
+                    n_new_series = 0
+                    n_skip_series = 0
                     for s in series_list:
                         sid = int(s["seriesid"])
+                        if incremental_only and sid in existing_series_ids:
+                            n_skip_series += 1
+                            continue
                         sname = str(s.get("seriesname") or "").strip() or f"车系{sid}"
                         p = _fmt_price_wan(
                             s.get("seriesminprice"), s.get("seriesmaxprice")
@@ -413,15 +487,24 @@ async def run_full_sync_job(job_id: int) -> None:
                             simg_rel,
                             spec_snap,
                         )
-                        n_series += 1
+                        if incremental_only:
+                            existing_series_ids.add(sid)
+                        n_new_series += 1
                         await asyncio.sleep(delay_ms / 1000.0)
 
                     job = await _load_job(session, job_id)
                     if job:
-                        job.log_text = _append_log(
-                            job.log_text,
-                            f"[full] ({idx+1}/{total}) 品牌 {bname} id={bid}，写入车系 {n_series} 条",
-                        )
+                        if incremental_only:
+                            line = (
+                                f"[full] ({idx+1}/{total}) 品牌 {bname} id={bid}，"
+                                f"新增车系 {n_new_series}，跳过已存在 {n_skip_series}"
+                            )
+                        else:
+                            line = (
+                                f"[full] ({idx+1}/{total}) 品牌 {bname} id={bid}，"
+                                f"写入车系 {n_new_series} 条"
+                            )
+                        job.log_text = _append_log(job.log_text, line)
                         job.progress_pct = max(
                             3,
                             min(

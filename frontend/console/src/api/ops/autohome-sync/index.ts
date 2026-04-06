@@ -35,6 +35,7 @@ export async function triggerAutohomeFullSync(body: {
   maxBrands?: number | null;
   delayMs?: number;
   includeInactiveBrands?: boolean;
+  incrementalOnly?: boolean;
 }) {
   const res = await request.post<ApiResult<{ jobId: number }>>(
     '/ops/autohome-sync/trigger',
@@ -45,7 +46,8 @@ export async function triggerAutohomeFullSync(body: {
           ? body.maxBrands
           : undefined,
       delayMs: body.delayMs ?? 400,
-      includeInactiveBrands: body.includeInactiveBrands ?? false
+      includeInactiveBrands: body.includeInactiveBrands ?? false,
+      incrementalOnly: body.incrementalOnly ?? false
     }
   );
   if (res.data.code === 0) {

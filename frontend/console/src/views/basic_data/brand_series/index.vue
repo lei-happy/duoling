@@ -510,7 +510,6 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
   }
   .series-thumb-cell {
     display: flex;

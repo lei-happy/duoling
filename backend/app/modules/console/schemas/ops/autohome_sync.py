@@ -32,6 +32,10 @@ class AutohomeSyncTriggerBody(BaseModel):
         default=True,
         description="全量时是否拉取参配页并写入能源类型、尺寸、轴距、整备质量等（每车系额外请求）",
     )
+    incrementalOnly: bool = Field(
+        default=False,
+        description="全量时仅新增：已存在的品牌/车系跳过 Logo、车系图、参配及库更新；仍会请求报价页以发现新车系",
+    )
 
 
 class AutohomeSyncJobOut(BaseModel):
