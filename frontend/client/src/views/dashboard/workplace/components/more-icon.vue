@@ -1,24 +1,6 @@
 <template>
   <ele-dropdown
-    :items="[
-      {
-        title: '刷新内容',
-        command: 'refresh',
-        icon: ReloadOutlined
-      },
-      {
-        title: '编辑卡片',
-        command: 'edit',
-        icon: EditOutlined
-      },
-      {
-        title: '删除卡片',
-        command: 'remove',
-        icon: DeleteOutlined,
-        danger: true,
-        divided: true
-      }
-    ]"
+    :items="menuItems"
     :icon-props="{ size: 15 }"
     placement="bottom-end"
     style="cursor: pointer"
@@ -36,6 +18,7 @@
 </template>
 
 <script lang="ts" setup>
+  import { computed } from 'vue';
   import {
     MoreOutlined,
     ReloadOutlined,
@@ -44,9 +27,49 @@
   } from '@/components/icons';
   import type { Command } from '../model';
 
+  const props = withDefaults(
+    defineProps<{
+      /** 隐藏「编辑卡片」 */
+      hideEdit?: boolean;
+      /** 隐藏「删除卡片」 */
+      hideRemove?: boolean;
+    }>(),
+    {
+      hideEdit: false,
+      hideRemove: false
+    }
+  );
+
   const emit = defineEmits<{
     (e: 'command', command: Command): void;
   }>();
+
+  const menuItems = computed(() => {
+    const items: Array<Record<string, unknown>> = [
+      {
+        title: '刷新内容',
+        command: 'refresh',
+        icon: ReloadOutlined
+      }
+    ];
+    if (!props.hideEdit) {
+      items.push({
+        title: '编辑卡片',
+        command: 'edit',
+        icon: EditOutlined
+      });
+    }
+    if (!props.hideRemove) {
+      items.push({
+        title: '删除卡片',
+        command: 'remove',
+        icon: DeleteOutlined,
+        danger: true,
+        divided: true
+      });
+    }
+    return items;
+  });
 
   const handleCommand = (command: Command) => {
     emit('command', command);

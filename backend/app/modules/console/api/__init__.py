@@ -21,6 +21,7 @@ from app.modules.console.api.product.client_menu import router as client_menu_ro
 from app.modules.console.api.sms import router as sms_code_router
 from app.modules.console.api.log_center import router as log_center_router
 from app.modules.console.api.region import router as region_router
+from app.modules.console.api.workbench.todo import router as workbench_todo_router
 
 router = APIRouter()
 
@@ -40,3 +41,4 @@ router.include_router(client_menu_router, prefix="/system/client-menu", tags=["�
 router.include_router(sms_code_router, prefix="/system/sms-code", tags=["短信验证码"])
 router.include_router(log_center_router, prefix="/log-center", tags=["日志中心"])
 router.include_router(region_router, prefix="/basic-data/region", tags=["管理后台-地区数据"])
+router.include_router(workbench_todo_router, prefix="/workbench/todo", tags=["管理后台-待办查询"])

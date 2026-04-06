@@ -1,6 +1,6 @@
 <!-- 最新动态 -->
 <template>
-  <ele-card :header="title" :body-style="{ padding: '6px 0', height: '370px' }">
+  <ele-card :header="title" :body-style="{ padding: '6px 0', height: '400px' }">
     <template #extra>
       <more-icon @command="handleCommand" />
     </template>

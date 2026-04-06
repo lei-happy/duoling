@@ -1,15 +1,4 @@
 <template>
-  <!-- 全屏切换 -->
-  <layout-tool class="hidden-sm-and-down" @click="toggleFullscreen">
-    <el-icon style="transform: scale(1.18)">
-      <CompressOutlined v-if="isFullscreen" style="stroke-width: 4" />
-      <ExpandOutlined v-else style="stroke-width: 4" />
-    </el-icon>
-  </layout-tool>
-  <!-- 语言切换 -->
-  <layout-tool :class="{ 'hidden-sm-and-down': tabBar && tabInHeader }">
-    <i18n-icon :icon-style="{ transform: 'scale(1.15)' }" />
-  </layout-tool>
   <!-- 消息通知 -->
   <layout-tool :class="{ 'hidden-sm-and-down': tabBar && tabInHeader }">
     <header-notice />
@@ -50,34 +39,13 @@
   import { ref } from 'vue';
   import { useI18n } from 'vue-i18n';
   import { storeToRefs } from 'pinia';
-  import {
-    LayoutTool,
-    requestFullscreen,
-    exitFullscreen,
-    useModal,
-    EleMessage
-  } from 'ele-admin-plus';
-  import {
-    ExpandOutlined,
-    CompressOutlined,
-    MoreOutlined,
-    MoonOutlined,
-    SunOutlined
-  } from '@/components/icons';
+  import { LayoutTool, useModal } from 'ele-admin-plus';
+  import { MoreOutlined, MoonOutlined, SunOutlined } from '@/components/icons';
   import { doWithTransition } from '@/utils/common';
   import { useThemeStore } from '@/store/modules/theme';
   import HeaderUser from './header-user.vue';
   import HeaderNotice from './header-notice.vue';
   import TenantSwitch from './tenant-switch.vue';
-  import I18nIcon from './i18n-icon.vue';
-  import IconOutline from './covers/icon-outline.vue';
-
-  const props = defineProps({
-    /** 是否全屏状态 */
-    isFullscreen: Boolean
-  });
-
-  const emit = defineEmits(['update:isFullscreen']);
 
   const { openModal } = useModal();
 
@@ -85,22 +53,6 @@
   const { tabBar, tabInHeader, darkMode, weakMode } = storeToRefs(themeStore);
 
   const { t } = useI18n();
-
-  /** 全屏切换 */
-  const toggleFullscreen = () => {
-    if (props.isFullscreen) {
-      exitFullscreen();
-      emit('update:isFullscreen', false);
-      return;
-    }
-    try {
-      requestFullscreen();
-      emit('update:isFullscreen', true);
-    } catch (e: any) {
-      console.error(e);
-      EleMessage.error({ message: e.message, plain: true });
-    }
-  };
 
   /** 打开主题设置抽屉 */
   const openSetting = () => {

@@ -95,7 +95,7 @@
     </template>
     <!-- 顶栏右侧按钮 -->
     <template #right>
-      <header-right v-model:isFullscreen="isFullscreen" />
+      <header-right />
     </template>
     <!-- 页签栏右侧下拉菜单 -->
     <template v-if="tabBar && !tabInHeader" #tabExtra="{ active }">
@@ -163,11 +163,11 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, markRaw } from 'vue';
+  import { markRaw } from 'vue';
   import { useRouter } from 'vue-router';
   import { storeToRefs } from 'pinia';
   import { useI18n } from 'vue-i18n';
-  import { LayoutTool, TabDropdown, checkFullscreen } from 'ele-admin-plus';
+  import { LayoutTool, TabDropdown } from 'ele-admin-plus';
   import type {
     MenuI18n,
     TabItemEventOption,
@@ -273,9 +273,6 @@
   /** 是否是清新主题 */
   const { isSimpleTheme } = useIsSimpleTheme();
 
-  /** 是否全屏 */
-  const isFullscreen = ref(false);
-
   /** 侧栏折叠切换 */
   const updateCollapse = (value: boolean) => {
     themeStore.setValue('collapse', value).catch((e) => console.error(e));
@@ -312,7 +309,6 @@
     themeStore
       .setValue('contentWidth', width ?? null)
       .catch((e) => console.error(e));
-    isFullscreen.value = checkFullscreen();
   };
 
   /** 页签右键菜单 */

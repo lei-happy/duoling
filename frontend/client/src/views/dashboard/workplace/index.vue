@@ -93,6 +93,7 @@
   import GoalCard from './components/goal-card.vue';
   import ProjectCard from './components/project-card.vue';
   import UserList from './components/user-list.vue';
+  import TodoCard from './components/todo-card.vue';
 
   defineOptions({
     name: 'DashboardWorkplace',
@@ -101,11 +102,13 @@
       TaskCard,
       GoalCard,
       ProjectCard,
-      UserList
+      UserList,
+      TodoCard
     }
   });
 
-  const CACHE_KEY = 'workplace-layout';
+  /** 版本号：用于在默认布局变更（待办宽度/顺序）后让用户重新套用 DEFAULT */
+  const CACHE_KEY = 'workplace-layout-v3';
 
   interface ViewItem {
     name: string;
@@ -117,6 +120,13 @@
 
   /** 默认布局 */
   const DEFAULT: ViewItem[] = [
+    {
+      name: 'todo-card',
+      title: '我的待办',
+      md: 16,
+      sm: 24,
+      xs: 24
+    },
     {
       name: 'activities-card',
       title: '最新动态',
@@ -154,18 +164,25 @@
     }
   ];
 
-  /** 获取缓存的数据 */
+  /** 获取缓存的数据（顺序以缓存为准，但合并 DEFAULT 中的栅格与标题；待办卡片固定置顶） */
   const getCacheData = (): ViewItem[] => {
     const cache = localStorage.getItem(CACHE_KEY);
     try {
       const temp: ViewItem[] | null = cache ? JSON.parse(cache) : null;
-      if (temp) {
-        const data = DEFAULT.filter((d) => temp.some((t) => t.name === d.name));
-        data.sort(
-          (a, b) =>
-            temp.findIndex((t) => t.name === a.name) -
-            temp.findIndex((t) => t.name === b.name)
-        );
+      if (temp?.length) {
+        const order = temp.map((t) => t.name);
+        const data: ViewItem[] = [];
+        for (const name of order) {
+          const def = DEFAULT.find((d) => d.name === name);
+          if (def) {
+            data.push({ ...def });
+          }
+        }
+        const todoIdx = data.findIndex((d) => d.name === 'todo-card');
+        if (todoIdx > 0) {
+          const [t] = data.splice(todoIdx, 1);
+          data.unshift(t);
+        }
         return data;
       }
     } catch (e) {

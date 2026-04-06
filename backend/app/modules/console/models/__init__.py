@@ -14,6 +14,7 @@ from app.modules.console.models.common.feedback import Feedback
 from app.modules.console.models.common.operation_log import OperationLog
 from app.modules.console.models.sms.sms_code import SmsCode
 from app.modules.console.models.region.sys_region import SysRegion
+from app.modules.console.models.todo.sys_todo_task import SysTodoTask
 
 __all__ = [
     "Tenant",
@@ -34,4 +35,5 @@ __all__ = [
     "OperationLog",
     "SmsCode",
     "SysRegion",
+    "SysTodoTask",
 ]

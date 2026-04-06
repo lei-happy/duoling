@@ -21,6 +21,7 @@ from app.modules.client.api.operation_record import router as operation_record_r
 from app.modules.client.api.region import router as region_router
 from app.modules.client.api.enterprise import router as enterprise_router
 from app.modules.client.api.file import router as file_router
+from app.modules.client.api.workbench.todo import router as workbench_todo_router
 
 router = APIRouter()
 
@@ -40,3 +41,4 @@ router.include_router(operation_record_router, prefix="/system/operation-record"
 router.include_router(region_router, prefix="/basic-data/region", tags=["客户端-地区数据"])
 router.include_router(enterprise_router, prefix="/enterprise", tags=["客户端-企业管理"])
 router.include_router(file_router, prefix="/file", tags=["客户端-文件管理"])
+router.include_router(workbench_todo_router, prefix="/workbench/todo", tags=["客户端-工作台待办"])
