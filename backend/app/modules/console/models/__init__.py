@@ -18,6 +18,7 @@ from app.modules.console.models.basicdata.basicdata_brand import BasicdataBrand
 from app.modules.console.models.basicdata.basicdata_car_series import BasicdataCarSeries
 from app.modules.console.models.basicdata.basicdata_dealer_info import BasicdataDealerInfo
 from app.modules.console.models.todo.sys_todo_task import SysTodoTask
+from app.modules.console.models.ops.autohome_sync_job import AutohomeSyncJob
 
 __all__ = [
     "Tenant",
@@ -42,4 +43,5 @@ __all__ = [
     "BasicdataCarSeries",
     "BasicdataDealerInfo",
     "SysTodoTask",
+    "AutohomeSyncJob",
 ]

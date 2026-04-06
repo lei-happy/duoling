@@ -18,6 +18,9 @@ class BasicdataBrand(PlatformBase):
     brand_id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True, comment="品牌ID"
     )
+    autohome_brand_id: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True, unique=True, comment="汽车之家品牌ID"
+    )
     brand_logo: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     brand_name_cn: Mapped[str] = mapped_column(String(100), nullable=False)
     brand_country: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)

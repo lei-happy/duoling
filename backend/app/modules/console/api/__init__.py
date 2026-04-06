@@ -28,6 +28,7 @@ from app.modules.console.api.basicdata import (
 )
 from app.modules.console.api.workbench.todo import router as workbench_todo_router
 from app.modules.console.api.file import router as file_router
+from app.modules.console.api.ops import autohome_sync_router
 
 router = APIRouter()
 
@@ -56,3 +57,8 @@ router.include_router(
 )
 router.include_router(dealer_router, prefix="/basic-data/dealer", tags=["管理后台-经销商"])
 router.include_router(workbench_todo_router, prefix="/workbench/todo", tags=["管理后台-待办查询"])
+router.include_router(
+    autohome_sync_router,
+    prefix="/ops/autohome-sync",
+    tags=["管理后台-汽车之家同步"],
+)

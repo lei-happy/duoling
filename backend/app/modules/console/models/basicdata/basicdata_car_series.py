@@ -25,6 +25,9 @@ class BasicdataCarSeries(PlatformBase):
         nullable=False,
         index=True,
     )
+    autohome_series_id: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True, unique=True, comment="汽车之家车系ID"
+    )
     price: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     series_image: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     series_name: Mapped[str] = mapped_column(String(100), nullable=False)
