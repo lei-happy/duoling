@@ -10,6 +10,9 @@
 #   同步配置:  bash deploy.sh db-sync
 #   查看日志:  bash deploy.sh logs [service]
 #   查看状态:  bash deploy.sh status
+#
+# 上传图片（头像、品牌图等）宿主机目录: /opt/zhitu/data/uploads
+# （与 deploy/docker/docker-compose.yml 中 backend 绑定挂载一致；勿与代码仓库 backend/uploads 混淆）
 # ============================================================
 
 set -e
@@ -22,6 +25,8 @@ PROJECT_NAME="zhitu"
 PROJECT_DIR="/opt/zhitu"
 DEPLOY_DIR="$PROJECT_DIR/deploy/docker"
 SSL_DIR="/opt/zhitu/ssl"
+# 与 deploy/docker/docker-compose.yml 中 backend 卷挂载一致（XFTP 可浏览此路径）
+UPLOADS_HOST_DIR="/opt/zhitu/data/uploads"
 GIT_REPO="https://gitee.com/happylei/zhitu.git"
 
 # 颜色输出
@@ -231,10 +236,34 @@ setup_ssl() {
 }
 
 # ============================================================
+# 宿主机上传目录（绑定到容器 /app/uploads）
+# ============================================================
+ensure_uploads_host_dir() {
+    mkdir -p "$UPLOADS_HOST_DIR"
+    chmod 755 "$UPLOADS_HOST_DIR" 2>/dev/null || true
+    log_info "上传文件宿主机目录: $UPLOADS_HOST_DIR（与 compose 中 backend 挂载一致）"
+}
+
+warn_if_uploads_empty() {
+    if [ ! -d "$UPLOADS_HOST_DIR" ]; then
+        return
+    fi
+    if [ -z "$(ls -A "$UPLOADS_HOST_DIR" 2>/dev/null)" ]; then
+        echo ""
+        log_warn "上传目录当前为空: $UPLOADS_HOST_DIR"
+        log_warn "数据库里若已有 /uploads/...（如用户头像），静态文件将 404，客户端头像会裂图。"
+        log_info "处理: 从备份还原该目录，或让用户在客户端重新上传头像；品牌/车系图可重跑控制台同步任务。"
+        log_info "注意: 在首次挂载宿主机卷之前，若未把旧容器内 /app/uploads 拷出，旧文件将无法恢复。"
+        echo ""
+    fi
+}
+
+# ============================================================
 # 构建并启动服务
 # ============================================================
 build_and_start() {
     log_info "构建并启动 Docker 服务..."
+    ensure_uploads_host_dir
     cd "$DEPLOY_DIR"
 
     # 启用 BuildKit 以并行构建多阶段 Dockerfile
@@ -250,6 +279,7 @@ build_and_start() {
     if docker compose ps | grep -qiE "(running|Up)"; then
         log_info "所有服务已启动"
         docker compose ps
+        warn_if_uploads_empty
     else
         log_error "部分服务启动失败，请检查日志:"
         docker compose logs --tail=50
@@ -410,6 +440,8 @@ cmd_update() {
     cd "$DEPLOY_DIR"
     check_env_file
 
+    ensure_uploads_host_dir
+
     export DOCKER_BUILDKIT=1
     export COMPOSE_DOCKER_CLI_BUILD=1
 
@@ -432,6 +464,7 @@ cmd_update() {
     log_info "旧镜像已清理"
 
     docker compose ps
+    warn_if_uploads_empty
 }
 
 # ============================================================
@@ -480,6 +513,15 @@ cmd_status() {
     echo ""
     echo "---- 服务状态 ----"
     docker compose ps
+    echo ""
+    echo "---- 上传目录（宿主机，对应容器 /app/uploads） ----"
+    if [ -d "$UPLOADS_HOST_DIR" ]; then
+        uf=$(find "$UPLOADS_HOST_DIR" -type f 2>/dev/null | wc -l)
+        echo "  路径: $UPLOADS_HOST_DIR"
+        echo "  文件数: ${uf// /}"
+    else
+        echo "  目录不存在（将随 deploy 创建）: $UPLOADS_HOST_DIR"
+    fi
     echo ""
     echo "---- 磁盘使用 ----"
     docker system df
