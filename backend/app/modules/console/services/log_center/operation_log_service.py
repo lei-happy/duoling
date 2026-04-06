@@ -2,7 +2,10 @@
 操作日志查询服务（日志中心）
 
 从平台库 sys_operation_log 查询租户端的操作日志；
-关联 sys_tenant.short_name；按租户库 biz_user 补全真实姓名。
+关联 sys_tenant：列表展示优先 short_name，空则回退 tenant_name；
+操作用户姓名：JWT 中 user_id 为平台 sys_user.id，与租户库 biz_user.id 不一致，
+@operation_log 写入的 username 为登录手机号，故按 biz_user.phone 批量关联 real_name，
+无手机号时再回退按 biz_user.id 查询（兼容历史或特殊数据）。
 """
 
 from collections import defaultdict
@@ -47,8 +50,54 @@ _TENANT_JOIN = and_(
 )
 
 
-async def _batch_real_names(logs: List[OperationLog]) -> Dict[Tuple[str, int], Optional[str]]:
-    """按租户批量查询 biz_user.real_name（user_id 为租户内用户主键）。"""
+def _tenant_list_label(
+    short_name: Optional[str], tenant_name: Optional[str]
+) -> Optional[str]:
+    s = (short_name or "").strip()
+    if s:
+        return s
+    t = (tenant_name or "").strip()
+    return t or None
+
+
+async def _batch_real_names_by_phone(
+    logs: List[OperationLog],
+) -> Dict[Tuple[str, str], Optional[str]]:
+    """按租户用手机号批量查 biz_user.real_name（与装饰器写入的 username 一致）。"""
+    by_tenant: dict[str, set[str]] = defaultdict(set)
+    for log in logs:
+        if log.tenant_code and log.username:
+            p = str(log.username).strip()
+            if p:
+                by_tenant[log.tenant_code].add(p)
+
+    out: Dict[Tuple[str, str], Optional[str]] = {}
+    for tcode, phones in by_tenant.items():
+        if not phones:
+            continue
+        try:
+            db_manager._get_or_create_tenant_engine(tcode)
+            factory = db_manager._tenant_session_factories.get(tcode)
+            if not factory:
+                continue
+            async with factory() as session:
+                stmt = select(BizUser.phone, BizUser.real_name).where(
+                    BizUser.phone.in_(list(phones))
+                )
+                result = await session.execute(stmt)
+                for phone, rn in result.all():
+                    out[(tcode, str(phone).strip())] = rn
+        except Exception as e:
+            logger.warning(
+                f"操作日志按手机号关联租户用户姓名失败 tenant={tcode}: {e}"
+            )
+    return out
+
+
+async def _batch_real_names_by_biz_id(
+    logs: List[OperationLog],
+) -> Dict[Tuple[str, int], Optional[str]]:
+    """按 biz_user.id 批量查询 real_name（次要路径，兼容 user_id 已为租户主键的数据）。"""
     by_tenant: dict[str, set[int]] = defaultdict(set)
     for log in logs:
         if log.tenant_code and log.user_id is not None:
@@ -71,8 +120,24 @@ async def _batch_real_names(logs: List[OperationLog]) -> Dict[Tuple[str, int], O
                 for uid, rn in result.all():
                     out[(tcode, int(uid))] = rn
         except Exception as e:
-            logger.warning(f"操作日志关联租户用户姓名失败 tenant={tcode}: {e}")
+            logger.warning(
+                f"操作日志按用户ID关联租户用户姓名失败 tenant={tcode}: {e}"
+            )
     return out
+
+
+def _resolve_operator_real_name(
+    log: OperationLog,
+    phone_map: Dict[Tuple[str, str], Optional[str]],
+    id_map: Dict[Tuple[str, int], Optional[str]],
+) -> Optional[str]:
+    if log.tenant_code and log.username:
+        p = str(log.username).strip()
+        if p and (log.tenant_code, p) in phone_map:
+            return phone_map[(log.tenant_code, p)]
+    if log.tenant_code and log.user_id is not None:
+        return id_map.get((log.tenant_code, int(log.user_id)))
+    return None
 
 
 class OperationLogService:
@@ -94,7 +159,7 @@ class OperationLogService:
         sort: Optional[str] = None,
         order: Optional[str] = None,
     ) -> Tuple[List[Tuple[OperationLog, Optional[str], Optional[str]]], int]:
-        """分页查询；返回 (日志, 租户简称, 真实姓名) 元组列表。"""
+        """分页查询；返回 (日志, 租户展示名, 操作人真实姓名) 元组列表。"""
         conditions = [OperationLog.is_deleted == 0]
 
         if tenant_code and str(tenant_code).strip():
@@ -134,7 +199,7 @@ class OperationLogService:
         total = total_result.scalar() or 0
 
         query = (
-            select(OperationLog, Tenant.short_name)
+            select(OperationLog, Tenant.short_name, Tenant.tenant_name)
             .outerjoin(Tenant, _TENANT_JOIN)
             .where(where_clause)
             .order_by(*_order_clauses(sort, order))
@@ -142,16 +207,16 @@ class OperationLogService:
             .limit(page_size)
         )
         result = await db.execute(query)
-        rows = [(r[0], r[1]) for r in result.all()]
+        rows = [(r[0], r[1], r[2]) for r in result.all()]
         logs = [r[0] for r in rows]
-        real_map = await _batch_real_names(logs)
+        phone_map = await _batch_real_names_by_phone(logs)
+        id_map = await _batch_real_names_by_biz_id(logs)
 
         triples: List[Tuple[OperationLog, Optional[str], Optional[str]]] = []
-        for log, short_name in rows:
-            rn = None
-            if log.tenant_code and log.user_id is not None:
-                rn = real_map.get((log.tenant_code, int(log.user_id)))
-            triples.append((log, short_name, rn))
+        for log, short_name, tenant_name in rows:
+            label = _tenant_list_label(short_name, tenant_name)
+            rn = _resolve_operator_real_name(log, phone_map, id_map)
+            triples.append((log, label, rn))
 
         return triples, total
 
@@ -200,31 +265,31 @@ class OperationLogService:
 
         where_clause = and_(*conditions)
         query = (
-            select(OperationLog, Tenant.short_name)
+            select(OperationLog, Tenant.short_name, Tenant.tenant_name)
             .outerjoin(Tenant, _TENANT_JOIN)
             .where(where_clause)
             .order_by(*_order_clauses(sort, order))
         )
         result = await db.execute(query)
-        rows = [(r[0], r[1]) for r in result.all()]
+        rows = [(r[0], r[1], r[2]) for r in result.all()]
         logs = [r[0] for r in rows]
-        real_map = await _batch_real_names(logs)
+        phone_map = await _batch_real_names_by_phone(logs)
+        id_map = await _batch_real_names_by_biz_id(logs)
 
         triples: List[Tuple[OperationLog, Optional[str], Optional[str]]] = []
-        for log, short_name in rows:
-            rn = None
-            if log.tenant_code and log.user_id is not None:
-                rn = real_map.get((log.tenant_code, int(log.user_id)))
-            triples.append((log, short_name, rn))
+        for log, short_name, tenant_name in rows:
+            label = _tenant_list_label(short_name, tenant_name)
+            rn = _resolve_operator_real_name(log, phone_map, id_map)
+            triples.append((log, label, rn))
         return triples
 
     @staticmethod
     async def get_operation_log_by_id(
         db: AsyncSession, log_id: int
     ) -> Optional[Tuple[OperationLog, Optional[str], Optional[str]]]:
-        """根据 ID 获取详情：(日志, 租户简称, 真实姓名)。"""
+        """根据 ID 获取详情：(日志, 租户展示名, 操作人真实姓名)。"""
         stmt = (
-            select(OperationLog, Tenant.short_name)
+            select(OperationLog, Tenant.short_name, Tenant.tenant_name)
             .outerjoin(Tenant, _TENANT_JOIN)
             .where(
                 OperationLog.id == log_id,
@@ -235,9 +300,9 @@ class OperationLogService:
         row = result.one_or_none()
         if row is None:
             return None
-        log, short_name = row[0], row[1]
-        real_map = await _batch_real_names([log])
-        rn = None
-        if log.tenant_code and log.user_id is not None:
-            rn = real_map.get((log.tenant_code, int(log.user_id)))
-        return log, short_name, rn
+        log, short_name, tenant_name = row[0], row[1], row[2]
+        phone_map = await _batch_real_names_by_phone([log])
+        id_map = await _batch_real_names_by_biz_id([log])
+        label = _tenant_list_label(short_name, tenant_name)
+        rn = _resolve_operator_real_name(log, phone_map, id_map)
+        return log, label, rn
