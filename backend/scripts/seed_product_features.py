@@ -25,6 +25,7 @@ FEATURES = [
     # 基础数据模块 (所有版本)
     {"feature_code": "basic_data", "feature_name": "基础数据", "module": "basic_data", "sort_order": 7, "required_tables": None},
     {"feature_code": "basic_data_region", "feature_name": "地区数据管理", "module": "basic_data", "sort_order": 8, "required_tables": None},
+    {"feature_code": "basic_data_vehicle_brand_series", "feature_name": "品牌车型管理", "module": "basic_data", "sort_order": 9, "required_tables": '["biz_vehicle_brand", "biz_vehicle_series"]'},
     # 资源模块 (standard 及以上)
     {"feature_code": "resource_manage", "feature_name": "资源管理", "module": "resource", "sort_order": 10, "required_tables": None},
     {"feature_code": "resource_vehicle", "feature_name": "车辆管理", "module": "resource", "sort_order": 11, "required_tables": '["biz_vehicle", "biz_vehicle_ext"]'},
@@ -54,12 +55,12 @@ VERSION_FEATURES = {
     "basic": [
         "base_dashboard", "base_system", "base_organization", "base_user",
         "base_role", "base_dict", "base_log",
-        "basic_data", "basic_data_region",
+        "basic_data", "basic_data_region", "basic_data_vehicle_brand_series",
     ],
     "standard": [
         "base_dashboard", "base_system", "base_organization", "base_user",
         "base_role", "base_dict", "base_log",
-        "basic_data", "basic_data_region",
+        "basic_data", "basic_data_region", "basic_data_vehicle_brand_series",
         "resource_manage", "resource_vehicle", "resource_trailer", "resource_driver",
         "resource_customer", "resource_route",
         "biz_manage", "biz_order", "biz_dispatch", "biz_tracking", "biz_receipt",
@@ -67,7 +68,7 @@ VERSION_FEATURES = {
     "pro": [
         "base_dashboard", "base_system", "base_organization", "base_user",
         "base_role", "base_dict", "base_log",
-        "basic_data", "basic_data_region",
+        "basic_data", "basic_data_region", "basic_data_vehicle_brand_series",
         "resource_manage", "resource_vehicle", "resource_trailer", "resource_driver",
         "resource_customer", "resource_route",
         "biz_manage", "biz_order", "biz_dispatch", "biz_tracking", "biz_receipt",
@@ -77,7 +78,7 @@ VERSION_FEATURES = {
     "enterprise": [
         "base_dashboard", "base_system", "base_organization", "base_user",
         "base_role", "base_dict", "base_log",
-        "basic_data", "basic_data_region",
+        "basic_data", "basic_data_region", "basic_data_vehicle_brand_series",
         "resource_manage", "resource_vehicle", "resource_trailer", "resource_driver",
         "resource_customer", "resource_route",
         "biz_manage", "biz_order", "biz_dispatch", "biz_tracking", "biz_receipt",
