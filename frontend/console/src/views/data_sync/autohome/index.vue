@@ -5,8 +5,9 @@
         <div class="card-head">
           <span>汽车之家同步</span>
           <span class="card-head__hint">
-            探测：参配页连通性。全量：拉取可售品牌与报价页车系，Logo → uploads/brand_logo，车系图
-            → uploads/car_series；并请求参配页写入能源类型、尺寸、轴距、整备质量等（默认开启，请求更多）。
+            探测：参配页连通性。下方「同步」固定为增量：已有品牌/车系不写库、不重下图片；
+            仍会拉报价页发现新车系，仅对新增品牌/车系下载 Logo、车系图并写参配（默认开启）。
+            全量刷新仅能通过接口传 incrementalOnly=false（会重下图片并改写路径）。
           </span>
         </div>
       </template>
@@ -25,7 +26,7 @@
             发起探测任务
           </el-button>
         </el-form-item>
-        <el-form-item label="全量-品牌上限">
+        <el-form-item label="品牌上限">
           <el-input-number
             v-model="maxBrands"
             :min="0"
@@ -33,7 +34,7 @@
             :controls="true"
             controls-position="right"
           />
-          <span class="inline-hint">0=不限制（默认可售品牌约 267 个，耗时长）</span>
+          <span class="inline-hint">0=不限制（可售品牌约 267 个；增量仍会逐品牌请求报价页）</span>
         </el-form-item>
         <el-form-item label="请求间隔(ms)">
           <el-input-number
@@ -44,18 +45,14 @@
             controls-position="right"
           />
         </el-form-item>
-        <el-form-item label="仅增量">
-          <el-switch v-model="incrementalOnly" />
-          <span class="inline-hint">已存在的品牌/车系不更新、不重新下载图片；仍会拉报价页以发现新车系</span>
-        </el-form-item>
         <el-form-item>
           <el-button
-            type="danger"
+            type="primary"
             plain
             :loading="fullTriggering"
             @click="onTriggerFull"
           >
-            发起全量同步
+            发起增量同步
           </el-button>
         </el-form-item>
       </el-form>
@@ -146,7 +143,6 @@
   const seriesId = ref(4851);
   const maxBrands = ref(0);
   const fullDelayMs = ref(400);
-  const incrementalOnly = ref(false);
   const triggering = ref(false);
   const fullTriggering = ref(false);
   const logVisible = ref(false);
@@ -211,8 +207,8 @@
   const onTriggerFull = async () => {
     try {
       await ElMessageBox.confirm(
-        '全量同步将向汽车之家发起大量请求，并写入平台库与 uploads。确认继续？',
-        '全量同步',
+        '将按「增量」同步：已存在品牌/车系不会更新或重下图片；仍会请求各品牌报价页，并对新车系发起图片与参配请求。确认继续？',
+        '增量同步',
         { type: 'warning', draggable: true }
       );
     } catch {
@@ -222,11 +218,10 @@
     try {
       await triggerAutohomeFullSync({
         maxBrands: maxBrands.value,
-        delayMs: fullDelayMs.value,
-        incrementalOnly: incrementalOnly.value
+        delayMs: fullDelayMs.value
       });
       EleMessage.success({
-        message: '全量任务已创建，请通过列表与日志查看进度（耗时较长）',
+        message: '增量同步任务已创建，请通过列表与日志查看进度',
         plain: true
       });
       reload(1);

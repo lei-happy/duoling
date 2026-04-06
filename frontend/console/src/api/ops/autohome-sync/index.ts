@@ -31,11 +31,11 @@ export async function triggerAutohomeProbe(body: {
   return Promise.reject(new Error(res.data.message));
 }
 
+/** 固定增量模式，避免误触全量导致已有 Logo/车系图路径被 UUID 覆盖。 */
 export async function triggerAutohomeFullSync(body: {
   maxBrands?: number | null;
   delayMs?: number;
   includeInactiveBrands?: boolean;
-  incrementalOnly?: boolean;
 }) {
   const res = await request.post<ApiResult<{ jobId: number }>>(
     '/ops/autohome-sync/trigger',
@@ -47,7 +47,7 @@ export async function triggerAutohomeFullSync(body: {
           : undefined,
       delayMs: body.delayMs ?? 400,
       includeInactiveBrands: body.includeInactiveBrands ?? false,
-      incrementalOnly: body.incrementalOnly ?? false
+      incrementalOnly: true
     }
   );
   if (res.data.code === 0) {
