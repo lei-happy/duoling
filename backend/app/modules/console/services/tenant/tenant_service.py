@@ -23,6 +23,9 @@ from app.modules.console.schemas.tenant.tenant import (
     TenantProductCreate, TenantProductOut,
     TenantFollowPoolUpdate,
 )
+from app.modules.console.services.system.open_register_policy_service import (
+    OpenRegisterPolicyService,
+)
 
 # on_progress(step_key, message, percent)
 TenantCreateProgressCallback = Optional[Callable[[str, str, int], Awaitable[None]]]
@@ -44,6 +47,32 @@ class TenantService:
             conds.append(TenantProduct.version_code == version_code_filter)
         if exclude_basic:
             conds.append(TenantProduct.version_code != "basic")
+        return exists(select(TenantProduct.id).where(*conds))
+
+    @staticmethod
+    def _active_commercial_non_basic_exists(version_code_filter=None):
+        """有效「商业」非 basic：grant_type 为 trial 的自助试用不算付费客户"""
+        conds = [
+            TenantProduct.tenant_id == Tenant.id,
+            TenantProduct.is_deleted == 0,
+            TenantProduct.status == 1,
+            TenantProduct.version_code != "basic",
+            or_(TenantProduct.end_time.is_(None), TenantProduct.end_time > datetime.now()),
+            or_(TenantProduct.grant_type.is_(None), TenantProduct.grant_type != "trial"),
+        ]
+        if version_code_filter:
+            conds.append(TenantProduct.version_code == version_code_filter)
+        return exists(select(TenantProduct.id).where(*conds))
+
+    @staticmethod
+    def _any_active_product_exists():
+        """任意当前有效的产品授权"""
+        conds = [
+            TenantProduct.tenant_id == Tenant.id,
+            TenantProduct.is_deleted == 0,
+            TenantProduct.status == 1,
+            or_(TenantProduct.end_time.is_(None), TenantProduct.end_time > datetime.now()),
+        ]
         return exists(select(TenantProduct.id).where(*conds))
 
     # ============================================================
@@ -92,6 +121,22 @@ class TenantService:
         settings = get_settings()
         db_name = settings.tenant_database_name(tenant_code)
 
+        source_ch = data.sourceChannel or "console"
+        use_open_register_policy = source_ch in ("website", "referral")
+        policy_version_code = "basic"
+        policy_trial_days = 0
+        if use_open_register_policy:
+            policy_version_code, policy_trial_days = (
+                await OpenRegisterPolicyService.get_policy_raw(db)
+            )
+
+        remark = data.remark
+        if use_open_register_policy:
+            if policy_trial_days > 0:
+                remark = f"官网自助注册（{policy_trial_days}天试用）"
+            else:
+                remark = "官网自助注册（不限期体验）"
+
         # 创建租户记录
         tenant = Tenant(
             tenant_code=tenant_code,
@@ -106,8 +151,8 @@ class TenantService:
             license_no=data.licenseNo,
             status=1,  # 注册即激活
             db_name=db_name,
-            remark=data.remark,
-            source_channel=data.sourceChannel or "console",
+            remark=remark,
+            source_channel=source_ch,
             referrer_code=data.referrerCode,
         )
         db.add(tenant)
@@ -187,26 +232,63 @@ class TenantService:
                 status=1,
             ))
 
-        # 自动开通 basic 版本
-        basic_ver = await db.execute(
-            select(ProductVersion).where(
-                ProductVersion.version_code == "basic",
-                ProductVersion.status == 1,
-                ProductVersion.is_deleted == 0,
+        # 自动开通产品版本（官网/推荐码走运营配置；后台录入仍为 basic 不限期）
+        if use_open_register_policy:
+            pv = await OpenRegisterPolicyService.get_resolved_version(
+                db, policy_version_code
             )
-        )
-        basic_version = basic_ver.scalar_one_or_none()
-        if basic_version:
-            basic_product = TenantProduct(
-                tenant_id=tenant.id,
-                tenant_code=tenant_code,
-                version_id=basic_version.id,
-                version_code="basic",
-                start_time=datetime.now(),
-                end_time=None,
-                status=1,
+            start_t = datetime.now()
+            end_t = (
+                start_t + timedelta(days=policy_trial_days)
+                if policy_trial_days > 0
+                else None
             )
-            db.add(basic_product)
+            db.add(
+                TenantProduct(
+                    tenant_id=tenant.id,
+                    tenant_code=tenant_code,
+                    version_id=pv.id,
+                    version_code=pv.version_code,
+                    start_time=start_t,
+                    end_time=end_t,
+                    status=1,
+                    grant_type=OpenRegisterPolicyService.grant_type_for_self_register(),
+                    grant_remark="官网自助注册",
+                )
+            )
+            if end_t is not None:
+                tenant.expire_time = end_t
+            await db.flush()
+            if pv.version_code != "basic":
+                try:
+                    await TenantService._ensure_version_tables(
+                        db, tenant_code, pv.id
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"租户 {tenant_code} 开户按需建业务表失败（非致命）: {e}"
+                    )
+        else:
+            basic_ver = await db.execute(
+                select(ProductVersion).where(
+                    ProductVersion.version_code == "basic",
+                    ProductVersion.status == 1,
+                    ProductVersion.is_deleted == 0,
+                )
+            )
+            basic_version = basic_ver.scalar_one_or_none()
+            if basic_version:
+                db.add(
+                    TenantProduct(
+                        tenant_id=tenant.id,
+                        tenant_code=tenant_code,
+                        version_id=basic_version.id,
+                        version_code="basic",
+                        start_time=datetime.now(),
+                        end_time=None,
+                        status=1,
+                    )
+                )
 
         await db.flush()
         await _emit("done", "开户完成", 100)
@@ -534,16 +616,20 @@ class TenantService:
             cutoff = datetime.now() - timedelta(days=30)
             query = query.where(Tenant.status == 1, Tenant.created_at >= cutoff)
         elif lifecycle == "trial":
-            has_basic_active = TenantService._active_product_exists(version_code_filter="basic")
-            has_paid_active = TenantService._active_product_exists(exclude_basic=True)
-            query = query.where(Tenant.status == 1, has_basic_active, ~has_paid_active)
+            has_any_active = TenantService._any_active_product_exists()
+            has_commercial = TenantService._active_commercial_non_basic_exists()
+            query = query.where(
+                Tenant.status == 1, has_any_active, ~has_commercial
+            )
         elif lifecycle == "follow_up":
             query = query.where(Tenant.in_follow_pool == 1)
         elif lifecycle == "paid":
-            has_paid_active = TenantService._active_product_exists(exclude_basic=True)
-            query = query.where(Tenant.status == 1, has_paid_active)
+            has_commercial = TenantService._active_commercial_non_basic_exists()
+            query = query.where(Tenant.status == 1, has_commercial)
             if version_code:
-                version_cond = TenantService._active_product_exists(version_code_filter=version_code)
+                version_cond = TenantService._active_commercial_non_basic_exists(
+                    version_code_filter=version_code
+                )
                 query = query.where(version_cond)
             if expire_warning:
                 warning_deadline = datetime.now() + timedelta(days=30)
@@ -754,13 +840,15 @@ class TenantService:
         base = select(func.count()).where(Tenant.is_deleted == 0)
         cutoff = datetime.now() - timedelta(days=30)
 
-        has_basic_active = TenantService._active_product_exists(version_code_filter="basic")
-        has_paid_active = TenantService._active_product_exists(exclude_basic=True)
+        has_any_active = TenantService._any_active_product_exists()
+        has_commercial = TenantService._active_commercial_non_basic_exists()
 
         new_q = base.where(Tenant.status == 1, Tenant.created_at >= cutoff)
-        trial_q = base.where(Tenant.status == 1, has_basic_active, ~has_paid_active)
+        trial_q = base.where(
+            Tenant.status == 1, has_any_active, ~has_commercial
+        )
         follow_q = base.where(Tenant.in_follow_pool == 1)
-        paid_q = base.where(Tenant.status == 1, has_paid_active)
+        paid_q = base.where(Tenant.status == 1, has_commercial)
         churned_q = base.where(Tenant.status.in_([0, 3]))
         total_q = base
 
@@ -997,19 +1085,19 @@ class TenantService:
                 )
             )
             active_products = prod_result.scalars().all()
-            has_active_basic = any(p.version_code == "basic" for p in active_products)
-            has_active_paid = any(p.version_code != "basic" for p in active_products)
 
-            if not has_active_paid and has_active_basic:
-                # 仅剩 basic 有效 → 客户回到免费体验，清空 expire_time
-                tenant.expire_time = None
-                affected += 1
-                logger.info(f"租户 {tenant.tenant_code} 付费授权已过期，回退为免费体验")
-            elif not active_products:
-                # 无任何有效授权 → 设为已过期
+            if not active_products:
                 tenant.status = 3
                 affected += 1
                 logger.info(f"租户 {tenant.tenant_code} 所有授权已过期，状态设为已过期")
+            else:
+                # 与当前有效授权对齐 tenant.expire_time（修正商业版过期后仍显示过期等问题）
+                if any(p.end_time is None for p in active_products):
+                    tenant.expire_time = None
+                else:
+                    tenant.expire_time = max(p.end_time for p in active_products)
+                affected += 1
+                logger.info(f"租户 {tenant.tenant_code} 已按有效授权同步到期时间")
 
         await db.flush()
         return affected

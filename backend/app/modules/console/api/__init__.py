@@ -29,6 +29,9 @@ from app.modules.console.api.basicdata import (
 from app.modules.console.api.workbench.todo import router as workbench_todo_router
 from app.modules.console.api.file import router as file_router
 from app.modules.console.api.ops import autohome_sync_router
+from app.modules.console.api.system.open_register_policy import (
+    router as open_register_policy_router,
+)
 
 router = APIRouter()
 
@@ -61,4 +64,9 @@ router.include_router(
     autohome_sync_router,
     prefix="/ops/autohome-sync",
     tags=["管理后台-汽车之家同步"],
+)
+router.include_router(
+    open_register_policy_router,
+    prefix="/system/open-register-policy",
+    tags=["管理后台-自助注册策略"],
 )

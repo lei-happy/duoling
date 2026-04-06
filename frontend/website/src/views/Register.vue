@@ -55,21 +55,6 @@
           来自企业推荐（推荐码：{{ referrerCode }}）
         </div>
 
-        <el-alert
-          v-if="phoneRegistered"
-          type="warning"
-          :closable="false"
-          show-icon
-          class="registered-alert"
-        >
-          <template #default>
-            <span class="registered-alert-text">该手机号已注册，请前往客户端登录。</span>
-            <el-button type="primary" link class="registered-alert-link" @click="goLogin">
-              立即登录
-            </el-button>
-          </template>
-        </el-alert>
-
         <el-form
           ref="formRef"
           :model="form"
@@ -107,9 +92,23 @@
                 <el-icon class="input-prefix-icon"><Phone /></el-icon>
               </template>
             </el-input>
+            <el-alert
+              v-if="phoneRegistered"
+              type="warning"
+              :closable="false"
+              show-icon
+              class="registered-alert"
+            >
+              <template #default>
+                <span class="registered-alert-text">该手机号已注册，请前往客户端登录。</span>
+                <el-button type="primary" link class="registered-alert-link" @click="goLogin">
+                  立即登录
+                </el-button>
+              </template>
+            </el-alert>
           </el-form-item>
 
-          <el-form-item label="短信验证码" prop="sms_code">
+          <el-form-item v-if="!phoneRegistered" label="短信验证码" prop="sms_code">
             <div class="sms-code-row">
               <el-input
                 v-model="form.sms_code"
@@ -298,9 +297,6 @@ async function onPhoneBlur() {
   try {
     const { registered } = await checkRegisterPhone(p)
     phoneRegistered.value = registered
-    if (registered) {
-      ElMessage.warning('该手机号已注册，请前往客户端登录')
-    }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '校验手机号失败'
     ElMessage.error(msg)
@@ -347,7 +343,6 @@ async function handleSubmit() {
   if (!formRef.value) return
 
   if (phoneRegistered.value) {
-    ElMessage.warning('该手机号已注册，请前往客户端登录')
     return
   }
 
@@ -365,7 +360,6 @@ async function handleSubmit() {
     const preCheck = await checkRegisterPhone(form.contact_phone.trim())
     if (preCheck.registered) {
       phoneRegistered.value = true
-      ElMessage.warning('该手机号已注册，请前往客户端登录')
       return
     }
 
@@ -645,7 +639,8 @@ function goHome() {
 }
 
 .registered-alert {
-  margin-bottom: 20px;
+  margin-top: 10px;
+  width: 100%;
 
   .registered-alert-text {
     margin-right: 8px;

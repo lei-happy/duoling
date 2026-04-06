@@ -26,7 +26,7 @@ async def register_phone_available(
     phone: str = Query(..., min_length=11, max_length=11, description="手机号"),
     db: AsyncSession = Depends(get_platform_db),
 ):
-    """查询手机号是否已在平台注册（官网用于即时提示）"""
+    """查询手机号是否已关联企业（官网用于即时提示；仅 sys_user 无企业关联时不视为已注册）"""
     if not _PHONE_RE.match(phone):
         raise BizException("请输入正确的手机号码")
     registered = await RegisterService.is_phone_registered(db, phone)

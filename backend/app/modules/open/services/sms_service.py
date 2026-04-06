@@ -48,7 +48,7 @@ class SmsService:
         - console + 登录: sys_user WHERE user_type=0
         - client + 登录: sys_user + 至少一条有效的 sys_user_tenant
         - 重置密码: sys_user 存在即可
-        - 企业注册(purpose=4): 手机号须尚未在 sys_user 注册
+        - 企业注册(purpose=4): 若 sys_user 存在且已与至少一家企业关联，则不可再注册
         """
         if purpose == PURPOSE_TENANT_REGISTER:
             result = await db.execute(
@@ -57,7 +57,17 @@ class SmsService:
                     User.is_deleted == 0,
                 )
             )
-            if result.scalar_one_or_none():
+            user = result.scalar_one_or_none()
+            if not user:
+                return
+            ut_result = await db.execute(
+                select(UserTenant).where(
+                    UserTenant.user_id == user.id,
+                    UserTenant.status == 1,
+                    UserTenant.is_deleted == 0,
+                )
+            )
+            if ut_result.first():
                 raise BizException("该手机号已注册，请前往客户端登录")
             return
 

@@ -8,13 +8,14 @@ from typing import Optional
 
 from fastapi import BackgroundTasks
 from loguru import logger
-from sqlalchemy import select, update
+from sqlalchemy import exists, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import db_manager
 from app.common.exceptions import BizException
 from app.modules.console.models.tenant.tenant import Tenant
 from app.modules.console.models.system.user import User
+from app.modules.console.models.system.user_tenant import UserTenant
 from app.modules.console.schemas.tenant.tenant import TenantCreate
 from app.modules.console.services.tenant.tenant_service import TenantService
 from app.modules.open.models.open_register_task import OpenRegisterTask
@@ -64,9 +65,20 @@ class RegisterService:
 
     @staticmethod
     async def is_phone_registered(db: AsyncSession, phone: str) -> bool:
-        """手机号是否已在平台 sys_user 注册"""
+        """手机号是否已与至少一家企业关联（与客户端登录前提一致，无关联则允许走企业注册）"""
+        bound_to_tenant = exists(
+            select(UserTenant.id).where(
+                UserTenant.user_id == User.id,
+                UserTenant.status == 1,
+                UserTenant.is_deleted == 0,
+            )
+        )
         result = await db.execute(
-            select(User).where(User.phone == phone, User.is_deleted == 0)
+            select(User.id).where(
+                User.phone == phone,
+                User.is_deleted == 0,
+                bound_to_tenant,
+            ).limit(1)
         )
         return result.scalar_one_or_none() is not None
 
@@ -207,7 +219,7 @@ class RegisterService:
             contactEmail=None,
             province=data.province,
             city=data.city,
-            remark="官网自助注册 - 免费版",
+            remark=None,
             sourceChannel=source_channel,
             referrerCode=data.referrer_code,
         )

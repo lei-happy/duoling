@@ -21,6 +21,13 @@ from app.modules.console.models.system.menu import Menu
 from app.modules.console.models.system.permission import RoleMenu
 from app.modules.console.models.product.product_version import ProductVersion
 from app.modules.console.models.dictionary.dict_model import Dict, DictItem
+from app.modules.console.models.system.platform_setting import PlatformSetting
+from app.modules.console.constants.open_register_policy import (
+    KEY_OPEN_REGISTER_DEFAULT_VERSION_CODE,
+    KEY_OPEN_REGISTER_TRIAL_DAYS,
+    DEFAULT_VERSION_CODE,
+    DEFAULT_TRIAL_DAYS,
+)
 
 
 def seed_platform_data():
@@ -155,6 +162,11 @@ def seed_platform_data():
                      menu_code="customer:churned", menu_type=0,
                      path="/customer/churned", component="/customer/churned/index",
                      sort_order=20, app_type="platform"),
+                Menu(parent_id=customer_menu.id, menu_name="自助注册策略",
+                     menu_code="customer:open-register-policy", menu_type=0,
+                     path="/customer/open-register-policy",
+                     component="/customer/open-register-policy/index",
+                     icon="Setting", sort_order=8, app_type="platform"),
                 # 系统管理子菜单
                 Menu(parent_id=system_menu.id, menu_name="用户管理",
                      menu_code="system:user", menu_type=0,
@@ -274,24 +286,6 @@ def seed_platform_data():
                     session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
                 print("[OK] 客户端菜单管理已补充")
 
-            # 补充：短信验证码（若不存在）
-            sms_code_menu = session.query(Menu).filter_by(
-                menu_code="system:sms-code", app_type="platform", is_deleted=0
-            ).first()
-            if system_menu and not sms_code_menu:
-                m = Menu(
-                    parent_id=system_menu.id, menu_name="短信验证码",
-                    menu_code="system:sms-code", menu_type=0,
-                    path="/system/sms-code", component="/system/sms-code/index",
-                    sort_order=27, app_type="platform",
-                )
-                session.add(m)
-                session.flush()
-                all_menus.append(m)
-                if role_admin:
-                    session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
-                print("[OK] 短信验证码菜单已补充")
-
             # 迁移：客户运营中心菜单精简（移除旧菜单，更新保留菜单）
             customer_menu = session.query(Menu).filter_by(
                 menu_code="customer", app_type="platform", is_deleted=0
@@ -326,6 +320,24 @@ def seed_platform_data():
                 ).first()
                 if churned_menu and churned_menu.sort_order != 20:
                     churned_menu.sort_order = 20
+
+                open_reg_menu = session.query(Menu).filter_by(
+                    menu_code="customer:open-register-policy",
+                    app_type="platform", is_deleted=0
+                ).first()
+                if customer_menu and not open_reg_menu:
+                    m = Menu(
+                        parent_id=customer_menu.id, menu_name="自助注册策略",
+                        menu_code="customer:open-register-policy", menu_type=0,
+                        path="/customer/open-register-policy",
+                        component="/customer/open-register-policy/index",
+                        icon="Setting", sort_order=8, app_type="platform",
+                    )
+                    session.add(m)
+                    session.flush()
+                    if role_admin:
+                        session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
+                    print("[OK] 自助注册策略菜单已补充")
 
                 session.flush()
 
@@ -572,6 +584,31 @@ def seed_platform_data():
                     DictItem(dict_id=d5.id, dict_code="product_module", item_name="数据分析", item_value="bi", sort_order=40),
                 ])
                 print("[OK] 产品模块字典已补充")
+
+        # ---- 自助注册策略默认配置 ----
+        _policy_defaults = [
+            (
+                KEY_OPEN_REGISTER_DEFAULT_VERSION_CODE,
+                DEFAULT_VERSION_CODE,
+                "官网自助注册默认开通的产品版本编码",
+            ),
+            (
+                KEY_OPEN_REGISTER_TRIAL_DAYS,
+                str(DEFAULT_TRIAL_DAYS),
+                "官网自助注册试用天数，0 表示不限期",
+            ),
+        ]
+        for _key, _val, _rmk in _policy_defaults:
+            _ex = session.query(PlatformSetting).filter_by(
+                config_key=_key, is_deleted=0
+            ).first()
+            if not _ex:
+                session.add(
+                    PlatformSetting(
+                        config_key=_key, config_value=_val, remark=_rmk
+                    )
+                )
+        print("[OK] 自助注册策略默认配置已就绪")
 
         session.commit()
 

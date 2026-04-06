@@ -64,5 +64,5 @@ class RegisterProgressOut(BaseModel):
 
 
 class RegisterPhoneCheckOut(BaseModel):
-    """官网校验手机号是否已在平台注册"""
-    registered: bool = Field(..., description="true 表示已注册，应引导登录")
+    """官网校验手机号是否已关联企业（可客户端登录）"""
+    registered: bool = Field(..., description="true 表示已关联企业，应引导登录")

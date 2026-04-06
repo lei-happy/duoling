@@ -251,7 +251,7 @@
   const MAX_INLINE_ACTIONS = 2;
 
   const getTrialRemainingDays = (row: Customer) => {
-    if (!row.expireTime) return -1;
+    if (!row.expireTime) return null;
     const expire = new Date(row.expireTime).getTime();
     const now = Date.now();
     return Math.ceil((expire - now) / (24 * 60 * 60 * 1000));
@@ -259,6 +259,7 @@
 
   const getTrialRemainingText = (row: Customer) => {
     const days = getTrialRemainingDays(row);
+    if (days === null) return '不限期';
     if (days < 0) return '已到期';
     if (days === 0) return '今天到期';
     return `${days}天`;
@@ -266,6 +267,7 @@
 
   const getTrialRemainingType = (row: Customer) => {
     const days = getTrialRemainingDays(row);
+    if (days === null) return 'info';
     if (days < 0) return 'info';
     if (days <= 3) return 'danger';
     if (days <= 7) return 'warning';

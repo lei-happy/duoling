@@ -27,7 +27,7 @@ export async function sendSmsCode(phone: string, purpose: number) {
   return Promise.reject(new Error(res.data.message || '发送失败'));
 }
 
-/** 查询手机号是否已在平台注册 */
+/** 查询手机号是否已关联企业（可客户端登录；仅有平台账号无企业时不视为已注册） */
 export async function checkRegisterPhone(phone: string) {
   const res = await request.get<{ code: number; message?: string; data?: { registered: boolean } }>(
     '/register/phone-available',
