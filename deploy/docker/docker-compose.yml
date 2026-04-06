@@ -60,6 +60,8 @@ services:
       - LOG_DIR=logs
     volumes:
       - backend_logs:/app/logs
+      # 上传图片落盘到宿主机，便于 XFTP/备份；与 app.main 中 /app/uploads 一致
+      - /opt/zhitu/data/uploads:/app/uploads
     depends_on:
       redis:
         condition: service_healthy
