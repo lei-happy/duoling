@@ -59,3 +59,6 @@ logs/
 
 # ---- Docker ----
 docker-compose.override.yml
+
+# ---- 后端本地上传（测试素材勿入库） ----
+backend/uploads/

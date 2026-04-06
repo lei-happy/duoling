@@ -6,14 +6,14 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
-from app.core.dependencies import get_platform_db, get_current_user
+from app.core.dependencies import get_platform_db, get_current_user, get_tenant_db
 from app.core.security import TokenData
 from app.common.response import success
 from app.common.operation_log import operation_log
 from app.modules.console.schemas.auth.auth import (
     LoginRequest, SmsLoginRequest, LoginResponse, MultiTenantResponse,
     ChangePasswordRequest, RefreshTokenRequest,
-    UpdateThemeConfigRequest, SwitchTenantRequest,
+    UpdateProfileRequest, UpdateThemeConfigRequest, SwitchTenantRequest,
 )
 from app.modules.console.services.auth.auth_service import AuthService
 
@@ -90,6 +90,20 @@ async def switch_tenant(
     """切换到目标租户，返回新的 Token"""
     result = await AuthService.switch_tenant(db, current_user.user_id, request)
     return success(data=result.model_dump())
+
+
+@router.put("/user")
+async def update_profile(
+    data: UpdateProfileRequest,
+    current_user: TokenData = Depends(get_current_user),
+    db: AsyncSession = Depends(get_platform_db),
+    tenant_db: AsyncSession = Depends(get_tenant_db),
+):
+    """更新当前登录用户的个人资料"""
+    result = await AuthService.update_profile(
+        db, current_user.user_id, data, tenant_db=tenant_db,
+    )
+    return success(data=result)
 
 
 @router.put("/password")

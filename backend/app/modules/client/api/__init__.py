@@ -20,6 +20,7 @@ from app.modules.client.api.order import router as order_router
 from app.modules.client.api.operation_record import router as operation_record_router
 from app.modules.client.api.region import router as region_router
 from app.modules.client.api.enterprise import router as enterprise_router
+from app.modules.client.api.file import router as file_router
 
 router = APIRouter()
 
@@ -38,3 +39,4 @@ router.include_router(order_router, prefix="/business/order", tags=["客户端-�
 router.include_router(operation_record_router, prefix="/system/operation-record", tags=["客户端-操作记录"])
 router.include_router(region_router, prefix="/basic-data/region", tags=["客户端-地区数据"])
 router.include_router(enterprise_router, prefix="/enterprise", tags=["客户端-企业管理"])
+router.include_router(file_router, prefix="/file", tags=["客户端-文件管理"])

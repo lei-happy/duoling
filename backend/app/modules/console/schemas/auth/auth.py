@@ -121,6 +121,14 @@ class UserInfoOut(BaseModel):
     authorities: List[UserMenuOut] = Field(default_factory=list, description="菜单/权限列表")
 
 
+class UpdateProfileRequest(BaseModel):
+    """更新个人资料请求（个人中心使用）"""
+    nickname: Optional[str] = Field(default=None, description="昵称", max_length=50)
+    email: Optional[str] = Field(default=None, description="邮箱", max_length=100)
+    avatar: Optional[str] = Field(default=None, description="头像URL", max_length=255)
+    sex: Optional[str] = Field(default=None, description="性别（男/女）")
+
+
 class UpdateThemeConfigRequest(BaseModel):
     """更新主题配置请求"""
     themeConfig: Optional[dict] = Field(default=None, description="用户主题配置（JSON格式）")

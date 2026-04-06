@@ -12,10 +12,14 @@ import type { AxiosRequestConfig } from 'axios';
 export async function uploadFile(
   file: File,
   config?: AxiosRequestConfig,
-  fileName?: string
+  fileName?: string,
+  scene?: string
 ) {
   const formData = new FormData();
   formData.append('file', file, fileName);
+  if (scene) {
+    formData.append('scene', scene);
+  }
   const res = await request.post<ApiResult<FileRecord>>(
     '/file/upload',
     formData,

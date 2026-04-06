@@ -83,6 +83,11 @@ export default defineConfig(({ /* command, */ mode }) => {
         target: `${openTarget.protocol}//${openTarget.host}`,
         changeOrigin: true
       };
+      // 后端在应用根路径挂载 /uploads，与 /api/client 不同前缀，需单独代理（头像等）
+      proxy['/uploads'] = {
+        target: `${openTarget.protocol}//${openTarget.host}`,
+        changeOrigin: true
+      };
     } catch {
       /* ignore */
     }

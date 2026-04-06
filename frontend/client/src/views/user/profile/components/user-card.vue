@@ -2,63 +2,39 @@
   <ele-card>
     <div class="info-user">
       <div class="info-user-avatar" @click="openCropper">
-        <el-avatar :size="100" :src="data.avatar" style="background: none" />
+        <el-avatar :size="100" :src="data.avatar" style="background: none">
+          <el-icon :size="40"><UserOutlined /></el-icon>
+        </el-avatar>
         <el-icon class="info-user-avatar-icon">
           <CloudUploadOutlined style="stroke-width: 3" />
         </el-icon>
       </div>
       <ele-text size="xxl" style="margin-top: 5px">
-        {{ data.nickname }}
+        {{ data.nickname || '未设置昵称' }}
       </ele-text>
       <ele-text type="placeholder">
-        {{ data.introduction || '这家伙很懒，什么都不说~' }}
+        {{ userTypeName }}
       </ele-text>
     </div>
     <div class="info-list">
       <div class="info-item">
-        <el-icon>
-          <UserOutlined />
-        </el-icon>
-        <div class="info-item-text">资深前端工程师</div>
+        <el-icon><MobileOutlined /></el-icon>
+        <div class="info-item-text">{{ data.phone || '-' }}</div>
       </div>
       <div class="info-item">
+        <el-icon><MailOutlined /></el-icon>
+        <div class="info-item-text">{{ data.email || '未设置' }}</div>
+      </div>
+      <div class="info-item" v-if="data.sex">
+        <el-icon><UserOutlined /></el-icon>
+        <div class="info-item-text">{{ data.sex }}</div>
+      </div>
+      <div class="info-item" v-if="data.tenantName">
         <el-icon>
           <CityOutlined style="transform: translateY(-1px)" />
         </el-icon>
-        <div class="info-item-text">某某公司 - 研发部 - 某某组</div>
+        <div class="info-item-text">{{ data.tenantName }}</div>
       </div>
-      <div class="info-item">
-        <el-icon>
-          <EnvironmentOutlined />
-        </el-icon>
-        <div class="info-item-text">中国 • 浙江省 • 杭州市</div>
-      </div>
-      <div class="info-item">
-        <el-icon>
-          <TagOutlined style="transform: translateY(-1px)" />
-        </el-icon>
-        <div class="info-item-text">JavaScript、HTML、CSS</div>
-      </div>
-    </div>
-    <el-divider border-style="dashed" style="margin: 0" />
-    <ele-text size="md" style="margin-top: 16px">标签</ele-text>
-    <div class="info-tags" style="margin-top: 12px">
-      <el-tag type="info" size="small" :disable-transitions="true">
-        很有想法的
-      </el-tag>
-      <el-tag type="info" size="small" :disable-transitions="true">
-        专注设计
-      </el-tag>
-      <el-tag type="info" size="small" :disable-transitions="true">辣~</el-tag>
-      <el-tag type="info" size="small" :disable-transitions="true">
-        大长腿
-      </el-tag>
-      <el-tag type="info" size="small" :disable-transitions="true">
-        川妹子
-      </el-tag>
-      <el-tag type="info" size="small" :disable-transitions="true">
-        海纳百川
-      </el-tag>
     </div>
     <!-- 头像裁剪弹窗 -->
     <ele-cropper-modal
@@ -77,19 +53,26 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue';
+  import { ref, computed } from 'vue';
   import {
     CloudUploadOutlined,
     UserOutlined,
     CityOutlined,
-    EnvironmentOutlined,
-    TagOutlined
+    MobileOutlined,
+    MailOutlined
   } from '@/components/icons';
-  //import { EleMessage } from 'ele-admin-plus';
-  //import { updateUserInfo } from '@/api/layout';
+  import { EleMessage } from 'ele-admin-plus';
+  import { updateUserInfo } from '@/api/layout';
+  import { uploadFile } from '@/api/system/file';
   import type { User } from '@/api/system/user/model';
 
-  defineProps<{
+  const USER_TYPE_MAP: Record<number, string> = {
+    1: '管理员',
+    2: '普通员工',
+    3: '驾驶员'
+  };
+
+  const props = defineProps<{
     data: User;
   }>();
 
@@ -97,33 +80,44 @@
     (e: 'done', value: User): void;
   }>();
 
-  /** 是否显示裁剪弹窗 */
+  const userTypeName = computed(() => {
+    return USER_TYPE_MAP[props.data.userType ?? 0] || '';
+  });
+
   const visible = ref(false);
 
-  /** 打开图片裁剪 */
   const openCropper = () => {
     visible.value = true;
   };
 
-  /** 头像裁剪完成回调 */
-  const handleCrop = (result: string) => {
+  const base64ToFile = (base64: string, fileName: string): File => {
+    const arr = base64.split(',');
+    const mime = arr[0]?.match(/:(.*?);/)?.[1] || 'image/png';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], fileName, { type: mime });
+  };
+
+  const handleCrop = async (result: string) => {
     visible.value = false;
-    emit('done', { avatar: result });
-    /* const loading = EleMessage.loading({
-      message: '请求中..',
-      plain: true
-    });
-    updateUserInfo({ avatar: result })
-      .then((data) => {
-        loading.close();
-        visible.value = false;
-        EleMessage.success({ message: '修改成功', plain: true });
-        emit('done', data);
-      })
-      .catch((e) => {
-        loading.close();
-        EleMessage.error({ message: e.message, plain: true });
-      }); */
+    const loading = EleMessage.loading({ message: '上传中..', plain: true });
+    try {
+      const file = base64ToFile(result, 'avatar.png');
+      const uploadRes = await uploadFile(file, undefined, 'avatar.png', 'avatar');
+      const avatarUrl = uploadRes.url;
+
+      const userInfo = await updateUserInfo({ avatar: avatarUrl });
+      loading.close();
+      EleMessage.success({ message: '头像更新成功', plain: true });
+      emit('done', userInfo);
+    } catch (e: any) {
+      loading.close();
+      EleMessage.error({ message: e.message || '上传失败', plain: true });
+    }
   };
 </script>
 
@@ -175,7 +169,7 @@
   }
 
   .info-list {
-    margin: 35px 0 24px 0;
+    margin: 28px 0 12px 0;
 
     .info-item {
       display: flex;
@@ -195,9 +189,5 @@
         margin-top: 10px;
       }
     }
-  }
-
-  .info-tags .el-tag {
-    margin: 0 12px 8px 0;
   }
 </style>

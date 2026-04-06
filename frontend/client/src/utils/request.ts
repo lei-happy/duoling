@@ -130,6 +130,13 @@ export function responseInterceptor(res: AxiosResponse<ApiResult<unknown>>) {
   return res.data.message;
 }
 
+/** 从 axios 错误响应体取后端 message（如登录失败时的业务提示） */
+function getAxiosErrorServerMessage(error: unknown): string | undefined {
+  const data = (error as any)?.response?.data as ApiResult<unknown> | undefined;
+  const m = data?.message;
+  return typeof m === 'string' && m.trim() ? m : undefined;
+}
+
 /**
  * 错误信息处理
  */
@@ -187,7 +194,9 @@ service.interceptors.response.use(
 
       if (config?._retried) {
         redirectToLogin(toRoute);
-        return Promise.reject(error);
+        return Promise.reject(
+          new Error(getAxiosErrorServerMessage(error) || error.message)
+        );
       }
 
       const newToken = await handleUnauthorized();
@@ -199,11 +208,16 @@ service.interceptors.response.use(
 
       removeRefreshToken();
       redirectToLogin(toRoute);
-      return Promise.reject(error);
+      return Promise.reject(
+        new Error(getAxiosErrorServerMessage(error) || error.message)
+      );
     }
 
     console.error(error);
-    return Promise.reject(new Error(getErrorMessage(error.message)));
+    const serverMsg = getAxiosErrorServerMessage(error);
+    return Promise.reject(
+      new Error(serverMsg || getErrorMessage((error as Error).message))
+    );
   }
 );
 

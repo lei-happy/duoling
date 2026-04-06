@@ -6,6 +6,7 @@ import type { UserMenuResult } from '@/utils/menu-util';
 import { formatUserMenu } from '@/utils/menu-util';
 import defaultAvatarUrl from '@/assets/avatar.png';
 import type { User } from '@/api/system/user/model';
+import { resolveUploadUrl } from '@/utils/upload-url';
 import { getUserInfo } from '@/api/layout';
 import { useThemeStore } from './theme';
 import { cacheSetting } from '@/utils/theme-util';
@@ -90,7 +91,9 @@ export const useUserStore = defineStore('user', {
       if (data == null) {
         this.info = null;
       } else {
-        this.info = { ...data, avatar: data?.avatar || defaultAvatarUrl };
+        const avatar =
+          resolveUploadUrl(data?.avatar) || defaultAvatarUrl;
+        this.info = { ...data, avatar };
       }
     },
     /**

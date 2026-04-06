@@ -3,75 +3,34 @@
     <div class="user-wrapper">
       <user-card :data="loginUser" @done="updateLoginUser" class="user-side" />
       <ele-card
-        :header-style="{ padding: '0 24px' }"
-        :body-style="{ padding: 0, minHeight: '462px' }"
+        :body-style="{ padding: '0', minHeight: '462px' }"
         class="user-body"
       >
         <template #header>
-          <ele-tabs
-            type="plain"
-            size="large"
-            :items="[
-              { name: 'info', label: '基本信息' },
-              { name: 'account', label: '账号绑定' }
-            ]"
-            :modelValue="active"
-            @update:modelValue="handleUpdateModelValue"
-          />
+          <ele-text size="md" style="font-weight: 500">基本信息</ele-text>
         </template>
-        <user-form
-          v-if="active === 'info'"
-          :data="loginUser"
-          @done="updateLoginUser"
-        />
-        <user-account v-if="active === 'account'" :data="loginUser" />
+        <user-form :data="loginUser" @done="updateLoginUser" />
       </ele-card>
     </div>
   </ele-page>
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, watch } from 'vue';
-  import { useRoute, useRouter } from 'vue-router';
+  import { computed } from 'vue';
   import { useUserStore } from '@/store/modules/user';
   import type { User } from '@/api/system/user/model';
   import UserCard from './components/user-card.vue';
   import UserForm from './components/user-form.vue';
-  import UserAccount from './components/user-account.vue';
-  const pagePath = '/user/profile';
 
   defineOptions({ name: 'UserProfile' });
 
-  const route = useRoute();
-  const { push } = useRouter();
-
   const userStore = useUserStore();
 
-  /** 选项卡选中 */
-  const active = ref('info');
-
-  /** 登录用户信息 */
   const loginUser = computed(() => userStore.info ?? {});
 
-  /** 修改登录用户信息 */
   const updateLoginUser = (data: User) => {
     userStore.setInfo({ ...loginUser.value, ...data });
   };
-
-  /** 切换选项卡 */
-  const handleUpdateModelValue = (modelValue: string) => {
-    push({ path: pagePath, query: { type: modelValue } });
-  };
-
-  watch(
-    () => route.query.type,
-    (type) => {
-      if (route.path === pagePath) {
-        active.value = [type].flat()[0] || 'info';
-      }
-    },
-    { immediate: true }
-  );
 </script>
 
 <style lang="scss" scoped>

@@ -28,7 +28,7 @@ from app.modules.console.schemas.auth.auth import (
     TenantOption, MultiTenantResponse,
     ChangePasswordRequest, RefreshTokenRequest, RefreshTokenResponse,
     UserInfoOut, UserRoleOut, UserMenuOut,
-    UpdateThemeConfigRequest, SwitchTenantRequest,
+    UpdateProfileRequest, UpdateThemeConfigRequest, SwitchTenantRequest,
 )
 
 
@@ -768,3 +768,68 @@ class AuthService:
 
         user.theme_config = request.themeConfig
         await db.commit()
+
+    # ============================================================
+    # 个人资料更新（/auth/user 使用）
+    # ============================================================
+
+    @staticmethod
+    async def update_profile(
+        db: AsyncSession,
+        user_id: int,
+        request: UpdateProfileRequest,
+        tenant_db: Optional[AsyncSession] = None,
+    ) -> dict:
+        """
+        更新个人资料，同步更新平台库 sys_user 和租户库 biz_user
+        """
+        from app.modules.client.models.user.biz_user import BizUser
+
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == 0)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise AuthException("用户不存在")
+
+        gender_map = {"男": 1, "女": 2}
+
+        if request.nickname is not None:
+            user.real_name = request.nickname
+        if request.email is not None:
+            user.email = request.email
+        if request.avatar is not None:
+            user.avatar = request.avatar
+        if request.sex is not None:
+            user.gender = gender_map.get(request.sex, 0)
+
+        await db.commit()
+        await db.refresh(user)
+
+        if tenant_db:
+            biz_result = await tenant_db.execute(
+                select(BizUser).where(
+                    BizUser.phone == user.phone,
+                    BizUser.is_deleted == 0,
+                )
+            )
+            biz_user = biz_result.scalar_one_or_none()
+            if biz_user:
+                if request.nickname is not None:
+                    biz_user.nickname = request.nickname
+                    biz_user.real_name = request.nickname
+                if request.email is not None:
+                    biz_user.email = request.email
+                if request.avatar is not None:
+                    biz_user.avatar = request.avatar
+                if request.sex is not None:
+                    biz_user.gender = gender_map.get(request.sex, 0)
+                await tenant_db.commit()
+
+        gender_reverse = {0: None, 1: "男", 2: "女"}
+        return {
+            "nickname": user.real_name,
+            "email": user.email,
+            "avatar": user.avatar,
+            "sex": gender_reverse.get(user.gender),
+        }
