@@ -322,6 +322,18 @@ class TenantService:
         except Exception as e:
             logger.warning(f"租户 {tenant_code} 地区数据同步失败（非致命）: {e}")
 
+        # 同步品牌/车系/经销商（平台 basicdata_* → 租户 biz_*）
+        try:
+            if on_progress:
+                await on_progress(
+                    "vehicle_basic_sync", "同步车辆与经销商基础数据", 62
+                )
+            await TenantService._sync_vehicle_basicdata(tenant_code)
+        except Exception as e:
+            logger.warning(
+                f"租户 {tenant_code} 车辆/经销商基础数据同步失败（非致命）: {e}"
+            )
+
     @staticmethod
     async def _sync_region_data(tenant_code: str) -> None:
         """从平台 sys_regions 同步地区数据到租户库 biz_region"""
@@ -414,6 +426,85 @@ class TenantService:
             await conn.execute(text(insert_sql))
 
         logger.info(f"租户 {tenant_code} 地区数据已从平台同步")
+
+    @staticmethod
+    async def _sync_vehicle_basicdata(tenant_code: str) -> None:
+        """从平台 basicdata_brand / basicdata_car_series / basicdata_dealer_info
+        同步到租户 biz_vehicle_brand / biz_vehicle_series / biz_dealer
+        """
+        settings = get_settings()
+        platform_db = settings.platform_database_name
+        engine = db_manager._get_or_create_tenant_engine(tenant_code)
+
+        async with engine.begin() as conn:
+            async def _count(table: str) -> int:
+                try:
+                    r = await conn.execute(text(f"SELECT COUNT(*) FROM `{table}`"))
+                    return int(r.scalar() or 0)
+                except Exception:
+                    return -1
+
+            brand_cnt = await _count("biz_vehicle_brand")
+            if brand_cnt < 0:
+                logger.warning(
+                    f"租户 {tenant_code} 无 biz_vehicle_brand 表，跳过车辆基础数据同步"
+                )
+                return
+
+            if brand_cnt == 0:
+                await conn.execute(
+                    text(
+                        f"INSERT INTO biz_vehicle_brand ("
+                        f"brand_id, brand_logo, brand_name_cn, brand_country, "
+                        f"brand_introduce, create_time, last_update_time) "
+                        f"SELECT brand_id, brand_logo, brand_name_cn, brand_country, "
+                        f"brand_introduce, create_time, last_update_time "
+                        f"FROM `{platform_db}`.basicdata_brand"
+                    )
+                )
+                logger.info(f"租户 {tenant_code} 品牌数据已从平台同步")
+            else:
+                logger.info(
+                    f"租户 {tenant_code} biz_vehicle_brand 已有数据，跳过品牌同步"
+                )
+
+            if await _count("biz_vehicle_series") == 0:
+                await conn.execute(
+                    text(
+                        f"INSERT INTO biz_vehicle_series ("
+                        f"series_id, brand_id, price, series_image, series_name, "
+                        f"energy_type, length_mm, width_mm, height_mm, wheelbase_mm, "
+                        f"front_track_mm, rear_track_mm, approach_angle, "
+                        f"departure_angle, curb_weight_kg, create_time, last_update_time) "
+                        f"SELECT series_id, brand_id, price, series_image, series_name, "
+                        f"energy_type, length_mm, width_mm, height_mm, wheelbase_mm, "
+                        f"front_track_mm, rear_track_mm, approach_angle, "
+                        f"departure_angle, curb_weight_kg, create_time, last_update_time "
+                        f"FROM `{platform_db}`.basicdata_car_series"
+                    )
+                )
+                logger.info(f"租户 {tenant_code} 车系数据已从平台同步")
+            else:
+                logger.info(
+                    f"租户 {tenant_code} biz_vehicle_series 已有数据，跳过车系同步"
+                )
+
+            if await _count("biz_dealer") == 0:
+                await conn.execute(
+                    text(
+                        f"INSERT INTO biz_dealer ("
+                        f"dealer_id, dealer_name, dealer_type, main_brand, "
+                        f"province, city, address_detail, longitude, latitude, "
+                        f"created_at, updated_at) "
+                        f"SELECT dealer_id, dealer_name, dealer_type, main_brand, "
+                        f"province, city, address_detail, longitude, latitude, "
+                        f"created_at, updated_at "
+                        f"FROM `{platform_db}`.basicdata_dealer_info"
+                    )
+                )
+                logger.info(f"租户 {tenant_code} 经销商数据已从平台同步")
+            else:
+                logger.info(f"租户 {tenant_code} biz_dealer 已有数据，跳过经销商同步")
 
     @staticmethod
     async def page_tenants(

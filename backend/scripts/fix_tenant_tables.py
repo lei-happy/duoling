@@ -72,6 +72,7 @@ def fix_tenant_database(tenant_code: str, settings):
         _seed_departments(conn, existing_tables)
         _seed_admin_user(conn, tenant_code, existing_tables)
         _sync_regions(conn, tenant_code, settings)
+        _sync_vehicle_basicdata(conn, settings)
         conn.commit()
 
     engine.dispose()
@@ -221,6 +222,75 @@ def _sync_regions(conn, tenant_code, settings):
         print("  已同步地区数据")
     except Exception as e:
         print(f"  地区数据同步失败: {e}")
+
+
+def _sync_vehicle_basicdata(conn, settings):
+    """从平台 basicdata_* 同步品牌/车系/经销商到租户库"""
+    platform_db = settings.platform_database_name
+
+    def _safe_count(sql: str):
+        try:
+            return conn.execute(text(sql)).scalar() or 0
+        except Exception:
+            return -1
+
+    if _safe_count("SELECT COUNT(*) FROM biz_vehicle_brand") < 0:
+        print("  biz_vehicle_brand 不存在，跳过车辆/经销商基础同步")
+        return
+
+    if _safe_count("SELECT COUNT(*) FROM biz_vehicle_brand") == 0:
+        try:
+            conn.execute(text(
+                f"INSERT INTO biz_vehicle_brand ("
+                f"brand_id, brand_logo, brand_name_cn, brand_country, "
+                f"brand_introduce, create_time, last_update_time) "
+                f"SELECT brand_id, brand_logo, brand_name_cn, brand_country, "
+                f"brand_introduce, create_time, last_update_time "
+                f"FROM `{platform_db}`.basicdata_brand"
+            ))
+            print("  已同步品牌数据")
+        except Exception as e:
+            print(f"  品牌同步失败: {e}")
+    else:
+        print("  biz_vehicle_brand 已有数据，跳过品牌同步")
+
+    if _safe_count("SELECT COUNT(*) FROM biz_vehicle_series") == 0:
+        try:
+            conn.execute(text(
+                f"INSERT INTO biz_vehicle_series ("
+                f"series_id, brand_id, price, series_image, series_name, "
+                f"energy_type, length_mm, width_mm, height_mm, wheelbase_mm, "
+                f"front_track_mm, rear_track_mm, approach_angle, "
+                f"departure_angle, curb_weight_kg, create_time, last_update_time) "
+                f"SELECT series_id, brand_id, price, series_image, series_name, "
+                f"energy_type, length_mm, width_mm, height_mm, wheelbase_mm, "
+                f"front_track_mm, rear_track_mm, approach_angle, "
+                f"departure_angle, curb_weight_kg, create_time, last_update_time "
+                f"FROM `{platform_db}`.basicdata_car_series"
+            ))
+            print("  已同步车系数据")
+        except Exception as e:
+            print(f"  车系同步失败: {e}")
+    else:
+        print("  biz_vehicle_series 已有数据，跳过车系同步")
+
+    if _safe_count("SELECT COUNT(*) FROM biz_dealer") == 0:
+        try:
+            conn.execute(text(
+                f"INSERT INTO biz_dealer ("
+                f"dealer_id, dealer_name, dealer_type, main_brand, "
+                f"province, city, address_detail, longitude, latitude, "
+                f"created_at, updated_at) "
+                f"SELECT dealer_id, dealer_name, dealer_type, main_brand, "
+                f"province, city, address_detail, longitude, latitude, "
+                f"created_at, updated_at "
+                f"FROM `{platform_db}`.basicdata_dealer_info"
+            ))
+            print("  已同步经销商数据")
+        except Exception as e:
+            print(f"  经销商同步失败: {e}")
+    else:
+        print("  biz_dealer 已有数据，跳过经销商同步")
 
 
 if __name__ == "__main__":

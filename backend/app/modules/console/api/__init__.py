@@ -21,11 +21,18 @@ from app.modules.console.api.product.client_menu import router as client_menu_ro
 from app.modules.console.api.sms import router as sms_code_router
 from app.modules.console.api.log_center import router as log_center_router
 from app.modules.console.api.region import router as region_router
+from app.modules.console.api.basicdata import (
+    vehicle_brand_router,
+    vehicle_series_router,
+    dealer_router,
+)
 from app.modules.console.api.workbench.todo import router as workbench_todo_router
+from app.modules.console.api.file import router as file_router
 
 router = APIRouter()
 
 router.include_router(auth_router, prefix="/auth", tags=["管理后台-认证"])
+router.include_router(file_router, prefix="/file", tags=["管理后台-文件上传"])
 router.include_router(tenant_router, prefix="/tenant", tags=["管理后台-租户管理"])
 router.include_router(menu_router, prefix="/system/menu", tags=["菜单管理"])
 router.include_router(user_router, prefix="/system/user", tags=["用户管理"])
@@ -41,4 +48,11 @@ router.include_router(client_menu_router, prefix="/system/client-menu", tags=["�
 router.include_router(sms_code_router, prefix="/system/sms-code", tags=["短信验证码"])
 router.include_router(log_center_router, prefix="/log-center", tags=["日志中心"])
 router.include_router(region_router, prefix="/basic-data/region", tags=["管理后台-地区数据"])
+router.include_router(
+    vehicle_brand_router, prefix="/basic-data/vehicle-brand", tags=["管理后台-品牌"]
+)
+router.include_router(
+    vehicle_series_router, prefix="/basic-data/vehicle-series", tags=["管理后台-车系"]
+)
+router.include_router(dealer_router, prefix="/basic-data/dealer", tags=["管理后台-经销商"])
 router.include_router(workbench_todo_router, prefix="/workbench/todo", tags=["管理后台-待办查询"])

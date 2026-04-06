@@ -1,6 +1,5 @@
 """
-文件上传接口
-按场景目录管理上传文件（用户头像、运单照片等）
+管理后台文件上传（与客户端共用落盘规则与场景）
 """
 
 from fastapi import APIRouter, Depends, UploadFile, File, Form
@@ -19,11 +18,6 @@ async def upload_file(
     scene: str = Form(default="avatar"),
     _: TokenData = Depends(get_current_user),
 ):
-    """
-    上传文件到指定场景目录
-    - scene: 场景标识，决定存储子目录
-    - 返回文件的相对访问路径
-    """
     content = await file.read()
     original_name = file.filename or "unknown"
     data = save_scene_image(content, scene, original_name)

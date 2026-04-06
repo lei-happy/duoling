@@ -119,6 +119,18 @@ def seed_platform_data():
                      component="/basic_data/regional_data/index",
                      icon="EnvironmentOutlined",
                      sort_order=0, app_type="platform"),
+                Menu(parent_id=basic_data_menu.id, menu_name="品牌与车系",
+                     menu_code="basic_data:vehicle_brand_series", menu_type=0,
+                     path="/basic_data/brand_series",
+                     component="/basic_data/brand_series/index",
+                     icon="CarOutlined",
+                     sort_order=5, app_type="platform"),
+                Menu(parent_id=basic_data_menu.id, menu_name="经销商门店",
+                     menu_code="basic_data:dealer", menu_type=0,
+                     path="/basic_data/dealer",
+                     component="/basic_data/dealer/index",
+                     icon="ShopOutlined",
+                     sort_order=10, app_type="platform"),
                 # 客户运营中心子菜单
                 Menu(parent_id=customer_menu.id, menu_name="试用期客户",
                      menu_code="customer:trial", menu_type=0,
@@ -341,6 +353,45 @@ def seed_platform_data():
                 if role_admin:
                     session.add(RoleMenu(role_id=role_admin.id, menu_id=region_menu.id))
                 print("[OK] 地区数据菜单已补充")
+
+            brand_series_menu = session.query(Menu).filter_by(
+                menu_code="basic_data:vehicle_brand_series",
+                app_type="platform", is_deleted=0
+            ).first()
+            if basic_data_menu and not brand_series_menu:
+                brand_series_menu = Menu(
+                    parent_id=basic_data_menu.id, menu_name="品牌与车系",
+                    menu_code="basic_data:vehicle_brand_series", menu_type=0,
+                    path="/basic_data/brand_series",
+                    component="/basic_data/brand_series/index",
+                    icon="CarOutlined", sort_order=5, app_type="platform",
+                )
+                session.add(brand_series_menu)
+                session.flush()
+                all_menus.append(brand_series_menu)
+                if role_admin:
+                    session.add(
+                        RoleMenu(role_id=role_admin.id, menu_id=brand_series_menu.id)
+                    )
+                print("[OK] 品牌与车系菜单已补充")
+
+            dealer_menu = session.query(Menu).filter_by(
+                menu_code="basic_data:dealer", app_type="platform", is_deleted=0
+            ).first()
+            if basic_data_menu and not dealer_menu:
+                dealer_menu = Menu(
+                    parent_id=basic_data_menu.id, menu_name="经销商门店",
+                    menu_code="basic_data:dealer", menu_type=0,
+                    path="/basic_data/dealer",
+                    component="/basic_data/dealer/index",
+                    icon="ShopOutlined", sort_order=10, app_type="platform",
+                )
+                session.add(dealer_menu)
+                session.flush()
+                all_menus.append(dealer_menu)
+                if role_admin:
+                    session.add(RoleMenu(role_id=role_admin.id, menu_id=dealer_menu.id))
+                print("[OK] 经销商门店菜单已补充")
 
         # ---- 4. 角色-菜单关联（super_admin 关联所有平台菜单）----
         existing_role_menu = session.query(RoleMenu).filter_by(

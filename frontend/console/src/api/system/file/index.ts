@@ -3,20 +3,31 @@ import type { ApiResult, PageResult } from '@/api';
 import type { FileRecord, FileRecordParam } from './model';
 import type { AxiosRequestConfig } from 'axios';
 
+/** 与后端上传接口 data 一致：相对路径 url */
+export interface UploadResult {
+  url: string;
+  name?: string;
+}
+
 /**
  * 上传文件
  * @param file 文件
  * @param config 请求配置
  * @param fileName 文件名称
+ * @param scene 场景目录，与后端 ALLOWED_SCENES 一致，默认 avatar
  */
 export async function uploadFile(
   file: File,
   config?: AxiosRequestConfig,
-  fileName?: string
+  fileName?: string,
+  scene?: string
 ) {
   const formData = new FormData();
   formData.append('file', file, fileName);
-  const res = await request.post<ApiResult<FileRecord>>(
+  if (scene) {
+    formData.append('scene', scene);
+  }
+  const res = await request.post<ApiResult<UploadResult>>(
     '/file/upload',
     formData,
     config

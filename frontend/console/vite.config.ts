@@ -83,6 +83,11 @@ export default defineConfig(({ /* command, */ mode }) => {
         target: `${openTarget.protocol}//${openTarget.host}`,
         changeOrigin: true
       };
+      // 后端根路径挂载 /uploads，控制台上传图片预览需同域代理
+      proxy['/uploads'] = {
+        target: `${openTarget.protocol}//${openTarget.host}`,
+        changeOrigin: true
+      };
     } catch {
       /* ignore */
     }

@@ -398,6 +398,68 @@ def step7_seed_tenant_data():
     except Exception as e:
         print(f"[WARN] 地区数据同步失败（非致命）: {e}")
 
+    # 同步品牌/车系/经销商（与 TenantService._sync_vehicle_basicdata 一致）
+    try:
+        platform_db = settings.platform_database_name
+
+        def _cnt_brand(c):
+            try:
+                return c.execute(text("SELECT COUNT(*) FROM biz_vehicle_brand")).scalar() or 0
+            except Exception:
+                return -1
+
+        with tenant_engine.begin() as tconn:
+            bc = _cnt_brand(tconn)
+            if bc < 0:
+                print("[SKIP] 租户库无 biz_vehicle_brand 表，跳过车辆/经销商基础同步")
+            else:
+                if bc == 0:
+                    tconn.execute(text(
+                        f"INSERT INTO biz_vehicle_brand ("
+                        f"brand_id, brand_logo, brand_name_cn, brand_country, "
+                        f"brand_introduce, create_time, last_update_time) "
+                        f"SELECT brand_id, brand_logo, brand_name_cn, brand_country, "
+                        f"brand_introduce, create_time, last_update_time "
+                        f"FROM `{platform_db}`.basicdata_brand"
+                    ))
+                    print("[OK] 品牌数据已从平台同步")
+                else:
+                    print("[SKIP] 品牌数据已存在")
+                sc = tconn.execute(text("SELECT COUNT(*) FROM biz_vehicle_series")).scalar() or 0
+                if sc == 0:
+                    tconn.execute(text(
+                        f"INSERT INTO biz_vehicle_series ("
+                        f"series_id, brand_id, price, series_image, series_name, "
+                        f"energy_type, length_mm, width_mm, height_mm, wheelbase_mm, "
+                        f"front_track_mm, rear_track_mm, approach_angle, "
+                        f"departure_angle, curb_weight_kg, create_time, last_update_time) "
+                        f"SELECT series_id, brand_id, price, series_image, series_name, "
+                        f"energy_type, length_mm, width_mm, height_mm, wheelbase_mm, "
+                        f"front_track_mm, rear_track_mm, approach_angle, "
+                        f"departure_angle, curb_weight_kg, create_time, last_update_time "
+                        f"FROM `{platform_db}`.basicdata_car_series"
+                    ))
+                    print("[OK] 车系数据已从平台同步")
+                else:
+                    print("[SKIP] 车系数据已存在")
+                dc = tconn.execute(text("SELECT COUNT(*) FROM biz_dealer")).scalar() or 0
+                if dc == 0:
+                    tconn.execute(text(
+                        f"INSERT INTO biz_dealer ("
+                        f"dealer_id, dealer_name, dealer_type, main_brand, "
+                        f"province, city, address_detail, longitude, latitude, "
+                        f"created_at, updated_at) "
+                        f"SELECT dealer_id, dealer_name, dealer_type, main_brand, "
+                        f"province, city, address_detail, longitude, latitude, "
+                        f"created_at, updated_at "
+                        f"FROM `{platform_db}`.basicdata_dealer_info"
+                    ))
+                    print("[OK] 经销商数据已从平台同步")
+                else:
+                    print("[SKIP] 经销商数据已存在")
+    except Exception as e:
+        print(f"[WARN] 车辆/经销商基础数据同步失败（非致命）: {e}")
+
     platform_engine.dispose()
     tenant_engine.dispose()
 
