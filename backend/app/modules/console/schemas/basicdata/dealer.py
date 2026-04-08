@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict
 class DealerCreate(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
+    autohomeDealerId: Optional[int] = None
     dealerName: str
     dealerType: str
     mainBrand: str
@@ -38,6 +39,7 @@ class DealerOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     dealerId: int
+    autohomeDealerId: Optional[int] = None
     dealerName: str
     dealerType: str
     mainBrand: str
@@ -53,6 +55,7 @@ class DealerOut(BaseModel):
     def from_model(cls, m) -> "DealerOut":
         return cls(
             dealerId=int(m.dealer_id),
+            autohomeDealerId=m.autohome_dealer_id,
             dealerName=m.dealer_name,
             dealerType=m.dealer_type,
             mainBrand=m.main_brand,

@@ -3,6 +3,7 @@
 --说明：汽车经销商信息表
 CREATE TABLE `basicdata_dealer_info` (
   `dealer_id` bigint NOT NULL AUTO_INCREMENT COMMENT '经销商ID，主键，自增',
+  `autohome_dealer_id` int DEFAULT NULL COMMENT '汽车之家经销商ID',
   `dealer_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '经销商名称',
   `dealer_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '经销商类型（例如4S店、二级经销商等）',
   `main_brand` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '主营品牌',
@@ -13,5 +14,6 @@ CREATE TABLE `basicdata_dealer_info` (
   `latitude` decimal(10,6) DEFAULT NULL COMMENT '维度坐标',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`dealer_id`) USING BTREE
+  PRIMARY KEY (`dealer_id`) USING BTREE,
+  UNIQUE KEY `uk_autohome_dealer_id` (`autohome_dealer_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4877 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='汽车经销商信息表';

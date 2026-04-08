@@ -6,7 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from sqlalchemy import String, BigInteger, DateTime, Numeric, func
+from sqlalchemy import Integer, String, BigInteger, DateTime, Numeric, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import PlatformBase
@@ -18,6 +18,9 @@ class BasicdataDealerInfo(PlatformBase):
 
     dealer_id: Mapped[int] = mapped_column(
         BigInteger, primary_key=True, autoincrement=True, comment="经销商ID"
+    )
+    autohome_dealer_id: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True, unique=True, comment="汽车之家经销商ID"
     )
     dealer_name: Mapped[str] = mapped_column(String(100), nullable=False)
     dealer_type: Mapped[str] = mapped_column(String(50), nullable=False)

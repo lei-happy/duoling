@@ -149,6 +149,12 @@ def seed_platform_data():
                      component="/data_sync/autohome/index",
                      icon="CarOutlined",
                      sort_order=0, app_type="platform"),
+                Menu(parent_id=data_sync_menu.id, menu_name="经销商数据同步",
+                     menu_code="data_sync:dealer", menu_type=0,
+                     path="/data_sync/dealer",
+                     component="/data_sync/dealer/index",
+                     icon="ShopOutlined",
+                     sort_order=5, app_type="platform"),
                 # 客户运营中心子菜单
                 Menu(parent_id=customer_menu.id, menu_name="试用期客户",
                      menu_code="customer:trial", menu_type=0,
@@ -454,6 +460,26 @@ def seed_platform_data():
                         RoleMenu(role_id=role_admin.id, menu_id=autohome_menu.id)
                     )
                 print("[OK] 汽车之家同步菜单已补充")
+
+            dealer_sync_menu = session.query(Menu).filter_by(
+                menu_code="data_sync:dealer", app_type="platform", is_deleted=0
+            ).first()
+            if data_sync_root and not dealer_sync_menu:
+                dealer_sync_menu = Menu(
+                    parent_id=data_sync_root.id, menu_name="经销商数据同步",
+                    menu_code="data_sync:dealer", menu_type=0,
+                    path="/data_sync/dealer",
+                    component="/data_sync/dealer/index",
+                    icon="ShopOutlined", sort_order=5, app_type="platform",
+                )
+                session.add(dealer_sync_menu)
+                session.flush()
+                all_menus.append(dealer_sync_menu)
+                if role_admin:
+                    session.add(
+                        RoleMenu(role_id=role_admin.id, menu_id=dealer_sync_menu.id)
+                    )
+                print("[OK] 经销商数据同步菜单已补充")
 
         # ---- 4. 角色-菜单关联（super_admin 关联所有平台菜单）----
         existing_role_menu = session.query(RoleMenu).filter_by(
