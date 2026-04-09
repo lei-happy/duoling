@@ -2,6 +2,7 @@
 企业自助注册服务（异步任务 + 进度）
 """
 
+import asyncio
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional
@@ -202,6 +203,8 @@ class RegisterService:
         if data is None:
             return
 
+        _STEP_DISPLAY_SECONDS = 1.5
+
         async def on_progress(step_key: str, message: str, percent: int) -> None:
             await RegisterService._update_task_fields(
                 task_id,
@@ -210,6 +213,8 @@ class RegisterService:
                 message=message,
                 percent=percent,
             )
+            if step_key != "done":
+                await asyncio.sleep(_STEP_DISPLAY_SECONDS)
 
         source_channel = "referral" if data.referrer_code else "website"
         tenant_data = TenantCreate(

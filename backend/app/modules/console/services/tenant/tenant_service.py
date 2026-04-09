@@ -157,14 +157,14 @@ class TenantService:
         )
         db.add(tenant)
         await db.flush()
-        await _emit("tenant_record", "创建企业信息", 15)
+        await _emit("tenant_record", "创建企业信息", 10)
 
         # 创建租户独立数据库（仅 core 层表）
         try:
             import app.modules.client.models  # noqa: F401
-            await _emit("tenant_database", "初始化数据库结构", 28)
+            await _emit("tenant_database", "初始化独立数据库", 25)
             await db_manager.create_tenant_database(tenant_code)
-            await _emit("seed_data", "初始化基础数据（角色、部门、字典）", 42)
+            await _emit("seed_data", "初始化组织架构与角色", 40)
             await TenantService._init_tenant_seed_data(
                 tenant_code,
                 admin_name=data.contactPerson or "管理员",
@@ -178,7 +178,7 @@ class TenantService:
             tenant.db_initialized = 0
 
         # ---- 管理员账号：按手机号查找已有用户 ----
-        await _emit("admin_binding", "关联管理员账号与产品授权", 78)
+        await _emit("admin_binding", "配置管理员账号", 85)
         is_existing_user = False
         admin_user = None
 
@@ -399,21 +399,29 @@ class TenantService:
         # 同步地区数据（从平台 sys_regions 到租户 biz_region）
         try:
             if on_progress:
-                await on_progress("region_sync", "同步地区数据", 58)
+                await on_progress("region_sync", "初始化地区数据", 52)
             await TenantService._sync_region_data(tenant_code)
         except Exception as e:
             logger.warning(f"租户 {tenant_code} 地区数据同步失败（非致命）: {e}")
 
-        # 同步品牌/车系/经销商（平台 basicdata_* → 租户 biz_*）
+        # 同步品牌/车系（平台 basicdata_brand / basicdata_car_series → 租户）
         try:
             if on_progress:
-                await on_progress(
-                    "vehicle_basic_sync", "同步车辆与经销商基础数据", 62
-                )
-            await TenantService._sync_vehicle_basicdata(tenant_code)
+                await on_progress("vehicle_sync", "初始化车型数据", 65)
+            await TenantService._sync_vehicle_brand_series(tenant_code)
         except Exception as e:
             logger.warning(
-                f"租户 {tenant_code} 车辆/经销商基础数据同步失败（非致命）: {e}"
+                f"租户 {tenant_code} 车型基础数据同步失败（非致命）: {e}"
+            )
+
+        # 同步经销商（平台 basicdata_dealer_info → 租户 biz_dealer）
+        try:
+            if on_progress:
+                await on_progress("dealer_sync", "初始化经销商数据", 72)
+            await TenantService._sync_dealer_data(tenant_code)
+        except Exception as e:
+            logger.warning(
+                f"租户 {tenant_code} 经销商数据同步失败（非致命）: {e}"
             )
 
     @staticmethod
@@ -494,10 +502,13 @@ class TenantService:
             target_cols.append("source")
             source_exprs.append("0")
 
-            # 构建 WHERE 条件：仅同步未删除的地区记录
-            where_clause = ""
+            # 构建 WHERE 条件：仅同步未删除的省/市/区三级数据
+            where_parts = []
             if "is_deleted" in source_cols:
-                where_clause = " WHERE `is_deleted` = 0"
+                where_parts.append("`is_deleted` = 0")
+            if "level" in source_cols:
+                where_parts.append("`level` <= 3")
+            where_clause = (" WHERE " + " AND ".join(where_parts)) if where_parts else ""
 
             insert_sql = (
                 f"INSERT INTO biz_region ({', '.join(target_cols)}) "
@@ -510,10 +521,8 @@ class TenantService:
         logger.info(f"租户 {tenant_code} 地区数据已从平台同步")
 
     @staticmethod
-    async def _sync_vehicle_basicdata(tenant_code: str) -> None:
-        """从平台 basicdata_brand / basicdata_car_series / basicdata_dealer_info
-        同步到租户 biz_vehicle_brand / biz_vehicle_series / biz_dealer
-        """
+    async def _sync_vehicle_brand_series(tenant_code: str) -> None:
+        """从平台 basicdata_brand / basicdata_car_series 同步到租户库"""
         settings = get_settings()
         platform_db = settings.platform_database_name
         engine = db_manager._get_or_create_tenant_engine(tenant_code)
@@ -529,7 +538,7 @@ class TenantService:
             brand_cnt = await _count("biz_vehicle_brand")
             if brand_cnt < 0:
                 logger.warning(
-                    f"租户 {tenant_code} 无 biz_vehicle_brand 表，跳过车辆基础数据同步"
+                    f"租户 {tenant_code} 无 biz_vehicle_brand 表，跳过车型数据同步"
                 )
                 return
 
@@ -571,7 +580,24 @@ class TenantService:
                     f"租户 {tenant_code} biz_vehicle_series 已有数据，跳过车系同步"
                 )
 
-            if await _count("biz_dealer") == 0:
+    @staticmethod
+    async def _sync_dealer_data(tenant_code: str) -> None:
+        """从平台 basicdata_dealer_info 同步到租户 biz_dealer"""
+        settings = get_settings()
+        platform_db = settings.platform_database_name
+        engine = db_manager._get_or_create_tenant_engine(tenant_code)
+
+        async with engine.begin() as conn:
+            try:
+                r = await conn.execute(text("SELECT COUNT(*) FROM `biz_dealer`"))
+                dealer_cnt = int(r.scalar() or 0)
+            except Exception:
+                logger.warning(
+                    f"租户 {tenant_code} 无 biz_dealer 表，跳过经销商数据同步"
+                )
+                return
+
+            if dealer_cnt == 0:
                 await conn.execute(
                     text(
                         f"INSERT INTO biz_dealer ("

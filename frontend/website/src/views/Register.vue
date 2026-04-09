@@ -148,21 +148,77 @@
         <!-- 开户进度（不可关闭，直至成功或失败） -->
         <el-dialog
           v-model="showProgress"
-          title="正在开通企业账号"
-          width="460px"
+          title=""
+          width="720px"
           :show-close="false"
           :close-on-press-escape="false"
           :close-on-click-modal="false"
           class="progress-dialog"
+          :body-style="{ padding: '0px' }"
         >
-          <div class="progress-content">
-            <p class="progress-hint">{{ progressMessage }}</p>
-            <el-progress
-              :percentage="Math.min(100, Math.max(0, progressPercent))"
-              :stroke-width="10"
-              striped
-              striped-flow
-            />
+          <div class="progress-layout">
+            <div class="progress-brand">
+              <div class="pb-carousel">
+                <transition name="pb-slide" mode="out-in">
+                  <div class="pb-slide" :key="carouselIdx">
+                    <div class="pb-slide-num">0{{ carouselIdx + 1 }}</div>
+                    <h3 class="pb-slide-title">{{ BRAND_FEATURES[carouselIdx].title }}</h3>
+                    <p class="pb-slide-desc">{{ BRAND_FEATURES[carouselIdx].desc }}</p>
+                    <ul class="pb-slide-highlights">
+                      <li v-for="kw in BRAND_FEATURES[carouselIdx].keywords" :key="kw">
+                        {{ kw }}
+                      </li>
+                    </ul>
+                  </div>
+                </transition>
+                <div class="pb-dots">
+                  <span
+                    v-for="(_, i) in BRAND_FEATURES"
+                    :key="i"
+                    class="pb-dot"
+                    :class="{ active: i === carouselIdx }"
+                  ></span>
+                </div>
+              </div>
+            </div>
+            <div class="progress-main">
+              <h3 class="pm-title">正在开通企业账号</h3>
+              <p class="pm-subtitle">系统正在为您初始化专属环境</p>
+              <div class="step-list">
+                <div
+                  v-for="(step, idx) in INIT_STEPS"
+                  :key="step.key"
+                  class="step-item"
+                  :class="stepClass(idx)"
+                >
+                  <div class="step-connector" v-if="idx > 0"></div>
+                  <div class="step-icon-area">
+                    <template v-if="idx < currentStepIndex">
+                      <el-icon :size="12"><Check /></el-icon>
+                    </template>
+                    <template v-else-if="idx === currentStepIndex">
+                      <el-progress
+                        type="circle"
+                        :percentage="stepSubPercent"
+                        :width="30"
+                        :stroke-width="3"
+                        color="var(--color-primary, #409eff)"
+                      >
+                        <template #default>
+                          <span class="circle-pct">{{ stepSubPercent }}%</span>
+                        </template>
+                      </el-progress>
+                    </template>
+                    <template v-else>
+                      <span class="step-num">{{ idx + 1 }}</span>
+                    </template>
+                  </div>
+                  <div class="step-text">
+                    <span class="step-title">{{ step.title }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </el-dialog>
 
@@ -208,7 +264,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -216,6 +272,7 @@ import {
   OfficeBuilding,
   User,
   Phone,
+  Check,
 } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
@@ -237,18 +294,103 @@ const referrerCode = ref<string | undefined>(
   (route.query.ref as string) || undefined
 )
 
+const BRAND_FEATURES = [
+  {
+    title: 'AI 助理集成业务过程',
+    desc: '将 AI 深度融入整车运输全流程，从订单匹配、板车调度到在途异常处理，全天候智能决策。',
+    keywords: ['智能调度', '异常识别', '配载优化'],
+  },
+  {
+    title: '业务全链路在线管理',
+    desc: '从主机厂下发指令到经销商验车签收，整车运输全链路在线化，多方实时协同。',
+    keywords: ['全流程', '实时协同', '无纸化'],
+  },
+  {
+    title: '运营成本实时在线',
+    desc: '油费、路桥费、维修费等成本实时归集到每票运单、每台板车，利润透视一目了然。',
+    keywords: ['费用管控', '异常预警', '利润透视'],
+  },
+  {
+    title: '智能 BI 报表',
+    desc: '自动生成运营分析报表，从运量趋势到客户贡献，多维度数据钻取，告别手工统计。',
+    keywords: ['数据看板', '多维分析', '决策支持'],
+  },
+  {
+    title: '移动办公更快捷高效',
+    desc: '手机端随时处理运输业务，司机在线接单、管理者随时审批，打破时间空间限制。',
+    keywords: ['随时随地', '移动协同', '效率翻倍'],
+  },
+]
+
+const carouselIdx = ref(0)
+let carouselTimer: ReturnType<typeof setInterval> | null = null
+
+function startCarousel() {
+  stopCarousel()
+  carouselTimer = setInterval(() => {
+    carouselIdx.value = (carouselIdx.value + 1) % BRAND_FEATURES.length
+  }, 3500)
+}
+
+function stopCarousel() {
+  if (carouselTimer) {
+    clearInterval(carouselTimer)
+    carouselTimer = null
+  }
+}
+
+const INIT_STEPS = [
+  { key: 'tenant_record', title: '创建企业信息', rangeStart: 0, rangeEnd: 10 },
+  { key: 'tenant_database', title: '初始化独立数据库', rangeStart: 10, rangeEnd: 25 },
+  { key: 'seed_data', title: '初始化组织架构与角色', rangeStart: 25, rangeEnd: 40 },
+  { key: 'region_sync', title: '初始化地区数据', rangeStart: 40, rangeEnd: 52 },
+  { key: 'vehicle_sync', title: '初始化车型数据', rangeStart: 52, rangeEnd: 65 },
+  { key: 'dealer_sync', title: '初始化经销商数据', rangeStart: 65, rangeEnd: 72 },
+  { key: 'admin_binding', title: '配置管理员账号', rangeStart: 72, rangeEnd: 100 },
+]
+
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const showProgress = ref(false)
 const progressMessage = ref('正在提交…')
 const progressPercent = ref(0)
+const currentStepKey = ref('')
 const showSuccess = ref(false)
+
+watch(showProgress, (v) => {
+  if (v) {
+    carouselIdx.value = 0
+    startCarousel()
+  } else {
+    stopCarousel()
+  }
+})
 const isExistingUser = ref(false)
 const phoneRegistered = ref(false)
 const smsCooldown = ref(0)
 let smsCooldownTimer: ReturnType<typeof setInterval> | null = null
 
 const POLL_INTERVAL_MS = 1500
+
+const currentStepIndex = computed(() => {
+  const idx = INIT_STEPS.findIndex(s => s.key === currentStepKey.value)
+  return idx >= 0 ? idx : 0
+})
+
+const stepSubPercent = computed(() => {
+  const step = INIT_STEPS[currentStepIndex.value]
+  if (!step) return 0
+  const range = step.rangeEnd - step.rangeStart
+  if (range <= 0) return 0
+  const pct = ((progressPercent.value - step.rangeStart) / range) * 100
+  return Math.min(100, Math.max(0, Math.round(pct)))
+})
+
+function stepClass(idx: number) {
+  if (idx < currentStepIndex.value) return 'is-done'
+  if (idx === currentStepIndex.value) return 'is-active'
+  return 'is-wait'
+}
 
 const form = reactive({
   tenant_name: '',
@@ -320,6 +462,7 @@ function startSmsCooldown() {
 
 onUnmounted(() => {
   if (smsCooldownTimer) clearInterval(smsCooldownTimer)
+  stopCarousel()
 })
 
 async function handleSendCode() {
@@ -356,6 +499,7 @@ async function handleSubmit() {
   showProgress.value = true
   progressMessage.value = '正在提交…'
   progressPercent.value = 0
+  currentStepKey.value = ''
   try {
     const preCheck = await checkRegisterPhone(form.contact_phone.trim())
     if (preCheck.registered) {
@@ -392,6 +536,7 @@ async function handleSubmit() {
       }
       const p = prog.data as {
         status: string
+        current_step: string
         message: string
         percent: number
         result?: { is_existing_user?: boolean }
@@ -399,6 +544,9 @@ async function handleSubmit() {
       }
       progressMessage.value = p.message || '处理中…'
       progressPercent.value = typeof p.percent === 'number' ? p.percent : 0
+      if (p.current_step) {
+        currentStepKey.value = p.current_step
+      }
 
       if (p.status === 'success' && p.result) {
         isExistingUser.value = p.result.is_existing_user === true
@@ -729,22 +877,285 @@ function goHome() {
   }
 }
 
-.progress-dialog {
-  :deep(.el-dialog__header) {
-    padding-bottom: 8px;
+/* ========== 开户进度布局 ========== */
+.progress-layout {
+  display: flex;
+  min-height: 460px;
+}
+
+/* ---- 左侧品牌轮播 ---- */
+.progress-brand {
+  width: 55%;
+  background: var(--gradient-hero, linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%));
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, 0.15);
+    filter: blur(60px);
+    top: -50px;
+    right: -50px;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.12);
+    filter: blur(50px);
+    bottom: -40px;
+    left: -40px;
   }
 }
 
-.progress-content {
-  padding: 8px 0 4px;
+.pb-carousel {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 32px;
 }
 
-.progress-hint {
-  font-size: 15px;
-  color: var(--color-text-secondary);
-  margin: 0 0 20px;
-  line-height: 1.5;
-  min-height: 1.5em;
+.pb-slide {
+  display: flex;
+  flex-direction: column;
+}
+
+.pb-slide-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.15em;
+  margin-bottom: 14px;
+  font-family: var(--font-mono, 'SF Mono', monospace);
+}
+
+.pb-slide-title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0 0 12px;
+}
+
+.pb-slide-desc {
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 22px;
+}
+
+.pb-slide-highlights {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  li {
+    font-size: 12px;
+    padding: 4px 14px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+.pb-dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 28px;
+}
+
+.pb-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: all 0.3s;
+
+  &.active {
+    width: 20px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.pb-slide-enter-active,
+.pb-slide-leave-active {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.pb-slide-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.pb-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-12px);
+}
+
+/* ---- 右侧步骤区 ---- */
+.progress-main {
+  width: 45%;
+  background: #fff;
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pm-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px;
+}
+
+.pm-subtitle {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0 0 24px;
+}
+
+.step-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  padding-bottom: 14px;
+
+  &:last-child {
+    padding-bottom: 0;
+
+    .step-connector {
+      display: none;
+    }
+  }
+}
+
+.step-connector {
+  position: absolute;
+  left: 14px;
+  top: -14px;
+  width: 2px;
+  height: 14px;
+}
+
+.step-item.is-done .step-connector,
+.step-item.is-active .step-connector {
+  background: var(--color-primary, #3b82f6);
+}
+
+.step-item.is-wait .step-connector {
+  background: #e2e8f0;
+}
+
+.step-icon-area {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+
+  .is-done & {
+    background: var(--color-primary, #3b82f6);
+    color: #fff;
+  }
+
+  .is-wait & {
+    background: #f1f5f9;
+    border: 2px solid #e2e8f0;
+    color: #94a3b8;
+  }
+
+  .is-active & {
+    background: #fff;
+  }
+}
+
+.step-num {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.step-icon-area :deep(.el-progress--circle) {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+.step-icon-area :deep(.el-progress-circle) {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+.step-icon-area :deep(.el-progress__text) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.circle-pct {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-primary, #3b82f6);
+  line-height: 1;
+  display: block;
+  text-align: center;
+}
+
+.step-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 30px;
+}
+
+.step-title {
+  font-size: 13px;
+  line-height: 1.4;
+
+  .is-done & {
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  .is-active & {
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  .is-wait & {
+    color: #94a3b8;
+    font-weight: 500;
+  }
 }
 
 .form-footer {
@@ -923,5 +1334,30 @@ function goHome() {
   .register-form-area {
     padding: 40px 24px;
   }
+}
+</style>
+
+<style>
+/* 针对传送至 body 的开户进度弹框的全局样式覆盖，必须使用非 scoped 样式 */
+.progress-dialog {
+  --el-dialog-padding-primary: 0px !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25) !important;
+}
+
+.progress-dialog .el-dialog__header {
+  display: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 0 !important;
+  border: none !important;
+}
+
+.progress-dialog .el-dialog__body {
+  padding: 0 !important;
+  border: none !important;
 }
 </style>
