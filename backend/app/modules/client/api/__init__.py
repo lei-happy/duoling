@@ -22,6 +22,7 @@ from app.modules.client.api.region import router as region_router
 from app.modules.client.api.basicdata import (
     vehicle_brand_router,
     vehicle_series_router,
+    dealer_router,
 )
 from app.modules.client.api.enterprise import router as enterprise_router
 from app.modules.client.api.file import router as file_router
@@ -48,6 +49,9 @@ router.include_router(
 )
 router.include_router(
     vehicle_series_router, prefix="/basic-data/vehicle-series", tags=["客户端-车系"]
+)
+router.include_router(
+    dealer_router, prefix="/basic-data/dealer", tags=["客户端-经销商"]
 )
 router.include_router(enterprise_router, prefix="/enterprise", tags=["客户端-企业管理"])
 router.include_router(file_router, prefix="/file", tags=["客户端-文件管理"])

@@ -325,6 +325,22 @@ CLIENT_MENUS = [
                     {"menu_name": "删除", "menu_code": "basic_data:vehicle_brand_series:delete", "menu_type": 1, "sort_order": 3, "feature_code": "basic_data_vehicle_brand_series"},
                 ],
             },
+            {
+                "menu_name": "经销商门店",
+                "menu_code": "basic_data:dealer",
+                "menu_type": 0,
+                "path": "/basic_data/dealer",
+                "component": "/basic_data/dealer/index",
+                "icon": "ShopOutlined",
+                "sort_order": 20,
+                "feature_code": "basic_data_dealer",
+                "children": [
+                    {"menu_name": "查询", "menu_code": "basic_data:dealer:list", "menu_type": 1, "sort_order": 0, "feature_code": "basic_data_dealer"},
+                    {"menu_name": "新增", "menu_code": "basic_data:dealer:add", "menu_type": 1, "sort_order": 1, "feature_code": "basic_data_dealer"},
+                    {"menu_name": "编辑", "menu_code": "basic_data:dealer:edit", "menu_type": 1, "sort_order": 2, "feature_code": "basic_data_dealer"},
+                    {"menu_name": "删除", "menu_code": "basic_data:dealer:delete", "menu_type": 1, "sort_order": 3, "feature_code": "basic_data_dealer"},
+                ],
+            },
         ],
     },
     # ---- 财务管理 ----

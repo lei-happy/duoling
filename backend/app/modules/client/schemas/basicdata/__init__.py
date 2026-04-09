@@ -8,6 +8,11 @@ from app.modules.client.schemas.basicdata.vehicle_series import (
     VehicleSeriesUpdate,
     VehicleSeriesOut,
 )
+from app.modules.client.schemas.basicdata.dealer import (
+    DealerCreate,
+    DealerUpdate,
+    DealerOut,
+)
 
 __all__ = [
     "VehicleBrandCreate",
@@ -16,4 +21,7 @@ __all__ = [
     "VehicleSeriesCreate",
     "VehicleSeriesUpdate",
     "VehicleSeriesOut",
+    "DealerCreate",
+    "DealerUpdate",
+    "DealerOut",
 ]
