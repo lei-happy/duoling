@@ -8,6 +8,7 @@ CREATE TABLE `biz_user` (
   `email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '邮箱',
   `avatar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '头像URL',
   `gender` smallint NOT NULL COMMENT '性别 0-未知 1-男 2-女',
+  `birthday` date DEFAULT NULL COMMENT '出生日期',
   `user_type` smallint NOT NULL COMMENT '用户类型 1-管理员 2-操作员 3-驾驶员',
   `department_id` bigint DEFAULT NULL COMMENT '所属部门ID',
   `status` smallint NOT NULL COMMENT '状态 0-停用 1-正常',
