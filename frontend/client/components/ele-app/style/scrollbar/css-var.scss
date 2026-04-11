@@ -9,7 +9,7 @@ $scrollbar-webkit-selector: 'html.is-webkit' !default;
 
 /* 滚动条样式 */
 @mixin scrollbar-style($selector: '') {
-  #{if($selector == '', '*', $selector)} {
+  #{if(sass($selector == ''): '*'; else: $selector)} {
     scrollbar-width: thin;
     scrollbar-color: eleVar('scrollbar', 'color') eleVar('scrollbar', 'bg');
   }
