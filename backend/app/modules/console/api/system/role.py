@@ -48,7 +48,6 @@ async def add_role(
 ):
     """新增角色"""
     await RoleService.create_role(db, data)
-    await db.commit()
     return success(message="添加成功")
 
 
@@ -60,7 +59,6 @@ async def update_role(
 ):
     """修改角色"""
     await RoleService.update_role(db, data)
-    await db.commit()
     return success(message="修改成功")
 
 
@@ -72,5 +70,4 @@ async def delete_role(
 ):
     """删除角色"""
     await RoleService.delete_role(db, role_id)
-    await db.commit()
     return success(message="删除成功")

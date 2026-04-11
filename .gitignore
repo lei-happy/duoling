@@ -27,10 +27,13 @@ yarn-error.log*
 # ---- 构建产物 ----
 frontend/console/dist/
 frontend/client/dist/
+frontend/website/dist/
 frontend/console/es/
 frontend/console/lib/
 frontend/client/es/
 frontend/client/lib/
+frontend/template/es/
+frontend/template/lib/
 
 # ---- IDE ----
 .vscode/

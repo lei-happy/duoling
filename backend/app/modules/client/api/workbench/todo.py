@@ -7,8 +7,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.common.exceptions import BizException, TenantException
-from app.common.response import fail, success
+from app.common.exceptions import TenantException
+from app.common.response import success
 from app.core.dependencies import get_current_user, get_platform_db, get_tenant_db
 from app.core.security import TokenData
 from app.modules.client.schemas.workbench.todo_task import TodoTaskCreate, TodoTaskUpdate, TodoTaskStatusBody
@@ -46,17 +46,14 @@ async def todo_stats(
     tenant_db: AsyncSession = Depends(get_tenant_db),
 ):
     tenant_code = _require_tenant(current_user)
-    try:
-        data = await TodoTaskService.stats(
-            pdb,
-            tenant_db,
-            tenant_code,
-            current_user.user_id,
-            my_tasks=my_tasks,
-        )
-        return success(data=data)
-    except BizException as e:
-        return fail(e.message)
+    data = await TodoTaskService.stats(
+        pdb,
+        tenant_db,
+        tenant_code,
+        current_user.user_id,
+        my_tasks=my_tasks,
+    )
+    return success(data=data)
 
 
 @router.get("/tasks")
@@ -73,20 +70,17 @@ async def list_tasks(
     tenant_db: AsyncSession = Depends(get_tenant_db),
 ):
     tenant_code = _require_tenant(current_user)
-    try:
-        data = await TodoTaskService.page_tasks(
-            pdb,
-            tenant_db,
-            tenant_code,
-            current_user.user_id,
-            page=page,
-            page_size=page_size,
-            status=status,
-            my_tasks=my_tasks,
-        )
-        return success(data=data)
-    except BizException as e:
-        return fail(e.message)
+    data = await TodoTaskService.page_tasks(
+        pdb,
+        tenant_db,
+        tenant_code,
+        current_user.user_id,
+        page=page,
+        page_size=page_size,
+        status=status,
+        my_tasks=my_tasks,
+    )
+    return success(data=data)
 
 
 @router.post("")
@@ -97,17 +91,14 @@ async def create_task(
     tenant_db: AsyncSession = Depends(get_tenant_db),
 ):
     tenant_code = _require_tenant(current_user)
-    try:
-        data = await TodoTaskService.create_task(
-            pdb,
-            tenant_db,
-            tenant_code,
-            current_user.user_id,
-            body,
-        )
-        return success(data=data)
-    except BizException as e:
-        return fail(e.message)
+    data = await TodoTaskService.create_task(
+        pdb,
+        tenant_db,
+        tenant_code,
+        current_user.user_id,
+        body,
+    )
+    return success(data=data)
 
 
 @router.put("/{task_id}")
@@ -120,18 +111,15 @@ async def update_task(
 ):
     tenant_code = _require_tenant(current_user)
     patch_keys = set(body.model_dump(exclude_unset=True).keys())
-    try:
-        data = await TodoTaskService.apply_task_update(
-            pdb,
-            tenant_db,
-            tenant_code,
-            task_id,
-            body,
-            patch_keys,
-        )
-        return success(data=data)
-    except BizException as e:
-        return fail(e.message)
+    data = await TodoTaskService.apply_task_update(
+        pdb,
+        tenant_db,
+        tenant_code,
+        task_id,
+        body,
+        patch_keys,
+    )
+    return success(data=data)
 
 
 @router.patch("/{task_id}/status")
@@ -142,11 +130,8 @@ async def patch_status(
     pdb: AsyncSession = Depends(get_platform_db),
 ):
     tenant_code = _require_tenant(current_user)
-    try:
-        data = await TodoTaskService.set_status(pdb, tenant_code, task_id, body.status)
-        return success(data=data)
-    except BizException as e:
-        return fail(e.message)
+    data = await TodoTaskService.set_status(pdb, tenant_code, task_id, body.status)
+    return success(data=data)
 
 
 @router.delete("/{task_id}")
@@ -156,8 +141,5 @@ async def delete_task(
     pdb: AsyncSession = Depends(get_platform_db),
 ):
     tenant_code = _require_tenant(current_user)
-    try:
-        await TodoTaskService.delete_task(pdb, tenant_code, task_id)
-        return success(message="删除成功")
-    except BizException as e:
-        return fail(e.message)
+    await TodoTaskService.delete_task(pdb, tenant_code, task_id)
+    return success(message="删除成功")

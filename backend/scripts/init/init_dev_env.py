@@ -11,8 +11,8 @@
 7. 在租户库中灌入种子数据（角色、部门、管理员）
 
 用法：
-    python scripts/init_dev_env.py
-    python scripts/init_dev_env.py --reset   # 重置（删除后重建开发企业库）
+    python scripts/init/init_dev_env.py
+    python scripts/init/init_dev_env.py --reset   # 重置（删除后重建开发企业库）
 """
 
 import sys
@@ -20,7 +20,7 @@ import os
 import argparse
 from datetime import datetime
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
@@ -43,7 +43,7 @@ def step1_init_platform_db():
     print("\n" + "=" * 60)
     print("步骤 1/7: 初始化平台库")
     print("=" * 60)
-    from scripts.init_platform_db import init_platform_database
+    from scripts.init.init_platform_db import init_platform_database
     init_platform_database()
 
 
@@ -52,7 +52,7 @@ def step2_seed_platform_data():
     print("\n" + "=" * 60)
     print("步骤 2/7: 灌入平台种子数据")
     print("=" * 60)
-    from scripts.seed_data import seed_platform_data
+    from scripts.seed.seed_data import seed_platform_data
     seed_platform_data()
 
 
@@ -61,7 +61,7 @@ def step3_seed_product_features():
     print("\n" + "=" * 60)
     print("步骤 3/7: 灌入产品功能清单与版本关联")
     print("=" * 60)
-    from scripts.seed_product_features import main as seed_features
+    from scripts.seed.seed_product_features import main as seed_features
     seed_features()
 
 
@@ -70,7 +70,7 @@ def step4_seed_client_menus():
     print("\n" + "=" * 60)
     print("步骤 4/7: 灌入客户端菜单")
     print("=" * 60)
-    from scripts.seed_client_menus import main as seed_menus
+    from scripts.seed.seed_client_menus import main as seed_menus
     seed_menus()
 
 

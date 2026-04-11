@@ -50,7 +50,6 @@ async def add_menu(
 ):
     """新增菜单"""
     await MenuService.create_menu(db, data)
-    await db.commit()
     return success(message="添加成功")
 
 
@@ -62,7 +61,6 @@ async def update_menu(
 ):
     """修改菜单"""
     await MenuService.update_menu(db, data)
-    await db.commit()
     return success(message="修改成功")
 
 
@@ -74,5 +72,4 @@ async def delete_menu(
 ):
     """删除菜单"""
     await MenuService.delete_menu(db, menu_id)
-    await db.commit()
     return success(message="删除成功")

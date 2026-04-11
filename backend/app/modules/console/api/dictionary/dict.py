@@ -47,7 +47,6 @@ async def add_dict(
 ):
     """新增字典"""
     await DictService.create_dict(db, data)
-    await db.commit()
     return success(message="添加成功")
 
 
@@ -59,7 +58,6 @@ async def update_dict(
 ):
     """修改字典"""
     await DictService.update_dict(db, data)
-    await db.commit()
     return success(message="修改成功")
 
 
@@ -71,5 +69,4 @@ async def delete_dict(
 ):
     """删除字典"""
     await DictService.delete_dict(db, dict_id)
-    await db.commit()
     return success(message="删除成功")

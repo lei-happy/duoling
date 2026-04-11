@@ -69,7 +69,6 @@ async def create_brand(
     await db.flush()
     await db.refresh(row)
     payload = VehicleBrandOut.from_model(row).model_dump()
-    await db.commit()
     return success(data=payload)
 
 
@@ -84,7 +83,6 @@ async def update_brand(
     await db.flush()
     await db.refresh(row)
     payload = VehicleBrandOut.from_model(row).model_dump()
-    await db.commit()
     return success(data=payload)
 
 
@@ -95,5 +93,4 @@ async def delete_brand(
     _: TokenData = Depends(get_current_user),
 ):
     await VehicleBrandService.delete_brand(db, brand_id)
-    await db.commit()
     return success()

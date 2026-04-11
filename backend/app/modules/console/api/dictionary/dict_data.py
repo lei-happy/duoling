@@ -52,7 +52,6 @@ async def add_dict_data(
 ):
     """新增字典数据"""
     await DictDataService.create_dict_data(db, data)
-    await db.commit()
     return success(message="添加成功")
 
 
@@ -64,7 +63,6 @@ async def update_dict_data(
 ):
     """修改字典数据"""
     await DictDataService.update_dict_data(db, data)
-    await db.commit()
     return success(message="修改成功")
 
 
@@ -76,7 +74,6 @@ async def batch_delete_dict_data(
 ):
     """批量删除字典数据"""
     await DictDataService.batch_delete_dict_data(db, ids)
-    await db.commit()
     return success(message="删除成功")
 
 
@@ -88,5 +85,4 @@ async def delete_dict_data(
 ):
     """删除字典数据"""
     await DictDataService.delete_dict_data(db, dict_data_id)
-    await db.commit()
     return success(message="删除成功")

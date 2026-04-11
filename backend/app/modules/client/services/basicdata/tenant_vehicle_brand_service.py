@@ -8,6 +8,7 @@ from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
+from app.common.pagination import paginate
 from app.modules.client.models.vehicle_basic.biz_vehicle_brand import BizVehicleBrand
 from app.modules.client.models.vehicle_basic.biz_vehicle_series import BizVehicleSeries
 from app.modules.client.schemas.basicdata.vehicle_brand import (
@@ -26,21 +27,14 @@ class TenantVehicleBrandService:
         limit: int = 20,
         keyword: Optional[str] = None,
     ) -> dict:
-        base = select(BizVehicleBrand)
+        stmt = select(BizVehicleBrand)
         if keyword:
-            base = base.where(BizVehicleBrand.brand_name_cn.contains(keyword.strip()))
-
-        count_q = select(func.count()).select_from(base.subquery())
-        count = (await db.execute(count_q)).scalar() or 0
-
-        result = await db.execute(
-            base.order_by(BizVehicleBrand.brand_id)
-            .offset((page - 1) * limit)
-            .limit(limit)
+            stmt = stmt.where(BizVehicleBrand.brand_name_cn.contains(keyword.strip()))
+        return await paginate(
+            db, stmt, page, limit,
+            order_by=BizVehicleBrand.brand_id,
+            serializer=lambda r: VehicleBrandOut.from_model(r).model_dump(),
         )
-        rows = result.scalars().all()
-        items = [VehicleBrandOut.from_model(r).model_dump() for r in rows]
-        return {"list": items, "count": count}
 
     @staticmethod
     async def list_brand_options(

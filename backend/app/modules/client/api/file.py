@@ -1,30 +1,7 @@
 """
-文件上传接口
-按场景目录管理上传文件（用户头像、运单照片等）
+客户端文件上传（复用共享文件上传路由）
 """
 
-from fastapi import APIRouter, Depends, UploadFile, File, Form
+from app.common.file_upload import create_file_upload_router
 
-from app.core.dependencies import get_current_user
-from app.core.security import TokenData
-from app.common.response import success
-from app.common.local_image_upload import save_scene_image
-
-router = APIRouter()
-
-
-@router.post("/upload")
-async def upload_file(
-    file: UploadFile = File(...),
-    scene: str = Form(default="avatar"),
-    _: TokenData = Depends(get_current_user),
-):
-    """
-    上传文件到指定场景目录
-    - scene: 场景标识，决定存储子目录
-    - 返回文件的相对访问路径
-    """
-    content = await file.read()
-    original_name = file.filename or "unknown"
-    data = save_scene_image(content, scene, original_name)
-    return success(data=data)
+router = create_file_upload_router()

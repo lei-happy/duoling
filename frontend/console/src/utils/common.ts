@@ -5,6 +5,17 @@ import { LOGIN_PATH } from '@/config/setting';
 import { removeToken, removeRefreshToken } from '@/utils/token-util';
 import router from '@/router';
 
+export {
+  downloadUrl,
+  download,
+  toURLSearch,
+  toFormData,
+  transformParams,
+  getObjectParamsArray,
+  isBlobFile,
+  isImageUrl
+} from '@zhitu/shared-utils';
+
 /**
  * 跳转到登录界面
  * @param from 登录后跳转的地址
@@ -20,7 +31,6 @@ export function goLogin(from?: string, route?: boolean) {
     });
     return;
   }
-  // 使用页面跳转避免再次登录重复注册路由
   const url = import.meta.env.BASE_URL + 'login';
   location.replace(from ? `${url}?from=${encodeURIComponent(from)}` : url);
 }
@@ -43,155 +53,13 @@ export function showExpiredLogout(from?: string, route?: boolean) {
     draggable: true
   });
 }
+
 /** 兼容旧版 */
 export function logout(route?: boolean, from?: string, _push?: Router['push']) {
   goLogin(from, route);
 }
 export function showLogoutConfirm(from: string, push?: Router['push']) {
   showExpiredLogout(from, !!push);
-}
-
-/**
- * 下载文件
- * @param url 文件地址
- * @param name 文件名
- */
-export function downloadUrl(url: string, name: string) {
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-/**
- * 下载文件
- * @param data 二进制数据
- * @param name 文件名
- * @param type 文件类型
- */
-export function download(
-  data: Blob | ArrayBuffer | string,
-  name: string,
-  type?: string
-) {
-  const blob = new Blob([data], { type: type || 'application/octet-stream' });
-  const url = URL.createObjectURL(blob);
-  downloadUrl(url, name);
-  URL.revokeObjectURL(url);
-}
-
-/**
- * 参数转url字符串
- * @param params 参数
- * @param url 需要拼接参数的地址
- */
-export function toURLSearch(
-  params?: Record<keyof any, any> | null,
-  url?: string
-): string {
-  if (typeof params !== 'object' || params == null) {
-    return '';
-  }
-  const result = transformParams(params)
-    .map((d) => `${encodeURIComponent(d[0])}=${encodeURIComponent(d[1])}`)
-    .join('&');
-  if (!url) {
-    return result;
-  }
-  return (url.includes('?') ? `${url}&` : `${url}?`) + result;
-}
-
-/**
- * 参数转表单数据
- * @param params 参数
- */
-export function toFormData(params?: Record<keyof any, any> | null): FormData {
-  const formData = new FormData();
-  if (typeof params !== 'object' || params == null) {
-    return formData;
-  }
-  transformParams(params).forEach((d) => {
-    formData.append(d[0], d[1]);
-  });
-  return formData;
-}
-
-/**
- * get请求处理数组和对象类型参数
- * @param params 参数
- */
-export function transformParams(params?: Record<string, any> | null) {
-  const result: [string, string][] = [];
-  if (params != null && typeof params === 'object') {
-    Object.keys(params).forEach((key) => {
-      const value = params[key];
-      if (value != null && value !== '') {
-        if (Array.isArray(value) && value.length && isBlobFile(value[0])) {
-          value.forEach((file) => {
-            result.push([key, file]);
-          });
-        } else if (typeof value === 'object' && !isBlobFile(value)) {
-          getObjectParamsArray(value).forEach((item) => {
-            result.push([`${key}${item[0]}`, item[1]]);
-          });
-        } else {
-          result.push([key, value]);
-        }
-      }
-    });
-  }
-  return result;
-}
-
-/**
- * 对象转参数数组
- * @param obj 对象
- */
-export function getObjectParamsArray(obj: Record<string, any>) {
-  const result: [string, string][] = [];
-  Object.keys(obj).forEach((key) => {
-    const value = obj[key];
-    if (value != null && value !== '') {
-      const name = `[${key}]`;
-      if (typeof value === 'object' && !isBlobFile(value)) {
-        getObjectParamsArray(value).forEach((item) => {
-          result.push([`${name}${item[0]}`, item[1]]);
-        });
-      } else {
-        result.push([name, value]);
-      }
-    }
-  });
-  return result;
-}
-
-/**
- * 判断是否是文件
- * @param obj 对象
- */
-export function isBlobFile(obj: any) {
-  return obj != null && (obj instanceof Blob || obj instanceof File);
-}
-
-/**
- * 判断是否是图片地址
- * @param url 图片地址
- */
-export function isImageUrl(url?: string) {
-  if (!url) {
-    return false;
-  }
-  const parts = url.split('.');
-  const suffix = parts[parts.length - 1];
-  if (!suffix) {
-    return false;
-  }
-  return ['png', 'jpg', 'jpeg', 'gif', '.bmp', 'svg', 'webp', 'tiff'].includes(
-    suffix.toLowerCase()
-  );
 }
 
 /**
@@ -208,11 +76,6 @@ export function isValidComponentName(name: unknown) {
 
 /**
  * 切换主题过渡动画
- * @param callback 执行的方法
- * @param el 过渡动画触发元素
- * @param isOut 是否是退出方向
- * @param isBody 是否在 body 上执行动画
- * @param customAnim 自定义动画
  */
 export function doWithTransition(
   callback: () => Promise<any>,

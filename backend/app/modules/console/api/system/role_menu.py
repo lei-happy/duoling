@@ -35,5 +35,4 @@ async def update_role_menus(
 ):
     """修改角色菜单分配"""
     await RoleService.update_role_menus(db, role_id, data.menuIds)
-    await db.commit()
     return success(message="分配成功")

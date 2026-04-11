@@ -3,12 +3,13 @@
 """
 
 from typing import Optional
-from decimal import Decimal, InvalidOperation
 
-from sqlalchemy import select, func, delete, or_
+from sqlalchemy import select, delete, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
+from app.common.pagination import paginate
+from app.common.utils import to_decimal
 from app.modules.client.models.vehicle_basic.biz_dealer import BizDealer
 from app.modules.client.schemas.basicdata.dealer import (
     DealerCreate,
@@ -26,10 +27,10 @@ class TenantDealerService:
         limit: int = 20,
         keyword: Optional[str] = None,
     ) -> dict:
-        base = select(BizDealer)
+        stmt = select(BizDealer)
         if keyword:
             kw = keyword.strip()
-            base = base.where(
+            stmt = stmt.where(
                 or_(
                     BizDealer.dealer_name.contains(kw),
                     BizDealer.province.contains(kw),
@@ -37,18 +38,11 @@ class TenantDealerService:
                     BizDealer.main_brand.contains(kw),
                 )
             )
-
-        count_q = select(func.count()).select_from(base.subquery())
-        count = (await db.execute(count_q)).scalar() or 0
-
-        result = await db.execute(
-            base.order_by(BizDealer.dealer_id.desc())
-            .offset((page - 1) * limit)
-            .limit(limit)
+        return await paginate(
+            db, stmt, page, limit,
+            order_by=BizDealer.dealer_id.desc(),
+            serializer=lambda r: DealerOut.from_model(r).model_dump(),
         )
-        rows = result.scalars().all()
-        items = [DealerOut.from_model(r).model_dump() for r in rows]
-        return {"list": items, "count": count}
 
     @staticmethod
     async def get_dealer(db: AsyncSession, dealer_id: int) -> DealerOut:
@@ -61,15 +55,6 @@ class TenantDealerService:
         return DealerOut.from_model(row)
 
     @staticmethod
-    def _to_decimal(val) -> Optional[Decimal]:
-        if val is None:
-            return None
-        try:
-            return Decimal(str(val))
-        except (InvalidOperation, ValueError):
-            return None
-
-    @staticmethod
     async def create_dealer(
         db: AsyncSession, data: DealerCreate
     ) -> BizDealer:
@@ -80,8 +65,8 @@ class TenantDealerService:
             province=data.province,
             city=data.city,
             address_detail=data.addressDetail,
-            longitude=TenantDealerService._to_decimal(data.longitude),
-            latitude=TenantDealerService._to_decimal(data.latitude),
+            longitude=to_decimal(data.longitude),
+            latitude=to_decimal(data.latitude),
         )
         db.add(row)
         await db.flush()
@@ -110,9 +95,9 @@ class TenantDealerService:
         if data.addressDetail is not None:
             row.address_detail = data.addressDetail
         if data.longitude is not None:
-            row.longitude = TenantDealerService._to_decimal(data.longitude)
+            row.longitude = to_decimal(data.longitude)
         if data.latitude is not None:
-            row.latitude = TenantDealerService._to_decimal(data.latitude)
+            row.latitude = to_decimal(data.latitude)
         await db.flush()
         return row
 

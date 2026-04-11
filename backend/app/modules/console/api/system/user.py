@@ -78,7 +78,6 @@ async def add_user(
 ):
     """新增用户"""
     await UserService.create_user(db, data)
-    await db.commit()
     return success(message="添加成功")
 
 
@@ -90,7 +89,6 @@ async def update_user(
 ):
     """修改用户"""
     await UserService.update_user(db, data)
-    await db.commit()
     return success(message="修改成功")
 
 
@@ -102,7 +100,6 @@ async def batch_delete_users(
 ):
     """批量删除用户"""
     await UserService.batch_delete(db, ids)
-    await db.commit()
     return success(message="删除成功")
 
 
@@ -114,7 +111,6 @@ async def update_user_status(
 ):
     """修改用户状态"""
     await UserService.update_status(db, data.userId, data.status)
-    await db.commit()
     return success(message="修改成功")
 
 

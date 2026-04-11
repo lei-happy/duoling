@@ -5,6 +5,8 @@
 import hashlib
 import uuid
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
+from typing import Optional
 
 
 def generate_uuid() -> str:
@@ -47,3 +49,13 @@ def now_utc() -> datetime:
 def md5(text: str) -> str:
     """MD5 哈希"""
     return hashlib.md5(text.encode("utf-8")).hexdigest()
+
+
+def to_decimal(val) -> Optional[Decimal]:
+    """将值安全地转换为 Decimal，无效值返回 None"""
+    if val is None:
+        return None
+    try:
+        return Decimal(str(val))
+    except (InvalidOperation, ValueError, TypeError):
+        return None

@@ -43,7 +43,6 @@ async def add_client_menu(
 ):
     """新增客户端菜单"""
     await ClientMenuService.create_menu(db, data)
-    await db.commit()
     return success(message="添加成功")
 
 
@@ -55,7 +54,6 @@ async def update_client_menu(
 ):
     """修改客户端菜单"""
     await ClientMenuService.update_menu(db, data)
-    await db.commit()
     return success(message="修改成功")
 
 
@@ -67,5 +65,4 @@ async def delete_client_menu(
 ):
     """删除客户端菜单"""
     await ClientMenuService.delete_menu(db, menu_id)
-    await db.commit()
     return success(message="删除成功")

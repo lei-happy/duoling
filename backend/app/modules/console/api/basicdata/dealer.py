@@ -54,7 +54,6 @@ async def create_dealer(
     await db.flush()
     await db.refresh(row)
     payload = DealerOut.from_model(row).model_dump()
-    await db.commit()
     return success(data=payload)
 
 
@@ -69,7 +68,6 @@ async def update_dealer(
     await db.flush()
     await db.refresh(row)
     payload = DealerOut.from_model(row).model_dump()
-    await db.commit()
     return success(data=payload)
 
 
@@ -80,5 +78,4 @@ async def delete_dealer(
     _: TokenData = Depends(get_current_user),
 ):
     await DealerService.delete_dealer(db, dealer_id)
-    await db.commit()
     return success()

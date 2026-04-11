@@ -1,0 +1,21 @@
+{
+  "name": "zhitu-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "智途(ZhiTu) - 前端 Monorepo",
+  "scripts": {
+    "dev:console": "pnpm --filter zhitu-console dev",
+    "dev:client": "pnpm --filter zhitu-client dev",
+    "dev:website": "pnpm --filter zhitu-website dev",
+    "build:console": "pnpm --filter zhitu-console build:app",
+    "build:client": "pnpm --filter zhitu-client build:app",
+    "build:website": "pnpm --filter zhitu-website build",
+    "build:all": "pnpm -r build:app",
+    "lint": "pnpm -r lint:eslint",
+    "clean": "pnpm -r clean:lib"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

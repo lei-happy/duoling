@@ -61,7 +61,6 @@ async def create_series(
     await db.flush()
     await db.refresh(row)
     payload = VehicleSeriesOut.from_model(row).model_dump()
-    await db.commit()
     return success(data=payload)
 
 
@@ -76,7 +75,6 @@ async def update_series(
     await db.flush()
     await db.refresh(row)
     payload = VehicleSeriesOut.from_model(row).model_dump()
-    await db.commit()
     return success(data=payload)
 
 
@@ -87,5 +85,4 @@ async def delete_series(
     _: TokenData = Depends(get_current_user),
 ):
     await VehicleSeriesService.delete_series(db, series_id)
-    await db.commit()
     return success()

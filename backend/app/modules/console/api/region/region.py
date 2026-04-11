@@ -88,7 +88,6 @@ async def create_region(
 ):
     """新增地区"""
     region = await RegionService.create_region(db, data)
-    await db.commit()
     out = RegionOut.from_model(region)
     return success(data=out.model_dump())
 
@@ -102,7 +101,6 @@ async def update_region(
 ):
     """编辑地区"""
     region = await RegionService.update_region(db, code, data)
-    await db.commit()
     out = RegionOut.from_model(region)
     return success(data=out.model_dump())
 
@@ -115,5 +113,4 @@ async def delete_region(
 ):
     """软删除地区"""
     await RegionService.delete_region(db, code)
-    await db.commit()
     return success()

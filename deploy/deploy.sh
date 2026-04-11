@@ -308,10 +308,10 @@ sync_platform_data() {
     log_info "同步平台配置数据..."
     cd "$DEPLOY_DIR"
 
-    docker compose exec backend python scripts/seed_product_features.py
+    docker compose exec backend python scripts/seed/seed_product_features.py
     log_info "产品功能模块已同步"
 
-    docker compose exec backend python scripts/seed_client_menus.py
+    docker compose exec backend python scripts/seed/seed_client_menus.py
     log_info "客户端菜单已同步"
 }
 
@@ -323,7 +323,7 @@ init_database() {
     cd "$DEPLOY_DIR"
 
     # 在 backend 容器中执行初始化脚本
-    docker compose exec backend python scripts/init_platform_db.py
+    docker compose exec backend python scripts/init/init_platform_db.py
     log_info "平台数据库表结构已创建"
 
     echo ""
@@ -334,7 +334,7 @@ init_database() {
         return
     fi
 
-    docker compose exec backend python scripts/seed_data.py
+    docker compose exec backend python scripts/seed/seed_data.py
     log_info "种子数据已写入（管理员: 13800000000 / admin123）"
 
     # 同步菜单和产品功能模块
