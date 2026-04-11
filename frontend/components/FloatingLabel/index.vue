@@ -53,6 +53,7 @@
       :collapse-tags="collapseTags"
       :collapse-tags-tooltip="collapseTagsTooltip"
       :filterable="filterable"
+      :filter-method="filterMethod"
       :remote="remote"
       :remote-method="remoteMethod"
       :loading="loading"
@@ -126,6 +127,8 @@
       remote?: boolean;
       /** 远程搜索方法 */
       remoteMethod?: (query: string) => void;
+      /** 本地可搜索时的自定义过滤方法（与 filterable 联用） */
+      filterMethod?: (query: string) => void;
       /** 远程搜索加载状态 */
       loading?: boolean;
       /** 下拉选择器是否插入body */

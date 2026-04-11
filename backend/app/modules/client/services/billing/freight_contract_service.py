@@ -2,7 +2,7 @@
 运价合同服务（租户库）
 """
 
-from typing import Optional
+from typing import Optional, Tuple
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +17,27 @@ from app.modules.client.schemas.billing.freight_contract import (
 class FreightContractService:
 
     @staticmethod
+    def _order_created_at_clause(
+        sort: Optional[str], order: Optional[str]
+    ) -> Tuple:
+        """按创建时间排序：仅支持 createdAt，其它回退为创建时间倒序。"""
+        if sort != "createdAt":
+            return (
+                FreightContract.created_at.desc(),
+                FreightContract.id.desc(),
+            )
+        ol = (order or "descending").lower()
+        if ol in ("asc", "ascending"):
+            return (
+                FreightContract.created_at.asc(),
+                FreightContract.id.asc(),
+            )
+        return (
+            FreightContract.created_at.desc(),
+            FreightContract.id.desc(),
+        )
+
+    @staticmethod
     async def page_contracts(
         db: AsyncSession,
         page: int = 1,
@@ -24,6 +45,8 @@ class FreightContractService:
         keyword: Optional[str] = None,
         customer_id: Optional[int] = None,
         status: Optional[int] = None,
+        sort: Optional[str] = None,
+        order: Optional[str] = None,
     ) -> dict:
         base = select(FreightContract).where(FreightContract.is_deleted == 0)
 
@@ -41,8 +64,11 @@ class FreightContractService:
         count_q = select(func.count()).select_from(base.subquery())
         total = (await db.execute(count_q)).scalar() or 0
 
+        order_clause = FreightContractService._order_created_at_clause(
+            sort, order
+        )
         result = await db.execute(
-            base.order_by(FreightContract.id.desc())
+            base.order_by(*order_clause)
             .offset((page - 1) * page_size)
             .limit(page_size)
         )

@@ -11,6 +11,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
+from app.common.pinyin_utils import match_pinyin
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.schemas.waybill.waybill import (
     WaybillCreate, WaybillUpdate, WaybillStatusUpdate, WaybillOut,
@@ -27,6 +28,27 @@ class WaybillService:
         return f"YD{now.strftime('%Y%m%d%H%M%S')}{random.randint(1000, 9999)}"
 
     @staticmethod
+    def _match_waybill_region_filters(
+        w: Waybill,
+        origin_keyword: Optional[str],
+        destination_keyword: Optional[str],
+        vehicle_keyword: Optional[str],
+    ) -> bool:
+        ow = (origin_keyword or "").strip()
+        if ow and not match_pinyin(w.origin or "", ow):
+            return False
+        dk = (destination_keyword or "").strip()
+        if dk and not match_pinyin(w.destination or "", dk):
+            return False
+        vk = (vehicle_keyword or "").strip()
+        if vk:
+            brand_ok = match_pinyin(w.vehicle_brand or "", vk)
+            model_ok = match_pinyin(w.vehicle_model or "", vk)
+            if not (brand_ok or model_ok):
+                return False
+        return True
+
+    @staticmethod
     async def page_waybills(
         db: AsyncSession,
         page: int = 1,
@@ -34,8 +56,18 @@ class WaybillService:
         keyword: Optional[str] = None,
         customer_id: Optional[int] = None,
         status: Optional[int] = None,
-        freight_source: Optional[int] = None,
+        origin_keyword: Optional[str] = None,
+        destination_keyword: Optional[str] = None,
+        vehicle_keyword: Optional[str] = None,
     ) -> dict:
+        use_pinyin_filters = any(
+            [
+                (origin_keyword or "").strip(),
+                (destination_keyword or "").strip(),
+                (vehicle_keyword or "").strip(),
+            ]
+        )
+
         base = select(Waybill).where(Waybill.is_deleted == 0)
 
         if keyword:
@@ -48,14 +80,35 @@ class WaybillService:
             base = base.where(Waybill.customer_id == customer_id)
         if status is not None:
             base = base.where(Waybill.status == status)
-        if freight_source is not None:
-            base = base.where(Waybill.freight_source == freight_source)
+
+        if use_pinyin_filters:
+            stmt = base.order_by(Waybill.created_at.desc())
+            result = await db.execute(stmt)
+            rows = list(result.scalars().all())
+            filtered = [
+                w
+                for w in rows
+                if WaybillService._match_waybill_region_filters(
+                    w, origin_keyword, destination_keyword, vehicle_keyword
+                )
+            ]
+            total = len(filtered)
+            offset = (page - 1) * page_size
+            page_items = filtered[offset : offset + page_size]
+            return {
+                "list": [
+                    WaybillOut.from_model(item).model_dump() for item in page_items
+                ],
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+            }
 
         count_q = select(func.count()).select_from(base.subquery())
         total = (await db.execute(count_q)).scalar() or 0
 
         result = await db.execute(
-            base.order_by(Waybill.id.desc())
+            base.order_by(Waybill.created_at.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )

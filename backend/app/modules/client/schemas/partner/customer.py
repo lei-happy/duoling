@@ -17,6 +17,7 @@ class CustomerCreate(BaseModel):
     address: Optional[str] = None
     settlementType: Optional[int] = None
     creditCode: Optional[str] = None
+    status: Optional[int] = None
     remark: Optional[str] = None
 
 

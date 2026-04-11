@@ -17,7 +17,8 @@
   },
   "dependencies": {
     "@zhitu/shared-types": "workspace:*",
-    "@zhitu/shared-utils": "workspace:*"
+    "@zhitu/shared-utils": "workspace:*",
+    "pinyin-pro": "^3.28.1"
   },
   "devDependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",

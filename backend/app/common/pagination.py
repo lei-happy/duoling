@@ -53,7 +53,10 @@ async def paginate(
     total = (await db.execute(count_q)).scalar() or 0
 
     if order_by is not None:
-        stmt = stmt.order_by(order_by)
+        if isinstance(order_by, (list, tuple)):
+            stmt = stmt.order_by(*order_by)
+        else:
+            stmt = stmt.order_by(order_by)
     stmt = stmt.offset((page - 1) * limit).limit(limit)
 
     result = await db.execute(stmt)

@@ -30,12 +30,20 @@ async def page_contracts(
     keyword: Optional[str] = None,
     customerId: Optional[int] = None,
     status: Optional[int] = None,
+    sort: Optional[str] = None,
+    order: Optional[str] = None,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     data = await FreightContractService.page_contracts(
-        db, page=page, page_size=page_size,
-        keyword=keyword, customer_id=customerId, status=status,
+        db,
+        page=page,
+        page_size=page_size,
+        keyword=keyword,
+        customer_id=customerId,
+        status=status,
+        sort=sort,
+        order=order,
     )
     return success(data=data)
 

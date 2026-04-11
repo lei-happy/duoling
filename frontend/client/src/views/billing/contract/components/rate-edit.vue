@@ -16,7 +16,10 @@
       <el-row :gutter="16">
         <el-col :span="24">
           <el-form-item label="计费模式" prop="billingMode">
-            <el-radio-group v-model="form.billingMode" @change="onBillingModeChange">
+            <el-radio-group
+              v-model="form.billingMode"
+              @change="onBillingModeChange"
+            >
               <el-radio :value="0">台单价</el-radio>
               <el-radio :value="1">单公里单价</el-radio>
               <el-radio :value="2">整单价格</el-radio>
@@ -216,9 +219,7 @@
       destinationCode: [
         { required: true, message: '请选择目的地', trigger: 'change' }
       ],
-      unitPrice: [
-        { required: true, message: '请输入单价', trigger: 'blur' }
-      ],
+      unitPrice: [{ required: true, message: '请输入单价', trigger: 'blur' }],
       effectiveDate: [
         { required: true, message: '请选择生效日期', trigger: 'change' }
       ],

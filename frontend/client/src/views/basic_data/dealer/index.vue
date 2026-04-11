@@ -1,37 +1,27 @@
 <template>
   <ele-page>
+    <dealer-search @search="(where) => reload(where, 1)" />
     <ele-card :body-style="{ paddingTop: '8px' }">
-      <div class="dealer-search">
-        <el-input
-          v-model="keyword"
-          clearable
-          placeholder="名称 / 省 / 市 / 主营品牌"
-          style="width: 280px"
-          @keyup.enter="doSearch"
-        />
-        <el-button type="primary" @click="doSearch">查询</el-button>
-      </div>
       <ele-pro-table
         ref="tableRef"
         row-key="dealerId"
         :columns="columns"
         :datasource="datasource"
         :show-overflow-tooltip="true"
-        highlight-current-row
+        :highlight-current-row="true"
+        :default-sort="{ prop: 'createdAt', order: 'descending' }"
         cache-key="BasicDataDealerTable"
       >
         <template #toolbar>
           <btn-items
             v-if="hasPermission(PERM_ADD)"
-            :items="[{ preset: 'add', title: '新增', onClick: () => openEdit() }]"
+            :items="[
+              { preset: 'add', title: '新增', onClick: () => openEdit() }
+            ]"
           />
         </template>
         <template #action="{ row }">
-          <btn-items
-            divider
-            type="link"
-            :items="actionItems(row)"
-          />
+          <btn-items divider type="link" :items="actionItems(row)" />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -39,7 +29,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed } from 'vue';
+  import { ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
@@ -47,9 +37,11 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import DealerSearch from './components/dealer-search.vue';
   import { pageDealers, removeDealer } from '@/api/basic-data/dealer';
-  import type { Dealer } from '@/api/basic-data/dealer/model';
+  import type { Dealer, DealerParam } from '@/api/basic-data/dealer/model';
   import { usePermission } from '@/utils/use-permission';
+  import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'BasicDataDealer' });
 
@@ -60,14 +52,8 @@
   const { hasPermission } = usePermission();
   const { openModal } = useModal();
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
-  const keyword = ref('');
-
-  const doSearch = () => {
-    reload({ keyword: keyword.value?.trim() || undefined }, 1);
-  };
 
   const columns = ref<Columns>([
-    { prop: 'dealerId', label: 'ID', width: 90, align: 'center' },
     { prop: 'dealerName', label: '经销商名称', minWidth: 160 },
     { prop: 'dealerType', label: '类型', width: 110 },
     { prop: 'mainBrand', label: '主营品牌', width: 120 },
@@ -75,13 +61,22 @@
     { prop: 'city', label: '市', width: 90 },
     { prop: 'addressDetail', label: '地址', minWidth: 200 },
     {
+      prop: 'createdAt',
+      label: '创建时间',
+      sortable: 'custom',
+      width: 170,
+      align: 'center',
+      formatter: (row) => formatDateTime(row.createdAt)
+    },
+    {
       columnKey: 'action',
       label: '操作',
       width: 148,
       align: 'center',
       slot: 'action',
       hideInPrint: true,
-      hideInExport: true
+      hideInExport: true,
+      fixed: 'right'
     }
   ]);
 
@@ -96,17 +91,11 @@
     return items;
   };
 
-  const datasource: DatasourceFunction = ({ pages, where }) => {
-    return pageDealers({
-      ...pages,
-      keyword: where?.keyword as string | undefined
-    }).then((res) => ({
-      list: res.list,
-      count: res.count
-    }));
+  const datasource: DatasourceFunction = ({ pages, where, orders }) => {
+    return pageDealers({ ...where, ...orders, ...pages });
   };
 
-  const reload = (where?: Record<string, unknown>, page?: number) => {
+  const reload = (where?: DealerParam, page?: number) => {
     tableRef.value?.reload?.({ where, page });
   };
 
@@ -122,11 +111,10 @@
   };
 
   const remove = (row: Dealer) => {
-    ElMessageBox.confirm(
-      `确定要删除「${row.dealerName}」吗？`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
+    ElMessageBox.confirm(`确定要删除「${row.dealerName}」吗？`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => {
         const loading = EleMessage.loading({
           message: '请求中..',
@@ -146,12 +134,3 @@
       .catch(() => {});
   };
 </script>
-
-<style scoped>
-  .dealer-search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-</style>

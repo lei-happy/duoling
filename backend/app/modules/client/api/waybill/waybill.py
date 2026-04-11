@@ -26,14 +26,19 @@ async def page_waybills(
     keyword: Optional[str] = None,
     customerId: Optional[int] = None,
     status: Optional[int] = None,
-    freightSource: Optional[int] = None,
+    originKeyword: Optional[str] = None,
+    destinationKeyword: Optional[str] = None,
+    vehicleKeyword: Optional[str] = None,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     data = await WaybillService.page_waybills(
         db, page=page, page_size=page_size,
         keyword=keyword, customer_id=customerId,
-        status=status, freight_source=freightSource,
+        status=status,
+        origin_keyword=originKeyword,
+        destination_keyword=destinationKeyword,
+        vehicle_keyword=vehicleKeyword,
     )
     return success(data=data)
 

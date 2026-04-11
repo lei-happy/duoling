@@ -1,197 +1,239 @@
 <template>
-  <el-dialog
-    :title="isEdit ? '编辑运单' : '新增运单'"
+  <el-drawer
     :model-value="visible"
+    :title="isEdit ? '编辑运单' : '新增运单'"
+    direction="rtl"
+    size="680px"
+    append-to-body
+    destroy-on-close
+    :close-on-click-modal="false"
+    :close-on-press-escape="false"
+    class="waybill-edit-drawer"
     @update:model-value="updateVisible"
-    width="800px"
-    draggable
   >
     <el-form
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="110px"
+      label-position="top"
+      label-width="80px"
+      class="waybill-edit-form waybill-edit-form--compact"
       @submit.prevent=""
     >
-      <el-divider content-position="left">基本信息</el-divider>
-      <el-row :gutter="16">
-        <el-col :span="12">
-          <el-form-item label="运单编号">
-            <el-input
-              v-model="form.waybillNo"
-              placeholder="留空自动生成"
+      <div class="waybill-section-title">基本信息</div>
+      <el-row :gutter="10">
+        <el-col :xs="24" :sm="12" :md="8">
+          <el-form-item>
+            <floating-label
+              label="请输入运单编号"
+              type="input"
+              v-model.trim="form.waybillNo"
+              clearable
             />
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="客户" prop="customerId">
-            <el-select
+        <el-col :xs="24" :sm="12" :md="8">
+          <el-form-item prop="customerId">
+            <floating-label
               v-model="form.customerId"
-              placeholder="请选择客户"
+              label="请选择客户"
+              type="select"
               filterable
-              style="width: 100%"
+              :filter-method="setCustomerFilter"
+              clearable
               @change="onCustomerChange"
             >
               <el-option
-                v-for="item in customerOptions"
+                v-for="item in customersShown"
                 :key="item.id"
                 :label="item.customerName"
                 :value="item.id"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="计划下达时间">
-            <el-date-picker
+        <el-col :xs="24" :sm="24" :md="8">
+          <el-form-item>
+            <floating-label
+              label="计划下达时间"
+              type="date"
+              date-type="datetime"
               v-model="form.planIssueTime"
-              type="datetime"
               value-format="YYYY-MM-DD HH:mm:ss"
-              placeholder="请选择时间"
-              style="width: 100%"
+              clearable
             />
           </el-form-item>
         </el-col>
       </el-row>
 
-      <el-divider content-position="left">运输信息</el-divider>
-      <el-row :gutter="16">
-        <el-col :span="12">
-          <el-form-item label="出发地" prop="originCode">
+      <div class="waybill-section-title">运输信息</div>
+      <el-row :gutter="10">
+        <el-col :span="12" :xs="24">
+          <el-form-item
+            label="出发地"
+            prop="originCode"
+            class="waybill-item-tight-label"
+          >
             <el-cascader
               v-model="originCodes"
+              class="ele-fluid"
               :options="regionTree"
               :props="regionCascaderProps"
               placeholder="请选择出发地"
               filterable
-              style="width: 100%"
               @change="onOriginChange"
             />
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="目的地" prop="destinationCode">
+        <el-col :span="12" :xs="24">
+          <el-form-item
+            label="目的地"
+            prop="destinationCode"
+            class="waybill-item-tight-label"
+          >
             <el-cascader
               v-model="destCodes"
+              class="ele-fluid"
               :options="regionTree"
               :props="regionCascaderProps"
               placeholder="请选择目的地"
               filterable
-              style="width: 100%"
               @change="onDestChange"
             />
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="商品车品牌" prop="vehicleBrand">
-            <el-select
+        <el-col :xs="24" :sm="8">
+          <el-form-item>
+            <floating-label
               v-model="form.vehicleBrand"
-              placeholder="请选择品牌"
+              label="请选择商品车品牌"
+              type="select"
               filterable
-              style="width: 100%"
+              :filter-method="setBrandFilter"
+              clearable
               @change="onBrandChange"
             >
               <el-option
-                v-for="b in brandOptions"
+                v-for="b in brandsShown"
                 :key="b.brandId"
                 :label="b.brandNameCn"
                 :value="b.brandNameCn"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="车型">
-            <el-select
+        <el-col :xs="24" :sm="8">
+          <el-form-item>
+            <floating-label
               v-model="form.vehicleModel"
-              placeholder="请选择车型"
+              label="请选择车型"
+              type="select"
               filterable
-              style="width: 100%"
+              :filter-method="setSeriesFilter"
               :disabled="!selectedBrandId"
+              clearable
             >
               <el-option
-                v-for="s in seriesOptions"
+                v-for="s in seriesShown"
                 :key="s.seriesId"
                 :label="s.seriesName"
                 :value="s.seriesName"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="台数" prop="quantity">
+        <el-col :xs="24" :sm="8">
+          <el-form-item
+            label="台数"
+            prop="quantity"
+            class="waybill-item-tight-label"
+          >
             <el-input-number
               v-model="form.quantity"
               :min="1"
-              style="width: 100%"
+              class="ele-fluid"
+              controls-position="right"
             />
           </el-form-item>
         </el-col>
       </el-row>
 
-      <el-divider content-position="left">收车门店</el-divider>
-      <el-row :gutter="16">
-        <el-col :span="12">
-          <el-form-item label="门店名称">
-            <el-select
+      <div class="waybill-section-title">收车门店</div>
+      <el-row :gutter="10">
+        <el-col :xs="24" :sm="12" :md="8">
+          <el-form-item>
+            <floating-label
               v-model="selectedDealerId"
-              placeholder="请选择经销商门店"
+              label="请选择经销商门店"
+              type="select"
               filterable
-              style="width: 100%"
+              :filter-method="setDealerFilter"
+              clearable
               @change="onDealerChange"
             >
               <el-option
-                v-for="d in dealerOptions"
+                v-for="d in dealersShown"
                 :key="d.dealerId"
                 :label="d.dealerName"
                 :value="d.dealerId"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="联系人">
-            <el-input
-              v-model="form.dealerContact"
-              placeholder="请输入联系人"
+        <el-col :xs="24" :sm="12" :md="8">
+          <el-form-item>
+            <floating-label
+              label="请输入联系人"
+              type="input"
+              v-model.trim="form.dealerContact"
+              clearable
             />
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="电话">
-            <el-input
-              v-model="form.dealerPhone"
-              placeholder="请输入电话"
+        <el-col :xs="24" :sm="12" :md="8">
+          <el-form-item>
+            <floating-label
+              label="请输入电话"
+              type="input"
+              v-model.trim="form.dealerPhone"
+              clearable
             />
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="地址">
-            <el-input
+        <el-col :span="24">
+          <el-form-item>
+            <floating-label
+              label="门店地址"
+              type="input"
               v-model="form.dealerAddress"
-              placeholder="请输入地址"
-              disabled
+              :disabled="true"
+              :clearable="false"
             />
           </el-form-item>
         </el-col>
       </el-row>
 
       <template v-if="freightCalcMode !== 'auto_required'">
-        <el-divider content-position="left">运费信息</el-divider>
-        <el-row :gutter="16">
-          <el-col :span="12">
-            <el-form-item label="运费金额">
+        <div class="waybill-section-title">运费信息</div>
+        <el-row :gutter="10" align="middle">
+          <el-col :xs="24" :sm="10" :md="8">
+            <el-form-item label="金额（元）" class="waybill-item-tight-label">
               <el-input-number
                 v-model="form.freightAmount"
                 :precision="2"
                 :min="0"
-                placeholder="元"
-                style="width: 100%"
+                class="ele-fluid"
+                controls-position="right"
               />
             </el-form-item>
           </el-col>
-          <el-col :span="12" v-if="freightCalcMode !== 'manual_only'">
-            <el-form-item>
+          <el-col
+            v-if="freightCalcMode !== 'manual_only'"
+            :xs="24"
+            :sm="14"
+            :md="16"
+          >
+            <el-form-item :label-width="0" class="waybill-freight-actions">
               <el-button
                 type="success"
                 :loading="calcLoading"
@@ -199,10 +241,7 @@
               >
                 计算运费
               </el-button>
-              <span
-                v-if="calcResult"
-                style="margin-left: 8px; color: #67c23a"
-              >
+              <span v-if="calcResult" class="waybill-calc-hint">
                 匹配: {{ calcResult.contractNo }} ({{ calcResult.matchLevel }})
               </span>
             </el-form-item>
@@ -211,18 +250,21 @@
       </template>
     </el-form>
     <template #footer>
-      <el-button @click="updateVisible(false)">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="handleSubmit">
-        保存
-      </el-button>
+      <div class="waybill-edit-drawer__footer">
+        <el-button @click="updateVisible(false)">取消</el-button>
+        <el-button type="primary" :loading="loading" @click="handleSubmit">
+          保存
+        </el-button>
+      </div>
     </template>
-  </el-dialog>
+  </el-drawer>
 </template>
 
 <script lang="ts" setup>
   import { ref, reactive, watch, computed } from 'vue';
   import type { FormInstance, FormRules, CascaderProps } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { addWaybill, updateWaybill } from '@/api/waybill';
   import { calculateFreight } from '@/api/billing/contract';
   import { selectCustomers } from '@/api/partner/customer';
@@ -238,6 +280,7 @@
   import type { VehicleSeries } from '@/api/basic-data/vehicle-series/model';
   import type { RegionNavNode } from '@/api/basic-data/region/model';
   import type { Dealer } from '@/api/basic-data/dealer/model';
+  import { pinyinMatch } from '@/utils/pinyin-match';
 
   const props = defineProps<{
     visible: boolean;
@@ -267,6 +310,58 @@
   const destCodes = ref<string[]>([]);
   const freightCalcMode = ref('auto_preferred');
 
+  const filterQ = reactive({
+    customer: '',
+    brand: '',
+    series: '',
+    dealer: ''
+  });
+
+  const customersShown = computed(() => {
+    const q = filterQ.customer.trim();
+    if (!q) return customerOptions.value;
+    return customerOptions.value.filter((c) =>
+      pinyinMatch(c.customerName ?? '', q)
+    );
+  });
+
+  const brandsShown = computed(() => {
+    const q = filterQ.brand.trim();
+    if (!q) return brandOptions.value;
+    return brandOptions.value.filter((b) =>
+      pinyinMatch(b.brandNameCn ?? '', q)
+    );
+  });
+
+  const seriesShown = computed(() => {
+    const q = filterQ.series.trim();
+    if (!q) return seriesOptions.value;
+    return seriesOptions.value.filter((s) =>
+      pinyinMatch(s.seriesName ?? '', q)
+    );
+  });
+
+  const dealersShown = computed(() => {
+    const q = filterQ.dealer.trim();
+    if (!q) return dealerOptions.value;
+    return dealerOptions.value.filter((d) =>
+      pinyinMatch(d.dealerName ?? '', q)
+    );
+  });
+
+  const setCustomerFilter = (q: string) => {
+    filterQ.customer = q;
+  };
+  const setBrandFilter = (q: string) => {
+    filterQ.brand = q;
+  };
+  const setSeriesFilter = (q: string) => {
+    filterQ.series = q;
+  };
+  const setDealerFilter = (q: string) => {
+    filterQ.dealer = q;
+  };
+
   const regionCascaderProps: CascaderProps = {
     value: 'code',
     label: 'name',
@@ -276,18 +371,14 @@
   };
 
   const rules = reactive<FormRules>({
-    customerId: [
-      { required: true, message: '请选择客户', trigger: 'change' }
-    ],
+    customerId: [{ required: true, message: '请选择客户', trigger: 'change' }],
     originCode: [
       { required: true, message: '请选择出发地', trigger: 'change' }
     ],
     destinationCode: [
       { required: true, message: '请选择目的地', trigger: 'change' }
     ],
-    quantity: [
-      { required: true, message: '请输入台数', trigger: 'blur' }
-    ]
+    quantity: [{ required: true, message: '请输入台数', trigger: 'blur' }]
   });
 
   const loadBaseData = async () => {
@@ -377,7 +468,12 @@
     calcResult.value = null;
   };
 
-  const onDealerChange = (dealerId: number) => {
+  const onDealerChange = (dealerId: number | undefined) => {
+    if (dealerId == null) {
+      form.dealerName = undefined;
+      form.dealerAddress = undefined;
+      return;
+    }
     const dealer = dealerOptions.value.find((d) => d.dealerId === dealerId);
     if (dealer) {
       form.dealerName = dealer.dealerName;
@@ -399,27 +495,56 @@
 
   watch(
     () => props.visible,
-    (val) => {
-      if (val) {
-        loadBaseData();
-        calcResult.value = null;
-        selectedBrandId.value = null;
-        selectedDealerId.value = null;
-        originCodes.value = [];
-        destCodes.value = [];
-        if (props.data) {
-          Object.assign(form, props.data);
-          if (props.data.originCode) {
-            originCodes.value = [props.data.originCode];
-          }
-          if (props.data.destinationCode) {
-            destCodes.value = [props.data.destinationCode];
-          }
-        } else {
-          Object.keys(form).forEach((k) => {
-            (form as any)[k] = undefined;
-          });
+    async (val) => {
+      if (!val) return;
+      filterQ.customer = '';
+      filterQ.brand = '';
+      filterQ.series = '';
+      filterQ.dealer = '';
+      calcResult.value = null;
+      selectedBrandId.value = null;
+      selectedDealerId.value = null;
+      originCodes.value = [];
+      destCodes.value = [];
+      seriesOptions.value = [];
+
+      await loadBaseData();
+
+      if (props.data?.id) {
+        Object.assign(form, props.data);
+        if (props.data.originCode) {
+          originCodes.value = [props.data.originCode];
         }
+        if (props.data.destinationCode) {
+          destCodes.value = [props.data.destinationCode];
+        }
+        const brand = brandOptions.value.find(
+          (b) => b.brandNameCn === props.data?.vehicleBrand
+        );
+        if (brand) {
+          selectedBrandId.value = brand.brandId;
+          try {
+            const data = await pageVehicleSeries({
+              brandId: brand.brandId,
+              page: 1,
+              limit: 200
+            });
+            seriesOptions.value = data?.list ?? [];
+          } catch (_) {
+            seriesOptions.value = [];
+          }
+        }
+        const dealer = dealerOptions.value.find(
+          (d) => d.dealerName === props.data?.dealerName
+        );
+        if (dealer) {
+          selectedDealerId.value = dealer.dealerId;
+        }
+      } else {
+        Object.keys(form).forEach((k) => {
+          (form as any)[k] = undefined;
+        });
+        form.quantity = 1;
       }
     }
   );
@@ -451,7 +576,8 @@
       });
       if (result) {
         calcResult.value = result;
-        form.freightAmount = result.totalAmount ?? result.unitPrice * (form.quantity || 1);
+        form.freightAmount =
+          result.totalAmount ?? result.unitPrice * (form.quantity || 1);
         form.freightSource = 0;
         form.contractId = result.contractId;
         form.rateId = result.rateId;
@@ -491,3 +617,66 @@
     });
   };
 </script>
+
+<style scoped>
+  .waybill-edit-drawer__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .waybill-section-title {
+    margin: 0 0 6px;
+    padding-bottom: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-regular);
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+
+  .waybill-section-title:not(:first-child) {
+    margin-top: 8px;
+  }
+
+  .waybill-edit-form--compact :deep(.el-form-item) {
+    margin-bottom: 8px;
+  }
+
+  .waybill-item-tight-label :deep(.el-form-item__label) {
+    padding-bottom: 2px;
+    line-height: 1.2;
+    font-size: 12px;
+  }
+
+  .waybill-freight-actions {
+    margin-bottom: 8px;
+  }
+
+  .waybill-freight-actions :deep(.el-form-item__content) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .waybill-calc-hint {
+    font-size: 12px;
+    color: var(--el-color-success);
+    line-height: 1.4;
+  }
+
+  .waybill-edit-drawer :deep(.el-drawer__header) {
+    margin-bottom: 8px;
+    padding-bottom: 12px;
+  }
+
+  .waybill-edit-drawer :deep(.el-drawer__body) {
+    padding: 8px 16px 12px;
+    overflow-y: auto;
+  }
+
+  .waybill-edit-drawer :deep(.el-drawer__footer) {
+    padding: 10px 16px;
+    border-top: 1px solid var(--el-border-color-lighter);
+  }
+</style>

@@ -33,5 +33,10 @@ export interface WaybillParam extends PageParam {
   keyword?: string;
   customerId?: number;
   status?: number;
-  freightSource?: number;
+  /** 出发地模糊 */
+  originKeyword?: string;
+  /** 目的地模糊 */
+  destinationKeyword?: string;
+  /** 品牌或车型模糊 */
+  vehicleKeyword?: string;
 }

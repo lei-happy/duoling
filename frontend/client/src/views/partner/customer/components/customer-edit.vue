@@ -2,103 +2,143 @@
   <el-dialog
     :title="isEdit ? '编辑客户' : '新增客户'"
     :model-value="visible"
-    @update:model-value="updateVisible"
-    width="700px"
+    width="720px"
     draggable
+    :close-on-click-modal="false"
+    @update:model-value="updateVisible"
   >
     <el-form
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="120px"
+      label-width="0"
+      class="customer-edit-form"
       @submit.prevent=""
     >
       <el-row :gutter="16">
+        <!-- 必填字段靠前 -->
         <el-col :span="12">
-          <el-form-item label="客户编码">
-            <el-input
-              v-model="form.customerCode"
-              placeholder="留空自动生成"
+          <el-form-item prop="customerName">
+            <floating-label
+              label="请输入客户名称"
+              type="input"
+              v-model.trim="form.customerName"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="客户名称" prop="customerName">
-            <el-input
-              v-model="form.customerName"
-              placeholder="请输入客户名称"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="简称">
-            <el-input v-model="form.shortName" placeholder="请输入简称" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="客户类型" prop="customerType">
-            <el-select
+          <el-form-item prop="customerType">
+            <floating-label
               v-model="form.customerType"
-              placeholder="请选择客户类型"
-              style="width: 100%"
+              label="请选择客户类型"
+              type="select"
+              clearable
             >
               <el-option label="主机厂" :value="0" />
               <el-option label="贸易商" :value="1" />
               <el-option label="经销商" :value="2" />
               <el-option label="个人" :value="3" />
               <el-option label="其他" :value="4" />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="结算方式" prop="settlementType">
-            <el-select
+          <el-form-item prop="settlementType">
+            <floating-label
               v-model="form.settlementType"
-              placeholder="请选择结算方式"
-              style="width: 100%"
+              label="请选择结算方式"
+              type="select"
+              clearable
             >
               <el-option label="月结" :value="0" />
               <el-option label="票结" :value="1" />
               <el-option label="预付" :value="2" />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="联系人" prop="contactPerson">
-            <el-input
-              v-model="form.contactPerson"
-              placeholder="请输入联系人"
+          <el-form-item prop="contactPerson">
+            <floating-label
+              label="请输入联系人"
+              type="input"
+              v-model.trim="form.contactPerson"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="联系电话" prop="contactPhone">
-            <el-input
-              v-model="form.contactPhone"
-              placeholder="请输入联系电话"
+          <el-form-item prop="contactPhone">
+            <floating-label
+              label="请输入联系电话"
+              type="input"
+              v-model.trim="form.contactPhone"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="信用代码">
-            <el-input
-              v-model="form.creditCode"
-              placeholder="统一社会信用代码"
+          <el-form-item prop="status">
+            <floating-label
+              v-model="form.status"
+              label="请选择客户状态"
+              type="select"
+              :clearable="false"
+            >
+              <el-option label="正常" :value="1" />
+              <el-option label="停用" :value="0" />
+            </floating-label>
+          </el-form-item>
+        </el-col>
+        <!-- 选填 -->
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入客户编码，留空则自动生成"
+              type="input"
+              v-model.trim="form.customerCode"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入简称"
+              type="input"
+              v-model.trim="form.shortName"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入统一社会信用代码"
+              type="input"
+              v-model.trim="form.creditCode"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="24">
-          <el-form-item label="地址">
-            <el-input v-model="form.address" placeholder="请输入地址" />
+          <el-form-item>
+            <floating-label
+              label="请输入地址"
+              type="input"
+              v-model.trim="form.address"
+              clearable
+            />
           </el-form-item>
         </el-col>
         <el-col :span="24">
-          <el-form-item label="备注">
-            <el-input
+          <el-form-item>
+            <floating-label
+              label="请输入备注"
+              type="input"
+              input-type="textarea"
               v-model="form.remark"
-              type="textarea"
-              :rows="3"
-              placeholder="请输入备注"
+              :clearable="false"
             />
           </el-form-item>
         </el-col>
@@ -114,9 +154,10 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive, watch, computed } from 'vue';
+  import { ref, reactive, watch, computed, nextTick } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { addCustomer, updateCustomer } from '@/api/partner/customer';
   import type { Customer } from '@/api/partner/customer/model';
 
@@ -150,21 +191,37 @@
     ],
     contactPhone: [
       { required: true, message: '请输入联系电话', trigger: 'blur' }
-    ]
+    ],
+    status: [{ required: true, message: '请选择客户状态', trigger: 'change' }]
   });
+
+  function resetFormForCreate() {
+    Object.assign(form, {
+      id: undefined,
+      customerCode: undefined,
+      customerName: undefined,
+      shortName: undefined,
+      customerType: undefined,
+      contactPerson: undefined,
+      contactPhone: undefined,
+      address: undefined,
+      settlementType: undefined,
+      creditCode: undefined,
+      status: 1,
+      remark: undefined
+    });
+  }
 
   watch(
     () => props.visible,
     (val) => {
-      if (val) {
-        if (props.data) {
-          Object.assign(form, props.data);
-        } else {
-          Object.keys(form).forEach((k) => {
-            (form as any)[k] = undefined;
-          });
-        }
+      if (!val) return;
+      if (props.data?.id) {
+        Object.assign(form, props.data);
+      } else {
+        resetFormForCreate();
       }
+      nextTick(() => formRef.value?.clearValidate());
     }
   );
 
@@ -172,15 +229,24 @@
     emit('update:visible', val);
   };
 
+  const buildPayload = (): Customer => {
+    const payload: Customer = { ...form };
+    if (!payload.customerCode?.trim()) {
+      delete payload.customerCode;
+    }
+    return payload;
+  };
+
   const handleSubmit = () => {
     formRef.value?.validate(async (valid) => {
       if (!valid) return;
       loading.value = true;
       try {
+        const payload = buildPayload();
         if (isEdit.value) {
-          await updateCustomer(form);
+          await updateCustomer(payload);
         } else {
-          await addCustomer(form);
+          await addCustomer(payload);
         }
         EleMessage.success({ message: '操作成功', plain: true });
         updateVisible(false);
@@ -193,3 +259,9 @@
     });
   };
 </script>
+
+<style scoped>
+  .customer-edit-form :deep(.el-form-item) {
+    margin-bottom: 18px;
+  }
+</style>

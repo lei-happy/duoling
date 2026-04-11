@@ -57,7 +57,12 @@
         <el-table-column label="计费模式" width="100" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.billingMode === 1" size="small">单公里</el-tag>
-            <el-tag v-else-if="row.billingMode === 2" type="warning" size="small">整单价</el-tag>
+            <el-tag
+              v-else-if="row.billingMode === 2"
+              type="warning"
+              size="small"
+              >整单价</el-tag
+            >
             <el-tag v-else type="success" size="small">台单价</el-tag>
           </template>
         </el-table-column>
@@ -67,20 +72,25 @@
           <template #default="{ row }">
             {{ row.unitPrice }}
             <span style="color: #999; font-size: 12px">
-              {{ row.billingMode === 1 ? '元/台·km' : row.billingMode === 2 ? '元/单' : '元/台' }}
+              {{
+                row.billingMode === 1
+                  ? '元/台·km'
+                  : row.billingMode === 2
+                    ? '元/单'
+                    : '元/台'
+              }}
             </span>
-            <div v-if="row.billingMode === 1 && row.distanceKm" style="color: #999; font-size: 12px">
+            <div
+              v-if="row.billingMode === 1 && row.distanceKm"
+              style="color: #999; font-size: 12px"
+            >
               {{ row.distanceKm }} km
             </div>
           </template>
         </el-table-column>
         <el-table-column label="运价类型" width="100" align="center">
           <template #default="{ row }">
-            <el-tag
-              v-if="row.priceType === 1"
-              type="warning"
-              size="small"
-            >
+            <el-tag v-if="row.priceType === 1" type="warning" size="small">
               预估
             </el-tag>
             <el-tag v-else type="success" size="small">明确</el-tag>

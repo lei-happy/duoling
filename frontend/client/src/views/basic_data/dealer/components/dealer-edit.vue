@@ -101,7 +101,9 @@
     mainBrand: [{ required: true, message: '请输入主营品牌', trigger: 'blur' }],
     province: [{ required: true, message: '请输入省', trigger: 'blur' }],
     city: [{ required: true, message: '请输入市', trigger: 'blur' }],
-    addressDetail: [{ required: true, message: '请输入详细地址', trigger: 'blur' }]
+    addressDetail: [
+      { required: true, message: '请输入详细地址', trigger: 'blur' }
+    ]
   };
 
   const handleCancel = () => {

@@ -28,11 +28,18 @@ async def page_dealers(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=200),
     keyword: Optional[str] = Query(None),
+    sort: Optional[str] = None,
+    order: Optional[str] = None,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     data = await TenantDealerService.page_dealers(
-        db, page=page, limit=limit, keyword=keyword
+        db,
+        page=page,
+        limit=limit,
+        keyword=keyword,
+        sort=sort,
+        order=order,
     )
     return success(data=data)
 

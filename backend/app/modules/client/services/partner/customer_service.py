@@ -2,6 +2,7 @@
 客户管理服务（租户库）
 """
 
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import select, func
@@ -17,6 +18,41 @@ from app.modules.client.schemas.partner.customer import (
 class CustomerService:
 
     @staticmethod
+    async def _generate_customer_code(db: AsyncSession) -> str:
+        """生成客户编码: KH + 年月日 + 3 位序号"""
+        today = datetime.now().strftime("%Y%m%d")
+        prefix = f"KH{today}"
+        result = await db.execute(
+            select(Customer.customer_code)
+            .where(
+                Customer.customer_code.isnot(None),
+                Customer.customer_code.like(f"{prefix}%"),
+                Customer.is_deleted == 0,
+            )
+            .order_by(Customer.customer_code.desc())
+            .limit(1)
+        )
+        last_code = result.scalar_one_or_none()
+        if last_code and len(last_code) > len(prefix):
+            try:
+                seq = int(last_code[len(prefix) :]) + 1
+            except ValueError:
+                seq = 1
+        else:
+            seq = 1
+        return f"{prefix}{seq:03d}"
+
+    @staticmethod
+    def _order_created_at_clause(sort: Optional[str], order: Optional[str]):
+        """按创建时间排序：仅支持 createdAt 字段，其它回退为创建时间倒序。"""
+        if sort != "createdAt":
+            return Customer.created_at.desc(), Customer.id.desc()
+        ol = (order or "descending").lower()
+        if ol in ("asc", "ascending"):
+            return Customer.created_at.asc(), Customer.id.asc()
+        return Customer.created_at.desc(), Customer.id.desc()
+
+    @staticmethod
     async def page_customers(
         db: AsyncSession,
         page: int = 1,
@@ -25,6 +61,8 @@ class CustomerService:
         customer_type: Optional[int] = None,
         settlement_type: Optional[int] = None,
         status: Optional[int] = None,
+        sort: Optional[str] = None,
+        order: Optional[str] = None,
     ) -> dict:
         base = select(Customer).where(Customer.is_deleted == 0)
 
@@ -45,8 +83,9 @@ class CustomerService:
         count_q = select(func.count()).select_from(base.subquery())
         total = (await db.execute(count_q)).scalar() or 0
 
+        order_clause = CustomerService._order_created_at_clause(sort, order)
         result = await db.execute(
-            base.order_by(Customer.id.desc())
+            base.order_by(*order_clause)
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
@@ -85,8 +124,24 @@ class CustomerService:
         if existing.scalar_one_or_none():
             raise BizException(f"客户名称 {data.customerName} 已存在")
 
+        raw_code = data.customerCode
+        if raw_code and str(raw_code).strip():
+            code = str(raw_code).strip()
+            dup_code = await db.execute(
+                select(Customer.id).where(
+                    Customer.customer_code == code,
+                    Customer.is_deleted == 0,
+                )
+            )
+            if dup_code.scalar_one_or_none():
+                raise BizException("客户编码已存在")
+        else:
+            code = await CustomerService._generate_customer_code(db)
+
+        status_val = 1 if data.status is None else data.status
+
         customer = Customer(
-            customer_code=data.customerCode,
+            customer_code=code,
             customer_name=data.customerName,
             short_name=data.shortName,
             customer_type=data.customerType,
@@ -95,6 +150,7 @@ class CustomerService:
             address=data.address,
             settlement_type=data.settlementType,
             credit_code=data.creditCode,
+            status=status_val,
             remark=data.remark,
         )
         db.add(customer)

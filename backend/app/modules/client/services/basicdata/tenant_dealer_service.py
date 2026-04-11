@@ -2,7 +2,7 @@
 租户库经销商服务
 """
 
-from typing import Optional
+from typing import Optional, Tuple
 
 from sqlalchemy import select, delete, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,11 +21,25 @@ from app.modules.client.schemas.basicdata.dealer import (
 class TenantDealerService:
 
     @staticmethod
+    def _order_created_at_clause(
+        sort: Optional[str], order: Optional[str]
+    ) -> Tuple:
+        """按创建时间排序：仅支持 createdAt，其它回退为创建时间倒序。"""
+        if sort != "createdAt":
+            return (BizDealer.created_at.desc(), BizDealer.dealer_id.desc())
+        ol = (order or "descending").lower()
+        if ol in ("asc", "ascending"):
+            return (BizDealer.created_at.asc(), BizDealer.dealer_id.asc())
+        return (BizDealer.created_at.desc(), BizDealer.dealer_id.desc())
+
+    @staticmethod
     async def page_dealers(
         db: AsyncSession,
         page: int = 1,
         limit: int = 20,
         keyword: Optional[str] = None,
+        sort: Optional[str] = None,
+        order: Optional[str] = None,
     ) -> dict:
         stmt = select(BizDealer)
         if keyword:
@@ -38,9 +52,13 @@ class TenantDealerService:
                     BizDealer.main_brand.contains(kw),
                 )
             )
+        order_clause = TenantDealerService._order_created_at_clause(sort, order)
         return await paginate(
-            db, stmt, page, limit,
-            order_by=BizDealer.dealer_id.desc(),
+            db,
+            stmt,
+            page,
+            limit,
+            order_by=order_clause,
             serializer=lambda r: DealerOut.from_model(r).model_dump(),
         )
 

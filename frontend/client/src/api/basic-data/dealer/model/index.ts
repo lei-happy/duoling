@@ -1,3 +1,5 @@
+import type { PageParam } from '@/api';
+
 /** 租户经销商（biz_dealer） */
 
 export interface Dealer {
@@ -12,4 +14,8 @@ export interface Dealer {
   latitude?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+}
+
+export interface DealerParam extends PageParam {
+  keyword?: string;
 }

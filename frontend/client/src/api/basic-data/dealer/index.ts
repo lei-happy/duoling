@@ -1,15 +1,12 @@
 import request from '@/utils/request';
 import type { ApiResult } from '@/api';
-import type { Dealer } from './model';
+import type { Dealer, DealerParam } from './model';
 
-export async function pageDealers(params: {
-  page?: number;
-  limit?: number;
-  keyword?: string;
-}) {
-  const res = await request.get<
-    ApiResult<{ list: Dealer[]; count: number }>
-  >('/basic-data/dealer', { params });
+export async function pageDealers(params: DealerParam) {
+  const res = await request.get<ApiResult<{ list: Dealer[]; count: number }>>(
+    '/basic-data/dealer',
+    { params }
+  );
   if (res.data.code === 0) {
     return res.data.data!;
   }
@@ -36,10 +33,7 @@ export async function addDealer(data: {
   longitude?: number;
   latitude?: number;
 }) {
-  const res = await request.post<ApiResult<Dealer>>(
-    '/basic-data/dealer',
-    data
-  );
+  const res = await request.post<ApiResult<Dealer>>('/basic-data/dealer', data);
   if (res.data.code === 0) {
     return res.data.message;
   }
