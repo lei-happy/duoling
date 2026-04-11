@@ -34,12 +34,12 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /build
 
-COPY frontend/pnpm-workspace.yaml frontend/package.json ./
+COPY frontend/.npmrc frontend/pnpm-workspace.yaml frontend/package.json ./
 COPY frontend/packages/ ./packages/
 COPY frontend/console/package.json ./console/package.json
 COPY frontend/client/package.json ./client/package.json
 
-RUN pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --registry=https://registry.npmmirror.com
+RUN pnpm install --frozen-lockfile 2>/dev/null || pnpm install --no-frozen-lockfile --registry=https://registry.npmmirror.com
 
 
 # ============================================================
@@ -53,7 +53,7 @@ COPY frontend/console/ ./console/
 COPY frontend/components/ ./components/
 
 WORKDIR /build/console
-RUN NODE_OPTIONS="--max-old-space-size=4096" npx vite build
+RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build:app
 
 
 # ============================================================
@@ -67,7 +67,7 @@ COPY frontend/client/ ./client/
 COPY frontend/components/ ./components/
 
 WORKDIR /build/client
-RUN NODE_OPTIONS="--max-old-space-size=4096" npx vite build
+RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build:app
 
 
 # ============================================================
