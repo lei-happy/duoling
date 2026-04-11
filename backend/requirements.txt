@@ -28,6 +28,7 @@ alibabacloud-tea-openapi>=0.3.0
 python-dotenv>=1.0.1
 loguru>=0.7.3
 httpx>=0.28.0
+pypinyin>=0.55.0
 
 # Testing
 pytest>=8.3.0

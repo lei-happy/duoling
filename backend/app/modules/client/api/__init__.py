@@ -16,7 +16,6 @@ from app.modules.client.api.trailer import router as trailer_router
 from app.modules.client.api.driver import router as driver_router
 from app.modules.client.api.customer import router as customer_router
 from app.modules.client.api.route import router as route_router
-from app.modules.client.api.order import router as order_router
 from app.modules.client.api.operation_record import router as operation_record_router
 from app.modules.client.api.region import router as region_router
 from app.modules.client.api.basicdata import (
@@ -27,6 +26,12 @@ from app.modules.client.api.basicdata import (
 from app.modules.client.api.enterprise import router as enterprise_router
 from app.modules.client.api.file import router as file_router
 from app.modules.client.api.workbench.todo import router as workbench_todo_router
+from app.modules.client.api.system_config import router as system_config_router
+from app.modules.client.api.partner.customer import router as partner_customer_router
+from app.modules.client.api.billing.freight_contract import router as freight_contract_router
+from app.modules.client.api.billing.freight_rate import router as freight_rate_router
+from app.modules.client.api.billing.calculate import router as freight_calc_router
+from app.modules.client.api.waybill.waybill import router as waybill_router
 
 router = APIRouter()
 
@@ -41,7 +46,6 @@ router.include_router(trailer_router, prefix="/resource/trailer", tags=["客户�
 router.include_router(driver_router, prefix="/resource/driver", tags=["客户端-驾驶员管理"])
 router.include_router(customer_router, prefix="/resource/customer", tags=["客户端-客户管理"])
 router.include_router(route_router, prefix="/resource/route", tags=["客户端-路线管理"])
-router.include_router(order_router, prefix="/business/order", tags=["客户端-运单管理"])
 router.include_router(operation_record_router, prefix="/system/operation-record", tags=["客户端-操作记录"])
 router.include_router(region_router, prefix="/basic-data/region", tags=["客户端-地区数据"])
 router.include_router(
@@ -56,3 +60,9 @@ router.include_router(
 router.include_router(enterprise_router, prefix="/enterprise", tags=["客户端-企业管理"])
 router.include_router(file_router, prefix="/file", tags=["客户端-文件管理"])
 router.include_router(workbench_todo_router, prefix="/workbench/todo", tags=["客户端-工作台待办"])
+router.include_router(system_config_router, prefix="/system/config", tags=["客户端-系统配置"])
+router.include_router(partner_customer_router, prefix="/partner/customer", tags=["客户端-合作伙伴-客户"])
+router.include_router(freight_contract_router, prefix="/billing/contract", tags=["客户端-运价合同"])
+router.include_router(freight_rate_router, prefix="/billing/rate", tags=["客户端-运价费率"])
+router.include_router(freight_calc_router, prefix="/billing/calculate", tags=["客户端-运费计算"])
+router.include_router(waybill_router, prefix="/business/waybill", tags=["客户端-运单管理V2"])

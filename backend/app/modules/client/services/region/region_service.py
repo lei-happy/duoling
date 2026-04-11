@@ -56,11 +56,12 @@ class RegionService:
         return result.scalar() or 0
 
     @staticmethod
-    async def get_nav_tree(db: AsyncSession) -> List[dict]:
-        """获取省+市两级树结构（左侧导航面板用）"""
+    async def get_nav_tree(db: AsyncSession, max_level: int = 3) -> List[dict]:
+        """获取省/市/区县树结构，max_level 控制深度（默认3级）"""
+        levels = list(range(1, max_level + 1))
         result = await db.execute(
             select(BizRegion).where(
-                BizRegion.level.in_([1, 2]),
+                BizRegion.level.in_(levels),
                 BizRegion.is_deleted == 0,
             ).order_by(BizRegion.sort_order, BizRegion.code)
         )

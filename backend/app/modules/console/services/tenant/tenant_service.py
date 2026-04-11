@@ -313,6 +313,7 @@ class TenantService:
         from app.modules.client.models.user.biz_user import BizUser
         from app.modules.client.models.user.biz_user_role import BizUserRole
         from app.modules.client.models.biz_dict import BizDict, BizDictItem
+        from app.modules.client.models.system_config import SystemConfig
 
         engine = db_manager._get_or_create_tenant_engine(tenant_code)
         session_factory = db_manager._tenant_session_factories[tenant_code]
@@ -388,6 +389,19 @@ class TenantService:
                             item_value=item_value,
                             sort_order=item_sort,
                         ))
+
+                # 系统配置初始数据
+                default_configs = [
+                    SystemConfig(
+                        config_key="waybill.freight_calc_mode",
+                        config_value="auto_preferred",
+                        config_group="waybill",
+                        description="运费计算模式：auto_required-强制自动计费 auto_preferred-优先自动允许手动 manual_only-仅手动",
+                        value_type="enum",
+                        default_value="auto_preferred",
+                    ),
+                ]
+                session.add_all(default_configs)
 
                 await session.commit()
                 logger.info(f"租户 {tenant_code} 种子数据已初始化")

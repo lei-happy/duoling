@@ -10,7 +10,6 @@
 # ---- Tier 1: Core (注册即创建) ----
 from app.modules.client.models.user.biz_user import BizUser
 from app.modules.client.models.role.biz_role import BizRole
-from app.modules.client.models.role.biz_menu import BizMenu
 from app.modules.client.models.organization.biz_department import BizDepartment
 from app.modules.client.models.user.biz_user_role import BizUserRole
 from app.modules.client.models.role.biz_role_menu import BizRoleMenu
@@ -20,6 +19,7 @@ from app.modules.client.models.vehicle_basic.biz_vehicle_series import BizVehicl
 from app.modules.client.models.vehicle_basic.biz_dealer import BizDealer
 from app.modules.client.models.biz_operation_log import BizOperationLog
 from app.modules.client.models.biz_dict import BizDict, BizDictItem
+from app.modules.client.models.system_config import SystemConfig
 
 # ---- Tier 2: Business (版本开通时创建) ----
 from app.modules.client.models.vehicle import Vehicle
@@ -27,15 +27,16 @@ from app.modules.client.models.vehicle_ext import VehicleExt
 from app.modules.client.models.trailer import Trailer
 from app.modules.client.models.trailer_ext import TrailerExt
 from app.modules.client.models.driver import Driver
-from app.modules.client.models.order import Order
 from app.modules.client.models.route import Route
-from app.modules.client.models.customer import Customer
+from app.modules.client.models.partner.customer import Customer
+from app.modules.client.models.billing.freight_contract import FreightContract
+from app.modules.client.models.billing.freight_rate import FreightRate
+from app.modules.client.models.waybill.waybill import Waybill
 
 __all__ = [
     # Core
     "BizUser",
     "BizRole",
-    "BizMenu",
     "BizDepartment",
     "BizUserRole",
     "BizRoleMenu",
@@ -46,13 +47,16 @@ __all__ = [
     "BizOperationLog",
     "BizDict",
     "BizDictItem",
+    "SystemConfig",
     # Business
     "Vehicle",
     "VehicleExt",
     "Trailer",
     "TrailerExt",
     "Driver",
-    "Order",
     "Route",
     "Customer",
+    "FreightContract",
+    "FreightRate",
+    "Waybill",
 ]
