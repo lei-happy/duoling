@@ -90,6 +90,28 @@
     visible.value = true;
   };
 
+  const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
+
+  const compressImage = (base64: string, quality = 0.85): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('无法创建画布'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('图片加载失败'));
+      img.src = base64;
+    });
+  };
+
   const base64ToFile = (base64: string, fileName: string): File => {
     const arr = base64.split(',');
     const mime = arr[0]?.match(/:(.*?);/)?.[1] || 'image/png';
@@ -106,8 +128,14 @@
     visible.value = false;
     const loading = EleMessage.loading({ message: '上传中..', plain: true });
     try {
-      const file = base64ToFile(result, 'avatar.png');
-      const uploadRes = await uploadFile(file, undefined, 'avatar.png', 'avatar');
+      const compressed = await compressImage(result);
+      const file = base64ToFile(compressed, 'avatar.jpg');
+      if (file.size > MAX_AVATAR_SIZE) {
+        loading.close();
+        EleMessage.error({ message: '图片过大，请选择较小的图片', plain: true });
+        return;
+      }
+      const uploadRes = await uploadFile(file, undefined, 'avatar.jpg', 'avatar');
       const avatarUrl = uploadRes.url;
 
       const userInfo = await updateUserInfo({ avatar: avatarUrl });
