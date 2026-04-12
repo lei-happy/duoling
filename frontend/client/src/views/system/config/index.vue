@@ -1,98 +1,107 @@
 <template>
-  <ele-page>
-    <ele-card
-      v-for="group in groups"
-      :key="group.name"
-      :header="group.label"
-      :body-style="{ padding: '16px 24px' }"
-      style="margin-bottom: 16px"
-    >
-      <el-form label-width="180px" :model="{}" @submit.prevent>
-        <el-form-item
-          v-for="item in group.items"
-          :key="item.configKey"
-          :label="item.description || item.configKey"
+  <ele-page :multi-card="false">
+    <ele-card :body-style="{ padding: 0, overflow: 'hidden' }">
+      <ele-split-panel
+        space="0px"
+        size="200px"
+        :allow-collapse="mobile"
+        v-model:collapse="sideCollapse"
+        :custom-style="{
+          borderWidth: '0 1px 0 0',
+          padding: '10px 0',
+          background: 'none'
+        }"
+        :body-style="{ padding: '16px 20px 20px 16px', overflow: 'hidden' }"
+        :collapse-style="{ marginLeft: '4px' }"
+        style="min-height: 480px; border-radius: var(--ele-card-radius)"
+      >
+        <ele-loading
+          :loading="loading && !configs.length"
+          :style="{ flex: '1', minHeight: '200px', padding: '0 0 8px 0' }"
         >
-          <template v-if="item.valueType === 'enum'">
-            <el-radio-group
-              :model-value="item.configValue"
-              @update:model-value="(val: string) => handleChange(item, val)"
-            >
-              <el-radio
-                v-for="opt in getEnumOptions(item.configKey)"
-                :key="opt.value"
-                :value="opt.value"
+          <ele-menus
+            v-if="menuItems.length"
+            ref="menuRef"
+            :items="menuItems"
+            :default-active="activeGroup"
+            class="config-side-menu"
+            @select="handleMenuSelect"
+          />
+        </ele-loading>
+        <template #body>
+          <ele-loading :loading="loading">
+            <transition name="slide-right" mode="out-in">
+              <ele-card
+                v-if="currentGroup"
+                :key="currentGroup.name"
+                class="config-group-card"
+                :header="currentGroup.label"
+                :header-style="configGroupCardHeaderStyle"
+                :body-style="configGroupCardBodyStyle"
               >
-                {{ opt.label }}
-              </el-radio>
-            </el-radio-group>
-          </template>
-          <template v-else-if="item.valueType === 'number'">
-            <el-input-number
-              :model-value="Number(item.configValue)"
-              @update:model-value="(val: number) => handleChange(item, String(val))"
-            />
-          </template>
-          <template v-else-if="item.valueType === 'boolean'">
-            <el-switch
-              :model-value="item.configValue === 'true'"
-              @update:model-value="(val: boolean) => handleChange(item, String(val))"
-            />
-          </template>
-          <template v-else>
-            <el-input
-              :model-value="item.configValue"
-              style="max-width: 360px"
-              @update:model-value="(val: string) => handleChange(item, val)"
-            />
-          </template>
-          <div v-if="item.defaultValue" class="config-default">
-            默认值：{{ getDisplayLabel(item.configKey, item.defaultValue) }}
-          </div>
-        </el-form-item>
-      </el-form>
-    </ele-card>
-    <ele-card v-if="!groups.length && !loading" :body-style="{ padding: '40px' }">
-      <el-empty description="暂无配置项" />
+                <component
+                  :is="resolveGroupPanel(currentGroup.name)"
+                  :items="currentGroup.items"
+                  @config-change="handleChange"
+                />
+              </ele-card>
+              <ele-card v-else-if="!loading" :body-style="{ padding: '40px' }">
+                <el-empty description="暂无配置项" />
+              </ele-card>
+            </transition>
+          </ele-loading>
+        </template>
+      </ele-split-panel>
     </ele-card>
   </ele-page>
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, onMounted } from 'vue';
+  import type { Component } from 'vue';
+  import { ref, computed, watch, nextTick } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import type { EleMenusInstance } from 'ele-admin-plus/es/ele-app/plus';
+  import type { MenuItem } from 'ele-admin-plus/es/ele-menus/types';
   import { listConfigs, updateConfig } from '@/api/system/config';
   import type { SystemConfig } from '@/api/system/config/model';
+  import { useMobile } from '@/utils/use-mobile';
+  import GenericGroupSettings from './components/generic-group-settings.vue';
+  import WaybillSettings from './components/waybill-settings.vue';
+  import { GROUP_LABELS } from './constants';
 
   defineOptions({ name: 'SystemConfig' });
 
+  /** 与正文左右对齐，并收紧标题区上、左留白 */
+  const configGroupCardHeaderStyle = {
+    padding: '6px 16px 10px'
+  };
+  const configGroupCardBodyStyle = {
+    padding: '10px 16px 16px'
+  };
+
+  const groupPanels: Record<string, Component> = {
+    waybill: WaybillSettings
+  };
+
+  const resolveGroupPanel = (name: string) =>
+    groupPanels[name] ?? GenericGroupSettings;
+
   const loading = ref(false);
   const configs = ref<SystemConfig[]>([]);
+  const activeGroup = ref('');
+  const menuRef = ref<EleMenusInstance>(null);
+  const { mobile } = useMobile();
+  const sideCollapse = ref(mobile.value);
 
-  const ENUM_OPTIONS: Record<string, { value: string; label: string }[]> = {
-    'waybill.freight_calc_mode': [
-      { value: 'auto_required', label: '强制自动计费' },
-      { value: 'auto_preferred', label: '优先自动，允许手动' },
-      { value: 'manual_only', label: '仅手动填写' }
-    ]
-  };
-
-  const GROUP_LABELS: Record<string, string> = {
-    waybill: '运单设置'
-  };
-
-  const getEnumOptions = (key: string) => {
-    return ENUM_OPTIONS[key] || [];
-  };
-
-  const getDisplayLabel = (key: string, value: string) => {
-    const opts = ENUM_OPTIONS[key];
-    if (opts) {
-      const opt = opts.find((o) => o.value === value);
-      if (opt) return opt.label;
-    }
-    return value;
-  };
+  watch(
+    mobile,
+    (m) => {
+      if (m) {
+        sideCollapse.value = true;
+      }
+    },
+    { immediate: true }
+  );
 
   const groups = computed(() => {
     const map = new Map<string, SystemConfig[]>();
@@ -107,6 +116,42 @@
       items
     }));
   });
+
+  const menuItems = computed<MenuItem[]>(() =>
+    groups.value.map((g) => ({
+      index: g.name,
+      title: g.label
+    }))
+  );
+
+  const currentGroup = computed(() =>
+    groups.value.find((g) => g.name === activeGroup.value)
+  );
+
+  const handleMenuSelect = (index: string) => {
+    activeGroup.value = index;
+    if (mobile.value) {
+      sideCollapse.value = true;
+    }
+  };
+
+  watch(
+    () => groups.value.map((g) => g.name),
+    (names) => {
+      if (!names.length) {
+        activeGroup.value = '';
+        return;
+      }
+      if (!names.includes(activeGroup.value)) {
+        activeGroup.value = names[0];
+      }
+      nextTick(() => {
+        menuRef.value?.updateActiveIndex?.(activeGroup.value);
+        menuRef.value?.scrollToActive?.();
+      });
+    },
+    { immediate: true }
+  );
 
   const query = () => {
     loading.value = true;
@@ -135,15 +180,18 @@
       });
   };
 
-  onMounted(() => {
-    query();
-  });
+  query();
 </script>
 
 <style scoped>
-  .config-default {
-    font-size: 12px;
-    color: var(--el-text-color-placeholder);
-    margin-top: 4px;
+  .config-side-menu {
+    width: 100%;
+    background: none;
+    border: none;
+  }
+
+  /* 标题与下方表单项共用同一水平起点，避免标题区默认 padding 过大 */
+  .config-group-card :deep(.ele-card-title) {
+    line-height: 1.35;
   }
 </style>
