@@ -56,6 +56,16 @@ async def get_tenant_code(request: Request) -> str:
     return tenant_code
 
 
+async def ensure_biz_login_log_table(
+    tenant_code: str = Depends(get_tenant_code),
+) -> None:
+    """
+    老租户库在新增 biz_login_log 模型前已初始化，可能缺少该表；
+    首次访问登录记录接口时按需补建（与 fix_tenant_tables 行为一致）。
+    """
+    await db_manager.ensure_tenant_tables(tenant_code, ["biz_login_log"])
+
+
 async def get_tenant_db(
     tenant_code: str = Depends(get_tenant_code),
 ) -> AsyncGenerator[AsyncSession, None]:

@@ -80,8 +80,8 @@
   import {
     pageLoginRecords,
     listLoginRecords
-  } from '@/api/system/login-record';
-  import type { LoginRecordParam } from '@/api/system/login-record/model';
+  } from '@/api/logcenter/login-record';
+  import type { LoginRecordParam } from '@/api/logcenter/login-record/model';
 
   defineOptions({ name: 'SystemLoginRecord' });
 

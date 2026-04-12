@@ -7,7 +7,7 @@ import type { OperationRecord, OperationRecordParam } from './model';
  */
 export async function pageOperationRecords(params: OperationRecordParam) {
   const res = await request.get<ApiResult<PageResult<OperationRecord>>>(
-    '/system/operation-record/page',
+    '/logcenter/operation-record/page',
     { params }
   );
   if (res.data.code === 0) {
@@ -21,7 +21,7 @@ export async function pageOperationRecords(params: OperationRecordParam) {
  */
 export async function listOperationRecords(params?: OperationRecordParam) {
   const res = await request.get<ApiResult<OperationRecord[]>>(
-    '/system/operation-record',
+    '/logcenter/operation-record',
     { params }
   );
   if (res.data.code === 0 && res.data.data) {

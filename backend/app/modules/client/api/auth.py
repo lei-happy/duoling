@@ -3,19 +3,28 @@
 """
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
 from app.core.dependencies import get_platform_db, get_current_user, get_tenant_db
-from app.core.security import TokenData
+from app.core.security import TokenData, decode_refresh_token
+from app.modules.console.models.system.user import User
 from app.common.response import success
 from app.common.operation_log import operation_log
 from app.modules.console.schemas.auth.auth import (
-    LoginRequest, SmsLoginRequest, LoginResponse, MultiTenantResponse,
-    ChangePasswordRequest, RefreshTokenRequest,
-    UpdateProfileRequest, UpdateThemeConfigRequest, SwitchTenantRequest,
+    LoginRequest,
+    SmsLoginRequest,
+    LoginResponse,
+    MultiTenantResponse,
+    ChangePasswordRequest,
+    RefreshTokenRequest,
+    UpdateProfileRequest,
+    UpdateThemeConfigRequest,
+    SwitchTenantRequest,
 )
 from app.modules.console.services.auth.auth_service import AuthService
+from app.modules.client.services.login_record_service import LoginRecordService
 
 router = APIRouter()
 
@@ -23,6 +32,7 @@ router = APIRouter()
 @router.post("/login")
 async def client_login(
     login_data: LoginRequest,
+    http_request: Request,
     db: AsyncSession = Depends(get_platform_db),
 ):
     """
@@ -30,12 +40,20 @@ async def client_login(
     当手机号对应多个企业时，返回企业选择列表
     """
     result = await AuthService.client_login(db, login_data)
+    if isinstance(result, LoginResponse) and result.user.tenant_code:
+        await LoginRecordService.record_login_event(
+            tenant_code=result.user.tenant_code,
+            username=result.user.phone,
+            login_type=0,
+            request=http_request,
+        )
     return success(data=result.model_dump())
 
 
 @router.post("/sms-login")
 async def client_sms_login(
     login_data: SmsLoginRequest,
+    http_request: Request,
     db: AsyncSession = Depends(get_platform_db),
 ):
     """
@@ -45,16 +63,35 @@ async def client_sms_login(
     result = await AuthService.client_sms_login(
         db, login_data.phone, login_data.code, login_data.tenant_code
     )
+    if isinstance(result, LoginResponse) and result.user.tenant_code:
+        await LoginRecordService.record_login_event(
+            tenant_code=result.user.tenant_code,
+            username=result.user.phone,
+            login_type=0,
+            request=http_request,
+        )
     return success(data=result.model_dump())
 
 
 @router.post("/refresh")
 async def refresh_token(
-    request: RefreshTokenRequest,
+    body: RefreshTokenRequest,
+    http_request: Request,
     db: AsyncSession = Depends(get_platform_db),
 ):
     """刷新 Token"""
-    result = await AuthService.refresh_token(db, request)
+    result = await AuthService.refresh_token(db, body)
+    td = decode_refresh_token(body.refresh_token)
+    if td and td.tenant_code:
+        phone = ""
+        pr = await db.execute(select(User.phone).where(User.id == td.user_id))
+        phone = pr.scalar_one_or_none() or ""
+        await LoginRecordService.record_login_event(
+            tenant_code=td.tenant_code,
+            username=phone,
+            login_type=3,
+            request=http_request,
+        )
     return success(data=result.model_dump())
 
 
@@ -84,11 +121,19 @@ async def get_user_tenants(
 @router.post("/switch-tenant")
 async def switch_tenant(
     request: SwitchTenantRequest,
+    http_request: Request,
     current_user: TokenData = Depends(get_current_user),
     db: AsyncSession = Depends(get_platform_db),
 ):
     """切换到目标租户，返回新的 Token"""
     result = await AuthService.switch_tenant(db, current_user.user_id, request)
+    if isinstance(result, LoginResponse) and result.user.tenant_code:
+        await LoginRecordService.record_login_event(
+            tenant_code=result.user.tenant_code,
+            username=result.user.phone,
+            login_type=0,
+            request=http_request,
+        )
     return success(data=result.model_dump())
 
 

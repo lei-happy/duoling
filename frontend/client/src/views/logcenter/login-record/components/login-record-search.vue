@@ -53,7 +53,7 @@
   import { ref } from 'vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
-  import type { LoginRecordParam } from '@/api/system/login-record/model';
+  import type { LoginRecordParam } from '@/api/logcenter/login-record/model';
 
   const props = defineProps<{
     /** 默认搜索条件 */

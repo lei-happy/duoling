@@ -51,11 +51,11 @@
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import OperationRecordSearch from './components/operation-record-search.vue';
-  import { pageOperationRecords } from '@/api/system/operation-record';
+  import { pageOperationRecords } from '@/api/logcenter/operation-record';
   import type {
     OperationRecord,
     OperationRecordParam
-  } from '@/api/system/operation-record/model';
+  } from '@/api/logcenter/operation-record/model';
   import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'SystemOperationRecord' });

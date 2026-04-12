@@ -55,7 +55,7 @@
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import { DATE_TIME_FORMAT } from '@/utils/date-util';
-  import type { OperationRecordParam } from '@/api/system/operation-record/model';
+  import type { OperationRecordParam } from '@/api/logcenter/operation-record/model';
 
   const emit = defineEmits<{
     (e: 'search', where?: OperationRecordParam): void;

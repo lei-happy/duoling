@@ -17,6 +17,7 @@ from app.modules.client.api.driver import router as driver_router
 from app.modules.client.api.customer import router as customer_router
 from app.modules.client.api.route import router as route_router
 from app.modules.client.api.operation_record import router as operation_record_router
+from app.modules.client.api.login_record import router as login_record_router
 from app.modules.client.api.region import router as region_router
 from app.modules.client.api.basicdata import (
     vehicle_brand_router,
@@ -46,7 +47,16 @@ router.include_router(trailer_router, prefix="/resource/trailer", tags=["客户�
 router.include_router(driver_router, prefix="/resource/driver", tags=["客户端-驾驶员管理"])
 router.include_router(customer_router, prefix="/resource/customer", tags=["客户端-客户管理"])
 router.include_router(route_router, prefix="/resource/route", tags=["客户端-路线管理"])
-router.include_router(operation_record_router, prefix="/system/operation-record", tags=["客户端-操作记录"])
+router.include_router(
+    operation_record_router,
+    prefix="/logcenter/operation-record",
+    tags=["客户端-日志中心-操作记录"],
+)
+router.include_router(
+    login_record_router,
+    prefix="/logcenter/login-record",
+    tags=["客户端-日志中心-登录记录"],
+)
 router.include_router(region_router, prefix="/basic-data/region", tags=["客户端-地区数据"])
 router.include_router(
     vehicle_brand_router, prefix="/basic-data/vehicle-brand", tags=["客户端-品牌"]

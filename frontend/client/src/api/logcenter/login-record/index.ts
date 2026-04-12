@@ -7,7 +7,7 @@ import type { LoginRecord, LoginRecordParam } from './model';
  */
 export async function pageLoginRecords(params: LoginRecordParam) {
   const res = await request.get<ApiResult<PageResult<LoginRecord>>>(
-    '/system/login-record/page',
+    '/logcenter/login-record/page',
     { params }
   );
   if (res.data.code === 0) {
@@ -21,7 +21,7 @@ export async function pageLoginRecords(params: LoginRecordParam) {
  */
 export async function listLoginRecords(params?: LoginRecordParam) {
   const res = await request.get<ApiResult<LoginRecord[]>>(
-    '/system/login-record',
+    '/logcenter/login-record',
     { params }
   );
   if (res.data.code === 0 && res.data.data) {

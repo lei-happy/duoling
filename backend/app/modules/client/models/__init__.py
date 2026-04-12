@@ -18,6 +18,7 @@ from app.modules.client.models.vehicle_basic.biz_vehicle_brand import BizVehicle
 from app.modules.client.models.vehicle_basic.biz_vehicle_series import BizVehicleSeries
 from app.modules.client.models.vehicle_basic.biz_dealer import BizDealer
 from app.modules.client.models.biz_operation_log import BizOperationLog
+from app.modules.client.models.biz_login_log import BizLoginLog
 from app.modules.client.models.biz_dict import BizDict, BizDictItem
 from app.modules.client.models.system_config import SystemConfig
 
@@ -45,6 +46,7 @@ __all__ = [
     "BizVehicleSeries",
     "BizDealer",
     "BizOperationLog",
+    "BizLoginLog",
     "BizDict",
     "BizDictItem",
     "SystemConfig",

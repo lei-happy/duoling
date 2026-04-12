@@ -67,7 +67,7 @@
 <script lang="ts" setup>
   import { computed, reactive } from 'vue';
   import type { EleTooltipProps } from 'ele-admin-plus/es/ele-app/plus';
-  import type { OperationRecord } from '@/api/system/operation-record/model';
+  import type { OperationRecord } from '@/api/logcenter/operation-record/model';
   import { formatDateTime } from '@/utils/date-util';
   import { useMobile } from '@/utils/use-mobile';
 
