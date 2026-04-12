@@ -320,11 +320,15 @@ class TenantService:
 
         async with session_factory() as session:
             try:
-                # 默认角色
+                # 默认角色（仅管理员）
                 roles = [
-                    BizRole(role_code="admin", role_name="管理员", sort_order=0, status=1),
-                    BizRole(role_code="operator", role_name="操作员", sort_order=10, status=1),
-                    BizRole(role_code="driver", role_name="驾驶员", sort_order=20, status=1),
+                    BizRole(
+                        role_code="admin",
+                        role_name="管理员",
+                        sort_order=0,
+                        status=1,
+                        remark="拥有系统全部的操作权限",
+                    ),
                 ]
                 session.add_all(roles)
                 await session.flush()

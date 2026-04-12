@@ -86,10 +86,8 @@ def _seed_roles(conn, existing_tables):
         print("  biz_role 已有数据，跳过")
         return
     conn.execute(text(
-        "INSERT INTO biz_role (role_code, role_name, sort_order, status, is_deleted) VALUES "
-        "('admin', '管理员', 0, 1, 0), "
-        "('operator', '操作员', 10, 1, 0), "
-        "('driver', '驾驶员', 20, 1, 0)"
+        "INSERT INTO biz_role (role_code, role_name, sort_order, status, is_deleted, remark) VALUES "
+        "('admin', '管理员', 0, 1, 0, '拥有系统全部的操作权限')"
     ))
     print("  已插入默认角色")
 

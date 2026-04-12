@@ -46,6 +46,12 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       path: '/enterprise/manage',
       component: () => import('@/views/enterprise/manage.vue'),
       meta: { title: '企业管理' }
+    },
+    // 个人中心（静态路由，不依赖后端菜单；与运营端入口一致）
+    {
+      path: '/user/profile',
+      component: () => import('@/views/user/profile/index.vue'),
+      meta: { title: '个人中心' }
     }
   ];
   const layoutRoutes: RouteRecordRaw[] = [
@@ -97,9 +103,10 @@ export function isWhiteList(path: string) {
  */
 function getComponent(component?: string) {
   if (component) {
-    const module = modules[`/src/views${component}.vue`];
+    const normalized = component.startsWith('/') ? component : `/${component}`;
+    const module = modules[`/src/views${normalized}.vue`];
     if (!module) {
-      return modules[`/src/views${component}/index.vue`];
+      return modules[`/src/views${normalized}/index.vue`];
     }
     return module;
   }
