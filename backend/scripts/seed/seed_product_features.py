@@ -34,9 +34,11 @@ FEATURES = [
     {"feature_code": "resource_trailer", "feature_name": "挂车管理", "module": "resource", "sort_order": 12, "required_tables": '["biz_trailer", "biz_trailer_ext"]'},
     {"feature_code": "resource_driver", "feature_name": "驾驶员管理", "module": "resource", "sort_order": 13, "required_tables": '["biz_driver", "biz_driver_license", "biz_driver_operation", "biz_driver_account", "biz_driver_route"]'},
     {"feature_code": "resource_route", "feature_name": "路线管理", "module": "resource", "sort_order": 14, "required_tables": '["biz_route"]'},
+    # 运力模块 (standard 及以上)
+    {"feature_code": "capacity_manage", "feature_name": "运力管理", "module": "capacity", "sort_order": 15, "required_tables": '["biz_capacity", "biz_capacity_log"]'},
     # 合作伙伴模块 (standard 及以上)
-    {"feature_code": "partner_manage", "feature_name": "合作伙伴", "module": "partner", "sort_order": 15, "required_tables": None},
-    {"feature_code": "partner_customer", "feature_name": "客户管理", "module": "partner", "sort_order": 16, "required_tables": '["biz_customer"]'},
+    {"feature_code": "partner_manage", "feature_name": "合作伙伴", "module": "partner", "sort_order": 16, "required_tables": None},
+    {"feature_code": "partner_customer", "feature_name": "客户管理", "module": "partner", "sort_order": 17, "required_tables": '["biz_customer"]'},
     # 业务模块 (standard 及以上)
     {"feature_code": "biz_manage", "feature_name": "业务管理", "module": "biz", "sort_order": 20, "required_tables": None},
     {"feature_code": "biz_waybill", "feature_name": "运单管理", "module": "biz", "sort_order": 21, "required_tables": '["biz_waybill"]'},
@@ -64,6 +66,7 @@ VERSION_FEATURES = {
         "base_role", "base_dict", "base_log", "base_config",
         "basic_data", "basic_data_region", "basic_data_vehicle_brand_series",
         "basic_data_dealer",
+        "capacity_manage",
     ],
     "standard": [
         "base_dashboard", "base_system", "base_organization", "base_user",
@@ -72,6 +75,7 @@ VERSION_FEATURES = {
         "basic_data_dealer",
         "resource_manage", "resource_vehicle", "resource_trailer", "resource_driver",
         "resource_route",
+        "capacity_manage",
         "partner_manage", "partner_customer",
         "biz_manage", "biz_waybill", "biz_dispatch", "biz_tracking", "biz_receipt",
         "billing_manage", "billing_contract",
@@ -83,6 +87,7 @@ VERSION_FEATURES = {
         "basic_data_dealer",
         "resource_manage", "resource_vehicle", "resource_trailer", "resource_driver",
         "resource_route",
+        "capacity_manage",
         "partner_manage", "partner_customer",
         "biz_manage", "biz_waybill", "biz_dispatch", "biz_tracking", "biz_receipt",
         "billing_manage", "billing_contract",
@@ -96,6 +101,7 @@ VERSION_FEATURES = {
         "basic_data_dealer",
         "resource_manage", "resource_vehicle", "resource_trailer", "resource_driver",
         "resource_route",
+        "capacity_manage",
         "partner_manage", "partner_customer",
         "biz_manage", "biz_waybill", "biz_dispatch", "biz_tracking", "biz_receipt",
         "billing_manage", "billing_contract",

@@ -33,6 +33,7 @@ from app.modules.client.api.billing.freight_contract import router as freight_co
 from app.modules.client.api.billing.freight_rate import router as freight_rate_router
 from app.modules.client.api.billing.calculate import router as freight_calc_router
 from app.modules.client.api.waybill.waybill import router as waybill_router
+from app.modules.client.api.capacity import router as capacity_router
 
 router = APIRouter()
 
@@ -76,3 +77,4 @@ router.include_router(freight_contract_router, prefix="/billing/contract", tags=
 router.include_router(freight_rate_router, prefix="/billing/rate", tags=["客户端-运价费率"])
 router.include_router(freight_calc_router, prefix="/billing/calculate", tags=["客户端-运费计算"])
 router.include_router(waybill_router, prefix="/business/waybill", tags=["客户端-运单管理V2"])
+router.include_router(capacity_router, prefix="/capacity", tags=["客户端-运力管理"])

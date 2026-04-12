@@ -647,6 +647,26 @@ def seed_platform_data():
                 session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
             print("[OK] 司机列表菜单已补充")
 
+        # ---- 补充：运力中心菜单（平台端） ----
+        capacity_menu = session.query(Menu).filter_by(
+            menu_code="platform_capacity", app_type="platform", is_deleted=0
+        ).first()
+        if not capacity_menu:
+            capacity_menu = Menu(
+                parent_id=user_mgmt_menu.id if user_mgmt_menu else 0,
+                menu_name="平台运力",
+                menu_code="platform_capacity", menu_type=0,
+                path="/user_management/capacity",
+                component="/capacity/index",
+                icon="CarFilled", sort_order=20, app_type="platform",
+            )
+            session.add(capacity_menu)
+            session.flush()
+            all_menus.append(capacity_menu)
+            if role_admin:
+                session.add(RoleMenu(role_id=role_admin.id, menu_id=capacity_menu.id))
+            print("[OK] 平台运力菜单已补充")
+
         # ---- 自助注册策略默认配置 ----
         _policy_defaults = [
             (

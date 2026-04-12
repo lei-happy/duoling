@@ -33,6 +33,7 @@ from app.modules.console.api.system.open_register_policy import (
     router as open_register_policy_router,
 )
 from app.modules.console.api.driver import router as driver_router
+from app.modules.console.api.capacity import router as capacity_router
 
 router = APIRouter()
 
@@ -77,3 +78,4 @@ router.include_router(
     tags=["管理后台-自助注册策略"],
 )
 router.include_router(driver_router, prefix="/driver", tags=["管理后台-平台司机"])
+router.include_router(capacity_router, prefix="/capacity", tags=["管理后台-平台运力"])

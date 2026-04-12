@@ -21,6 +21,7 @@ from app.modules.console.models.todo.sys_todo_task import SysTodoTask
 from app.modules.console.models.ops.autohome_sync_job import AutohomeSyncJob
 from app.modules.console.models.system.platform_setting import PlatformSetting
 from app.modules.console.models.driver.sys_driver import SysDriver
+from app.modules.console.models.capacity.sys_capacity import SysCapacity
 
 __all__ = [
     "Tenant",
@@ -48,4 +49,5 @@ __all__ = [
     "AutohomeSyncJob",
     "PlatformSetting",
     "SysDriver",
+    "SysCapacity",
 ]

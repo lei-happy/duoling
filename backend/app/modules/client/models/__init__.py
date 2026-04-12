@@ -33,6 +33,7 @@ from app.modules.client.models.partner.customer import Customer
 from app.modules.client.models.billing.freight_contract import FreightContract
 from app.modules.client.models.billing.freight_rate import FreightRate
 from app.modules.client.models.waybill.waybill import Waybill
+from app.modules.client.models.capacity import Capacity, CapacityLog
 
 __all__ = [
     # Core
@@ -64,4 +65,6 @@ __all__ = [
     "FreightContract",
     "FreightRate",
     "Waybill",
+    "Capacity",
+    "CapacityLog",
 ]
