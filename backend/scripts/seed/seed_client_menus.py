@@ -107,7 +107,7 @@ CLIENT_MENUS = [
                 "menu_code": "business:waybill",
                 "menu_type": 0,
                 "path": "/business/waybill",
-                "component": "/waybill/index",
+                "component": "/business/waybill/index",
                 "icon": "yundanguanli",
                 "sort_order": 0,
                 "feature_code": "biz_waybill",
