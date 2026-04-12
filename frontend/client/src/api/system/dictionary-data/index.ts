@@ -24,8 +24,8 @@ export async function listDictionaryData(params?: DictionaryDataParam) {
     '/system/dictionary-data',
     { params }
   );
-  if (res.data.code === 0 && res.data.data) {
-    return res.data.data;
+  if (res.data.code === 0) {
+    return res.data.data ?? [];
   }
   return Promise.reject(new Error(res.data.message));
 }
@@ -75,9 +75,10 @@ export async function removeDictionaryData(id?: number) {
  * 批量删除字典数据
  */
 export async function removeDictionaryDataBatch(data: (number | undefined)[]) {
+  const ids = data.filter((id): id is number => id != null);
   const res = await request.delete<ApiResult<unknown>>(
     '/system/dictionary-data/batch',
-    { data }
+    { data: ids }
   );
   if (res.data.code === 0) {
     return res.data.message;

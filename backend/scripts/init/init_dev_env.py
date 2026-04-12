@@ -369,6 +369,11 @@ def step7_seed_tenant_data():
 
         session.commit()
 
+    # 灌入字典数据（统一来源）
+    from scripts.seed.seed_client_dicts import upsert_dicts_for_tenant
+    created = upsert_dicts_for_tenant(DEV_TENANT_CODE, tenant_engine)
+    print(f"[OK] 字典数据已灌入（新增 {created} 个字典）")
+
     # 同步地区数据
     platform_engine = create_engine(settings.platform_db_url_sync)
     platform_db = settings.platform_database_name

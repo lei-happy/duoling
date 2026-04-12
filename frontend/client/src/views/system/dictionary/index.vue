@@ -12,6 +12,7 @@
       >
         <template #sideHeader>
           <el-input
+            class="ele-fluid"
             clearable
             :maxlength="20"
             v-model="keywords"
@@ -19,26 +20,9 @@
             :prefix-icon="SearchOutlined"
           />
         </template>
-        <btn-items
-          :wrap="false"
-          :items="[
-            { preset: 'add', onClick: () => openTreeEdit() },
-            {
-              preset: 'edit',
-              props: { disabled: !current },
-              onClick: () => openTreeEdit(current)
-            },
-            {
-              preset: 'del',
-              props: { disabled: !current },
-              onClick: () => removeTree()
-            }
-          ]"
-          style="padding: 12px 0 12px 12px"
-        />
         <ele-loading
           :loading="loading"
-          :style="{ flex: '1 1 60px', padding: '0 0 12px 0', overflow: 'auto' }"
+          :style="{ flex: '1 1 60px', padding: '12px 0', overflow: 'auto' }"
         >
           <el-tree
             ref="treeRef"
@@ -56,10 +40,10 @@
             }"
             @node-click="handleNodeClick"
           >
-            <template #default="{ node, data: d }">
+            <template #default="{ node }">
               <div
                 class="el-tree-node__label"
-                :title="`${node.label}(${d.dictCode})`"
+                :title="node.label"
                 style="overflow: visible"
               >
                 <el-icon
@@ -71,12 +55,7 @@
                 >
                   <BookOutlined />
                 </el-icon>
-                <span style="margin-right: 4px">{{ node.label }}</span>
-                <span
-                  style="font-size: 12px; opacity: 0.8; font-weight: normal"
-                >
-                  ({{ d.dictCode }})
-                </span>
+                <span>{{ node.label }}</span>
               </div>
             </template>
           </el-tree>
@@ -94,7 +73,6 @@
             :columns="columns"
             :datasource="datasource"
             :show-overflow-tooltip="true"
-            v-model:selections="selections"
             :highlight-current-row="true"
             :export-config="{ fileName: '字典数据', datasource: exportSource }"
             :print-config="{ datasource: exportSource }"
@@ -104,8 +82,11 @@
             <template #toolbar>
               <btn-items
                 :items="[
-                  { preset: 'add', onClick: () => openEdit() },
-                  { preset: 'del', onClick: () => remove() }
+                  {
+                    preset: 'add',
+                    onClick: () => openEdit(),
+                    props: { disabled: !current }
+                  }
                 ]"
               />
             </template>
@@ -139,11 +120,11 @@
   import { SearchOutlined, BookOutlined } from '@/components/icons';
   import { useMobile } from '@/utils/use-mobile';
   import DictDataSearch from './components/dict-data-search.vue';
-  import { listDictionaries, removeDictionary } from '@/api/system/dictionary';
+  import { listDictionaries } from '@/api/system/dictionary';
   import type { Dictionary } from '@/api/system/dictionary/model';
   import {
     pageDictionaryData,
-    removeDictionaryDataBatch,
+    removeDictionaryData,
     listDictionaryData
   } from '@/api/system/dictionary-data';
   import type {
@@ -197,7 +178,6 @@
       current.value = null;
     }
     reload({}, 1);
-    // 移动端自动收起左侧
     if (current.value != null && mobile.value) {
       collapse.value = true;
     }
@@ -216,55 +196,11 @@
     treeRef.value?.filter?.(value);
   });
 
-  /** 打开树编辑弹窗 */
-  const openTreeEdit = (row?: Dictionary | null) => {
-    openModal({
-      custom: true,
-      asyncComponent: () => import('./components/dict-edit.vue'),
-      componentProps: { data: row, onDone: () => query() }
-    });
-  };
-
-  /** 删除树 */
-  const removeTree = () => {
-    const row = current.value;
-    if (!row) {
-      return;
-    }
-    ElMessageBox.confirm(`确定要删除“${row.dictName}”吗?`, '系统提示', {
-      type: 'warning',
-      draggable: true
-    })
-      .then(() => {
-        const loading = EleMessage.loading({
-          message: '请求中..',
-          plain: true
-        });
-        removeDictionary(row.dictId)
-          .then((msg) => {
-            loading.close();
-            EleMessage.success({ message: msg, plain: true });
-            query();
-          })
-          .catch((e) => {
-            loading.close();
-            EleMessage.error({ message: e.message, plain: true });
-          });
-      })
-      .catch(() => {});
-  };
-
   /** 表格组件 */
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
 
   /** 表格列配置 */
   const columns = ref<Columns>([
-    {
-      type: 'selection',
-      columnKey: 'selection',
-      width: 50,
-      align: 'center'
-    },
     {
       prop: 'dictDataName',
       label: '字典数据名',
@@ -302,9 +238,6 @@
     }
   ]);
 
-  /** 表格选中数据 */
-  const selections = ref<DictionaryData[]>([]);
-
   /** 表格数据源 */
   const datasource: DatasourceFunction = ({ pages, where, orders }) => {
     return pageDictionaryData({
@@ -317,7 +250,6 @@
 
   /** 刷新表格 */
   const reload = (where?: DictionaryDataParam, page?: number) => {
-    selections.value = [];
     tableRef.value?.reload?.({ where, page });
   };
 
@@ -329,20 +261,19 @@
       componentProps: {
         data: row,
         dictId: current.value?.dictId,
+        dictCode: current.value?.dictCode,
         onDone: () => reload()
       }
     });
   };
 
-  /** 删除 */
-  const remove = (row?: DictionaryData) => {
-    const rows = row == null ? selections.value : [row];
-    if (!rows.length) {
-      EleMessage.error({ message: '请至少选择一条数据', plain: true });
+  /** 删除（单行） */
+  const remove = (row: DictionaryData) => {
+    if (row.dictDataId == null) {
       return;
     }
     ElMessageBox.confirm(
-      `确定要删除“${rows.map((d) => d.dictDataName).join(', ')}”吗?`,
+      `确定要删除"${row.dictDataName}"吗?`,
       '系统提示',
       { type: 'warning', draggable: true }
     )
@@ -351,7 +282,7 @@
           message: '请求中..',
           plain: true
         });
-        removeDictionaryDataBatch(rows.map((d) => d.dictDataId))
+        removeDictionaryData(row.dictDataId)
           .then((msg) => {
             loading.close();
             EleMessage.success({ message: msg, plain: true });
@@ -377,3 +308,10 @@
   /** 查询树数据 */
   query();
 </script>
+<style scoped>
+.ele-card-body {
+  :deep(.ele-card-body) {
+    padding: 8px 0 8px 0 !important;
+  }
+}
+</style>

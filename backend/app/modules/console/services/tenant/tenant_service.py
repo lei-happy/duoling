@@ -359,20 +359,10 @@ class TenantService:
                 user_role = BizUserRole(user_id=admin_user.id, role_id=admin_role.id)
                 session.add(user_role)
 
-                # 基础字典数据
-                dict_defs = [
-                    ("sex", "性别", 0, [
-                        ("男", "男", 0),
-                        ("女", "女", 10),
-                    ]),
-                    ("organization_type", "机构类型", 10, [
-                        ("总部", "headquarters", 0),
-                        ("分公司", "branch", 10),
-                        ("部门", "department", 20),
-                        ("车队", "fleet", 30),
-                    ]),
-                ]
-                for dict_code, dict_name, sort_order, items in dict_defs:
+                # 基础字典数据（统一来源）
+                from scripts.seed.seed_client_dicts import DICT_DEFS
+
+                for dict_code, dict_name, sort_order, items in DICT_DEFS:
                     d = BizDict(
                         dict_code=dict_code,
                         dict_name=dict_name,

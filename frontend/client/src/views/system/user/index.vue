@@ -12,6 +12,7 @@
       >
         <template #sideHeader>
           <el-input
+            class="ele-fluid"
             clearable
             :maxlength="20"
             v-model="keywords"

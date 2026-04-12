@@ -3,7 +3,7 @@
   <ele-modal
     form
     :width="460"
-    :title="isUpdate ? '修改字典数据' : '添加字典数据'"
+    :title="isUpdate ? '修改选项' : '添加选项'"
     :loading="loading"
     v-bind="modalProps"
   >
@@ -11,31 +11,25 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="94px"
+      label-width="80px"
       @submit.prevent=""
     >
-      <el-form-item label="字典数据名" prop="dictDataName">
+      <el-form-item label="选项名称" prop="dictDataName">
         <el-input
           clearable
           :maxlength="20"
           v-model="form.dictDataName"
-          placeholder="请输入字典数据名"
+          placeholder="请输入选项名称"
         />
       </el-form-item>
-      <el-form-item label="字典数据值" prop="dictDataCode">
-        <el-input
-          clearable
-          :maxlength="20"
-          v-model="form.dictDataCode"
-          placeholder="请输入字典数据值"
-        />
+      <el-form-item v-if="isUpdate" label="选项值">
+        <el-input :model-value="form.dictDataCode" disabled />
       </el-form-item>
-      <el-form-item label="排序号" prop="sortNumber">
+      <el-form-item v-if="isUpdate" label="排序号">
         <el-input-number
           :min="0"
           :max="9999"
           v-model="form.sortNumber"
-          placeholder="请输入排序号"
           controls-position="right"
           class="ele-fluid"
         />
@@ -75,8 +69,10 @@
   const props = defineProps<{
     /** 修改回显的数据 */
     data?: DictionaryData | null;
-    /** 字典id */
-    dictId: number;
+    /** 字典 id */
+    dictId?: number;
+    /** 字典编码（新增时与 dictId 一起提交） */
+    dictCode?: string;
   }>();
 
   const emit = defineEmits<{
@@ -108,24 +104,8 @@
     dictDataName: [
       {
         required: true,
-        message: '请输入字典数据名',
+        message: '请输入选项名称',
         type: 'string',
-        trigger: 'blur'
-      }
-    ],
-    dictDataCode: [
-      {
-        required: true,
-        message: '请输入字典数据值',
-        type: 'string',
-        trigger: 'blur'
-      }
-    ],
-    sortNumber: [
-      {
-        required: true,
-        message: '请输入排序号',
-        type: 'number',
         trigger: 'blur'
       }
     ]
@@ -138,6 +118,10 @@
 
   /** 保存编辑 */
   const save = () => {
+    if (props.dictId == null) {
+      EleMessage.error({ message: '请先选择左侧字典', plain: true });
+      return;
+    }
     formRef.value?.validate?.((valid) => {
       if (!valid) {
         return;
@@ -148,7 +132,8 @@
         : addDictionaryData;
       saveOrUpdate({
         ...form,
-        dictId: props.dictId
+        dictId: props.dictId,
+        dictCode: props.dictCode
       })
         .then((msg) => {
           loading.value = false;

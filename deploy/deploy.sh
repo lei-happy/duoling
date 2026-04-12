@@ -299,10 +299,11 @@ reload_ssl() {
 }
 
 # ============================================================
-# 同步平台配置数据（菜单 + 产品功能模块）
-# 两个脚本均为幂等 upsert 操作，可安全重复执行：
+# 同步平台配置数据（菜单 + 产品功能模块 + 租户字典）
+# 所有脚本均为幂等 upsert 操作，可安全重复执行：
 #   - seed_client_menus.py     : 存在则全字段更新，不存在则插入（脚本数据为唯一真实来源）
 #   - seed_product_features.py : 存在则更新，不存在则插入
+#   - seed_client_dicts.py     : dict_code 不存在则新增，已存在则跳过
 # ============================================================
 sync_platform_data() {
     log_info "同步平台配置数据..."
@@ -313,6 +314,9 @@ sync_platform_data() {
 
     docker compose exec backend python scripts/seed/seed_client_menus.py
     log_info "客户端菜单已同步"
+
+    docker compose exec backend python scripts/seed/seed_client_dicts.py
+    log_info "租户字典数据已同步"
 }
 
 # ============================================================

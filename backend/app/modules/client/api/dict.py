@@ -25,9 +25,13 @@ async def list_dicts(
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """获取字典列表"""
+    """获取字典列表（字段与前端 EleAdmin Dictionary 模型一致）"""
     items = await BizDictService.list_dicts(db)
-    return success(data=[item.model_dump() for item in items])
+    return success(
+        data=[
+            BizDictService.serialize_dictionary_for_frontend(item) for item in items
+        ]
+    )
 
 
 @router.post("")

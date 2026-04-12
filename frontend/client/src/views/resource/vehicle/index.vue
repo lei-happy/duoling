@@ -19,6 +19,13 @@
             ]"
           />
         </template>
+        <template #vehicleType="{ row }">
+          <dict-data
+            type="text"
+            :code="dictCodeVehicleType"
+            :model-value="row.vehicleType"
+          />
+        </template>
         <template #trailerPlateNumber="{ row }">
           <span v-if="row.trailerPlateNumber">{{ row.trailerPlateNumber }}</span>
           <span v-else style="color: #999">—</span>
@@ -70,8 +77,10 @@
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import VehicleEdit from './components/vehicle-edit.vue';
   import VehicleSearch from './components/vehicle-search.vue';
+  import DictData from '@/components/DictData/index.vue';
   import { pageVehicles, removeVehicle } from '@/api/resource/vehicle';
   import type { Vehicle, VehicleParam } from '@/api/resource/vehicle/model';
+  import { DICT_CODE_VEHICLE_TYPE } from '@/constants/dict-codes';
 
   defineOptions({ name: 'ResourceVehicle' });
 
@@ -79,20 +88,33 @@
   const selections = ref<Vehicle[]>([]);
   const editVisible = ref(false);
   const editData = ref<Vehicle | null>(null);
-  const where = reactive<Pick<VehicleParam, 'keyword' | 'status'>>({
-    keyword: '',
-    status: void 0
-  });
+  const dictCodeVehicleType = DICT_CODE_VEHICLE_TYPE;
 
-  const onSearch = (payload: Pick<VehicleParam, 'keyword' | 'status'>) => {
+  const where = reactive<Pick<VehicleParam, 'keyword' | 'status' | 'vehicleType'>>(
+    {
+      keyword: '',
+      status: void 0,
+      vehicleType: void 0
+    }
+  );
+
+  const onSearch = (
+    payload: Pick<VehicleParam, 'keyword' | 'status' | 'vehicleType'>
+  ) => {
     where.keyword = payload.keyword ?? '';
     where.status = payload.status;
+    where.vehicleType = payload.vehicleType;
     tableRef.value?.reload?.({ page: 1 });
   };
 
   const columns = ref<Columns>([
     { prop: 'plateNumber', label: '车牌号', minWidth: 120 },
-    { prop: 'vehicleType', label: '车辆类型', minWidth: 100 },
+    {
+      prop: 'vehicleType',
+      label: '车辆类型',
+      minWidth: 100,
+      slot: 'vehicleType'
+    },
     { prop: 'brand', label: '品牌', minWidth: 80 },
     { prop: 'model', label: '型号', minWidth: 80 },
     {

@@ -1,8 +1,7 @@
-<!-- 搜索表单 -->
+<!-- 搜索表单（与地区模块一致：不包 ele-card，避免 bodyHeader 内多一层内边距导致与表格左缘不对齐） -->
 <template>
-  <ele-card search-form>
-    <el-form label-width="0" @keyup.enter="search" @submit.prevent="">
-      <el-row :gutter="8">
+  <el-form label-width="0" @keyup.enter="search" @submit.prevent="">
+    <el-row :gutter="16">
         <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <floating-label
             label="请输入手机号"
@@ -47,7 +46,6 @@
         </el-col>
       </el-row>
     </el-form>
-  </ele-card>
 </template>
 
 <script lang="ts" setup>

@@ -2,7 +2,7 @@
 企业端数据字典 Schemas
 """
 
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -88,3 +88,24 @@ class BizDictItemOut(BaseModel):
             remark=m.remark,
             createdAt=m.created_at,
         )
+
+
+class BizDictItemApiCreate(BaseModel):
+    """POST /dictionary-data 请求体（与前端表单字段一致）"""
+
+    dictId: int
+    dictCode: Optional[str] = None
+    dictDataName: str
+    dictDataCode: Optional[str] = None
+    sortNumber: Optional[int] = None
+    comments: Optional[str] = None
+
+
+class BizDictItemApiUpdate(BaseModel):
+    """PUT /dictionary-data 请求体"""
+
+    dictDataId: int
+    dictDataName: Optional[str] = None
+    dictDataCode: Optional[str] = None
+    sortNumber: Optional[int] = None
+    comments: Optional[str] = None

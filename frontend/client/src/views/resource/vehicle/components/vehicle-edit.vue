@@ -49,11 +49,19 @@
         <el-col :span="12">
           <el-form-item>
             <floating-label
-              label="请输入车辆类型"
-              type="input"
-              v-model.trim="form.vehicleType"
+              v-model="form.vehicleType"
+              label="请选择车辆类型"
+              type="select"
+              :filterable="true"
               clearable
-            />
+            >
+              <el-option
+                v-for="item in vehicleTypeDict"
+                :key="item.dictDataCode"
+                :label="item.dictDataName"
+                :value="item.dictDataCode"
+              />
+            </floating-label>
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -207,6 +215,8 @@
     listAvailableTrailers
   } from '@/api/resource/vehicle';
   import type { Vehicle, TrailerOption } from '@/api/resource/vehicle/model';
+  import { useDictData } from '@/utils/use-dict-data';
+  import { DICT_CODE_VEHICLE_TYPE } from '@/constants/dict-codes';
 
   const props = defineProps<{
     visible: boolean;
@@ -223,6 +233,9 @@
   const loading = ref(false);
   const form = reactive<Vehicle>({});
   const trailerOptions = ref<TrailerOption[]>([]);
+
+  /** 车辆类型选项（数据字典 vehicle_type） */
+  const [vehicleTypeDict] = useDictData([DICT_CODE_VEHICLE_TYPE]);
 
   const numToStr = (n: number | undefined | null) =>
     n != null && !Number.isNaN(Number(n)) ? String(n) : '';
