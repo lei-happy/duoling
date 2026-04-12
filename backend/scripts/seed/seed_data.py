@@ -611,6 +611,42 @@ def seed_platform_data():
                 ])
                 print("[OK] 产品模块字典已补充")
 
+        # ---- 补充：用户管理目录 + 司机列表子菜单 ----
+        user_mgmt_menu = session.query(Menu).filter_by(
+            menu_code="user_management", app_type="platform", is_deleted=0
+        ).first()
+        if not user_mgmt_menu:
+            user_mgmt_menu = Menu(
+                parent_id=0, menu_name="用户管理",
+                menu_code="user_management", menu_type=0,
+                path="/user_management",
+                icon="TeamOutlined", sort_order=12, app_type="platform",
+            )
+            session.add(user_mgmt_menu)
+            session.flush()
+            all_menus.append(user_mgmt_menu)
+            if role_admin:
+                session.add(RoleMenu(role_id=role_admin.id, menu_id=user_mgmt_menu.id))
+            print("[OK] 用户管理菜单已补充")
+
+        driver_list_menu = session.query(Menu).filter_by(
+            menu_code="user_management:drivers", app_type="platform", is_deleted=0
+        ).first()
+        if user_mgmt_menu and not driver_list_menu:
+            m = Menu(
+                parent_id=user_mgmt_menu.id, menu_name="司机列表",
+                menu_code="user_management:drivers", menu_type=0,
+                path="/user_management/drivers",
+                component="/user_management/drivers/index",
+                icon="UserFilled", sort_order=10, app_type="platform",
+            )
+            session.add(m)
+            session.flush()
+            all_menus.append(m)
+            if role_admin:
+                session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
+            print("[OK] 司机列表菜单已补充")
+
         # ---- 自助注册策略默认配置 ----
         _policy_defaults = [
             (

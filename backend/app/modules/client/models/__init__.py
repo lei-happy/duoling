@@ -27,7 +27,7 @@ from app.modules.client.models.vehicle import Vehicle
 from app.modules.client.models.vehicle_ext import VehicleExt
 from app.modules.client.models.trailer import Trailer
 from app.modules.client.models.trailer_ext import TrailerExt
-from app.modules.client.models.driver import Driver
+from app.modules.client.models.driver import Driver, DriverLicense, DriverOperation, DriverAccount
 from app.modules.client.models.route import Route
 from app.modules.client.models.partner.customer import Customer
 from app.modules.client.models.billing.freight_contract import FreightContract
@@ -56,6 +56,9 @@ __all__ = [
     "Trailer",
     "TrailerExt",
     "Driver",
+    "DriverLicense",
+    "DriverOperation",
+    "DriverAccount",
     "Route",
     "Customer",
     "FreightContract",

@@ -303,6 +303,12 @@ CLIENT_MENUS = [
                 "icon": "IdcardOutlined",
                 "sort_order": 10,
                 "feature_code": "resource_driver",
+                "children": [
+                    {"menu_name": "查询", "menu_code": "resource:driver:list", "menu_type": 1, "sort_order": 0, "feature_code": "resource_driver"},
+                    {"menu_name": "新增", "menu_code": "resource:driver:add", "menu_type": 1, "sort_order": 1, "feature_code": "resource_driver"},
+                    {"menu_name": "编辑", "menu_code": "resource:driver:edit", "menu_type": 1, "sort_order": 2, "feature_code": "resource_driver"},
+                    {"menu_name": "删除", "menu_code": "resource:driver:delete", "menu_type": 1, "sort_order": 3, "feature_code": "resource_driver"},
+                ],
             },
             {
                 "menu_name": "客户管理",

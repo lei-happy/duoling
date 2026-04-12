@@ -1,5 +1,6 @@
 <template>
   <ele-page>
+    <driver-search @search="(where) => reload(where, 1)" />
     <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
@@ -7,65 +8,101 @@
         :columns="columns"
         :datasource="datasource"
         :show-overflow-tooltip="true"
-        v-model:selections="selections"
         :highlight-current-row="true"
+        :default-sort="{ prop: 'createdAt', order: 'descending' }"
         cache-key="ResourceDriverTable"
       >
         <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="姓名/手机号"
-                clearable
-                @change="reload"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.licenseType"
-                placeholder="驾照类型"
-                clearable
-                @change="reload"
-              >
-                <el-option label="A1" value="A1" />
-                <el-option label="A2" value="A2" />
-                <el-option label="B1" value="B1" />
-                <el-option label="B2" value="B2" />
-                <el-option label="C1" value="C1" />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.status"
-                placeholder="状态"
-                clearable
-                @change="reload"
-              >
-                <el-option label="在岗" :value="1" />
-                <el-option label="停用" :value="0" />
-                <el-option label="休息" :value="2" />
-                <el-option label="离职" :value="3" />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="openEdit()">
-                新增司机
-              </el-button>
-            </el-form-item>
-          </el-form>
+          <btn-items
+            :items="[
+              { preset: 'add', title: '新增驾驶员', onClick: () => openEdit() }
+            ]"
+          />
+        </template>
+        <template #driverType="{ row }">
+          <el-tag
+            v-if="row.driverType === 1"
+            size="small"
+            :disable-transitions="true"
+          >
+            自有
+          </el-tag>
+          <el-tag
+            v-else-if="row.driverType === 2"
+            type="warning"
+            size="small"
+            :disable-transitions="true"
+          >
+            外协
+          </el-tag>
+          <el-tag
+            v-else-if="row.driverType === 3"
+            type="info"
+            size="small"
+            :disable-transitions="true"
+          >
+            临时
+          </el-tag>
+          <span v-else>—</span>
+        </template>
+        <template #operationStatus="{ row }">
+          <el-tag
+            v-if="row.operationStatus === 1"
+            type="success"
+            size="small"
+            :disable-transitions="true"
+          >
+            可接单
+          </el-tag>
+          <el-tag
+            v-else-if="row.operationStatus === 2"
+            type="warning"
+            size="small"
+            :disable-transitions="true"
+          >
+            忙碌
+          </el-tag>
+          <el-tag
+            v-else-if="row.operationStatus === 3"
+            type="info"
+            size="small"
+            :disable-transitions="true"
+          >
+            休假
+          </el-tag>
+          <el-tag
+            v-else-if="row.operationStatus === 4"
+            type="danger"
+            size="small"
+            :disable-transitions="true"
+          >
+            停运
+          </el-tag>
+          <span v-else>—</span>
         </template>
         <template #status="{ row }">
-          <el-tag v-if="row.status === 1" type="success" size="small">
-            在岗
+          <el-tag
+            v-if="row.status === 1"
+            type="success"
+            size="small"
+            :disable-transitions="true"
+          >
+            在职
           </el-tag>
-          <el-tag v-else-if="row.status === 0" type="info" size="small">
-            停用
+          <el-tag
+            v-else-if="row.status === 0"
+            type="info"
+            size="small"
+            :disable-transitions="true"
+          >
+            冻结
           </el-tag>
-          <el-tag v-else-if="row.status === 2" type="warning" size="small">
-            休息
-          </el-tag>
-          <el-tag v-else-if="row.status === 3" type="danger" size="small">
+          <el-tag
+            v-else-if="row.status === 2"
+            type="danger"
+            size="small"
+            :disable-transitions="true"
+          >
             离职
           </el-tag>
         </template>
@@ -74,9 +111,27 @@
             编辑
           </el-link>
           <el-divider direction="vertical" />
-          <el-link type="danger" :underline="false" @click="remove(row)">
-            删除
-          </el-link>
+          <el-dropdown trigger="click" @command="(cmd: string) => handleStatusCommand(cmd, row)">
+            <el-link type="primary" :underline="false">
+              更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            </el-link>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="status-1" :disabled="row.status === 1">
+                  设为在职
+                </el-dropdown-item>
+                <el-dropdown-item command="status-0" :disabled="row.status === 0">
+                  设为冻结
+                </el-dropdown-item>
+                <el-dropdown-item command="status-2" :disabled="row.status === 2">
+                  设为离职
+                </el-dropdown-item>
+                <el-dropdown-item divided command="delete">
+                  删除
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </template>
       </ele-pro-table>
     </ele-card>
@@ -89,8 +144,9 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive } from 'vue';
+  import { ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
+  import { ArrowDown } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
@@ -98,62 +154,79 @@
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import DriverEdit from './components/driver-edit.vue';
-  import { pageDrivers, removeDriver } from '@/api/resource/driver';
-  import type { Driver } from '@/api/resource/driver/model';
+  import DriverSearch from './components/driver-search.vue';
+  import {
+    pageDrivers,
+    removeDriver,
+    updateDriverStatus
+  } from '@/api/resource/driver';
+  import type { Driver, DriverParam } from '@/api/resource/driver/model';
+  import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'ResourceDriver' });
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
-  const selections = ref<Driver[]>([]);
   const editVisible = ref(false);
   const editData = ref<Driver | null>(null);
-  const where = reactive({
-    keyword: '',
-    licenseType: undefined as string | undefined,
-    status: undefined as number | undefined
-  });
 
   const columns = ref<Columns>([
-    {
-      type: 'selection',
-      columnKey: 'selection',
-      width: 50,
-      align: 'center'
-    },
-    { type: 'index', columnKey: 'index', width: 50, align: 'center' },
-    { prop: 'name', label: '姓名', minWidth: 100 },
+    { prop: 'driverCode', label: '司机编号', minWidth: 120 },
+    { prop: 'name', label: '姓名', minWidth: 90 },
     { prop: 'phone', label: '手机号', minWidth: 120 },
-    { prop: 'licenseType', label: '驾照类型', minWidth: 90, align: 'center' },
-    { prop: 'licenseNo', label: '驾照号码', minWidth: 140 },
+    { prop: 'licenseType', label: '驾照类型', minWidth: 80, align: 'center' },
+    { prop: 'departmentName', label: '所属车队', minWidth: 100 },
     {
-      prop: 'licenseExpire',
-      label: '驾照到期',
-      minWidth: 110,
-      align: 'center'
+      prop: 'driverType',
+      label: '司机类型',
+      width: 90,
+      align: 'center',
+      slot: 'driverType'
+    },
+    {
+      prop: 'operationStatus',
+      label: '运营状态',
+      width: 90,
+      align: 'center',
+      slot: 'operationStatus'
     },
     {
       prop: 'status',
-      label: '状态',
+      label: '人事状态',
       width: 90,
       align: 'center',
       slot: 'status'
     },
     {
+      prop: 'createdAt',
+      label: '创建时间',
+      sortable: 'custom',
+      width: 170,
+      align: 'center',
+      formatter: (row) => formatDateTime(row.createdAt)
+    },
+    {
       columnKey: 'action',
       label: '操作',
-      width: 130,
+      width: 160,
       align: 'center',
-      slot: 'action'
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
     }
   ]);
 
-  const datasource: DatasourceFunction = async ({ page, limit }) => {
-    const res = await pageDrivers({ ...where, page, limit });
-    return { list: res?.list ?? [], count: res?.count ?? 0 };
+  const datasource: DatasourceFunction = async ({ pages, where, orders }) => {
+    const res = await pageDrivers({ ...where, ...orders, ...pages });
+    const raw = res as { list?: Driver[]; count?: number; total?: number };
+    return {
+      list: raw?.list ?? [],
+      count: raw?.count ?? raw?.total ?? 0
+    };
   };
 
-  const reload = () => {
-    tableRef.value?.reload?.();
+  const reload = (where?: DriverParam, page?: number) => {
+    tableRef.value?.reload?.({ where, page });
   };
 
   const openEdit = (row?: Driver) => {
@@ -161,12 +234,39 @@
     editVisible.value = true;
   };
 
-  const remove = (row: Driver) => {
+  const handleStatusCommand = (command: string, row: Driver) => {
+    if (command === 'delete') {
+      remove(row);
+      return;
+    }
+    const statusVal = Number(command.split('-')[1]);
+    const statusMap: Record<number, string> = {
+      0: '冻结',
+      1: '在职',
+      2: '离职'
+    };
     ElMessageBox.confirm(
-      `确定要删除司机"${row.name}"吗?`,
+      `确定将"${row.name}"的人事状态修改为"${statusMap[statusVal]}"吗?`,
       '系统提示',
       { type: 'warning', draggable: true }
     )
+      .then(async () => {
+        try {
+          await updateDriverStatus(row.id!, statusVal);
+          EleMessage.success({ message: '状态修改成功', plain: true });
+          reload();
+        } catch (e: any) {
+          EleMessage.error({ message: e.message, plain: true });
+        }
+      })
+      .catch(() => {});
+  };
+
+  const remove = (row: Driver) => {
+    ElMessageBox.confirm(`确定要删除驾驶员"${row.name}"吗?`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => {
         const loading = EleMessage.loading({
           message: '请求中..',

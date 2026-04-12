@@ -23,6 +23,7 @@ ALLOWED_SCENES = {
     "document",
     "brand_logo",
     "car_series",
+    "driver_license",
 }
 
 

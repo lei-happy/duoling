@@ -32,7 +32,7 @@ FEATURES = [
     {"feature_code": "resource_manage", "feature_name": "资源管理", "module": "resource", "sort_order": 10, "required_tables": None},
     {"feature_code": "resource_vehicle", "feature_name": "车辆管理", "module": "resource", "sort_order": 11, "required_tables": '["biz_vehicle", "biz_vehicle_ext"]'},
     {"feature_code": "resource_trailer", "feature_name": "挂车管理", "module": "resource", "sort_order": 12, "required_tables": '["biz_trailer", "biz_trailer_ext"]'},
-    {"feature_code": "resource_driver", "feature_name": "驾驶员管理", "module": "resource", "sort_order": 13, "required_tables": '["biz_driver"]'},
+    {"feature_code": "resource_driver", "feature_name": "驾驶员管理", "module": "resource", "sort_order": 13, "required_tables": '["biz_driver", "biz_driver_license", "biz_driver_operation", "biz_driver_account", "biz_driver_route"]'},
     {"feature_code": "resource_route", "feature_name": "路线管理", "module": "resource", "sort_order": 14, "required_tables": '["biz_route"]'},
     # 合作伙伴模块 (standard 及以上)
     {"feature_code": "partner_manage", "feature_name": "合作伙伴", "module": "partner", "sort_order": 15, "required_tables": None},

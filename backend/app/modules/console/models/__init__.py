@@ -20,6 +20,7 @@ from app.modules.console.models.basicdata.basicdata_dealer_info import Basicdata
 from app.modules.console.models.todo.sys_todo_task import SysTodoTask
 from app.modules.console.models.ops.autohome_sync_job import AutohomeSyncJob
 from app.modules.console.models.system.platform_setting import PlatformSetting
+from app.modules.console.models.driver.sys_driver import SysDriver
 
 __all__ = [
     "Tenant",
@@ -46,4 +47,5 @@ __all__ = [
     "SysTodoTask",
     "AutohomeSyncJob",
     "PlatformSetting",
+    "SysDriver",
 ]

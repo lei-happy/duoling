@@ -32,6 +32,7 @@ from app.modules.console.api.ops import autohome_sync_router, dealer_sync_router
 from app.modules.console.api.system.open_register_policy import (
     router as open_register_policy_router,
 )
+from app.modules.console.api.driver import router as driver_router
 
 router = APIRouter()
 
@@ -75,3 +76,4 @@ router.include_router(
     prefix="/system/open-register-policy",
     tags=["管理后台-自助注册策略"],
 )
+router.include_router(driver_router, prefix="/driver", tags=["管理后台-平台司机"])
