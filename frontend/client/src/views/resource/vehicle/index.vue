@@ -27,7 +27,9 @@
           />
         </template>
         <template #trailerPlateNumber="{ row }">
-          <span v-if="row.trailerPlateNumber">{{ row.trailerPlateNumber }}</span>
+          <span v-if="row.trailerPlateNumber">{{
+            row.trailerPlateNumber
+          }}</span>
           <span v-else style="color: #999">—</span>
         </template>
         <template #status="{ row }">
@@ -48,13 +50,14 @@
           </el-tag>
         </template>
         <template #action="{ row }">
-          <el-link type="primary" :underline="false" @click="openEdit(row)">
-            编辑
-          </el-link>
-          <el-divider direction="vertical" />
-          <el-link type="danger" :underline="false" @click="remove(row)">
-            删除
-          </el-link>
+          <btn-items
+            divider
+            type="link"
+            :items="[
+              { preset: 'edit', onClick: () => openEdit(row) },
+              { preset: 'del', onClick: () => remove(row) }
+            ]"
+          />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -90,13 +93,13 @@
   const editData = ref<Vehicle | null>(null);
   const dictCodeVehicleType = DICT_CODE_VEHICLE_TYPE;
 
-  const where = reactive<Pick<VehicleParam, 'keyword' | 'status' | 'vehicleType'>>(
-    {
-      keyword: '',
-      status: void 0,
-      vehicleType: void 0
-    }
-  );
+  const where = reactive<
+    Pick<VehicleParam, 'keyword' | 'status' | 'vehicleType'>
+  >({
+    keyword: '',
+    status: void 0,
+    vehicleType: void 0
+  });
 
   const onSearch = (
     payload: Pick<VehicleParam, 'keyword' | 'status' | 'vehicleType'>
@@ -151,9 +154,12 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 130,
+      width: 160,
       align: 'center',
-      slot: 'action'
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
     }
   ]);
 
@@ -172,11 +178,10 @@
   };
 
   const remove = (row: Vehicle) => {
-    ElMessageBox.confirm(
-      `确定要删除车辆"${row.plateNumber}"吗?`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
+    ElMessageBox.confirm(`确定要删除车辆"${row.plateNumber}"吗?`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => {
         const loading = EleMessage.loading({
           message: '请求中..',

@@ -107,31 +107,7 @@
           </el-tag>
         </template>
         <template #action="{ row }">
-          <el-link type="primary" :underline="false" @click="openEdit(row)">
-            编辑
-          </el-link>
-          <el-divider direction="vertical" />
-          <el-dropdown trigger="click" @command="(cmd: string) => handleStatusCommand(cmd, row)">
-            <el-link type="primary" :underline="false">
-              更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-            </el-link>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="status-1" :disabled="row.status === 1">
-                  设为在职
-                </el-dropdown-item>
-                <el-dropdown-item command="status-0" :disabled="row.status === 0">
-                  设为冻结
-                </el-dropdown-item>
-                <el-dropdown-item command="status-2" :disabled="row.status === 2">
-                  设为离职
-                </el-dropdown-item>
-                <el-dropdown-item divided command="delete">
-                  删除
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          <btn-items divider type="link" :items="actionItems(row)" />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -146,8 +122,8 @@
 <script lang="ts" setup>
   import { ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
-  import { ArrowDown } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
+  import { DeleteOutlined } from '@/components/icons';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
     DatasourceFunction,
@@ -233,6 +209,37 @@
     editData.value = row ?? null;
     editVisible.value = true;
   };
+
+  const actionItems = (row: Driver) => [
+    { preset: 'edit', onClick: () => openEdit(row) },
+    {
+      preset: 'more',
+      dropdownItems: [
+        {
+          title: '设为在职',
+          disabled: row.status === 1,
+          onClick: () => handleStatusCommand('status-1', row)
+        },
+        {
+          title: '设为冻结',
+          disabled: row.status === 0,
+          onClick: () => handleStatusCommand('status-0', row)
+        },
+        {
+          title: '设为离职',
+          disabled: row.status === 2,
+          onClick: () => handleStatusCommand('status-2', row)
+        },
+        {
+          title: '删除',
+          divided: true,
+          danger: true,
+          icon: DeleteOutlined,
+          onClick: () => handleStatusCommand('delete', row)
+        }
+      ]
+    }
+  ];
 
   const handleStatusCommand = (command: string, row: Driver) => {
     if (command === 'delete') {

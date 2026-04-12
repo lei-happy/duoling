@@ -32,13 +32,14 @@
           <el-tag v-else type="info" size="small">停用</el-tag>
         </template>
         <template #action="{ row }">
-          <el-link type="primary" :underline="false" @click="openEdit(row)">
-            编辑
-          </el-link>
-          <el-divider direction="vertical" />
-          <el-link type="danger" :underline="false" @click="remove(row)">
-            删除
-          </el-link>
+          <btn-items
+            divider
+            type="link"
+            :items="[
+              { preset: 'edit', onClick: () => openEdit(row) },
+              { preset: 'del', onClick: () => remove(row) }
+            ]"
+          />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -118,9 +119,12 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 130,
+      width: 160,
       align: 'center',
-      slot: 'action'
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
     }
   ]);
 
@@ -139,11 +143,10 @@
   };
 
   const remove = (row: Trailer) => {
-    ElMessageBox.confirm(
-      `确定要删除挂车"${row.plateNumber}"吗?`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
+    ElMessageBox.confirm(`确定要删除挂车"${row.plateNumber}"吗?`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => {
         const loading = EleMessage.loading({
           message: '请求中..',
