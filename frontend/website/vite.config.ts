@@ -1,13 +1,18 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/** 配置文件所在目录作为项目根，避免从 monorepo 其它目录启动时 public/、别名解析错误 */
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  root: __dirname,
   plugins: [vue()],
   resolve: {
     alias: {
-      '@/': resolve('src') + '/',
-      '@shared/': resolve('../components') + '/'
+      '@/': resolve(__dirname, 'src') + '/',
+      '@shared/': resolve(__dirname, '../components') + '/'
     }
   },
   server: {
