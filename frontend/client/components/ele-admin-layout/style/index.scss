@@ -225,8 +225,8 @@
 }
 
 .ele-admin-logo > img {
-  width: 30px;
-  height: 30px;
+  width: 20px;
+  height: 20px;
 
   & + h1 {
     margin-left: 8px;
@@ -238,8 +238,7 @@
 }
 
 .ele-admin-header > .ele-admin-logo {
-  $tool-padding: eleVar('header', 'tool-padding');
-  margin-left: calc(#{eleVar('header', 'tools-padding')} + #{$tool-padding});
+  margin-left: 10px;
 }
 
 .ele-admin-header.is-dark > .ele-admin-logo,
