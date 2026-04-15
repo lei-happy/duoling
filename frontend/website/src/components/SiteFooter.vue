@@ -3,9 +3,11 @@
     <div class="container">
       <div class="footer-main">
         <div class="footer-brand">
-          <div class="footer-logo">
-            <span class="logo-icon">Z</span>
-            <span class="logo-text">智途</span>
+          <div class="footer-logo" aria-label="智途">
+            <span class="logo-icon" aria-hidden="true">
+              <img :src="logoIconUrl" alt="" width="32" height="32" decoding="async" />
+            </span>
+            <span class="logo-text"><LogoText aria-hidden="true" /></span>
           </div>
           <p class="footer-slogan">轿运车队的利润管理专家<br>让每一公里都不白跑</p>
         </div>
@@ -38,6 +40,9 @@
 </template>
 
 <script setup lang="ts">
+import logoIconUrl from '@/assets/brand/logo-icon.svg?url'
+import LogoText from '@/assets/brand/logo-text.svg?component'
+
 const currentYear = new Date().getFullYear()
 </script>
 
@@ -76,20 +81,29 @@ const currentYear = new Date().getFullYear()
 .logo-icon {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 800;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
 }
 
 .logo-text {
-  font-size: 20px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
   color: #fff;
+
+  :deep(svg) {
+    display: block;
+    height: 20px;
+    width: auto;
+  }
 }
 
 .footer-slogan {

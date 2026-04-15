@@ -12,6 +12,13 @@ import Layout from '@/layout/index.vue';
 import RedirectLayout from '@/components/RedirectLayout/index.vue';
 const modules = import.meta.glob('/src/views/**/index.vue');
 
+/** 已在布局 childRoutes 中静态注册的路径，供 menuToRoutes 去重，避免与后端菜单重复生成 */
+const STATIC_LAYOUT_MENU_PATHS = [
+  { path: '/enterprise/manage' },
+  { path: '/user/profile' },
+  { path: '/user/message' }
+] as const;
+
 /**
  * 静态路由
  */
@@ -52,6 +59,12 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       path: '/user/profile',
       component: () => import('@/views/user/profile/index.vue'),
       meta: { title: '个人中心' }
+    },
+    // 消息中心（静态路由，不依赖后端菜单；与顶栏通知「查看更多」等入口一致）
+    {
+      path: '/user/message',
+      component: () => import('@/views/user/message/index.vue'),
+      meta: { title: '消息中心' }
     }
   ];
   const layoutRoutes: RouteRecordRaw[] = [
@@ -63,7 +76,12 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
     }
   ];
   // 路由铺平处理
-  eachTree(menuToRoutes(menus, getComponent, routes), (route) => {
+  eachTree(
+    menuToRoutes(menus, getComponent, [
+      ...routes,
+      ...STATIC_LAYOUT_MENU_PATHS
+    ]),
+    (route) => {
     const temp: RouteRecordRaw = Object.assign({}, route, { children: void 0 });
     if (!temp.component && !temp.redirect) {
       // 没有对应组件的路由页面使用 404 组件

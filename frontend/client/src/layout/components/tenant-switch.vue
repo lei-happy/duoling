@@ -1,7 +1,6 @@
-<!-- 租户切换 -->
+<!-- 租户切换（仅由父级在 tenants.length > 1 时挂载） -->
 <template>
   <ele-dropdown
-    v-if="tenantList.length > 1"
     :items="dropdownItems"
     :popper-options="{
       modifiers: [{ name: 'offset', options: { offset: [0, 5] } }]
@@ -20,40 +19,34 @@
       </el-icon>
     </div>
   </ele-dropdown>
-  <div
-    v-else-if="currentTenantName"
-    style="display: flex; align-items: center; height: 100%; padding: 0 8px"
-  >
-    <el-icon :size="16" style="margin-right: 4px">
-      <OfficeBuilding />
-    </el-icon>
-    <span class="hidden-sm-and-down" style="line-height: 1.5">{{ currentTenantName }}</span>
-  </div>
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, onMounted } from 'vue';
+  import { computed } from 'vue';
   import { OfficeBuilding, ArrowDown } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import { setToken, setRefreshToken, isRememberToken } from '@/utils/token-util';
   import { useUserStore } from '@/store/modules/user';
-  import { getUserTenants, switchTenant } from '@/api/login';
+  import { switchTenant } from '@/api/login';
   import type { TenantOption } from '@/api/login/model';
 
-  const userStore = useUserStore();
+  const props = defineProps<{
+    /** 当前用户所属企业列表（至少 2 条时父级才会渲染本组件） */
+    tenants: TenantOption[];
+  }>();
 
-  const tenantList = ref<TenantOption[]>([]);
+  const userStore = useUserStore();
 
   const currentTenantName = computed(() => {
     const info = userStore.info as any;
     if (!info?.tenant_code && !info?.tenantCode) return '';
     const code = info.tenant_code || info.tenantCode;
-    const found = tenantList.value.find((t) => t.tenantCode === code);
+    const found = props.tenants.find((t) => t.tenantCode === code);
     return found?.tenantName || code;
   });
 
   const dropdownItems = computed(() =>
-    tenantList.value.map((t) => ({
+    props.tenants.map((t) => ({
       title: t.tenantName,
       command: t.tenantCode
     }))
@@ -75,12 +68,4 @@
       EleMessage.error({ message: e.message || '切换失败', plain: true });
     }
   };
-
-  onMounted(async () => {
-    try {
-      tenantList.value = await getUserTenants();
-    } catch (e) {
-      console.error('获取租户列表失败', e);
-    }
-  });
 </script>

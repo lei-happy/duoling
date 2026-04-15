@@ -17,9 +17,11 @@
           >
             <el-icon :size="16"><ArrowLeft /></el-icon>
           </router-link>
-          <router-link to="/" class="brand-logo">
-            <span class="logo-icon">Z</span>
-            <span class="logo-text">智途</span>
+          <router-link to="/" class="brand-logo" aria-label="智途，返回官网首页">
+            <span class="logo-icon" aria-hidden="true">
+              <img :src="logoIconUrl" alt="" width="32" height="32" decoding="async" />
+            </span>
+            <span class="logo-text"><LogoText aria-hidden="true" /></span>
           </router-link>
         </div>
         <h1>让每一台车、每一公里的利润都看得清楚</h1>
@@ -281,6 +283,8 @@ import {
   sendSmsCode,
   checkRegisterPhone,
 } from '@/api'
+import logoIconUrl from '@/assets/brand/logo-icon.svg?url'
+import LogoText from '@/assets/brand/logo-text.svg?component'
 
 const SMS_PURPOSE_REGISTER = 4
 
@@ -694,21 +698,29 @@ function goHome() {
   .logo-icon {
     width: 32px;
     height: 32px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
-    color: #fff;
-    font-size: 16px;
-    font-weight: 800;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
   }
 
   .logo-text {
-    font-size: 19px;
-    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
     color: #fff;
+
+    :deep(svg) {
+      display: block;
+      height: 19px;
+      width: auto;
+    }
   }
 }
 

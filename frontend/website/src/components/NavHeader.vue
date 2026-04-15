@@ -1,9 +1,11 @@
 <template>
   <header class="nav-header" :class="{ scrolled: isScrolled }">
     <div class="container nav-inner">
-      <router-link to="/" class="logo">
-        <span class="logo-icon">Z</span>
-        <span class="logo-text">智途</span>
+      <router-link to="/" class="logo" aria-label="智途，返回首页">
+        <span class="logo-icon" aria-hidden="true">
+          <img :src="logoIconUrl" alt="" width="24" height="24" decoding="async" />
+        </span>
+        <span class="logo-text"><LogoText aria-hidden="true" /></span>
       </router-link>
       <nav class="nav-links" :class="{ open: mobileOpen }">
         <router-link to="/" @click="mobileOpen = false">首页</router-link>
@@ -27,6 +29,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import logoIconUrl from '@/assets/brand/logo-icon.svg?url'
+import LogoText from '@/assets/brand/logo-text.svg?component'
 
 const clientLoginUrl = (import.meta.env.VITE_CLIENT_URL || 'http://localhost:5174') + '/login'
 
@@ -58,8 +62,6 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   /* ---------- 默认态：透明底 + 白色文字 ---------- */
   .logo-text {
     color: #fff;
-    background: none;
-    -webkit-text-fill-color: #fff;
   }
 
   .nav-links a {
@@ -91,10 +93,7 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
     box-shadow: 0 1px 16px rgba(0, 0, 0, 0.06);
 
     .logo-text {
-      background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: #0047ff;
     }
 
     .nav-links a {
@@ -138,28 +137,37 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  // gap: 8px;
   text-decoration: none;
   flex-shrink: 0;
 }
 
 .logo-icon {
-  width: 36px;
+  // width: 36px;
   height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-  color: #fff;
-  font-size: 18px;
-  font-weight: 800;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+
+  img {
+    display: block;
+    // width: 100%;
+    // height: 100%;
+    object-fit: contain;
+  }
 }
 
 .logo-text {
-  font-size: 22px;
-  font-weight: 700;
-  transition: all 0.35s;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+  :deep(svg) {
+    display: block;
+    height: 22px;
+    width: auto;
+  }
 }
 
 .nav-links {
