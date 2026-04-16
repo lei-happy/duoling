@@ -2,16 +2,21 @@
 同步 Client 端菜单数据到 sys_menu 表
 
 菜单定义来自与本脚本同目录的 sys_menu.json（请保持与线上一致：从库导出或手工合并后再执行）。
-默认按匹配键 upsert，与 JSON 中 client 且未删除的记录对齐。
-使用 --insert-only 时仅插入缺失项，已存在的菜单不更新（避免覆盖库内最新配置）。
+
+三种同步模式：
+  默认（preserve-ui）: 已存在的菜单只更新结构字段（menu_name/menu_code/menu_type/path/
+                       component/feature_code），保留数据库中用户配置的 icon/sort_order/visible。
+  --force-all        : 已存在则全字段 UPDATE（覆盖所有字段，包括 icon/排序/可见性）。
+  --insert-only      : 仅插入缺失项，已存在的菜单不更新。
 
 匹配规则：
   - 有 menu_code 的菜单：按 menu_code + app_type 匹配
   - 无 menu_code 的菜单：按 path + parent_id + app_type 匹配
 
 用法：
-    python scripts/seed/seed_client_menus.py
-    python scripts/seed/seed_client_menus.py --insert-only
+    python scripts/seed/seed_client_menus.py                 # 默认 preserve-ui
+    python scripts/seed/seed_client_menus.py --force-all     # 全字段覆盖
+    python scripts/seed/seed_client_menus.py --insert-only   # 仅补全缺失
 
 可选环境变量：
     SYS_MENU_JSON  覆盖默认的 sys_menu.json 路径（绝对路径或相对 cwd）
@@ -103,12 +108,14 @@ def load_client_menus_from_json(json_path: Path) -> list:
     return [build(r) for r in roots]
 
 
-def upsert_menus(conn, menus, parent_id=0, insert_only: bool = False):
+def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
     """
     递归同步菜单树（与 JSON 中 client 菜单定义一致）。
 
-    insert_only=False：已存在则 UPDATE。
-    insert_only=True：已存在则跳过更新，仍递归子节点（用于补全新菜单而不改已有行）。
+    mode:
+      "preserve_ui" : 已存在则只更新结构字段，保留 icon/sort_order/visible（默认）
+      "force_all"   : 已存在则全字段 UPDATE
+      "insert_only" : 已存在则跳过更新，仅递归子节点
 
     匹配规则：
       - 有 menu_code 的菜单：按 menu_code + app_type 匹配（跨父级唯一）
@@ -141,7 +148,7 @@ def upsert_menus(conn, menus, parent_id=0, insert_only: bool = False):
         existing_id = result.scalar()
 
         if existing_id:
-            if not insert_only:
+            if mode == "force_all":
                 conn.execute(
                     text(
                         "UPDATE sys_menu SET "
@@ -165,7 +172,28 @@ def upsert_menus(conn, menus, parent_id=0, insert_only: bool = False):
                         "feature_code": menu.get("feature_code"),
                     },
                 )
-                print(f"  更新菜单: {menu['menu_name']} (id={existing_id})")
+                print(f"  更新菜单(全字段): {menu['menu_name']} (id={existing_id})")
+            elif mode == "preserve_ui":
+                conn.execute(
+                    text(
+                        "UPDATE sys_menu SET "
+                        "menu_name = :menu_name, menu_code = :menu_code, "
+                        "menu_type = :menu_type, path = :path, component = :component, "
+                        "feature_code = :feature_code, parent_id = :parent_id "
+                        "WHERE id = :id"
+                    ),
+                    {
+                        "id": existing_id,
+                        "parent_id": parent_id,
+                        "menu_name": menu["menu_name"],
+                        "menu_code": menu_code,
+                        "menu_type": menu["menu_type"],
+                        "path": menu_path,
+                        "component": menu.get("component"),
+                        "feature_code": menu.get("feature_code"),
+                    },
+                )
+                print(f"  更新菜单(保留UI): {menu['menu_name']} (id={existing_id})")
             else:
                 print(f"  跳过已存在: {menu['menu_name']} (id={existing_id})")
             menu_id = existing_id
@@ -198,17 +226,31 @@ def upsert_menus(conn, menus, parent_id=0, insert_only: bool = False):
             )
 
         if children:
-            upsert_menus(conn, children, parent_id=menu_id, insert_only=insert_only)
+            upsert_menus(conn, children, parent_id=menu_id, mode=mode)
 
 
 def main():
     parser = argparse.ArgumentParser(description="同步 Client 端菜单到 sys_menu")
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         "--insert-only",
         action="store_true",
         help="仅插入 JSON 中有而库中无的菜单，已匹配到的记录不执行 UPDATE",
     )
+    group.add_argument(
+        "--force-all",
+        action="store_true",
+        help="已存在的菜单全字段 UPDATE（包括 icon/sort_order/visible，会覆盖用户配置）",
+    )
     args = parser.parse_args()
+
+    if args.insert_only:
+        mode = "insert_only"
+    elif args.force_all:
+        mode = "force_all"
+    else:
+        mode = "preserve_ui"
+
     env_path = (os.environ.get("SYS_MENU_JSON") or "").strip()
     json_path = (
         Path(env_path).expanduser()
@@ -253,10 +295,15 @@ def main():
     menus = load_client_menus_from_json(json_path)
     menus = copy.deepcopy(menus)
 
+    mode_labels = {
+        "preserve_ui": "preserve-ui（保留 icon/排序/可见性，仅更新结构字段）",
+        "force_all": "force-all（全字段覆盖）",
+        "insert_only": "insert-only（仅补全缺失）",
+    }
+
     with engine.connect() as conn:
-        mode = "insert-only（仅补全缺失）" if args.insert_only else "upsert（存在则更新）"
-        print(f"\n从 {json_path} 加载 Client 菜单，开始同步… 模式: {mode}")
-        upsert_menus(conn, menus, insert_only=args.insert_only)
+        print(f"\n从 {json_path} 加载 Client 菜单，开始同步… 模式: {mode_labels[mode]}")
+        upsert_menus(conn, menus, mode=mode)
         conn.commit()
 
     engine.dispose()

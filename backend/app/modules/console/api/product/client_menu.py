@@ -18,6 +18,16 @@ from app.modules.console.services.product.client_menu_service import ClientMenuS
 router = APIRouter()
 
 
+@router.get("/export")
+async def export_client_menus(
+    db: AsyncSession = Depends(get_platform_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """导出客户端菜单（与 sys_menu.json 格式一致），用于同步到本地 seed 文件"""
+    rows = await ClientMenuService.export_menus(db)
+    return success(data=rows)
+
+
 @router.get("")
 async def list_client_menus(
     title: Optional[str] = Query(None),

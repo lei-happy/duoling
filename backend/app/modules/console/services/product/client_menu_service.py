@@ -3,7 +3,7 @@
 操作 sys_menu 表中 app_type='client' 的记录
 """
 
-from typing import Optional, List
+from typing import Optional, List, Any
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -120,6 +120,45 @@ class ClientMenuService:
             menu.feature_code = data.featureCode
 
         await db.flush()
+
+    @staticmethod
+    async def export_menus(db: AsyncSession) -> List[dict[str, Any]]:
+        """导出 client 菜单为与 sys_menu.json 格式一致的扁平数组，
+        供开发者同步到本地 sys_menu.json 后再执行 seed 脚本。"""
+        query = (
+            select(Menu)
+            .where(Menu.is_deleted == 0, Menu.app_type == "client")
+            .order_by(Menu.parent_id, Menu.sort_order, Menu.id)
+        )
+        result = await db.execute(query)
+        items = result.scalars().all()
+        rows: List[dict[str, Any]] = []
+        for m in items:
+            rows.append({
+                "parent_id": m.parent_id,
+                "menu_name": m.menu_name,
+                "menu_code": m.menu_code or "",
+                "menu_type": m.menu_type,
+                "path": m.path,
+                "component": m.component,
+                "icon": m.icon,
+                "sort_order": m.sort_order,
+                "visible": m.visible,
+                "status": m.status,
+                "app_type": m.app_type,
+                "feature_code": m.feature_code,
+                "id": m.id,
+                "created_at": (
+                    m.created_at.strftime("%d/%m/%Y %H:%M:%S")
+                    if m.created_at else None
+                ),
+                "updated_at": (
+                    m.updated_at.strftime("%d/%m/%Y %H:%M:%S")
+                    if m.updated_at else None
+                ),
+                "is_deleted": m.is_deleted,
+            })
+        return rows
 
     @staticmethod
     async def delete_menu(db: AsyncSession, menu_id: int) -> None:
