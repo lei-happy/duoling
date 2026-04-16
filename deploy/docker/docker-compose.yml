@@ -58,6 +58,7 @@ services:
       - ALIYUN_SMS_ENABLED=${ALIYUN_SMS_ENABLED:-true}
       - LOG_LEVEL=INFO
       - LOG_DIR=logs
+      - DOC_ROOT=/app/docs
     volumes:
       - backend_logs:/app/logs
       # 上传图片落盘到宿主机，便于 XFTP/备份；与 app.main 中 /app/uploads 一致

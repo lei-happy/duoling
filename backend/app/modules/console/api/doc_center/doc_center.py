@@ -3,6 +3,7 @@
 提供项目文档目录树浏览和 Markdown 文件内容读取
 """
 
+import os
 from pathlib import Path
 from typing import Any, List, Optional
 
@@ -14,9 +15,11 @@ from app.common.response import success, fail
 
 router = APIRouter()
 
-# 项目根目录 -> backend/ 的上一级
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent.parent.parent
-_DOC_ROOT = _PROJECT_ROOT / "项目文档"
+# 文档根目录：优先从环境变量 DOC_ROOT 读取（Docker 部署时使用），
+# 否则按本地开发目录结构自动推导
+_DOC_ROOT = Path(os.environ.get("DOC_ROOT", "")).resolve() \
+    if os.environ.get("DOC_ROOT") \
+    else Path(__file__).resolve().parent.parent.parent.parent.parent.parent.parent / "项目文档"
 
 _ALLOWED_EXTENSIONS = {".md"}
 
