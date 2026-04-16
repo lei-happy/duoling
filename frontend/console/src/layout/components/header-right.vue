@@ -6,9 +6,16 @@
       <ExpandOutlined v-else style="stroke-width: 4" />
     </el-icon>
   </layout-tool>
-  <!-- 语言切换 -->
-  <layout-tool :class="{ 'hidden-sm-and-down': tabBar && tabInHeader }">
-    <i18n-icon :icon-style="{ transform: 'scale(1.15)' }" />
+  <!-- 文档中心 -->
+  <layout-tool
+    :class="{ 'hidden-sm-and-down': tabBar && tabInHeader }"
+    @click="goDocCenter"
+  >
+    <el-tooltip content="文档中心" placement="bottom">
+      <el-icon style="transform: scale(1.18)">
+        <Document />
+      </el-icon>
+    </el-tooltip>
   </layout-tool>
   <!-- 消息通知 -->
   <layout-tool :class="{ 'hidden-sm-and-down': tabBar && tabInHeader }">
@@ -44,6 +51,7 @@
 
 <script lang="ts" setup>
   import { ref } from 'vue';
+  import { useRouter } from 'vue-router';
   import { useI18n } from 'vue-i18n';
   import { storeToRefs } from 'pinia';
   import {
@@ -53,6 +61,7 @@
     useModal,
     EleMessage
   } from 'ele-admin-plus';
+  import { Document } from '@element-plus/icons-vue';
   import {
     ExpandOutlined,
     CompressOutlined,
@@ -65,7 +74,6 @@
   import { useUserStore } from '@/store/modules/user';
   import HeaderUser from './header-user.vue';
   import HeaderNotice from './header-notice.vue';
-  import I18nIcon from './i18n-icon.vue';
   import IconOutline from './covers/icon-outline.vue';
 
   const props = defineProps({
@@ -75,12 +83,18 @@
 
   const emit = defineEmits(['update:isFullscreen']);
 
+  const router = useRouter();
   const { openModal } = useModal();
 
   const themeStore = useThemeStore();
   const { tabBar, tabInHeader, darkMode, weakMode } = storeToRefs(themeStore);
 
   const { t } = useI18n();
+
+  /** 跳转文档中心 */
+  const goDocCenter = () => {
+    router.push('/doc-center');
+  };
 
   /** 全屏切换 */
   const toggleFullscreen = () => {

@@ -50,6 +50,13 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       children: childRoutes
     }
   ];
+  // 文档中心（不在菜单中，通过右上角入口访问）
+  childRoutes.push({
+    path: '/doc-center',
+    component: () => import('@/views/doc-center/index.vue'),
+    meta: { title: '文档中心' }
+  });
+
   // 路由铺平处理
   eachTree(menuToRoutes(menus, getComponent, routes), (route) => {
     const temp: RouteRecordRaw = Object.assign({}, route, { children: void 0 });
