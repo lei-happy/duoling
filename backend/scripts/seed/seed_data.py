@@ -501,27 +501,35 @@ def seed_platform_data():
             versions = [
                 ProductVersion(
                     version_code="basic", version_name="基础版",
-                    description="适合小型车队，包含基础车辆和驾驶员管理功能",
+                    description="基础管理能力：智能工作台 + 企业管理（组织/员工/角色/数据字典/基础数据）",
                     max_users=5, max_vehicles=20, price="免费",
                     sort_order=0, status=1,
                 ),
                 ProductVersion(
                     version_code="standard", version_name="标准版",
-                    description="适合中型车队，包含运单管理、路线管理等功能",
+                    description="完整运输业务能力：basic + 运营调度 + 运力中心（自营/外协/社会三类）+ 客商中心（含供应商管理）+ 计费中心",
                     max_users=20, max_vehicles=100, price="2999/年",
                     sort_order=10, status=1,
                 ),
                 ProductVersion(
                     version_code="pro", version_name="专业版",
-                    description="适合大型车队，包含数据分析、结算管理等高级功能",
+                    description="企业级管理 + 数据分析：standard + 审批中心 + 财务结算（应收/应付三路径/对账中心）+ 数据洞察",
                     max_users=100, max_vehicles=500, price="9999/年",
                     sort_order=20, status=1,
                 ),
                 ProductVersion(
-                    version_code="enterprise", version_name="企业版",
-                    description="定制化解决方案，不限用户和车辆数，专属技术支持",
+                    version_code="enterprise", version_name="旗舰版",
+                    description="全功能 + AI 增值：pro + AI 助手 + 智能预测 + 利润分析 + 车辆维保 + 证照监控 + 审批流程配置 + 发票管理 + 成本规则/费用模板",
                     max_users=9999, max_vehicles=9999, price="面议",
                     sort_order=30, status=1,
+                ),
+                # v2.0 预留：生态版（货源/运力/服务三大厅，远期开启）
+                # status=0 表示当前不对外销售；菜单 sys_menu 同样以 visible=0 预留
+                ProductVersion(
+                    version_code="ecosystem", version_name="生态版",
+                    description="平台运营产品（远期）：enterprise + 生态平台（货源大厅/运力大厅/服务大厅）",
+                    max_users=9999, max_vehicles=9999, price="面议",
+                    sort_order=40, status=0,
                 ),
             ]
             session.add_all(versions)

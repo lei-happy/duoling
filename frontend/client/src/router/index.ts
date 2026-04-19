@@ -9,6 +9,7 @@ import { useUserStore } from '@/store/modules/user';
 import { getToken, removeToken, removeRefreshToken } from '@/utils/token-util';
 import { setPageTitle } from '@/utils/page-title-util';
 import { getRouteTitle } from '@/i18n/use-locale';
+import { ElMessage } from 'element-plus';
 import { routes, getMenuRoutes, isWhiteList } from './routes';
 
 NProgress.configure({
@@ -58,6 +59,21 @@ router.beforeEach(async (to) => {
       removeRefreshToken();
       const query = to.path === LAYOUT_PATH ? {} : { from: encodeURIComponent(to.fullPath) };
       return { path: LOGIN_PATH, query };
+    }
+    return;
+  }
+  // 已有菜单时，做轻量版本戳比对（内置 5s 节流），
+  // 不一致说明运营后台已变更授权，强制刷新页面以重建动态路由。
+  // 跳过 redirect 页面，避免无限跳转。
+  if (!to.path.includes(REDIRECT_PATH)) {
+    const outdated = await userStore.checkMenuOutdated();
+    if (outdated) {
+      ElMessage.warning('企业版本授权已更新，正在重新加载菜单…');
+      userStore.clearData();
+      // 整页刷新可彻底重建已通过 router.addRoute 注册的动态路由，
+      // 避免新旧菜单合并出现的脏路由
+      window.location.replace(to.fullPath);
+      return false;
     }
   }
 });

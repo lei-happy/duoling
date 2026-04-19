@@ -4,12 +4,15 @@
 
 from typing import Optional, List
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
 from app.common.exceptions import BizException
 from app.modules.console.models.product.product_feature import ProductFeature, VersionFeature
+from app.modules.console.models.system.menu import Menu
+from app.modules.console.models.tenant.tenant import Tenant
+from app.modules.console.models.tenant.tenant_product import TenantProduct
 from app.modules.console.schemas.product.product_feature import (
     ProductFeatureCreate, ProductFeatureUpdate,
 )
@@ -128,28 +131,171 @@ class ProductFeatureService:
     async def assign_features(
         db: AsyncSession, version_id: int, feature_ids: List[int]
     ) -> None:
-        """批量设置版本的功能清单（全量替换）"""
-        # 软删除现有关联
-        existing = await db.execute(
+        """
+        批量设置版本的功能清单（全量替换）。
+
+        变更说明（修复"勾选 AI 助手等远期菜单后客户端依然不显示"问题）：
+        1. 关联功能的 client 菜单自动 visible=1，运营勾选即视为"该菜单允许展示"，
+           覆盖菜单 seed 时打的"远期预留 visible=0"标记；
+        2. 取消关联且不再被任何版本引用的 feature 对应 client 菜单回到 visible=0，
+           保持"无任何版本许可时该菜单依旧隐藏"的语义一致；
+        3. 自动递增所有持有该版本（且授权未删除）的租户 menu_version，触发其客户端
+           侧重新拉取菜单，避免运营改完功能清单后老租户菜单不刷新的问题。
+        """
+        # 取出旧关联，便于做"差集"判断
+        old_result = await db.execute(
             select(VersionFeature).where(
                 VersionFeature.version_id == version_id,
                 VersionFeature.is_deleted == 0,
             )
         )
-        for vf in existing.scalars().all():
+        old_vfs = list(old_result.scalars().all())
+        old_feature_ids = {vf.feature_id for vf in old_vfs}
+        new_feature_ids = set(feature_ids)
+
+        added = new_feature_ids - old_feature_ids
+        removed = old_feature_ids - new_feature_ids
+
+        for vf in old_vfs:
             vf.is_deleted = 1
 
-        # 创建新关联
         for fid in feature_ids:
-            vf = VersionFeature(
+            db.add(VersionFeature(
                 version_id=version_id,
                 feature_id=fid,
                 status=1,
-            )
-            db.add(vf)
+            ))
 
         await db.flush()
-        logger.info(f"版本 {version_id} 已更新功能清单: {feature_ids}")
+        logger.info(
+            f"版本 {version_id} 已更新功能清单：保留 {len(new_feature_ids & old_feature_ids)}，"
+            f"新增 {len(added)}，移除 {len(removed)}"
+        )
+
+        # ---- 同步联动菜单 visible ----
+        try:
+            await ProductFeatureService._sync_menu_visibility(
+                db, added_feature_ids=added, removed_feature_ids=removed
+            )
+        except Exception as e:
+            logger.warning(
+                f"版本 {version_id} 功能联动菜单 visible 失败（不影响功能关联保存）：{e!r}"
+            )
+
+        # ---- 触发持有该版本的租户 menu_version 递增 ----
+        try:
+            bumped = await ProductFeatureService._bump_tenants_menu_version(
+                db, version_id
+            )
+            if bumped:
+                logger.info(
+                    f"版本 {version_id} 功能清单变更：已递增 {bumped} 个租户的 menu_version"
+                )
+        except Exception as e:
+            logger.warning(
+                f"版本 {version_id} 触发租户 menu_version 递增失败（不影响功能关联保存）：{e!r}"
+            )
+
+    @staticmethod
+    async def _sync_menu_visibility(
+        db: AsyncSession,
+        added_feature_ids: set,
+        removed_feature_ids: set,
+    ) -> None:
+        """
+        根据本次 added/removed 的 feature_id，调整对应 client 菜单的 visible。
+        - added：直接将 feature_code 对应的 client 菜单 visible 置 1
+        - removed：仅当该 feature_code 已不被任何启用的版本引用时，才把 visible 置 0
+        platform 端菜单不受此联动影响。
+        """
+        affected_ids = added_feature_ids | removed_feature_ids
+        if not affected_ids:
+            return
+
+        feat_rows = await db.execute(
+            select(ProductFeature.id, ProductFeature.feature_code).where(
+                ProductFeature.id.in_(affected_ids),
+                ProductFeature.is_deleted == 0,
+            )
+        )
+        id_to_code = {row.id: row.feature_code for row in feat_rows.all()}
+
+        added_codes = {id_to_code[fid] for fid in added_feature_ids if fid in id_to_code}
+        removed_codes = {id_to_code[fid] for fid in removed_feature_ids if fid in id_to_code}
+
+        if added_codes:
+            await db.execute(
+                update(Menu)
+                .where(
+                    Menu.feature_code.in_(added_codes),
+                    Menu.app_type == "client",
+                    Menu.is_deleted == 0,
+                    Menu.visible == 0,
+                )
+                .values(visible=1)
+            )
+            logger.info(f"已将 client 菜单 visible 置 1，feature_code={added_codes}")
+
+        if removed_codes:
+            still_used = await db.execute(
+                select(ProductFeature.feature_code)
+                .join(VersionFeature, VersionFeature.feature_id == ProductFeature.id)
+                .where(
+                    ProductFeature.feature_code.in_(removed_codes),
+                    VersionFeature.is_deleted == 0,
+                    VersionFeature.status == 1,
+                )
+                .distinct()
+            )
+            still_used_codes = {r for r in still_used.scalars().all()}
+            truly_removed = removed_codes - still_used_codes
+            if truly_removed:
+                await db.execute(
+                    update(Menu)
+                    .where(
+                        Menu.feature_code.in_(truly_removed),
+                        Menu.app_type == "client",
+                        Menu.is_deleted == 0,
+                        Menu.visible == 1,
+                    )
+                    .values(visible=0)
+                )
+                logger.info(
+                    f"已将 client 菜单 visible 置 0（feature 已无任何版本引用）"
+                    f"feature_code={truly_removed}"
+                )
+
+    @staticmethod
+    async def _bump_tenants_menu_version(
+        db: AsyncSession, version_id: int
+    ) -> int:
+        """
+        把所有持有该 version_id 且未软删除的授权对应的租户 menu_version +1。
+        返回受影响的租户数。
+        """
+        from datetime import datetime
+        from sqlalchemy import or_
+
+        now = datetime.now()
+        tenant_rows = await db.execute(
+            select(TenantProduct.tenant_id)
+            .where(
+                TenantProduct.version_id == version_id,
+                TenantProduct.is_deleted == 0,
+                TenantProduct.status == 1,
+                or_(TenantProduct.end_time.is_(None), TenantProduct.end_time > now),
+            )
+            .distinct()
+        )
+        tenant_ids = [r for r in tenant_rows.scalars().all() if r is not None]
+        if not tenant_ids:
+            return 0
+        await db.execute(
+            update(Tenant)
+            .where(Tenant.id.in_(tenant_ids))
+            .values(menu_version=Tenant.menu_version + 1)
+        )
+        return len(tenant_ids)
 
     @staticmethod
     async def get_feature_codes_by_version_ids(

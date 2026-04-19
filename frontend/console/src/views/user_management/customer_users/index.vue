@@ -48,6 +48,29 @@
             {{ channelText(row.sourceChannel) }}
           </el-tag>
         </template>
+        <template #currentVersion="{ row }">
+          <template v-if="row.currentVersionName">
+            <el-tag
+              :type="versionTagType(row.currentVersionCode)"
+              size="small"
+              :disable-transitions="true"
+            >
+              {{ row.currentVersionName }}
+            </el-tag>
+            <el-tag
+              v-if="row.activeProductCount && row.activeProductCount > 1"
+              type="warning"
+              size="small"
+              effect="plain"
+              style="margin-left: 6px"
+              :disable-transitions="true"
+              :title="`存在 ${row.activeProductCount} 条有效授权叠加`"
+            >
+              叠加×{{ row.activeProductCount }}
+            </el-tag>
+          </template>
+          <span v-else style="color: var(--el-text-color-secondary)">无生效授权</span>
+        </template>
         <template #action="{ row }">
           <btn-items
             :divider="true"
@@ -147,6 +170,13 @@
       formatter: (row: Tenant) => channelText(row.sourceChannel)
     },
     {
+      prop: 'currentVersionName',
+      label: '当前版本',
+      width: 140,
+      align: 'center',
+      slot: 'currentVersion'
+    },
+    {
       prop: 'createTime',
       label: '创建时间',
       width: 170,
@@ -217,6 +247,18 @@
       referral: 'success'
     };
     return map[channel ?? ''] || 'info';
+  };
+
+  /** 版本标签颜色 */
+  const versionTagType = (code?: string) => {
+    const map: Record<string, string> = {
+      basic: 'info',
+      standard: '',
+      pro: 'success',
+      enterprise: 'warning',
+      ecosystem: 'danger'
+    };
+    return map[code ?? ''] || 'info';
   };
 
   /** 操作按钮列表 */

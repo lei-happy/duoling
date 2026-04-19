@@ -108,6 +108,31 @@ async def get_user_info(
     return success(data=user_info.model_dump())
 
 
+@router.get("/menu-version")
+async def get_menu_version(
+    current_user: TokenData = Depends(get_current_user),
+    db: AsyncSession = Depends(get_platform_db),
+):
+    """
+    获取当前租户的菜单版本戳（轻量接口）
+
+    前端登录/进入主布局后将其与本地缓存的 menuVersion 比对，
+    不一致时清空菜单并重新调用 /auth/user-info 拉取最新菜单。
+    用于运营后台修改授权后，客户端能够及时感知并刷新菜单。
+    """
+    from app.modules.console.models.tenant.tenant import Tenant
+    menu_version = 0
+    if current_user.tenant_code:
+        result = await db.execute(
+            select(Tenant.menu_version).where(
+                Tenant.tenant_code == current_user.tenant_code,
+                Tenant.is_deleted == 0,
+            )
+        )
+        menu_version = result.scalar() or 0
+    return success(data={"menuVersion": menu_version})
+
+
 @router.get("/user-tenants")
 async def get_user_tenants(
     current_user: TokenData = Depends(get_current_user),

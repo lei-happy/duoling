@@ -4,7 +4,7 @@
 
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import String, SmallInteger, DateTime, Text
+from sqlalchemy import String, SmallInteger, DateTime, Text, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.modules.console.models.common.base import PlatformModelBase
@@ -77,4 +77,8 @@ class Tenant(PlatformModelBase):
     )
     follow_remark: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="跟进备注"
+    )
+    menu_version: Mapped[int] = mapped_column(
+        BigInteger, default=0, server_default="0",
+        comment="菜单版本戳：版本授权变更时递增，前端据此判断是否需重新拉取菜单",
     )

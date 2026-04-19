@@ -50,6 +50,8 @@ export interface User {
   userType?: number;
   /** 主题配置 */
   themeConfig?: Record<string, any>;
+  /** 菜单版本戳：与 /auth/menu-version 比对，不一致需重新拉取菜单 */
+  menuVersion?: number;
 }
 
 /**

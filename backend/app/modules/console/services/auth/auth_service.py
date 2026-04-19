@@ -592,6 +592,7 @@ class AuthService:
         tenant_name = None
         system_name = None
         user_type = None
+        menu_version = None
         if tenant_code:
             tenant_result = await db.execute(
                 select(Tenant).where(
@@ -603,6 +604,7 @@ class AuthService:
             if tenant:
                 tenant_name = tenant.tenant_name
                 system_name = tenant.system_name
+                menu_version = tenant.menu_version or 0
 
             ut_result = await db.execute(
                 select(UserTenant.user_type).where(
@@ -626,6 +628,7 @@ class AuthService:
             tenantName=tenant_name,
             systemName=system_name,
             userType=user_type,
+            menuVersion=menu_version,
             roles=[
                 UserRoleOut(
                     roleId=r.id,
@@ -668,8 +671,19 @@ class AuthService:
                     db, tenant_code
                 )
             except Exception as e:
-                logger.warning(f"获取企业版本功能清单失败，跳过版本过滤: {e}")
+                logger.exception(
+                    f"[菜单版本裁剪降级] 获取企业版本功能清单失败 "
+                    f"tenant_code={tenant_code} user_id={user_id} app_type={app_type} "
+                    f"将跳过版本过滤、按角色返回全量菜单 err={e!r}"
+                )
                 allowed_feature_codes = None
+            else:
+                if not allowed_feature_codes:
+                    logger.warning(
+                        f"[菜单版本裁剪降级] 企业 {tenant_code} 当前没有任何有效授权"
+                        f" → allowed_feature_codes 为空，将按角色返回不含 feature_code 限制的菜单。"
+                        f" 若运营预期看到限制后的菜单，请检查 sys_tenant_product 状态/end_time。"
+                    )
 
         is_admin = "super_admin" in role_codes
 

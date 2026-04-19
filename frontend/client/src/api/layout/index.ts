@@ -19,6 +19,20 @@ export async function getUserInfo(toRoute: any): Promise<User> {
 }
 
 /**
+ * 获取当前租户的菜单版本戳（轻量接口）
+ * 用于检测运营后台修改授权后是否需要重新拉取菜单
+ */
+export async function getMenuVersion(): Promise<number> {
+  const res = await request.get<ApiResult<{ menuVersion: number }>>(
+    '/auth/menu-version'
+  );
+  if (res.data.code === 0 && res.data.data) {
+    return res.data.data.menuVersion ?? 0;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/**
  * 修改当前登录用户的密码
  */
 export async function updatePassword(

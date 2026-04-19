@@ -115,6 +115,10 @@ class TenantListOut(BaseModel):
     inFollowPool: int = 0
     followRemark: Optional[str] = None
     createTime: Optional[str] = None
+    # 当前生效授权（按 sys_tenant_product 实时计算，避免直接读 sys_tenant 反范式字段）
+    currentVersionCode: Optional[str] = Field(default=None, description="当前生效版本编码（多条按到期时间最晚优先）")
+    currentVersionName: Optional[str] = Field(default=None, description="当前生效版本名称")
+    activeProductCount: int = Field(default=0, description="当前有效授权数量（≥2 表示存在叠加，需运营关注）")
 
     @classmethod
     def from_model(cls, t) -> "TenantListOut":
@@ -156,6 +160,13 @@ class TenantProductCreate(BaseModel):
     endTime: Optional[str] = Field(default=None, description="授权到期时间 YYYY-MM-DD HH:MM:SS")
     grantType: Optional[str] = Field(default=None, description="开通类型(数据字典 grant_type)")
     grantRemark: Optional[str] = Field(default=None, description="开通备注")
+    replaceActive: bool = Field(
+        default=False,
+        description=(
+            "替换语义：true 时先取消其他生效授权再开通本次授权，"
+            "且跳过时间冲突/空档期校验；false 时按叠加语义校验时间线"
+        ),
+    )
 
 
 class TenantProductOut(BaseModel):

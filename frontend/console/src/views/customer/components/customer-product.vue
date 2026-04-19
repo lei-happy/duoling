@@ -112,8 +112,14 @@
                 placeholder="选择开始时间"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 style="width: 100%"
-                disabled
+                :disabled="startTimeLocked"
               />
+              <div
+                v-if="startTimeLocked"
+                style="font-size: 12px; color: var(--el-text-color-secondary); line-height: 1.4"
+              >
+                时间闭环：自动衔接上一条授权的到期时间，避免空档
+              </div>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -179,6 +185,9 @@
   const versionList = ref<any[]>([]);
   const submitLoading = ref(false);
   const showForm = ref(false);
+  // 仅当存在「未来到期」的有效授权时才锁定开始时间为时间闭环；
+  // 否则（无任何授权 / 历史全部过期）允许运营手工选择开始时间。
+  const startTimeLocked = ref(false);
 
   const createEmptyForm = () => ({
     versionId: undefined as number | undefined,
@@ -272,15 +281,39 @@
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   };
 
-  const handleShowForm = () => {
-    const latestEndTime = productList.value.reduce((latest, p) => {
-      if (!p.endTime) return latest;
+  const formatNow = () => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  };
+
+  /**
+   * 取「当前时间之后到期」的最大 endTime；如果不存在则返回空串。
+   * 历史已过期 / 已取消的记录不再纳入时间闭环计算，避免运营被锁在过去时间无法新建授权。
+   */
+  const findActiveLatestEndTime = (): string => {
+    const nowStr = formatNow();
+    return productList.value.reduce((latest, p) => {
+      if (!p.endTime) return latest; // 永久授权不参与闭环
+      if (p.endTime <= nowStr) return latest; // 已过期不参与闭环
       return p.endTime > latest ? p.endTime : latest;
     }, '');
+  };
+
+  const handleShowForm = () => {
+    const latestEndTime = findActiveLatestEndTime();
     Object.assign(form, createEmptyForm());
     if (latestEndTime) {
+      // 时间闭环：从上一条有效授权的到期时间开始
       form.startTime = latestEndTime;
       form.endTime = addDays(latestEndTime, 10);
+      startTimeLocked.value = true;
+    } else {
+      // 无有效授权（取消全部 / 历史全部过期 / 全新客户）
+      // 默认从当前时间开始，且开放编辑
+      form.startTime = formatNow();
+      form.endTime = addDays(form.startTime, 10);
+      startTimeLocked.value = false;
     }
     showForm.value = true;
   };

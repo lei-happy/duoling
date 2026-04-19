@@ -203,9 +203,14 @@
   import RouterLayout from '@/components/RouterLayout/index.vue';
   import HeaderRight from './components/header-right.vue';
   import PageFooter from './components/page-footer.vue';
+  import { useMenuVersionWatcher } from '@/utils/use-menu-version-watcher';
   const DEFAULT_NAME = import.meta.env.VITE_APP_NAME;
 
   defineOptions({ name: 'Layout' });
+
+  // 监听菜单版本戳变化（轮询 + 标签页可视性 + 窗口 focus）
+  // 覆盖"用户停留在某页不切路由"时运营后台改授权的场景
+  useMenuVersionWatcher();
 
   const { push, resolve } = useRouter();
   const { t, locale } = useI18n();

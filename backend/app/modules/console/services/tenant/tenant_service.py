@@ -704,12 +704,68 @@ class TenantService:
                 row.tenant_id: row.max_end_time for row in ve_result
             }
 
+        # 实时计算每个租户的"当前生效版本"，避免依赖 sys_tenant 反范式字段。
+        # 选取规则：优先取所有有效授权中 end_time 最晚的（NULL=永久 当作最大），
+        # 同期则取 created_at 最新的。这样直接改 DB 的脏数据也能被列表如实呈现。
+        current_version_map: dict = {}
+        active_count_map: dict = {}
+        if items:
+            tenant_ids = [t.id for t in items]
+            now = datetime.now()
+            cv_result = await db.execute(
+                select(
+                    TenantProduct.tenant_id,
+                    TenantProduct.version_id,
+                    TenantProduct.version_code,
+                    TenantProduct.start_time,
+                    TenantProduct.end_time,
+                    TenantProduct.created_at,
+                    ProductVersion.version_name,
+                ).join(
+                    ProductVersion,
+                    ProductVersion.id == TenantProduct.version_id,
+                ).where(
+                    TenantProduct.tenant_id.in_(tenant_ids),
+                    TenantProduct.is_deleted == 0,
+                    TenantProduct.status == 1,
+                    or_(
+                        TenantProduct.end_time.is_(None),
+                        TenantProduct.end_time > now,
+                    ),
+                    ProductVersion.is_deleted == 0,
+                )
+            )
+            grouped: dict = {}
+            for row in cv_result.all():
+                grouped.setdefault(row.tenant_id, []).append(row)
+            for tid, rows in grouped.items():
+                active_count_map[tid] = len(rows)
+                # end_time=None 永久 视为最大；同期取 created_at 最新
+                rows.sort(
+                    key=lambda r: (
+                        r.end_time is None,
+                        r.end_time or datetime.min,
+                        r.created_at or datetime.min,
+                    ),
+                    reverse=True,
+                )
+                top = rows[0]
+                current_version_map[tid] = {
+                    "code": top.version_code,
+                    "name": top.version_name,
+                }
+
         out_list = []
         for t in items:
             item = TenantListOut.from_model(t).model_dump()
             if version_code and t.id in version_expire_map:
                 ve = version_expire_map[t.id]
                 item["expireTime"] = ve.strftime("%Y-%m-%d %H:%M:%S") if ve else None
+            cv = current_version_map.get(t.id)
+            if cv:
+                item["currentVersionCode"] = cv["code"]
+                item["currentVersionName"] = cv["name"]
+            item["activeProductCount"] = active_count_map.get(t.id, 0)
             out_list.append(item)
 
         return {
@@ -944,6 +1000,21 @@ class TenantService:
         )
         existing_products = existing_result.scalars().all()
 
+        replace_active = bool(getattr(data, "replaceActive", False))
+        if replace_active:
+            # 替换语义：先软删其他生效授权，跳过时间冲突/空档期校验
+            now = datetime.now()
+            for ep in existing_products:
+                still_active = ep.end_time is None or ep.end_time > now
+                if still_active:
+                    ep.is_deleted = 1
+                    logger.info(
+                        f"替换授权：软删租户 {tenant.tenant_code} 已有授权 "
+                        f"id={ep.id} version={ep.version_code}"
+                    )
+            await db.flush()
+            existing_products = []
+
         for ep in existing_products:
             if not start_time or not end_time or not ep.start_time or not ep.end_time:
                 continue
@@ -955,12 +1026,17 @@ class TenantService:
                 )
 
         # 校验授权时间线不能存在空档期
-        if start_time and end_time:
-            all_periods = [
+        # 仅用「未来仍然有效（end_time > now）」的历史授权参与闭环检查；
+        # 已过期的记录代表自然续约的合理断档，不应再约束新增授权的开始时间，
+        # 否则当历史授权全部过期时，运营将永远无法补一条 startTime=now 的新授权。
+        if start_time and end_time and not replace_active:
+            now = datetime.now()
+            future_periods = [
                 (ep.start_time, ep.end_time)
                 for ep in existing_products
-                if ep.start_time and ep.end_time
+                if ep.start_time and ep.end_time and ep.end_time > now
             ]
+            all_periods = list(future_periods)
             all_periods.append((start_time, end_time))
             all_periods.sort(key=lambda x: x[0])
             for i in range(len(all_periods) - 1):
@@ -971,7 +1047,7 @@ class TenantService:
                         f"授权时间存在空档期（"
                         f"{cur_end.strftime('%Y-%m-%d %H:%M:%S')} ~ "
                         f"{nxt_start.strftime('%Y-%m-%d %H:%M:%S')}），"
-                        f"请确保授权时间连续无断档"
+                        f"请确保新授权的开始时间紧接上一条有效授权的到期时间"
                     )
 
         # 创建授权记录
@@ -1000,6 +1076,13 @@ class TenantService:
         await db.flush()
         await db.refresh(product)
         logger.info(f"租户 {tenant.tenant_code} 已开通产品版本: {data.versionCode}")
+
+        # 授权变更必须递增菜单版本戳，触发客户端重新拉取菜单
+        tenant.menu_version = (tenant.menu_version or 0) + 1
+        await db.flush()
+        logger.info(
+            f"租户 {tenant.tenant_code} menu_version 递增至 {tenant.menu_version}"
+        )
 
         # 按版本功能清单按需创建租户库业务表
         try:
@@ -1085,7 +1168,12 @@ class TenantService:
                     max_end = p.end_time
             tenant.expire_time = max_end
 
+        # 授权取消必须递增菜单版本戳，触发客户端重新拉取菜单
+        tenant.menu_version = (tenant.menu_version or 0) + 1
         await db.flush()
+        logger.info(
+            f"租户 {tenant.tenant_code} 取消授权后 menu_version 递增至 {tenant.menu_version}"
+        )
 
     # ============================================================
     # 过期检查
@@ -1093,23 +1181,30 @@ class TenantService:
 
     @staticmethod
     async def check_expirations(db: AsyncSession) -> int:
-        """检查过期授权，更新客户状态，返回受影响数量"""
+        """
+        检查过期授权 + 反范式字段自愈，返回受影响数量。
+
+        以 sys_tenant_product 为唯一权威，强制把 sys_tenant.status / expire_time 拉齐：
+        1. status=1 但已无任何有效授权 → status=3，expire_time=None
+        2. status=3 但已出现新的有效授权（含手工 SQL 改 sys_tenant_product 的场景）
+           → status=1，expire_time=有效授权的最晚 end_time（None 表示永久）
+        3. status=1 且仍有有效授权 → 仅同步 expire_time（修正商业版到期时间漂移）
+
+        因此「直接改 sys_tenant_product 后客户列表 / 当前版本不刷新」的问题
+        在 30 秒级定时任务下会自动收敛；如需立即生效，运营同样可以手工触发本接口。
+        """
+        from sqlalchemy import or_
         now = datetime.now()
         affected = 0
 
-        # 查找 status=1 且 expire_time 已过期的客户
+        # 候选集：所有未删除租户。少量循环成本可控；
+        # 即便上千租户也比直接改 SQL 出错的人工成本低。
         result = await db.execute(
-            select(Tenant).where(
-                Tenant.is_deleted == 0,
-                Tenant.status == 1,
-                Tenant.expire_time.isnot(None),
-                Tenant.expire_time < now,
-            )
+            select(Tenant).where(Tenant.is_deleted == 0)
         )
-        tenants = result.scalars().all()
+        tenants = list(result.scalars().all())
 
         for tenant in tenants:
-            # 检查是否还有其他有效授权
             prod_result = await db.execute(
                 select(TenantProduct).where(
                     TenantProduct.tenant_id == tenant.id,
@@ -1118,20 +1213,45 @@ class TenantService:
                     or_(TenantProduct.end_time.is_(None), TenantProduct.end_time > now),
                 )
             )
-            active_products = prod_result.scalars().all()
+            active_products = list(prod_result.scalars().all())
 
-            if not active_products:
-                tenant.status = 3
-                affected += 1
-                logger.info(f"租户 {tenant.tenant_code} 所有授权已过期，状态设为已过期")
-            else:
-                # 与当前有效授权对齐 tenant.expire_time（修正商业版过期后仍显示过期等问题）
+            new_status = tenant.status
+            new_expire = tenant.expire_time
+
+            if active_products:
                 if any(p.end_time is None for p in active_products):
-                    tenant.expire_time = None
+                    new_expire = None
                 else:
-                    tenant.expire_time = max(p.end_time for p in active_products)
+                    new_expire = max(p.end_time for p in active_products)
+                if tenant.status == 3:
+                    new_status = 1
+                    logger.info(
+                        f"租户 {tenant.tenant_code} 出现新的有效授权"
+                        f"（{[(p.version_code, p.end_time) for p in active_products]}），"
+                        f"status 由 3 自动恢复为 1"
+                    )
+            else:
+                new_expire = None
+                if tenant.status == 1:
+                    new_status = 3
+                    logger.info(
+                        f"租户 {tenant.tenant_code} 已无有效授权，status 自动设为 3"
+                    )
+
+            changed = False
+            if new_status != tenant.status:
+                tenant.status = new_status
+                changed = True
+            if new_expire != tenant.expire_time:
+                tenant.expire_time = new_expire
+                changed = True
+            if changed:
+                # 任何 status / expire_time 变化都意味着客户端能见菜单可能改变，
+                # 一并递增 menu_version 触发客户端刷新。
+                tenant.menu_version = (tenant.menu_version or 0) + 1
                 affected += 1
-                logger.info(f"租户 {tenant.tenant_code} 已按有效授权同步到期时间")
 
         await db.flush()
+        if affected:
+            logger.info(f"check_expirations 自愈 {affected} 个租户的 status/expire_time")
         return affected

@@ -7,9 +7,12 @@ import { formatUserMenu } from '@/utils/menu-util';
 import defaultAvatarUrl from '@/assets/avatar.png';
 import type { User } from '@/api/system/user/model';
 import { resolveUploadUrl } from '@/utils/upload-url';
-import { getUserInfo } from '@/api/layout';
+import { getUserInfo, getMenuVersion } from '@/api/layout';
 import { useThemeStore } from './theme';
 import { cacheSetting } from '@/utils/theme-util';
+
+/** 模块级缓存：上次检查菜单版本戳的时间戳，用于节流避免频繁请求 */
+let _menuVersionCheckedAt = 0;
 
 /**
  * 登录用户状态管理
@@ -23,7 +26,12 @@ export const useUserStore = defineStore('user', {
     /** 当前登录用户的按钮权限数据 */
     authorities: [] as (string | undefined)[] | null | undefined,
     /** 当前登录用户的角色权限数据 */
-    roles: [] as (string | undefined)[] | null | undefined
+    roles: [] as (string | undefined)[] | null | undefined,
+    /**
+     * 当前菜单版本戳（来自 /auth/user-info 的 menuVersion）
+     * 与 /auth/menu-version 比对，不一致时需重新拉取菜单
+     */
+    menuVersion: null as number | null
   }),
   getters: {
     /** 是否是企业管理员 */
@@ -78,6 +86,9 @@ export const useUserStore = defineStore('user', {
         );
         this.setRoles(userInfo?.roles?.map?.((d) => d.roleCode));
         this.setMenus(userMenuResult.menus);
+        this.setMenuVersion(
+          typeof userInfo.menuVersion === 'number' ? userInfo.menuVersion : null
+        );
         return userMenuResult;
       } catch (e) {
         console.error(e);
@@ -115,6 +126,38 @@ export const useUserStore = defineStore('user', {
       this.roles = roles;
     },
     /**
+     * 更新菜单版本戳
+     */
+    setMenuVersion(v: number | null) {
+      this.menuVersion = v;
+    },
+    /**
+     * 检查菜单版本是否过期（轻量接口，内置节流）
+     * @returns 若已过期返回 true（前端应清空菜单并重新拉取）
+     */
+    async checkMenuOutdated(throttleMs = 5000): Promise<boolean> {
+      const now = Date.now();
+      const last = _menuVersionCheckedAt;
+      if (now - last < throttleMs) {
+        return false;
+      }
+      _menuVersionCheckedAt = now;
+      try {
+        const remoteVersion = await getMenuVersion();
+        const local = this.menuVersion ?? 0;
+        if (remoteVersion !== local) {
+          console.info(
+            `[menu-version] 菜单版本变化 local=${local} → remote=${remoteVersion}，需重新拉取菜单`
+          );
+          return true;
+        }
+        return false;
+      } catch (e) {
+        console.warn('[menu-version] 版本戳查询失败，忽略本次检查', e);
+        return false;
+      }
+    },
+    /**
      * 清空状态数据
      */
     clearData() {
@@ -122,6 +165,7 @@ export const useUserStore = defineStore('user', {
       this.setMenus(null);
       this.setAuthorities(null);
       this.setRoles(null);
+      this.setMenuVersion(null);
     },
     /**
      * 更新菜单的徽章

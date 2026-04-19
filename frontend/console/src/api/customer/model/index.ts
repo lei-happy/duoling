@@ -44,6 +44,12 @@ export interface Customer {
   referrerCode?: string;
   /** 创建时间 */
   createTime?: string;
+  /** 当前生效版本编码（按 sys_tenant_product 实时计算） */
+  currentVersionCode?: string;
+  /** 当前生效版本名称 */
+  currentVersionName?: string;
+  /** 当前有效授权数量（≥2 表示存在叠加） */
+  activeProductCount?: number;
 }
 
 /**
@@ -117,6 +123,11 @@ export interface CustomerProductCreate {
   grantType?: string;
   /** 开通备注 */
   grantRemark?: string;
+  /**
+   * 替换语义：true 时先取消其他生效授权再开通本次授权
+   * 用于"切换版本"场景，避免新旧版本菜单叠加
+   */
+  replaceActive?: boolean;
 }
 
 // 兼容别名，供其他模块平滑迁移

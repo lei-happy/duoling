@@ -95,6 +95,9 @@ def load_client_menus_from_json(json_path: Path) -> list:
                 item[k] = v
         if "visible" not in item or item["visible"] is None:
             item["visible"] = 1
+        # 透传 id，供 upsert 基于稳定主键定位老记录（用于 v2.0 重命名/路径变更）
+        if "id" in r and r["id"] is not None:
+            item["_seed_id"] = int(r["id"])
         return item
 
     def build(r: dict) -> dict:
@@ -117,17 +120,30 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
       "force_all"   : 已存在则全字段 UPDATE
       "insert_only" : 已存在则跳过更新，仅递归子节点
 
-    匹配规则：
-      - 有 menu_code 的菜单：按 menu_code + app_type 匹配（跨父级唯一）
-      - 无 menu_code 的菜单：按 path + parent_id + app_type 匹配（避免改名导致重复）
+    匹配规则（按优先级）：
+      1. JSON 中带 _seed_id 时优先按主键 id 匹配（最稳健，覆盖 v2.0 重命名/路径变更）
+      2. 否则按 menu_code + app_type 匹配（跨父级唯一）
+      3. 否则按 path + parent_id + app_type 匹配（避免改名导致重复）
     """
     for menu in menus:
         children = menu.pop("children", None)
         menu_code = menu.get("menu_code")
         menu_path = menu.get("path")
         visible = menu.get("visible", 1)
+        seed_id = menu.pop("_seed_id", None)
 
-        if menu_code:
+        existing_id = None
+        if seed_id:
+            result = conn.execute(
+                text(
+                    "SELECT id FROM sys_menu "
+                    "WHERE id = :sid AND app_type = 'client' AND is_deleted = 0"
+                ),
+                {"sid": seed_id},
+            )
+            existing_id = result.scalar()
+
+        if not existing_id and menu_code:
             result = conn.execute(
                 text(
                     "SELECT id FROM sys_menu "
@@ -135,7 +151,9 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
                 ),
                 {"code": menu_code},
             )
-        else:
+            existing_id = result.scalar()
+
+        if not existing_id and not menu_code:
             result = conn.execute(
                 text(
                     "SELECT id FROM sys_menu "
@@ -144,8 +162,7 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
                 ),
                 {"path": menu_path, "pid": parent_id},
             )
-
-        existing_id = result.scalar()
+            existing_id = result.scalar()
 
         if existing_id:
             if mode == "force_all":
@@ -198,29 +215,72 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
                 print(f"  跳过已存在: {menu['menu_name']} (id={existing_id})")
             menu_id = existing_id
         else:
-            conn.execute(
-                text(
-                    "INSERT INTO sys_menu "
-                    "(parent_id, menu_name, menu_code, menu_type, path, component, "
-                    "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
-                    "VALUES (:parent_id, :menu_name, :menu_code, :menu_type, :path, "
-                    ":component, :icon, :sort_order, :visible, 1, 'client', :feature_code, 0)"
-                ),
-                {
-                    "parent_id": parent_id,
-                    "menu_name": menu["menu_name"],
-                    "menu_code": menu_code,
-                    "menu_type": menu["menu_type"],
-                    "path": menu_path,
-                    "component": menu.get("component"),
-                    "icon": menu.get("icon"),
-                    "sort_order": menu.get("sort_order", 0),
-                    "visible": visible,
-                    "feature_code": menu.get("feature_code"),
-                },
-            )
-            result = conn.execute(text("SELECT LAST_INSERT_ID()"))
-            menu_id = result.scalar()
+            # JSON 中带 _seed_id 时显式指定主键，保证 v2.0 新菜单 ID 与文档/SQL 完全一致
+            if seed_id:
+                # 防御：检查该 ID 是否被其他 app_type 或 已软删除的同类记录占用
+                # 这种情况下直接 INSERT 会触发 PRIMARY KEY 冲突，导致整批静默失败
+                conflict = conn.execute(
+                    text(
+                        "SELECT id, menu_name, app_type, is_deleted "
+                        "FROM sys_menu WHERE id = :sid"
+                    ),
+                    {"sid": seed_id},
+                ).fetchone()
+                if conflict is not None:
+                    raise RuntimeError(
+                        f"\n[ERROR] seed id={seed_id} ('{menu['menu_name']}') 已被现有记录占用："
+                        f"\n        existing: id={conflict.id} name='{conflict.menu_name}' "
+                        f"app_type={conflict.app_type} is_deleted={conflict.is_deleted}"
+                        f"\n        请先执行: python backend/scripts/fix/fix_client_menu_v2.py"
+                        f"\n        以清理 ID 冲突后再重跑本脚本。"
+                    )
+                conn.execute(
+                    text(
+                        "INSERT INTO sys_menu "
+                        "(id, parent_id, menu_name, menu_code, menu_type, path, component, "
+                        "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
+                        "VALUES (:id, :parent_id, :menu_name, :menu_code, :menu_type, :path, "
+                        ":component, :icon, :sort_order, :visible, 1, 'client', :feature_code, 0)"
+                    ),
+                    {
+                        "id": seed_id,
+                        "parent_id": parent_id,
+                        "menu_name": menu["menu_name"],
+                        "menu_code": menu_code,
+                        "menu_type": menu["menu_type"],
+                        "path": menu_path,
+                        "component": menu.get("component"),
+                        "icon": menu.get("icon"),
+                        "sort_order": menu.get("sort_order", 0),
+                        "visible": visible,
+                        "feature_code": menu.get("feature_code"),
+                    },
+                )
+                menu_id = seed_id
+            else:
+                conn.execute(
+                    text(
+                        "INSERT INTO sys_menu "
+                        "(parent_id, menu_name, menu_code, menu_type, path, component, "
+                        "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
+                        "VALUES (:parent_id, :menu_name, :menu_code, :menu_type, :path, "
+                        ":component, :icon, :sort_order, :visible, 1, 'client', :feature_code, 0)"
+                    ),
+                    {
+                        "parent_id": parent_id,
+                        "menu_name": menu["menu_name"],
+                        "menu_code": menu_code,
+                        "menu_type": menu["menu_type"],
+                        "path": menu_path,
+                        "component": menu.get("component"),
+                        "icon": menu.get("icon"),
+                        "sort_order": menu.get("sort_order", 0),
+                        "visible": visible,
+                        "feature_code": menu.get("feature_code"),
+                    },
+                )
+                result = conn.execute(text("SELECT LAST_INSERT_ID()"))
+                menu_id = result.scalar()
             print(
                 f"  新增菜单: {menu['menu_name']} (id={menu_id}, feature_code={menu.get('feature_code')})"
             )

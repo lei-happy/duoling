@@ -4,6 +4,14 @@
     :title="`配置功能 - ${versionName}`"
     v-bind="modalProps"
   >
+    <el-alert
+      type="info"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 12px"
+      title="勾选功能即表示『允许该版本下的菜单展示』"
+      description="保存后系统会：1) 自动联动菜单 visible（避免远期预留菜单永远不显示）；2) 递增所有持有此版本的租户 menu_version，触发其客户端在下次切换路由/标签页激活时强制重新拉取菜单。如客户端仍未刷新，请引导用户 F5。"
+    />
     <el-skeleton :loading="loading" :rows="8" animated>
       <template #default>
         <div
