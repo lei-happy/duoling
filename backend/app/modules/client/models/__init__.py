@@ -35,6 +35,12 @@ from app.modules.client.models.billing.freight_rate import FreightRate
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.models.capacity import Capacity, CapacityLog
 
+# ---- Tier 2: Business - AI 数字员工（biz_ai_*） ----
+from app.modules.ai.models.tenant.biz_ai_session import BizAiSession
+from app.modules.ai.models.tenant.biz_ai_message import BizAiMessage
+from app.modules.ai.models.tenant.biz_ai_tool_call_log import BizAiToolCallLog
+from app.modules.ai.models.tenant.biz_ai_context import BizAiContext
+
 __all__ = [
     # Core
     "BizUser",
@@ -67,4 +73,9 @@ __all__ = [
     "Waybill",
     "Capacity",
     "CapacityLog",
+    # AI 数字员工（biz_ai_*）
+    "BizAiSession",
+    "BizAiMessage",
+    "BizAiToolCallLog",
+    "BizAiContext",
 ]

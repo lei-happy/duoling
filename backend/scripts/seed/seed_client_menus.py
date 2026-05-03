@@ -353,6 +353,7 @@ def main():
             print("feature_code 列已添加")
 
     menus = load_client_menus_from_json(json_path)
+    menus_for_check = copy.deepcopy(menus)
     menus = copy.deepcopy(menus)
 
     mode_labels = {
@@ -368,6 +369,68 @@ def main():
 
     engine.dispose()
     print("\nClient 端菜单同步完成！")
+
+    # ---- 末尾自检：扫描 client 工程，检查 component 引用的 .vue 是否存在 ----
+    _check_missing_frontend_pages(menus_for_check)
+
+
+def _flatten_components(items: list, out: list[dict]) -> None:
+    for item in items:
+        comp = item.get("component")
+        if comp:
+            out.append({
+                "menu_name": item.get("menu_name"),
+                "path": item.get("path"),
+                "component": comp,
+            })
+        children = item.get("children")
+        if children:
+            _flatten_components(children, out)
+
+
+def _check_missing_frontend_pages(menus: list) -> None:
+    """
+    根据 menu.component（如 "/resource/vehicle/index"）静态扫描
+    frontend/client/src/views/<component>.vue 与 .../<component>/index.vue
+    是否存在，打印缺失清单（不会失败）。
+
+    若客户端工程不在仓库内（例如部署环境），自动跳过此检查。
+    """
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parents[3]
+    views_root = repo_root / "frontend" / "client" / "src" / "views"
+    if not views_root.is_dir():
+        print(f"[SKIP] 未找到客户端 views 目录，跳过前端页面校验：{views_root}")
+        return
+
+    flat: list[dict] = []
+    _flatten_components(menus, flat)
+
+    missing: list[dict] = []
+    for item in flat:
+        comp = (item["component"] or "").strip()
+        if not comp:
+            continue
+        normalized = comp if comp.startswith("/") else "/" + comp
+        candidates = [
+            views_root.joinpath(*normalized.strip("/").split("/")).with_suffix(".vue"),
+            views_root.joinpath(*normalized.strip("/").split("/")) / "index.vue",
+        ]
+        if not any(c.is_file() for c in candidates):
+            missing.append(item)
+
+    print("\n========== 前端页面校验 ==========")
+    if not missing:
+        print(f"[OK] {len(flat)} 个 component 引用全部存在")
+    else:
+        print(
+            f"[警告] 共 {len(missing)} 个菜单 component 在客户端工程下找不到对应 .vue 文件，"
+            "客户端将自动渲染「功能开发中」占位页："
+        )
+        for m in missing:
+            print(f"  - {m['menu_name']}  path={m['path']}  component={m['component']}")
+    print("==================================\n")
 
 
 if __name__ == "__main__":

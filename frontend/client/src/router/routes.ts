@@ -84,8 +84,10 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
     (route) => {
     const temp: RouteRecordRaw = Object.assign({}, route, { children: void 0 });
     if (!temp.component && !temp.redirect) {
-      // 没有对应组件的路由页面使用 404 组件
-      temp.component = () => import('@/views/exception/404/index.vue');
+      // 后端菜单已勾选但前端工程暂未实现对应页面时，统一回退到「功能开发中」占位页，
+      // 避免给用户呈现刺眼的 404；真正未注册的非法路径仍由 routes 兜底的 404 处理。
+      temp.component = () =>
+        import('@/views/exception/placeholder/index.vue');
     }
     if (temp.meta?.layout === false) {
       layoutRoutes.push(temp); // 不需要外层布局的路由

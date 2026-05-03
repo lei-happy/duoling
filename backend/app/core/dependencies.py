@@ -7,7 +7,7 @@ FastAPI 依赖注入
 - 获取租户库 Session（根据当前用户的 tenant_code）
 """
 
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Optional, Set
 
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,6 +64,30 @@ async def ensure_biz_login_log_table(
     首次访问登录记录接口时按需补建（与 fix_tenant_tables 行为一致）。
     """
     await db_manager.ensure_tenant_tables(tenant_code, ["biz_login_log"])
+
+
+# ai_assistant 在 enterprise 版本默认开通，但 required_tables 是后期补充的；
+# 老租户库可能缺 biz_ai_* 表。首次访问 AI 接口时幂等补建。
+_AI_TENANT_TABLES = [
+    "biz_ai_session",
+    "biz_ai_message",
+    "biz_ai_tool_call_log",
+    "biz_ai_context",
+]
+_ai_checked_tenants: Set[str] = set()
+
+
+async def ensure_biz_ai_tables(
+    tenant_code: str = Depends(get_tenant_code),
+) -> None:
+    """首次访问当前租户的 AI 接口时，按需补建 biz_ai_* 4 张表
+
+    带进程内缓存，避免每次请求都查 information_schema。
+    """
+    if tenant_code in _ai_checked_tenants:
+        return
+    await db_manager.ensure_tenant_tables(tenant_code, _AI_TENANT_TABLES)
+    _ai_checked_tenants.add(tenant_code)
 
 
 async def get_tenant_db(

@@ -675,6 +675,49 @@ def seed_platform_data():
                 session.add(RoleMenu(role_id=role_admin.id, menu_id=capacity_menu.id))
             print("[OK] 平台运力菜单已补充")
 
+        # ---- 补充：AI 数字员工 Console 菜单（一级 + 五子项） ----
+        ai_root = session.query(Menu).filter_by(
+            menu_code="ai", app_type="platform", is_deleted=0
+        ).first()
+        if not ai_root:
+            ai_root = Menu(
+                parent_id=0, menu_name="AI 数字员工",
+                menu_code="ai", menu_type=0,
+                path="/ai", icon="MagicStick",
+                sort_order=18, app_type="platform",
+            )
+            session.add(ai_root)
+            session.flush()
+            all_menus.append(ai_root)
+            if role_admin:
+                session.add(RoleMenu(role_id=role_admin.id, menu_id=ai_root.id))
+            print("[OK] AI 数字员工 顶级菜单已补充")
+
+        ai_children = [
+            ("ai:employee", "数字员工", "/ai/employee", "/ai/employee/index", 0),
+            ("ai:tool", "工具中心", "/ai/tool", "/ai/tool/index", 10),
+            ("ai:prompt", "提示词模板", "/ai/prompt", "/ai/prompt/index", 20),
+            ("ai:provider", "模型 Provider", "/ai/provider", "/ai/provider/index", 30),
+            ("ai:observe", "调用观测", "/ai/observe", "/ai/observe/index", 40),
+        ]
+        for code, name, path, comp, order in ai_children:
+            ex = session.query(Menu).filter_by(
+                menu_code=code, app_type="platform", is_deleted=0
+            ).first()
+            if ex:
+                continue
+            m = Menu(
+                parent_id=ai_root.id, menu_name=name, menu_code=code,
+                menu_type=0, path=path, component=comp,
+                sort_order=order, app_type="platform",
+            )
+            session.add(m)
+            session.flush()
+            all_menus.append(m)
+            if role_admin:
+                session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
+            print(f"[OK] AI 子菜单 {name} 已补充")
+
         # ---- 自助注册策略默认配置 ----
         _policy_defaults = [
             (

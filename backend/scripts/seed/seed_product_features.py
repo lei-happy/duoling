@@ -34,7 +34,10 @@ from app.core.config import get_settings
 FEATURES = [
     # ===== 智能工作台 =====
     {"feature_code": "base_dashboard", "feature_name": "工作台", "module": "dashboard", "sort_order": 0, "required_tables": None},
-    {"feature_code": "ai_assistant", "feature_name": "AI 助手", "module": "dashboard", "sort_order": 5, "required_tables": None},
+    {"feature_code": "ai_assistant", "feature_name": "AI 数字员工", "module": "dashboard", "sort_order": 5, "required_tables": '["biz_ai_session", "biz_ai_message", "biz_ai_tool_call_log", "biz_ai_context"]'},
+    # 子能力：远期可独立挂版本控制（当前继承 ai_assistant 总开关）
+    {"feature_code": "ai_form_recorder", "feature_name": "AI 录单员", "module": "dashboard", "sort_order": 6, "required_tables": None},
+    {"feature_code": "ai_data_analyst", "feature_name": "AI 数据分析员", "module": "dashboard", "sort_order": 7, "required_tables": None},
 
     # ===== 企业管理（含基础数据）=====
     {"feature_code": "base_system", "feature_name": "企业管理", "module": "enterprise", "sort_order": 10, "required_tables": None},
@@ -141,8 +144,8 @@ _PRO_DELTA = [
 ]
 
 _ENTERPRISE_DELTA = [
-    # 智能工作台·AI 助手
-    "ai_assistant",
+    # 智能工作台·AI 数字员工（含子能力）
+    "ai_assistant", "ai_form_recorder", "ai_data_analyst",
     # 运力中心·远期
     "fleet_maintenance", "fleet_compliance",
     # 计费中心·远期
@@ -276,6 +279,44 @@ def main():
 
             print(f"  版本 {version_code}: 关联 {len(feature_codes)} 个功能")
         conn.commit()
+
+        # ---- 末尾自检：打印「脏 feature_code」「未绑版本 feature_code」清单 ----
+        feature_codes_in_features = {f["feature_code"] for f in FEATURES}
+
+        menu_codes_rows = conn.execute(text(
+            "SELECT DISTINCT feature_code FROM sys_menu "
+            "WHERE app_type = 'client' AND is_deleted = 0 "
+            "AND feature_code IS NOT NULL AND feature_code <> ''"
+        )).fetchall()
+        menu_codes = {r[0] for r in menu_codes_rows if r[0]}
+
+        bound_codes_rows = conn.execute(text(
+            "SELECT DISTINCT pf.feature_code "
+            "FROM sys_product_feature pf "
+            "JOIN sys_version_feature vf ON vf.feature_id = pf.id "
+            "WHERE pf.is_deleted = 0 AND vf.is_deleted = 0 AND vf.status = 1"
+        )).fetchall()
+        bound_codes = {r[0] for r in bound_codes_rows if r[0]}
+
+        orphan = sorted(menu_codes - feature_codes_in_features)
+        unbound = sorted(feature_codes_in_features - bound_codes)
+
+        print("\n========== 全链路自检 ==========")
+        if orphan:
+            print(f"[警告] sys_menu 中引用但 FEATURES 未定义的脏 feature_code 共 {len(orphan)} 个：")
+            for c in orphan:
+                print(f"  - {c}")
+            print("  请使用 backend/scripts/fix/fix_stale_feature_codes.py 修复")
+        else:
+            print("[OK] sys_menu 全部 feature_code 均在 FEATURES 中存在")
+
+        if unbound:
+            print(f"[提示] FEATURES 中存在但任何启用版本都未勾选的 feature_code 共 {len(unbound)} 个：")
+            for c in unbound:
+                print(f"  - {c}")
+        else:
+            print("[OK] 所有功能都至少已关联到一个版本")
+        print("==================================\n")
 
     engine.dispose()
     print("\n产品功能清单和版本关联初始化完成！")

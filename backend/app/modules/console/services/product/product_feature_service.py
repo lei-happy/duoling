@@ -4,12 +4,13 @@
 
 from typing import Optional, List
 
-from sqlalchemy import select, func, update
+from sqlalchemy import select, func, update, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
 from app.common.exceptions import BizException
 from app.modules.console.models.product.product_feature import ProductFeature, VersionFeature
+from app.modules.console.models.product.product_version import ProductVersion
 from app.modules.console.models.system.menu import Menu
 from app.modules.console.models.tenant.tenant import Tenant
 from app.modules.console.models.tenant.tenant_product import TenantProduct
@@ -27,15 +28,93 @@ class ProductFeatureService:
         db: AsyncSession,
         module: Optional[str] = None,
         status: Optional[int] = None,
+        keyword: Optional[str] = None,
     ) -> list:
+        """全量返回 feature 列表（兼容旧调用方，例如版本-功能配置弹窗）"""
         query = select(ProductFeature).where(ProductFeature.is_deleted == 0)
         if module:
             query = query.where(ProductFeature.module == module)
         if status is not None:
             query = query.where(ProductFeature.status == status)
+        if keyword:
+            kw = f"%{keyword}%"
+            query = query.where(
+                or_(
+                    ProductFeature.feature_code.like(kw),
+                    ProductFeature.feature_name.like(kw),
+                )
+            )
         query = query.order_by(ProductFeature.sort_order, ProductFeature.id)
         result = await db.execute(query)
         return list(result.scalars().all())
+
+    @staticmethod
+    async def page_features(
+        db: AsyncSession,
+        page: int = 1,
+        page_size: int = 20,
+        module: Optional[str] = None,
+        status: Optional[int] = None,
+        keyword: Optional[str] = None,
+    ) -> dict:
+        """分页查询功能清单，并附带每个功能已关联的版本列表"""
+        base = select(ProductFeature).where(ProductFeature.is_deleted == 0)
+        if module:
+            base = base.where(ProductFeature.module == module)
+        if status is not None:
+            base = base.where(ProductFeature.status == status)
+        if keyword:
+            kw = f"%{keyword}%"
+            base = base.where(
+                or_(
+                    ProductFeature.feature_code.like(kw),
+                    ProductFeature.feature_name.like(kw),
+                )
+            )
+
+        count_q = select(func.count()).select_from(base.subquery())
+        total = (await db.execute(count_q)).scalar() or 0
+
+        rows_q = (
+            base.order_by(ProductFeature.sort_order, ProductFeature.id)
+            .offset(max(page - 1, 0) * page_size)
+            .limit(page_size)
+        )
+        items = list((await db.execute(rows_q)).scalars().all())
+        feature_ids = [f.id for f in items]
+
+        # 一次性查询本页所有功能的版本关联，避免 N+1
+        assigned_map: dict[int, list[dict]] = {fid: [] for fid in feature_ids}
+        if feature_ids:
+            rel_q = (
+                select(
+                    VersionFeature.feature_id,
+                    ProductVersion.id,
+                    ProductVersion.version_code,
+                    ProductVersion.version_name,
+                    ProductVersion.sort_order,
+                )
+                .join(ProductVersion, ProductVersion.id == VersionFeature.version_id)
+                .where(
+                    VersionFeature.feature_id.in_(feature_ids),
+                    VersionFeature.is_deleted == 0,
+                    VersionFeature.status == 1,
+                    ProductVersion.is_deleted == 0,
+                )
+                .order_by(ProductVersion.sort_order, ProductVersion.id)
+            )
+            for fid, vid, vcode, vname, _vsort in (await db.execute(rel_q)).all():
+                assigned_map.setdefault(fid, []).append(
+                    {"id": vid, "code": vcode, "name": vname}
+                )
+
+        return {
+            "list": items,
+            "total": total,
+            "page": page,
+            "pageSize": page_size,
+            "assignedVersionsMap": assigned_map,
+        }
 
     @staticmethod
     async def create_feature(db: AsyncSession, data: ProductFeatureCreate) -> ProductFeature:
@@ -224,6 +303,7 @@ class ProductFeatureService:
         removed_codes = {id_to_code[fid] for fid in removed_feature_ids if fid in id_to_code}
 
         if added_codes:
+            # 1) 自身（叶子/中间）菜单 visible 置 1
             await db.execute(
                 update(Menu)
                 .where(
@@ -235,6 +315,10 @@ class ProductFeatureService:
                 .values(visible=1)
             )
             logger.info(f"已将 client 菜单 visible 置 1，feature_code={added_codes}")
+
+            # 2) 沿 parent_id 链路上溯，把祖先目录菜单（feature_code IS NULL/空）也放开
+            #    避免「子菜单被勾选放开但父目录仍 visible=0，整棵子树孤儿化」
+            await ProductFeatureService._open_ancestor_directories(db, added_codes)
 
         if removed_codes:
             still_used = await db.execute(
@@ -264,6 +348,67 @@ class ProductFeatureService:
                     f"已将 client 菜单 visible 置 0（feature 已无任何版本引用）"
                     f"feature_code={truly_removed}"
                 )
+
+    @staticmethod
+    async def _open_ancestor_directories(
+        db: AsyncSession, added_codes: set
+    ) -> None:
+        """
+        把本次放开的 feature_code 所属菜单的所有祖先「目录菜单」visible 置 1。
+
+        目录菜单的特征是：feature_code 为 NULL 或空字符串（如 /resource、/finance），
+        它们不参与 feature 过滤，但若 visible=0 也会在前端侧边栏隐藏，从而带飞整个
+        子树。这里只放开 visible=0 的祖先，不会改动用户主动设置 visible=1 的菜单。
+        """
+        if not added_codes:
+            return
+
+        # 找出本次受影响菜单的 parent_id 链路
+        rows = await db.execute(
+            select(Menu.id, Menu.parent_id).where(
+                Menu.feature_code.in_(added_codes),
+                Menu.app_type == "client",
+                Menu.is_deleted == 0,
+            )
+        )
+        parent_ids: set[int] = {pid for _id, pid in rows.all() if pid and pid > 0}
+        ancestor_ids: set[int] = set()
+        # 防御性地限制循环深度，菜单树通常不会超过 8 层
+        for _ in range(8):
+            if not parent_ids:
+                break
+            ancestor_ids.update(parent_ids)
+            up = await db.execute(
+                select(Menu.parent_id).where(
+                    Menu.id.in_(parent_ids),
+                    Menu.app_type == "client",
+                    Menu.is_deleted == 0,
+                )
+            )
+            parent_ids = {pid for pid in up.scalars().all() if pid and pid > 0}
+
+        if not ancestor_ids:
+            return
+
+        from sqlalchemy import or_
+
+        result = await db.execute(
+            update(Menu)
+            .where(
+                Menu.id.in_(ancestor_ids),
+                Menu.app_type == "client",
+                Menu.is_deleted == 0,
+                Menu.visible == 0,
+                or_(Menu.feature_code.is_(None), Menu.feature_code == ""),
+            )
+            .values(visible=1)
+        )
+        affected = result.rowcount or 0
+        if affected:
+            logger.info(
+                f"已上溯放开 {affected} 个祖先目录菜单 visible=1，"
+                f"避免子菜单孤儿化（ancestor_ids={ancestor_ids}）"
+            )
 
     @staticmethod
     async def _bump_tenants_menu_version(
@@ -316,6 +461,53 @@ class ProductFeatureService:
             )
         )
         return list(set(result.scalars().all()))
+
+    @staticmethod
+    async def health_check(db: AsyncSession) -> dict:
+        """
+        全链路一致性体检：
+
+        - orphanFeatureCodes：sys_menu 中引用了但 sys_product_feature 未定义/已软删的 feature_code
+                              （这些菜单永远过不了客户端的 feature_code 过滤）
+        - unboundFeatureCodes：sys_product_feature 中存在但任何启用版本都未勾选的 feature_code
+                              （表示功能没有任何版本能看到）
+        """
+        menu_codes_q = await db.execute(
+            select(Menu.feature_code).where(
+                Menu.app_type == "client",
+                Menu.is_deleted == 0,
+                Menu.feature_code.is_not(None),
+                Menu.feature_code != "",
+            )
+        )
+        menu_codes = {c for c in menu_codes_q.scalars().all() if c}
+
+        feature_codes_q = await db.execute(
+            select(ProductFeature.feature_code).where(
+                ProductFeature.is_deleted == 0,
+            )
+        )
+        feature_codes = set(feature_codes_q.scalars().all())
+
+        orphan = sorted(menu_codes - feature_codes)
+
+        bound_q = await db.execute(
+            select(ProductFeature.feature_code)
+            .join(VersionFeature, VersionFeature.feature_id == ProductFeature.id)
+            .where(
+                ProductFeature.is_deleted == 0,
+                VersionFeature.is_deleted == 0,
+                VersionFeature.status == 1,
+            )
+            .distinct()
+        )
+        bound_codes = set(bound_q.scalars().all())
+        unbound = sorted(feature_codes - bound_codes)
+
+        return {
+            "orphanFeatureCodes": orphan,
+            "unboundFeatureCodes": unbound,
+        }
 
     @staticmethod
     async def get_required_tables_by_version_id(

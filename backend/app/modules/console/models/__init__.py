@@ -23,6 +23,13 @@ from app.modules.console.models.system.platform_setting import PlatformSetting
 from app.modules.console.models.driver.sys_driver import SysDriver
 from app.modules.console.models.capacity.sys_capacity import SysCapacity
 
+# ---- AI 数字员工平台库元数据 ----
+from app.modules.ai.models.platform.ai_employee import AiEmployee
+from app.modules.ai.models.platform.ai_tool import AiTool
+from app.modules.ai.models.platform.ai_employee_tool import AiEmployeeTool
+from app.modules.ai.models.platform.ai_prompt_template import AiPromptTemplate
+from app.modules.ai.models.platform.ai_model_provider import AiModelProvider
+
 __all__ = [
     "Tenant",
     "User",
@@ -50,4 +57,10 @@ __all__ = [
     "PlatformSetting",
     "SysDriver",
     "SysCapacity",
+    # AI 数字员工
+    "AiEmployee",
+    "AiTool",
+    "AiEmployeeTool",
+    "AiPromptTemplate",
+    "AiModelProvider",
 ]

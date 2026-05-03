@@ -189,10 +189,10 @@ NEW_MENUS = [
               "shenpi", 500, 1, "approval_manage"),
     _new_menu(301, 0, "生态平台", "ecosystem", 0, "/ecosystem", None,
               "shengtai", 800, 0, None),  # visible=0 预留
-    # 智能工作台：AI 助手
-    _new_menu(302, 164, "AI 助手", "dashboard:ai-assistant", 0,
+    # 智能工作台：数字员工
+    _new_menu(302, 164, "数字员工", "dashboard:ai-assistant", 0,
               "/dashboard/ai-assistant", "/dashboard/ai-assistant/index",
-              "AI", 10, 0, "ai_assistant"),  # visible=0 远期
+              "AI", 10, 1, "ai_assistant"),  # 旗舰版默认放开
     # 运力中心：外协供应商 / 社会运力池 / 车辆维保（远期） / 证照监控（远期）
     _new_menu(303, 260, "外协供应商", "capacity:external-carrier", 0,
               "/capacity/external-carrier", "/capacity/external-carrier/index",

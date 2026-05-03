@@ -21,12 +21,59 @@ router = APIRouter()
 async def list_features(
     module: Optional[str] = Query(None),
     status: Optional[int] = Query(None),
+    keyword: Optional[str] = Query(None, description="按功能编码/名称模糊匹配"),
+    page: Optional[int] = Query(None, description="为空时返回全量列表（兼容旧调用）"),
+    page_size: Optional[int] = Query(None, alias="pageSize"),
     db: AsyncSession = Depends(get_platform_db),
     _=Depends(get_current_user),
 ):
-    """获取功能清单列表"""
-    items = await ProductFeatureService.list_features(db, module=module, status=status)
-    return success(data=[ProductFeatureOut.model_validate(f).model_dump(by_alias=True) for f in items])
+    """获取功能清单列表
+
+    - 不传 page 时：返回全量数组（兼容版本-功能配置弹窗等旧调用）
+    - 传 page 时：返回 {list, total, page, pageSize}，并附带每条 assignedVersions
+    """
+    if page is None:
+        items = await ProductFeatureService.list_features(
+            db, module=module, status=status, keyword=keyword,
+        )
+        return success(
+            data=[
+                ProductFeatureOut.model_validate(f).model_dump(by_alias=True)
+                for f in items
+            ]
+        )
+
+    page_size = page_size or 20
+    paged = await ProductFeatureService.page_features(
+        db,
+        page=page,
+        page_size=page_size,
+        module=module,
+        status=status,
+        keyword=keyword,
+    )
+    assigned_map = paged["assignedVersionsMap"]
+    list_data = []
+    for f in paged["list"]:
+        out = ProductFeatureOut.model_validate(f).model_dump(by_alias=True)
+        out["assignedVersions"] = assigned_map.get(f.id, [])
+        list_data.append(out)
+    return success(data={
+        "list": list_data,
+        "total": paged["total"],
+        "page": paged["page"],
+        "pageSize": paged["pageSize"],
+    })
+
+
+@router.get("/health-check")
+async def feature_health_check(
+    db: AsyncSession = Depends(get_platform_db),
+    _=Depends(get_current_user),
+):
+    """全链路一致性体检：返回脏 feature_code / 未绑版本的 feature_code 清单"""
+    result = await ProductFeatureService.health_check(db)
+    return success(data=result)
 
 
 @router.post("")

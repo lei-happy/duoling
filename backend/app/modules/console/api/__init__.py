@@ -35,6 +35,7 @@ from app.modules.console.api.system.open_register_policy import (
 from app.modules.console.api.driver import router as driver_router
 from app.modules.console.api.capacity import router as capacity_router
 from app.modules.console.api.doc_center import router as doc_center_router
+from app.modules.ai.api.console import router as ai_console_router
 
 router = APIRouter()
 
@@ -81,3 +82,4 @@ router.include_router(
 router.include_router(driver_router, prefix="/driver", tags=["管理后台-平台司机"])
 router.include_router(capacity_router, prefix="/capacity", tags=["管理后台-平台运力"])
 router.include_router(doc_center_router, prefix="/doc-center", tags=["管理后台-文档中心"])
+router.include_router(ai_console_router, prefix="/ai", tags=["管理后台-AI数字员工"])

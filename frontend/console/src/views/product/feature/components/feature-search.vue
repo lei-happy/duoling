@@ -4,19 +4,10 @@
       <el-row :gutter="8">
         <el-col :lg="6" :md="12" :sm="12" :xs="24">
           <floating-label
-            v-model="form.module"
-            label="请选择所属模块"
-            type="select"
-            :filterable="true"
+            v-model="form.keyword"
+            label="按功能编码 / 名称搜索"
             clearable
-          >
-            <el-option
-              v-for="item in moduleDicts"
-              :key="item.dictDataCode"
-              :label="item.dictDataName"
-              :value="item.dictDataCode"
-            />
-          </floating-label>
+          />
         </el-col>
         <el-col :lg="6" :md="12" :sm="12" :xs="24">
           <floating-label
@@ -48,11 +39,9 @@
 <script lang="ts" setup>
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
-  import { useDictData } from '@/utils/use-dict-data';
-  import { DICT_CODE_PRODUCT_MODULE } from '@/api/product/model';
 
   interface FeatureSearchParam {
-    module?: string;
+    keyword?: string;
     status?: number;
   }
 
@@ -60,10 +49,8 @@
     (e: 'search', where?: FeatureSearchParam): void;
   }>();
 
-  const [moduleDicts] = useDictData([DICT_CODE_PRODUCT_MODULE]);
-
   const [form, resetFields] = useFormData<FeatureSearchParam>({
-    module: void 0,
+    keyword: void 0,
     status: void 0
   });
 

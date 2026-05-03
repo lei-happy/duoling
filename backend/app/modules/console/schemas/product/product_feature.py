@@ -35,6 +35,15 @@ class ProductFeatureUpdate(BaseModel):
     status: Optional[int] = None
 
 
+class AssignedVersion(BaseModel):
+    """功能已关联的版本简要信息"""
+    model_config = _camel_config
+
+    id: int
+    code: str
+    name: str
+
+
 class ProductFeatureOut(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
@@ -52,6 +61,7 @@ class ProductFeatureOut(BaseModel):
     status: int
     created_at: datetime
     updated_at: datetime
+    assigned_versions: List[AssignedVersion] = []
 
 
 class VersionFeatureAssign(BaseModel):

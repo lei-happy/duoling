@@ -1,6 +1,11 @@
 import request from '@/utils/request';
 import type { ApiResult } from '@/api';
-import type { ProductVersion, ProductFeature, VersionFeature } from './model';
+import type {
+  ProductVersion,
+  ProductFeature,
+  VersionFeature,
+  FeatureHealthCheck
+} from './model';
 
 export async function listVersions(params?: {
   page?: number;
@@ -47,10 +52,42 @@ export async function removeVersion(id: number) {
 export async function listFeatures(params?: {
   module?: string;
   status?: number;
+  keyword?: string;
 }) {
   const res = await request.get<ApiResult<ProductFeature[]>>(
     '/product-feature',
     { params }
+  );
+  if (res.data.code === 0 && res.data.data) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function pageFeatures(params: {
+  page: number;
+  pageSize: number;
+  module?: string;
+  status?: number;
+  keyword?: string;
+}) {
+  const res = await request.get<
+    ApiResult<{
+      list: ProductFeature[];
+      total: number;
+      page: number;
+      pageSize: number;
+    }>
+  >('/product-feature', { params });
+  if (res.data.code === 0 && res.data.data) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function checkFeatureHealth() {
+  const res = await request.get<ApiResult<FeatureHealthCheck>>(
+    '/product-feature/health-check'
   );
   if (res.data.code === 0 && res.data.data) {
     return res.data.data;

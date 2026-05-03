@@ -30,6 +30,13 @@ loguru>=0.7.3
 httpx>=0.28.0
 pypinyin>=0.55.0
 
+# AI Digital Employee
+openai>=1.50.0
+tiktoken>=0.7.0
+openpyxl>=3.1.5
+pandas>=2.2.0
+cryptography>=42.0.0
+
 # Testing
 pytest>=8.3.0
 pytest-asyncio>=0.24.0

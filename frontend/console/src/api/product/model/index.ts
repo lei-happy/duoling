@@ -15,6 +15,12 @@ export interface ProductVersion {
   createdAt?: string;
 }
 
+export interface AssignedVersion {
+  id: number;
+  code: string;
+  name: string;
+}
+
 export interface ProductFeature {
   id?: number;
   featureCode?: string;
@@ -25,6 +31,12 @@ export interface ProductFeature {
   sortOrder?: number;
   status?: number;
   createdAt?: string;
+  assignedVersions?: AssignedVersion[];
+}
+
+export interface FeatureHealthCheck {
+  orphanFeatureCodes: string[];
+  unboundFeatureCodes: string[];
 }
 
 export interface VersionFeature {
