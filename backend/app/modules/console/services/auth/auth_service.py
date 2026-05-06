@@ -585,8 +585,26 @@ class AuthService:
         roles = await AuthService._get_user_roles(db, user_id, tenant_code)
         role_codes = [r.role_code for r in roles]
 
+        # client 端：先查租户已启用的 feature_codes，菜单裁剪与 user-info.features 共用一次查询
+        feature_codes: List[str] = []
+        if app_type == "client" and tenant_code:
+            try:
+                feature_codes = await AuthService._get_tenant_feature_codes(
+                    db, tenant_code
+                )
+            except Exception as e:
+                logger.exception(
+                    f"[get_user_info] 获取企业 feature_codes 失败 "
+                    f"tenant_code={tenant_code} user_id={user_id} err={e!r}"
+                )
+                feature_codes = []
+
         menus = await AuthService._get_user_menus(
-            db, user_id, role_codes, app_type, tenant_code=tenant_code
+            db, user_id, role_codes, app_type,
+            tenant_code=tenant_code,
+            pre_fetched_features=(
+                feature_codes if app_type == "client" and tenant_code else None
+            ),
         )
 
         tenant_name = None
@@ -652,6 +670,7 @@ class AuthService:
                 )
                 for m in menus
             ],
+            features=feature_codes,
         )
 
     @staticmethod
@@ -659,31 +678,37 @@ class AuthService:
         db: AsyncSession, user_id: int, role_codes: List[str],
         app_type: str = "platform",
         tenant_code: Optional[str] = None,
+        pre_fetched_features: Optional[List[str]] = None,
     ) -> List[Menu]:
         """
         获取用户可访问的菜单列表。
         client 端额外根据企业产品版本的功能清单过滤菜单。
+
+        :param pre_fetched_features: 上层已查询过的企业 feature_codes，
+            传入后避免在本方法内重复查询；传 None 时按原逻辑现查。
         """
         allowed_feature_codes = None
         if app_type == "client" and tenant_code:
-            try:
-                allowed_feature_codes = await AuthService._get_tenant_feature_codes(
-                    db, tenant_code
-                )
-            except Exception as e:
-                logger.exception(
-                    f"[菜单版本裁剪降级] 获取企业版本功能清单失败 "
-                    f"tenant_code={tenant_code} user_id={user_id} app_type={app_type} "
-                    f"将跳过版本过滤、按角色返回全量菜单 err={e!r}"
-                )
-                allowed_feature_codes = None
+            if pre_fetched_features is not None:
+                allowed_feature_codes = pre_fetched_features
             else:
-                if not allowed_feature_codes:
-                    logger.warning(
-                        f"[菜单版本裁剪降级] 企业 {tenant_code} 当前没有任何有效授权"
-                        f" → allowed_feature_codes 为空，将按角色返回不含 feature_code 限制的菜单。"
-                        f" 若运营预期看到限制后的菜单，请检查 sys_tenant_product 状态/end_time。"
+                try:
+                    allowed_feature_codes = await AuthService._get_tenant_feature_codes(
+                        db, tenant_code
                     )
+                except Exception as e:
+                    logger.exception(
+                        f"[菜单版本裁剪降级] 获取企业版本功能清单失败 "
+                        f"tenant_code={tenant_code} user_id={user_id} app_type={app_type} "
+                        f"将跳过版本过滤、按角色返回全量菜单 err={e!r}"
+                    )
+                    allowed_feature_codes = None
+            if allowed_feature_codes is not None and not allowed_feature_codes:
+                logger.warning(
+                    f"[菜单版本裁剪降级] 企业 {tenant_code} 当前没有任何有效授权"
+                    f" → allowed_feature_codes 为空，将按角色返回不含 feature_code 限制的菜单。"
+                    f" 若运营预期看到限制后的菜单，请检查 sys_tenant_product 状态/end_time。"
+                )
 
         is_admin = "super_admin" in role_codes
 

@@ -31,12 +31,18 @@ export const useUserStore = defineStore('user', {
      * 当前菜单版本戳（来自 /auth/user-info 的 menuVersion）
      * 与 /auth/menu-version 比对，不一致时需重新拉取菜单
      */
-    menuVersion: null as number | null
+    menuVersion: null as number | null,
+    /** 当前租户已启用的产品功能码（仅 client 端有值），用于顶栏全局入口的可见性判断 */
+    features: [] as string[]
   }),
   getters: {
     /** 是否是企业管理员 */
     isAdmin(): boolean {
       return this.info?.userType === 1;
+    },
+    /** 判断当前租户是否启用某个 feature_code */
+    hasFeature(): (code: string) => boolean {
+      return (code: string) => (this.features ?? []).includes(code);
     },
     /** 系统显示名称：优先自定义名称 > 企业名称 > 环境变量默认值 */
     displayName(): string {
@@ -89,6 +95,9 @@ export const useUserStore = defineStore('user', {
         this.setMenuVersion(
           typeof userInfo.menuVersion === 'number' ? userInfo.menuVersion : null
         );
+        this.setFeatures(
+          Array.isArray(userInfo.features) ? userInfo.features : []
+        );
         return userMenuResult;
       } catch (e) {
         console.error(e);
@@ -132,6 +141,12 @@ export const useUserStore = defineStore('user', {
       this.menuVersion = v;
     },
     /**
+     * 更新租户功能码列表
+     */
+    setFeatures(features: string[]) {
+      this.features = features ?? [];
+    },
+    /**
      * 检查菜单版本是否过期（轻量接口，内置节流）
      * @returns 若已过期返回 true（前端应清空菜单并重新拉取）
      */
@@ -166,6 +181,7 @@ export const useUserStore = defineStore('user', {
       this.setAuthorities(null);
       this.setRoles(null);
       this.setMenuVersion(null);
+      this.setFeatures([]);
     },
     /**
      * 更新菜单的徽章

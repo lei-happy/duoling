@@ -123,6 +123,10 @@ class UserInfoOut(BaseModel):
     )
     roles: List[UserRoleOut] = Field(default_factory=list, description="角色列表")
     authorities: List[UserMenuOut] = Field(default_factory=list, description="菜单/权限列表")
+    features: List[str] = Field(
+        default_factory=list,
+        description="当前租户已启用的产品功能码（仅 client 端有值）",
+    )
 
 
 class UpdateProfileRequest(BaseModel):

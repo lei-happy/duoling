@@ -1,13 +1,15 @@
 <template>
-  <div class="ai-assistant">
+  <div class="ai-assistant" :class="{ 'is-embedded': embedded }">
     <!-- 左栏 -->
     <aside class="ai-assistant__aside">
+      <!-- 顶栏炫彩入口已经选过数字员工，弹窗内不再展示员工切换列表 -->
       <employee-list
+        v-if="!embedded"
         :employees="employees"
         v-model="currentEmployeeCode"
         @update:modelValue="onEmployeeChange"
       />
-      <el-divider style="margin: 8px 0" />
+      <el-divider v-if="!embedded" style="margin: 8px 0" />
       <session-list
         :sessions="sessions"
         v-model="currentSessionId"
@@ -112,14 +114,27 @@
         </div>
       </div>
     </aside>
+
+    <!-- 嵌入弹窗模式下的浮动关闭按钮：弹窗已隐藏默认头部，由这里承担关闭交互 -->
+    <button
+      v-if="embedded"
+      class="ai-assistant__close"
+      type="button"
+      aria-label="关闭"
+      @click="handleClose"
+    >
+      <el-icon><close /></el-icon>
+    </button>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed, nextTick, onMounted, reactive, ref } from 'vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
+  import { useModal } from 'ele-admin-plus';
   import {
     ChatLineSquare,
+    Close,
     Loading
   } from '@element-plus/icons-vue';
   import {
@@ -144,12 +159,31 @@
     ChatTurn,
     ToolCallEntry
   } from '@/api/ai/model';
-  import EmployeeList from './components/employee-list.vue';
-  import SessionList from './components/session-list.vue';
-  import MessageBubble from './components/message-bubble.vue';
-  import ChatInput from './components/chat-input.vue';
+  import EmployeeList from './employee-list.vue';
+  import SessionList from './session-list.vue';
+  import MessageBubble from './message-bubble.vue';
+  import ChatInput from './chat-input.vue';
 
-  defineOptions({ name: 'DashboardAiAssistant' });
+  defineOptions({ name: 'AiChatPanel' });
+
+  const props = defineProps<{
+    /** 弹窗等容器内默认选中的数字员工 code（不传则按列表第一个） */
+    defaultEmployeeCode?: string;
+    /** 嵌入模式：高度由父级容器（弹窗/抽屉）控制，去除整页内边距 */
+    embedded?: boolean;
+  }>();
+
+  // 嵌入到 ele-admin 弹窗时，用 useModal 拿到 closeModal 以便由面板自身浮动关闭按钮触发
+  // 非弹窗场景下 useModal 调用也安全（仅本组件未被 openModal 装载时返回的 closeModal 是 noop）
+  const { closeModal } = useModal();
+  function handleClose() {
+    try {
+      closeModal?.();
+    } catch (e) {
+      // 兜底：直接调用未在 modal 上下文中时不报错
+      console.warn('[ai-chat-panel] closeModal failed', e);
+    }
+  }
 
   const employees = ref<AiEmployee[]>([]);
   const sessions = ref<AiSession[]>([]);
@@ -198,7 +232,6 @@
         st.onFlush?.();
         return;
       }
-      // 缓冲越多每帧吐越多字符，保持节奏感（>200 时近乎一次吐完）
       const len = st.buffer.length;
       let take = 1;
       if (len > 200) take = Math.min(len, 16);
@@ -209,7 +242,7 @@
       st.buffer = st.buffer.slice(take);
       turn.content += piece;
       scrollToBottomThrottled();
-      st.timer = setTimeout(tick, 24); // ~42fps，对 CJK 视觉就很顺
+      st.timer = setTimeout(tick, 24);
     };
     st.timer = setTimeout(tick, 0);
   }
@@ -259,7 +292,12 @@
     try {
       employees.value = await listAiEmployees();
       if (employees.value.length && !currentEmployeeCode.value) {
-        await onEmployeeChange(employees.value[0].code);
+        // 优先选中外部传入的 defaultEmployeeCode；命中失败时回退到列表第一个
+        const preferred = (props.defaultEmployeeCode || '').trim();
+        const hit = preferred
+          ? employees.value.find((e) => e.code === preferred)
+          : null;
+        await onEmployeeChange((hit || employees.value[0]).code);
       }
     } catch (e: any) {
       ElMessage.error(e?.message || '加载数字员工失败');
@@ -366,7 +404,6 @@
         out.push(turn);
         lastAssistant = turn;
       } else if (m.role === 'tool' && lastAssistant) {
-        // 找到对应的 toolCall 项，写入摘要
         const target = lastAssistant.toolCalls.find(
           (x) => x.toolCallId === m.toolCallId
         );
@@ -439,7 +476,6 @@
             (assistantTurn.content ? '\n\n' : '') + `[错误] ${err.message}`;
         },
         onDone: async () => {
-          // 等打字机把队列吐完再关 streaming 状态
           flushTyper(assistantTurn, async () => {
             streaming.value = false;
             assistantTurn.pending = false;
@@ -497,7 +533,6 @@
         break;
       }
       case 'done':
-        // 等打字机吐完队列后再清 pending
         flushTyper(assistantTurn, () => {
           assistantTurn.pending = false;
         });
@@ -540,7 +575,6 @@
       {
         signal: abortCtrl.signal,
         onEvent: (evt) => {
-          // tool.result 事件可能针对老的 entry，也可能产生新工具调用
           if (
             evt.event === 'tool.result' &&
             evt.data.tool_call_id === entry.toolCallId &&
@@ -607,12 +641,48 @@
 
 <style lang="scss" scoped>
   .ai-assistant {
+    position: relative;
     display: grid;
     grid-template-columns: 260px 1fr 280px;
     gap: 12px;
     height: calc(100vh - 120px);
     min-height: 500px;
     padding: 12px;
+
+    // 嵌入弹窗/抽屉时由父级容器控制尺寸
+    &.is-embedded {
+      height: 100%;
+      min-height: 0;
+      padding: 8px;
+    }
+
+    // 浮动关闭按钮（仅 embedded 模式渲染）
+    &__close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 50%;
+      background: var(--el-fill-color);
+      color: var(--el-text-color-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 5;
+      transition: background-color 0.15s, color 0.15s, transform 0.15s;
+
+      &:hover {
+        background: var(--el-fill-color-darker);
+        color: var(--el-text-color-primary);
+        transform: rotate(90deg);
+      }
+      :deep(.el-icon) {
+        font-size: 16px;
+      }
+    }
 
     &__aside {
       background: var(--el-bg-color);
