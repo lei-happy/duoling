@@ -127,12 +127,12 @@
       asyncComponent: () =>
         import('@/views/dashboard/ai-assistant/components/ai-chat-panel.vue'),
       props: {
-        // 隐藏默认标题栏：title 留空 + modalClass 由全局样式接管 header 隐藏 / 固定高度
+        // 隐藏默认标题栏：title 留空 + modalClass 由全局样式接管 header 隐藏
         title: '',
         showClose: false,
+        // 容器宽 80vw、高 90vh，由 ele-modal 内置的 margin:auto 完成水平 + 垂直居中
         width: '80vw',
-        // 视口高度 80%，再用 (100-80)/2 = 10vh 顶部偏移做上下居中
-        top: '10vh',
+        height: '90vh',
         customFooter: true,
         modalClass: 'ai-chat-modal',
         bodyStyle: { padding: 0, overflow: 'hidden' }
@@ -294,20 +294,20 @@
 <!--
   ai-chat-modal 渲染在 body 层（el-dialog teleport），scoped 样式无法命中，
   这里用一个非 scoped 的 style 块单独处理：
-  1) 隐藏弹窗自带的 header 与 footer，由面板自身渲染浮动关闭按钮；
-  2) 固定弹窗高度（85vh），避免不同员工的会话列表长度让弹窗拉伸 / 压扁。
+  1) 弹窗高度由 ele-modal 的 height 属性直接控制（90vh），margin: auto 完成上下居中；
+  2) 隐藏弹窗自带的 header 与 footer，由面板自身渲染浮动关闭按钮；
+  3) 让 body 撑满弹窗剩余空间，去掉默认内边距。
+
+  注意：modalClass 会被加到根元素 .el-overlay 上，因此设置弹框尺寸需要写在
+  .el-dialog 上（这里通过 ele-modal 的 height prop 处理，无需在 css 里 hack）。
 -->
 <style lang="scss">
   .ai-chat-modal {
-    /* 视口 80% 的固定高度，配合 top: 10vh 实现垂直居中（width 80vw + el-dialog 默认水平居中） */
-    --ai-chat-modal-height: 80vh;
-
-    display: flex;
-    flex-direction: column;
-    height: var(--ai-chat-modal-height);
-    margin-bottom: 0 !important;
-    overflow: hidden;
-    border-radius: 12px;
+    > .el-overlay-dialog > .el-dialog {
+      margin: auto !important;
+      border-radius: 12px;
+      overflow: hidden;
+    }
 
     .el-dialog__header {
       display: none;
