@@ -13,17 +13,18 @@
               :class="['login-tab', { active: loginMode === 'password' }]"
               @click="loginMode = 'password'"
             >密码登录</span>
-            <span class="login-tab-divider">|</span>
             <span
               :class="['login-tab', { active: loginMode === 'sms' }]"
               @click="loginMode = 'sms'"
             >验证码登录</span>
           </div>
 
-          <!-- 密码登录表单 -->
-          <el-form
-            v-if="loginMode === 'password'"
-            ref="formRef"
+          <transition name="slide-fade" mode="out-in">
+            <!-- 密码登录表单 -->
+            <el-form
+              v-if="loginMode === 'password'"
+              key="password"
+              ref="formRef"
             size="large"
             :model="form"
             :rules="rules"
@@ -35,7 +36,7 @@
                 clearable
                 v-model="form.phone"
                 placeholder="请输入手机号"
-                :prefix-icon="UserOutlined"
+                :prefix-icon="MobileOutlined"
               />
             </el-form-item>
             <el-form-item prop="password">
@@ -72,6 +73,7 @@
           <!-- 验证码登录表单 -->
           <el-form
             v-else
+            key="sms"
             ref="smsFormRef"
             size="large"
             :model="smsForm"
@@ -84,7 +86,7 @@
                 clearable
                 v-model="smsForm.phone"
                 placeholder="请输入手机号"
-                :prefix-icon="UserOutlined"
+                :prefix-icon="MobileOutlined"
               />
             </el-form-item>
             <el-form-item prop="code">
@@ -92,7 +94,7 @@
                 <el-input
                   v-model="smsForm.code"
                   placeholder="请输入验证码"
-                  :prefix-icon="LockOutlined"
+                  :prefix-icon="MessageOutlined"
                   style="flex: 1"
                 />
                 <el-button
@@ -116,6 +118,7 @@
               </el-button>
             </el-form-item>
           </el-form>
+          </transition>
         </div>
       </ele-card>
     </div>
@@ -171,7 +174,7 @@
   import { ref, reactive, computed } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
-  import { UserOutlined, LockOutlined } from '@/components/icons';
+  import { MobileOutlined, LockOutlined, MessageOutlined } from '@/components/icons';
   import PageFooter from '@/layout/components/page-footer.vue';
   import { useLogin } from '@/utils/use-login';
   import { sendSmsCode, resetPasswordBySms } from '@/api/login';
@@ -437,31 +440,59 @@
 
   .login-tabs {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    min-height: 36px;
+    align-items: baseline;
+    gap: 24px;
+    margin-bottom: 64px;
   }
 
   .login-tab {
-    font-size: 17px;
-    color: #94a3b8;
+    position: relative;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 0 12px 0;
+    color: #cacaca;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
 
     &.active {
-      color: #1681fd;
-      font-weight: 600;
+      color: #1e293b;
+      font-size: 22px;
+      font-weight: 400;
+
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -4px;
+        width: 100%;
+        height: 3px;
+        border-radius: 2px;
+        background: #1681fd;
+        transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+      }
     }
 
     &:hover {
-      color: #1681fd;
+      color: #1e293b;
     }
   }
 
-  .login-tab-divider {
-    color: #e2e8f0;
-    font-size: 17px;
+  .slide-fade-enter-active {
+    transition: all 0.3s ease-out;
+  }
+
+  .slide-fade-leave-active {
+    transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
+  }
+
+  .slide-fade-enter-from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  
+  .slide-fade-leave-to {
+    transform: translateX(-20px);
+    opacity: 0;
   }
 
   .forgot-pwd-link {

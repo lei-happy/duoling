@@ -8,6 +8,7 @@ import { usePageTab } from '@/utils/use-page-tab';
 import { useUserStore } from '@/store/modules/user';
 import { login as loginApi, smsLogin as smsLoginApi, logout as logoutApi } from '@/api/login';
 import type { LoginParam, LoginResult, TenantOption } from '@/api/login/model';
+import { HOME_PATH, LAYOUT_PATH } from '@/config/setting';
 
 /** 登录结果类型 */
 export interface LoginActionResult {
@@ -47,6 +48,19 @@ export function useLogin() {
   };
 
   /**
+   * 登录成功后跳转：使用硬跳转重新加载页面，
+   * 避免动态路由注入与路由守卫的时序竞态导致用户停留在登录页。
+   */
+  const redirectAfterLogin = () => {
+    const from = route.query.from;
+    const fromPath = [from].flat()[0];
+    const target = fromPath
+      ? decodeURIComponent(fromPath)
+      : (HOME_PATH || LAYOUT_PATH);
+    window.location.replace(target);
+  };
+
+  /**
    * 登录
    * @param data 表单数据
    * @returns LoginActionResult 供登录页面处理多企业选择和强制改密
@@ -70,7 +84,7 @@ export function useLogin() {
       return Promise.reject(new Error(result.message || '登录失败'));
     }
 
-    EleMessage.success({ message: result.message, plain: true });
+    EleMessage.success({ message: '登录成功', plain: true });
     setToken(token, data.remember);
     setRefreshToken(loginData?.refresh_token, data.remember);
     clearData();
@@ -81,9 +95,13 @@ export function useLogin() {
       return { success: true, forceChangePwd: true };
     }
 
-    // 直接跳转首页
-    goHome();
-    return { success: true };
+    // 硬跳转到首页，规避动态路由注入与守卫的时序竞态
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        redirectAfterLogin();
+        resolve({ success: true });
+      }, 500);
+    });
   };
 
   /**
@@ -111,7 +129,7 @@ export function useLogin() {
       return Promise.reject(new Error(result.message || '登录失败'));
     }
 
-    EleMessage.success({ message: result.message, plain: true });
+    EleMessage.success({ message: '登录成功', plain: true });
     setToken(token, remember);
     setRefreshToken(loginData?.refresh_token, remember);
     clearData();
@@ -121,8 +139,12 @@ export function useLogin() {
       return { success: true, forceChangePwd: true };
     }
 
-    goHome();
-    return { success: true };
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        redirectAfterLogin();
+        resolve({ success: true });
+      }, 500);
+    });
   };
 
   /**
@@ -177,6 +199,7 @@ export function useLogin() {
     logout,
     checkLogin,
     goHome,
+    redirectAfterLogin,
     showLogoutConfirm
   };
 }

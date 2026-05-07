@@ -8,6 +8,7 @@ import { usePageTab } from '@/utils/use-page-tab';
 import { useUserStore } from '@/store/modules/user';
 import { login as loginApi, smsLogin as smsLoginApi, logout as logoutApi } from '@/api/login';
 import type { LoginParam } from '@/api/login/model';
+import { HOME_PATH, LAYOUT_PATH } from '@/config/setting';
 
 /**
  * 登录操作
@@ -35,6 +36,19 @@ export function useLogin() {
   };
 
   /**
+   * 登录成功后跳转：使用硬跳转重新加载页面，
+   * 避免动态路由注入与路由守卫的时序竞态导致用户停留在登录页。
+   */
+  const redirectAfterLogin = () => {
+    const from = route.query.from;
+    const fromPath = [from].flat()[0];
+    const target = fromPath
+      ? decodeURIComponent(fromPath)
+      : (HOME_PATH || LAYOUT_PATH);
+    window.location.replace(target);
+  };
+
+  /**
    * 登录
    * @param data 表单数据
    */
@@ -44,11 +58,16 @@ export function useLogin() {
     if (!token) {
       return Promise.reject(new Error(result.message));
     }
-    EleMessage.success({ message: result.message, plain: true });
+    EleMessage.success({ message: '登录成功', plain: true });
     setToken(token, data.remember);
     setRefreshToken(result.data?.refresh_token, data.remember);
     clearData();
-    goHome();
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        redirectAfterLogin();
+        resolve(undefined);
+      }, 500);
+    });
   };
 
   /**
@@ -60,11 +79,16 @@ export function useLogin() {
     if (!token) {
       return Promise.reject(new Error(result.message || '登录失败'));
     }
-    EleMessage.success({ message: result.message, plain: true });
+    EleMessage.success({ message: '登录成功', plain: true });
     setToken(token, remember);
     setRefreshToken(result.data?.refresh_token, remember);
     clearData();
-    goHome();
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        redirectAfterLogin();
+        resolve(undefined);
+      }, 500);
+    });
   };
 
   /**
@@ -119,6 +143,7 @@ export function useLogin() {
     logout,
     checkLogin,
     goHome,
+    redirectAfterLogin,
     showLogoutConfirm
   };
 }
