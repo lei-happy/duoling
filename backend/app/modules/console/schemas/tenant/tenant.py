@@ -23,8 +23,15 @@ class TenantCreate(BaseModel):
     address: Optional[str] = Field(default=None, description="详细地址")
     licenseNo: Optional[str] = Field(default=None, description="营业执照号")
     remark: Optional[str] = Field(default=None, description="备注")
-    sourceChannel: Optional[str] = Field(default=None, description="来源渠道: website/console/referral")
+    sourceChannel: Optional[str] = Field(
+        default=None,
+        description="来源渠道: website/console/referral/carrier_invite",
+    )
     referrerCode: Optional[str] = Field(default=None, description="推荐人企业编码")
+    inviteSourceTenant: Optional[str] = Field(
+        default=None,
+        description="承运商邀请来源租户编码（carrier_invite 渠道专用，写入 sys_user_tenant.invite_source_tenant）",
+    )
 
 
 class TenantUpdate(BaseModel):

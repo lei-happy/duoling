@@ -3,6 +3,8 @@
 同一用户可关联多个企业，每个企业中有独立的角色类型和状态
 """
 
+from typing import Optional
+
 from sqlalchemy import BigInteger, String, SmallInteger, UniqueConstraint, Index
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -30,4 +32,8 @@ class UserTenant(PlatformModelBase):
     )
     status: Mapped[int] = mapped_column(
         SmallInteger, default=1, comment="状态 0-停用 1-正常"
+    )
+    invite_source_tenant: Mapped[Optional[str]] = mapped_column(
+        String(32), nullable=True,
+        comment="邀请来源租户编码（carrier_invite 场景：标记是被哪个 A 邀请激活的）",
     )

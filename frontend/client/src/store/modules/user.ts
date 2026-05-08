@@ -44,6 +44,14 @@ export const useUserStore = defineStore('user', {
     hasFeature(): (code: string) => boolean {
       return (code: string) => (this.features ?? []).includes(code);
     },
+    /** 当前生效的产品版本编码（lite/basic/...） */
+    versionCode(): string | undefined {
+      return this.info?.versionCode ?? undefined;
+    },
+    /** 是否为轻量版（承运商邀请激活的 lite 租户） */
+    isLite(): boolean {
+      return this.info?.versionCode === 'lite';
+    },
     /** 系统显示名称：优先自定义名称 > 企业名称 > 环境变量默认值 */
     displayName(): string {
       return (

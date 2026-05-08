@@ -29,6 +29,8 @@ from app.modules.client.api.file import router as file_router
 from app.modules.client.api.workbench.todo import router as workbench_todo_router
 from app.modules.client.api.system_config import router as system_config_router
 from app.modules.client.api.partner.customer import router as partner_customer_router
+from app.modules.client.api.partner.carrier import router as partner_carrier_router
+from app.modules.client.api.partner.carrier_inbound import router as partner_inbound_router
 from app.modules.client.api.billing.freight_contract import router as freight_contract_router
 from app.modules.client.api.billing.freight_rate import router as freight_rate_router
 from app.modules.client.api.billing.calculate import router as freight_calc_router
@@ -74,6 +76,8 @@ router.include_router(file_router, prefix="/file", tags=["客户端-文件管理
 router.include_router(workbench_todo_router, prefix="/workbench/todo", tags=["客户端-工作台待办"])
 router.include_router(system_config_router, prefix="/system/config", tags=["客户端-系统配置"])
 router.include_router(partner_customer_router, prefix="/partner/customer", tags=["客户端-合作伙伴-客户"])
+router.include_router(partner_carrier_router, prefix="/partner/carrier", tags=["客户端-合作伙伴-承运商"])
+router.include_router(partner_inbound_router, prefix="/partner/inbound", tags=["客户端-合作伙伴-合作客户(反向)"])
 router.include_router(freight_contract_router, prefix="/billing/contract", tags=["客户端-运价合同"])
 router.include_router(freight_rate_router, prefix="/billing/rate", tags=["客户端-运价费率"])
 router.include_router(freight_calc_router, prefix="/billing/calculate", tags=["客户端-运费计算"])

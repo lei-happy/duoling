@@ -30,6 +30,9 @@ from app.modules.client.models.trailer_ext import TrailerExt
 from app.modules.client.models.driver import Driver, DriverLicense, DriverOperation, DriverAccount
 from app.modules.client.models.route import Route
 from app.modules.client.models.partner.customer import Customer
+from app.modules.client.models.partner.carrier import Carrier
+from app.modules.client.models.partner.carrier_settlement import CarrierSettlement
+from app.modules.client.models.partner.carrier_invitation import CarrierInvitation
 from app.modules.client.models.billing.freight_contract import FreightContract
 from app.modules.client.models.billing.freight_rate import FreightRate
 from app.modules.client.models.waybill.waybill import Waybill
@@ -68,6 +71,9 @@ __all__ = [
     "DriverAccount",
     "Route",
     "Customer",
+    "Carrier",
+    "CarrierSettlement",
+    "CarrierInvitation",
     "FreightContract",
     "FreightRate",
     "Waybill",

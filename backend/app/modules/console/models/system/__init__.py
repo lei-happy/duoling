@@ -4,6 +4,8 @@ from app.modules.console.models.system.user_role import UserRole
 from app.modules.console.models.system.menu import Menu
 from app.modules.console.models.system.role import Role
 from app.modules.console.models.system.permission import RoleMenu
+from app.modules.console.models.system.carrier_link import CarrierLink
+from app.modules.console.models.system.carrier_invitation_inbox import CarrierInvitationInbox
 
 __all__ = [
     "User",
@@ -12,4 +14,6 @@ __all__ = [
     "Menu",
     "Role",
     "RoleMenu",
+    "CarrierLink",
+    "CarrierInvitationInbox",
 ]

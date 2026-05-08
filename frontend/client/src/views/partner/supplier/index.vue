@@ -1,8 +1,8 @@
 <template>
   <placeholder-page
-    title="供应商管理"
+    title="供应商管理（远期）"
     feature-code="partner_supplier"
-    version="标准版"
+    version="旗舰版"
   />
 </template>
 

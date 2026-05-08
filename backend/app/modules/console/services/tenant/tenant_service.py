@@ -122,20 +122,31 @@ class TenantService:
         db_name = settings.tenant_database_name(tenant_code)
 
         source_ch = data.sourceChannel or "console"
-        use_open_register_policy = source_ch in ("website", "referral")
+        # carrier_invite 渠道：承运商邀请激活，复用自助注册策略路径但默认强制开通 lite
+        use_open_register_policy = source_ch in (
+            "website", "referral", "carrier_invite"
+        )
         policy_version_code = "basic"
         policy_trial_days = 0
         if use_open_register_policy:
-            policy_version_code, policy_trial_days = (
-                await OpenRegisterPolicyService.get_policy_raw(db)
-            )
+            if source_ch == "carrier_invite":
+                # 承运商邀请固定开通 lite 不限期，不读取自助注册策略
+                policy_version_code = "lite"
+                policy_trial_days = 0
+            else:
+                policy_version_code, policy_trial_days = (
+                    await OpenRegisterPolicyService.get_policy_raw(db)
+                )
 
         remark = data.remark
-        if use_open_register_policy:
+        if use_open_register_policy and source_ch != "carrier_invite":
             if policy_trial_days > 0:
                 remark = f"官网自助注册（{policy_trial_days}天试用）"
             else:
                 remark = "官网自助注册（不限期体验）"
+        elif source_ch == "carrier_invite" and not remark:
+            invite_src = data.inviteSourceTenant or "未知"
+            remark = f"承运商邀请激活（来源租户 {invite_src}）"
 
         # 创建租户记录
         tenant = Tenant(
@@ -224,15 +235,27 @@ class TenantService:
             ut_record.user_type = 1
             ut_record.status = 1
             ut_record.is_deleted = 0
+            if source_ch == "carrier_invite" and data.inviteSourceTenant:
+                ut_record.invite_source_tenant = data.inviteSourceTenant
         else:
             db.add(UserTenant(
                 user_id=admin_user.id,
                 tenant_code=tenant_code,
                 user_type=1,
                 status=1,
+                invite_source_tenant=(
+                    data.inviteSourceTenant
+                    if source_ch == "carrier_invite" else None
+                ),
             ))
 
-        # 自动开通产品版本（官网/推荐码走运营配置；后台录入仍为 basic 不限期）
+        # 自动开通产品版本：
+        #   - website / referral：按运营配置（policy_version_code/policy_trial_days）
+        #   - carrier_invite：固定 lite 不限期
+        #   - console：basic 不限期
+        # 所有路径开通授权后都统一调用 _ensure_version_tables，使得 basic / lite / standard
+        # 等任意版本所需的 business 层表都按 sys_product_feature.required_tables 自动创建。
+        granted_version_id: Optional[int] = None
         if use_open_register_policy:
             pv = await OpenRegisterPolicyService.get_resolved_version(
                 db, policy_version_code
@@ -242,6 +265,10 @@ class TenantService:
                 start_t + timedelta(days=policy_trial_days)
                 if policy_trial_days > 0
                 else None
+            )
+            grant_remark = (
+                "承运商邀请激活" if source_ch == "carrier_invite"
+                else "官网自助注册"
             )
             db.add(
                 TenantProduct(
@@ -253,21 +280,12 @@ class TenantService:
                     end_time=end_t,
                     status=1,
                     grant_type=OpenRegisterPolicyService.grant_type_for_self_register(),
-                    grant_remark="官网自助注册",
+                    grant_remark=grant_remark,
                 )
             )
             if end_t is not None:
                 tenant.expire_time = end_t
-            await db.flush()
-            if pv.version_code != "basic":
-                try:
-                    await TenantService._ensure_version_tables(
-                        db, tenant_code, pv.id
-                    )
-                except Exception as e:
-                    logger.warning(
-                        f"租户 {tenant_code} 开户按需建业务表失败（非致命）: {e}"
-                    )
+            granted_version_id = pv.id
         else:
             basic_ver = await db.execute(
                 select(ProductVersion).where(
@@ -289,8 +307,22 @@ class TenantService:
                         status=1,
                     )
                 )
+                granted_version_id = basic_version.id
 
         await db.flush()
+
+        # 统一按当前授权版本的 required_tables 建业务表
+        # （basic 也走这里，承运商三表挂在 partner_carrier.required_tables，
+        #  basic 包含 partner_carrier 时即会自动建表）
+        if granted_version_id is not None:
+            try:
+                await TenantService._ensure_version_tables(
+                    db, tenant_code, granted_version_id
+                )
+            except Exception as e:
+                logger.warning(
+                    f"租户 {tenant_code} 开户按需建业务表失败（非致命）: {e}"
+                )
         await _emit("done", "开户完成", 100)
         logger.info(f"新租户已创建: {tenant_code} - {data.tenantName}")
 

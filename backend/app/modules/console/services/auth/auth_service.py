@@ -611,6 +611,8 @@ class AuthService:
         system_name = None
         user_type = None
         menu_version = None
+        version_code: Optional[str] = None
+        version_name: Optional[str] = None
         if tenant_code:
             tenant_result = await db.execute(
                 select(Tenant).where(
@@ -632,6 +634,37 @@ class AuthService:
                 )
             )
             user_type = ut_result.scalar()
+
+            # 当前生效产品版本（按 end_time 最晚优先；都为 None 视为永久授权优先）
+            from sqlalchemy import or_ as _or_
+            from app.modules.console.models.product.product_version import ProductVersion as _PV
+            now_t = datetime.now()
+            tp_result = await db.execute(
+                select(TenantProduct.version_code, TenantProduct.end_time)
+                .where(
+                    TenantProduct.tenant_code == tenant_code,
+                    TenantProduct.is_deleted == 0,
+                    TenantProduct.status == 1,
+                    _or_(
+                        TenantProduct.end_time.is_(None),
+                        TenantProduct.end_time > now_t,
+                    ),
+                )
+            )
+            tp_rows = list(tp_result.all())
+            if tp_rows:
+                tp_rows.sort(
+                    key=lambda r: (r[1] is not None, r[1] or now_t),
+                    reverse=True,
+                )
+                version_code = tp_rows[0][0]
+                pv_r = await db.execute(
+                    select(_PV.version_name).where(
+                        _PV.version_code == version_code,
+                        _PV.is_deleted == 0,
+                    ).limit(1)
+                )
+                version_name = pv_r.scalar()
 
         gender_map = {0: None, 1: "男", 2: "女"}
         return UserInfoOut(
@@ -671,6 +704,8 @@ class AuthService:
                 for m in menus
             ],
             features=feature_codes,
+            versionCode=version_code,
+            versionName=version_name,
         )
 
     @staticmethod
@@ -761,7 +796,70 @@ class AuthService:
 
         query = query.order_by(Menu.sort_order, Menu.id)
         result = await db.execute(query)
-        return list(result.scalars().all())
+        menus = list(result.scalars().all())
+
+        # 顶级目录裁剪：feature 过滤是按"叶子的 feature_code"做的，
+        # 顶级目录（type=0、feature_code IS NULL）会逃过过滤继续返回，
+        # 导致 lite 等小版本看到一堆"空目录"。这里递归剔除：
+        # 一个目录若其下没有任何"非目录子节点（type IN (1,2)）"且没有任何"非空子目录"，
+        # 则该目录本身也应裁掉。仅在 client 端、且做过 feature 过滤时执行。
+        if (
+            app_type == "client"
+            and allowed_feature_codes is not None
+            and len(allowed_feature_codes) > 0
+        ):
+            menus = AuthService._prune_empty_directories(menus)
+
+        return menus
+
+    @staticmethod
+    def _prune_empty_directories(menus: List[Menu]) -> List[Menu]:
+        """从已过滤的 client 菜单列表中递归剔除空目录（无叶子可达的目录节点）。
+
+        节点角色识别（基于 sys_menu 现有字段）：
+          - 按钮：menu_type == 1（无路径，权限点）
+          - 外链：menu_type == 2
+          - 页面：menu_type == 0 且 component 非空（带路由）
+          - 目录：menu_type == 0 且 component 为空（仅分组用）
+
+        算法：迭代识别"有效目录"——其下至少有一个"页面/外链/有效子目录"。
+        单遍可能不够（多级目录嵌套），故用稳定点迭代直到集合不再扩张。
+
+        按钮节点（type=1）一律保留：它们是 authorities 字符串权限点，
+        前端按 menu_code 匹配，不依赖父级是否被显示。
+        """
+        # 1) 找出所有"叶子展示节点"（页面/外链）
+        def is_leaf(m: Menu) -> bool:
+            if m.menu_type == 2:
+                return True
+            if m.menu_type == 0 and m.component:
+                return True
+            return False
+
+        leaf_ids = {m.id for m in menus if is_leaf(m)}
+
+        # 2) 迭代识别"有效目录"
+        directories = [m for m in menus if m.menu_type == 0 and not m.component]
+        # parent_id → 所有子节点 id
+        parent_to_children: dict = {}
+        for m in menus:
+            parent_to_children.setdefault(m.parent_id, set()).add(m.id)
+
+        effective_dir_ids: set = set()
+        while True:
+            valid_targets = leaf_ids | effective_dir_ids
+            new_dirs: set = set()
+            for d in directories:
+                children = parent_to_children.get(d.id, set())
+                if children & valid_targets:
+                    new_dirs.add(d.id)
+            if new_dirs == effective_dir_ids:
+                break
+            effective_dir_ids = new_dirs
+
+        # 3) 保留：叶子 + 有效目录 + 全部按钮
+        keep_ids = leaf_ids | effective_dir_ids
+        return [m for m in menus if m.id in keep_ids or m.menu_type == 1]
 
     @staticmethod
     async def _get_tenant_feature_codes(

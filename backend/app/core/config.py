@@ -65,6 +65,12 @@ class Settings(BaseSettings):
     # ---- 跨域 ----
     CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:5174"]
 
+    # ---- 前端站点根 URL ----
+    # 用于拼接外发邀请链接（如承运商邀请激活落地页 `${FRONTEND_BASE_URL}/invite-landing/{code}`）。
+    # 开发环境通常配 `http://192.168.x.x:5174`，生产环境配域名（如 `https://app.zhitu.com`）。
+    # 末尾不要带斜杠。
+    FRONTEND_BASE_URL: str = "http://localhost:5174"
+
     # ---- 日志 ----
     LOG_LEVEL: str = "DEBUG"
     LOG_DIR: str = "logs"

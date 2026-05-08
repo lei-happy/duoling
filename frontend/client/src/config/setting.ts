@@ -1,8 +1,16 @@
 /** 登录页面的路由地址 */
 export const LOGIN_PATH = '/login';
 
-/** 不需要登录的路由地址 */
-export const WHITE_LIST: string[] = [LOGIN_PATH, '/forget'];
+/** 不需要登录的路由地址：
+ *  - '/invite-landing/*' 承运商邀请着陆页（路径 B 激活入口）
+ *  - '/upgrade-plans'    版本对比/升级方案页（lite 用户横幅按钮 + 公开分享）
+ */
+export const WHITE_LIST: string[] = [
+  LOGIN_PATH,
+  '/forget',
+  '/invite-landing/*',
+  '/upgrade-plans'
+];
 
 /** 首页路径, 为空则取第一个菜单的地址 */
 export const HOME_PATH: string | undefined = void 0;

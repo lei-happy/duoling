@@ -66,6 +66,7 @@
     @tabSortChange="setPageTabs"
     @bodySizeChange="handleBodySizeChange"
   >
+    <upgrade-to-pro-banner />
     <router-layout />
     <!-- logo -->
     <template #logo>
@@ -201,6 +202,7 @@
   import { useIsSimpleTheme } from '@/components/IconSelect/util';
   import MenuIcon from '@/components/IconSelect/components/menu-icon.vue';
   import RouterLayout from '@/components/RouterLayout/index.vue';
+  import UpgradeToProBanner from '@/components/UpgradeToProBanner/index.vue';
   import HeaderRight from './components/header-right.vue';
   import PageFooter from './components/page-footer.vue';
   import { useMenuVersionWatcher } from '@/utils/use-menu-version-watcher';

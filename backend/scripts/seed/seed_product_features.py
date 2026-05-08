@@ -70,7 +70,9 @@ FEATURES = [
     # ===== 客商中心 =====
     {"feature_code": "partner_customer", "feature_name": "客户管理", "module": "partner", "sort_order": 50, "required_tables": '["biz_customer"]'},
     {"feature_code": "basic_data_dealer", "feature_name": "经销商门店", "module": "partner", "sort_order": 51, "required_tables": '["biz_dealer"]'},
-    {"feature_code": "partner_supplier", "feature_name": "供应商管理", "module": "partner", "sort_order": 52, "required_tables": None},
+    {"feature_code": "partner_supplier", "feature_name": "供应商管理（远期）", "module": "partner", "sort_order": 52, "required_tables": None},
+    {"feature_code": "partner_carrier", "feature_name": "承运商管理", "module": "partner", "sort_order": 53, "required_tables": '["biz_carrier", "biz_carrier_settlement", "biz_carrier_invitation"]'},
+    {"feature_code": "partner_inbound", "feature_name": "合作客户（反向视角）", "module": "partner", "sort_order": 54, "required_tables": None},
 
     # ===== 计费中心 =====
     {"feature_code": "billing_contract", "feature_name": "运价合同", "module": "billing", "sort_order": 60, "required_tables": '["biz_freight_contract", "biz_freight_rate"]'},
@@ -120,6 +122,26 @@ _BASIC_FEATURES = [
     "base_system", "base_organization", "base_user", "base_role",
     "base_dict", "base_log", "base_config",
     "basic_data", "basic_data_region", "basic_data_vehicle_brand_series",
+    # 客商中心（基础功能：客户管理 + 承运商管理 + 合作客户反向视角）
+    "partner_customer", "partner_carrier", "partner_inbound",
+]
+
+# lite 版本：承运商邀请激活专用，仅包含运力相关 + 合作客户反向视角
+# basic_data_region/base_dashboard 等基础项继承 _BASIC_FEATURES 之外，单独列举所需项
+#
+# 注意：base_config（系统设置）已剔除 —— 该菜单的子项当前只有"运单设置"，
+# 而 lite 没有运单模块，留着会引导用户进到一个对它无意义的页面，反而误导。
+# 待 lite 引入"系统设置"下任何对 lite 有意义的子项时再加回来。
+_LITE_FEATURES = [
+    "base_dashboard",
+    # 企业管理：精简到必须项（员工、角色、登录记录）
+    "base_system", "base_organization", "base_user", "base_role",
+    "base_log",
+    "basic_data", "basic_data_region",
+    # 运力中心（精简）
+    "capacity_manage", "resource_vehicle", "resource_trailer", "resource_driver",
+    # 反向视角合作客户
+    "partner_inbound",
 ]
 
 _STANDARD_DELTA = [
@@ -128,8 +150,8 @@ _STANDARD_DELTA = [
     # 运力中心（含 v2.0 三类承运资源）
     "capacity_manage", "resource_vehicle", "resource_trailer", "resource_driver",
     "carrier_external", "carrier_social",
-    # 客商中心（v2.0 供应商管理提前到 standard）
-    "partner_customer", "basic_data_dealer", "partner_supplier",
+    # 客商中心（v2.0 供应商管理远期化，partner_carrier 已下沉至 basic）
+    "basic_data_dealer",
     # 计费中心（基础）
     "billing_contract", "billing_route",
 ]
@@ -156,6 +178,8 @@ _ENTERPRISE_DELTA = [
     "finance_invoice", "finance_profit",
     # 数据洞察·远期
     "bi_prediction",
+    # 客商中心·远期（上游供应商管理）
+    "partner_supplier",
 ]
 
 _ECOSYSTEM_DELTA = [
@@ -164,6 +188,8 @@ _ECOSYSTEM_DELTA = [
 ]
 
 VERSION_FEATURES = {
+    # lite 是承运商邀请激活后开通的轻量版，独立于 basic 阶梯
+    "lite": list(_LITE_FEATURES),
     "basic": list(_BASIC_FEATURES),
     "standard": _BASIC_FEATURES + _STANDARD_DELTA,
     "pro": _BASIC_FEATURES + _STANDARD_DELTA + _PRO_DELTA,
@@ -317,6 +343,23 @@ def main():
         else:
             print("[OK] 所有功能都至少已关联到一个版本")
         print("==================================\n")
+
+        # ---- 末尾：bump 所有 active 租户的 menu_version ----
+        # 版本-功能关联变了之后，每个已登录的客户端需要重拉菜单。
+        # 客户端 store 通过 GET /auth/menu-version 轮询比对此戳，
+        # 不一致则触发整页刷新重建动态路由。
+        # 这里 +1 即可让所有在线用户在节流窗口（默认 5s）后自动重拉。
+        bump_res = conn.execute(text(
+            "UPDATE sys_tenant SET menu_version = menu_version + 1 "
+            "WHERE is_deleted = 0"
+        ))
+        conn.commit()
+        try:
+            affected = bump_res.rowcount
+        except Exception:
+            affected = -1
+        print(f"[OK] sys_tenant.menu_version 已统一 +1，影响 {affected} 条 → "
+              f"所有在线客户端将在数秒内自动重拉菜单。\n")
 
     engine.dispose()
     print("\n产品功能清单和版本关联初始化完成！")

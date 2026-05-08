@@ -127,6 +127,13 @@ class UserInfoOut(BaseModel):
         default_factory=list,
         description="当前租户已启用的产品功能码（仅 client 端有值）",
     )
+    versionCode: Optional[str] = Field(
+        default=None,
+        description="当前租户生效的产品版本编码（lite/basic/standard/pro/enterprise）",
+    )
+    versionName: Optional[str] = Field(
+        default=None, description="当前租户生效的产品版本名称",
+    )
 
 
 class UpdateProfileRequest(BaseModel):

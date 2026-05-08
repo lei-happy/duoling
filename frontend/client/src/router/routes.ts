@@ -28,6 +28,18 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/views/login/index.vue'),
     meta: { title: '登录' }
   },
+  // 承运商邀请着陆页（白名单免登录，路径 B 激活入口）
+  {
+    path: '/invite-landing/:code',
+    component: () => import('@/views/invite-landing/index.vue'),
+    meta: { title: '承运商邀请激活', layout: false }
+  },
+  // 升级方案对比页（不依赖后端菜单，已登录用户也可直接访问）
+  {
+    path: '/upgrade-plans',
+    component: () => import('@/views/upgrade-plans/index.vue'),
+    meta: { title: '升级方案', layout: false }
+  },
   // 404
   {
     path: '/:path(.*)*',
