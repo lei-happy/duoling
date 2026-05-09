@@ -30,8 +30,28 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, inspect as sa_inspect
 from app.core.config import get_settings
+
+
+def _ensure_menu_version_column(conn) -> None:
+    """
+    保证 sys_tenant 表存在 menu_version 列。
+    早期库的 schema 没有这列；首次 sync 到老库时自动补上，避免后面的 bump 失败。
+    幂等：列已存在则直接返回。
+    """
+    insp = sa_inspect(conn)
+    cols = {c["name"] for c in insp.get_columns("sys_tenant")}
+    if "menu_version" in cols:
+        return
+    print("[INFO] 检测到 sys_tenant 表缺少 menu_version 列（老 schema），自动补加...")
+    conn.execute(text(
+        "ALTER TABLE `sys_tenant` "
+        "ADD COLUMN `menu_version` BIGINT NOT NULL DEFAULT 0 "
+        "COMMENT '菜单版本戳：版本授权变更时递增，前端据此判断是否需重新拉取菜单'"
+    ))
+    conn.commit()
+    print("[OK] sys_tenant.menu_version 列已添加（默认值 0）")
 
 
 # ---------------------------------------------------------------------------
@@ -251,6 +271,8 @@ def main():
         # 版本-功能关联变了之后，每个已登录的客户端需要重拉菜单。
         # 客户端 store 通过 GET /auth/menu-version 轮询比对此戳，
         # 不一致则触发整页刷新重建动态路由。
+        # 老库可能缺这一列，先保证存在（幂等）
+        _ensure_menu_version_column(conn)
         bump_res = conn.execute(text(
             "UPDATE sys_tenant SET menu_version = menu_version + 1 "
             "WHERE is_deleted = 0"
