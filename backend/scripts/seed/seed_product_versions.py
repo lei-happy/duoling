@@ -120,11 +120,15 @@ def main():
                 print(f"  更新版本: {v['version_code']} - {v['version_name']} (id={existing})")
                 updated += 1
             else:
+                # 显式给 is_deleted / created_at / updated_at 赋值
+                # 防御老库 DDL 中这些字段没有 DEFAULT 值（MySQL strict mode 下会 1364）
                 conn.execute(
                     text(
                         "INSERT INTO sys_product_version "
-                        "(version_code, version_name, description, max_users, max_vehicles, price, sort_order, status) "
-                        "VALUES (:version_code, :version_name, :description, :max_users, :max_vehicles, :price, :sort_order, :status)"
+                        "(version_code, version_name, description, max_users, max_vehicles, "
+                        "price, sort_order, status, is_deleted, created_at, updated_at) "
+                        "VALUES (:version_code, :version_name, :description, :max_users, :max_vehicles, "
+                        ":price, :sort_order, :status, 0, NOW(), NOW())"
                     ),
                     v,
                 )
