@@ -30,7 +30,10 @@ RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 # ============================================================
 FROM node:20-alpine AS pnpm-deps
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# 用 npm 全局安装 pnpm 并锁定大版本（pnpm 9 与 node 20 兼容良好）
+# 历史上用过 `corepack prepare pnpm@latest`，但 corepack 与某些 pnpm 11.x 在新 node 中
+# 会抛 ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING；改用 npm 全局安装更稳定可控。
+RUN npm install -g pnpm@9 --registry=https://registry.npmmirror.com
 
 WORKDIR /build
 
