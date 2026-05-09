@@ -313,6 +313,61 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui", app_typ
             upsert_menus(conn, children, parent_id=menu_id, mode=mode, app_type=app_type)
 
 
+def prune_deleted_menus(conn, snapshot_ids: set[int], app_type: str) -> int:
+    """
+    软删（is_deleted=1）prod 库中存在、但快照里没有的同 app_type 菜单。
+
+    判定规则：
+      库中 (app_type=app_type AND is_deleted=0) 的所有 id 减去 snapshot_ids，
+      差集就是历史遗留 / 已废弃但未清理的菜单。
+
+    安全设计：
+      - 只软删（is_deleted=1），保留可追溯
+      - 不动 is_deleted=1 的记录（已经软删过的不重复操作）
+      - 每条都打印日志，附原 menu_name + path
+      - 只在 --force-all 模式下被调用（insert-only / preserve-ui 不 prune）
+
+    返回软删条数。
+    """
+    rows = conn.execute(
+        text(
+            "SELECT id, menu_name, path FROM sys_menu "
+            "WHERE app_type = :app_type AND is_deleted = 0"
+        ),
+        {"app_type": app_type},
+    ).fetchall()
+
+    extra = [r for r in rows if int(r.id) not in snapshot_ids]
+    if not extra:
+        print(f"\n[OK] prune 检查：prod 库 {app_type} 菜单全部在快照中，无需软删")
+        return 0
+
+    print(
+        f"\n[PRUNE] 检测到 {len(extra)} 条 {app_type} 菜单在 prod 但快照中不存在，"
+        f"将软删（is_deleted=1，可追溯，不物删）："
+    )
+    for row in extra:
+        print(f"  软删: id={row.id} name='{row.menu_name}' path='{row.path}'")
+        conn.execute(
+            text("UPDATE sys_menu SET is_deleted = 1 WHERE id = :id"),
+            {"id": int(row.id)},
+        )
+    return len(extra)
+
+
+def _collect_snapshot_ids(json_path: Path, app_type: str) -> set[int]:
+    """从快照 JSON 直接提取所有 (app_type, is_deleted=0) 记录的 id 集合。"""
+    with open(json_path, encoding="utf-8") as f:
+        rows = json.load(f)
+    return {
+        int(r["id"])
+        for r in rows
+        if r.get("app_type") == app_type
+        and int(r.get("is_deleted", 0)) == 0
+        and r.get("id") is not None
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="同步菜单数据到 sys_menu（支持 client / platform 两类）")
     parser.add_argument(
@@ -399,9 +454,15 @@ def main():
         "insert_only": "insert-only（仅补全缺失）",
     }
 
+    snapshot_ids = _collect_snapshot_ids(json_path, app_type)
+
     with engine.connect() as conn:
         print(f"\n从 {json_path} 加载 {app_type} 菜单，开始同步… 模式: {mode_labels[mode]}")
         upsert_menus(conn, menus, mode=mode, app_type=app_type)
+        # force-all 是"完全对齐"语义，需要主动清理 prod 多余的菜单（软删）
+        # insert-only / preserve-ui 不 prune，避免误删
+        if mode == "force_all":
+            prune_deleted_menus(conn, snapshot_ids, app_type)
         conn.commit()
 
     engine.dispose()
