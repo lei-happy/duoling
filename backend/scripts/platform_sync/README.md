@@ -43,23 +43,91 @@ git push
 
 ## 给发版人看（prod 上想同步）
 
-```bash
-ssh user@prod-server
-cd /opt/zhitu
-git pull
+最常用：用一键部署脚本，无需了解 platform_sync 工具细节：
 
-docker compose exec backend python -m scripts.platform_sync sync
-# 工具会输出变更摘要 + 详情，例如：
-#   [客户端菜单] 新增 1 / 修改 2 / 删除 0
-#   [产品功能]   新增 3 / 修改 0 / 删除 0
-#   [版本-功能]  新增 5 / 删除 1
-#   [+] 菜单 partner:invoice  发票管理
-#   [+] feature partner_invoice  发票管理
-#   ...
-# 输入 y → 自动调用 seed 脚本写库 → 应用后再拉一次确认 0 差异
+```bash
+ssh root@prod-server
+cd /opt/zhitu
+
+# 推荐：日常发版（拉代码 → 重新构建 → 启动 → 平台元数据 plan + 交互确认 + apply）
+sudo bash deploy/deploy.sh update
+
+# 无人值守发版（CI / 定时任务）：metadata 有差异时自动 apply，不再 prompt
+sudo bash deploy/deploy.sh update --auto
+
+# 单独触发"只同步元数据，不重新构建服务"
+sudo bash deploy/deploy.sh db-sync         # 交互式
+sudo bash deploy/deploy.sh db-sync --auto  # 无人值守
+
+# 应急：跳过元数据同步（prod 突发问题不希望任何元数据变动时）
+sudo bash deploy/deploy.sh update --skip-sync
+```
+
+deploy.sh 内部会先打印「prod 当前 vs 仓库快照」的差异摘要：
+
+```text
+[客户端菜单] 新增 1 / 修改 2 / 删除 0
+[产品功能]   新增 3 / 修改 0 / 删除 0
+[版本-功能]  新增 5 / 删除 1
+[+] 菜单 partner:invoice  发票管理
+[+] feature partner_invoice  发票管理
+...
+是否应用以上变更到生产平台库？(y/N): _
+```
+
+输入 `y`（或带 `--auto` 时自动）→ 调用 seed 脚本写库 → 再次自检 0 差异。
+
+如需绕过 deploy.sh 直接调工具：
+
+```bash
+docker compose exec backend python -m scripts.platform_sync sync          # 交互式
+docker compose exec backend python -m scripts.platform_sync sync --plan   # 只看差异
+docker compose exec backend python -m scripts.platform_sync sync --yes    # 自动应用
 ```
 
 > **要点**：sync 会调用 `seed_client_menus.py --force-all`，意味着 prod 与 snapshots 完全对齐（包括 visible / icon / sort_order）。如果想保留 prod 的 UI 自定义，应在 dev 也照样改一遍后再发版。
+
+---
+
+## 自动化部署集成（deploy.sh）
+
+deploy.sh 把 sync 分成两阶段：先 `--plan` 只读对比并打印差异 → 再决定是否 `--yes` 应用。两阶段的好处是 **既能无人值守、又能保留知情权和否决权**。
+
+### 三种 update 模式对比
+
+| 命令 | 适用 | 行为 |
+|------|------|------|
+| `deploy.sh update` | 默认，人工值守发版 | metadata 0 差异时静默；有差异时打印摘要并 prompt y/N |
+| `deploy.sh update --auto` | CI / 定时任务 | metadata 0 差异时静默；有差异时打印摘要后**自动 apply** |
+| `deploy.sh update --skip-sync` | 应急 / 已知不动元数据 | 完全跳过 metadata 同步阶段（仅跑租户字典 seed） |
+
+### sync --plan 退出码契约（供脚本判断）
+
+| 退出码 | 含义 | deploy.sh 处理 |
+|--------|------|----------------|
+| 0 | 无差异 | 跳过 apply |
+| 10 | 有差异 | 进入 prompt（或 --auto 自动 apply） |
+| 2 | 配置错误（缺 .env / 缺快照） | abort 部署，引导用户创建 .env.prod |
+| 3 | API/网络/凭证失败 | abort 部署 |
+
+### 凭证文件（首次部署一次性配置）
+
+容器内必须存在 `backend/scripts/platform_sync/envs/.env.prod`，否则 deploy.sh 会优雅降级并打印创建步骤：
+
+```bash
+# 在 prod 服务器宿主机上：
+cd /opt/zhitu/backend/scripts/platform_sync/envs
+cp .env.example .env.prod
+vi .env.prod
+# 填入：
+#   CONSOLE_API_BASE=http://backend:8000        # 容器内访问后端服务名
+#   CONSOLE_ADMIN_PHONE=<同步专用账号手机号>
+#   CONSOLE_ADMIN_PASSWORD=<密码>
+```
+
+凭证文件在 `.gitignore` 中（不入库），CI 环境也可改用环境变量注入（`CONSOLE_API_BASE` / `CONSOLE_ADMIN_PHONE` / `CONSOLE_ADMIN_PASSWORD`），优先级高于文件。
+
+> 推荐为本工具单独建一个平台超管账号（如 `sync-bot`），便于审计与权限隔离。
 
 ---
 
@@ -80,7 +148,7 @@ cp .env.example .env.prod     # 生产服务器上配（容器内路径相同）
 
 ## 文件结构
 
-```
+```text
 backend/scripts/platform_sync/
   README.md                # 本文档
   __main__.py              # 命令分发：export / sync
@@ -112,7 +180,7 @@ backend/scripts/platform_sync/
 
 ## 与"新模块初始化脚本"的边界
 
-```
+```text
 [开发新模块 invoice] → [手写 migrate_invoice_module.py] → [在 dev 跑一次 migrate]
                                                           ↓
                                          dev 库有了新菜单/feature/版本关联

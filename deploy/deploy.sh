@@ -3,16 +3,25 @@
 # 智途(ZhiTu) 生产环境一键部署脚本
 #
 # 使用方法:
-#   首次部署:  bash deploy.sh init
-#   日常更新:  bash deploy.sh update
-#   仅获SSL:   bash deploy.sh ssl
-#   初始化DB:  bash deploy.sh db-init
-#   同步配置:  bash deploy.sh db-sync
-#   查看日志:  bash deploy.sh logs [service]
-#   查看状态:  bash deploy.sh status
+#   首次部署:    bash deploy.sh init
+#   日常更新:    bash deploy.sh update                # 交互式（推荐人工值守发版）
+#                bash deploy.sh update --auto         # 无人值守（CI / 定时任务）
+#                bash deploy.sh update --skip-sync    # 应急：跳过平台元数据同步
+#   仅获SSL:     bash deploy.sh ssl
+#   初始化DB:    bash deploy.sh db-init
+#   同步配置:    bash deploy.sh db-sync               # 单独触发平台元数据同步
+#                bash deploy.sh db-sync --auto        # 无人值守
+#   查看日志:    bash deploy.sh logs [service]
+#   查看状态:    bash deploy.sh status
 #
 # 上传图片（头像、品牌图等）宿主机目录: /opt/zhitu/data/uploads
 # （与 deploy/docker/docker-compose.yml 中 backend 绑定挂载一致；勿与代码仓库 backend/uploads 混淆）
+#
+# 平台元数据同步（菜单 / 产品版本 / 功能 / 版本-功能映射）:
+#   事实源 = backend/scripts/platform_sync/snapshots/*.json（随代码 git push）
+#   工具   = backend/scripts/platform_sync/        （详见其 README.md）
+#   流程   = update 时先 plan（只读对比）→ 显示差异 → y/N 或 --auto 自动 apply
+#   首次部署需在 prod 服务器创建 /opt/zhitu/backend/scripts/platform_sync/envs/.env.prod
 # ============================================================
 
 set -e
@@ -299,30 +308,99 @@ reload_ssl() {
 }
 
 # ============================================================
-# 同步平台配置数据（菜单 + 产品功能模块 + 租户字典）
-# 所有脚本均为幂等 upsert 操作，可安全重复执行：
-#   - seed_client_menus.py     : 默认 preserve-ui 模式，仅更新结构字段（path/component 等），
-#                                保留数据库中用户配置的 icon/排序/可见性；
-#                                事实源 = backend/scripts/platform_sync/snapshots/client_menu.json
-#   - seed_product_features.py : 事实源 = snapshots/product_feature.json + version_feature.json
-#   - seed_client_dicts.py     : dict_code 不存在则新增，已存在则跳过
+# 平台元数据同步（菜单 / 产品功能 / 版本 / 版本-功能映射）
 #
-# 推荐发版方式：用 `docker compose exec backend python -m scripts.platform_sync sync`
-# 该命令会先打印「prod vs 仓库快照」的差异摘要、询问 y/N 后再执行下面三个 seed 脚本，
-# 比直接 deploy.sh update 更可控。详见 backend/scripts/platform_sync/README.md。
+# 流程：plan（只读对比） → 视模式决定 apply：
+#   - 交互式（默认）：终端 prompt y/N，仅在有差异时打扰
+#   - --auto       ：无差异时安静跳过；有差异时自动 apply
+#   - --skip-sync  ：完全跳过本环节（应急用，调用方设置 SKIP_PLATFORM_SYNC=1）
+#
+# 退出码（platform_sync sync --plan）：
+#   0=无差异，10=有差异需 apply，2=配置错误（缺 .env / 缺快照），3=API 失败
+#
+# 凭证：容器内需要 backend/scripts/platform_sync/envs/.env.prod
+# （内含 console URL + 平台超管账号；不入库，需 prod 服务器上手工预置一次）
 # ============================================================
-sync_platform_data() {
-    log_info "同步平台配置数据..."
+sync_platform_metadata() {
+    if [ "${SKIP_PLATFORM_SYNC:-0}" = "1" ]; then
+        log_warn "已设置 --skip-sync，跳过平台元数据同步（菜单/功能/版本）"
+        return 0
+    fi
+
     cd "$DEPLOY_DIR"
 
-    docker compose exec backend python scripts/seed/seed_product_features.py
-    log_info "产品功能模块已同步"
+    # ---- 检查容器内是否有凭证文件 ----
+    if ! docker compose exec -T backend test -f scripts/platform_sync/envs/.env.prod 2>/dev/null; then
+        log_warn "容器内未找到 backend/scripts/platform_sync/envs/.env.prod"
+        log_warn "首次部署？请按下面步骤创建该文件后再执行 db-sync："
+        echo "  1) 在宿主机创建：vi $PROJECT_DIR/backend/scripts/platform_sync/envs/.env.prod"
+        echo "     模板：cp $PROJECT_DIR/backend/scripts/platform_sync/envs/.env.example \\"
+        echo "                $PROJECT_DIR/backend/scripts/platform_sync/envs/.env.prod"
+        echo "  2) 编辑填入 console URL（容器内访问写 http://backend:8000）+ 平台超管账号"
+        echo "  3) docker compose exec backend ls scripts/platform_sync/envs/  确认能看到 .env.prod"
+        echo ""
+        log_warn "本次 update 跳过平台元数据同步，按需手动跑 db-sync 补回。"
+        return 0
+    fi
 
-    docker compose exec backend python scripts/seed/seed_client_menus.py
-    log_info "客户端菜单已同步"
+    # ---- 第 1 阶段：plan（只读对比，打印差异摘要+详情） ----
+    log_info "==== 平台元数据 plan：对比目标库 vs 仓库快照 ===="
+    set +e
+    docker compose exec backend python -m scripts.platform_sync sync --plan
+    local plan_rc=$?
+    set -e
 
+    case "$plan_rc" in
+        0)
+            log_info "[OK] 目标库与仓库快照一致，跳过 apply"
+            return 0
+            ;;
+        10)
+            ;;  # 有差异，进入 apply 流程
+        2|3|*)
+            log_error "平台元数据 plan 失败 (exit=$plan_rc)，已中止部署"
+            log_warn "常见原因：缺 .env.prod 凭证 / 快照不齐 / console 服务未就绪"
+            log_warn "可用 db-sync 命令单独排查后再 update"
+            return $plan_rc
+            ;;
+    esac
+
+    # ---- 第 2 阶段：apply（人工或自动） ----
+    if [ "${AUTO_MODE:-0}" = "1" ]; then
+        log_warn "auto 模式：自动应用上述差异（如不希望自动应用，去掉 --auto）"
+    else
+        echo ""
+        read -p "是否应用以上变更到生产平台库？(y/N): " confirm
+        if [[ ! "$confirm" =~ ^[yY]([eE][sS])?$ ]]; then
+            log_warn "已取消平台元数据同步（部署其余环节继续）"
+            return 0
+        fi
+    fi
+
+    log_info "==== 平台元数据 apply：写库 + 自检 ===="
+    set +e
+    docker compose exec backend python -m scripts.platform_sync sync --yes
+    local apply_rc=$?
+    set -e
+    if [ "$apply_rc" -ne 0 ]; then
+        log_error "平台元数据 apply 失败 (exit=$apply_rc)"
+        return $apply_rc
+    fi
+    log_info "[OK] 平台元数据已同步"
+}
+
+# 租户字典种子数据（dict_code 不存在则新增，已存在则跳过；与平台元数据无关）
+sync_tenant_dicts() {
+    log_info "同步租户字典数据..."
+    cd "$DEPLOY_DIR"
     docker compose exec backend python scripts/seed/seed_client_dicts.py
     log_info "租户字典数据已同步"
+}
+
+# 老接口保留，封装为顺序调用（向后兼容旧调用点）
+sync_platform_data() {
+    sync_platform_metadata
+    sync_tenant_dicts
 }
 
 # ============================================================
@@ -430,11 +508,32 @@ cmd_init() {
 
 # ============================================================
 # 命令: update（日常更新）
+#
+# 用法:
+#   bash deploy.sh update              # 默认：交互式（仅在 metadata 有差异时 prompt）
+#   bash deploy.sh update --auto       # 无人值守：metadata 有差异自动 apply
+#   bash deploy.sh update --skip-sync  # 应急：完全不动平台 metadata
 # ============================================================
 cmd_update() {
     check_root "update"
 
-    log_info "开始更新部署..."
+    # 解析 flags（$1=update 已被 case 消费，从 $2 开始）
+    AUTO_MODE=0
+    SKIP_PLATFORM_SYNC=0
+    shift  # 跳过子命令本身
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --auto)      AUTO_MODE=1 ;;
+            --skip-sync) SKIP_PLATFORM_SYNC=1 ;;
+            *)
+                log_warn "未知参数: $1（已忽略）"
+                ;;
+        esac
+        shift
+    done
+    export AUTO_MODE SKIP_PLATFORM_SYNC
+
+    log_info "开始更新部署...  (auto=$AUTO_MODE, skip-sync=$SKIP_PLATFORM_SYNC)"
     cd "$PROJECT_DIR"
 
     # 拉取最新代码
@@ -495,10 +594,29 @@ cmd_db_init() {
 
 # ============================================================
 # 命令: db-sync（同步菜单和产品功能模块）
+#
+# 用法:
+#   bash deploy.sh db-sync             # 交互式
+#   bash deploy.sh db-sync --auto      # 无人值守
+#   bash deploy.sh db-sync --skip-sync # 仅跑租户字典 seed，不动 metadata
 # ============================================================
 cmd_db_sync() {
     check_root "db-sync"
     check_env_file
+
+    AUTO_MODE=0
+    SKIP_PLATFORM_SYNC=0
+    shift
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --auto)      AUTO_MODE=1 ;;
+            --skip-sync) SKIP_PLATFORM_SYNC=1 ;;
+            *)           log_warn "未知参数: $1（已忽略）" ;;
+        esac
+        shift
+    done
+    export AUTO_MODE SKIP_PLATFORM_SYNC
+
     sync_platform_data
     log_info "平台配置数据同步完成"
 }
@@ -572,10 +690,10 @@ cmd_stop() {
 # ============================================================
 case "${1:-}" in
     init)
-        cmd_init
+        cmd_init "$@"
         ;;
     update)
-        cmd_update
+        cmd_update "$@"
         ;;
     ssl)
         cmd_ssl
@@ -584,7 +702,7 @@ case "${1:-}" in
         cmd_db_init
         ;;
     db-sync)
-        cmd_db_sync
+        cmd_db_sync "$@"
         ;;
     logs)
         cmd_logs "$@"
@@ -601,18 +719,27 @@ case "${1:-}" in
     *)
         echo "智途(ZhiTu) 部署管理脚本"
         echo ""
-        echo "用法: bash deploy.sh <命令>"
+        echo "用法: bash deploy.sh <命令> [选项]"
         echo ""
         echo "命令:"
-        echo "  init      首次完整部署（安装 Docker、配置、构建、启动）"
-        echo "  update    日常更新（拉取代码、重新构建、重启服务、同步配置）"
-        echo "  ssl       检查并重载 SSL 证书（上传新证书后执行）"
-        echo "  db-init   初始化数据库（创建表结构和种子数据）"
-        echo "  db-sync   同步平台配置（更新菜单和产品功能模块）"
-        echo "  logs      查看日志（可指定服务: logs backend / logs nginx）"
-        echo "  status    查看服务状态"
-        echo "  restart   重启所有服务"
-        echo "  stop      停止所有服务"
+        echo "  init                       首次完整部署（安装 Docker、配置、构建、启动）"
+        echo "  update [--auto|--skip-sync]"
+        echo "                             日常更新；--auto 跳过 sync 的人工确认；"
+        echo "                             --skip-sync 完全跳过平台元数据同步（应急）"
+        echo "  ssl                        检查并重载 SSL 证书（上传新证书后执行）"
+        echo "  db-init                    初始化数据库（创建表结构和种子数据）"
+        echo "  db-sync [--auto|--skip-sync]"
+        echo "                             单独触发同步：平台元数据 + 租户字典"
+        echo "  logs [service]             查看日志（如 logs backend / logs nginx）"
+        echo "  status                     查看服务状态"
+        echo "  restart                    重启所有服务"
+        echo "  stop                       停止所有服务"
+        echo ""
+        echo "平台元数据同步说明（菜单/产品功能/版本）:"
+        echo "  事实源: backend/scripts/platform_sync/snapshots/*.json（随代码 git push）"
+        echo "  首次部署需创建凭证文件:"
+        echo "    /opt/zhitu/backend/scripts/platform_sync/envs/.env.prod"
+        echo "  详见 backend/scripts/platform_sync/README.md"
         echo ""
         ;;
 esac
