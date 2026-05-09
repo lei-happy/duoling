@@ -13,7 +13,7 @@ from loguru import logger
 from app.core.config import get_settings
 from app.core.security import TokenData, create_access_token, create_refresh_token, decode_refresh_token
 from app.common.utils import verify_password, hash_password
-from app.common.exceptions import AuthException
+from app.common.exceptions import AuthException, BizException
 from app.modules.console.models.system.user import User
 from app.modules.console.models.system.user_tenant import UserTenant
 from app.modules.console.models.system.user_role import UserRole
@@ -521,13 +521,13 @@ class AuthService:
         )
         user = result.scalar_one_or_none()
         if not user:
-            raise AuthException("用户不存在")
+            raise BizException("用户不存在")
 
         if not verify_password(request.oldPassword, user.password):
-            raise AuthException("旧密码错误")
+            raise BizException("旧密码错误")
 
         if request.oldPassword == request.newPassword:
-            raise AuthException("新密码不能与旧密码相同")
+            raise BizException("新密码不能与旧密码相同")
 
         user.password = hash_password(request.newPassword)
         user.force_change_pwd = 0

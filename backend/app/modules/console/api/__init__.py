@@ -6,6 +6,7 @@ Console 端的所有 API（操作 zt_platform 库）
 from fastapi import APIRouter
 
 from app.modules.console.api.auth import router as auth_router
+from app.modules.console.api.user_me import router as user_me_router
 from app.modules.console.api.tenant import router as tenant_router
 from app.modules.console.api.system.user import router as user_router
 from app.modules.console.api.system.menu import router as menu_router
@@ -40,6 +41,7 @@ from app.modules.ai.api.console import router as ai_console_router
 router = APIRouter()
 
 router.include_router(auth_router, prefix="/auth", tags=["管理后台-认证"])
+router.include_router(user_me_router, prefix="/user", tags=["管理后台-当前用户"])
 router.include_router(file_router, prefix="/file", tags=["管理后台-文件上传"])
 router.include_router(tenant_router, prefix="/tenant", tags=["管理后台-租户管理"])
 router.include_router(menu_router, prefix="/system/menu", tags=["菜单管理"])

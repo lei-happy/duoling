@@ -3,7 +3,7 @@
 """
 
 from typing import Optional, List, Any
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 
 class LoginRequest(BaseModel):
@@ -67,9 +67,13 @@ class RefreshTokenResponse(BaseModel):
 
 
 class ChangePasswordRequest(BaseModel):
-    """修改密码请求"""
+    """修改密码请求（旧密码校验）；运营端表单字段 password 与 newPassword 等价"""
     oldPassword: str = Field(description="旧密码")
-    newPassword: str = Field(description="新密码", min_length=6)
+    newPassword: str = Field(
+        description="新密码",
+        min_length=6,
+        validation_alias=AliasChoices("newPassword", "password"),
+    )
 
 
 class SwitchTenantRequest(BaseModel):
