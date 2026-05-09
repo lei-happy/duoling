@@ -1,13 +1,20 @@
 """
 同步 Client 端菜单数据到 sys_menu 表
 
-菜单定义来自与本脚本同目录的 sys_menu.json（请保持与线上一致：从库导出或手工合并后再执行）。
+菜单事实源：backend/scripts/platform_sync/snapshots/client_menu.json
+  —— 由 `python -m scripts.platform_sync export` 在 dev 端生成。
+
+如果该文件不存在，本脚本会拒绝执行并提示先运行 platform_sync 工具。
+通常生产端不会遇到这种情况，因为快照文件是随代码 git push 的，部署时一定存在。
 
 三种同步模式：
   默认（preserve-ui）: 已存在的菜单只更新结构字段（menu_name/menu_code/menu_type/path/
                        component/feature_code），保留数据库中用户配置的 icon/sort_order/visible。
   --force-all        : 已存在则全字段 UPDATE（覆盖所有字段，包括 icon/排序/可见性）。
   --insert-only      : 仅插入缺失项，已存在的菜单不更新。
+
+`python -m scripts.platform_sync sync` 会以 --force-all 模式调用本脚本，
+确保生产环境与仓库快照完全对齐。
 
 匹配规则：
   - 有 menu_code 的菜单：按 menu_code + app_type 匹配
@@ -19,7 +26,7 @@
     python scripts/seed/seed_client_menus.py --insert-only   # 仅补全缺失
 
 可选环境变量：
-    SYS_MENU_JSON  覆盖默认的 sys_menu.json 路径（绝对路径或相对 cwd）
+    SYS_MENU_JSON  覆盖默认事实源路径（一般不要使用，仅供应急覆盖）
 """
 
 import argparse
@@ -37,7 +44,13 @@ from app.core.config import get_settings
 
 
 def _default_json_path() -> Path:
-    return Path(__file__).resolve().parent / "sys_menu.json"
+    """事实源：platform_sync 工具产出的客户端菜单快照。"""
+    return (
+        Path(__file__).resolve().parent.parent
+        / "platform_sync"
+        / "snapshots"
+        / "client_menu.json"
+    )
 
 
 def load_client_menus_from_json(json_path: Path) -> list:
@@ -318,8 +331,13 @@ def main():
         else _default_json_path()
     )
     if not json_path.is_file():
-        print(f"错误: 找不到菜单 JSON 文件: {json_path}", file=sys.stderr)
-        print("请将 sys_menu 导出为 backend/scripts/seed/sys_menu.json，或设置 SYS_MENU_JSON。", file=sys.stderr)
+        print(f"错误: 找不到菜单事实源: {json_path}", file=sys.stderr)
+        print(
+            "请先在 dev 环境跑：\n"
+            "    cd backend && python -m scripts.platform_sync export\n"
+            "以从 console API 生成 snapshots/client_menu.json，再 git push 部署。",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     settings = get_settings()

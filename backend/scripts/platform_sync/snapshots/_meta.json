@@ -1,0 +1,9 @@
+{
+  "env": "dev",
+  "api_base": "http://127.0.0.1:8000",
+  "exported_at": "2026-05-09 22:10:37",
+  "git_sha": "fe5be2008f7714d674925f9338f93ebddac27e74",
+  "git_branch": "master",
+  "exported_by": "qinxi",
+  "schema_version": 1
+}

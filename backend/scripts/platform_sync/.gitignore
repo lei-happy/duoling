@@ -1,0 +1,4 @@
+# 本地凭证文件不入库（除模板）
+envs/.env.dev
+envs/.env.prod
+envs/.env.*.local

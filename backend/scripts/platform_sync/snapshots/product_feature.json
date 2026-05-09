@@ -1,0 +1,574 @@
+[
+  {
+    "feature_code": "base_dashboard",
+    "feature_name": "工作台",
+    "module": "dashboard",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 0,
+    "status": 1
+  },
+  {
+    "feature_code": "ai_assistant",
+    "feature_name": "AI 数字员工",
+    "module": "dashboard",
+    "description": null,
+    "required_tables": [
+      "biz_ai_session",
+      "biz_ai_message",
+      "biz_ai_tool_call_log",
+      "biz_ai_context"
+    ],
+    "sort_order": 5,
+    "status": 1
+  },
+  {
+    "feature_code": "ai_form_recorder",
+    "feature_name": "AI 录单员",
+    "module": "dashboard",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 6,
+    "status": 1
+  },
+  {
+    "feature_code": "ai_data_analyst",
+    "feature_name": "AI 数据分析员",
+    "module": "dashboard",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 7,
+    "status": 1
+  },
+  {
+    "feature_code": "base_system",
+    "feature_name": "企业管理",
+    "module": "enterprise",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 10,
+    "status": 1
+  },
+  {
+    "feature_code": "resource_manage",
+    "feature_name": "资源管理",
+    "module": "resource",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 10,
+    "status": 1
+  },
+  {
+    "feature_code": "base_organization",
+    "feature_name": "组织架构",
+    "module": "enterprise",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 11,
+    "status": 1
+  },
+  {
+    "feature_code": "base_user",
+    "feature_name": "员工管理",
+    "module": "enterprise",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 12,
+    "status": 1
+  },
+  {
+    "feature_code": "base_role",
+    "feature_name": "角色权限",
+    "module": "enterprise",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 13,
+    "status": 1
+  },
+  {
+    "feature_code": "resource_customer",
+    "feature_name": "客户管理",
+    "module": "resource",
+    "description": null,
+    "required_tables": [
+      "biz_customer"
+    ],
+    "sort_order": 13,
+    "status": 1
+  },
+  {
+    "feature_code": "base_dict",
+    "feature_name": "数据字典",
+    "module": "enterprise",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 14,
+    "status": 1
+  },
+  {
+    "feature_code": "resource_route",
+    "feature_name": "路线管理",
+    "module": "resource",
+    "description": null,
+    "required_tables": [
+      "biz_route"
+    ],
+    "sort_order": 14,
+    "status": 1
+  },
+  {
+    "feature_code": "base_log",
+    "feature_name": "操作/登录记录",
+    "module": "enterprise",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 15,
+    "status": 1
+  },
+  {
+    "feature_code": "base_config",
+    "feature_name": "系统设置",
+    "module": "enterprise",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 16,
+    "status": 1
+  },
+  {
+    "feature_code": "partner_manage",
+    "feature_name": "合作伙伴",
+    "module": "partner",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 16,
+    "status": 1
+  },
+  {
+    "feature_code": "basic_data",
+    "feature_name": "基础数据",
+    "module": "enterprise",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 17,
+    "status": 1
+  },
+  {
+    "feature_code": "basic_data_region",
+    "feature_name": "地区数据",
+    "module": "enterprise",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 18,
+    "status": 1
+  },
+  {
+    "feature_code": "basic_data_vehicle_brand_series",
+    "feature_name": "品牌车型",
+    "module": "enterprise",
+    "description": null,
+    "required_tables": [
+      "biz_vehicle_brand",
+      "biz_vehicle_series"
+    ],
+    "sort_order": 19,
+    "status": 1
+  },
+  {
+    "feature_code": "biz_manage",
+    "feature_name": "业务管理",
+    "module": "biz",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 20,
+    "status": 1
+  },
+  {
+    "feature_code": "biz_order",
+    "feature_name": "运单管理",
+    "module": "biz",
+    "description": null,
+    "required_tables": [
+      "biz_order"
+    ],
+    "sort_order": 21,
+    "status": 1
+  },
+  {
+    "feature_code": "billing_manage",
+    "feature_name": "计费管理",
+    "module": "billing",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 25,
+    "status": 1
+  },
+  {
+    "feature_code": "biz_waybill",
+    "feature_name": "运单管理",
+    "module": "operation",
+    "description": null,
+    "required_tables": [
+      "biz_waybill"
+    ],
+    "sort_order": 30,
+    "status": 1
+  },
+  {
+    "feature_code": "finance_manage",
+    "feature_name": "财务管理",
+    "module": "finance",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 30,
+    "status": 1
+  },
+  {
+    "feature_code": "biz_dispatch",
+    "feature_name": "智能调度",
+    "module": "operation",
+    "description": null,
+    "required_tables": [
+      "biz_waybill"
+    ],
+    "sort_order": 31,
+    "status": 1
+  },
+  {
+    "feature_code": "biz_tracking",
+    "feature_name": "在途监控",
+    "module": "operation",
+    "description": null,
+    "required_tables": [
+      "biz_waybill"
+    ],
+    "sort_order": 32,
+    "status": 1
+  },
+  {
+    "feature_code": "biz_receipt",
+    "feature_name": "回单签收",
+    "module": "operation",
+    "description": null,
+    "required_tables": [
+      "biz_waybill"
+    ],
+    "sort_order": 33,
+    "status": 1
+  },
+  {
+    "feature_code": "bi_analytics",
+    "feature_name": "数据分析",
+    "module": "bi",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 40,
+    "status": 1
+  },
+  {
+    "feature_code": "capacity_manage",
+    "feature_name": "运力调配/记录",
+    "module": "capacity",
+    "description": null,
+    "required_tables": [
+      "biz_capacity",
+      "biz_capacity_log"
+    ],
+    "sort_order": 40,
+    "status": 1
+  },
+  {
+    "feature_code": "resource_vehicle",
+    "feature_name": "车辆管理",
+    "module": "capacity",
+    "description": null,
+    "required_tables": [
+      "biz_vehicle",
+      "biz_vehicle_ext"
+    ],
+    "sort_order": 41,
+    "status": 1
+  },
+  {
+    "feature_code": "resource_trailer",
+    "feature_name": "挂车管理",
+    "module": "capacity",
+    "description": null,
+    "required_tables": [
+      "biz_trailer",
+      "biz_trailer_ext"
+    ],
+    "sort_order": 42,
+    "status": 1
+  },
+  {
+    "feature_code": "log_center",
+    "feature_name": "日志中心",
+    "module": "base",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 43,
+    "status": 1
+  },
+  {
+    "feature_code": "resource_driver",
+    "feature_name": "驾驶员管理",
+    "module": "capacity",
+    "description": null,
+    "required_tables": [
+      "biz_driver",
+      "biz_driver_license",
+      "biz_driver_operation",
+      "biz_driver_account",
+      "biz_driver_route"
+    ],
+    "sort_order": 43,
+    "status": 1
+  },
+  {
+    "feature_code": "carrier_external",
+    "feature_name": "外协供应商运力",
+    "module": "capacity",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 44,
+    "status": 1
+  },
+  {
+    "feature_code": "carrier_social",
+    "feature_name": "社会运力池",
+    "module": "capacity",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 45,
+    "status": 1
+  },
+  {
+    "feature_code": "fleet_maintenance",
+    "feature_name": "车辆维保",
+    "module": "capacity",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 46,
+    "status": 1
+  },
+  {
+    "feature_code": "fleet_compliance",
+    "feature_name": "证照监控",
+    "module": "capacity",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 47,
+    "status": 1
+  },
+  {
+    "feature_code": "partner_customer",
+    "feature_name": "客户管理",
+    "module": "partner",
+    "description": null,
+    "required_tables": [
+      "biz_customer"
+    ],
+    "sort_order": 50,
+    "status": 1
+  },
+  {
+    "feature_code": "basic_data_dealer",
+    "feature_name": "经销商门店",
+    "module": "partner",
+    "description": null,
+    "required_tables": [
+      "biz_dealer"
+    ],
+    "sort_order": 51,
+    "status": 1
+  },
+  {
+    "feature_code": "partner_supplier",
+    "feature_name": "供应商管理（远期）",
+    "module": "partner",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 52,
+    "status": 1
+  },
+  {
+    "feature_code": "partner_carrier",
+    "feature_name": "承运商管理",
+    "module": "partner",
+    "description": null,
+    "required_tables": [
+      "biz_carrier",
+      "biz_carrier_settlement",
+      "biz_carrier_invitation"
+    ],
+    "sort_order": 53,
+    "status": 1
+  },
+  {
+    "feature_code": "partner_inbound",
+    "feature_name": "合作客户（反向视角）",
+    "module": "partner",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 54,
+    "status": 1
+  },
+  {
+    "feature_code": "billing_contract",
+    "feature_name": "运价合同",
+    "module": "billing",
+    "description": null,
+    "required_tables": [
+      "biz_freight_contract",
+      "biz_freight_rate"
+    ],
+    "sort_order": 60,
+    "status": 1
+  },
+  {
+    "feature_code": "billing_route",
+    "feature_name": "路线管理",
+    "module": "billing",
+    "description": null,
+    "required_tables": [
+      "biz_route"
+    ],
+    "sort_order": 61,
+    "status": 1
+  },
+  {
+    "feature_code": "billing_cost_rule",
+    "feature_name": "成本规则",
+    "module": "billing",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 62,
+    "status": 1
+  },
+  {
+    "feature_code": "billing_fee_template",
+    "feature_name": "费用模板",
+    "module": "billing",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 63,
+    "status": 1
+  },
+  {
+    "feature_code": "approval_manage",
+    "feature_name": "审批中心",
+    "module": "approval",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 70,
+    "status": 1
+  },
+  {
+    "feature_code": "approval_config",
+    "feature_name": "审批流程配置",
+    "module": "approval",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 71,
+    "status": 1
+  },
+  {
+    "feature_code": "finance_receivable",
+    "feature_name": "应收管理",
+    "module": "finance",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 80,
+    "status": 1
+  },
+  {
+    "feature_code": "finance_payable",
+    "feature_name": "应付管理（三类路径）",
+    "module": "finance",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 81,
+    "status": 1
+  },
+  {
+    "feature_code": "finance_reconciliation",
+    "feature_name": "对账中心（含供应商对账）",
+    "module": "finance",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 82,
+    "status": 1
+  },
+  {
+    "feature_code": "finance_invoice",
+    "feature_name": "发票管理",
+    "module": "finance",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 83,
+    "status": 1
+  },
+  {
+    "feature_code": "finance_profit",
+    "feature_name": "利润分析",
+    "module": "finance",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 84,
+    "status": 1
+  },
+  {
+    "feature_code": "bi_overview",
+    "feature_name": "运营看板",
+    "module": "insight",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 90,
+    "status": 1
+  },
+  {
+    "feature_code": "bi_report",
+    "feature_name": "数据报表（+承运结构分析）",
+    "module": "insight",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 91,
+    "status": 1
+  },
+  {
+    "feature_code": "bi_prediction",
+    "feature_name": "智能预测",
+    "module": "insight",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 92,
+    "status": 1
+  },
+  {
+    "feature_code": "ecosystem_cargo_hall",
+    "feature_name": "货源大厅",
+    "module": "ecosystem",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 100,
+    "status": 1
+  },
+  {
+    "feature_code": "ecosystem_capacity_hall",
+    "feature_name": "运力大厅",
+    "module": "ecosystem",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 101,
+    "status": 1
+  },
+  {
+    "feature_code": "ecosystem_service_hall",
+    "feature_name": "服务大厅",
+    "module": "ecosystem",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 102,
+    "status": 1
+  }
+]

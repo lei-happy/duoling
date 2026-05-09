@@ -1,0 +1,35 @@
+[
+  {
+    "version_code": "lite",
+    "version_name": "轻量版",
+    "description": "承运商邀请激活专用版本，仅含运力管理与合作客户",
+    "features": null,
+    "max_users": 5,
+    "max_vehicles": 20,
+    "price": "免费",
+    "sort_order": 5,
+    "status": 1
+  },
+  {
+    "version_code": "standard",
+    "version_name": "标准版",
+    "description": "适合中型车队，包含运单管理、路线管理等功能",
+    "features": null,
+    "max_users": 20,
+    "max_vehicles": 100,
+    "price": "2999/年",
+    "sort_order": 10,
+    "status": 1
+  },
+  {
+    "version_code": "pro",
+    "version_name": "专业版",
+    "description": "适合大型车队，包含数据分析、结算管理等高级功能",
+    "features": null,
+    "max_users": 100,
+    "max_vehicles": 500,
+    "price": "9999/年",
+    "sort_order": 20,
+    "status": 1
+  }
+]

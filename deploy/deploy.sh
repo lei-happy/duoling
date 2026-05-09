@@ -302,9 +302,14 @@ reload_ssl() {
 # 同步平台配置数据（菜单 + 产品功能模块 + 租户字典）
 # 所有脚本均为幂等 upsert 操作，可安全重复执行：
 #   - seed_client_menus.py     : 默认 preserve-ui 模式，仅更新结构字段（path/component 等），
-#                                保留数据库中用户配置的 icon/排序/可见性；加 --force-all 可全字段覆盖
-#   - seed_product_features.py : 存在则更新，不存在则插入
+#                                保留数据库中用户配置的 icon/排序/可见性；
+#                                事实源 = backend/scripts/platform_sync/snapshots/client_menu.json
+#   - seed_product_features.py : 事实源 = snapshots/product_feature.json + version_feature.json
 #   - seed_client_dicts.py     : dict_code 不存在则新增，已存在则跳过
+#
+# 推荐发版方式：用 `docker compose exec backend python -m scripts.platform_sync sync`
+# 该命令会先打印「prod vs 仓库快照」的差异摘要、询问 y/N 后再执行下面三个 seed 脚本，
+# 比直接 deploy.sh update 更可控。详见 backend/scripts/platform_sync/README.md。
 # ============================================================
 sync_platform_data() {
     log_info "同步平台配置数据..."
