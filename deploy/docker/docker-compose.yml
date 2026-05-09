@@ -63,6 +63,10 @@ services:
       - backend_logs:/app/logs
       # 上传图片落盘到宿主机，便于 XFTP/备份；与 app.main 中 /app/uploads 一致
       - /opt/zhitu/data/uploads:/app/uploads
+      # platform_sync 凭证目录（含 .env.prod，存放 console 同步账号）
+      # 挂宿主机目录而非打镜像，便于改凭证无需 rebuild
+      # 仓库内已有 .env.example 入库；.env.prod 由 xftp 单独上传到宿主机此目录
+      - /opt/zhitu/backend/scripts/platform_sync/envs:/app/scripts/platform_sync/envs:ro
     depends_on:
       redis:
         condition: service_healthy
