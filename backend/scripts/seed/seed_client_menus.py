@@ -1,11 +1,11 @@
 """
-同步 Client 端菜单数据到 sys_menu 表
+同步菜单数据到 sys_menu 表（支持 Client 端 与 Console 平台后台两种菜单）
 
-菜单事实源：backend/scripts/platform_sync/snapshots/client_menu.json
-  —— 由 `python -m scripts.platform_sync export` 在 dev 端生成。
+事实源：
+  - app_type=client   → backend/scripts/platform_sync/snapshots/client_menu.json
+  - app_type=platform → backend/scripts/platform_sync/snapshots/platform_menu.json
 
-如果该文件不存在，本脚本会拒绝执行并提示先运行 platform_sync 工具。
-通常生产端不会遇到这种情况，因为快照文件是随代码 git push 的，部署时一定存在。
+由 `python -m scripts.platform_sync export` 在 dev 端生成；快照随代码 git push。
 
 三种同步模式：
   默认（preserve-ui）: 已存在的菜单只更新结构字段（menu_name/menu_code/menu_type/path/
@@ -13,19 +13,20 @@
   --force-all        : 已存在则全字段 UPDATE（覆盖所有字段，包括 icon/排序/可见性）。
   --insert-only      : 仅插入缺失项，已存在的菜单不更新。
 
-`python -m scripts.platform_sync sync` 会以 --force-all 模式调用本脚本，
-确保生产环境与仓库快照完全对齐。
+`python -m scripts.platform_sync sync` 会以 --force-all 模式分别调用 client 和 platform。
 
 匹配规则：
-  - 有 menu_code 的菜单：按 menu_code + app_type 匹配
-  - 无 menu_code 的菜单：按 path + parent_id + app_type 匹配
+  - 有 _seed_id 时：按 (id + app_type) 主键匹配（最稳健）
+  - 否则有 menu_code：按 menu_code + app_type 匹配
+  - 否则按 path + parent_id + app_type 匹配
 
 用法：
-    python scripts/seed/seed_client_menus.py                 # 默认 preserve-ui
-    python scripts/seed/seed_client_menus.py --force-all     # 全字段覆盖
-    python scripts/seed/seed_client_menus.py --insert-only   # 仅补全缺失
+    python scripts/seed/seed_client_menus.py                            # 默认 client + preserve-ui
+    python scripts/seed/seed_client_menus.py --force-all                # client 全字段覆盖
+    python scripts/seed/seed_client_menus.py --app-type platform        # platform 后台菜单
+    python scripts/seed/seed_client_menus.py --app-type platform --force-all
 
-可选环境变量：
+可选环境变量:
     SYS_MENU_JSON  覆盖默认事实源路径（一般不要使用，仅供应急覆盖）
 """
 
@@ -43,19 +44,20 @@ from sqlalchemy import create_engine, text
 from app.core.config import get_settings
 
 
-def _default_json_path() -> Path:
-    """事实源：platform_sync 工具产出的客户端菜单快照。"""
+def _default_json_path(app_type: str = "client") -> Path:
+    """事实源：platform_sync 工具产出的菜单快照（按 app_type 选不同文件）。"""
+    filename = "platform_menu.json" if app_type == "platform" else "client_menu.json"
     return (
         Path(__file__).resolve().parent.parent
         / "platform_sync"
         / "snapshots"
-        / "client_menu.json"
+        / filename
     )
 
 
-def load_client_menus_from_json(json_path: Path) -> list:
+def load_client_menus_from_json(json_path: Path, app_type: str = "client") -> list:
     """
-    从 sys_menu 导出 JSON 中读取 app_type=client 且 is_deleted=0 的菜单，按 parent_id 组装为树。
+    从 sys_menu 导出 JSON 中读取指定 app_type 且 is_deleted=0 的菜单，按 parent_id 组装为树。
     """
     with open(json_path, encoding="utf-8") as f:
         all_rows = json.load(f)
@@ -63,10 +65,10 @@ def load_client_menus_from_json(json_path: Path) -> list:
     rows = [
         r
         for r in all_rows
-        if r.get("app_type") == "client" and int(r.get("is_deleted", 0)) == 0
+        if r.get("app_type") == app_type and int(r.get("is_deleted", 0)) == 0
     ]
     if not rows:
-        raise ValueError(f"未在 {json_path} 中找到任何 app_type=client 且未删除的菜单行")
+        raise ValueError(f"未在 {json_path} 中找到任何 app_type={app_type} 且未删除的菜单行")
 
     by_id = {int(r["id"]): r for r in rows}
     ids = set(by_id.keys())
@@ -124,17 +126,21 @@ def load_client_menus_from_json(json_path: Path) -> list:
     return [build(r) for r in roots]
 
 
-def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
+def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui", app_type: str = "client"):
     """
-    递归同步菜单树（与 JSON 中 client 菜单定义一致）。
+    递归同步菜单树（与 JSON 中菜单定义一致）。
 
     mode:
       "preserve_ui" : 已存在则只更新结构字段，保留 icon/sort_order/visible（默认）
       "force_all"   : 已存在则全字段 UPDATE
       "insert_only" : 已存在则跳过更新，仅递归子节点
 
+    app_type:
+      "client"   : 客户端菜单
+      "platform" : Console 平台后台菜单
+
     匹配规则（按优先级）：
-      1. JSON 中带 _seed_id 时优先按主键 id 匹配（最稳健，覆盖 v2.0 重命名/路径变更）
+      1. JSON 中带 _seed_id 时优先按 (id + app_type) 主键匹配（最稳健）
       2. 否则按 menu_code + app_type 匹配（跨父级唯一）
       3. 否则按 path + parent_id + app_type 匹配（避免改名导致重复）
     """
@@ -150,9 +156,9 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
             result = conn.execute(
                 text(
                     "SELECT id FROM sys_menu "
-                    "WHERE id = :sid AND app_type = 'client' AND is_deleted = 0"
+                    "WHERE id = :sid AND app_type = :app_type AND is_deleted = 0"
                 ),
-                {"sid": seed_id},
+                {"sid": seed_id, "app_type": app_type},
             )
             existing_id = result.scalar()
 
@@ -160,9 +166,9 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
             result = conn.execute(
                 text(
                     "SELECT id FROM sys_menu "
-                    "WHERE menu_code = :code AND app_type = 'client' AND is_deleted = 0"
+                    "WHERE menu_code = :code AND app_type = :app_type AND is_deleted = 0"
                 ),
-                {"code": menu_code},
+                {"code": menu_code, "app_type": app_type},
             )
             existing_id = result.scalar()
 
@@ -170,10 +176,10 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
             result = conn.execute(
                 text(
                     "SELECT id FROM sys_menu "
-                    "WHERE path = :path AND app_type = 'client' "
+                    "WHERE path = :path AND app_type = :app_type "
                     "AND parent_id = :pid AND is_deleted = 0"
                 ),
-                {"path": menu_path, "pid": parent_id},
+                {"path": menu_path, "pid": parent_id, "app_type": app_type},
             )
             existing_id = result.scalar()
 
@@ -228,10 +234,9 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
                 print(f"  跳过已存在: {menu['menu_name']} (id={existing_id})")
             menu_id = existing_id
         else:
-            # JSON 中带 _seed_id 时显式指定主键，保证 v2.0 新菜单 ID 与文档/SQL 完全一致
+            # JSON 中带 _seed_id 时显式指定主键，保证新菜单 ID 与快照完全一致
             if seed_id:
                 # 防御：检查该 ID 是否被其他 app_type 或 已软删除的同类记录占用
-                # 这种情况下直接 INSERT 会触发 PRIMARY KEY 冲突，导致整批静默失败
                 conflict = conn.execute(
                     text(
                         "SELECT id, menu_name, app_type, is_deleted "
@@ -240,12 +245,16 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
                     {"sid": seed_id},
                 ).fetchone()
                 if conflict is not None:
+                    fix_hint = (
+                        "请先执行: python backend/scripts/fix/fix_client_menu_v2.py"
+                        if app_type == "client"
+                        else "请人工排查并清理 sys_menu 表中该 ID 的占用记录后重跑"
+                    )
                     raise RuntimeError(
-                        f"\n[ERROR] seed id={seed_id} ('{menu['menu_name']}') 已被现有记录占用："
+                        f"\n[ERROR] seed id={seed_id} ('{menu['menu_name']}', app_type={app_type}) 已被现有记录占用："
                         f"\n        existing: id={conflict.id} name='{conflict.menu_name}' "
                         f"app_type={conflict.app_type} is_deleted={conflict.is_deleted}"
-                        f"\n        请先执行: python backend/scripts/fix/fix_client_menu_v2.py"
-                        f"\n        以清理 ID 冲突后再重跑本脚本。"
+                        f"\n        {fix_hint}"
                     )
                 conn.execute(
                     text(
@@ -253,7 +262,7 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
                         "(id, parent_id, menu_name, menu_code, menu_type, path, component, "
                         "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
                         "VALUES (:id, :parent_id, :menu_name, :menu_code, :menu_type, :path, "
-                        ":component, :icon, :sort_order, :visible, 1, 'client', :feature_code, 0)"
+                        ":component, :icon, :sort_order, :visible, 1, :app_type, :feature_code, 0)"
                     ),
                     {
                         "id": seed_id,
@@ -267,6 +276,7 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
                         "sort_order": menu.get("sort_order", 0),
                         "visible": visible,
                         "feature_code": menu.get("feature_code"),
+                        "app_type": app_type,
                     },
                 )
                 menu_id = seed_id
@@ -277,7 +287,7 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
                         "(parent_id, menu_name, menu_code, menu_type, path, component, "
                         "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
                         "VALUES (:parent_id, :menu_name, :menu_code, :menu_type, :path, "
-                        ":component, :icon, :sort_order, :visible, 1, 'client', :feature_code, 0)"
+                        ":component, :icon, :sort_order, :visible, 1, :app_type, :feature_code, 0)"
                     ),
                     {
                         "parent_id": parent_id,
@@ -290,20 +300,27 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui"):
                         "sort_order": menu.get("sort_order", 0),
                         "visible": visible,
                         "feature_code": menu.get("feature_code"),
+                        "app_type": app_type,
                     },
                 )
                 result = conn.execute(text("SELECT LAST_INSERT_ID()"))
                 menu_id = result.scalar()
             print(
-                f"  新增菜单: {menu['menu_name']} (id={menu_id}, feature_code={menu.get('feature_code')})"
+                f"  新增菜单({app_type}): {menu['menu_name']} (id={menu_id}, feature_code={menu.get('feature_code')})"
             )
 
         if children:
-            upsert_menus(conn, children, parent_id=menu_id, mode=mode)
+            upsert_menus(conn, children, parent_id=menu_id, mode=mode, app_type=app_type)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="同步 Client 端菜单到 sys_menu")
+    parser = argparse.ArgumentParser(description="同步菜单数据到 sys_menu（支持 client / platform 两类）")
+    parser.add_argument(
+        "--app-type",
+        choices=["client", "platform"],
+        default="client",
+        help="菜单类型：client（默认，客户端菜单）或 platform（Console 后台菜单）",
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--insert-only",
@@ -324,18 +341,20 @@ def main():
     else:
         mode = "preserve_ui"
 
+    app_type = args.app_type
+
     env_path = (os.environ.get("SYS_MENU_JSON") or "").strip()
     json_path = (
         Path(env_path).expanduser()
         if env_path
-        else _default_json_path()
+        else _default_json_path(app_type)
     )
     if not json_path.is_file():
         print(f"错误: 找不到菜单事实源: {json_path}", file=sys.stderr)
         print(
             "请先在 dev 环境跑：\n"
-            "    cd backend && python -m scripts.platform_sync export\n"
-            "以从 console API 生成 snapshots/client_menu.json，再 git push 部署。",
+            f"    cd backend && python -m scripts.platform_sync export\n"
+            f"以从 console API 生成 snapshots/{app_type}_menu.json，再 git push 部署。",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -370,7 +389,7 @@ def main():
             conn.commit()
             print("feature_code 列已添加")
 
-    menus = load_client_menus_from_json(json_path)
+    menus = load_client_menus_from_json(json_path, app_type=app_type)
     menus_for_check = copy.deepcopy(menus)
     menus = copy.deepcopy(menus)
 
@@ -381,15 +400,16 @@ def main():
     }
 
     with engine.connect() as conn:
-        print(f"\n从 {json_path} 加载 Client 菜单，开始同步… 模式: {mode_labels[mode]}")
-        upsert_menus(conn, menus, mode=mode)
+        print(f"\n从 {json_path} 加载 {app_type} 菜单，开始同步… 模式: {mode_labels[mode]}")
+        upsert_menus(conn, menus, mode=mode, app_type=app_type)
         conn.commit()
 
     engine.dispose()
-    print("\nClient 端菜单同步完成！")
+    print(f"\n{app_type} 端菜单同步完成！")
 
-    # ---- 末尾自检：扫描 client 工程，检查 component 引用的 .vue 是否存在 ----
-    _check_missing_frontend_pages(menus_for_check)
+    # ---- 末尾自检：仅 client 类型扫描前端工程检查 component 引用 ----
+    if app_type == "client":
+        _check_missing_frontend_pages(menus_for_check)
 
 
 def _flatten_components(items: list, out: list[dict]) -> None:

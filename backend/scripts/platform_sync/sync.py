@@ -14,9 +14,11 @@ sync — 把仓库快照应用到目标环境（通常是 prod）
     4. 打印变更摘要 + 详情
     5. 若 0 差异 → 提示"无须同步"，退出 0
     6. 若有差异 → 询问 (y/N)
-    7. 用户输入 y → 顺序执行：
-         python scripts/seed/seed_product_features.py
-         python scripts/seed/seed_client_menus.py --force-all
+    7. 用户输入 y → 顺序执行 4 个 seed 脚本：
+         python scripts/seed/seed_product_versions.py            # 产品版本
+         python scripts/seed/seed_product_features.py            # 功能模块 + 版本-功能关联
+         python scripts/seed/seed_client_menus.py --app-type client   --force-all
+         python scripts/seed/seed_client_menus.py --app-type platform --force-all
     8. 应用后再拉取一次目标环境，确认 0 差异
 
 退出码（约定）：
@@ -146,23 +148,32 @@ def _run_seed(script_relpath: str, args: List[str]) -> int:
 
 
 def _apply(snapshot_dir: Path) -> bool:
-    """顺序执行两个 seed 脚本；任何一个失败立刻终止"""
-    rc = _run_seed("scripts/seed/seed_product_features.py", [])
-    if rc != 0:
-        print(
-            f"[ERROR] seed_product_features.py 退出码 {rc}，已中止。\n"
-            f"  目标库可能处于半同步状态，请检查日志后修复或回滚。",
-            file=sys.stderr,
-        )
-        return False
+    """
+    顺序执行 4 个 seed 脚本；任何一个失败立刻终止。
 
-    rc = _run_seed("scripts/seed/seed_client_menus.py", ["--force-all"])
-    if rc != 0:
-        print(
-            f"[ERROR] seed_client_menus.py --force-all 退出码 {rc}，已中止。",
-            file=sys.stderr,
-        )
-        return False
+    顺序设计原因：
+      1. product_versions：先建版本（lite/standard/pro），后续 version_feature 需要这些版本
+      2. product_features：写 feature + version_feature 关联（依赖版本已存在）
+      3. client_menus：客户端菜单（依赖 feature_code 已存在）
+      4. platform_menus：Console 后台菜单（独立，最后跑）
+    """
+    steps = [
+        ("scripts/seed/seed_product_versions.py", []),
+        ("scripts/seed/seed_product_features.py", []),
+        ("scripts/seed/seed_client_menus.py", ["--app-type", "client", "--force-all"]),
+        ("scripts/seed/seed_client_menus.py", ["--app-type", "platform", "--force-all"]),
+    ]
+    for script, args in steps:
+        rc = _run_seed(script, args)
+        if rc != 0:
+            label = f"{script} {' '.join(args)}".strip()
+            print(
+                f"[ERROR] {label} 退出码 {rc}，已中止。\n"
+                f"  目标库可能处于半同步状态：前面已成功的 seed 已 commit；\n"
+                f"  请检查日志后排查具体失败原因，修好之后重跑 sync 即可（幂等）。",
+                file=sys.stderr,
+            )
+            return False
     return True
 
 

@@ -85,7 +85,18 @@ docker compose exec backend python -m scripts.platform_sync sync --plan   # 只�
 docker compose exec backend python -m scripts.platform_sync sync --yes    # 自动应用
 ```
 
-> **要点**：sync 会调用 `seed_client_menus.py --force-all`，意味着 prod 与 snapshots 完全对齐（包括 visible / icon / sort_order）。如果想保留 prod 的 UI 自定义，应在 dev 也照样改一遍后再发版。
+> **要点**：sync 会顺序执行 4 个 seed 脚本，覆盖全部 5 个数据集：
+>
+> ```text
+> seed_product_versions.py                       # 产品版本（lite/standard/pro）
+> seed_product_features.py                       # 功能 + 版本-功能关联
+> seed_client_menus.py --app-type client   --force-all   # 客户端菜单
+> seed_client_menus.py --app-type platform --force-all   # Console 后台菜单
+> ```
+>
+> `--force-all` 意味着 prod 与 snapshots 完全对齐（包括 visible / icon / sort_order）。如果想保留 prod 的 UI 自定义，应在 dev 也照样改一遍后再发版。
+>
+> 4 个 seed 之间是顺序依赖（版本必须先于版本-功能关联存在），任何一步失败立刻中止。前面已成功的部分已 commit，无需回滚——重跑 sync 是幂等的。
 
 ---
 
