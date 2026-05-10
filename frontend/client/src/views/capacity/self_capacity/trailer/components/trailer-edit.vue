@@ -2,143 +2,185 @@
   <el-dialog
     :title="isEdit ? '编辑挂车' : '新增挂车'"
     :model-value="visible"
-    @update:model-value="updateVisible"
-    width="700px"
+    width="780px"
     draggable
+    class="trailer-edit-dialog"
+    :close-on-click-modal="false"
+    :body-style="dialogBodyStyle"
+    @update:model-value="updateVisible"
   >
     <el-form
       ref="formRef"
       :model="form"
       :rules="rules"
       label-width="0"
+      class="trailer-edit-form"
+      :validate-on-rule-change="false"
       @submit.prevent=""
     >
-      <el-divider content-position="left">基础信息</el-divider>
-      <el-row :gutter="16">
-        <el-col :span="12">
-          <el-form-item prop="plateNumber">
-            <floating-label
-              label="请输入挂车车牌号"
-              type="input"
-              v-model.trim="form.plateNumber"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-divider content-position="left">详细信息</el-divider>
-      <el-row :gutter="16">
-        <el-col :span="12">
-          <el-form-item>
-            <floating-label
-              label="请输入挂车类型"
-              type="input"
-              v-model.trim="form.trailerType"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item>
-            <floating-label
-              label="请输入轴数"
-              type="input"
-              input-type="number"
-              v-model="axleCountStr"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item>
-            <floating-label
-              label="请输入载重(吨)"
-              type="input"
-              input-type="number"
-              v-model="loadCapacityStr"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item>
-            <floating-label
-              label="请输入容积(m³)"
-              type="input"
-              input-type="number"
-              v-model="volumeCapacityStr"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item>
-            <floating-label
-              label="请输入车厢长(m)"
-              type="input"
-              input-type="number"
-              v-model="lengthStr"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item>
-            <floating-label
-              label="请输入车厢宽(m)"
-              type="input"
-              input-type="number"
-              v-model="widthStr"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item>
-            <floating-label
-              label="请输入车厢高(m)"
-              type="input"
-              input-type="number"
-              v-model="heightStr"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item>
-            <floating-label
-              label="请输入车位数"
-              type="input"
-              input-type="number"
-              v-model="parkingSpotsStr"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item>
-            <floating-label
-              label="请选择购买日期"
-              type="date"
-              date-type="date"
-              v-model="form.purchaseDate"
-              value-format="YYYY-MM-DD"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="24">
-          <el-form-item>
-            <floating-label
-              label="请输入备注"
-              type="input"
-              input-type="textarea"
-              v-model.trim="form.remark"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-      </el-row>
+      <el-tabs v-model="activeTab" class="trailer-edit-tabs">
+        <el-tab-pane label="基础信息" name="basic">
+          <div class="trailer-tab-pane">
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item prop="plateNumber">
+                  <floating-label
+                    label="请输入挂车号牌（如 京A1234挂）"
+                    type="input"
+                    v-model.trim="form.plateNumber"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col v-if="isEdit" :span="12">
+                <el-form-item>
+                  <floating-label
+                    v-model="form.status"
+                    label="请选择状态"
+                    type="select"
+                    clearable
+                  >
+                    <el-option label="正常" :value="1" />
+                    <el-option label="停用" :value="0" />
+                  </floating-label>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-tab-pane>
+
+        <el-tab-pane label="规格参数" name="spec">
+          <div class="trailer-tab-pane">
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    v-model="form.trailerType"
+                    label="请选择挂车类型"
+                    type="select"
+                    :filterable="true"
+                    clearable
+                  >
+                    <el-option
+                      v-for="item in trailerTypeDict"
+                      :key="item.dictDataCode"
+                      :label="item.dictDataName"
+                      :value="item.dictDataCode"
+                    />
+                  </floating-label>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    label="请输入轴数"
+                    type="input"
+                    input-type="number"
+                    v-model="axleCountStr"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    label="请输入载重(吨)"
+                    type="input"
+                    input-type="number"
+                    v-model="loadCapacityStr"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    label="请输入容积(m³)"
+                    type="input"
+                    input-type="number"
+                    v-model="volumeCapacityStr"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item>
+                  <floating-label
+                    label="请输入车厢长(m)"
+                    type="input"
+                    input-type="number"
+                    v-model="lengthStr"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item>
+                  <floating-label
+                    label="请输入车厢宽(m)"
+                    type="input"
+                    input-type="number"
+                    v-model="widthStr"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item>
+                  <floating-label
+                    label="请输入车厢高(m)"
+                    type="input"
+                    input-type="number"
+                    v-model="heightStr"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    label="请输入车位数"
+                    type="input"
+                    input-type="number"
+                    v-model="parkingSpotsStr"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-tab-pane>
+
+        <el-tab-pane label="档案信息" name="archive">
+          <div class="trailer-tab-pane">
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    label="请选择购买日期"
+                    type="date"
+                    date-type="date"
+                    v-model="form.purchaseDate"
+                    value-format="YYYY-MM-DD"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item>
+                  <floating-label
+                    label="请输入备注"
+                    type="input"
+                    input-type="textarea"
+                    v-model.trim="form.remark"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
     </el-form>
     <template #footer>
       <el-button @click="updateVisible(false)">取消</el-button>
@@ -150,12 +192,14 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive, watch, computed } from 'vue';
+  import { ref, reactive, watch, computed, nextTick } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { addTrailer, updateTrailer } from '@/api/capacity/self_capacity/trailer';
   import type { Trailer } from '@/api/capacity/self_capacity/trailer/model';
+  import { useDictData } from '@/utils/use-dict-data';
+  import { DICT_CODE_TRAILER_TYPE } from '@/constants/dict-codes';
 
   const props = defineProps<{
     visible: boolean;
@@ -168,13 +212,22 @@
   }>();
 
   const isEdit = computed(() => !!props.data?.id);
+  const activeTab = ref('basic');
   const formRef = ref<FormInstance>();
   const loading = ref(false);
   const form = reactive<Trailer>({});
 
+  const dialogBodyStyle = {
+    padding: '0 12px 8px'
+  };
+
+  const [trailerTypeDict] = useDictData([DICT_CODE_TRAILER_TYPE]);
+
   const round2 = (n: number) => Math.round(n * 100) / 100;
 
-  const decStr = (key: 'loadCapacity' | 'volumeCapacity' | 'length' | 'width' | 'height') =>
+  const decStr = (
+    key: 'loadCapacity' | 'volumeCapacity' | 'length' | 'width' | 'height'
+  ) =>
     computed({
       get: () => {
         const n = form[key];
@@ -229,14 +282,13 @@
         return;
       }
       const n = parseInt(t, 10);
-      form.parkingSpots =
-        Number.isFinite(n) && n >= 0 ? n : void 0;
+      form.parkingSpots = Number.isFinite(n) && n >= 0 ? n : void 0;
     }
   });
 
   const rules = reactive<FormRules>({
     plateNumber: [
-      { required: true, message: '请输入挂车车牌号', trigger: 'blur' }
+      { required: true, message: '请输入挂车号牌', trigger: 'blur' }
     ]
   });
 
@@ -244,13 +296,21 @@
     () => props.visible,
     (val) => {
       if (val) {
+        activeTab.value = 'basic';
         if (props.data) {
           Object.assign(form, props.data);
         } else {
           Object.keys(form).forEach((k) => {
-            (form as any)[k] = undefined;
+            (form as Record<string, unknown>)[k] = undefined;
           });
         }
+        void nextTick(() => {
+          formRef.value?.clearValidate();
+        });
+      } else {
+        void nextTick(() => {
+          formRef.value?.clearValidate();
+        });
       }
     }
   );
@@ -261,7 +321,10 @@
 
   const handleSubmit = () => {
     formRef.value?.validate(async (valid) => {
-      if (!valid) return;
+      if (!valid) {
+        activeTab.value = 'basic';
+        return;
+      }
       loading.value = true;
       try {
         if (isEdit.value) {
@@ -280,3 +343,99 @@
     });
   };
 </script>
+
+<style scoped>
+  .trailer-edit-form {
+    margin: 0;
+  }
+
+  .trailer-edit-tabs :deep(.el-tabs__header) {
+    margin: 0 0 10px;
+    border-bottom: none;
+  }
+
+  .trailer-edit-tabs :deep(.el-tabs__nav-wrap) {
+    width: 100%;
+  }
+
+  .trailer-edit-tabs :deep(.el-tabs__nav-wrap)::after {
+    display: none;
+  }
+
+  .trailer-edit-tabs :deep(.el-tabs__nav-scroll) {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .trailer-edit-tabs :deep(.el-tabs__nav) {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 4px;
+    background: var(--el-fill-color-light);
+  }
+
+  .trailer-edit-tabs :deep(.el-tabs__item) {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0 6px;
+    height: 36px;
+    line-height: 36px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition:
+      color 0.2s,
+      background 0.2s,
+      box-shadow 0.2s;
+  }
+
+  .trailer-edit-tabs :deep(.el-tabs__item:hover) {
+    color: var(--el-color-primary);
+  }
+
+  .trailer-edit-tabs :deep(.el-tabs__item.is-active) {
+    color: var(--el-color-primary);
+    font-weight: 600;
+    background: var(--el-bg-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .trailer-edit-tabs :deep(.el-tabs__active-bar) {
+    display: none;
+  }
+
+  .trailer-edit-tabs :deep(.el-tabs__content) {
+    overflow: visible;
+  }
+
+  .trailer-tab-pane {
+    max-height: min(420px, calc(100vh - 300px));
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 14px 6px 12px 4px;
+    scrollbar-gutter: stable;
+  }
+
+  .trailer-edit-dialog :deep(.floating-label-wrapper.is-focused .floating-label),
+  .trailer-edit-dialog :deep(.floating-label-wrapper.has-value .floating-label) {
+    transform: translateY(-62%);
+    padding: 2px 6px;
+    z-index: 4;
+    background-color: var(--el-bg-color) !important;
+    box-shadow: 0 0 0 2px var(--el-bg-color);
+  }
+
+  .trailer-edit-dialog :deep(.trailer-tab-pane > .el-row > .el-col > .el-form-item) {
+    margin-bottom: 14px;
+  }
+</style>

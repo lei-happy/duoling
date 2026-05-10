@@ -8,8 +8,8 @@
         :columns="columns"
         :datasource="datasource"
         :show-overflow-tooltip="true"
-        v-model:selections="selections"
         :highlight-current-row="true"
+        :default-sort="{ prop: 'createdAt', order: 'descending' }"
         cache-key="ResourceTrailerTable"
       >
         <template #toolbar>
@@ -25,11 +25,25 @@
           </span>
           <span v-else style="color: #999">—</span>
         </template>
+        <template #trailerType="{ row }">
+          <dict-data
+            type="text"
+            :code="dictCodeTrailerType"
+            :model-value="row.trailerType"
+          />
+        </template>
         <template #status="{ row }">
-          <el-tag v-if="row.status === 1" type="success" size="small">
+          <el-tag
+            v-if="row.status === 1"
+            type="success"
+            size="small"
+            :disable-transitions="true"
+          >
             正常
           </el-tag>
-          <el-tag v-else type="info" size="small">停用</el-tag>
+          <el-tag v-else type="info" size="small" :disable-transitions="true">
+            停用
+          </el-tag>
         </template>
         <template #action="{ row }">
           <btn-items
@@ -62,29 +76,43 @@
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import TrailerEdit from './components/trailer-edit.vue';
   import TrailerSearch from './components/trailer-search.vue';
+  import DictData from '@/components/DictData/index.vue';
   import { pageTrailers, removeTrailer } from '@/api/capacity/self_capacity/trailer';
   import type { Trailer, TrailerParam } from '@/api/capacity/self_capacity/trailer/model';
+  import { DICT_CODE_TRAILER_TYPE } from '@/constants/dict-codes';
+  import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'ResourceTrailer' });
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
-  const selections = ref<Trailer[]>([]);
   const editVisible = ref(false);
   const editData = ref<Trailer | null>(null);
-  const where = reactive<Pick<TrailerParam, 'keyword' | 'status'>>({
+  const dictCodeTrailerType = DICT_CODE_TRAILER_TYPE;
+  const where = reactive<
+    Pick<TrailerParam, 'keyword' | 'status' | 'trailerType'>
+  >({
     keyword: '',
-    status: void 0
+    status: void 0,
+    trailerType: void 0
   });
 
-  const onSearch = (payload: Pick<TrailerParam, 'keyword' | 'status'>) => {
+  const onSearch = (
+    payload: Pick<TrailerParam, 'keyword' | 'status' | 'trailerType'>
+  ) => {
     where.keyword = payload.keyword ?? '';
     where.status = payload.status;
+    where.trailerType = payload.trailerType;
     tableRef.value?.reload?.({ page: 1 });
   };
 
   const columns = ref<Columns>([
-    { prop: 'plateNumber', label: '挂车车牌号', minWidth: 130 },
-    { prop: 'trailerType', label: '挂车类型', minWidth: 110 },
+    { prop: 'plateNumber', label: '挂车号牌', minWidth: 130 },
+    {
+      prop: 'trailerType',
+      label: '挂车类型',
+      minWidth: 110,
+      slot: 'trailerType'
+    },
     {
       prop: 'loadCapacity',
       label: '载重(吨)',
@@ -112,9 +140,16 @@
     {
       prop: 'status',
       label: '状态',
-      width: 80,
+      width: 100,
       align: 'center',
       slot: 'status'
+    },
+    {
+      prop: 'createdAt',
+      label: '创建时间',
+      minWidth: 170,
+      align: 'center',
+      formatter: (row) => formatDateTime(row.createdAt)
     },
     {
       columnKey: 'action',
@@ -135,7 +170,11 @@
   }) => {
     const p = page ?? (Number(pages?.page) || 1);
     const l = limit ?? (Number(pages?.limit) || 10);
-    const res = await pageTrailers({ ...where, page: p, limit: l });
+    const res = await pageTrailers({
+      ...where,
+      page: p,
+      limit: l
+    });
     const raw = res as { list?: Trailer[]; count?: number; total?: number };
     return {
       list: raw?.list ?? [],

@@ -4,3 +4,4 @@
  * 业务字段存库一般为字典项的 dictDataCode（值）。
  */
 export const DICT_CODE_VEHICLE_TYPE = 'vehicle_type';
+export const DICT_CODE_TRAILER_TYPE = 'trailer_type';
