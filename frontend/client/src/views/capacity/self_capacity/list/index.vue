@@ -29,6 +29,14 @@
             :category="row.plateCategory"
           />
         </template>
+        <template #trailerPlateNumber="{ row }">
+          <plate-number-tag
+            v-if="row.trailerPlateNumber"
+            :text="row.trailerPlateNumber"
+            :category="row.trailerPlateCategory"
+          />
+          <span v-else style="color: var(--el-text-color-placeholder)">—</span>
+        </template>
         <template #action="{ row }">
           <el-button type="danger" link size="small" @click="handleUnbind(row)">
             下车
@@ -137,6 +145,12 @@
       label: '车牌号',
       minWidth: 120,
       slot: 'plateNumber'
+    },
+    {
+      prop: 'trailerPlateNumber',
+      label: '挂车',
+      minWidth: 120,
+      slot: 'trailerPlateNumber'
     },
     {
       prop: 'boundAt',

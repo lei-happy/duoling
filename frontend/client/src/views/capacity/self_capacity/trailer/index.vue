@@ -117,7 +117,7 @@
   const columns = ref<Columns>([
     {
       prop: 'plateNumber',
-      label: '挂车号牌',
+      label: '车牌号',
       minWidth: 130,
       slot: 'plateNumber'
     },

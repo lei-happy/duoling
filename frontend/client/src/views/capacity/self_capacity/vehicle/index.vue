@@ -157,17 +157,11 @@
       slot: 'vehicleType'
     },
     { prop: 'brand', label: '品牌', minWidth: 80 },
-    { prop: 'model', label: '型号', minWidth: 80 },
-    {
-      prop: 'loadCapacity',
-      label: '载重(吨)',
-      minWidth: 90,
-      align: 'center'
-    },
+    { prop: 'model', label: '型号', minWidth: 110 },
     {
       prop: 'trailerPlateNumber',
       label: '关联挂车',
-      minWidth: 120,
+      minWidth: 140,
       slot: 'trailerPlateNumber'
     },
     {

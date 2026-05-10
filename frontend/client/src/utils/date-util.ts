@@ -15,3 +15,10 @@ export function formatDateTime(
   const d = dayjs(val);
   return d.isValid() ? d.format(DATE_TIME_FORMAT) : String(val);
 }
+
+/** 含今天在内涵盖 7 个自然日：自 (今天−6) 日 00:00:00 至当日 23:59:59 */
+export function getLast7DaysDateTimeRange(): [string, string] {
+  const end = dayjs().endOf('day');
+  const start = dayjs().subtract(6, 'day').startOf('day');
+  return [start.format(DATE_TIME_FORMAT), end.format(DATE_TIME_FORMAT)];
+}

@@ -5,8 +5,11 @@ export interface CapacityLog {
   capacityId?: number;
   driverId?: number;
   driverName?: string;
+  driverCode?: string;
+  driverPhone?: string;
   vehicleId?: number;
   plateNumber?: string;
+  plateCategory?: string;
   action?: number;
   actionTime?: string;
   operatorId?: number;
@@ -18,4 +21,7 @@ export interface CapacityLog {
 export interface CapacityLogParam extends PageParam {
   keyword?: string;
   action?: number;
+  operatorName?: string;
+  actionTimeStart?: string;
+  actionTimeEnd?: string;
 }

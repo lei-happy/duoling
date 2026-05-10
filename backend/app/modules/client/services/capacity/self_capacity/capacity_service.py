@@ -16,6 +16,7 @@ from app.modules.client.models.capacity.self_capacity.capacity import (
 )
 from app.modules.client.models.capacity.self_capacity.driver.driver import Driver
 from app.modules.client.models.capacity.self_capacity.vehicle import Vehicle
+from app.modules.client.models.capacity.self_capacity.trailer import Trailer
 from app.modules.client.models.user.biz_user import BizUser
 from app.modules.client.schemas.capacity.self_capacity.capacity import (
     CapacityOut, CapacityLogOut,
@@ -71,6 +72,10 @@ class CapacityService:
         await db.flush()
         await db.refresh(capacity)
 
+        trailer_plate, trailer_cat = (
+            await CapacityService._trailer_plates_for_vehicle(db, vehicle)
+        )
+
         operator_name = await CapacityService._get_operator_name(
             db, operator_user_id
         )
@@ -89,7 +94,12 @@ class CapacityService:
         db.add(log)
         await db.flush()
 
-        return CapacityOut.from_model(capacity, vehicle.plate_category)
+        return CapacityOut.from_model(
+            capacity,
+            vehicle.plate_category,
+            trailer_plate,
+            trailer_cat,
+        )
 
     @staticmethod
     async def unbind(
@@ -134,11 +144,23 @@ class CapacityService:
         await db.flush()
 
         vr = await db.execute(
-            select(Vehicle.plate_category).where(Vehicle.id == capacity.vehicle_id)
+            select(Vehicle).where(
+                Vehicle.id == capacity.vehicle_id,
+                Vehicle.is_deleted == 0,
+            )
         )
-        pc = vr.scalar_one_or_none() or "YELLOW"
+        vehicle = vr.scalar_one_or_none()
+        pc = (vehicle.plate_category if vehicle else None) or "YELLOW"
+        trailer_plate, trailer_cat = (
+            await CapacityService._trailer_plates_for_vehicle(db, vehicle)
+        )
 
-        return CapacityOut.from_model(capacity, pc)
+        return CapacityOut.from_model(
+            capacity,
+            pc,
+            trailer_plate,
+            trailer_cat,
+        )
 
     @staticmethod
     async def page_capacities(
@@ -149,10 +171,19 @@ class CapacityService:
     ) -> dict:
         """运力分页列表（仅当前绑定中的运力；已解绑请在变动记录中查看）"""
         query = (
-            select(Capacity, Vehicle.plate_category)
+            select(
+                Capacity,
+                Vehicle.plate_category,
+                Trailer.plate_number.label("trailer_plate"),
+                Trailer.plate_category.label("trailer_cat"),
+            )
             .outerjoin(
                 Vehicle,
                 and_(Vehicle.id == Capacity.vehicle_id, Vehicle.is_deleted == 0),
+            )
+            .outerjoin(
+                Trailer,
+                and_(Trailer.id == Vehicle.trailer_id, Trailer.is_deleted == 0),
             )
             .where(
                 Capacity.is_deleted == 0,
@@ -167,6 +198,7 @@ class CapacityService:
                     Capacity.driver_name.like(kw),
                     Capacity.driver_phone.like(kw),
                     Capacity.plate_number.like(kw),
+                    Trailer.plate_number.like(kw),
                 )
             )
 
@@ -182,8 +214,13 @@ class CapacityService:
 
         return {
             "list": [
-                CapacityOut.from_model(cap, pc or "YELLOW").model_dump()
-                for cap, pc in rows
+                CapacityOut.from_model(
+                    cap,
+                    pc or "YELLOW",
+                    tp,
+                    tc,
+                ).model_dump()
+                for cap, pc, tp, tc in rows
             ],
             "total": total,
             "count": total,
@@ -198,36 +235,71 @@ class CapacityService:
         page_size: int = 20,
         keyword: Optional[str] = None,
         action: Optional[int] = None,
+        operator_name: Optional[str] = None,
+        action_time_start: Optional[str] = None,
+        action_time_end: Optional[str] = None,
     ) -> dict:
         """运力变动历史分页列表"""
-        query = (
-            select(CapacityLog)
-            .where(CapacityLog.is_deleted == 0)
-        )
+        filters = [CapacityLog.is_deleted == 0]
 
         if keyword:
             kw = f"%{keyword}%"
-            query = query.where(
+            filters.append(
                 or_(
                     CapacityLog.driver_name.like(kw),
                     CapacityLog.plate_number.like(kw),
+                    Driver.phone.like(kw),
                 )
             )
         if action is not None:
-            query = query.where(CapacityLog.action == action)
+            filters.append(CapacityLog.action == action)
+        if operator_name:
+            filters.append(
+                CapacityLog.operator_name.like(f"%{operator_name}%")
+            )
+        if action_time_start:
+            filters.append(CapacityLog.action_time >= action_time_start)
+        if action_time_end:
+            filters.append(CapacityLog.action_time <= action_time_end)
 
-        count_q = select(func.count()).select_from(query.subquery())
-        total = (await db.execute(count_q)).scalar() or 0
+        where_clause = and_(*filters)
 
-        result = await db.execute(
-            query.order_by(CapacityLog.id.desc())
+        count_stmt = (
+            select(func.count(CapacityLog.id))
+            .select_from(CapacityLog)
+            .outerjoin(Vehicle, Vehicle.id == CapacityLog.vehicle_id)
+            .outerjoin(Driver, Driver.id == CapacityLog.driver_id)
+            .where(where_clause)
+        )
+        total = (await db.execute(count_stmt)).scalar() or 0
+
+        list_stmt = (
+            select(
+                CapacityLog,
+                Vehicle.plate_category,
+                Driver.driver_code,
+                Driver.phone,
+            )
+            .outerjoin(Vehicle, Vehicle.id == CapacityLog.vehicle_id)
+            .outerjoin(Driver, Driver.id == CapacityLog.driver_id)
+            .where(where_clause)
+            .order_by(CapacityLog.id.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
-        rows = result.scalars().all()
+        result = await db.execute(list_stmt)
+        rows = result.all()
 
         return {
-            "list": [CapacityLogOut.from_model(r).model_dump() for r in rows],
+            "list": [
+                CapacityLogOut.from_model(
+                    log,
+                    plate_category=pc,
+                    driver_code=dcode,
+                    driver_phone=dphone,
+                ).model_dump()
+                for log, pc, dcode, dphone in rows
+            ],
             "total": total,
             "page": page,
             "page_size": page_size,
@@ -247,6 +319,24 @@ class CapacityService:
         if driver.status != 1:
             raise BizException("司机非在职状态，无法绑定")
         return driver
+
+    @staticmethod
+    async def _trailer_plates_for_vehicle(
+        db: AsyncSession,
+        vehicle: Optional[Vehicle],
+    ) -> tuple[Optional[str], Optional[str]]:
+        if not vehicle or not vehicle.trailer_id:
+            return None, None
+        result = await db.execute(
+            select(Trailer.plate_number, Trailer.plate_category).where(
+                Trailer.id == vehicle.trailer_id,
+                Trailer.is_deleted == 0,
+            )
+        )
+        row = result.one_or_none()
+        if not row:
+            return None, None
+        return row[0], row[1]
 
     @staticmethod
     async def _get_active_vehicle(db: AsyncSession, vehicle_id: int) -> Vehicle:

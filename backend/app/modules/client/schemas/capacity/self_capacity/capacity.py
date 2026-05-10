@@ -28,6 +28,8 @@ class CapacityOut(BaseModel):
     vehicleId: int
     plateNumber: str
     plateCategory: Optional[str] = None
+    trailerPlateNumber: Optional[str] = None
+    trailerPlateCategory: Optional[str] = None
     status: int
     boundAt: Optional[datetime] = None
     unboundAt: Optional[datetime] = None
@@ -37,7 +39,13 @@ class CapacityOut(BaseModel):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_model(cls, cap, plate_category: Optional[str] = None) -> "CapacityOut":
+    def from_model(
+        cls,
+        cap,
+        plate_category: Optional[str] = None,
+        trailer_plate_number: Optional[str] = None,
+        trailer_plate_category: Optional[str] = None,
+    ) -> "CapacityOut":
         return cls(
             id=cap.id,
             driverId=cap.driver_id,
@@ -46,6 +54,8 @@ class CapacityOut(BaseModel):
             vehicleId=cap.vehicle_id,
             plateNumber=cap.plate_number,
             plateCategory=plate_category,
+            trailerPlateNumber=trailer_plate_number,
+            trailerPlateCategory=trailer_plate_category,
             status=cap.status,
             boundAt=cap.bound_at,
             unboundAt=cap.unbound_at,
@@ -60,8 +70,11 @@ class CapacityLogOut(BaseModel):
     capacityId: int
     driverId: int
     driverName: str
+    driverCode: Optional[str] = None
+    driverPhone: Optional[str] = None
     vehicleId: int
     plateNumber: str
+    plateCategory: Optional[str] = None
     action: int
     actionTime: Optional[datetime] = None
     operatorId: Optional[int] = None
@@ -72,14 +85,23 @@ class CapacityLogOut(BaseModel):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_model(cls, log) -> "CapacityLogOut":
+    def from_model(
+        cls,
+        log,
+        plate_category: Optional[str] = None,
+        driver_code: Optional[str] = None,
+        driver_phone: Optional[str] = None,
+    ) -> "CapacityLogOut":
         return cls(
             id=log.id,
             capacityId=log.capacity_id,
             driverId=log.driver_id,
             driverName=log.driver_name,
+            driverCode=driver_code,
+            driverPhone=driver_phone,
             vehicleId=log.vehicle_id,
             plateNumber=log.plate_number,
+            plateCategory=plate_category or "YELLOW",
             action=log.action,
             actionTime=log.action_time,
             operatorId=log.operator_id,

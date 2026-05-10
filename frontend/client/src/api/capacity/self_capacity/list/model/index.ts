@@ -9,6 +9,8 @@ export interface Capacity {
   vehicleId?: number;
   plateNumber?: string;
   plateCategory?: PlateCategory;
+  trailerPlateNumber?: string;
+  trailerPlateCategory?: PlateCategory;
   status?: number;
   boundAt?: string;
   unboundAt?: string;
