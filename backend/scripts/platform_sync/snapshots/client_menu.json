@@ -1284,7 +1284,7 @@
     "menu_type": 0,
     "path": "/capacity/self_capacity",
     "component": "",
-    "icon": "",
+    "icon": "ziyou",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -1292,7 +1292,7 @@
     "feature_code": "capacity_self",
     "id": 338,
     "created_at": "2026-05-10 11:51:52",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:07:23",
     "is_deleted": 0
   },
   {
@@ -1302,7 +1302,7 @@
     "menu_type": 0,
     "path": "/capacity/carrier_capacity",
     "component": "",
-    "icon": "",
+    "icon": "ziyou",
     "sort_order": 30,
     "visible": 1,
     "status": 1,
@@ -1310,7 +1310,7 @@
     "feature_code": "capacity_carrier",
     "id": 303,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:11:25",
     "is_deleted": 0
   },
   {
@@ -1320,7 +1320,7 @@
     "menu_type": 0,
     "path": "/capacity/social_capacity",
     "component": "",
-    "icon": "",
+    "icon": "ziyou",
     "sort_order": 40,
     "visible": 1,
     "status": 1,
@@ -1328,7 +1328,7 @@
     "feature_code": "capacity_social",
     "id": 304,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:11:29",
     "is_deleted": 0
   },
   {
@@ -1340,13 +1340,13 @@
     "component": "/capacity/maintenance/index",
     "icon": "weibao",
     "sort_order": 70,
-    "visible": 1,
+    "visible": 0,
     "status": 1,
     "app_type": "client",
     "feature_code": "fleet_maintenance",
     "id": 305,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-09 21:33:24",
+    "updated_at": "2026-05-10 14:12:11",
     "is_deleted": 0
   },
   {
@@ -1358,13 +1358,13 @@
     "component": "/capacity/compliance/index",
     "icon": "zhengjian",
     "sort_order": 80,
-    "visible": 1,
+    "visible": 0,
     "status": 1,
     "app_type": "client",
     "feature_code": "fleet_compliance",
     "id": 306,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-09 21:33:24",
+    "updated_at": "2026-05-10 14:12:15",
     "is_deleted": 0
   },
   {
@@ -1482,7 +1482,7 @@
     "menu_type": 0,
     "path": "/capacity/carrier_capacity/list",
     "component": "/capacity/carrier_capacity/list/index",
-    "icon": "",
+    "icon": "yunliliebiao",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -1490,7 +1490,7 @@
     "feature_code": "capacity_carrier_list",
     "id": 343,
     "created_at": "2026-05-10 12:08:59",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:11:45",
     "is_deleted": 0
   },
   {
@@ -1500,7 +1500,7 @@
     "menu_type": 0,
     "path": "/capacity/carrier_capacity/capacity_approval",
     "component": "/capacity/carrier_capacity/capacity_approval/index",
-    "icon": "",
+    "icon": "yunliliebiao",
     "sort_order": 50,
     "visible": 1,
     "status": 1,
@@ -1508,7 +1508,7 @@
     "feature_code": "capacity_carrier_approval",
     "id": 346,
     "created_at": "2026-05-10 12:16:02",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:11:50",
     "is_deleted": 0
   },
   {
@@ -1518,7 +1518,7 @@
     "menu_type": 0,
     "path": "/capacity/social_capacity/list",
     "component": "/capacity/social_capacity/list/index",
-    "icon": "",
+    "icon": "yunliliebiao",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -1526,7 +1526,7 @@
     "feature_code": "capacity_social_list",
     "id": 344,
     "created_at": "2026-05-10 12:11:53",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:11:56",
     "is_deleted": 0
   },
   {
@@ -1536,7 +1536,7 @@
     "menu_type": 0,
     "path": "/capacity/social_capacity/capacity_approval",
     "component": "/capacity/social_capacity/capacity_approval/index",
-    "icon": "",
+    "icon": "yunliliebiao",
     "sort_order": 60,
     "visible": 1,
     "status": 1,
@@ -1544,7 +1544,7 @@
     "feature_code": "capacity_social_approval",
     "id": 347,
     "created_at": "2026-05-10 12:17:33",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:12:02",
     "is_deleted": 0
   },
   {
@@ -1698,7 +1698,7 @@
     "menu_type": 0,
     "path": "/capacity/self_capacity/list",
     "component": "/capacity/self_capacity/list/index",
-    "icon": "",
+    "icon": "yunliliebiao",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -1706,7 +1706,7 @@
     "feature_code": "capacity_self_list",
     "id": 339,
     "created_at": "2026-05-10 11:52:52",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:10:53",
     "is_deleted": 0
   },
   {
@@ -1716,7 +1716,7 @@
     "menu_type": 0,
     "path": "/capacity/self_capacity/driver",
     "component": "/capacity/self_capacity/driver/index",
-    "icon": "",
+    "icon": "jiashiyuanguanli",
     "sort_order": 20,
     "visible": 1,
     "status": 1,
@@ -1724,7 +1724,7 @@
     "feature_code": "capacity_self_driver",
     "id": 342,
     "created_at": "2026-05-10 11:59:26",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:02:19",
     "is_deleted": 0
   },
   {
@@ -1734,7 +1734,7 @@
     "menu_type": 0,
     "path": "/capacity/self_capacity/vehicle",
     "component": "/capacity/self_capacity/vehicle/index",
-    "icon": "",
+    "icon": "cheliang",
     "sort_order": 30,
     "visible": 1,
     "status": 1,
@@ -1742,7 +1742,7 @@
     "feature_code": "capacity_self_vehicle",
     "id": 340,
     "created_at": "2026-05-10 11:57:46",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:01:00",
     "is_deleted": 0
   },
   {
@@ -1752,7 +1752,7 @@
     "menu_type": 0,
     "path": "/capacity/self_capacity/trailer",
     "component": "/capacity/self_capacity/trailer/index",
-    "icon": "",
+    "icon": "guache",
     "sort_order": 40,
     "visible": 1,
     "status": 1,
@@ -1760,7 +1760,7 @@
     "feature_code": "capacity_self_trailer",
     "id": 341,
     "created_at": "2026-05-10 11:58:38",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:02:01",
     "is_deleted": 0
   },
   {
@@ -1770,7 +1770,7 @@
     "menu_type": 0,
     "path": "/capacity/self_capacity/log",
     "component": "/capacity/self_capacity/log/index",
-    "icon": "",
+    "icon": "logs",
     "sort_order": 60,
     "visible": 1,
     "status": 1,
@@ -1778,7 +1778,7 @@
     "feature_code": "capacity_self_log",
     "id": 345,
     "created_at": "2026-05-10 12:14:11",
-    "updated_at": "2026-05-10 13:27:22",
+    "updated_at": "2026-05-10 14:02:55",
     "is_deleted": 0
   },
   {

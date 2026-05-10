@@ -17,7 +17,7 @@
   python scripts/seed/seed_client_dicts.py <tenant_code> [<tenant_code> ...]
 """
 
-import os
+import osy
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
