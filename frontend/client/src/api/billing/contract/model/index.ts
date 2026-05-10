@@ -44,6 +44,8 @@ export interface FreightCalcRequest {
   destinationCode: string;
   vehicleBrand?: string;
   vehicleModel?: string;
+  /** 台数，默认 1 */
+  quantity?: number;
 }
 
 export interface FreightCalcResult {

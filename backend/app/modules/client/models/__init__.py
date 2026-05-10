@@ -45,6 +45,7 @@ from app.modules.client.models.partner.carrier_invitation import CarrierInvitati
 from app.modules.client.models.billing.freight_contract import FreightContract
 from app.modules.client.models.billing.freight_rate import FreightRate
 from app.modules.client.models.waybill.waybill import Waybill
+from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
 
 # ---- Tier 2: Business - AI 数字员工（biz_ai_*） ----
 from app.modules.ai.models.tenant.biz_ai_session import BizAiSession
@@ -86,6 +87,7 @@ __all__ = [
     "FreightContract",
     "FreightRate",
     "Waybill",
+    "WaybillCargo",
     "Capacity",
     "CapacityLog",
     "BizCompanyActivity",

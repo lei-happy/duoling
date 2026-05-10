@@ -7,7 +7,8 @@
       'has-value': hasValue,
       'is-disabled': disabled,
       'is-date-picker': type === 'date',
-      'is-select': type === 'select'
+      'is-select': type === 'select',
+      'is-cascader': type === 'cascader'
     }"
   >
     <el-input
@@ -43,6 +44,22 @@
       @clear="handleClear"
     />
 
+    <el-cascader
+      v-else-if="type === 'cascader'"
+      ref="cascaderRef"
+      v-model="model"
+      :options="cascaderOptionsList"
+      :props="cascaderOptionProps"
+      :clearable="clearable"
+      :disabled="disabled"
+      :filterable="cascaderFilterable"
+      class="ele-fluid"
+      @focus="handleFocus"
+      @blur="handleBlur"
+      @visible-change="handleCascaderVisible"
+      @change="$emit('change', $event)"
+    />
+
     <el-select
       v-else-if="type === 'select'"
       ref="selectRef"
@@ -76,7 +93,7 @@
 
 <script lang="ts" setup>
   import { ref, computed } from 'vue';
-  import type { InputInstance } from 'element-plus';
+  import type { CascaderProps, InputInstance } from 'element-plus';
 
   defineOptions({ name: 'FloatingLabel' });
 
@@ -90,7 +107,7 @@
       /** 激活状态的标签文本（可选，不传则自动从 label 提取） */
       floatedLabel?: string;
       /** 组件类型 */
-      type?: 'input' | 'date' | 'select';
+      type?: 'input' | 'date' | 'select' | 'cascader';
       /** 是否禁用 */
       disabled?: boolean;
       /** 是否可清除 */
@@ -133,6 +150,12 @@
       loading?: boolean;
       /** 下拉选择器是否插入body */
       teleported?: boolean;
+      /** 级联选项（type=cascader） */
+      cascaderOptions?: any[];
+      /** 透传给 el-cascader 的 props（如 value/label/children、emitPath 等） */
+      cascaderOptionProps?: CascaderProps;
+      /** 级联是否可筛选 */
+      cascaderFilterable?: boolean;
     }>(),
     {
       type: 'input',
@@ -146,7 +169,8 @@
       filterable: false,
       remote: false,
       loading: false,
-      teleported: true
+      teleported: true,
+      cascaderFilterable: true
     }
   );
 
@@ -159,10 +183,13 @@
   /** 绑定值 */
   const model = defineModel<any>();
 
+  const cascaderOptionsList = computed(() => props.cascaderOptions ?? []);
+
   /** 输入框引用 */
   const inputRef = ref<InputInstance>();
   const datePickerRef = ref<any>();
   const selectRef = ref<any>();
+  const cascaderRef = ref<any>();
 
   /** 是否聚焦 */
   const isFocused = ref(false);
@@ -227,6 +254,11 @@
     emit('visible-change', visible);
   };
 
+  const handleCascaderVisible = (visible: boolean) => {
+    isFocused.value = visible;
+    emit('visible-change', visible);
+  };
+
   /** 标签点击事件 */
   const handleLabelClick = () => {
     if (props.disabled) {
@@ -238,6 +270,8 @@
       datePickerRef.value?.focus();
     } else if (props.type === 'select') {
       selectRef.value?.focus();
+    } else if (props.type === 'cascader') {
+      cascaderRef.value?.focus?.();
     }
   };
 </script>
@@ -322,6 +356,14 @@
   // 确保下拉选择器占满宽度
   :deep(.el-select) {
     width: 100%;
+  }
+
+  :deep(.el-cascader) {
+    width: 100%;
+  }
+
+  &.is-cascader:not(.has-value) :deep(.el-input__inner::placeholder) {
+    opacity: 0;
   }
 
   // 聚焦时保持细边框，避免默认的加粗效果

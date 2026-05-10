@@ -22,6 +22,7 @@ class FreightCalcRequest(BaseModel):
     destinationCode: str
     vehicleBrand: Optional[str] = None
     vehicleModel: Optional[str] = None
+    quantity: int = 1
     billingDate: Optional[date] = None
 
 
@@ -38,6 +39,7 @@ async def calculate_freight(
         destination_code=data.destinationCode,
         vehicle_brand=data.vehicleBrand,
         vehicle_model=data.vehicleModel,
+        quantity=data.quantity or 1,
         billing_date=data.billingDate,
     )
     if result:

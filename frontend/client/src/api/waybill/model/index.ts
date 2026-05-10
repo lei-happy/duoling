@@ -1,5 +1,14 @@
 import type { PageParam } from '@/api';
 
+/** 运单货物明细（一单多车型） */
+export interface WaybillCargoLine {
+  id?: number;
+  vehicleBrand?: string;
+  vehicleModel?: string;
+  quantity?: number;
+  sortOrder?: number;
+}
+
 export interface Waybill {
   id?: number;
   waybillNo?: string;
@@ -12,6 +21,8 @@ export interface Waybill {
   vehicleBrand?: string;
   vehicleModel?: string;
   quantity?: number;
+  cargoes?: WaybillCargoLine[];
+  cargoSummary?: string;
   planIssueTime?: string;
   requiredLoadTime?: string;
   requiredDeliverTime?: string;

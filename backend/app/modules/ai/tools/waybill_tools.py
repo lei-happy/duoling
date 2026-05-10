@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from app.common.exceptions import BizException
 from app.modules.ai.tools.base import ToolContext, ToolResult
 from app.modules.ai.tools.registry import register_tool
-from app.modules.client.schemas.waybill.waybill import WaybillCreate
+from app.modules.client.schemas.waybill.waybill import WaybillCreate, WaybillCargoLineIn
 from app.modules.client.services.waybill.waybill_service import WaybillService
 
 
@@ -82,9 +82,8 @@ async def get_waybill_detail(ctx: ToolContext, **kwargs) -> ToolResult:
         wb = await WaybillService.get_waybill(ctx.db, params.waybill_id)
     except BizException as e:
         return ToolResult(success=False, error=e.message)
-    from app.modules.client.schemas.waybill.waybill import WaybillOut
-
-    return ToolResult(success=True, data=WaybillOut.from_model(wb).model_dump())
+    out = await WaybillService.waybill_to_out(ctx.db, wb)
+    return ToolResult(success=True, data=out.model_dump())
 
 
 class WaybillRow(BaseModel):
@@ -97,9 +96,12 @@ class WaybillRow(BaseModel):
     originCode: Optional[str] = Field(None, description="出发地编码")
     destination: Optional[str] = Field(None, description="目的地")
     destinationCode: Optional[str] = Field(None, description="目的地编码")
-    vehicleBrand: Optional[str] = Field(None, description="车辆品牌")
+    vehicleBrand: Optional[str] = Field(None, description="车辆品牌（无 cargoes 时与 vehicleModel/quantity 生成一行明细）")
     vehicleModel: Optional[str] = Field(None, description="车型")
     quantity: Optional[int] = Field(None, description="数量，默认1")
+    cargoes: Optional[list[WaybillCargoLineIn]] = Field(
+        None, description="货物明细（多品牌车型）；优先于顶层 vehicleBrand/vehicleModel"
+    )
     dealerName: Optional[str] = Field(None, description="经销商名称")
     dealerContact: Optional[str] = Field(None, description="经销商联系人")
     dealerPhone: Optional[str] = Field(None, description="经销商电话")

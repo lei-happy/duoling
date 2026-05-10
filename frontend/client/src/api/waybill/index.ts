@@ -23,6 +23,20 @@ export async function getWaybill(id: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
+/** 运单号是否可用（未被占用）；编辑传 excludeId 排除当前单 */
+export async function checkWaybillNoAvailable(waybillNo: string, excludeId?: number) {
+  const q = waybillNo.trim();
+  if (!q) return true;
+  const res = await request.get<ApiResult<{ available: boolean }>>(
+    '/business/waybill/check-waybill-no',
+    { params: { waybillNo: q, excludeId } }
+  );
+  if (res.data.code === 0) {
+    return res.data.data?.available ?? true;
+  }
+  return true;
+}
+
 export async function addWaybill(data: Waybill) {
   const res = await request.post<ApiResult<unknown>>(
     '/business/waybill',

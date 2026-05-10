@@ -22,7 +22,8 @@
           {{ row.origin }} → {{ row.destination }}
         </template>
         <template #vehicleInfo="{ row }">
-          <span v-if="row.vehicleBrand || row.vehicleModel">
+          <span v-if="row.cargoSummary">{{ row.cargoSummary }}</span>
+          <span v-else-if="row.vehicleBrand || row.vehicleModel">
             {{ row.vehicleBrand
             }}{{ row.vehicleModel ? '/' + row.vehicleModel : '' }}
           </span>
@@ -75,7 +76,7 @@
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import WaybillEdit from './components/waybill-edit.vue';
   import WaybillSearch from './components/waybill-search.vue';
-  import { pageWaybills, removeWaybill } from '@/api/waybill';
+  import { pageWaybills, removeWaybill, updateWaybillStatus } from '@/api/waybill';
   import type { Waybill, WaybillParam } from '@/api/waybill/model';
   import { formatDateTime } from '@/utils/date-util';
 
@@ -124,7 +125,7 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 150,
+      width: 200,
       align: 'center',
       slot: 'action',
       fixed: 'right',
@@ -148,7 +149,10 @@
   };
 
   const actionItems = (row: Waybill) => {
-    const items: { preset: string; onClick: () => void }[] = [];
+    const items: Array<{ preset?: string; title?: string; onClick: () => void }> = [];
+    if (row.status === 0) {
+      items.push({ title: '确认', onClick: () => confirmWaybill(row) });
+    }
     if (row.status === 0 || row.status === 1) {
       items.push({ preset: 'edit', onClick: () => openEdit(row) });
     }
@@ -156,6 +160,31 @@
       items.push({ preset: 'del', onClick: () => remove(row) });
     }
     return items;
+  };
+
+  const confirmWaybill = (row: Waybill) => {
+    ElMessageBox.confirm(
+      `确认运单「${row.waybillNo}」？确认后将变为「已确认」状态。`,
+      '系统提示',
+      { type: 'warning', draggable: true }
+    )
+      .then(() => {
+        const loading = EleMessage.loading({
+          message: '请求中..',
+          plain: true
+        });
+        updateWaybillStatus(row.id!, 1)
+          .then((msg) => {
+            loading.close();
+            EleMessage.success({ message: msg, plain: true });
+            reload();
+          })
+          .catch((e: Error) => {
+            loading.close();
+            EleMessage.error({ message: e.message, plain: true });
+          });
+      })
+      .catch(() => {});
   };
 
   const openEdit = (row?: Waybill) => {

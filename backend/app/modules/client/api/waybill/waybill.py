@@ -23,7 +23,6 @@ from app.modules.client.schemas.waybill.waybill import (
     WaybillCreate,
     WaybillUpdate,
     WaybillStatusUpdate,
-    WaybillOut,
 )
 from app.modules.client.services.company_activity_service import CompanyActivityService
 from app.modules.client.services.waybill.waybill_service import WaybillService
@@ -80,6 +79,18 @@ async def page_waybills(
     return success(data=data)
 
 
+@router.get("/check-waybill-no")
+async def check_waybill_no(
+    waybillNo: str = Query(..., min_length=1, max_length=50),
+    excludeId: Optional[int] = Query(None, ge=1),
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    """校验运单号是否可用（未被占用）。编辑时可传 excludeId 排除当前运单。"""
+    taken = await WaybillService.waybill_no_exists(db, waybillNo, excludeId)
+    return success(data={"available": not taken})
+
+
 @router.get("/{waybill_id}")
 async def get_waybill(
     waybill_id: int,
@@ -87,7 +98,8 @@ async def get_waybill(
     _=Depends(get_current_user),
 ):
     waybill = await WaybillService.get_waybill(db, waybill_id)
-    return success(data=WaybillOut.from_model(waybill).model_dump())
+    out = await WaybillService.waybill_to_out(db, waybill)
+    return success(data=out.model_dump())
 
 
 @router.post("")
@@ -100,7 +112,9 @@ async def create_waybill(
     _: None = Depends(ensure_biz_company_activity_table),
 ):
     _require_tenant_for_activity(current_user)
-    waybill = await WaybillService.create_waybill(db, data, current_user.user_id)
+    waybill, _cargoes = await WaybillService.create_waybill(
+        db, data, current_user.user_id
+    )
     op_name = await CompanyActivityService.actor_display_name(
         db, current_user.user_id
     )
@@ -123,7 +137,8 @@ async def create_waybill(
         actor_display_name=op_name,
         payload=payload,
     )
-    return success(data=WaybillOut.from_model(waybill).model_dump())
+    out = await WaybillService.waybill_to_out(db, waybill)
+    return success(data=out.model_dump())
 
 
 @router.put("/{waybill_id}")
@@ -137,7 +152,7 @@ async def update_waybill(
     _: None = Depends(ensure_biz_company_activity_table),
 ):
     _require_tenant_for_activity(current_user)
-    waybill = await WaybillService.update_waybill(db, waybill_id, data)
+    waybill, _cargoes = await WaybillService.update_waybill(db, waybill_id, data)
     op_name = await CompanyActivityService.actor_display_name(
         db, current_user.user_id
     )
@@ -160,7 +175,8 @@ async def update_waybill(
         actor_display_name=op_name,
         payload=payload,
     )
-    return success(data=WaybillOut.from_model(waybill).model_dump())
+    out = await WaybillService.waybill_to_out(db, waybill)
+    return success(data=out.model_dump())
 
 
 @router.put("/{waybill_id}/status")
@@ -204,7 +220,8 @@ async def update_waybill_status(
         actor_display_name=op_name,
         payload=payload,
     )
-    return success(data=WaybillOut.from_model(waybill).model_dump())
+    out = await WaybillService.waybill_to_out(db, waybill)
+    return success(data=out.model_dump())
 
 
 @router.delete("/{waybill_id}")

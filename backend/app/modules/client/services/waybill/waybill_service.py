@@ -7,14 +7,20 @@ from typing import Optional
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
 from app.common.pinyin_utils import match_pinyin
 from app.modules.client.models.waybill.waybill import Waybill
+from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
 from app.modules.client.schemas.waybill.waybill import (
-    WaybillCreate, WaybillUpdate, WaybillStatusUpdate, WaybillOut,
+    WaybillCreate,
+    WaybillUpdate,
+    WaybillStatusUpdate,
+    WaybillOut,
+    WaybillCargoLineIn,
 )
 from app.modules.client.services.system_config_service import SystemConfigService
 from app.modules.client.services.billing.billing_engine_service import BillingEngineService
@@ -23,9 +29,43 @@ from app.modules.client.services.billing.billing_engine_service import BillingEn
 class WaybillService:
 
     @staticmethod
+    def _raise_biz_if_duplicate_waybill_no(exc: IntegrityError) -> None:
+        msg = str(getattr(exc, "orig", None) or exc).lower()
+        if "waybill_no" in msg:
+            raise BizException("运单编号已存在，请更换其他编号") from exc
+        raise exc
+
+    @staticmethod
     def _generate_waybill_no() -> str:
         now = datetime.now()
         return f"YD{now.strftime('%Y%m%d%H%M%S')}{random.randint(1000, 9999)}"
+
+    @staticmethod
+    def _validate_cargo_lines(lines: list[WaybillCargoLineIn]) -> None:
+        if not lines:
+            raise BizException("请至少录入一行货物信息")
+        for i, line in enumerate(lines):
+            if not (line.vehicleBrand and str(line.vehicleBrand).strip()):
+                raise BizException(f"货物第{i + 1}行：请填写商品车品牌")
+            if not (line.vehicleModel and str(line.vehicleModel).strip()):
+                raise BizException(f"货物第{i + 1}行：请填写车型")
+
+    @staticmethod
+    def _ordered_cargoes(lines: list[WaybillCargoLineIn]) -> list[WaybillCargoLineIn]:
+        indexed = list(enumerate(lines))
+        indexed.sort(key=lambda t: (t[1].sortOrder, t[0]))
+        return [t[1] for t in indexed]
+
+    @staticmethod
+    def _mirror_main_vehicle_fields(lines: list[WaybillCargoLineIn]) -> tuple[str, str, int]:
+        ordered = WaybillService._ordered_cargoes(lines)
+        first = ordered[0]
+        total_qty = sum(int(x.quantity) for x in ordered)
+        return (
+            (first.vehicleBrand or "").strip() or None,  # type: ignore
+            (first.vehicleModel or "").strip() or None,  # type: ignore
+            total_qty,
+        )
 
     @staticmethod
     def _match_waybill_region_filters(
@@ -47,6 +87,117 @@ class WaybillService:
             if not (brand_ok or model_ok):
                 return False
         return True
+
+    @staticmethod
+    async def _fetch_cargoes_batch(
+        db: AsyncSession, waybill_ids: list[int]
+    ) -> dict[int, list[WaybillCargo]]:
+        if not waybill_ids:
+            return {}
+        result = await db.execute(
+            select(WaybillCargo).where(
+                WaybillCargo.waybill_id.in_(waybill_ids),
+                WaybillCargo.is_deleted == 0,
+            )
+        )
+        rows = list(result.scalars().all())
+        by_wb: dict[int, list[WaybillCargo]] = {}
+        for r in rows:
+            by_wb.setdefault(r.waybill_id, []).append(r)
+        for wid in by_wb:
+            by_wb[wid].sort(key=lambda x: (x.sort_order, x.id))
+        return by_wb
+
+    @staticmethod
+    async def _fetch_cargoes_for_waybill(
+        db: AsyncSession, waybill_id: int
+    ) -> list[WaybillCargo]:
+        m = await WaybillService._fetch_cargoes_batch(db, [waybill_id])
+        return m.get(waybill_id, [])
+
+    @staticmethod
+    async def _soft_delete_cargoes(db: AsyncSession, waybill_id: int) -> None:
+        await db.execute(
+            update(WaybillCargo)
+            .where(
+                WaybillCargo.waybill_id == waybill_id,
+                WaybillCargo.is_deleted == 0,
+            )
+            .values(is_deleted=1)
+        )
+
+    @staticmethod
+    async def _insert_cargoes(
+        db: AsyncSession,
+        waybill_id: int,
+        lines: list[WaybillCargoLineIn],
+    ) -> None:
+        ordered = WaybillService._ordered_cargoes(lines)
+        for idx, line in enumerate(ordered):
+            db.add(
+                WaybillCargo(
+                    waybill_id=waybill_id,
+                    sort_order=idx,
+                    vehicle_brand=(line.vehicleBrand or "").strip() or None,
+                    vehicle_model=(line.vehicleModel or "").strip() or None,
+                    quantity=line.quantity,
+                )
+            )
+
+    @staticmethod
+    async def _replace_cargoes(
+        db: AsyncSession, waybill_id: int, lines: list[WaybillCargoLineIn]
+    ) -> None:
+        WaybillService._validate_cargo_lines(lines)
+        await WaybillService._soft_delete_cargoes(db, waybill_id)
+        await WaybillService._insert_cargoes(db, waybill_id, lines)
+
+    @staticmethod
+    async def _resolve_auto_freight(
+        db: AsyncSession,
+        calc_mode: str,
+        customer_id: Optional[int],
+        origin_code: Optional[str],
+        destination_code: Optional[str],
+        lines: list[WaybillCargoLineIn],
+    ) -> tuple[Optional[Decimal], Optional[int], Optional[int]]:
+        """
+        多行分别计价后汇总金额。
+        contract_id / rate_id：仅记录首个成功匹配行（多行可能对应不同运价，勿用于强业务约束）。
+        """
+        if calc_mode not in ("auto_required", "auto_preferred"):
+            return None, None, None
+        if not (customer_id and origin_code and destination_code):
+            return None, None, None
+
+        ordered = WaybillService._ordered_cargoes(lines)
+        total = Decimal("0")
+        first_contract_id: Optional[int] = None
+        first_rate_id: Optional[int] = None
+        any_hit = False
+
+        for line in ordered:
+            hit = await BillingEngineService.calculate_freight(
+                db,
+                customer_id=customer_id,
+                origin_code=origin_code,
+                destination_code=destination_code,
+                vehicle_brand=line.vehicleBrand,
+                vehicle_model=line.vehicleModel,
+                quantity=line.quantity,
+            )
+            if hit:
+                total += hit.totalAmount
+                any_hit = True
+                if first_contract_id is None:
+                    first_contract_id = hit.contractId
+                    first_rate_id = hit.rateId
+            elif calc_mode == "auto_required":
+                raise BizException("存在货物行未匹配到运价，无法保存运单")
+
+        if not any_hit:
+            return None, None, None
+        return total, first_contract_id, first_rate_id
 
     @staticmethod
     async def page_waybills(
@@ -72,9 +223,9 @@ class WaybillService:
 
         if keyword:
             base = base.where(
-                (Waybill.waybill_no.contains(keyword)) |
-                (Waybill.customer_name.contains(keyword)) |
-                (Waybill.dealer_name.contains(keyword))
+                (Waybill.waybill_no.contains(keyword))
+                | (Waybill.customer_name.contains(keyword))
+                | (Waybill.dealer_name.contains(keyword))
             )
         if customer_id is not None:
             base = base.where(Waybill.customer_id == customer_id)
@@ -95,9 +246,12 @@ class WaybillService:
             total = len(filtered)
             offset = (page - 1) * page_size
             page_items = filtered[offset : offset + page_size]
+            wb_ids = [w.id for w in page_items]
+            cargo_map = await WaybillService._fetch_cargoes_batch(db, wb_ids)
             return {
                 "list": [
-                    WaybillOut.from_model(item).model_dump() for item in page_items
+                    WaybillOut.from_model(item, cargo_map.get(item.id, [])).model_dump()
+                    for item in page_items
                 ],
                 "total": total,
                 "page": page,
@@ -113,13 +267,42 @@ class WaybillService:
             .limit(page_size)
         )
         items = result.scalars().all()
+        wb_ids = [w.id for w in items]
+        cargo_map = await WaybillService._fetch_cargoes_batch(db, wb_ids)
 
         return {
-            "list": [WaybillOut.from_model(item).model_dump() for item in items],
+            "list": [
+                WaybillOut.from_model(item, cargo_map.get(item.id, [])).model_dump()
+                for item in items
+            ],
             "total": total,
             "page": page,
             "page_size": page_size,
         }
+
+    @staticmethod
+    async def waybill_to_out(db: AsyncSession, waybill: Waybill) -> WaybillOut:
+        cargoes = await WaybillService._fetch_cargoes_for_waybill(db, waybill.id)
+        return WaybillOut.from_model(waybill, cargoes)
+
+    @staticmethod
+    async def waybill_no_exists(
+        db: AsyncSession,
+        waybill_no: str,
+        exclude_waybill_id: Optional[int] = None,
+    ) -> bool:
+        """是否存在相同运单号（未删除）。排除指定 id 用于编辑场景。"""
+        raw = (waybill_no or "").strip()
+        if not raw:
+            return False
+        q = select(Waybill.id).where(
+            Waybill.waybill_no == raw,
+            Waybill.is_deleted == 0,
+        )
+        if exclude_waybill_id is not None:
+            q = q.where(Waybill.id != exclude_waybill_id)
+        result = await db.execute(q.limit(1))
+        return result.scalar_one_or_none() is not None
 
     @staticmethod
     async def get_waybill(db: AsyncSession, waybill_id: int) -> Waybill:
@@ -137,41 +320,43 @@ class WaybillService:
     @staticmethod
     async def create_waybill(
         db: AsyncSession, data: WaybillCreate, current_user_id: int
-    ) -> Waybill:
+    ) -> tuple[Waybill, list[WaybillCargo]]:
         waybill_no = data.waybillNo or WaybillService._generate_waybill_no()
+        WaybillService._validate_cargo_lines(data.cargoes)
 
-        freight_amount = None
-        freight_source = None
-        contract_id = None
-        rate_id = None
+        brand_mirr, model_mirr, qty_sum = WaybillService._mirror_main_vehicle_fields(
+            data.cargoes
+        )
+
+        freight_amount: Optional[Decimal] = None
+        freight_source: Optional[int] = None
+        contract_id: Optional[int] = None
+        rate_id: Optional[int] = None
 
         calc_mode = await SystemConfigService.get_by_key(db, "waybill.freight_calc_mode")
         if not calc_mode:
             calc_mode = "manual_only"
 
-        if calc_mode in ("auto_required", "auto_preferred"):
-            if data.customerId and data.originCode and data.destinationCode:
-                calc_result = await BillingEngineService.calculate_freight(
-                    db,
-                    customer_id=data.customerId,
-                    origin_code=data.originCode,
-                    destination_code=data.destinationCode,
-                    vehicle_brand=data.vehicleBrand,
-                    vehicle_model=data.vehicleModel,
-                    quantity=data.quantity or 1,
-                )
-                if calc_result:
-                    freight_amount = calc_result.totalAmount
-                    freight_source = 0
-                    contract_id = calc_result.contractId
-                    rate_id = calc_result.rateId
-                elif calc_mode == "auto_required":
-                    raise BizException("未匹配到运价，无法创建运单")
+        auto_total, auto_cid, auto_rid = await WaybillService._resolve_auto_freight(
+            db,
+            calc_mode,
+            data.customerId,
+            data.originCode,
+            data.destinationCode,
+            data.cargoes,
+        )
+        if auto_total is not None:
+            freight_amount = auto_total
+            freight_source = 0
+            contract_id = auto_cid
+            rate_id = auto_rid
 
         if freight_amount is None:
             if data.freightAmount is not None:
                 freight_amount = Decimal(str(data.freightAmount))
-            freight_source = 1
+                freight_source = 1
+            elif calc_mode == "auto_required":
+                raise BizException("未匹配到运价，无法创建运单")
 
         waybill = Waybill(
             waybill_no=waybill_no,
@@ -181,9 +366,9 @@ class WaybillService:
             origin_code=data.originCode,
             destination=data.destination,
             destination_code=data.destinationCode,
-            vehicle_brand=data.vehicleBrand,
-            vehicle_model=data.vehicleModel,
-            quantity=data.quantity or 1,
+            vehicle_brand=brand_mirr,
+            vehicle_model=model_mirr,
+            quantity=qty_sum,
             plan_issue_time=data.planIssueTime,
             required_load_time=data.requiredLoadTime,
             required_deliver_time=data.requiredDeliverTime,
@@ -200,14 +385,21 @@ class WaybillService:
             created_by=current_user_id,
         )
         db.add(waybill)
+        try:
+            await db.flush()
+        except IntegrityError as exc:
+            await db.rollback()
+            WaybillService._raise_biz_if_duplicate_waybill_no(exc)
+        await WaybillService._insert_cargoes(db, waybill.id, data.cargoes)
         await db.flush()
+        cargoes = await WaybillService._fetch_cargoes_for_waybill(db, waybill.id)
         await db.refresh(waybill)
-        return waybill
+        return waybill, cargoes
 
     @staticmethod
     async def update_waybill(
         db: AsyncSession, waybill_id: int, data: WaybillUpdate
-    ) -> Waybill:
+    ) -> tuple[Waybill, list[WaybillCargo]]:
         result = await db.execute(
             select(Waybill).where(
                 Waybill.id == waybill_id,
@@ -243,9 +435,18 @@ class WaybillService:
             if val is not None:
                 setattr(waybill, model_field, val)
 
+        if data.cargoes is not None:
+            WaybillService._validate_cargo_lines(data.cargoes)
+            await WaybillService._replace_cargoes(db, waybill_id, data.cargoes)
+            b, m, q = WaybillService._mirror_main_vehicle_fields(data.cargoes)
+            waybill.vehicle_brand = b
+            waybill.vehicle_model = m
+            waybill.quantity = q
+
         await db.flush()
+        cargoes = await WaybillService._fetch_cargoes_for_waybill(db, waybill_id)
         await db.refresh(waybill)
-        return waybill
+        return waybill, cargoes
 
     @staticmethod
     async def update_status(
@@ -280,4 +481,5 @@ class WaybillService:
         if waybill.status not in (0, 6):
             raise BizException("只有待处理或已取消的运单可以删除")
         waybill.is_deleted = 1
+        await WaybillService._soft_delete_cargoes(db, waybill_id)
         await db.flush()
