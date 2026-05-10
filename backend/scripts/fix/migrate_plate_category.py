@@ -1,9 +1,9 @@
-"""
-为租户库 biz_vehicle、biz_trailer 增加 plate_category 字段（幂等）
+# -*- coding: utf-8 -*-
+"""为租户库 biz_vehicle、biz_trailer 增加 plate_category 字段（幂等）
 
 用法：
-  python backend/scripts/fix/migrate_plate_category.py
-  python backend/scripts/fix/migrate_plate_category.py <tenant_code>
+  python3 scripts/fix/migrate_plate_category.py
+  python3 scripts/fix/migrate_plate_category.py <tenant_code>
 """
 
 from __future__ import annotations
