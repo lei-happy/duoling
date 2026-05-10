@@ -14,7 +14,11 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
-from app.core.dependencies import get_tenant_db, get_current_user
+from app.core.dependencies import (
+    get_tenant_db,
+    get_current_user,
+    ensure_biz_company_activity_table,
+)
 from app.core.security import TokenData
 from app.core.database import db_manager
 from app.common.response import success
@@ -73,6 +77,7 @@ async def bind_capacity(
     data: CapacityBind,
     db: AsyncSession = Depends(get_tenant_db),
     current_user: TokenData = Depends(get_current_user),
+    _: None = Depends(ensure_biz_company_activity_table),
 ):
     """上车（绑定司机+车辆）"""
     result = await CapacityService.bind(
@@ -95,6 +100,7 @@ async def unbind_capacity(
     data: CapacityUnbind,
     db: AsyncSession = Depends(get_tenant_db),
     current_user: TokenData = Depends(get_current_user),
+    _: None = Depends(ensure_biz_company_activity_table),
 ):
     """下车（解绑司机与车辆）"""
     result = await CapacityService.unbind(

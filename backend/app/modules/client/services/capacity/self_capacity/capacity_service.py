@@ -21,6 +21,7 @@ from app.modules.client.models.user.biz_user import BizUser
 from app.modules.client.schemas.capacity.self_capacity.capacity import (
     CapacityOut, CapacityLogOut,
 )
+from app.modules.client.services.company_activity_service import CompanyActivityService
 
 
 class CapacityService:
@@ -94,6 +95,25 @@ class CapacityService:
         db.add(log)
         await db.flush()
 
+        op_label = operator_name or "用户"
+        await CompanyActivityService.record(
+            db,
+            occurred_at=now,
+            event_code="capacity.self_bind",
+            summary=(
+                f"{op_label} 为司机「{driver.name}」与车辆「{vehicle.plate_number}」"
+                "执行了上车绑定"
+            ),
+            actor_user_id=operator_user_id,
+            actor_display_name=operator_name,
+            payload={
+                "capacity_id": capacity.id,
+                "driver_id": driver_id,
+                "vehicle_id": vehicle_id,
+                "plate_number": vehicle.plate_number,
+            },
+        )
+
         return CapacityOut.from_model(
             capacity,
             vehicle.plate_category,
@@ -142,6 +162,25 @@ class CapacityService:
         )
         db.add(log)
         await db.flush()
+
+        op_label = operator_name or "用户"
+        await CompanyActivityService.record(
+            db,
+            occurred_at=now,
+            event_code="capacity.self_unbind",
+            summary=(
+                f"{op_label} 对司机「{capacity.driver_name}」与车辆「{capacity.plate_number}」"
+                "执行了下车解绑"
+            ),
+            actor_user_id=operator_user_id,
+            actor_display_name=operator_name,
+            payload={
+                "capacity_id": capacity.id,
+                "driver_id": capacity.driver_id,
+                "vehicle_id": capacity.vehicle_id,
+                "plate_number": capacity.plate_number,
+            },
+        )
 
         vr = await db.execute(
             select(Vehicle).where(

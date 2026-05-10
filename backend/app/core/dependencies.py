@@ -66,6 +66,13 @@ async def ensure_biz_login_log_table(
     await db_manager.ensure_tenant_tables(tenant_code, ["biz_login_log"])
 
 
+async def ensure_biz_company_activity_table(
+    tenant_code: str = Depends(get_tenant_code),
+) -> None:
+    """老租户库可能缺少工作台「最新动态」表，首次访问时幂等补建。"""
+    await db_manager.ensure_tenant_tables(tenant_code, ["biz_company_activity"])
+
+
 # ai_assistant 在 enterprise 版本默认开通，但 required_tables 是后期补充的；
 # 老租户库可能缺 biz_ai_* 表。首次访问 AI 接口时幂等补建。
 _AI_TENANT_TABLES = [

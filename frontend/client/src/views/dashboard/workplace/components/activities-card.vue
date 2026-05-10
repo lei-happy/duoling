@@ -5,15 +5,19 @@
       <more-icon @command="handleCommand" />
     </template>
     <el-scrollbar :view-style="{ padding: '20px 20px 0 20px' }">
-      <el-timeline :reverse="false" class="demo-timeline">
+      <div v-if="loading" class="activities-loading">
+        <el-skeleton :rows="6" animated />
+      </div>
+      <el-empty v-else-if="!activities.length" description="今日暂无动态" />
+      <el-timeline v-else :reverse="false" class="demo-timeline">
         <el-timeline-item
           v-for="item in activities"
           :key="item.id"
-          :timestamp="item.time"
-          :type="item.type"
-          :hollow="true"
+          :timestamp="item.display_time"
+          :type="timelineType(item.event_code)"
+          :hollow="hollowFor(item.event_code)"
         >
-          {{ item.title }}
+          {{ item.summary }}
         </el-timeline-item>
       </el-timeline>
     </el-scrollbar>
@@ -21,9 +25,14 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue';
+  import { onMounted, onUnmounted, ref } from 'vue';
+  import { EleMessage } from 'ele-admin-plus';
   import MoreIcon from './more-icon.vue';
   import type { Command } from '../model';
+  import {
+    getCompanyActivities,
+    type CompanyActivityItem
+  } from '@/api/home/workbench/activities';
 
   defineProps<{
     title?: string;
@@ -33,96 +42,71 @@
     (e: 'command', command: Command): void;
   }>();
 
-  interface Activitie {
-    id: number;
-    title: string;
-    time: string;
-    type?: any;
-  }
+  const activities = ref<CompanyActivityItem[]>([]);
+  const loading = ref(false);
+  let pollTimer: ReturnType<typeof setInterval> | null = null;
 
-  /** 最新动态数据 */
-  const activities = ref<Activitie[]>([]);
+  const POLL_MS = 60_000;
 
-  /** 查询最新动态 */
-  const queryActivities = () => {
-    activities.value = [
-      {
-        id: 1,
-        title: 'SunSmile 解决了bug 登录提示操作失败',
-        time: '20:30'
-      },
-      {
-        id: 2,
-        title: 'Jasmine 解决了bug 按钮颜色与设计不符',
-        time: '19:30'
-      },
-      {
-        id: 3,
-        title: '项目经理 指派了任务 解决项目一的bug',
-        time: '18:30',
-        type: 'primary'
-      },
-      {
-        id: 4,
-        title: '项目经理 指派了任务 解决项目二的bug',
-        time: '17:30',
-        type: 'primary'
-      },
-      {
-        id: 5,
-        title: '项目经理 指派了任务 解决项目三的bug',
-        time: '16:30',
-        type: 'primary'
-      },
-      {
-        id: 6,
-        title: '项目经理 指派了任务 解决项目四的bug',
-        time: '15:30'
-      },
-      {
-        id: 7,
-        title: '项目经理 指派了任务 解决项目五的bug',
-        time: '14:30'
-      },
-      {
-        id: 8,
-        title: '项目经理 指派了任务 解决项目六的bug',
-        time: '12:30'
-      },
-      {
-        id: 9,
-        title: '项目经理 指派了任务 解决项目七的bug',
-        time: '11:30',
-        type: 'primary'
-      },
-      {
-        id: 10,
-        title: '项目经理 指派了任务 解决项目八的bug',
-        time: '10:30'
-      },
-      {
-        id: 11,
-        title: '项目经理 指派了任务 解决项目九的bug',
-        time: '09:30',
-        type: 'success'
-      },
-      {
-        id: 12,
-        title: '项目经理 指派了任务 解决项目十的bug',
-        time: '08:30',
-        type: 'danger'
+  /** 时间轴节点颜色：与 demo / 运力等区分 */
+  const timelineType = (eventCode: string) => {
+    if (eventCode.startsWith('capacity.')) return 'primary';
+    if (eventCode.startsWith('partner.')) return 'success';
+    if (eventCode.startsWith('demo.')) return undefined;
+    return undefined;
+  };
+
+  const hollowFor = (eventCode: string) => {
+    if (eventCode.startsWith('capacity.')) return false;
+    if (eventCode.startsWith('partner.')) return false;
+    return true;
+  };
+
+  const loadActivities = async (silent = false) => {
+    if (!silent) {
+      loading.value = true;
+    }
+    try {
+      const res = await getCompanyActivities({ limit: 50 });
+      activities.value = res.data.data?.items ?? [];
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '加载失败';
+      EleMessage.error(msg);
+    } finally {
+      if (!silent) {
+        loading.value = false;
       }
-    ];
+    }
   };
 
   const handleCommand = (command: Command) => {
+    if (command === 'refresh') {
+      loadActivities(false);
+      return;
+    }
     emit('command', command);
   };
 
-  queryActivities();
+  onMounted(() => {
+    loadActivities(false);
+    pollTimer = setInterval(() => {
+      loadActivities(true);
+    }, POLL_MS);
+  });
+
+  onUnmounted(() => {
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  });
 </script>
 
 <style lang="scss" scoped>
+  .activities-loading {
+    padding: 8px 0;
+  }
+
   /* 时间轴 */
   .demo-timeline {
     padding-left: 0;

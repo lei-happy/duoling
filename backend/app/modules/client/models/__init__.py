@@ -23,6 +23,7 @@ from app.modules.client.models.biz_dict import BizDict, BizDictItem
 from app.modules.client.models.system_config import SystemConfig
 
 # ---- Tier 2: Business (版本开通时创建) ----
+from app.modules.client.models.workbench.company_activity import BizCompanyActivity
 from app.modules.client.models.capacity.self_capacity import (
     Vehicle,
     VehicleExt,
@@ -87,6 +88,7 @@ __all__ = [
     "Waybill",
     "Capacity",
     "CapacityLog",
+    "BizCompanyActivity",
     # AI 数字员工（biz_ai_*）
     "BizAiSession",
     "BizAiMessage",

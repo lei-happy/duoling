@@ -177,6 +177,7 @@ backend/
 | 运单管理     | `/api/client/order`            | CRUD         |
 | 客户管理     | `/api/client/customer`         | CRUD         |
 | 工作台      | `/api/client/workbench/todo`   | 待办任务 CRUD    |
+| 工作台      | `/api/client/workbench/activities` | 最新动态（当日列表） |
 | 文件上传     | `/api/client/file`             | 上传文件         |
 
 
