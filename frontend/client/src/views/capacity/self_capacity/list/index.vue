@@ -37,12 +37,65 @@
       </ele-pro-table>
     </ele-card>
     <capacity-bind v-model:visible="bindVisible" @done="reload" />
+
+    <el-dialog
+      v-model="unbindVisible"
+      title="系统提示"
+      width="520px"
+      align-center
+      destroy-on-close
+      :close-on-click-modal="false"
+      append-to-body
+      class="capacity-unbind-dialog-wrap"
+      @closed="onUnbindDialogClosed"
+    >
+      <div class="capacity-unbind-dialog-body">
+        <el-icon class="capacity-unbind-dialog-icon" :size="22">
+          <WarningFilled />
+        </el-icon>
+        <div class="capacity-unbind-dialog-main">
+          <p class="capacity-unbind-dialog-msg">
+            确定将司机
+            <strong class="capacity-unbind-name">{{
+              unbindTarget?.driverName
+            }}</strong>
+            与车辆
+            <plate-number-tag
+              class="capacity-unbind-plate-inline"
+              :text="unbindTarget?.plateNumber"
+              :category="unbindTarget?.plateCategory"
+            />
+            解绑吗？解绑后可在「变更记录」中查看历史。
+          </p>
+          <el-input
+            v-model.trim="unbindRemark"
+            type="textarea"
+            :rows="3"
+            resize="none"
+            maxlength="500"
+            show-word-limit
+            placeholder="请填写下车备注"
+            class="capacity-unbind-remark-input"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="unbindVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="unbindLoading"
+          @click="confirmUnbind"
+        >
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </ele-page>
 </template>
 
 <script lang="ts" setup>
   import { ref, reactive } from 'vue';
-  import { ElMessageBox } from 'element-plus';
+  import { WarningFilled } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
@@ -52,8 +105,14 @@
   import CapacitySearch from './components/capacity-search.vue';
   import CapacityBind from './components/capacity-bind.vue';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
-  import { pageCapacities, unbindCapacity } from '@/api/capacity/self_capacity/list';
-  import type { Capacity, CapacityParam } from '@/api/capacity/self_capacity/list/model';
+  import {
+    pageCapacities,
+    unbindCapacity
+  } from '@/api/capacity/self_capacity/list';
+  import type {
+    Capacity,
+    CapacityParam
+  } from '@/api/capacity/self_capacity/list/model';
   import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'CapacityList' });
@@ -73,7 +132,12 @@
   const columns = ref<Columns>([
     { prop: 'driverName', label: '司机姓名', minWidth: 100 },
     { prop: 'driverPhone', label: '手机号', minWidth: 130 },
-    { prop: 'plateNumber', label: '车牌号', minWidth: 120, slot: 'plateNumber' },
+    {
+      prop: 'plateNumber',
+      label: '车牌号',
+      minWidth: 120,
+      slot: 'plateNumber'
+    },
     {
       prop: 'boundAt',
       label: '绑定时间',
@@ -112,28 +176,83 @@
     bindVisible.value = true;
   };
 
+  const unbindVisible = ref(false);
+  const unbindTarget = ref<Capacity | null>(null);
+  const unbindRemark = ref('');
+  const unbindLoading = ref(false);
+
+  function onUnbindDialogClosed() {
+    unbindTarget.value = null;
+    unbindRemark.value = '';
+  }
+
   const handleUnbind = (row: Capacity) => {
-    ElMessageBox.confirm(
-      `确定将司机「${row.driverName}」与车辆「${row.plateNumber}」解绑（下车）吗？解绑后可在「变动记录」中查看历史。`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
-      .then(() => {
-        const loading = EleMessage.loading({
-          message: '请求中..',
-          plain: true
-        });
-        unbindCapacity(row.id!)
-          .then((msg) => {
-            loading.close();
-            EleMessage.success({ message: msg, plain: true });
-            reload();
-          })
-          .catch((e) => {
-            loading.close();
-            EleMessage.error({ message: e.message, plain: true });
-          });
-      })
-      .catch(() => {});
+    unbindTarget.value = row;
+    unbindRemark.value = '';
+    unbindVisible.value = true;
+  };
+
+  const confirmUnbind = async () => {
+    const row = unbindTarget.value;
+    const id = row?.id;
+    if (id == null) return;
+
+    const remark = unbindRemark.value.trim();
+    unbindLoading.value = true;
+    try {
+      const msg = await unbindCapacity(id, remark ? { remark } : {});
+      EleMessage.success({ message: msg, plain: true });
+      unbindVisible.value = false;
+      reload();
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      EleMessage.error({ message, plain: true });
+    } finally {
+      unbindLoading.value = false;
+    }
   };
 </script>
+
+<style scoped>
+  .capacity-unbind-dialog-body {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .capacity-unbind-dialog-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--el-color-warning);
+  }
+
+  .capacity-unbind-dialog-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .capacity-unbind-dialog-msg {
+    margin: 0 0 12px;
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--el-text-color-regular);
+  }
+
+  .capacity-unbind-name {
+    margin: 0 2px;
+    padding: 0 4px;
+    font-weight: 700;
+    color: var(--el-color-primary);
+    border-radius: 4px;
+    background: var(--el-color-primary-light-9);
+  }
+
+  .capacity-unbind-plate-inline {
+    margin: 0 4px;
+    vertical-align: middle;
+  }
+
+  .capacity-unbind-remark-input :deep(.el-textarea__inner) {
+    box-sizing: border-box;
+  }
+</style>

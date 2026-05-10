@@ -27,7 +27,12 @@
 
     <el-row :gutter="16" class="capacity-bind-split">
       <el-col :xs="24" :md="12">
-        <div class="capacity-bind-panel-title">选择司机</div>
+        <div class="capacity-bind-panel-head">
+          <span class="capacity-bind-panel-title">选择司机</span>
+          <el-checkbox v-model="filterDriversFreeOnly" size="small">
+            仅显示空闲司机
+          </el-checkbox>
+        </div>
         <el-input
           v-model.trim="driverSearchInput"
           clearable
@@ -38,14 +43,14 @@
           <el-table
             ref="driverTableRef"
             v-loading="loadingDrivers && drivers.length === 0"
-            :data="drivers"
+            :data="displayedDrivers"
+            :empty-text="driverTableEmptyText"
             :row-class-name="driverRowClassName"
             row-key="id"
             height="320"
             highlight-current-row
             border
             size="small"
-            empty-text="暂无在职司机"
             @current-change="onDriverCurrentChange"
           >
             <el-table-column label="姓名" min-width="96">
@@ -102,7 +107,12 @@
         </div>
       </el-col>
       <el-col :xs="24" :md="12">
-        <div class="capacity-bind-panel-title">选择车辆</div>
+        <div class="capacity-bind-panel-head">
+          <span class="capacity-bind-panel-title">选择车辆</span>
+          <el-checkbox v-model="filterVehiclesFreeOnly" size="small">
+            仅显示空闲车辆
+          </el-checkbox>
+        </div>
         <el-input
           v-model.trim="vehicleSearchInput"
           clearable
@@ -113,14 +123,14 @@
           <el-table
             ref="vehicleTableRef"
             v-loading="loadingVehicles && vehicles.length === 0"
-            :data="vehicles"
+            :data="displayedVehicles"
+            :empty-text="vehicleTableEmptyText"
             :row-class-name="vehicleRowClassName"
             row-key="id"
             height="320"
             highlight-current-row
             border
             size="small"
-            empty-text="暂无可用车辆"
             @current-change="onVehicleCurrentChange"
           >
             <el-table-column label="车牌号" min-width="110">
@@ -229,9 +239,6 @@
         </template>
         <template v-else-if="selectedDriver && selectedVehicle">
           <span class="capacity-bind-preview-name">{{ selectedDriver.name }}</span>
-          <span v-if="phoneDigits4Only(selectedDriver.phone)" class="capacity-bind-preview-sub">
-            （{{ phoneDigits4Only(selectedDriver.phone) }}）
-          </span>
           <span class="capacity-bind-preview-dot" aria-hidden="true">·</span>
           <plate-number-tag
             class="capacity-bind-preview-plate"
@@ -328,6 +335,8 @@
 
   const drivers = ref<Driver[]>([]);
   const driverSearchInput = ref('');
+  /** 勾选后表格只显示未绑定运力的司机（空闲） */
+  const filterDriversFreeOnly = ref(false);
   const driverNextPage = ref(1);
   const driverTotal = ref(0);
   const loadingDrivers = ref(false);
@@ -335,6 +344,8 @@
 
   const vehicles = ref<Vehicle[]>([]);
   const vehicleSearchInput = ref('');
+  /** 勾选后表格只显示未绑定运力的车辆（空闲） */
+  const filterVehiclesFreeOnly = ref(false);
   const vehicleNextPage = ref(1);
   const vehicleTotal = ref(0);
   const loadingVehicles = ref(false);
@@ -435,6 +446,32 @@
     const id = row?.id;
     return id != null && !!vehicleToBoundDriver.value[id];
   }
+
+  const displayedDrivers = computed(() => {
+    if (!filterDriversFreeOnly.value) return drivers.value;
+    return drivers.value.filter((d) => !isDriverRowBound(d));
+  });
+
+  const displayedVehicles = computed(() => {
+    if (!filterVehiclesFreeOnly.value) return vehicles.value;
+    return vehicles.value.filter((v) => !isVehicleRowBound(v));
+  });
+
+  const driverTableEmptyText = computed(() => {
+    if (drivers.value.length === 0) return '暂无在职司机';
+    if (filterDriversFreeOnly.value && displayedDrivers.value.length === 0) {
+      return '暂无空闲司机，取消勾选可查看全部';
+    }
+    return '暂无在职司机';
+  });
+
+  const vehicleTableEmptyText = computed(() => {
+    if (vehicles.value.length === 0) return '暂无可用车辆';
+    if (filterVehiclesFreeOnly.value && displayedVehicles.value.length === 0) {
+      return '暂无空闲车辆，取消勾选可查看全部';
+    }
+    return '暂无可用车辆';
+  });
 
   function driverRowClassName({ row }: { row: Driver }) {
     return isDriverRowBound(row) ? 'capacity-bind-row-disabled' : '';
@@ -653,6 +690,8 @@
     clearAllLoadedFlashes();
     driverSearchInput.value = '';
     vehicleSearchInput.value = '';
+    filterDriversFreeOnly.value = false;
+    filterVehiclesFreeOnly.value = false;
     remark.value = '';
     selectedDriver.value = undefined;
     selectedVehicle.value = undefined;
@@ -676,8 +715,8 @@
         void loadDrivers({ reset: true });
         void loadVehicles({ reset: true });
         void nextTick(() => {
-          driverTableRef.value?.setCurrentRow();
-          vehicleTableRef.value?.setCurrentRow();
+          driverTableRef.value?.setCurrentRow(undefined);
+          vehicleTableRef.value?.setCurrentRow(undefined);
         });
       } else {
         clearAllLoadedFlashes();
@@ -733,19 +772,19 @@
     }
   );
 
-  watch(drivers, (list) => {
+  watch(displayedDrivers, (list) => {
     const sid = selectedDriver.value?.id;
     if (sid != null && !list.some((d) => d.id === sid)) {
       selectedDriver.value = undefined;
-      void nextTick(() => driverTableRef.value?.setCurrentRow());
+      void nextTick(() => driverTableRef.value?.setCurrentRow(undefined));
     }
   });
 
-  watch(vehicles, (list) => {
+  watch(displayedVehicles, (list) => {
     const sid = selectedVehicle.value?.id;
     if (sid != null && !list.some((v) => v.id === sid)) {
       selectedVehicle.value = undefined;
-      void nextTick(() => vehicleTableRef.value?.setCurrentRow());
+      void nextTick(() => vehicleTableRef.value?.setCurrentRow(undefined));
     }
   });
 
@@ -754,7 +793,7 @@
       void nextTick(() => {
         const prev = selectedDriver.value;
         driverTableRef.value?.setCurrentRow(
-          prev?.id != null ? drivers.value.find((d) => d.id === prev.id) : undefined
+          prev?.id != null ? displayedDrivers.value.find((d) => d.id === prev.id) : undefined
         );
       });
       return;
@@ -767,7 +806,7 @@
       void nextTick(() => {
         const prev = selectedVehicle.value;
         vehicleTableRef.value?.setCurrentRow(
-          prev?.id != null ? vehicles.value.find((v) => v.id === prev.id) : undefined
+          prev?.id != null ? displayedVehicles.value.find((v) => v.id === prev.id) : undefined
         );
       });
       return;
@@ -838,10 +877,23 @@
     margin-bottom: 8px;
   }
 
+  .capacity-bind-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  .capacity-bind-panel-head :deep(.el-checkbox) {
+    flex-shrink: 0;
+    font-weight: 400;
+  }
+
   .capacity-bind-panel-title {
     font-weight: 600;
     font-size: 14px;
-    margin-bottom: 8px;
     color: var(--el-text-color-primary);
   }
 
