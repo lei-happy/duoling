@@ -23,11 +23,19 @@ from app.modules.client.models.biz_dict import BizDict, BizDictItem
 from app.modules.client.models.system_config import SystemConfig
 
 # ---- Tier 2: Business (版本开通时创建) ----
-from app.modules.client.models.vehicle import Vehicle
-from app.modules.client.models.vehicle_ext import VehicleExt
-from app.modules.client.models.trailer import Trailer
-from app.modules.client.models.trailer_ext import TrailerExt
-from app.modules.client.models.driver import Driver, DriverLicense, DriverOperation, DriverAccount
+from app.modules.client.models.capacity.self_capacity import (
+    Vehicle,
+    VehicleExt,
+    Trailer,
+    TrailerExt,
+    Capacity,
+    CapacityLog,
+    Driver,
+    DriverLicense,
+    DriverOperation,
+    DriverAccount,
+    DriverRoute,
+)
 from app.modules.client.models.route import Route
 from app.modules.client.models.partner.customer import Customer
 from app.modules.client.models.partner.carrier import Carrier
@@ -36,7 +44,6 @@ from app.modules.client.models.partner.carrier_invitation import CarrierInvitati
 from app.modules.client.models.billing.freight_contract import FreightContract
 from app.modules.client.models.billing.freight_rate import FreightRate
 from app.modules.client.models.waybill.waybill import Waybill
-from app.modules.client.models.capacity import Capacity, CapacityLog
 
 # ---- Tier 2: Business - AI 数字员工（biz_ai_*） ----
 from app.modules.ai.models.tenant.biz_ai_session import BizAiSession
@@ -69,6 +76,7 @@ __all__ = [
     "DriverLicense",
     "DriverOperation",
     "DriverAccount",
+    "DriverRoute",
     "Route",
     "Customer",
     "Carrier",

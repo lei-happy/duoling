@@ -468,12 +468,12 @@
     toggleAccountStatus as apiToggleAccountStatus,
     listDriverRoutes,
     saveDriverRoutes
-  } from '@/api/resource/driver';
+  } from '@/api/capacity/self_capacity/driver';
   import type {
     Driver,
     DriverAccount,
     DriverRoute
-  } from '@/api/resource/driver/model';
+  } from '@/api/capacity/self_capacity/driver/model';
 
   interface RouteRow extends DriverRoute {
     originValue?: string[];

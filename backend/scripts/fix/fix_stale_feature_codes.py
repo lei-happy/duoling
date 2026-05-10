@@ -44,6 +44,15 @@ STALE_MAP: dict[str, Optional[str]] = {
     "resource_customer": "partner_customer",
     # 早期占位的"地区数据"已统一到 basic_data_region
     "regional_data": "basic_data_region",
+    # 运力中心模块 v3 重构（migrate_capacity_v3.py）：旧 feature_code -> 新 feature_code
+    # 用于 prod 上仍持有旧 code 的 sys_menu 行做兜底；新菜单已直接写入 v3 code，
+    # 但若历史快照恢复或部分行漏改，本映射可补救。
+    "capacity_manage": "capacity_center",
+    "resource_vehicle": "capacity_self_vehicle",
+    "resource_trailer": "capacity_self_trailer",
+    "resource_driver": "capacity_self_driver",
+    "carrier_external": "capacity_carrier",
+    "carrier_social": "capacity_social",
 }
 
 

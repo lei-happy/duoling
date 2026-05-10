@@ -154,8 +154,8 @@
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
-  import { addTrailer, updateTrailer } from '@/api/resource/trailer';
-  import type { Trailer } from '@/api/resource/trailer/model';
+  import { addTrailer, updateTrailer } from '@/api/capacity/self_capacity/trailer';
+  import type { Trailer } from '@/api/capacity/self_capacity/trailer/model';
 
   const props = defineProps<{
     visible: boolean;

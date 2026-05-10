@@ -1,0 +1,26 @@
+"""
+社会运力池-列表 API（占位 router）
+
+TODO: 后续实现社会运力池列表逻辑，当前仅提供分页空响应。
+"""
+
+from fastapi import APIRouter, Depends, Query
+
+from app.core.dependencies import get_current_user
+from app.common.response import success
+
+router = APIRouter()
+
+
+@router.get("")
+async def page_social_capacities(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, alias="limit", ge=1, le=100),
+    _=Depends(get_current_user),
+):
+    return success(data={
+        "list": [],
+        "total": 0,
+        "page": page,
+        "page_size": page_size,
+    })

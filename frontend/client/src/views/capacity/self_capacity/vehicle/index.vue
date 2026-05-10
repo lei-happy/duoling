@@ -81,8 +81,8 @@
   import VehicleEdit from './components/vehicle-edit.vue';
   import VehicleSearch from './components/vehicle-search.vue';
   import DictData from '@/components/DictData/index.vue';
-  import { pageVehicles, removeVehicle } from '@/api/resource/vehicle';
-  import type { Vehicle, VehicleParam } from '@/api/resource/vehicle/model';
+  import { pageVehicles, removeVehicle } from '@/api/capacity/self_capacity/vehicle';
+  import type { Vehicle, VehicleParam } from '@/api/capacity/self_capacity/vehicle/model';
   import { DICT_CODE_VEHICLE_TYPE } from '@/constants/dict-codes';
 
   defineOptions({ name: 'ResourceVehicle' });

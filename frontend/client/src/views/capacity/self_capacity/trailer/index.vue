@@ -62,8 +62,8 @@
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import TrailerEdit from './components/trailer-edit.vue';
   import TrailerSearch from './components/trailer-search.vue';
-  import { pageTrailers, removeTrailer } from '@/api/resource/trailer';
-  import type { Trailer, TrailerParam } from '@/api/resource/trailer/model';
+  import { pageTrailers, removeTrailer } from '@/api/capacity/self_capacity/trailer';
+  import type { Trailer, TrailerParam } from '@/api/capacity/self_capacity/trailer/model';
 
   defineOptions({ name: 'ResourceTrailer' });
 

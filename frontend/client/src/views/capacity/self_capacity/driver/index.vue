@@ -135,8 +135,8 @@
     pageDrivers,
     removeDriver,
     updateDriverStatus
-  } from '@/api/resource/driver';
-  import type { Driver, DriverParam } from '@/api/resource/driver/model';
+  } from '@/api/capacity/self_capacity/driver';
+  import type { Driver, DriverParam } from '@/api/capacity/self_capacity/driver/model';
   import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'ResourceDriver' });

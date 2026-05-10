@@ -67,7 +67,7 @@
 <script lang="ts" setup>
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
-  import type { DriverParam } from '@/api/resource/driver/model';
+  import type { DriverParam } from '@/api/capacity/self_capacity/driver/model';
 
   const emit = defineEmits<{
     (e: 'search', where?: DriverParam): void;

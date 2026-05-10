@@ -16,7 +16,7 @@ from app.core.config import get_settings
 from app.core.database import TenantBase
 
 # 确保运力模型已导入，注册进 TenantBase.metadata
-from app.modules.client.models.capacity import Capacity, CapacityLog  # noqa: F401
+from app.modules.client.models.capacity.self_capacity.capacity import Capacity, CapacityLog  # noqa: F401
 
 CAPACITY_TABLES = ["biz_capacity", "biz_capacity_log"]
 

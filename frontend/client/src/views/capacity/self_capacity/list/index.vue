@@ -57,8 +57,8 @@
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import CapacitySearch from './components/capacity-search.vue';
   import CapacityBind from './components/capacity-bind.vue';
-  import { pageCapacities, unbindCapacity } from '@/api/capacity';
-  import type { Capacity, CapacityParam } from '@/api/capacity/model';
+  import { pageCapacities, unbindCapacity } from '@/api/capacity/self_capacity/list';
+  import type { Capacity, CapacityParam } from '@/api/capacity/self_capacity/list/model';
 
   defineOptions({ name: 'CapacityList' });
 

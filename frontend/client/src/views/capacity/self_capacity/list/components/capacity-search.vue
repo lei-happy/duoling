@@ -40,7 +40,7 @@
 <script lang="ts" setup>
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
-  import type { CapacityParam } from '@/api/capacity/model';
+  import type { CapacityParam } from '@/api/capacity/self_capacity/list/model';
 
   const emit = defineEmits<{
     (e: 'search', where: Pick<CapacityParam, 'keyword' | 'status'>): void;

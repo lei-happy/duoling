@@ -41,7 +41,7 @@
 <script lang="ts" setup>
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
-  import type { TrailerParam } from '@/api/resource/trailer/model';
+  import type { TrailerParam } from '@/api/capacity/self_capacity/trailer/model';
 
   const emit = defineEmits<{
     (e: 'search', where: Pick<TrailerParam, 'keyword' | 'status'>): void;

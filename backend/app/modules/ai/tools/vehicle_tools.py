@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from app.modules.ai.tools.base import ToolContext, ToolResult
 from app.modules.ai.tools.registry import register_tool
-from app.modules.client.services.vehicle_service import VehicleService
+from app.modules.client.services.capacity.self_capacity.vehicle_service import VehicleService
 
 
 class VehicleSearchParams(BaseModel):
@@ -34,7 +34,7 @@ class VehicleSearchParams(BaseModel):
         "返回车牌号、品牌、型号、状态等信息。"
     ),
     params_schema=VehicleSearchParams,
-    permission="resource:vehicle:list",
+    permission="capacity:self_capacity:vehicle:list",
     risk_level="low",
 )
 async def search_vehicle(ctx: ToolContext, **kwargs) -> ToolResult:

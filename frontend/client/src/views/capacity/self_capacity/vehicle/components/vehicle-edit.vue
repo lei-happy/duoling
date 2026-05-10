@@ -213,8 +213,8 @@
     addVehicle,
     updateVehicle,
     listAvailableTrailers
-  } from '@/api/resource/vehicle';
-  import type { Vehicle, TrailerOption } from '@/api/resource/vehicle/model';
+  } from '@/api/capacity/self_capacity/vehicle';
+  import type { Vehicle, TrailerOption } from '@/api/capacity/self_capacity/vehicle/model';
   import { useDictData } from '@/utils/use-dict-data';
   import { DICT_CODE_VEHICLE_TYPE } from '@/constants/dict-codes';
 

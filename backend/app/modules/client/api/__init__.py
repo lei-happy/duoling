@@ -11,9 +11,15 @@ from app.modules.client.api.user import router as user_router
 from app.modules.client.api.role import router as role_router
 from app.modules.client.api.dict import router as dict_router
 from app.modules.client.api.dict_data import router as dict_data_router
-from app.modules.client.api.vehicle import router as vehicle_router
-from app.modules.client.api.trailer import router as trailer_router
-from app.modules.client.api.driver import router as driver_router
+from app.modules.client.api.capacity.self_capacity.vehicle import router as self_vehicle_router
+from app.modules.client.api.capacity.self_capacity.trailer import router as self_trailer_router
+from app.modules.client.api.capacity.self_capacity.driver import router as self_driver_router
+from app.modules.client.api.capacity.self_capacity.list import router as self_capacity_list_router
+from app.modules.client.api.capacity.self_capacity.log import router as self_capacity_log_router
+from app.modules.client.api.capacity.carrier_capacity.list import router as carrier_capacity_list_router
+from app.modules.client.api.capacity.carrier_capacity.approval import router as carrier_capacity_approval_router
+from app.modules.client.api.capacity.social_capacity.list import router as social_capacity_list_router
+from app.modules.client.api.capacity.social_capacity.approval import router as social_capacity_approval_router
 from app.modules.client.api.customer import router as customer_router
 from app.modules.client.api.route import router as route_router
 from app.modules.client.api.operation_record import router as operation_record_router
@@ -35,7 +41,6 @@ from app.modules.client.api.billing.freight_contract import router as freight_co
 from app.modules.client.api.billing.freight_rate import router as freight_rate_router
 from app.modules.client.api.billing.calculate import router as freight_calc_router
 from app.modules.client.api.waybill.waybill import router as waybill_router
-from app.modules.client.api.capacity import router as capacity_router
 from app.modules.ai.api.client import router as ai_client_router
 
 router = APIRouter()
@@ -46,9 +51,51 @@ router.include_router(user_router, prefix="/system/user", tags=["客户端-员�
 router.include_router(role_router, prefix="/system/role", tags=["客户端-角色管理"])
 router.include_router(dict_router, prefix="/system/dictionary", tags=["客户端-数据字典"])
 router.include_router(dict_data_router, prefix="/system/dictionary-data", tags=["客户端-字典数据"])
-router.include_router(vehicle_router, prefix="/resource/vehicle", tags=["客户端-车辆管理"])
-router.include_router(trailer_router, prefix="/resource/trailer", tags=["客户端-挂车管理"])
-router.include_router(driver_router, prefix="/resource/driver", tags=["客户端-驾驶员管理"])
+router.include_router(
+    self_capacity_list_router,
+    prefix="/capacity/self_capacity/list",
+    tags=["客户端-自有运力-运力列表"],
+)
+router.include_router(
+    self_capacity_log_router,
+    prefix="/capacity/self_capacity/log",
+    tags=["客户端-自有运力-变更记录"],
+)
+router.include_router(
+    self_vehicle_router,
+    prefix="/capacity/self_capacity/vehicle",
+    tags=["客户端-自有运力-车辆管理"],
+)
+router.include_router(
+    self_trailer_router,
+    prefix="/capacity/self_capacity/trailer",
+    tags=["客户端-自有运力-挂车管理"],
+)
+router.include_router(
+    self_driver_router,
+    prefix="/capacity/self_capacity/driver",
+    tags=["客户端-自有运力-驾驶员管理"],
+)
+router.include_router(
+    carrier_capacity_list_router,
+    prefix="/capacity/carrier_capacity/list",
+    tags=["客户端-承运商运力-列表(占位)"],
+)
+router.include_router(
+    carrier_capacity_approval_router,
+    prefix="/capacity/carrier_capacity/approval",
+    tags=["客户端-承运商运力-审批(占位)"],
+)
+router.include_router(
+    social_capacity_list_router,
+    prefix="/capacity/social_capacity/list",
+    tags=["客户端-社会运力池-列表(占位)"],
+)
+router.include_router(
+    social_capacity_approval_router,
+    prefix="/capacity/social_capacity/approval",
+    tags=["客户端-社会运力池-审批(占位)"],
+)
 router.include_router(customer_router, prefix="/resource/customer", tags=["客户端-客户管理"])
 router.include_router(route_router, prefix="/resource/route", tags=["客户端-路线管理"])
 router.include_router(
@@ -82,5 +129,4 @@ router.include_router(freight_contract_router, prefix="/billing/contract", tags=
 router.include_router(freight_rate_router, prefix="/billing/rate", tags=["客户端-运价费率"])
 router.include_router(freight_calc_router, prefix="/billing/calculate", tags=["客户端-运费计算"])
 router.include_router(waybill_router, prefix="/business/waybill", tags=["客户端-运单管理V2"])
-router.include_router(capacity_router, prefix="/capacity", tags=["客户端-运力管理"])
 router.include_router(ai_client_router, prefix="/ai", tags=["客户端-AI数字员工"])

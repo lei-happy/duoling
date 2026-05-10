@@ -85,8 +85,8 @@
     bindCapacity,
     listAvailableDrivers,
     listAvailableVehicles
-  } from '@/api/capacity';
-  import type { DriverOption, VehicleOption } from '@/api/capacity/model';
+  } from '@/api/capacity/self_capacity/list';
+  import type { DriverOption, VehicleOption } from '@/api/capacity/self_capacity/list/model';
 
   const props = defineProps<{
     visible: boolean;
