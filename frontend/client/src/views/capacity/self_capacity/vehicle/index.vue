@@ -148,21 +148,24 @@
       prop: 'plateNumber',
       label: '车牌号',
       minWidth: 140,
-      slot: 'plateNumber'
+      slot: 'plateNumber',
+      align: 'center'
     },
     {
       prop: 'vehicleType',
       label: '车辆类型',
       minWidth: 100,
-      slot: 'vehicleType'
+      slot: 'vehicleType',
+      align: 'center'
     },
-    { prop: 'brand', label: '品牌', minWidth: 80 },
-    { prop: 'model', label: '型号', minWidth: 110 },
+    { prop: 'brand', label: '品牌', minWidth: 80, align: 'center' },
+    { prop: 'model', label: '型号', minWidth: 110, align: 'center' },
     {
       prop: 'trailerPlateNumber',
       label: '关联挂车',
       minWidth: 140,
-      slot: 'trailerPlateNumber'
+      slot: 'trailerPlateNumber',
+      align: 'center'
     },
     {
       prop: 'insuranceExpire',

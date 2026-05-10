@@ -282,9 +282,9 @@
     z-index: 2;
   }
 
-  // 有值但未聚焦时的标签颜色
+  // 有值但未聚焦：标签再弱一档，贴近占位符层次，与输入正文区分更明显
   &.has-value:not(.is-focused) .floating-label {
-    color: var(--el-text-color-regular);
+    color: var(--el-text-color-placeholder);
   }
 
   // 禁用状态
