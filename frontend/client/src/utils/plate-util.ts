@@ -11,9 +11,20 @@ function stripSeparators(s: string): string {
   return t;
 }
 
+/** 省简称 + 发牌机关首字母后打点：`京A12345` → `京A · 12345`；无字母时退化为 `京 · xxx` */
+function provinceThenLetterDot(provinceChar: string, afterProvince: string): string {
+  const tail = afterProvince.trim();
+  if (!tail) return `${provinceChar}${PLATE_DOT}`;
+  const m = tail.match(/^([A-HJ-NP-Za-hj-np-z])(.*)$/);
+  if (m) {
+    return `${provinceChar}${m[1]}${PLATE_DOT}${m[2]}`;
+  }
+  return `${provinceChar}${PLATE_DOT}${tail}`;
+}
+
 /**
  * 车牌展示（不改变存储值）。
- * - 蓝/黄：`京A12345` → `京 · A12345`
+ * - 蓝/黄：`京A12345` → `京A · 12345`
  * - 新能源：`粤BD12345` → `粤B · D12345`（发牌机关代号与序号之间）
  */
 export function formatPlateNumberDisplay(
@@ -27,30 +38,33 @@ export function formatPlateNumberDisplay(
   if (!core) return '';
 
   if (category === 'NEW_ENERGY') {
-    if (core.length >= 3 && /^[\u4e00-\u9fa5][A-HJ-NP-Z]/.test(core.slice(0, 2))) {
+    if (
+      core.length >= 3 &&
+      /^[\u4e00-\u9fa5][A-HJ-NP-Za-hj-np-z]/.test(core.slice(0, 2))
+    ) {
       return `${core.slice(0, 2)}${PLATE_DOT}${core.slice(2)}`;
     }
     const normalized = s.match(/^([\u4e00-\u9fa5])\s*[·・]\s*(.+)$/);
     if (normalized) {
-      return `${normalized[1]}${PLATE_DOT}${normalized[2].trim()}`;
+      return provinceThenLetterDot(normalized[1], normalized[2]);
     }
     const first = core[0];
     const rest = core.slice(1);
     if (/[\u4e00-\u9fa5]/.test(first) && rest.length > 0) {
-      return `${first}${PLATE_DOT}${rest}`;
+      return provinceThenLetterDot(first, rest);
     }
     return s;
   }
 
   const normalized = s.match(/^([\u4e00-\u9fa5])\s*[·・]\s*(.+)$/);
   if (normalized) {
-    return `${normalized[1]}${PLATE_DOT}${normalized[2].trim()}`;
+    return provinceThenLetterDot(normalized[1], normalized[2]);
   }
 
   const first = core[0];
   const rest = core.slice(1);
   if (/[\u4e00-\u9fa5]/.test(first) && rest.length > 0) {
-    return `${first}${PLATE_DOT}${rest}`;
+    return provinceThenLetterDot(first, rest);
   }
 
   return s;
