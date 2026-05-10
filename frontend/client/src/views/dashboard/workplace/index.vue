@@ -89,26 +89,18 @@
   import LinkCard from './components/link-card.vue';
   import type { Command } from './model';
   import ActivitiesCard from './components/activities-card.vue';
-  import TaskCard from './components/task-card.vue';
-  import GoalCard from './components/goal-card.vue';
-  import ProjectCard from './components/project-card.vue';
-  import UserList from './components/user-list.vue';
   import TodoCard from './components/todo-card.vue';
 
   defineOptions({
     name: 'DashboardWorkplace',
     components: {
       ActivitiesCard,
-      TaskCard,
-      GoalCard,
-      ProjectCard,
-      UserList,
       TodoCard
     }
   });
 
-  /** 版本号：用于在默认布局变更（待办宽度/顺序）后让用户重新套用 DEFAULT */
-  const CACHE_KEY = 'workplace-layout-v3';
+  /** 版本号：用于在默认布局变更后让用户重新套用 DEFAULT */
+  const CACHE_KEY = 'workplace-layout-v4';
 
   interface ViewItem {
     name: string;
@@ -118,7 +110,7 @@
     xs: number;
   }
 
-  /** 默认布局 */
+  /** 默认布局（与产品示意一致：待办 + 最新动态；其他类型后续按需加入 DEFAULT） */
   const DEFAULT: ViewItem[] = [
     {
       name: 'todo-card',
@@ -130,34 +122,6 @@
     {
       name: 'activities-card',
       title: '最新动态',
-      md: 8,
-      sm: 24,
-      xs: 24
-    },
-    {
-      name: 'task-card',
-      title: '我的任务',
-      md: 8,
-      sm: 24,
-      xs: 24
-    },
-    {
-      name: 'goal-card',
-      title: '本月目标',
-      md: 8,
-      sm: 24,
-      xs: 24
-    },
-    {
-      name: 'project-card',
-      title: '项目进度',
-      md: 16,
-      sm: 24,
-      xs: 24
-    },
-    {
-      name: 'user-list',
-      title: '小组成员',
       md: 8,
       sm: 24,
       xs: 24
@@ -183,7 +147,7 @@
           const [t] = data.splice(todoIdx, 1);
           data.unshift(t);
         }
-        return data;
+        return data.length ? data : [...DEFAULT];
       }
     } catch (e) {
       console.error(e);

@@ -1,203 +1,212 @@
-<!-- 承运商 Tab 编辑弹窗：基础信息 / 结算账户 / 备注 -->
+<!-- 承运商 Tab 编辑弹窗：基础信息 / 结算账户 / 备注（与运力-车辆编辑弹窗交互一致） -->
 <template>
   <el-dialog
     :title="isEdit ? '编辑承运商' : '新增承运商'"
     :model-value="visible"
     width="860px"
     draggable
+    class="carrier-edit-dialog"
     :close-on-click-modal="false"
+    :body-style="dialogBodyStyle"
     @update:model-value="updateVisible"
-    @open="onOpen"
   >
-    <el-tabs v-model="activeTab">
-      <!-- 基础信息 -->
-      <el-tab-pane label="基础信息" name="base">
-        <el-form
-          ref="formRef"
-          :model="form"
-          :rules="rules"
-          label-width="0"
-          class="carrier-edit-form"
-          @submit.prevent=""
-        >
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item prop="carrierName">
-                <floating-label
-                  label="请输入承运商全称"
-                  type="input"
-                  v-model.trim="form.carrierName"
-                  clearable
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item prop="carrierType">
-                <floating-label
-                  v-model="form.carrierType"
-                  label="请选择承运商类型"
-                  type="select"
-                  clearable
-                >
-                  <el-option label="公司车队" :value="0" />
-                  <el-option label="个体司机/小车队" :value="1" />
-                  <el-option label="其他" :value="2" />
-                </floating-label>
-              </el-form-item>
-            </el-col>
+    <el-form
+      ref="formRef"
+      :model="form"
+      :rules="rules"
+      label-width="0"
+      class="carrier-edit-form"
+      :validate-on-rule-change="false"
+      @submit.prevent=""
+    >
+      <el-tabs v-model="activeTab" class="carrier-edit-tabs">
+        <el-tab-pane label="基础信息" name="base">
+          <div class="carrier-tab-pane">
+            <el-row :gutter="16">
+              <!-- 类型优先，与全称、简称同一行 -->
+              <el-col :span="8">
+                <el-form-item prop="carrierType">
+                  <floating-label
+                    v-model="form.carrierType"
+                    label="请选择承运商类型"
+                    type="select"
+                    :clearable="false"
+                  >
+                    <el-option label="公司车队" :value="0" />
+                    <el-option label="个体司机/小车队" :value="1" />
+                    <el-option label="其他" :value="2" />
+                  </floating-label>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item prop="carrierName">
+                  <floating-label
+                    label="请输入承运商全称"
+                    type="input"
+                    v-model.trim="form.carrierName"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item>
+                  <floating-label
+                    label="请输入简称"
+                    type="input"
+                    v-model.trim="form.shortName"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
 
-            <el-col :span="12">
-              <el-form-item prop="contactPhone">
-                <floating-label
-                  label="请输入联系电话（互联激活关键字段）"
-                  type="input"
-                  v-model.trim="form.contactPhone"
-                  clearable
-                  :disabled="phoneLocked"
-                />
-                <div v-if="phoneLocked" class="form-tip">
-                  已激活互联，电话不可修改
-                </div>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item>
-                <floating-label
-                  label="请输入主要联系人"
-                  type="input"
-                  v-model.trim="form.contactPerson"
-                  clearable
-                />
-              </el-form-item>
-            </el-col>
+              <el-col :span="12">
+                <el-form-item prop="contactPerson">
+                  <floating-label
+                    label="请输入联系人姓名"
+                    type="input"
+                    v-model.trim="form.contactPerson"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item prop="contactPhone">
+                  <floating-label
+                    label="请输入联系电话（互联激活关键字段）"
+                    type="input"
+                    v-model.trim="form.contactPhone"
+                    clearable
+                    :disabled="phoneLocked"
+                  />
+                  <div v-if="phoneLocked" class="form-tip">
+                    已激活互联，电话不可修改
+                  </div>
+                </el-form-item>
+              </el-col>
 
-            <el-col :span="12">
-              <el-form-item>
-                <floating-label
-                  label="请输入承运商编码（留空自动）"
-                  type="input"
-                  v-model.trim="form.carrierCode"
-                  clearable
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item>
-                <floating-label
-                  label="请输入简称"
-                  type="input"
-                  v-model.trim="form.shortName"
-                  clearable
-                />
-              </el-form-item>
-            </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    label="请输入承运商编码（留空自动）"
+                    type="input"
+                    v-model.trim="form.carrierCode"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    label="联系邮箱"
+                    type="input"
+                    v-model.trim="form.contactEmail"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
 
-            <el-col :span="12">
-              <el-form-item>
-                <floating-label
-                  label="统一社会信用代码（公司必填）"
-                  type="input"
-                  v-model.trim="form.creditCode"
-                  clearable
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item>
-                <floating-label
-                  label="身份证号（个体场景）"
-                  type="input"
-                  v-model.trim="form.idCardNo"
-                  clearable
-                />
-              </el-form-item>
-            </el-col>
+              <!-- 公司：统一社会信用代码必填，法人选填 -->
+              <template v-if="isCompanyCarrier">
+                <el-col :span="12">
+                  <el-form-item prop="creditCode">
+                    <floating-label
+                      label="请输入统一社会信用代码（必填）"
+                      type="input"
+                      v-model.trim="form.creditCode"
+                      clearable
+                    />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item>
+                    <floating-label
+                      label="法人代表/负责人（选填）"
+                      type="input"
+                      v-model.trim="form.legalPerson"
+                      clearable
+                    />
+                  </el-form-item>
+                </el-col>
+              </template>
+              <!-- 个体/其他：身份证号必填 -->
+              <el-col v-else :span="24">
+                <el-form-item prop="idCardNo">
+                  <floating-label
+                    label="请输入身份证号（必填）"
+                    type="input"
+                    v-model.trim="form.idCardNo"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
 
-            <el-col :span="12">
-              <el-form-item>
-                <floating-label
-                  label="法人代表/负责人"
-                  type="input"
-                  v-model.trim="form.legalPerson"
-                  clearable
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item>
-                <floating-label
-                  label="联系邮箱"
-                  type="input"
-                  v-model.trim="form.contactEmail"
-                  clearable
-                />
-              </el-form-item>
-            </el-col>
+              <el-col :span="24">
+                <el-form-item>
+                  <floating-label
+                    label="请输入详细地址"
+                    type="input"
+                    v-model.trim="form.address"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
 
-            <el-col :span="24">
-              <el-form-item>
-                <floating-label
-                  label="请输入详细地址"
-                  type="input"
-                  v-model.trim="form.address"
-                  clearable
-                />
-              </el-form-item>
-            </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    v-model="form.status"
+                    label="状态"
+                    type="select"
+                    :clearable="false"
+                  >
+                    <el-option label="正常" :value="1" />
+                    <el-option label="停用" :value="0" />
+                    <el-option label="黑名单" :value="2" />
+                  </floating-label>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    label="合作起始日"
+                    type="date"
+                    date-type="date"
+                    v-model="form.cooperationStartDate"
+                    value-format="YYYY-MM-DD"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+        </el-tab-pane>
 
-            <el-col :span="12">
-              <el-form-item>
-                <floating-label
-                  v-model="form.status"
-                  label="状态"
-                  type="select"
-                  :clearable="false"
-                >
-                  <el-option label="正常" :value="1" />
-                  <el-option label="停用" :value="0" />
-                  <el-option label="黑名单" :value="2" />
-                </floating-label>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item>
-                <el-date-picker
-                  v-model="form.cooperationStartDate"
-                  type="date"
-                  placeholder="合作起始日"
-                  value-format="YYYY-MM-DD"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </el-form>
-      </el-tab-pane>
-
-      <!-- 结算账户 -->
-      <el-tab-pane label="结算账户" name="settlements">
-        <carrier-settlement-table
-          :carrier-id="form.id ?? null"
-          v-model="settlements"
-        />
-      </el-tab-pane>
-
-      <!-- 备注 -->
-      <el-tab-pane label="备注" name="remark">
-        <el-form label-width="0">
-          <el-form-item>
-            <el-input
-              v-model="form.remark"
-              type="textarea"
-              :autosize="{ minRows: 6, maxRows: 12 }"
-              placeholder="请输入备注（仅本租户可见）"
+        <el-tab-pane label="结算账户" name="settlements">
+          <div class="carrier-tab-pane">
+            <carrier-settlement-table
+              :carrier-id="form.id ?? null"
+              v-model="settlements"
             />
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
-    </el-tabs>
+          </div>
+        </el-tab-pane>
+
+        <el-tab-pane label="备注" name="remark">
+          <div class="carrier-tab-pane">
+            <el-form-item>
+              <floating-label
+                label="请输入备注（仅本租户可见）"
+                type="input"
+                input-type="textarea"
+                v-model.trim="form.remark"
+                clearable
+              />
+            </el-form-item>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+    </el-form>
     <template #footer>
-      <el-button @click="updateVisible(false)">关闭</el-button>
+      <el-button @click="updateVisible(false)">取消</el-button>
       <el-button type="primary" :loading="loading" @click="handleSubmit">
         保存
       </el-button>
@@ -233,6 +242,8 @@
   }>();
 
   const isEdit = computed(() => !!props.data?.id);
+  /** 公司车队 */
+  const isCompanyCarrier = computed(() => form.carrierType === 0);
   const phoneLocked = computed(
     () => isEdit.value && !!form.linkedTenantCode
   );
@@ -247,22 +258,93 @@
   });
   const settlements = ref<CarrierSettlement[]>([]);
 
-  const rules = reactive<FormRules>({
-    carrierName: [
-      { required: true, message: '请输入承运商全称', trigger: 'blur' }
-    ],
-    carrierType: [
-      { required: true, message: '请选择承运商类型', trigger: 'change' }
-    ],
-    contactPhone: [
-      { required: true, message: '请输入联系电话', trigger: 'blur' },
-      {
-        pattern: /^1[3-9]\d{9}$/,
-        message: '请输入正确的手机号',
-        trigger: 'blur'
-      }
-    ]
+  const dialogBodyStyle = {
+    padding: '0 12px 8px'
+  };
+
+  /** 统一社会信用代码 18 位（数字与大写字母，不含 I/O/Z/S/V） */
+  const USCC_PATTERN =
+    /^[0-9A-HJ-NPQRTUWXY]{2}\d{6}[0-9A-HJ-NPQRTUWXY]{10}$/i;
+
+  /** 大陆 18 位身份证号 */
+  const ID_CARD_18_PATTERN =
+    /^[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/;
+
+  /** 大陆 15 位一代身份证 */
+  const ID_CARD_15_PATTERN =
+    /^[1-9]\d{7}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}$/;
+
+  const validateIdCardNo = (
+    _rule: unknown,
+    value: string | undefined,
+    callback: (e?: Error) => void
+  ) => {
+    const v = value?.trim() ?? '';
+    if (!v) {
+      callback(new Error('请输入身份证号'));
+      return;
+    }
+    if (ID_CARD_18_PATTERN.test(v) || ID_CARD_15_PATTERN.test(v)) {
+      callback();
+      return;
+    }
+    callback(new Error('请输入正确的 15 或 18 位身份证号'));
+  };
+
+  const rules = computed<FormRules>(() => {
+    const r: FormRules = {
+      carrierName: [
+        { required: true, message: '请输入承运商全称', trigger: 'blur' }
+      ],
+      carrierType: [
+        { required: true, message: '请选择承运商类型', trigger: 'change' }
+      ],
+      contactPerson: [
+        { required: true, message: '请输入联系人姓名', trigger: 'blur' }
+      ],
+      contactPhone: [
+        { required: true, message: '请输入联系电话', trigger: 'blur' },
+        {
+          pattern: /^1[3-9]\d{9}$/,
+          message: '请输入正确的手机号',
+          trigger: 'blur'
+        }
+      ]
+    };
+    if (form.carrierType === 0) {
+      r.creditCode = [
+        {
+          required: true,
+          message: '请输入统一社会信用代码',
+          trigger: 'blur'
+        },
+        {
+          pattern: USCC_PATTERN,
+          message: '请输入正确的 18 位统一社会信用代码',
+          trigger: 'blur'
+        }
+      ];
+    } else {
+      r.idCardNo = [
+        { required: true, message: '请输入身份证号', trigger: 'blur' },
+        { validator: validateIdCardNo, trigger: 'blur' }
+      ];
+    }
+    return r;
   });
+
+  watch(
+    () => form.carrierType,
+    () => {
+      void nextTick(() => {
+        formRef.value?.clearValidate([
+          'creditCode',
+          'idCardNo',
+          'legalPerson'
+        ]);
+      });
+    }
+  );
 
   function reset() {
     Object.assign(form, {
@@ -291,14 +373,16 @@
     activeTab.value = 'base';
   }
 
-  const onOpen = () => {
-    nextTick(() => formRef.value?.clearValidate());
-  };
-
   watch(
     () => props.visible,
     async (val) => {
-      if (!val) return;
+      if (!val) {
+        void nextTick(() => {
+          formRef.value?.clearValidate();
+        });
+        return;
+      }
+      activeTab.value = 'base';
       reset();
       if (props.data?.id) {
         const detail = await getCarrier(props.data.id);
@@ -307,7 +391,9 @@
           settlements.value = detail.settlements ?? [];
         }
       }
-      nextTick(() => formRef.value?.clearValidate());
+      void nextTick(() => {
+        formRef.value?.clearValidate();
+      });
     }
   );
 
@@ -317,6 +403,11 @@
 
   const buildPayload = (): Carrier => {
     const payload: Carrier = { ...form };
+    if (payload.carrierType === 0) {
+      delete payload.idCardNo;
+    } else {
+      delete payload.creditCode;
+    }
     if (!payload.carrierCode?.trim()) {
       delete payload.carrierCode;
     }
@@ -350,7 +441,7 @@
             settlements.value = list ?? [];
           }
         }
-        EleMessage.success({ message: '保存成功', plain: true });
+        EleMessage.success({ message: '操作成功', plain: true });
         emit('done');
         updateVisible(false);
       } catch (e: any) {
@@ -363,9 +454,104 @@
 </script>
 
 <style scoped>
-  .carrier-edit-form :deep(.el-form-item) {
-    margin-bottom: 18px;
+  .carrier-edit-form {
+    margin: 0;
   }
+
+  .carrier-edit-tabs :deep(.el-tabs__header) {
+    margin: 0 0 10px;
+    border-bottom: none;
+  }
+
+  .carrier-edit-tabs :deep(.el-tabs__nav-wrap) {
+    width: 100%;
+  }
+
+  .carrier-edit-tabs :deep(.el-tabs__nav-wrap)::after {
+    display: none;
+  }
+
+  .carrier-edit-tabs :deep(.el-tabs__nav-scroll) {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .carrier-edit-tabs :deep(.el-tabs__nav) {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 4px;
+    background: var(--el-fill-color-light);
+  }
+
+  .carrier-edit-tabs :deep(.el-tabs__item) {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0 6px;
+    height: 36px;
+    line-height: 36px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition:
+      color 0.2s,
+      background 0.2s,
+      box-shadow 0.2s;
+  }
+
+  .carrier-edit-tabs :deep(.el-tabs__item:hover) {
+    color: var(--el-color-primary);
+  }
+
+  .carrier-edit-tabs :deep(.el-tabs__item.is-active) {
+    color: var(--el-color-primary);
+    font-weight: 600;
+    background: var(--el-bg-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .carrier-edit-tabs :deep(.el-tabs__active-bar) {
+    display: none;
+  }
+
+  .carrier-edit-tabs :deep(.el-tabs__content) {
+    overflow: visible;
+  }
+
+  .carrier-tab-pane {
+    max-height: min(420px, calc(100vh - 300px));
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 14px 6px 12px 4px;
+    scrollbar-gutter: stable;
+  }
+
+  .carrier-edit-dialog :deep(.floating-label-wrapper.is-focused .floating-label),
+  .carrier-edit-dialog :deep(.floating-label-wrapper.has-value .floating-label) {
+    transform: translateY(-62%);
+    padding: 2px 6px;
+    z-index: 4;
+    background-color: var(--el-bg-color) !important;
+    box-shadow: 0 0 0 2px var(--el-bg-color);
+  }
+
+  .carrier-edit-dialog :deep(.carrier-tab-pane > .el-row > .el-col > .el-form-item) {
+    margin-bottom: 14px;
+  }
+
+  .carrier-edit-dialog :deep(.carrier-tab-pane > .el-form-item) {
+    margin-bottom: 14px;
+  }
+
   .form-tip {
     font-size: 12px;
     color: var(--el-color-warning);
