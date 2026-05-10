@@ -2,387 +2,380 @@
   <el-dialog
     :title="isEdit ? '编辑驾驶员' : '新增驾驶员'"
     :model-value="visible"
-    @update:model-value="updateVisible"
-    width="750px"
+    width="780px"
     draggable
+    class="driver-edit-dialog"
+    :close-on-click-modal="false"
+    :body-style="dialogBodyStyle"
+    @update:model-value="updateVisible"
   >
-    <el-tabs v-model="activeTab">
-      <!-- Tab 1: 基础信息 -->
-      <el-tab-pane label="基础信息" name="basic">
-        <el-form
-          ref="basicFormRef"
-          :model="form"
-          :rules="basicRules"
-          label-width="100px"
-          @submit.prevent=""
-        >
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="姓名" prop="name">
-                <el-input v-model="form.name" placeholder="请输入姓名" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="手机号" prop="phone">
-                <el-input v-model="form.phone" placeholder="请输入手机号" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="性别">
-                <el-select
-                  v-model="form.gender"
-                  placeholder="请选择性别"
-                  style="width: 100%"
-                >
-                  <el-option label="男" :value="1" />
-                  <el-option label="女" :value="2" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="身份证号">
-                <el-input
-                  v-model="form.idCard"
-                  placeholder="请输入身份证号"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="紧急联系人">
-                <el-input
-                  v-model="form.emergencyContact"
-                  placeholder="请输入紧急联系人"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="紧急电话">
-                <el-input
-                  v-model="form.emergencyPhone"
-                  placeholder="请输入紧急联系电话"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="24">
-              <el-form-item label="家庭住址">
-                <el-input
-                  v-model="form.homeAddress"
-                  placeholder="请输入家庭住址"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="24">
-              <el-form-item label="备注">
-                <el-input
-                  v-model="form.remark"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="请输入备注"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </el-form>
-      </el-tab-pane>
-
-      <!-- Tab 2: 资质信息 -->
-      <el-tab-pane label="资质信息" name="license">
-        <el-form :model="form" label-width="110px" @submit.prevent="">
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="驾照类型">
-                <el-select
-                  v-model="form.licenseType"
-                  placeholder="请选择驾照类型"
-                  style="width: 100%"
-                >
-                  <el-option label="A1" value="A1" />
-                  <el-option label="A2" value="A2" />
-                  <el-option label="A3" value="A3" />
-                  <el-option label="B1" value="B1" />
-                  <el-option label="B2" value="B2" />
-                  <el-option label="C1" value="C1" />
-                  <el-option label="C2" value="C2" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="驾照号码">
-                <el-input
-                  v-model="form.licenseNo"
-                  placeholder="请输入驾照号码"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="驾照有效期">
-                <el-date-picker
-                  v-model="form.licenseExpire"
-                  type="date"
-                  value-format="YYYY-MM-DD"
-                  placeholder="选择日期"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="资格证号">
-                <el-input
-                  v-model="form.qualificationNo"
-                  placeholder="请输入从业资格证号"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="资格证有效期">
-                <el-date-picker
-                  v-model="form.qualificationExpire"
-                  type="date"
-                  value-format="YYYY-MM-DD"
-                  placeholder="选择日期"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-divider content-position="left">证件附件</el-divider>
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="驾驶证">
-                <el-upload
-                  class="driver-photo-upload"
-                  :show-file-list="false"
-                  :http-request="(opt: any) => handlePhotoUpload(opt, 'licensePhoto')"
-                  accept="image/*"
-                >
-                  <el-image
-                    v-if="form.licensePhoto"
-                    :src="resolveUploadUrl(form.licensePhoto)"
-                    fit="cover"
-                    style="width: 120px; height: 80px"
+    <el-form
+      ref="formRef"
+      :model="form"
+      :rules="basicRules"
+      label-width="0"
+      class="driver-edit-form"
+      :validate-on-rule-change="false"
+      @submit.prevent=""
+    >
+      <el-tabs v-model="activeTab" class="driver-edit-tabs">
+        <el-tab-pane label="基础信息" name="basic">
+          <div class="driver-tab-pane">
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item prop="name">
+                  <floating-label
+                    label="请输入姓名"
+                    type="input"
+                    v-model.trim="form.name"
+                    clearable
                   />
-                  <div v-else class="driver-photo-placeholder">
-                    <el-icon :size="24"><Plus /></el-icon>
-                    <span>上传驾驶证</span>
-                  </div>
-                </el-upload>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="资格证">
-                <el-upload
-                  class="driver-photo-upload"
-                  :show-file-list="false"
-                  :http-request="(opt: any) => handlePhotoUpload(opt, 'qualificationPhoto')"
-                  accept="image/*"
-                >
-                  <el-image
-                    v-if="form.qualificationPhoto"
-                    :src="resolveUploadUrl(form.qualificationPhoto)"
-                    fit="cover"
-                    style="width: 120px; height: 80px"
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item prop="phone">
+                  <floating-label
+                    label="请输入手机号"
+                    type="input"
+                    v-model.trim="form.phone"
+                    clearable
                   />
-                  <div v-else class="driver-photo-placeholder">
-                    <el-icon :size="24"><Plus /></el-icon>
-                    <span>上传资格证</span>
-                  </div>
-                </el-upload>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="身份证正面">
-                <el-upload
-                  class="driver-photo-upload"
-                  :show-file-list="false"
-                  :http-request="(opt: any) => handlePhotoUpload(opt, 'idCardFrontPhoto')"
-                  accept="image/*"
-                >
-                  <el-image
-                    v-if="form.idCardFrontPhoto"
-                    :src="resolveUploadUrl(form.idCardFrontPhoto)"
-                    fit="cover"
-                    style="width: 120px; height: 80px"
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    v-model="form.gender"
+                    label="请选择性别"
+                    type="select"
+                    clearable
+                  >
+                    <el-option label="男" :value="1" />
+                    <el-option label="女" :value="2" />
+                  </floating-label>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    label="请输入身份证号"
+                    type="input"
+                    v-model.trim="form.idCard"
+                    clearable
                   />
-                  <div v-else class="driver-photo-placeholder">
-                    <el-icon :size="24"><Plus /></el-icon>
-                    <span>上传正面</span>
-                  </div>
-                </el-upload>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="身份证反面">
-                <el-upload
-                  class="driver-photo-upload"
-                  :show-file-list="false"
-                  :http-request="(opt: any) => handlePhotoUpload(opt, 'idCardBackPhoto')"
-                  accept="image/*"
-                >
-                  <el-image
-                    v-if="form.idCardBackPhoto"
-                    :src="resolveUploadUrl(form.idCardBackPhoto)"
-                    fit="cover"
-                    style="width: 120px; height: 80px"
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    label="请输入紧急联系人"
+                    type="input"
+                    v-model.trim="form.emergencyContact"
+                    clearable
                   />
-                  <div v-else class="driver-photo-placeholder">
-                    <el-icon :size="24"><Plus /></el-icon>
-                    <span>上传反面</span>
-                  </div>
-                </el-upload>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </el-form>
-      </el-tab-pane>
-
-      <!-- Tab 3: 运营属性 -->
-      <el-tab-pane label="运营属性" name="operation">
-        <el-form :model="form" label-width="100px" @submit.prevent="">
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="所属部门">
-                <DepartmentSelect
-                  v-model="form.departmentId"
-                  placeholder="请选择所属部门"
-                  clearable
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="司机类型">
-                <el-select
-                  v-model="form.driverType"
-                  placeholder="请选择司机类型"
-                  style="width: 100%"
-                  clearable
-                >
-                  <el-option label="自有" :value="1" />
-                  <el-option label="外协" :value="2" />
-                  <el-option label="临时" :value="3" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="运营状态">
-                <el-select
-                  v-model="form.operationStatus"
-                  placeholder="请选择运营状态"
-                  style="width: 100%"
-                  clearable
-                >
-                  <el-option label="可接单" :value="1" />
-                  <el-option label="忙碌" :value="2" />
-                  <el-option label="休假" :value="3" />
-                  <el-option label="停运" :value="4" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-divider content-position="left">常跑线路</el-divider>
-          <div style="margin-bottom: 12px">
-            <el-button type="primary" size="small" @click="addRoute">
-              添加线路
-            </el-button>
-            <span v-if="!isEdit" style="color: #999; margin-left: 8px; font-size: 12px">
-              请先保存驾驶员后再管理线路
-            </span>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item>
+                  <floating-label
+                    label="请输入紧急联系电话"
+                    type="input"
+                    v-model.trim="form.emergencyPhone"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item>
+                  <floating-label
+                    label="请输入家庭住址"
+                    type="input"
+                    v-model.trim="form.homeAddress"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item>
+                  <floating-label
+                    label="请输入备注"
+                    type="input"
+                    input-type="textarea"
+                    v-model.trim="form.remark"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
           </div>
-          <el-table :data="routes" border size="small" style="width: 100%">
-            <el-table-column label="出发地" min-width="160">
-              <template #default="{ row, $index }">
-                <RegionsSelect
-                  v-model="row.originValue"
-                  type="provinceCity"
-                  placeholder="选择出发地"
-                  size="small"
-                  @change="onRouteRegionChange(row, 'origin', $index)"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="目的地" min-width="160">
-              <template #default="{ row, $index }">
-                <RegionsSelect
-                  v-model="row.destValue"
-                  type="provinceCity"
-                  placeholder="选择目的地"
-                  size="small"
-                  @change="onRouteRegionChange(row, 'dest', $index)"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="70" align="center">
-              <template #default="{ $index }">
-                <el-link
-                  type="danger"
-                  :underline="false"
-                  @click="removeRoute($index)"
-                >
-                  删除
-                </el-link>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-form>
-      </el-tab-pane>
+        </el-tab-pane>
 
-      <!-- Tab 4: 账户信息 -->
-      <el-tab-pane label="账户信息" name="account">
-        <div style="margin-bottom: 12px">
-          <el-button
-            type="primary"
-            size="small"
-            :disabled="!isEdit"
-            @click="addAccount"
-          >
-            新增账户
-          </el-button>
-          <span v-if="!isEdit" style="color: #999; margin-left: 8px; font-size: 12px">
-            请先保存驾驶员基础信息后再添加账户
-          </span>
-        </div>
-        <el-table :data="accounts" border size="small" style="width: 100%">
-          <el-table-column prop="accountType" label="账户类型" width="100" align="center">
-            <template #default="{ row }">
-              <span v-if="row.accountType === 1">银行卡</span>
-              <span v-else-if="row.accountType === 2">油气款</span>
-              <span v-else-if="row.accountType === 3">积分</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="accountName" label="账户名称" min-width="120" />
-          <el-table-column prop="accountNo" label="账户号" min-width="160" />
-          <el-table-column prop="balance" label="余额" width="100" align="right" />
-          <el-table-column prop="status" label="状态" width="90" align="center">
-            <template #default="{ row }">
-              <el-switch
-                :model-value="row.status === 1"
-                size="small"
-                @change="(checked: boolean) => toggleAccountStatus(row, checked)"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="120" align="center">
-            <template #default="{ row }">
-              <el-link
+        <el-tab-pane label="资质信息" name="license">
+          <div class="driver-tab-pane">
+            <el-row :gutter="12" class="driver-license-row">
+              <el-col :span="5" :xs="24" :sm="5">
+                <el-form-item>
+                  <floating-label
+                    v-model="form.licenseType"
+                    label="请选择驾照类型"
+                    type="select"
+                    clearable
+                  >
+                    <el-option label="A1" value="A1" />
+                    <el-option label="A2" value="A2" />
+                    <el-option label="A3" value="A3" />
+                    <el-option label="B1" value="B1" />
+                    <el-option label="B2" value="B2" />
+                    <el-option label="C1" value="C1" />
+                    <el-option label="C2" value="C2" />
+                  </floating-label>
+                </el-form-item>
+              </el-col>
+              <el-col :span="10" :xs="24" :sm="10">
+                <el-form-item>
+                  <floating-label
+                    label="请输入驾照号码"
+                    type="input"
+                    v-model.trim="form.licenseNo"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="9" :xs="24" :sm="9">
+                <el-form-item>
+                  <floating-label
+                    label="请选择驾照有效期"
+                    type="date"
+                    date-type="date"
+                    v-model="form.licenseExpire"
+                    value-format="YYYY-MM-DD"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="12" class="driver-license-row">
+              <el-col :span="12" :xs="24" :sm="12">
+                <el-form-item>
+                  <floating-label
+                    label="请输入从业资格证号"
+                    type="input"
+                    v-model.trim="form.qualificationNo"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12" :xs="24" :sm="12">
+                <el-form-item>
+                  <floating-label
+                    label="请选择资格证有效期"
+                    type="date"
+                    date-type="date"
+                    v-model="form.qualificationExpire"
+                    value-format="YYYY-MM-DD"
+                    clearable
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="driver-photo-section-title">证件照片</div>
+            <div class="driver-doc-gallery">
+              <div
+                v-for="doc in driverPhotoGallery"
+                :key="doc.key"
+                class="driver-doc-gallery__card"
+              >
+                <div class="driver-doc-gallery__title">{{ doc.title }}</div>
+                <el-upload
+                  class="driver-doc-gallery__upload"
+                  :show-file-list="false"
+                  :http-request="(opt: any) => handlePhotoUpload(opt, doc.field)"
+                  accept="image/*"
+                >
+                  <div class="driver-doc-gallery__frame">
+                    <el-image
+                      v-if="(form as any)[doc.field]"
+                      :src="resolveUploadUrl((form as any)[doc.field])"
+                      fit="cover"
+                      class="driver-doc-gallery__image"
+                    />
+                    <div v-else class="driver-doc-gallery__empty">
+                      <el-icon :size="28"><Plus /></el-icon>
+                      <span>点击上传</span>
+                    </div>
+                  </div>
+                  <p class="driver-doc-gallery__hint">{{ doc.hint }}</p>
+                </el-upload>
+              </div>
+            </div>
+          </div>
+        </el-tab-pane>
+
+        <el-tab-pane label="运营属性" name="operation">
+          <div class="driver-tab-pane">
+            <el-row :gutter="12" class="driver-op-row">
+              <el-col :span="8" :xs="24" :sm="8">
+                <el-form-item class="driver-op-form-item">
+                  <DepartmentSelect
+                    v-model="form.departmentId"
+                    placeholder="请选择所属部门"
+                    clearable
+                    class="driver-op-dept-select"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8" :xs="24" :sm="8">
+                <el-form-item class="driver-op-form-item">
+                  <floating-label
+                    v-model="form.driverType"
+                    label="请选择司机类型"
+                    type="select"
+                    clearable
+                  >
+                    <el-option label="自有" :value="1" />
+                    <el-option label="外协" :value="2" />
+                    <el-option label="临时" :value="3" />
+                  </floating-label>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8" :xs="24" :sm="8">
+                <el-form-item class="driver-op-form-item">
+                  <floating-label
+                    v-model="form.operationStatus"
+                    label="请选择运营状态"
+                    type="select"
+                    clearable
+                  >
+                    <el-option label="可接单" :value="1" />
+                    <el-option label="忙碌" :value="2" />
+                    <el-option label="休假" :value="3" />
+                    <el-option label="停运" :value="4" />
+                  </floating-label>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="driver-photo-section-title">常跑线路</div>
+            <div class="driver-section-toolbar">
+              <el-button type="primary" size="small" @click="addRoute">
+                添加线路
+              </el-button>
+              <span v-if="!isEdit" class="driver-hint">
+                请先保存驾驶员后再管理线路
+              </span>
+            </div>
+            <div class="driver-table-wrap">
+            <el-table
+              :data="routes"
+              border
+              stripe
+              size="default"
+              class="driver-nested-table driver-data-table"
+            >
+              <el-table-column label="出发地" min-width="160">
+                <template #default="{ row, $index }">
+                  <RegionsSelect
+                    v-model="row.originValue"
+                    type="provinceCity"
+                    placeholder="选择出发地"
+                    size="small"
+                    @change="onRouteRegionChange(row, 'origin', $index)"
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="目的地" min-width="160">
+                <template #default="{ row, $index }">
+                  <RegionsSelect
+                    v-model="row.destValue"
+                    type="provinceCity"
+                    placeholder="选择目的地"
+                    size="small"
+                    @change="onRouteRegionChange(row, 'dest', $index)"
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="70" align="center">
+                <template #default="{ $index }">
+                  <el-link
+                    type="danger"
+                    :underline="false"
+                    @click="removeRoute($index)"
+                  >
+                    删除
+                  </el-link>
+                </template>
+              </el-table-column>
+            </el-table>
+            </div>
+          </div>
+        </el-tab-pane>
+
+        <el-tab-pane label="账户信息" name="account">
+          <div class="driver-tab-pane">
+            <div class="driver-section-toolbar">
+              <el-button
                 type="primary"
-                :underline="false"
-                @click="editAccount(row)"
+                size="small"
+                :disabled="!isEdit"
+                @click="addAccount"
               >
-                编辑
-              </el-link>
-              <el-divider direction="vertical" />
-              <el-link
-                type="danger"
-                :underline="false"
-                @click="deleteAccount(row)"
-              >
-                删除
-              </el-link>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-tab-pane>
-    </el-tabs>
+                新增账户
+              </el-button>
+              <span v-if="!isEdit" class="driver-hint">
+                请先保存驾驶员基础信息后再添加账户
+              </span>
+            </div>
+            <div class="driver-table-wrap">
+            <el-table
+              :data="accounts"
+              border
+              stripe
+              size="default"
+              class="driver-nested-table driver-data-table"
+            >
+              <el-table-column prop="accountType" label="账户类型" width="100" align="center">
+                <template #default="{ row }">
+                  <span v-if="row.accountType === 1">银行卡</span>
+                  <span v-else-if="row.accountType === 2">油气款</span>
+                  <span v-else-if="row.accountType === 3">积分</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="accountName" label="账户名称" min-width="120" />
+              <el-table-column prop="accountNo" label="账户号" min-width="160" />
+              <el-table-column prop="balance" label="余额" width="100" align="right" />
+              <el-table-column prop="status" label="状态" width="90" align="center">
+                <template #default="{ row }">
+                  <el-switch
+                    :model-value="row.status === 1"
+                    size="small"
+                    @change="(checked: boolean) => toggleAccountStatus(row, checked)"
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="120" align="center">
+                <template #default="{ row }">
+                  <el-link
+                    type="primary"
+                    :underline="false"
+                    @click="editAccount(row)"
+                  >
+                    编辑
+                  </el-link>
+                  <el-divider direction="vertical" />
+                  <el-link
+                    type="danger"
+                    :underline="false"
+                    @click="deleteAccount(row)"
+                  >
+                    删除
+                  </el-link>
+                </template>
+              </el-table-column>
+            </el-table>
+            </div>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
+    </el-form>
     <template #footer>
       <el-button @click="updateVisible(false)">取消</el-button>
       <el-button type="primary" :loading="loading" @click="handleSubmit">
@@ -397,41 +390,52 @@
       width="480px"
       append-to-body
       draggable
+      :close-on-click-modal="false"
     >
       <el-form
         ref="accountFormRef"
         :model="accountForm"
         :rules="accountRules"
-        label-width="90px"
+        label-width="0"
       >
-        <el-form-item label="账户类型" prop="accountType">
-          <el-select
+        <el-form-item prop="accountType">
+          <floating-label
             v-model="accountForm.accountType"
-            placeholder="请选择"
-            style="width: 100%"
+            label="请选择账户类型"
+            type="select"
+            clearable
           >
             <el-option label="银行卡" :value="1" />
             <el-option label="油气款" :value="2" />
             <el-option label="积分" :value="3" />
-          </el-select>
+          </floating-label>
         </el-form-item>
-        <el-form-item label="账户名称" prop="accountName">
-          <el-input
-            v-model="accountForm.accountName"
-            placeholder="请输入账户名称"
+        <el-form-item prop="accountName">
+          <floating-label
+            label="请输入账户名称"
+            type="input"
+            v-model.trim="accountForm.accountName"
+            clearable
           />
         </el-form-item>
-        <el-form-item label="账户号" prop="accountNo">
-          <el-input
-            v-model="accountForm.accountNo"
-            placeholder="请输入账户号"
+        <el-form-item prop="accountNo">
+          <floating-label
+            label="请输入账户号"
+            type="input"
+            v-model.trim="accountForm.accountNo"
+            clearable
           />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="accountForm.status" style="width: 100%">
+        <el-form-item>
+          <floating-label
+            v-model="accountForm.status"
+            label="请选择状态"
+            type="select"
+            clearable
+          >
             <el-option label="正常" :value="1" />
             <el-option label="停用" :value="0" />
-          </el-select>
+          </floating-label>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -449,11 +453,12 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive, watch, computed } from 'vue';
+  import { ref, reactive, watch, computed, nextTick } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { ElMessageBox } from 'element-plus';
   import { Plus } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import DepartmentSelect from '@/components/DepartmentSelect/index.vue';
   import RegionsSelect from '@/components/RegionsSelect/index.vue';
   import { uploadFile } from '@/api/system/file';
@@ -492,9 +497,13 @@
 
   const isEdit = computed(() => !!props.data?.id);
   const activeTab = ref('basic');
-  const basicFormRef = ref<FormInstance>();
+  const formRef = ref<FormInstance>();
   const loading = ref(false);
   const form = reactive<Driver>({});
+
+  const dialogBodyStyle = {
+    padding: '0 12px 8px'
+  };
 
   const accounts = ref<DriverAccount[]>([]);
   const accountDialogVisible = ref(false);
@@ -504,6 +513,34 @@
   const accountForm = reactive<Partial<DriverAccount>>({});
 
   const routes = ref<RouteRow[]>([]);
+
+  /** 资质页证件画廊项（字段名与 Driver 一致） */
+  const driverPhotoGallery = [
+    {
+      key: 'license',
+      title: '驾驶证',
+      field: 'licensePhoto' as const,
+      hint: 'JPG / PNG'
+    },
+    {
+      key: 'qualification',
+      title: '从业资格证',
+      field: 'qualificationPhoto' as const,
+      hint: 'JPG / PNG'
+    },
+    {
+      key: 'idFront',
+      title: '身份证人像面',
+      field: 'idCardFrontPhoto' as const,
+      hint: 'JPG / PNG'
+    },
+    {
+      key: 'idBack',
+      title: '身份证国徽面',
+      field: 'idCardBackPhoto' as const,
+      hint: 'JPG / PNG'
+    }
+  ];
 
   const basicRules = reactive<FormRules>({
     name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
@@ -573,7 +610,7 @@
       if (val) {
         activeTab.value = 'basic';
         if (props.data) {
-          Object.assign(form, props.data);
+          Object.assign(form, { ...props.data });
           loadAccounts();
           loadRoutes();
         } else {
@@ -583,6 +620,13 @@
           accounts.value = [];
           routes.value = [];
         }
+        void nextTick(() => {
+          formRef.value?.clearValidate();
+        });
+      } else {
+        void nextTick(() => {
+          formRef.value?.clearValidate();
+        });
       }
     }
   );
@@ -592,7 +636,7 @@
   };
 
   const handleSubmit = () => {
-    basicFormRef.value?.validate(async (valid) => {
+    formRef.value?.validate(async (valid) => {
       if (!valid) {
         activeTab.value = 'basic';
         return;
@@ -735,27 +779,278 @@
 </script>
 
 <style scoped>
-  .driver-photo-upload :deep(.el-upload) {
-    border: 1px dashed var(--el-border-color);
-    border-radius: 6px;
-    cursor: pointer;
+  .driver-edit-form {
+    margin: 0;
+  }
+
+  /* Tab 灰色底轨铺满整行，单项均分且文字居中 */
+  .driver-edit-tabs :deep(.el-tabs__header) {
+    margin: 0 0 10px;
+    border-bottom: none;
+  }
+
+  .driver-edit-tabs :deep(.el-tabs__nav-wrap) {
+    width: 100%;
+  }
+
+  .driver-edit-tabs :deep(.el-tabs__nav-wrap)::after {
+    display: none;
+  }
+
+  .driver-edit-tabs :deep(.el-tabs__nav-scroll) {
+    width: 100%;
     overflow: hidden;
+  }
+
+  .driver-edit-tabs :deep(.el-tabs__nav) {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 4px;
+    background: var(--el-fill-color-light);
+  }
+
+  .driver-edit-tabs :deep(.el-tabs__item) {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0 6px;
+    height: 36px;
+    line-height: 36px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition:
+      color 0.2s,
+      background 0.2s,
+      box-shadow 0.2s;
+  }
+
+  .driver-edit-tabs :deep(.el-tabs__item:hover) {
+    color: var(--el-color-primary);
+  }
+
+  .driver-edit-tabs :deep(.el-tabs__item.is-active) {
+    color: var(--el-color-primary);
+    font-weight: 600;
+    background: var(--el-bg-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .driver-edit-tabs :deep(.el-tabs__active-bar) {
+    display: none;
+  }
+
+  .driver-edit-tabs :deep(.el-tabs__content) {
+    overflow: visible;
+  }
+
+  /* 顶部留白：浮动标签上浮后不被裁切；与 Tab 条留出间距 */
+  .driver-tab-pane {
+    max-height: min(420px, calc(100vh - 300px));
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 14px 6px 12px 4px;
+    scrollbar-gutter: stable;
+  }
+
+  /* 浮动标签与输入框上边框「穿线」问题：抬高并加厚底色遮挡边框 */
+  .driver-edit-dialog :deep(.floating-label-wrapper.is-focused .floating-label),
+  .driver-edit-dialog :deep(.floating-label-wrapper.has-value .floating-label) {
+    transform: translateY(-62%);
+    padding: 2px 6px;
+    z-index: 4;
+    background-color: var(--el-bg-color) !important;
+    box-shadow: 0 0 0 2px var(--el-bg-color);
+  }
+
+  .driver-edit-dialog :deep(.driver-tab-pane > .el-row > .el-col > .el-form-item) {
+    margin-bottom: 14px;
+  }
+
+  .driver-op-row :deep(.el-form-item__content) {
+    width: 100%;
+  }
+
+  .driver-op-dept-select {
+    width: 100%;
+  }
+
+  .driver-op-form-item {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  .driver-photo-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin: 8px 0 10px;
+    padding-left: 2px;
+    border-left: 3px solid var(--el-color-primary);
+    line-height: 1.2;
+  }
+
+  .driver-section-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .driver-hint {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+  }
+
+  .driver-nested-table {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .driver-table-wrap {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+  }
+
+  .driver-data-table :deep(.el-table__inner-wrapper::before) {
+    display: none;
+  }
+
+  .driver-data-table :deep(.el-table__header-wrapper th.el-table__cell) {
+    background: var(--el-fill-color-light) !important;
+    color: var(--el-text-color-regular);
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .driver-data-table :deep(.el-table__header .cell) {
+    padding: 0 10px;
+  }
+
+  .driver-data-table :deep(.el-table__body .el-table__cell) {
+    vertical-align: middle;
+  }
+
+  .driver-data-table :deep(.el-table__body .cell) {
+    padding: 10px 10px;
+  }
+
+  .driver-data-table :deep(.el-table__row:hover > td.el-table__cell) {
+    background-color: var(--el-fill-color-lighter) !important;
+  }
+
+  .driver-data-table :deep(.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
+    background: var(--el-fill-color-blank);
+  }
+
+  .driver-license-row {
+    margin-bottom: 4px;
+  }
+
+  .driver-doc-gallery {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  @media (max-width: 768px) {
+    .driver-doc-gallery {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 480px) {
+    .driver-doc-gallery {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .driver-doc-gallery__card {
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 10px;
+    padding: 10px 10px 8px;
+    background: var(--el-fill-color-blank);
+    transition:
+      box-shadow 0.2s,
+      border-color 0.2s;
+  }
+
+  .driver-doc-gallery__card:hover {
+    border-color: var(--el-color-primary-light-5);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  }
+
+  .driver-doc-gallery__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .driver-doc-gallery__upload {
+    display: block;
+    width: 100%;
+  }
+
+  .driver-doc-gallery__upload :deep(.el-upload) {
+    display: block;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .driver-doc-gallery__frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px dashed var(--el-border-color);
+    background: var(--el-fill-color-light);
     transition: border-color 0.2s;
   }
 
-  .driver-photo-upload :deep(.el-upload:hover) {
+  .driver-doc-gallery__upload:hover .driver-doc-gallery__frame {
     border-color: var(--el-color-primary);
   }
 
-  .driver-photo-placeholder {
-    width: 120px;
-    height: 80px;
+  .driver-doc-gallery__image {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .driver-doc-gallery__empty {
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #999;
+    gap: 6px;
+    color: var(--el-text-color-secondary);
     font-size: 12px;
-    gap: 4px;
+  }
+
+  .driver-doc-gallery__hint {
+    margin: 8px 0 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--el-text-color-placeholder);
+    line-height: 1.3;
   }
 </style>
