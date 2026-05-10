@@ -6,8 +6,6 @@
   python3 scripts/fix/migrate_plate_category.py <tenant_code>
 """
 
-from __future__ import annotations
-
 import os
 import sys
 
