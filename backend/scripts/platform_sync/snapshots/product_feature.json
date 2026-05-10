@@ -4,9 +4,7 @@
     "feature_name": "工作台",
     "module": "dashboard",
     "description": null,
-    "required_tables": [
-      "biz_company_activity"
-    ],
+    "required_tables": null,
     "sort_order": 0,
     "status": 1
   },
