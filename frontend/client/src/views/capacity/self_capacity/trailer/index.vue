@@ -19,10 +19,18 @@
             ]"
           />
         </template>
+        <template #plateNumber="{ row }">
+          <plate-number-tag
+            :text="row.plateNumber"
+            :category="row.plateCategory"
+          />
+        </template>
         <template #vehiclePlateNumber="{ row }">
-          <span v-if="row.vehiclePlateNumber">
-            {{ row.vehiclePlateNumber }}
-          </span>
+          <plate-number-tag
+            v-if="row.vehiclePlateNumber"
+            :text="row.vehiclePlateNumber"
+            :category="row.vehiclePlateCategory"
+          />
           <span v-else style="color: #999">—</span>
         </template>
         <template #trailerType="{ row }">
@@ -77,6 +85,7 @@
   import TrailerEdit from './components/trailer-edit.vue';
   import TrailerSearch from './components/trailer-search.vue';
   import DictData from '@/components/DictData/index.vue';
+  import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
   import { pageTrailers, removeTrailer } from '@/api/capacity/self_capacity/trailer';
   import type { Trailer, TrailerParam } from '@/api/capacity/self_capacity/trailer/model';
   import { DICT_CODE_TRAILER_TYPE } from '@/constants/dict-codes';
@@ -106,7 +115,12 @@
   };
 
   const columns = ref<Columns>([
-    { prop: 'plateNumber', label: '挂车号牌', minWidth: 130 },
+    {
+      prop: 'plateNumber',
+      label: '挂车号牌',
+      minWidth: 130,
+      slot: 'plateNumber'
+    },
     {
       prop: 'trailerType',
       label: '挂车类型',

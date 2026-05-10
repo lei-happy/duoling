@@ -6,7 +6,7 @@
 
 from typing import Optional
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
@@ -15,6 +15,10 @@ from app.modules.client.models.capacity.self_capacity.vehicle_ext import Vehicle
 from app.modules.client.models.capacity.self_capacity.trailer import Trailer
 from app.modules.client.schemas.capacity.self_capacity.vehicle import (
     VehicleCreate, VehicleUpdate, VehicleOut,
+)
+from app.modules.client.constants.plate_category import (
+    normalize_plate_input,
+    validate_plate_for_category,
 )
 
 
@@ -30,7 +34,12 @@ class VehicleService:
         status: Optional[int] = None,
     ) -> dict:
         base = (
-            select(Vehicle, VehicleExt, Trailer.plate_number.label("trailer_plate"))
+            select(
+                Vehicle,
+                VehicleExt,
+                Trailer.plate_number.label("trailer_plate"),
+                Trailer.plate_category.label("trailer_cat"),
+            )
             .outerjoin(VehicleExt, and_(
                 VehicleExt.vehicle_id == Vehicle.id,
                 VehicleExt.is_deleted == 0,
@@ -90,8 +99,8 @@ class VehicleService:
 
         return {
             "list": [
-                VehicleOut.from_row(v, ext, tp).model_dump()
-                for v, ext, tp in rows
+                VehicleOut.from_row(v, ext, tp, tc).model_dump()
+                for v, ext, tp, tc in rows
             ],
             "total": total,
             "count": total,
@@ -102,7 +111,12 @@ class VehicleService:
     @staticmethod
     async def get_vehicle(db: AsyncSession, vehicle_id: int) -> VehicleOut:
         result = await db.execute(
-            select(Vehicle, VehicleExt, Trailer.plate_number.label("trailer_plate"))
+            select(
+                Vehicle,
+                VehicleExt,
+                Trailer.plate_number.label("trailer_plate"),
+                Trailer.plate_category.label("trailer_cat"),
+            )
             .outerjoin(VehicleExt, and_(
                 VehicleExt.vehicle_id == Vehicle.id,
                 VehicleExt.is_deleted == 0,
@@ -116,27 +130,31 @@ class VehicleService:
         row = result.one_or_none()
         if not row:
             raise BizException("车辆不存在")
-        v, ext, tp = row
-        return VehicleOut.from_row(v, ext, tp)
+        v, ext, tp, tc = row
+        return VehicleOut.from_row(v, ext, tp, tc)
 
     @staticmethod
     async def create_vehicle(
         db: AsyncSession, data: VehicleCreate
     ) -> VehicleOut:
+        plate_norm = normalize_plate_input(data.plateNumber)
+        validate_plate_for_category(data.plateCategory, plate_norm)
+
         existing = await db.execute(
             select(Vehicle).where(
-                Vehicle.plate_number == data.plateNumber,
+                Vehicle.plate_number == plate_norm,
                 Vehicle.is_deleted == 0,
             )
         )
         if existing.scalar_one_or_none():
-            raise BizException(f"车牌号 {data.plateNumber} 已存在")
+            raise BizException(f"车牌号 {plate_norm} 已存在")
 
         if data.trailerId:
             await VehicleService._check_trailer_bindable(db, data.trailerId)
 
         vehicle = Vehicle(
-            plate_number=data.plateNumber,
+            plate_number=plate_norm,
+            plate_category=data.plateCategory,
             trailer_id=data.trailerId,
             status=1,
             status_source="manual",
@@ -144,6 +162,12 @@ class VehicleService:
         db.add(vehicle)
         await db.flush()
         await db.refresh(vehicle)
+
+        # 清除同 vehicle_id 的残留扩展行（孤儿数据或仅软删导致 UNIQUE 冲突）
+        await db.execute(
+            delete(VehicleExt).where(VehicleExt.vehicle_id == vehicle.id)
+        )
+        await db.flush()
 
         ext = VehicleExt(
             vehicle_id=vehicle.id,
@@ -166,13 +190,18 @@ class VehicleService:
         await db.refresh(ext)
 
         trailer_plate = None
+        trailer_plate_category = None
         if vehicle.trailer_id:
             r = await db.execute(
-                select(Trailer.plate_number).where(Trailer.id == vehicle.trailer_id)
+                select(Trailer.plate_number, Trailer.plate_category).where(
+                    Trailer.id == vehicle.trailer_id
+                )
             )
-            trailer_plate = r.scalar_one_or_none()
+            trow = r.one_or_none()
+            if trow:
+                trailer_plate, trailer_plate_category = trow[0], trow[1]
 
-        return VehicleOut.from_row(vehicle, ext, trailer_plate)
+        return VehicleOut.from_row(vehicle, ext, trailer_plate, trailer_plate_category)
 
     @staticmethod
     async def update_vehicle(
@@ -190,18 +219,38 @@ class VehicleService:
 
         update_data = data.model_dump(exclude_unset=True)
 
-        core_fields = {
-            "plateNumber": "plate_number",
-            "trailerId": "trailer_id",
-            "status": "status",
-        }
-        for schema_f, model_f in core_fields.items():
-            if schema_f in update_data:
-                if schema_f == "trailerId" and update_data[schema_f] is not None:
-                    await VehicleService._check_trailer_bindable(
-                        db, update_data[schema_f], exclude_vehicle_id=vehicle_id
+        if "trailerId" in update_data:
+            tid = update_data["trailerId"]
+            if tid is not None:
+                await VehicleService._check_trailer_bindable(
+                    db, tid, exclude_vehicle_id=vehicle_id
+                )
+            vehicle.trailer_id = tid
+
+        if "status" in update_data and update_data["status"] is not None:
+            vehicle.status = update_data["status"]
+
+        if "plateNumber" in update_data and update_data["plateNumber"]:
+            new_pn = normalize_plate_input(update_data["plateNumber"])
+            if new_pn != vehicle.plate_number:
+                dup = await db.execute(
+                    select(Vehicle.id).where(
+                        Vehicle.plate_number == new_pn,
+                        Vehicle.is_deleted == 0,
+                        Vehicle.id != vehicle_id,
                     )
-                setattr(vehicle, model_f, update_data[schema_f])
+                )
+                if dup.scalar_one_or_none():
+                    raise BizException(f"车牌号 {new_pn} 已存在")
+            vehicle.plate_number = new_pn
+
+        if "plateCategory" in update_data and update_data["plateCategory"] is not None:
+            vehicle.plate_category = update_data["plateCategory"]
+
+        if "plateNumber" in update_data or "plateCategory" in update_data:
+            validate_plate_for_category(
+                vehicle.plate_category, vehicle.plate_number
+            )
 
         ext_fields = {
             "vehicleType": "vehicle_type",
@@ -221,16 +270,15 @@ class VehicleService:
         has_ext_update = any(k in update_data for k in ext_fields)
         if has_ext_update:
             ext_result = await db.execute(
-                select(VehicleExt).where(
-                    VehicleExt.vehicle_id == vehicle_id,
-                    VehicleExt.is_deleted == 0,
-                )
+                select(VehicleExt).where(VehicleExt.vehicle_id == vehicle_id)
             )
             ext = ext_result.scalar_one_or_none()
             if not ext:
                 ext = VehicleExt(vehicle_id=vehicle_id)
                 db.add(ext)
                 await db.flush()
+            elif ext.is_deleted:
+                ext.is_deleted = 0
 
             for schema_f, model_f in ext_fields.items():
                 if schema_f in update_data:

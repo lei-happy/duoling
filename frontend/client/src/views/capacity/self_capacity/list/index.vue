@@ -23,6 +23,12 @@
             ]"
           />
         </template>
+        <template #plateNumber="{ row }">
+          <plate-number-tag
+            :text="row.plateNumber"
+            :category="row.plateCategory"
+          />
+        </template>
         <template #action="{ row }">
           <el-button type="danger" link size="small" @click="handleUnbind(row)">
             下车
@@ -45,6 +51,7 @@
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import CapacitySearch from './components/capacity-search.vue';
   import CapacityBind from './components/capacity-bind.vue';
+  import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
   import { pageCapacities, unbindCapacity } from '@/api/capacity/self_capacity/list';
   import type { Capacity, CapacityParam } from '@/api/capacity/self_capacity/list/model';
   import { formatDateTime } from '@/utils/date-util';
@@ -66,7 +73,7 @@
   const columns = ref<Columns>([
     { prop: 'driverName', label: '司机姓名', minWidth: 100 },
     { prop: 'driverPhone', label: '手机号', minWidth: 130 },
-    { prop: 'plateNumber', label: '车牌号', minWidth: 120 },
+    { prop: 'plateNumber', label: '车牌号', minWidth: 120, slot: 'plateNumber' },
     {
       prop: 'boundAt',
       label: '绑定时间',

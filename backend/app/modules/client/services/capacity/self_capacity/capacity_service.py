@@ -7,7 +7,7 @@
 from typing import Optional
 from datetime import datetime
 
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, func, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
@@ -89,7 +89,7 @@ class CapacityService:
         db.add(log)
         await db.flush()
 
-        return CapacityOut.from_model(capacity)
+        return CapacityOut.from_model(capacity, vehicle.plate_category)
 
     @staticmethod
     async def unbind(
@@ -133,7 +133,12 @@ class CapacityService:
         db.add(log)
         await db.flush()
 
-        return CapacityOut.from_model(capacity)
+        vr = await db.execute(
+            select(Vehicle.plate_category).where(Vehicle.id == capacity.vehicle_id)
+        )
+        pc = vr.scalar_one_or_none() or "YELLOW"
+
+        return CapacityOut.from_model(capacity, pc)
 
     @staticmethod
     async def page_capacities(
@@ -144,7 +149,11 @@ class CapacityService:
     ) -> dict:
         """运力分页列表（仅当前绑定中的运力；已解绑请在变动记录中查看）"""
         query = (
-            select(Capacity)
+            select(Capacity, Vehicle.plate_category)
+            .outerjoin(
+                Vehicle,
+                and_(Vehicle.id == Capacity.vehicle_id, Vehicle.is_deleted == 0),
+            )
             .where(
                 Capacity.is_deleted == 0,
                 Capacity.status == 1,
@@ -169,10 +178,13 @@ class CapacityService:
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
-        rows = result.scalars().all()
+        rows = result.all()
 
         return {
-            "list": [CapacityOut.from_model(r).model_dump() for r in rows],
+            "list": [
+                CapacityOut.from_model(cap, pc or "YELLOW").model_dump()
+                for cap, pc in rows
+            ],
             "total": total,
             "count": total,
             "page": page,

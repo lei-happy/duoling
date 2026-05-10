@@ -1,4 +1,5 @@
 import type { PageParam } from '@/api';
+import type { PlateCategory } from '@/constants/plate-category';
 
 export interface Capacity {
   id?: number;
@@ -7,6 +8,7 @@ export interface Capacity {
   driverPhone?: string;
   vehicleId?: number;
   plateNumber?: string;
+  plateCategory?: PlateCategory;
   status?: number;
   boundAt?: string;
   unboundAt?: string;

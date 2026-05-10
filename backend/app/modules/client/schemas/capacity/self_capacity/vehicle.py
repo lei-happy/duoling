@@ -13,6 +13,7 @@ from pydantic import BaseModel
 class VehicleCreate(BaseModel):
     """创建车辆（核心+扩展字段合并提交）"""
     plateNumber: str
+    plateCategory: str
     trailerId: Optional[int] = None
     # 扩展字段
     vehicleType: Optional[str] = None
@@ -33,6 +34,7 @@ class VehicleCreate(BaseModel):
 class VehicleUpdate(BaseModel):
     """更新车辆"""
     plateNumber: Optional[str] = None
+    plateCategory: Optional[str] = None
     trailerId: Optional[int] = None
     status: Optional[int] = None
     # 扩展字段
@@ -61,8 +63,10 @@ class VehicleOut(BaseModel):
     """车辆响应（核心+扩展合并输出）"""
     id: int
     plateNumber: str
+    plateCategory: str
     trailerId: Optional[int] = None
     trailerPlateNumber: Optional[str] = None
+    trailerPlateCategory: Optional[str] = None
     status: int
     statusSource: Optional[str] = None
     # 扩展字段
@@ -84,13 +88,21 @@ class VehicleOut(BaseModel):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_row(cls, vehicle, ext=None, trailer_plate=None) -> "VehicleOut":
+    def from_row(
+        cls,
+        vehicle,
+        ext=None,
+        trailer_plate=None,
+        trailer_plate_category=None,
+    ) -> "VehicleOut":
         """从核心表+扩展表组装输出"""
         data = dict(
             id=vehicle.id,
             plateNumber=vehicle.plate_number,
+            plateCategory=getattr(vehicle, "plate_category", None) or "YELLOW",
             trailerId=vehicle.trailer_id,
             trailerPlateNumber=trailer_plate,
+            trailerPlateCategory=trailer_plate_category,
             status=vehicle.status,
             statusSource=vehicle.status_source,
             createdAt=vehicle.created_at,

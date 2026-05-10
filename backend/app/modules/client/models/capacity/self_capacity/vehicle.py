@@ -31,3 +31,9 @@ class Vehicle(TenantModelBase):
         String(50), nullable=True, default="manual",
         comment="状态变更来源（manual/maintenance/insurance）"
     )
+    plate_category: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="YELLOW",
+        comment="车牌类型 BLUE/YELLOW/NEW_ENERGY",
+    )

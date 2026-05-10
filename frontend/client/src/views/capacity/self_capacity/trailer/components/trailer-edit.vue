@@ -23,11 +23,28 @@
           <div class="trailer-tab-pane">
             <el-row :gutter="16">
               <el-col :span="12">
+                <el-form-item prop="plateCategory">
+                  <floating-label
+                    v-model="form.plateCategory"
+                    label="请选择号牌类型"
+                    type="select"
+                  >
+                    <el-option
+                      v-for="opt in PLATE_CATEGORY_OPTIONS"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                    />
+                  </floating-label>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
                 <el-form-item prop="plateNumber">
                   <floating-label
-                    label="请输入挂车号牌（如 京A1234挂）"
+                    :label="trailerPlateLabel"
                     type="input"
                     v-model.trim="form.plateNumber"
+                    :maxlength="trailerPlateMaxLen"
                     clearable
                   />
                 </el-form-item>
@@ -201,6 +218,12 @@
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { addTrailer, updateTrailer } from '@/api/capacity/self_capacity/trailer';
   import type { Trailer } from '@/api/capacity/self_capacity/trailer/model';
+  import {
+    DEFAULT_PLATE_CATEGORY,
+    PLATE_CATEGORY_OPTIONS,
+    trailerPlateInputMaxLen
+  } from '@/constants/plate-category';
+  import type { PlateCategory } from '@/constants/plate-category';
   import { useDictData } from '@/utils/use-dict-data';
   import { DICT_CODE_TRAILER_TYPE } from '@/constants/dict-codes';
 
@@ -289,7 +312,23 @@
     }
   });
 
+  const trailerPlateMaxLen = computed(() =>
+    trailerPlateInputMaxLen(
+      (form.plateCategory as PlateCategory) ?? DEFAULT_PLATE_CATEGORY
+    )
+  );
+
+  const trailerPlateLabel = computed(() => {
+    const c =
+      (form.plateCategory as PlateCategory) ?? DEFAULT_PLATE_CATEGORY;
+    if (c === 'NEW_ENERGY') return '请输入挂车号牌（新能源 8 位）';
+    return '请输入挂车号牌（如 京A1234挂）';
+  });
+
   const rules = reactive<FormRules>({
+    plateCategory: [
+      { required: true, message: '请选择号牌类型', trigger: 'change' }
+    ],
     plateNumber: [
       { required: true, message: '请输入挂车号牌', trigger: 'blur' }
     ]
@@ -302,10 +341,14 @@
         activeTab.value = 'basic';
         if (props.data) {
           Object.assign(form, props.data);
+          if (!form.plateCategory) {
+            form.plateCategory = DEFAULT_PLATE_CATEGORY;
+          }
         } else {
           Object.keys(form).forEach((k) => {
             (form as Record<string, unknown>)[k] = undefined;
           });
+          form.plateCategory = DEFAULT_PLATE_CATEGORY;
         }
         void nextTick(() => {
           formRef.value?.clearValidate();

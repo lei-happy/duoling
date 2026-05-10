@@ -31,6 +31,11 @@ from sqlalchemy import create_engine, delete, select  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
 from app.core.config import get_settings  # noqa: E402
+from app.modules.client.constants.plate_category import (
+    PLATE_CATEGORY_BLUE,
+    PLATE_CATEGORY_NEW_ENERGY,
+    PLATE_CATEGORY_YELLOW,
+)
 from app.modules.client.models.capacity.self_capacity.vehicle import Vehicle  # noqa: E402
 from app.modules.client.models.capacity.self_capacity.vehicle_ext import VehicleExt  # noqa: E402
 from app.modules.client.models.capacity.self_capacity.trailer import Trailer  # noqa: E402
@@ -121,6 +126,16 @@ def _mock_plate(rng: random.Random, seq: int) -> str:
     return f"{prov}{letter}{num}"
 
 
+def _mock_plate_nev(rng: random.Random, seq: int) -> str:
+    """新能源小型车：省简称 + 字母 + 6 位序号，总长 8。"""
+    prov = PLATE_PROVINCES[seq % len(PLATE_PROVINCES)]
+    letter = rng.choice(PLATE_LETTERS)
+    suf = "".join(
+        rng.choice("0123456789ABCDEFGHJKLMNPQRSTUVWXYZ") for _ in range(6)
+    )
+    return f"{prov}{letter}{suf}"
+
+
 def generate_vehicles(
     session: Session,
     count: int,
@@ -136,7 +151,17 @@ def generate_vehicles(
 
     created = 0
     for i in range(count):
-        plate = _mock_plate(rng, i)
+        roll = rng.random()
+        if roll < 0.2:
+            plate_category = PLATE_CATEGORY_BLUE
+            plate = _mock_plate(rng, i)
+        elif roll < 0.65:
+            plate_category = PLATE_CATEGORY_YELLOW
+            plate = _mock_plate(rng, i)
+        else:
+            plate_category = PLATE_CATEGORY_NEW_ENERGY
+            plate = _mock_plate_nev(rng, i)
+
         with session.no_autoflush:
             exists = session.execute(
                 select(Vehicle.id).where(
@@ -162,12 +187,13 @@ def generate_vehicles(
         )
 
         if dry_run:
-            print(f"[dry-run] {plate} type={vt} trailer={trailer_id}")
+            print(f"[dry-run] {plate} cat={plate_category} type={vt} trailer={trailer_id}")
             created += 1
             continue
 
         v = Vehicle(
             plate_number=plate,
+            plate_category=plate_category,
             trailer_id=trailer_id,
             status=1,
             status_source="manual",

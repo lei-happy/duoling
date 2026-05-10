@@ -18,6 +18,12 @@
             ]"
           />
         </template>
+        <template #plateNumber="{ row }">
+          <plate-number-tag
+            :text="row.plateNumber"
+            :category="row.plateCategory"
+          />
+        </template>
         <template #vehicleType="{ row }">
           <dict-data
             type="text"
@@ -26,9 +32,11 @@
           />
         </template>
         <template #trailerPlateNumber="{ row }">
-          <span v-if="row.trailerPlateNumber">{{
-            row.trailerPlateNumber
-          }}</span>
+          <plate-number-tag
+            v-if="row.trailerPlateNumber"
+            :text="row.trailerPlateNumber"
+            :category="row.trailerPlateCategory"
+          />
           <span v-else style="color: #999">—</span>
         </template>
         <template #status="{ row }">
@@ -105,6 +113,7 @@
   import VehicleEdit from './components/vehicle-edit.vue';
   import VehicleSearch from './components/vehicle-search.vue';
   import DictData from '@/components/DictData/index.vue';
+  import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
   import { pageVehicles, removeVehicle } from '@/api/capacity/self_capacity/vehicle';
   import type { Vehicle, VehicleParam } from '@/api/capacity/self_capacity/vehicle/model';
   import { DICT_CODE_VEHICLE_TYPE } from '@/constants/dict-codes';
@@ -135,7 +144,12 @@
   };
 
   const columns = ref<Columns>([
-    { prop: 'plateNumber', label: '车牌号', minWidth: 120 },
+    {
+      prop: 'plateNumber',
+      label: '车牌号',
+      minWidth: 120,
+      slot: 'plateNumber'
+    },
     {
       prop: 'vehicleType',
       label: '车辆类型',

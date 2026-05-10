@@ -23,11 +23,28 @@
           <div class="vehicle-tab-pane">
             <el-row :gutter="16">
               <el-col :span="12">
+                <el-form-item prop="plateCategory">
+                  <floating-label
+                    v-model="form.plateCategory"
+                    label="请选择车牌类型"
+                    type="select"
+                  >
+                    <el-option
+                      v-for="opt in PLATE_CATEGORY_OPTIONS"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                    />
+                  </floating-label>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
                 <el-form-item prop="plateNumber">
                   <floating-label
-                    label="请输入车牌号"
+                    :label="plateNumberLabel"
                     type="input"
                     v-model.trim="form.plateNumber"
+                    :maxlength="plateMaxLen"
                     clearable
                   />
                 </el-form-item>
@@ -239,6 +256,12 @@
     listAvailableTrailers
   } from '@/api/capacity/self_capacity/vehicle';
   import type { Vehicle, TrailerOption } from '@/api/capacity/self_capacity/vehicle/model';
+  import {
+    DEFAULT_PLATE_CATEGORY,
+    PLATE_CATEGORY_OPTIONS,
+    plateInputMaxLen
+  } from '@/constants/plate-category';
+  import type { PlateCategory } from '@/constants/plate-category';
   import { useDictData } from '@/utils/use-dict-data';
   import { DICT_CODE_VEHICLE_TYPE } from '@/constants/dict-codes';
 
@@ -294,11 +317,38 @@
     }
   });
 
+  const plateMaxLen = computed(() =>
+    plateInputMaxLen(
+      (form.plateCategory as PlateCategory) ?? DEFAULT_PLATE_CATEGORY
+    )
+  );
+
+  const plateNumberLabel = computed(() => {
+    const c =
+      (form.plateCategory as PlateCategory) ?? DEFAULT_PLATE_CATEGORY;
+    if (c === 'NEW_ENERGY') return '请输入车牌号（新能源 8 位）';
+    return '请输入车牌号（7 位）';
+  });
+
   const rules = reactive<FormRules>({
+    plateCategory: [
+      { required: true, message: '请选择车牌类型', trigger: 'change' }
+    ],
     plateNumber: [
       { required: true, message: '请输入车牌号', trigger: 'blur' }
     ]
   });
+
+  watch(
+    () => form.plateCategory,
+    (cat) => {
+      const ml = plateInputMaxLen(
+        (cat as PlateCategory) ?? DEFAULT_PLATE_CATEGORY
+      );
+      const pn = form.plateNumber?.trim();
+      if (pn && pn.length > ml) form.plateNumber = pn.slice(0, ml);
+    }
+  );
 
   const loadTrailerOptions = async () => {
     try {
@@ -318,10 +368,14 @@
         loadTrailerOptions();
         if (props.data) {
           Object.assign(form, { ...props.data });
+          if (!form.plateCategory) {
+            form.plateCategory = DEFAULT_PLATE_CATEGORY;
+          }
         } else {
           Object.keys(form).forEach((k) => {
             (form as any)[k] = undefined;
           });
+          form.plateCategory = DEFAULT_PLATE_CATEGORY;
         }
         void nextTick(() => {
           formRef.value?.clearValidate();

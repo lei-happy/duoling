@@ -19,6 +19,12 @@ class Trailer(TenantModelBase):
     plate_number: Mapped[str] = mapped_column(
         String(20), unique=True, nullable=False, comment="挂车车牌号"
     )
+    plate_category: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="YELLOW",
+        comment="车牌类型 BLUE/YELLOW/NEW_ENERGY",
+    )
     status: Mapped[int] = mapped_column(
         SmallInteger, default=1, comment="状态 0-停用 1-正常"
     )

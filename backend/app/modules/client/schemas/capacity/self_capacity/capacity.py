@@ -27,6 +27,7 @@ class CapacityOut(BaseModel):
     driverPhone: str
     vehicleId: int
     plateNumber: str
+    plateCategory: Optional[str] = None
     status: int
     boundAt: Optional[datetime] = None
     unboundAt: Optional[datetime] = None
@@ -36,7 +37,7 @@ class CapacityOut(BaseModel):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_model(cls, cap) -> "CapacityOut":
+    def from_model(cls, cap, plate_category: Optional[str] = None) -> "CapacityOut":
         return cls(
             id=cap.id,
             driverId=cap.driver_id,
@@ -44,6 +45,7 @@ class CapacityOut(BaseModel):
             driverPhone=cap.driver_phone,
             vehicleId=cap.vehicle_id,
             plateNumber=cap.plate_number,
+            plateCategory=plate_category,
             status=cap.status,
             boundAt=cap.bound_at,
             unboundAt=cap.unbound_at,

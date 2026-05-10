@@ -30,6 +30,7 @@ from sqlalchemy import create_engine, delete, select  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
 from app.core.config import get_settings  # noqa: E402
+from app.modules.client.constants.plate_category import PLATE_CATEGORY_YELLOW
 from app.modules.client.models.capacity.self_capacity.trailer import Trailer  # noqa: E402
 from app.modules.client.models.capacity.self_capacity.trailer_ext import TrailerExt  # noqa: E402
 from app.modules.client.models.biz_dict import BizDict, BizDictItem  # noqa: E402
@@ -147,6 +148,7 @@ def generate_trailers(
 
         t = Trailer(
             plate_number=plate,
+            plate_category=PLATE_CATEGORY_YELLOW,
             status=1,
         )
         session.add(t)

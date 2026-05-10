@@ -14,6 +14,10 @@ from app.modules.client.models.capacity.self_capacity.vehicle import Vehicle
 from app.modules.client.schemas.capacity.self_capacity.trailer import (
     TrailerCreate, TrailerUpdate, TrailerOut, TrailerSimpleOut,
 )
+from app.modules.client.constants.plate_category import (
+    normalize_plate_input,
+    validate_trailer_plate_for_category,
+)
 
 
 class TrailerService:
@@ -28,7 +32,12 @@ class TrailerService:
         status: Optional[int] = None,
     ) -> dict:
         base = (
-            select(Trailer, TrailerExt, Vehicle.plate_number.label("vehicle_plate"))
+            select(
+                Trailer,
+                TrailerExt,
+                Vehicle.plate_number.label("vehicle_plate"),
+                Vehicle.plate_category.label("vehicle_pc"),
+            )
             .outerjoin(TrailerExt, and_(
                 TrailerExt.trailer_id == Trailer.id,
                 TrailerExt.is_deleted == 0,
@@ -70,8 +79,8 @@ class TrailerService:
 
         return {
             "list": [
-                TrailerOut.from_row(t, ext, vp).model_dump()
-                for t, ext, vp in rows
+                TrailerOut.from_row(t, ext, vp, vpc).model_dump()
+                for t, ext, vp, vpc in rows
             ],
             "total": total,
             "count": total,
@@ -82,7 +91,12 @@ class TrailerService:
     @staticmethod
     async def get_trailer(db: AsyncSession, trailer_id: int) -> TrailerOut:
         result = await db.execute(
-            select(Trailer, TrailerExt, Vehicle.plate_number.label("vehicle_plate"))
+            select(
+                Trailer,
+                TrailerExt,
+                Vehicle.plate_number.label("vehicle_plate"),
+                Vehicle.plate_category.label("vehicle_pc"),
+            )
             .outerjoin(TrailerExt, and_(
                 TrailerExt.trailer_id == Trailer.id,
                 TrailerExt.is_deleted == 0,
@@ -96,8 +110,8 @@ class TrailerService:
         row = result.one_or_none()
         if not row:
             raise BizException("挂车不存在")
-        t, ext, vp = row
-        return TrailerOut.from_row(t, ext, vp)
+        t, ext, vp, vpc = row
+        return TrailerOut.from_row(t, ext, vp, vpc)
 
     @staticmethod
     async def list_available_trailers(
@@ -123,7 +137,11 @@ class TrailerService:
         )
         trailers = result.scalars().all()
         return [
-            TrailerSimpleOut(id=t.id, plateNumber=t.plate_number).model_dump()
+            TrailerSimpleOut(
+                id=t.id,
+                plateNumber=t.plate_number,
+                plateCategory=t.plate_category,
+            ).model_dump()
             for t in trailers
         ]
 
@@ -131,17 +149,21 @@ class TrailerService:
     async def create_trailer(
         db: AsyncSession, data: TrailerCreate
     ) -> TrailerOut:
+        plate_norm = normalize_plate_input(data.plateNumber)
+        validate_trailer_plate_for_category(data.plateCategory, plate_norm)
+
         existing = await db.execute(
             select(Trailer).where(
-                Trailer.plate_number == data.plateNumber,
+                Trailer.plate_number == plate_norm,
                 Trailer.is_deleted == 0,
             )
         )
         if existing.scalar_one_or_none():
-            raise BizException(f"挂车车牌号 {data.plateNumber} 已存在")
+            raise BizException(f"挂车车牌号 {plate_norm} 已存在")
 
         trailer = Trailer(
-            plate_number=data.plateNumber,
+            plate_number=plate_norm,
+            plate_category=data.plateCategory,
             status=1,
         )
         db.add(trailer)
@@ -165,7 +187,7 @@ class TrailerService:
         await db.flush()
         await db.refresh(ext)
 
-        return TrailerOut.from_row(trailer, ext, None)
+        return TrailerOut.from_row(trailer, ext, None, None)
 
     @staticmethod
     async def update_trailer(
@@ -184,7 +206,27 @@ class TrailerService:
         update_data = data.model_dump(exclude_unset=True)
 
         if "plateNumber" in update_data and update_data["plateNumber"]:
-            trailer.plate_number = update_data["plateNumber"]
+            new_pn = normalize_plate_input(update_data["plateNumber"])
+            if new_pn != trailer.plate_number:
+                dup = await db.execute(
+                    select(Trailer.id).where(
+                        Trailer.plate_number == new_pn,
+                        Trailer.is_deleted == 0,
+                        Trailer.id != trailer_id,
+                    )
+                )
+                if dup.scalar_one_or_none():
+                    raise BizException(f"挂车车牌号 {new_pn} 已存在")
+            trailer.plate_number = new_pn
+
+        if "plateCategory" in update_data and update_data["plateCategory"] is not None:
+            trailer.plate_category = update_data["plateCategory"]
+
+        if "plateNumber" in update_data or "plateCategory" in update_data:
+            validate_trailer_plate_for_category(
+                trailer.plate_category, trailer.plate_number
+            )
+
         if "status" in update_data and update_data["status"] is not None:
             trailer.status = update_data["status"]
 

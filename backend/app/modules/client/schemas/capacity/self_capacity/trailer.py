@@ -10,6 +10,7 @@ from pydantic import BaseModel
 class TrailerCreate(BaseModel):
     """创建挂车（核心+扩展字段合并提交）"""
     plateNumber: str
+    plateCategory: str
     # 扩展字段
     trailerType: Optional[str] = None
     axleCount: Optional[int] = None
@@ -26,6 +27,7 @@ class TrailerCreate(BaseModel):
 class TrailerUpdate(BaseModel):
     """更新挂车"""
     plateNumber: Optional[str] = None
+    plateCategory: Optional[str] = None
     status: Optional[int] = None
     # 扩展字段
     trailerType: Optional[str] = None
@@ -44,7 +46,9 @@ class TrailerOut(BaseModel):
     """挂车响应（核心+扩展合并输出）"""
     id: int
     plateNumber: str
+    plateCategory: str
     vehiclePlateNumber: Optional[str] = None
+    vehiclePlateCategory: Optional[str] = None
     status: int
     # 扩展字段
     trailerType: Optional[str] = None
@@ -62,12 +66,20 @@ class TrailerOut(BaseModel):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_row(cls, trailer, ext=None, vehicle_plate=None) -> "TrailerOut":
+    def from_row(
+        cls,
+        trailer,
+        ext=None,
+        vehicle_plate=None,
+        vehicle_plate_category=None,
+    ) -> "TrailerOut":
         """从核心表+扩展表组装输出"""
         data = dict(
             id=trailer.id,
             plateNumber=trailer.plate_number,
+            plateCategory=getattr(trailer, "plate_category", None) or "YELLOW",
             vehiclePlateNumber=vehicle_plate,
+            vehiclePlateCategory=vehicle_plate_category,
             status=trailer.status,
             createdAt=trailer.created_at,
         )
@@ -91,3 +103,4 @@ class TrailerSimpleOut(BaseModel):
     """挂车简要信息（用于下拉选择）"""
     id: int
     plateNumber: str
+    plateCategory: str

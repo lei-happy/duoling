@@ -15,7 +15,7 @@
         <el-tooltip placement="top-start" :show-after="200" :max-width="420">
           <template #content>
             <div class="capacity-bind-tooltip-text">
-              请选择一名在职司机与一辆可用车辆，将创建一条「司机 + 车辆」运力绑定。同一司机或同一车辆在同一时刻仅能参与一条在绑运力。
+              请选择一名司机与一辆可用车辆，同一司机或同一车辆在同一时刻仅能参与一条在绑运力。
             </div>
           </template>
           <el-icon class="capacity-bind-help" :size="18">
@@ -31,7 +31,7 @@
         <el-input
           v-model.trim="driverSearchInput"
           clearable
-          placeholder="搜索：姓名 / 手机号（全库）"
+          placeholder="搜索：姓名 / 手机号"
           class="capacity-bind-filter"
         />
         <div class="capacity-bind-table-wrap capacity-bind-table-card">
@@ -106,7 +106,7 @@
         <el-input
           v-model.trim="vehicleSearchInput"
           clearable
-          placeholder="搜索：车牌 / 品牌 / 型号 / 挂车（全库）"
+          placeholder="搜索：车牌号"
           class="capacity-bind-filter"
         />
         <div class="capacity-bind-table-wrap capacity-bind-table-card">
@@ -131,9 +131,20 @@
                   placement="top"
                   :show-after="150"
                 >
-                  <span class="capacity-bind-tt-cell">{{ row.plateNumber }}</span>
+                  <span class="capacity-bind-tt-cell">
+                    <plate-number-tag
+                      :text="row.plateNumber"
+                      :category="row.plateCategory"
+                      :dimmed="true"
+                    />
+                  </span>
                 </el-tooltip>
-                <span v-else class="capacity-bind-tt-plain">{{ row.plateNumber }}</span>
+                <span v-else class="capacity-bind-tt-plain">
+                  <plate-number-tag
+                    :text="row.plateNumber"
+                    :category="row.plateCategory"
+                  />
+                </span>
               </template>
             </el-table-column>
             <el-table-column label="挂车" min-width="120">
@@ -145,12 +156,21 @@
                   :show-after="150"
                 >
                   <span class="capacity-bind-tt-cell">
-                    <span v-if="row.trailerPlateNumber">{{ row.trailerPlateNumber }}</span>
+                    <plate-number-tag
+                      v-if="row.trailerPlateNumber"
+                      :text="row.trailerPlateNumber"
+                      :category="row.trailerPlateCategory"
+                      :dimmed="true"
+                    />
                     <span v-else class="capacity-bind-muted">—</span>
                   </span>
                 </el-tooltip>
                 <template v-else>
-                  <span v-if="row.trailerPlateNumber">{{ row.trailerPlateNumber }}</span>
+                  <plate-number-tag
+                    v-if="row.trailerPlateNumber"
+                    :text="row.trailerPlateNumber"
+                    :category="row.trailerPlateCategory"
+                  />
                   <span v-else class="capacity-bind-muted">—</span>
                 </template>
               </template>
@@ -190,7 +210,7 @@
       show-icon
       :closable="false"
       class="capacity-bind-alert"
-      :title="`该司机当前已绑定车辆「${driverBoundPlate}」，请先下车后再新建运力。`"
+      :title="`该司机当前已绑定车辆「${driverBoundPlate}」，请先解绑后再新建运力。`"
     />
     <el-alert
       v-if="vehicleBoundDriver"
@@ -213,9 +233,22 @@
             （{{ phoneDigits4Only(selectedDriver.phone) }}）
           </span>
           <span class="capacity-bind-preview-dot" aria-hidden="true">·</span>
-          <span class="capacity-bind-preview-plate">{{ selectedVehicle.plateNumber }}</span>
-          <span v-if="selectedVehicle.trailerPlateNumber" class="capacity-bind-preview-sub">
-            （{{ selectedVehicle.trailerPlateNumber }}）
+          <plate-number-tag
+            class="capacity-bind-preview-plate"
+            size="large"
+            :text="selectedVehicle.plateNumber"
+            :category="selectedVehicle.plateCategory"
+          />
+          <span
+            v-if="selectedVehicle.trailerPlateNumber"
+            class="capacity-bind-preview-trailer-wrap"
+          >
+            <span class="capacity-bind-preview-paren">（</span>
+            <plate-number-tag
+              :text="selectedVehicle.trailerPlateNumber"
+              :category="selectedVehicle.trailerPlateCategory"
+            />
+            <span class="capacity-bind-preview-paren">）</span>
           </span>
         </template>
         <template v-else-if="selectedDriver">
@@ -226,7 +259,13 @@
           <span class="capacity-bind-preview-hint">请选择右侧车辆</span>
         </template>
         <template v-else>
-          <span class="capacity-bind-preview-plate">{{ selectedVehicle?.plateNumber }}</span>
+          <plate-number-tag
+            v-if="selectedVehicle?.plateNumber"
+            class="capacity-bind-preview-plate"
+            size="large"
+            :text="selectedVehicle.plateNumber"
+            :category="selectedVehicle.plateCategory"
+          />
           <span class="capacity-bind-preview-hint">请选择左侧司机</span>
         </template>
       </div>
@@ -235,7 +274,8 @@
           v-model.trim="remark"
           class="capacity-bind-remark-input"
           type="textarea"
-          :rows="2"
+          :rows="3"
+          resize="none"
           maxlength="500"
           show-word-limit
           placeholder="备注（选填）"
@@ -269,6 +309,7 @@
   import type { Vehicle } from '@/api/capacity/self_capacity/vehicle/model';
   import { bindCapacity, pageCapacities } from '@/api/capacity/self_capacity/list';
   import type { Capacity } from '@/api/capacity/self_capacity/list/model';
+  import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
 
   const PAGE_SIZE = 30;
 
@@ -964,11 +1005,21 @@
     color: var(--el-text-color-secondary);
   }
 
+  .capacity-bind-preview-trailer-wrap {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .capacity-bind-preview-paren {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--el-text-color-secondary);
+  }
+
   .capacity-bind-preview-plate {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--el-color-primary);
-    letter-spacing: 0.02em;
+    flex-shrink: 0;
   }
 
   .capacity-bind-preview-dot {

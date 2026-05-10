@@ -1,10 +1,13 @@
 import type { PageParam } from '@/api';
+import type { PlateCategory } from '@/constants/plate-category';
 
 export interface Vehicle {
   id?: number;
   plateNumber?: string;
+  plateCategory?: PlateCategory;
   trailerId?: number | null;
   trailerPlateNumber?: string;
+  trailerPlateCategory?: PlateCategory;
   status?: number;
   statusSource?: string;
   vehicleType?: string;
@@ -32,4 +35,5 @@ export interface VehicleParam extends PageParam {
 export interface TrailerOption {
   id: number;
   plateNumber: string;
+  plateCategory?: PlateCategory;
 }
