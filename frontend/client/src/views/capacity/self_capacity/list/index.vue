@@ -9,40 +9,28 @@
         :datasource="datasource"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
+        :default-sort="{ prop: 'boundAt', order: 'descending' }"
         cache-key="CapacityListTable"
       >
         <template #toolbar>
           <btn-items
             :items="[
-              { preset: 'add', title: '上车', onClick: () => openBind() }
+              {
+                preset: 'add',
+                title: '新建运力',
+                onClick: () => openBind()
+              }
             ]"
           />
         </template>
-        <template #status="{ row }">
-          <el-tag v-if="row.status === 1" type="success" size="small">
-            绑定中
-          </el-tag>
-          <el-tag v-else-if="row.status === 0" type="info" size="small">
-            已解绑
-          </el-tag>
-        </template>
         <template #action="{ row }">
-          <btn-items
-            divider
-            type="link"
-            :items="
-              row.status === 1
-                ? [{ title: '下车', type: 'danger', onClick: () => handleUnbind(row) }]
-                : []
-            "
-          />
+          <el-button type="danger" link size="small" @click="handleUnbind(row)">
+            下车
+          </el-button>
         </template>
       </ele-pro-table>
     </ele-card>
-    <capacity-bind
-      v-model:visible="bindVisible"
-      @done="reload"
-    />
+    <capacity-bind v-model:visible="bindVisible" @done="reload" />
   </ele-page>
 </template>
 
@@ -59,20 +47,19 @@
   import CapacityBind from './components/capacity-bind.vue';
   import { pageCapacities, unbindCapacity } from '@/api/capacity/self_capacity/list';
   import type { Capacity, CapacityParam } from '@/api/capacity/self_capacity/list/model';
+  import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'CapacityList' });
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const bindVisible = ref(false);
 
-  const where = reactive<Pick<CapacityParam, 'keyword' | 'status'>>({
-    keyword: '',
-    status: void 0
+  const where = reactive<Pick<CapacityParam, 'keyword'>>({
+    keyword: ''
   });
 
-  const onSearch = (payload: Pick<CapacityParam, 'keyword' | 'status'>) => {
+  const onSearch = (payload: Pick<CapacityParam, 'keyword'>) => {
     where.keyword = payload.keyword ?? '';
-    where.status = payload.status;
     tableRef.value?.reload?.({ page: 1 });
   };
 
@@ -81,23 +68,11 @@
     { prop: 'driverPhone', label: '手机号', minWidth: 130 },
     { prop: 'plateNumber', label: '车牌号', minWidth: 120 },
     {
-      prop: 'status',
-      label: '状态',
-      width: 100,
-      align: 'center',
-      slot: 'status'
-    },
-    {
       prop: 'boundAt',
       label: '绑定时间',
       minWidth: 170,
-      align: 'center'
-    },
-    {
-      prop: 'unboundAt',
-      label: '解绑时间',
-      minWidth: 170,
-      align: 'center'
+      align: 'center',
+      formatter: (row) => formatDateTime(row.boundAt)
     },
     {
       columnKey: 'action',
@@ -111,9 +86,15 @@
     }
   ]);
 
-  const datasource: DatasourceFunction = async ({ page, limit }) => {
-    const res = await pageCapacities({ ...where, page, limit });
-    return { list: res?.list ?? [], count: res?.count ?? res?.total ?? 0 };
+  const datasource: DatasourceFunction = async ({ page, limit, pages }) => {
+    const p = page ?? (Number(pages?.page) || 1);
+    const l = limit ?? (Number(pages?.limit) || 10);
+    const res = await pageCapacities({ ...where, page: p, limit: l });
+    const raw = res as { list?: Capacity[]; count?: number; total?: number };
+    return {
+      list: raw?.list ?? [],
+      count: raw?.count ?? raw?.total ?? 0
+    };
   };
 
   const reload = () => {
@@ -126,7 +107,7 @@
 
   const handleUnbind = (row: Capacity) => {
     ElMessageBox.confirm(
-      `确定要将司机「${row.driverName}」从车辆「${row.plateNumber}」下车吗？`,
+      `确定将司机「${row.driverName}」与车辆「${row.plateNumber}」解绑（下车）吗？解绑后可在「变动记录」中查看历史。`,
       '系统提示',
       { type: 'warning', draggable: true }
     )

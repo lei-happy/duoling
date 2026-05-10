@@ -16,7 +16,6 @@ export interface Capacity {
 
 export interface CapacityParam extends PageParam {
   keyword?: string;
-  status?: number;
 }
 
 export interface CapacityBindData {
@@ -27,16 +26,4 @@ export interface CapacityBindData {
 
 export interface CapacityUnbindData {
   remark?: string;
-}
-
-export interface DriverOption {
-  id: number;
-  name: string;
-  phone: string;
-  driverCode: string;
-}
-
-export interface VehicleOption {
-  id: number;
-  plateNumber: string;
 }

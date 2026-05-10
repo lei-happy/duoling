@@ -141,12 +141,14 @@ class CapacityService:
         page: int = 1,
         page_size: int = 20,
         keyword: Optional[str] = None,
-        status: Optional[int] = None,
     ) -> dict:
-        """运力分页列表"""
+        """运力分页列表（仅当前绑定中的运力；已解绑请在变动记录中查看）"""
         query = (
             select(Capacity)
-            .where(Capacity.is_deleted == 0)
+            .where(
+                Capacity.is_deleted == 0,
+                Capacity.status == 1,
+            )
         )
 
         if keyword:
@@ -158,8 +160,6 @@ class CapacityService:
                     Capacity.plate_number.like(kw),
                 )
             )
-        if status is not None:
-            query = query.where(Capacity.status == status)
 
         count_q = select(func.count()).select_from(query.subquery())
         total = (await db.execute(count_q)).scalar() or 0
@@ -174,6 +174,7 @@ class CapacityService:
         return {
             "list": [CapacityOut.from_model(r).model_dump() for r in rows],
             "total": total,
+            "count": total,
             "page": page,
             "page_size": page_size,
         }

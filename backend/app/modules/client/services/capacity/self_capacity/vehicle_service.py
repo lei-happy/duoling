@@ -6,7 +6,7 @@
 
 from typing import Optional
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
@@ -44,9 +44,12 @@ class VehicleService:
 
         if keyword:
             base = base.where(
-                (Vehicle.plate_number.contains(keyword)) |
-                (VehicleExt.brand.contains(keyword)) |
-                (VehicleExt.model.contains(keyword))
+                or_(
+                    Vehicle.plate_number.contains(keyword),
+                    VehicleExt.brand.contains(keyword),
+                    VehicleExt.model.contains(keyword),
+                    Trailer.plate_number.contains(keyword),
+                )
             )
         if vehicle_type:
             base = base.where(VehicleExt.vehicle_type == vehicle_type)
@@ -59,11 +62,18 @@ class VehicleService:
                 VehicleExt.vehicle_id == Vehicle.id,
                 VehicleExt.is_deleted == 0,
             ))
+            .outerjoin(Trailer, and_(
+                Trailer.id == Vehicle.trailer_id,
+                Trailer.is_deleted == 0,
+            ))
             .where(Vehicle.is_deleted == 0)
             .where(
-                (Vehicle.plate_number.contains(keyword) |
-                 VehicleExt.brand.contains(keyword) |
-                 VehicleExt.model.contains(keyword)) if keyword else True
+                or_(
+                    Vehicle.plate_number.contains(keyword),
+                    VehicleExt.brand.contains(keyword),
+                    VehicleExt.model.contains(keyword),
+                    Trailer.plate_number.contains(keyword),
+                ) if keyword else True
             )
             .where(VehicleExt.vehicle_type == vehicle_type if vehicle_type else True)
             .where(Vehicle.status == status if status is not None else True)

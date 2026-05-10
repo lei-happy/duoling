@@ -54,22 +54,20 @@ async def _sync_to_platform(tenant_code: str, capacity_out):
 @router.get("")
 async def page_capacities(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, alias="limit", ge=1, le=100),
+    page_size: int = Query(20, alias="limit", ge=1, le=200),
     keyword: Optional[str] = None,
-    status: Optional[int] = None,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """运力分页列表"""
+    """运力分页列表（仅绑定中；已解绑见变动记录）"""
     data = await CapacityService.page_capacities(
-        db, page=page, page_size=page_size,
-        keyword=keyword, status=status,
+        db, page=page, page_size=page_size, keyword=keyword,
     )
     return success(data=data)
 
 
 @router.post("/bind")
-@operation_log(module="运力管理", action="上车", description="绑定司机与车辆")
+@operation_log(module="运力管理", action="新建运力", description="绑定司机与车辆")
 async def bind_capacity(
     request: Request,
     data: CapacityBind,

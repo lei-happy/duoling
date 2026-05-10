@@ -1,25 +1,15 @@
+<!-- 运力列表搜索（仅展示绑定中运力，已解绑见变动记录） -->
 <template>
   <ele-card search-form>
     <el-form label-width="0" @keyup.enter="search" @submit.prevent="">
       <el-row :gutter="8">
-        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+        <el-col :lg="8" :md="10" :sm="12" :xs="24">
           <floating-label
-            label="请输入司机姓名/手机号/车牌号"
+            label="司机姓名 / 手机号 / 车牌号"
             type="input"
             v-model.trim="form.keyword"
             clearable
           />
-        </el-col>
-        <el-col :lg="6" :md="8" :sm="12" :xs="24">
-          <floating-label
-            v-model="form.status"
-            label="请选择状态"
-            type="select"
-            clearable
-          >
-            <el-option label="绑定中" :value="1" />
-            <el-option label="已解绑" :value="0" />
-          </floating-label>
         </el-col>
         <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <el-form-item label-width="0px">
@@ -43,15 +33,13 @@
   import type { CapacityParam } from '@/api/capacity/self_capacity/list/model';
 
   const emit = defineEmits<{
-    (e: 'search', where: Pick<CapacityParam, 'keyword' | 'status'>): void;
+    (e: 'search', where: Pick<CapacityParam, 'keyword'>): void;
   }>();
 
   const [form, resetFields] = useFormData<{
     keyword: string;
-    status: number | undefined;
   }>({
-    keyword: '',
-    status: void 0
+    keyword: ''
   });
 
   const search = () => {

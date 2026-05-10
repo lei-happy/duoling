@@ -4,9 +4,7 @@ import type {
   Capacity,
   CapacityParam,
   CapacityBindData,
-  CapacityUnbindData,
-  DriverOption,
-  VehicleOption
+  CapacityUnbindData
 } from './model';
 
 const BASE = '/capacity/self_capacity/list';
@@ -40,28 +38,6 @@ export async function unbindCapacity(id: number, data?: CapacityUnbindData) {
   );
   if (res.data.code === 0) {
     return res.data.message;
-  }
-  return Promise.reject(new Error(res.data.message));
-}
-
-export async function listAvailableDrivers(keyword?: string) {
-  const res = await request.get<ApiResult<PageResult<DriverOption>>>(
-    '/capacity/self_capacity/driver',
-    { params: { status: 1, limit: 50, keyword } }
-  );
-  if (res.data.code === 0) {
-    return res.data.data?.list ?? [];
-  }
-  return Promise.reject(new Error(res.data.message));
-}
-
-export async function listAvailableVehicles(keyword?: string) {
-  const res = await request.get<ApiResult<PageResult<VehicleOption>>>(
-    '/capacity/self_capacity/vehicle',
-    { params: { status: 1, limit: 50, keyword } }
-  );
-  if (res.data.code === 0) {
-    return res.data.data?.list ?? [];
   }
   return Promise.reject(new Error(res.data.message));
 }

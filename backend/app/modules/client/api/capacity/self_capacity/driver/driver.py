@@ -59,7 +59,7 @@ async def _remove_from_platform(tenant_code: str, biz_driver_id: int):
 @router.get("")
 async def page_drivers(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, alias="limit", ge=1, le=100),
+    page_size: int = Query(20, alias="limit", ge=1, le=200),
     keyword: Optional[str] = None,
     status: Optional[int] = None,
     driverType: Optional[int] = None,
