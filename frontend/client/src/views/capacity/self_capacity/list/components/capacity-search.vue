@@ -5,7 +5,7 @@
       <el-row :gutter="8">
         <el-col :lg="8" :md="10" :sm="12" :xs="24">
           <floating-label
-            label="司机姓名 / 手机号 / 车牌号"
+            label="驾驶员姓名 / 手机号 / 车牌号"
             type="input"
             v-model.trim="form.keyword"
             clearable

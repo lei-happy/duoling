@@ -63,7 +63,7 @@
         </el-icon>
         <div class="capacity-unbind-dialog-main">
           <p class="capacity-unbind-dialog-msg">
-            确定将司机
+            确定将驾驶员
             <strong class="capacity-unbind-name">{{
               unbindTarget?.driverName
             }}</strong>
@@ -138,7 +138,7 @@
   };
 
   const columns = ref<Columns>([
-    { prop: 'driverName', label: '司机姓名', minWidth: 100 },
+    { prop: 'driverName', label: '驾驶员姓名', minWidth: 100 },
     { prop: 'driverPhone', label: '手机号', minWidth: 130 },
     {
       prop: 'plateNumber',

@@ -15,7 +15,7 @@
         <el-tooltip placement="top-start" :show-after="200" :max-width="420">
           <template #content>
             <div class="capacity-bind-tooltip-text">
-              请选择一名司机与一辆可用车辆，同一司机或同一车辆在同一时刻仅能参与一条在绑运力。
+              请选择一名驾驶员与一辆可用车辆，同一驾驶员或同一车辆在同一时刻仅能参与一条在绑运力。
             </div>
           </template>
           <el-icon class="capacity-bind-help" :size="18">
@@ -28,9 +28,9 @@
     <el-row :gutter="16" class="capacity-bind-split">
       <el-col :xs="24" :md="12">
         <div class="capacity-bind-panel-head">
-          <span class="capacity-bind-panel-title">选择司机</span>
+          <span class="capacity-bind-panel-title">选择驾驶员</span>
           <el-checkbox v-model="filterDriversFreeOnly" size="small">
-            仅显示空闲司机
+            仅显示空闲驾驶员
           </el-checkbox>
         </div>
         <el-input
@@ -220,7 +220,7 @@
       show-icon
       :closable="false"
       class="capacity-bind-alert"
-      :title="`该司机当前已绑定车辆「${driverBoundPlate}」，请先解绑后再新建运力。`"
+      :title="`该驾驶员当前已绑定车辆「${driverBoundPlate}」，请先解绑后再新建运力。`"
     />
     <el-alert
       v-if="vehicleBoundDriver"
@@ -235,7 +235,7 @@
     <div class="capacity-bind-preview-card">
       <div class="capacity-bind-preview-main">
         <template v-if="!selectedDriver && !selectedVehicle">
-          <span class="capacity-bind-preview-empty">请在上表选择司机与车辆</span>
+          <span class="capacity-bind-preview-empty">请在上表选择驾驶员与车辆</span>
         </template>
         <template v-else-if="selectedDriver && selectedVehicle">
           <span class="capacity-bind-preview-name">{{ selectedDriver.name }}</span>
@@ -250,19 +250,14 @@
             v-if="selectedVehicle.trailerPlateNumber"
             class="capacity-bind-preview-trailer-wrap"
           >
-            <span class="capacity-bind-preview-paren">（</span>
             <plate-number-tag
               :text="selectedVehicle.trailerPlateNumber"
               :category="selectedVehicle.trailerPlateCategory"
             />
-            <span class="capacity-bind-preview-paren">）</span>
           </span>
         </template>
         <template v-else-if="selectedDriver">
           <span class="capacity-bind-preview-name">{{ selectedDriver.name }}</span>
-          <span v-if="phoneDigits4Only(selectedDriver.phone)" class="capacity-bind-preview-sub">
-            （{{ phoneDigits4Only(selectedDriver.phone) }}）
-          </span>
           <span class="capacity-bind-preview-hint">请选择右侧车辆</span>
         </template>
         <template v-else>
@@ -273,7 +268,16 @@
             :text="selectedVehicle.plateNumber"
             :category="selectedVehicle.plateCategory"
           />
-          <span class="capacity-bind-preview-hint">请选择左侧司机</span>
+          <span
+            v-if="selectedVehicle?.trailerPlateNumber"
+            class="capacity-bind-preview-trailer-wrap"
+          >
+            <plate-number-tag
+              :text="selectedVehicle.trailerPlateNumber"
+              :category="selectedVehicle.trailerPlateCategory"
+            />
+          </span>
+          <span class="capacity-bind-preview-hint">请选择左侧驾驶员</span>
         </template>
       </div>
       <div class="capacity-bind-remark-wrap">
@@ -285,7 +289,7 @@
           resize="none"
           maxlength="500"
           show-word-limit
-          placeholder="备注（选填）"
+          placeholder="请填写上车备注"
         />
       </div>
     </div>
@@ -335,7 +339,7 @@
 
   const drivers = ref<Driver[]>([]);
   const driverSearchInput = ref('');
-  /** 勾选后表格只显示未绑定运力的司机（空闲） */
+  /** 勾选后表格只显示未绑定运力的驾驶员（空闲） */
   const filterDriversFreeOnly = ref(false);
   const driverNextPage = ref(1);
   const driverTotal = ref(0);
@@ -458,11 +462,11 @@
   });
 
   const driverTableEmptyText = computed(() => {
-    if (drivers.value.length === 0) return '暂无在职司机';
+    if (drivers.value.length === 0) return '暂无在职驾驶员';
     if (filterDriversFreeOnly.value && displayedDrivers.value.length === 0) {
-      return '暂无空闲司机，取消勾选可查看全部';
+      return '暂无空闲驾驶员，取消勾选可查看全部';
     }
-    return '暂无在职司机';
+    return '暂无在职驾驶员';
   });
 
   const vehicleTableEmptyText = computed(() => {
@@ -485,7 +489,7 @@
     const id = row.id;
     if (id == null) return '';
     const plate = driverToBoundPlate.value[id] ?? '';
-    return `该司机当前已绑定车辆「${plate}」，请先下车后再新建运力。`;
+    return `该驾驶员当前已绑定车辆「${plate}」，请先下车后再新建运力。`;
   }
 
   function vehicleRowDisabledTip(row: Vehicle): string {
@@ -1062,12 +1066,6 @@
     align-items: center;
     flex-wrap: nowrap;
     white-space: nowrap;
-  }
-
-  .capacity-bind-preview-paren {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--el-text-color-secondary);
   }
 
   .capacity-bind-preview-plate {
