@@ -154,7 +154,7 @@ def generate_drivers(
         driver_code = _next_driver_code(session)
         gender = rng.choice((1, 1, 1, 2))
         dept_id = rng.choice(dept_ids) if dept_ids else None
-        driver_type = rng.choice((1, 1, 2, 3))
+        driver_type = rng.choice(("own", "own", "outsourced", "temporary"))
         operation_status = rng.choice((1, 1, 2, 3, 4))
         lic_type = rng.choice(LICENSE_TYPES)
         lic_no = f"{rng.randint(10**11, 10**12 - 1)}"[:18]

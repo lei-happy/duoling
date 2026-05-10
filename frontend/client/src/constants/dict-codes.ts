@@ -5,3 +5,4 @@
  */
 export const DICT_CODE_VEHICLE_TYPE = 'vehicle_type';
 export const DICT_CODE_TRAILER_TYPE = 'trailer_type';
+export const DICT_CODE_SELF_CAPACITY_DRIVER_TYPE = 'self_capacity_driver_type';

@@ -35,7 +35,7 @@ class DriverCreate(BaseModel):
     idCardBackPhoto: Optional[str] = None
     # 运营属性
     departmentId: Optional[int] = None
-    driverType: Optional[int] = None
+    driverType: Optional[str] = None
     residentAreas: Optional[Any] = None
     commonRoutes: Optional[str] = None
     operationStatus: Optional[int] = 1
@@ -66,7 +66,7 @@ class DriverUpdate(BaseModel):
     idCardBackPhoto: Optional[str] = None
     # 运营属性
     departmentId: Optional[int] = None
-    driverType: Optional[int] = None
+    driverType: Optional[str] = None
     residentAreas: Optional[Any] = None
     commonRoutes: Optional[str] = None
     operationStatus: Optional[int] = None
@@ -110,7 +110,7 @@ class DriverOut(BaseModel):
     # 运营属性
     departmentId: Optional[int] = None
     departmentName: Optional[str] = None
-    driverType: Optional[int] = None
+    driverType: Optional[str] = None
     residentAreas: Optional[Any] = None
     commonRoutes: Optional[str] = None
     operationStatus: Optional[int] = None

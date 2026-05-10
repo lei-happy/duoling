@@ -37,16 +37,21 @@
           </floating-label>
         </el-col>
         <el-col :lg="5" :md="8" :sm="12" :xs="24">
-          <floating-label
-            v-model="form.driverType"
-            label="司机类型"
-            type="select"
-            clearable
-          >
-            <el-option label="自有" :value="1" />
-            <el-option label="外协" :value="2" />
-            <el-option label="临时" :value="3" />
-          </floating-label>
+          <dict-select-hint-wrap dict-name="自有驾驶员类型">
+            <floating-label
+              v-model="form.driverType"
+              label="请选择驾驶员类型"
+              type="select"
+              clearable
+            >
+              <el-option
+                v-for="item in driverTypeDict"
+                :key="item.dictDataCode"
+                :label="item.dictDataName"
+                :value="item.dictDataCode"
+              />
+            </floating-label>
+          </dict-select-hint-wrap>
         </el-col>
         <el-col :lg="4" :md="8" :sm="12" :xs="24">
           <el-form-item label-width="0px">
@@ -65,9 +70,14 @@
 </template>
 
 <script lang="ts" setup>
+  import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
+  import { useDictData } from '@/utils/use-dict-data';
   import type { DriverParam } from '@/api/capacity/self_capacity/driver/model';
+  import { DICT_CODE_SELF_CAPACITY_DRIVER_TYPE } from '@/constants/dict-codes';
+
+  const [driverTypeDict] = useDictData([DICT_CODE_SELF_CAPACITY_DRIVER_TYPE]);
 
   const emit = defineEmits<{
     (e: 'search', where?: DriverParam): void;

@@ -13,7 +13,7 @@ class DriverOperationOut(BaseModel):
     driverId: int
     departmentId: Optional[int] = None
     departmentName: Optional[str] = None
-    driverType: Optional[int] = None
+    driverType: Optional[str] = None
     residentAreas: Optional[Any] = None
     commonRoutes: Optional[str] = None
     operationStatus: Optional[int] = None

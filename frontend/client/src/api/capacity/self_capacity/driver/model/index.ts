@@ -25,7 +25,7 @@ export interface Driver {
   idCardBackPhoto?: string;
   departmentId?: number;
   departmentName?: string;
-  driverType?: number;
+  driverType?: string;
   residentAreas?: ResidentArea[];
   commonRoutes?: string;
   operationStatus?: number;
@@ -40,7 +40,7 @@ export interface ResidentArea {
 export interface DriverParam extends PageParam {
   keyword?: string;
   status?: number;
-  driverType?: number;
+  driverType?: string;
   operationStatus?: number;
   departmentId?: number;
 }

@@ -226,16 +226,21 @@
               </el-col>
               <el-col :span="8" :xs="24" :sm="8">
                 <el-form-item class="driver-op-form-item">
-                  <floating-label
-                    v-model="form.driverType"
-                    label="请选择司机类型"
-                    type="select"
-                    clearable
-                  >
-                    <el-option label="自有" :value="1" />
-                    <el-option label="外协" :value="2" />
-                    <el-option label="临时" :value="3" />
-                  </floating-label>
+                  <dict-select-hint-wrap dict-name="自有驾驶员类型">
+                    <floating-label
+                      v-model="form.driverType"
+                      label="请选择驾驶员类型"
+                      type="select"
+                      clearable
+                    >
+                      <el-option
+                        v-for="item in driverTypeDict"
+                        :key="item.dictDataCode"
+                        :label="item.dictDataName"
+                        :value="item.dictDataCode"
+                      />
+                    </floating-label>
+                  </dict-select-hint-wrap>
                 </el-form-item>
               </el-col>
               <el-col :span="8" :xs="24" :sm="8">
@@ -459,6 +464,7 @@
   import { Plus } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
+  import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import DepartmentSelect from '@/components/DepartmentSelect/index.vue';
   import RegionsSelect from '@/components/RegionsSelect/index.vue';
   import { uploadFile } from '@/api/system/file';
@@ -479,6 +485,8 @@
     DriverAccount,
     DriverRoute
   } from '@/api/capacity/self_capacity/driver/model';
+  import { useDictData } from '@/utils/use-dict-data';
+  import { DICT_CODE_SELF_CAPACITY_DRIVER_TYPE } from '@/constants/dict-codes';
 
   interface RouteRow extends DriverRoute {
     originValue?: string[];
@@ -503,6 +511,26 @@
 
   const dialogBodyStyle = {
     padding: '0 12px 8px'
+  };
+
+  const [driverTypeDict] = useDictData([DICT_CODE_SELF_CAPACITY_DRIVER_TYPE]);
+
+  /** 历史整型 driverType 与字典 code 的映射（迁移过渡期） */
+  const LEGACY_DRIVER_TYPE: Record<number, string> = {
+    1: 'own',
+    2: 'outsourced',
+    3: 'temporary'
+  };
+
+  const normalizeDriverTypeField = () => {
+    const v = form.driverType as unknown;
+    if (typeof v === 'number' && v in LEGACY_DRIVER_TYPE) {
+      form.driverType = LEGACY_DRIVER_TYPE[v as number];
+      return;
+    }
+    if (v === '1' || v === '2' || v === '3') {
+      form.driverType = LEGACY_DRIVER_TYPE[Number(v)];
+    }
   };
 
   const accounts = ref<DriverAccount[]>([]);
@@ -611,6 +639,7 @@
         activeTab.value = 'basic';
         if (props.data) {
           Object.assign(form, { ...props.data });
+          normalizeDriverTypeField();
           loadAccounts();
           loadRoutes();
         } else {

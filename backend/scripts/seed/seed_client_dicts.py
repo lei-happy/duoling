@@ -10,6 +10,10 @@ DICT_DEFS 是租户字典的唯一真实来源（Single Source of Truth）：
 
 用法：
     python scripts/seed/seed_client_dicts.py
+    python scripts/seed/seed_client_dicts.py 1001 1010   # 仅同步指定租户编码（不依赖平台库筛选条件）
+
+说明：仅执行「列类型迁移」不会新增数据字典；新字典（如 self_capacity_driver_type / 自有驾驶员类型）
+须在代码合并 DICT_DEFS 后执行本脚本，才会写入各租户库 biz_dict。
 """
 
 import sys
@@ -54,6 +58,11 @@ DICT_DEFS = [
         ("低平板挂车", "lowbed", 30),
         ("罐式挂车", "tank", 40),
         ("集装箱挂车", "container", 50),
+    ]),
+    ("self_capacity_driver_type", "自有驾驶员类型", 24, [
+        ("自有", "own", 0),
+        ("外协", "outsourced", 10),
+        ("临时", "temporary", 20),
     ]),
 ]
 
@@ -114,24 +123,27 @@ def upsert_dicts_for_tenant(tenant_code: str, engine) -> int:
 def main():
     """遍历所有已激活租户，upsert 字典数据。"""
     settings = get_settings()
-    platform_engine = create_engine(settings.platform_db_url_sync)
 
-    with Session(platform_engine) as session:
-        rows = session.execute(
-            text(
-                "SELECT tenant_code FROM sys_tenant "
-                "WHERE is_deleted = 0 AND status = 1 AND db_initialized = 1"
-            )
-        ).fetchall()
-
-    tenant_codes = [r[0] for r in rows]
-    platform_engine.dispose()
+    if len(sys.argv) > 1:
+        tenant_codes = [c.strip() for c in sys.argv[1:] if c.strip()]
+        print(f"[INFO] 使用命令行指定租户: {tenant_codes}")
+    else:
+        platform_engine = create_engine(settings.platform_db_url_sync)
+        with Session(platform_engine) as session:
+            rows = session.execute(
+                text(
+                    "SELECT tenant_code FROM sys_tenant "
+                    "WHERE is_deleted = 0 AND status = 1 AND db_initialized = 1"
+                )
+            ).fetchall()
+        tenant_codes = [r[0] for r in rows]
+        platform_engine.dispose()
 
     if not tenant_codes:
-        print("[INFO] 无已激活的租户，跳过")
+        print("[INFO] 无租户可同步，跳过（可传租户编码：python scripts/seed/seed_client_dicts.py 1001）")
         return
 
-    print(f"[INFO] 找到 {len(tenant_codes)} 个已激活租户")
+    print(f"[INFO] 将同步 {len(tenant_codes)} 个租户库")
 
     for code in tenant_codes:
         tenant_engine = create_engine(settings.tenant_db_url_sync(code))

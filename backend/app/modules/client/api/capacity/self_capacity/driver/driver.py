@@ -27,7 +27,7 @@ router = APIRouter()
 
 
 async def _sync_to_platform(tenant_code: str, driver_out: DriverOut):
-    """将司机摘要同步到平台库（fire-and-forget）"""
+    """将驾驶员摘要同步到平台库（fire-and-forget）"""
     try:
         async for platform_db in db_manager.get_platform_session():
             await SysDriverService.sync_driver(
@@ -40,11 +40,11 @@ async def _sync_to_platform(tenant_code: str, driver_out: DriverOut):
                 status=driver_out.status if driver_out.status is not None else 1,
             )
     except Exception as e:
-        logger.warning(f"平台司机同步失败: {e}")
+        logger.warning(f"平台驾驶员同步失败: {e}")
 
 
 async def _remove_from_platform(tenant_code: str, biz_driver_id: int):
-    """从平台库软删除司机记录"""
+    """从平台库软删除驾驶员记录"""
     try:
         async for platform_db in db_manager.get_platform_session():
             await SysDriverService.remove_driver(
@@ -53,7 +53,7 @@ async def _remove_from_platform(tenant_code: str, biz_driver_id: int):
                 biz_driver_id=biz_driver_id,
             )
     except Exception as e:
-        logger.warning(f"平台司机删除同步失败: {e}")
+        logger.warning(f"平台驾驶员删除同步失败: {e}")
 
 
 @router.get("")
@@ -62,9 +62,11 @@ async def page_drivers(
     page_size: int = Query(20, alias="limit", ge=1, le=200),
     keyword: Optional[str] = None,
     status: Optional[int] = None,
-    driverType: Optional[int] = None,
+    driverType: Optional[str] = None,
     operationStatus: Optional[int] = None,
     departmentId: Optional[int] = None,
+    sort: Optional[str] = None,
+    order: Optional[str] = None,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
@@ -74,6 +76,8 @@ async def page_drivers(
         driver_type=driverType,
         operation_status=operationStatus,
         department_id=departmentId,
+        sort=sort,
+        order=order,
     )
     return success(data=data)
 

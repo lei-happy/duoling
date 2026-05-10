@@ -1,7 +1,7 @@
 """
 驾驶员运营属性表（租户库）
 
-与 biz_driver 1:1 关联，存储车队归属、司机类型、运营状态等业务属性。
+与 biz_driver 1:1 关联，存储车队归属、驾驶员类型、运营状态等业务属性。
 """
 
 from typing import Optional, Any
@@ -23,8 +23,8 @@ class DriverOperation(TenantModelBase):
     department_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="所属车队/部门ID"
     )
-    driver_type: Mapped[Optional[int]] = mapped_column(
-        SmallInteger, nullable=True, comment="司机类型 1-自有 2-外协 3-临时"
+    driver_type: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, comment="自有驾驶员类型（数据字典 dictDataCode）"
     )
     resident_areas: Mapped[Optional[Any]] = mapped_column(
         JSON, nullable=True, comment="常驻区域，存储省市代码数组"

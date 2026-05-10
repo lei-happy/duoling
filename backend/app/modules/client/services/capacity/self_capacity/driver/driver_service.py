@@ -7,7 +7,7 @@
 from typing import Optional
 from datetime import datetime
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
@@ -20,12 +20,36 @@ from app.modules.client.schemas.capacity.self_capacity.driver.driver import (
     DriverCreate, DriverUpdate, DriverOut,
 )
 
+_DRIVER_SORT_COLUMNS = {
+    "createdAt": Driver.created_at,
+}
+
+
+def _driver_list_order_clauses(sort: Optional[str], order: Optional[str]):
+    """解析列表排序；非法或未传时按 id 降序（与历史默认一致）。"""
+    col = _DRIVER_SORT_COLUMNS.get(sort or "")
+    if col is None:
+        return [desc(Driver.id)]
+    raw = (order or "desc").strip().lower()
+    if raw in ("descending",):
+        direction = "desc"
+    elif raw in ("ascending",):
+        direction = "asc"
+    elif raw in ("asc", "desc"):
+        direction = raw
+    else:
+        direction = "desc"
+    primary = asc(col) if direction == "asc" else desc(col)
+    if col is Driver.created_at:
+        return [primary, desc(Driver.id)]
+    return [primary]
+
 
 class DriverService:
 
     @staticmethod
     async def _generate_driver_code(db: AsyncSession) -> str:
-        """生成司机编号：D + 年份(4位) + 序号(4位+)"""
+        """生成驾驶员编号：D + 年份(4位) + 序号(4位+)"""
         year = datetime.now().strftime("%Y")
         prefix = f"D{year}"
 
@@ -46,9 +70,11 @@ class DriverService:
         page_size: int = 20,
         keyword: Optional[str] = None,
         status: Optional[int] = None,
-        driver_type: Optional[int] = None,
+        driver_type: Optional[str] = None,
         operation_status: Optional[int] = None,
         department_id: Optional[int] = None,
+        sort: Optional[str] = None,
+        order: Optional[str] = None,
     ) -> dict:
         base = (
             select(
@@ -113,8 +139,10 @@ class DriverService:
         count_q = select(func.count()).select_from(count_base.subquery())
         total = (await db.execute(count_q)).scalar() or 0
 
+        order_clauses = _driver_list_order_clauses(sort, order)
+
         result = await db.execute(
-            base.order_by(Driver.id.desc())
+            base.order_by(*order_clauses)
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
