@@ -170,7 +170,7 @@
           <el-form-item label="排序号" prop="sortNumber">
             <el-input-number
               :min="0"
-              :max="99999"
+              :max="CLIENT_MENU_SORT_ORDER_MAX"
               v-model="form.sortNumber"
               placeholder="请输入排序号"
               controls-position="right"
@@ -238,6 +238,9 @@
   const formRef = ref<FormInstance | null>(null);
   const featureOptions = ref<ProductFeature[]>([]);
 
+  /** 与后端 sys_menu.sort_order（SmallInteger）一致，超出会写入失败 */
+  const CLIENT_MENU_SORT_ORDER_MAX = 32767;
+
   const [form, _resetFields, assignFields] = useFormData<ClientMenu>({
     menuId: void 0,
     parentId: props.parentId,
@@ -268,6 +271,13 @@
           required: true,
           type: 'number',
           message: '请输入排序号',
+          trigger: 'blur'
+        },
+        {
+          type: 'number',
+          min: 0,
+          max: CLIENT_MENU_SORT_ORDER_MAX,
+          message: `排序号范围为 0～${CLIENT_MENU_SORT_ORDER_MAX}`,
           trigger: 'blur'
         }
       ]
