@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """为租户库 biz_vehicle、biz_trailer 增加 plate_category 字段（幂等）
 
-用法：
+用法（须使用已安装依赖的 Python，一般为项目 venv）：
+  cd /opt/zhitu/backend
+  source venv/bin/activate    # 若虚拟环境目录名不同请改为实际路径
   python3 scripts/fix/migrate_plate_category.py
   python3 scripts/fix/migrate_plate_category.py <tenant_code>
 """
