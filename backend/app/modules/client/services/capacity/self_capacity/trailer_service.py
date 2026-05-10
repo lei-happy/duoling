@@ -74,6 +74,7 @@ class TrailerService:
                 for t, ext, vp in rows
             ],
             "total": total,
+            "count": total,
             "page": page,
             "page_size": page_size,
         }

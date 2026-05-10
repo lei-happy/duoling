@@ -84,6 +84,7 @@ class VehicleService:
                 for v, ext, tp in rows
             ],
             "total": total,
+            "count": total,
             "page": page,
             "page_size": page_size,
         }

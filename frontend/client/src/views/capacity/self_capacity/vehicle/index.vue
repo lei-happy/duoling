@@ -8,7 +8,6 @@
         :columns="columns"
         :datasource="datasource"
         :show-overflow-tooltip="true"
-        v-model:selections="selections"
         :highlight-current-row="true"
         cache-key="ResourceVehicleTable"
       >
@@ -33,19 +32,44 @@
           <span v-else style="color: #999">—</span>
         </template>
         <template #status="{ row }">
-          <el-tag v-if="row.status === 1" type="success" size="small">
+          <el-tag
+            v-if="row.status === 1"
+            type="success"
+            size="small"
+            :disable-transitions="true"
+          >
             正常
           </el-tag>
-          <el-tag v-else-if="row.status === 0" type="info" size="small">
+          <el-tag
+            v-else-if="row.status === 0"
+            type="info"
+            size="small"
+            :disable-transitions="true"
+          >
             停用
           </el-tag>
-          <el-tag v-else-if="row.status === 2" type="warning" size="small">
+          <el-tag
+            v-else-if="row.status === 2"
+            type="warning"
+            size="small"
+            :disable-transitions="true"
+          >
             维修/保养
           </el-tag>
-          <el-tag v-else-if="row.status === 3" type="warning" size="small">
+          <el-tag
+            v-else-if="row.status === 3"
+            type="warning"
+            size="small"
+            :disable-transitions="true"
+          >
             保险续期
           </el-tag>
-          <el-tag v-else-if="row.status === 9" type="danger" size="small">
+          <el-tag
+            v-else-if="row.status === 9"
+            type="danger"
+            size="small"
+            :disable-transitions="true"
+          >
             已报废
           </el-tag>
         </template>
@@ -84,11 +108,11 @@
   import { pageVehicles, removeVehicle } from '@/api/capacity/self_capacity/vehicle';
   import type { Vehicle, VehicleParam } from '@/api/capacity/self_capacity/vehicle/model';
   import { DICT_CODE_VEHICLE_TYPE } from '@/constants/dict-codes';
+  import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'ResourceVehicle' });
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
-  const selections = ref<Vehicle[]>([]);
   const editVisible = ref(false);
   const editData = ref<Vehicle | null>(null);
   const dictCodeVehicleType = DICT_CODE_VEHICLE_TYPE;
@@ -152,6 +176,13 @@
       slot: 'status'
     },
     {
+      prop: 'createdAt',
+      label: '创建时间',
+      minWidth: 170,
+      align: 'center',
+      formatter: (row) => formatDateTime(row.createdAt)
+    },
+    {
       columnKey: 'action',
       label: '操作',
       width: 160,
@@ -163,9 +194,19 @@
     }
   ]);
 
-  const datasource: DatasourceFunction = async ({ page, limit }) => {
-    const res = await pageVehicles({ ...where, page, limit });
-    return { list: res?.list ?? [], count: res?.count ?? 0 };
+  const datasource: DatasourceFunction = async ({
+    page,
+    limit,
+    pages
+  }) => {
+    const p = page ?? (Number(pages?.page) || 1);
+    const l = limit ?? (Number(pages?.limit) || 10);
+    const res = await pageVehicles({ ...where, page: p, limit: l });
+    const raw = res as { list?: Vehicle[]; count?: number; total?: number };
+    return {
+      list: raw?.list ?? [],
+      count: raw?.count ?? raw?.total ?? 0
+    };
   };
 
   const reload = () => {

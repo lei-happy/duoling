@@ -128,9 +128,19 @@
     }
   ]);
 
-  const datasource: DatasourceFunction = async ({ page, limit }) => {
-    const res = await pageTrailers({ ...where, page, limit });
-    return { list: res?.list ?? [], count: res?.count ?? 0 };
+  const datasource: DatasourceFunction = async ({
+    page,
+    limit,
+    pages
+  }) => {
+    const p = page ?? (Number(pages?.page) || 1);
+    const l = limit ?? (Number(pages?.limit) || 10);
+    const res = await pageTrailers({ ...where, page: p, limit: l });
+    const raw = res as { list?: Trailer[]; count?: number; total?: number };
+    return {
+      list: raw?.list ?? [],
+      count: raw?.count ?? raw?.total ?? 0
+    };
   };
 
   const reload = () => {
