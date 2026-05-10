@@ -163,24 +163,30 @@ def main():
         conn.commit()
 
         # 插入或更新功能清单
+        # 兼容场景：feature_code 之前可能被软删（is_deleted=1）；若快照重新出现，
+        # 直接在该行上"复活"+ 更新元数据，避免触发 UNIQUE(feature_code) 冲突。
         for f in features:
             result = conn.execute(text(
-                "SELECT id FROM sys_product_feature WHERE feature_code = :code AND is_deleted = 0"
+                "SELECT id, is_deleted FROM sys_product_feature "
+                "WHERE feature_code = :code"
             ), {"code": f["feature_code"]})
-            existing_id = result.scalar()
-            if existing_id:
+            row = result.fetchone()
+            if row:
                 conn.execute(text(
-                    "UPDATE sys_product_feature "
-                    "SET feature_name = :name, module = :module, sort_order = :sort, required_tables = :tables "
+                    "UPDATE sys_product_feature SET "
+                    "  feature_name = :name, module = :module, "
+                    "  sort_order = :sort, required_tables = :tables, "
+                    "  status = 1, is_deleted = 0 "
                     "WHERE id = :id"
                 ), {
-                    "id": existing_id,
+                    "id": int(row.id),
                     "name": f["feature_name"],
                     "module": f["module"],
                     "sort": f["sort_order"],
                     "tables": f["required_tables"],
                 })
-                print(f"  更新功能: {f['feature_code']} (id={existing_id})")
+                tag = "复活+更新" if int(row.is_deleted) == 1 else "更新"
+                print(f"  {tag}功能: {f['feature_code']} (id={int(row.id)})")
             else:
                 conn.execute(text(
                     "INSERT INTO sys_product_feature (feature_code, feature_name, module, sort_order, required_tables) "
@@ -194,6 +200,34 @@ def main():
                 })
                 print(f"  插入功能: {f['feature_code']} - {f['feature_name']}")
         conn.commit()
+
+        # ---- prune：软删快照中已不存在的 feature ----
+        # 让"快照 == 数据库 active 集"成为不变量，否则 sync 自检会反复报"删除 N"。
+        snapshot_codes = {f["feature_code"] for f in features}
+        active_rows = conn.execute(text(
+            "SELECT id, feature_code FROM sys_product_feature WHERE is_deleted = 0"
+        )).fetchall()
+        stale = [r for r in active_rows if r.feature_code not in snapshot_codes]
+        if stale:
+            for r in stale:
+                conn.execute(text(
+                    "UPDATE sys_product_feature SET is_deleted = 1, status = 0 "
+                    "WHERE id = :id"
+                ), {"id": int(r.id)})
+                print(f"  软删功能(快照已无): {r.feature_code} (id={int(r.id)})")
+            # 同步停用挂在已软删 feature 上的 version_feature 关联，
+            # 否则下面的"全链路自检"和 sync 自检仍会看到引用，触发误报。
+            stale_ids = [int(r.id) for r in stale]
+            if stale_ids:
+                placeholders = ",".join(str(i) for i in stale_ids)
+                conn.execute(text(
+                    f"UPDATE sys_version_feature SET is_deleted = 1 "
+                    f"WHERE feature_id IN ({placeholders}) AND is_deleted = 0"
+                ))
+            conn.commit()
+            print(f"[OK] prune: 软删 {len(stale)} 个快照已不存在的 feature_code")
+        else:
+            print("[OK] prune: 全部 active feature 都在快照中，无需软删")
 
         # 建立版本-功能关联
         for version_code, feature_codes in version_features.items():
