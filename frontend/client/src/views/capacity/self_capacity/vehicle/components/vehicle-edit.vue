@@ -2,7 +2,7 @@
   <el-dialog
     :title="isEdit ? '编辑车辆' : '新增车辆'"
     :model-value="visible"
-    width="780px"
+    width="860px"
     draggable
     class="vehicle-edit-dialog"
     :close-on-click-modal="false"
@@ -21,24 +21,24 @@
       <el-tabs v-model="activeTab" class="vehicle-edit-tabs">
         <el-tab-pane label="基础信息" name="basic">
           <div class="vehicle-tab-pane">
-            <el-row :gutter="16">
-              <el-col :span="12">
-                <el-form-item prop="plateCategory">
-                  <floating-label
+            <el-row :gutter="10" class="vehicle-basic-first-row" align="middle">
+              <el-col :span="8">
+                <el-form-item prop="plateCategory" class="vehicle-plate-category-item">
+                  <el-radio-group
                     v-model="form.plateCategory"
-                    label="请选择车牌类型"
-                    type="select"
+                    size="small"
+                    class="vehicle-plate-category-radios"
                   >
-                    <el-option
+                    <el-radio
                       v-for="opt in PLATE_CATEGORY_OPTIONS"
                       :key="opt.value"
-                      :label="opt.label"
                       :value="opt.value"
+                      :label="opt.label"
                     />
-                  </floating-label>
+                  </el-radio-group>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="8">
                 <el-form-item prop="plateNumber">
                   <floating-label
                     :label="plateNumberLabel"
@@ -49,7 +49,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="8">
                 <el-form-item>
                   <floating-label
                     v-model="form.trailerId"
@@ -510,5 +510,22 @@
 
   .vehicle-edit-dialog :deep(.vehicle-tab-pane > .el-row > .el-col > .el-form-item) {
     margin-bottom: 14px;
+  }
+
+  .vehicle-basic-first-row .vehicle-plate-category-item :deep(.el-form-item__content) {
+    display: flex;
+    align-items: center;
+    line-height: 1;
+  }
+
+  .vehicle-plate-category-radios {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+  }
+
+  .vehicle-plate-category-radios :deep(.el-radio) {
+    margin-right: 0;
   }
 </style>

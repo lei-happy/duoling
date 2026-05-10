@@ -21,21 +21,21 @@
       <el-tabs v-model="activeTab" class="trailer-edit-tabs">
         <el-tab-pane label="基础信息" name="basic">
           <div class="trailer-tab-pane">
-            <el-row :gutter="16">
+            <el-row :gutter="16" align="middle">
               <el-col :span="12">
-                <el-form-item prop="plateCategory">
-                  <floating-label
+                <el-form-item prop="plateCategory" class="trailer-plate-category-item">
+                  <el-radio-group
                     v-model="form.plateCategory"
-                    label="请选择号牌类型"
-                    type="select"
+                    size="small"
+                    class="trailer-plate-category-radios"
                   >
-                    <el-option
+                    <el-radio
                       v-for="opt in PLATE_CATEGORY_OPTIONS"
                       :key="opt.value"
-                      :label="opt.label"
                       :value="opt.value"
+                      :label="opt.label"
                     />
-                  </floating-label>
+                  </el-radio-group>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -335,6 +335,17 @@
   });
 
   watch(
+    () => form.plateCategory,
+    (cat) => {
+      const ml = trailerPlateInputMaxLen(
+        (cat as PlateCategory) ?? DEFAULT_PLATE_CATEGORY
+      );
+      const pn = form.plateNumber?.trim();
+      if (pn && pn.length > ml) form.plateNumber = pn.slice(0, ml);
+    }
+  );
+
+  watch(
     () => props.visible,
     (val) => {
       if (val) {
@@ -483,5 +494,22 @@
 
   .trailer-edit-dialog :deep(.trailer-tab-pane > .el-row > .el-col > .el-form-item) {
     margin-bottom: 14px;
+  }
+
+  .trailer-tab-pane > .el-row .trailer-plate-category-item :deep(.el-form-item__content) {
+    display: flex;
+    align-items: center;
+    line-height: 1;
+  }
+
+  .trailer-plate-category-radios {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+  }
+
+  .trailer-plate-category-radios :deep(.el-radio) {
+    margin-right: 0;
   }
 </style>

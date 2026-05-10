@@ -147,7 +147,7 @@
     {
       prop: 'plateNumber',
       label: '车牌号',
-      minWidth: 120,
+      minWidth: 140,
       slot: 'plateNumber'
     },
     {

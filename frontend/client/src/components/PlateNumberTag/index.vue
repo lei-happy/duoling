@@ -48,16 +48,21 @@
   .plate-number-tag {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     box-sizing: border-box;
+    /* 与字体大小联动，黄/蓝/新能源、7/8 位号牌统一视觉宽度（偏紧凑） */
+    width: 7.5em;
+    min-width: 7.5em;
     max-width: 100%;
     white-space: nowrap;
     font-weight: 700;
     border-radius: 4px;
-    padding: 2px 8px;
+    padding: 2px 4px;
     font-size: 13px;
     line-height: 1.35;
     vertical-align: middle;
     letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
     border: 1px solid transparent;
   }
 
@@ -88,7 +93,7 @@
 
   .plate-number-tag--large {
     font-size: 15px;
-    padding: 3px 10px;
+    padding: 3px 8px;
     border-radius: 5px;
   }
 
