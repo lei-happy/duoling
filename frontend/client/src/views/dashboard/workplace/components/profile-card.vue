@@ -6,7 +6,7 @@
         <el-avatar :size="68" :src="loginUser.avatar" class="profile-avatar" />
         <div class="profile-body">
           <ele-text size="xl" type="heading" style="font-weight: normal">
-            早安, {{ loginUser.nickname }}, 开始您一天的工作吧!
+            {{ greetingText }}
           </ele-text>
           <ele-text type="placeholder" :icon="PartlyCloudy">
             今日多云转阴, 18℃ ~ 22℃, 出门记得穿外套哦~
@@ -59,7 +59,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed } from 'vue';
+  import { computed, ref, watch } from 'vue';
   import {
     PartlyCloudy,
     Briefcase,
@@ -67,11 +67,21 @@
     BellFilled
   } from '@element-plus/icons-vue';
   import { useUserStore } from '@/store/modules/user';
+  import { getProfileGreetingText } from '../utils/profile-greeting';
 
   const userStore = useUserStore();
 
   /** 当前登录用户信息 */
   const loginUser = computed(() => userStore.info ?? {});
+
+  /** 按上海时段随机问候（用户信息就绪或变化时刷新一条） */
+  const greetingText = ref(getProfileGreetingText(userStore.info));
+  watch(
+    () => userStore.info,
+    (info) => {
+      greetingText.value = getProfileGreetingText(info);
+    }
+  );
 </script>
 
 <style lang="scss" scoped>
