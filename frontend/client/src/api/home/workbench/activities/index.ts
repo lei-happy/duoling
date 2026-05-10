@@ -14,6 +14,8 @@ export type CompanyActivityItem = {
   display_time: string;
   summary: string;
   event_code: string;
+  /** 操作人展示名，与摘要配合高亮 */
+  actor_display_name?: string | null;
 };
 
 export type CompanyActivityListData = {

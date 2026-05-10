@@ -16,6 +16,9 @@ class CompanyActivityItem(BaseModel):
     display_time: str = Field(..., description="当日时分 HH:mm（Asia/Shanghai）")
     summary: str
     event_code: str
+    actor_display_name: Optional[str] = Field(
+        None, description="操作人展示名快照，可与摘要配合高亮"
+    )
 
 
 class CompanyActivityListOut(BaseModel):

@@ -1065,7 +1065,6 @@
 
 .todo-tabs {
   display: inline-block;
-  margin-right: 10px;
   pointer-events: all;
   z-index: 10;
 }

@@ -76,6 +76,7 @@ class CompanyActivityService:
                     ),
                     "summary": row.summary,
                     "event_code": row.event_code,
+                    "actor_display_name": row.actor_display_name,
                 }
             )
         return items
