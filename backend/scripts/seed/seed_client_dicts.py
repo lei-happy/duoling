@@ -46,6 +46,15 @@ DICT_DEFS = [
         ("微型货车", "mini_truck", 30),
         ("挂车", "trailer", 40),
     ]),
+    # 挂车子类（与 mock_tenant_trailers.DEFAULT_TRAILER_TYPES 的 item_value 一致）
+    ("trailer_type", "挂车类型", 22, [
+        ("平板挂车", "flatbed", 0),
+        ("厢式挂车", "van", 10),
+        ("骨架挂车", "skeleton", 20),
+        ("低平板挂车", "lowbed", 30),
+        ("罐式挂车", "tank", 40),
+        ("集装箱挂车", "container", 50),
+    ]),
 ]
 
 

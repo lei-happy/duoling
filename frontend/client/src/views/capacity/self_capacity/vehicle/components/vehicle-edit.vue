@@ -59,20 +59,22 @@
             <el-row :gutter="16">
               <el-col :span="12">
                 <el-form-item>
-                  <floating-label
-                    v-model="form.vehicleType"
-                    label="请选择车辆类型"
-                    type="select"
-                    :filterable="true"
-                    clearable
-                  >
-                    <el-option
-                      v-for="item in vehicleTypeDict"
-                      :key="item.dictDataCode"
-                      :label="item.dictDataName"
-                      :value="item.dictDataCode"
-                    />
-                  </floating-label>
+                  <dict-select-hint-wrap dict-name="车辆类型">
+                    <floating-label
+                      v-model="form.vehicleType"
+                      label="请选择车辆类型"
+                      type="select"
+                      :filterable="true"
+                      clearable
+                    >
+                      <el-option
+                        v-for="item in vehicleTypeDict"
+                        :key="item.dictDataCode"
+                        :label="item.dictDataName"
+                        :value="item.dictDataCode"
+                      />
+                    </floating-label>
+                  </dict-select-hint-wrap>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -229,6 +231,7 @@
   import { ref, reactive, watch, computed, nextTick } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import {
     addVehicle,

@@ -29,19 +29,21 @@
             />
           </el-form-item>
           <el-form-item prop="sex">
-            <floating-label
-              v-model="form.sex"
-              label="请选择性别"
-              type="select"
-              clearable
-            >
-              <el-option
-                v-for="item in sexDict"
-                :key="item.dictDataCode"
-                :label="item.dictDataName"
-                :value="item.dictDataCode"
-              />
-            </floating-label>
+            <dict-select-hint-wrap dict-name="性别">
+              <floating-label
+                v-model="form.sex"
+                label="请选择性别"
+                type="select"
+                clearable
+              >
+                <el-option
+                  v-for="item in sexDict"
+                  :key="item.dictDataCode"
+                  :label="item.dictDataName"
+                  :value="item.dictDataCode"
+                />
+              </floating-label>
+            </dict-select-hint-wrap>
           </el-form-item>
           <el-form-item prop="roles">
             <role-select v-model="form.roles" />
@@ -111,6 +113,7 @@
   import { ref, reactive } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage, emailReg, phoneReg, useModal } from 'ele-admin-plus';
+  import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import { useDictData } from '@/utils/use-dict-data';

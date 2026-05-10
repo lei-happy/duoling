@@ -19,19 +19,21 @@
           />
         </el-col>
         <el-col :lg="6" :md="8" :sm="12" :xs="24">
-          <floating-label
-            v-model="form.sex"
-            label="请选择性别"
-            type="select"
-            clearable
-          >
-            <el-option
-              v-for="item in sexDict"
-              :key="item.dictDataCode"
-              :label="item.dictDataName"
-              :value="item.dictDataCode"
-            />
-          </floating-label>
+          <dict-select-hint-wrap dict-name="性别">
+            <floating-label
+              v-model="form.sex"
+              label="请选择性别"
+              type="select"
+              clearable
+            >
+              <el-option
+                v-for="item in sexDict"
+                :key="item.dictDataCode"
+                :label="item.dictDataName"
+                :value="item.dictDataCode"
+              />
+            </floating-label>
+          </dict-select-hint-wrap>
         </el-col>
         <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <el-form-item label-width="0px">
@@ -50,6 +52,7 @@
 
 <script lang="ts" setup>
   import { watch } from 'vue';
+  import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import { useDictData } from '@/utils/use-dict-data';

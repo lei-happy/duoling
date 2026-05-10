@@ -12,20 +12,22 @@
           />
         </el-col>
         <el-col :lg="6" :md="8" :sm="12" :xs="24">
-          <floating-label
-            v-model="form.vehicleType"
-            label="请选择车辆类型"
-            type="select"
-            :filterable="true"
-            clearable
-          >
-            <el-option
-              v-for="item in vehicleTypeDict"
-              :key="item.dictDataCode"
-              :label="item.dictDataName"
-              :value="item.dictDataCode"
-            />
-          </floating-label>
+          <dict-select-hint-wrap dict-name="车辆类型">
+            <floating-label
+              v-model="form.vehicleType"
+              label="请选择车辆类型"
+              type="select"
+              :filterable="true"
+              clearable
+            >
+              <el-option
+                v-for="item in vehicleTypeDict"
+                :key="item.dictDataCode"
+                :label="item.dictDataName"
+                :value="item.dictDataCode"
+              />
+            </floating-label>
+          </dict-select-hint-wrap>
         </el-col>
         <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <floating-label
@@ -58,6 +60,7 @@
 </template>
 
 <script lang="ts" setup>
+  import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import { useDictData } from '@/utils/use-dict-data';

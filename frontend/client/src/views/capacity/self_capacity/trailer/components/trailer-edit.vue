@@ -54,20 +54,22 @@
             <el-row :gutter="16">
               <el-col :span="12">
                 <el-form-item>
-                  <floating-label
-                    v-model="form.trailerType"
-                    label="请选择挂车类型"
-                    type="select"
-                    :filterable="true"
-                    clearable
-                  >
-                    <el-option
-                      v-for="item in trailerTypeDict"
-                      :key="item.dictDataCode"
-                      :label="item.dictDataName"
-                      :value="item.dictDataCode"
-                    />
-                  </floating-label>
+                  <dict-select-hint-wrap dict-name="挂车类型">
+                    <floating-label
+                      v-model="form.trailerType"
+                      label="请选择挂车类型"
+                      type="select"
+                      :filterable="true"
+                      clearable
+                    >
+                      <el-option
+                        v-for="item in trailerTypeDict"
+                        :key="item.dictDataCode"
+                        :label="item.dictDataName"
+                        :value="item.dictDataCode"
+                      />
+                    </floating-label>
+                  </dict-select-hint-wrap>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
@@ -195,6 +197,7 @@
   import { ref, reactive, watch, computed, nextTick } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { addTrailer, updateTrailer } from '@/api/capacity/self_capacity/trailer';
   import type { Trailer } from '@/api/capacity/self_capacity/trailer/model';

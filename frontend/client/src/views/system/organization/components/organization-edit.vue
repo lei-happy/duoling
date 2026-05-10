@@ -43,19 +43,21 @@
         </el-col>
         <el-col :sm="12" :xs="24">
           <el-form-item prop="organizationType">
-            <floating-label
-              v-model="form.organizationType"
-              label="请选择机构类型"
-              type="select"
-              clearable
-            >
-              <el-option
-                v-for="item in organizationTypeDict"
-                :key="item.dictDataCode"
-                :label="item.dictDataName"
-                :value="item.dictDataCode"
-              />
-            </floating-label>
+            <dict-select-hint-wrap dict-name="机构类型">
+              <floating-label
+                v-model="form.organizationType"
+                label="请选择机构类型"
+                type="select"
+                clearable
+              >
+                <el-option
+                  v-for="item in organizationTypeDict"
+                  :key="item.dictDataCode"
+                  :label="item.dictDataName"
+                  :value="item.dictDataCode"
+                />
+              </floating-label>
+            </dict-select-hint-wrap>
           </el-form-item>
           <el-form-item prop="sortNumber">
             <floating-label
@@ -95,6 +97,7 @@
   import { ref, reactive, computed } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
+  import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import { useDictData } from '@/utils/use-dict-data';
