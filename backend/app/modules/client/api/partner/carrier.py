@@ -76,6 +76,7 @@ async def page_carriers(
     ]
     return success(data={
         "list": rows,
+        "count": total,
         "total": total,
         "page": page,
         "page_size": page_size,

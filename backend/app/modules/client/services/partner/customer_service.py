@@ -93,6 +93,7 @@ class CustomerService:
 
         return {
             "list": [CustomerOut.from_model(item).model_dump() for item in items],
+            "count": total,
             "total": total,
             "page": page,
             "page_size": page_size,

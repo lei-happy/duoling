@@ -92,11 +92,14 @@
           </el-tag>
         </template>
         <template #action="{ row }">
-          <btn-items
-            divider
-            type="link"
-            :items="rowActions(row)"
-          />
+          <div class="partner-carrier-actions">
+            <btn-items
+              divider
+              type="link"
+              :wrap="false"
+              :items="rowActions(row)"
+            />
+          </div>
         </template>
       </ele-pro-table>
     </ele-card>
@@ -121,8 +124,12 @@
 <script lang="ts" setup>
   import { ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
-  import { CircleCheck } from '@element-plus/icons-vue';
+  import { CircleCheck, Promotion, RefreshLeft } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
+  import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
     DatasourceFunction,
@@ -144,6 +151,7 @@
     type CarrierParam
   } from '@/api/partner/carrier/model';
   import { formatDateTime } from '@/utils/date-util';
+  import { DeleteOutlined } from '@/components/icons';
 
   defineOptions({ name: 'PartnerCarrier' });
 
@@ -198,7 +206,7 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 280,
+      minWidth: 230,
       align: 'center',
       slot: 'action',
       hideInPrint: true,
@@ -272,34 +280,42 @@
       .catch(() => {});
   };
 
-  function rowActions(row: CarrierListItem) {
-    const items: any[] = [
+  function rowActions(row: CarrierListItem): ButtonItem[] {
+    const items: ButtonItem[] = [
       { preset: 'edit', onClick: () => openEdit(row) }
     ];
-    // 互联：未邀请 / A 已撤回 / B 已拒绝 / 失败 / 解绑 → 邀请
+    // 互联：未邀请 / A 已撤回 / B 已拒绝 / 失败 / 解绑 → 邀请（文字链 + 图标，勿用 type 以免变成实心按钮）
     if ([0, 3, 5, 6, 8, 9].includes(row.inviteStatus)) {
       items.push({
         title: '邀请激活',
-        type: 'success',
+        icon: Promotion,
         onClick: () => openInvite(row)
       });
     }
-    // 邀请中 → 撤回
     if (row.inviteStatus === 1) {
       items.push({
         title: '撤回邀请',
-        type: 'warning',
+        icon: RefreshLeft,
         onClick: () => revoke(row)
       });
     }
+    const dropdownItems: ButtonDropdownItem[] = [
+      {
+        title: '邀请历史',
+        onClick: () => openHistory(row)
+      },
+      {
+        title: '删除',
+        icon: DeleteOutlined,
+        divided: true,
+        danger: true,
+        disabled: !!row.linkedTenantCode,
+        onClick: () => remove(row)
+      }
+    ];
     items.push({
-      title: '邀请历史',
-      onClick: () => openHistory(row)
-    });
-    items.push({
-      preset: 'del',
-      onClick: () => remove(row),
-      disabled: !!row.linkedTenantCode
+      preset: 'more',
+      dropdownItems
     });
     return items;
   }
@@ -311,3 +327,10 @@
     return 'danger';
   }
 </script>
+
+<style scoped>
+  .partner-carrier-actions {
+    text-align: center;
+    white-space: nowrap;
+  }
+</style>
