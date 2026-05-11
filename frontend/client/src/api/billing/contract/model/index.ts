@@ -38,6 +38,14 @@ export interface FreightRate {
   status?: number;
 }
 
+/** 合同详情页运价明细本地筛选 */
+export interface FreightRateFilterParam {
+  keyword?: string;
+  billingMode?: number;
+  priceType?: number;
+  status?: number;
+}
+
 export interface FreightCalcRequest {
   customerId: number;
   originCode: string;

@@ -20,8 +20,7 @@
           >
             <el-option label="草稿" :value="0" />
             <el-option label="生效" :value="1" />
-            <el-option label="已过期" :value="2" />
-            <el-option label="已终止" :value="3" />
+            <el-option label="已终止" :value="2" />
           </floating-label>
         </el-col>
         <el-col :lg="4" :md="8" :sm="12" :xs="24">

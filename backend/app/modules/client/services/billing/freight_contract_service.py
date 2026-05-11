@@ -187,10 +187,32 @@ class FreightContractService:
         contract = result.scalar_one_or_none()
         if not contract:
             raise BizException("合同不存在")
-        if contract.status == 2:
-            raise BizException("合同已终止")
+        if contract.status != 1:
+            raise BizException("仅生效中的合同可以终止")
 
         contract.status = 2
+        await db.flush()
+        await db.refresh(contract)
+        return contract
+
+    @staticmethod
+    async def resume_contract(
+        db: AsyncSession, contract_id: int
+    ) -> FreightContract:
+        """将已终止的合同恢复为生效（可逆终止）。"""
+        result = await db.execute(
+            select(FreightContract).where(
+                FreightContract.id == contract_id,
+                FreightContract.is_deleted == 0,
+            )
+        )
+        contract = result.scalar_one_or_none()
+        if not contract:
+            raise BizException("合同不存在")
+        if contract.status != 2:
+            raise BizException("仅已终止的合同可以恢复生效")
+
+        contract.status = 1
         await db.flush()
         await db.refresh(contract)
         return contract

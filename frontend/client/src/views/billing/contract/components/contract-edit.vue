@@ -2,38 +2,29 @@
   <el-dialog
     :title="isEdit ? '编辑合同' : '新增合同'"
     :model-value="visible"
-    @update:model-value="updateVisible"
-    width="700px"
+    width="560px"
     draggable
+    :close-on-click-modal="false"
+    class="contract-edit-dialog"
+    @update:model-value="updateVisible"
   >
     <el-form
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="100px"
+      label-width="0"
+      class="contract-edit-form"
       @submit.prevent=""
     >
       <el-row :gutter="16">
-        <el-col :span="12">
-          <el-form-item label="合同编号" prop="contractNo">
-            <el-input v-model="form.contractNo" placeholder="请输入合同编号" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="合同名称" prop="contractName">
-            <el-input
-              v-model="form.contractName"
-              placeholder="请输入合同名称"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="客户" prop="customerId">
-            <el-select
+        <el-col :span="24">
+          <el-form-item prop="customerId">
+            <floating-label
               v-model="form.customerId"
-              placeholder="请选择客户"
+              label="请选择客户"
+              type="select"
               filterable
-              style="width: 100%"
+              clearable
             >
               <el-option
                 v-for="item in customerOptions"
@@ -41,39 +32,52 @@
                 :label="item.customerName"
                 :value="item.id"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="12" />
-        <el-col :span="12">
-          <el-form-item label="生效日期" prop="effectiveDate">
-            <el-date-picker
-              v-model="form.effectiveDate"
-              type="date"
-              value-format="YYYY-MM-DD"
-              placeholder="请选择生效日期"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="失效日期" prop="expiryDate">
-            <el-date-picker
-              v-model="form.expiryDate"
-              type="date"
-              value-format="YYYY-MM-DD"
-              placeholder="请选择失效日期"
-              style="width: 100%"
+        <el-col :span="24">
+          <el-form-item prop="contractName">
+            <floating-label
+              label="请输入合同名称"
+              type="input"
+              v-model.trim="form.contractName"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="24">
-          <el-form-item label="备注">
-            <el-input
+          <el-form-item prop="contractNo">
+            <floating-label
+              label="请输入合同编号"
+              type="input"
+              v-model.trim="form.contractNo"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24">
+          <el-form-item prop="contractPeriod">
+            <floating-label
+              v-model="form.contractPeriod"
+              label="请选择有效期"
+              type="date"
+              date-type="daterange"
+              value-format="YYYY-MM-DD"
+              range-separator="~"
+              start-placeholder="开始"
+              end-placeholder="结束"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24">
+          <el-form-item>
+            <floating-label
+              label="请输入备注"
+              type="input"
+              input-type="textarea"
               v-model="form.remark"
-              type="textarea"
-              :rows="3"
-              placeholder="请输入备注"
+              :clearable="false"
             />
           </el-form-item>
         </el-col>
@@ -89,13 +93,18 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive, watch, computed } from 'vue';
+  import { ref, reactive, watch, computed, nextTick } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { addContract, updateContract } from '@/api/billing/contract';
   import { selectCustomers } from '@/api/partner/customer';
   import type { FreightContract } from '@/api/billing/contract/model';
   import type { CustomerSelectItem } from '@/api/partner/customer/model';
+
+  type ContractForm = FreightContract & {
+    contractPeriod: [string, string] | null;
+  };
 
   const props = defineProps<{
     visible: boolean;
@@ -110,7 +119,9 @@
   const isEdit = computed(() => !!props.data?.id);
   const formRef = ref<FormInstance>();
   const loading = ref(false);
-  const form = reactive<FreightContract>({});
+  const form = reactive<ContractForm>({
+    contractPeriod: null
+  });
   const customerOptions = ref<CustomerSelectItem[]>([]);
 
   const rules = reactive<FormRules>({
@@ -120,7 +131,28 @@
     contractName: [
       { required: true, message: '请输入合同名称', trigger: 'blur' }
     ],
-    customerId: [{ required: true, message: '请选择客户', trigger: 'change' }]
+    customerId: [{ required: true, message: '请选择客户', trigger: 'change' }],
+    contractPeriod: [
+      {
+        required: true,
+        message: '请选择有效期',
+        trigger: 'change'
+      },
+      {
+        validator: (_r, v, cb) => {
+          if (!v || !Array.isArray(v) || v.length !== 2 || !v[0] || !v[1]) {
+            cb(new Error('请选择有效期'));
+            return;
+          }
+          if (v[0] > v[1]) {
+            cb(new Error('结束日期不能早于开始日期'));
+            return;
+          }
+          cb();
+        },
+        trigger: 'change'
+      }
+    ]
   });
 
   const loadCustomers = async () => {
@@ -131,19 +163,35 @@
     }
   };
 
+  function resetFormForCreate() {
+    Object.assign(form, {
+      id: undefined,
+      contractNo: undefined,
+      contractName: undefined,
+      customerId: undefined,
+      customerName: undefined,
+      effectiveDate: undefined,
+      expiryDate: undefined,
+      contractPeriod: null,
+      remark: undefined
+    });
+  }
+
   watch(
     () => props.visible,
     (val) => {
-      if (val) {
-        loadCustomers();
-        if (props.data) {
-          Object.assign(form, props.data);
-        } else {
-          Object.keys(form).forEach((k) => {
-            (form as any)[k] = undefined;
-          });
-        }
+      if (!val) return;
+      loadCustomers();
+      if (props.data?.id) {
+        Object.assign(form, props.data);
+        form.contractPeriod =
+          props.data.effectiveDate && props.data.expiryDate
+            ? [props.data.effectiveDate, props.data.expiryDate]
+            : null;
+      } else {
+        resetFormForCreate();
       }
+      nextTick(() => formRef.value?.clearValidate());
     }
   );
 
@@ -151,21 +199,35 @@
     emit('update:visible', val);
   };
 
+  const buildPayload = (): FreightContract => {
+    const period = form.contractPeriod;
+    const selected = customerOptions.value.find(
+      (c) => c.id === form.customerId
+    );
+    const payload: FreightContract = {
+      id: form.id,
+      contractNo: form.contractNo,
+      contractName: form.contractName,
+      customerId: form.customerId,
+      customerName: selected?.customerName ?? form.customerName,
+      effectiveDate: period?.[0],
+      expiryDate: period?.[1],
+      remark: form.remark,
+      status: form.status
+    };
+    return payload;
+  };
+
   const handleSubmit = () => {
     formRef.value?.validate(async (valid) => {
       if (!valid) return;
       loading.value = true;
       try {
-        const selected = customerOptions.value.find(
-          (c) => c.id === form.customerId
-        );
-        if (selected) {
-          form.customerName = selected.customerName;
-        }
+        const payload = buildPayload();
         if (isEdit.value) {
-          await updateContract(form);
+          await updateContract(payload);
         } else {
-          await addContract(form);
+          await addContract(payload);
         }
         EleMessage.success({ message: '操作成功', plain: true });
         updateVisible(false);
@@ -178,3 +240,16 @@
     });
   };
 </script>
+
+<style scoped>
+  .contract-edit-form :deep(.el-form-item) {
+    margin-bottom: 18px;
+  }
+</style>
+
+<style scoped lang="scss">
+  .contract-edit-dialog :deep(.floating-label-wrapper.is-focused .floating-label),
+  .contract-edit-dialog :deep(.floating-label-wrapper.has-value .floating-label) {
+    color: var(--el-color-primary);
+  }
+</style>

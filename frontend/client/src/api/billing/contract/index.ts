@@ -71,6 +71,16 @@ export async function terminateContract(id: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
+export async function resumeContract(id: number) {
+  const res = await request.put<ApiResult<unknown>>(
+    `/billing/contract/${id}/resume`
+  );
+  if (res.data.code === 0) {
+    return res.data.message;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
 export async function removeContract(id: number) {
   const res = await request.delete<ApiResult<unknown>>(
     `/billing/contract/${id}`

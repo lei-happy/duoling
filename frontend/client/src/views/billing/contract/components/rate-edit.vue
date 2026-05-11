@@ -2,23 +2,27 @@
   <el-dialog
     :title="isEdit ? '编辑运价' : '新增运价'"
     :model-value="visible"
-    @update:model-value="updateVisible"
-    width="640px"
+    width="920px"
     draggable
+    :close-on-click-modal="false"
+    class="rate-edit-dialog"
+    @update:model-value="updateVisible"
   >
     <el-form
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="120px"
+      label-width="0"
+      class="rate-edit-form"
       @submit.prevent=""
     >
-      <el-row :gutter="16">
+      <el-row :gutter="20">
         <el-col :span="24">
-          <el-form-item label="计费模式" prop="billingMode">
+          <el-form-item prop="billingMode" class="rate-block-item">
+            <div class="rate-block-cap">计费模式</div>
             <el-radio-group
               v-model="form.billingMode"
-              @change="onBillingModeChange"
+              @change="onBillingModeRadioChange"
             >
               <el-radio :value="0">台单价</el-radio>
               <el-radio :value="1">单公里单价</el-radio>
@@ -27,40 +31,40 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="出发地" prop="originCode">
-            <el-cascader
+          <el-form-item prop="originCode">
+            <floating-label
               v-model="originCodes"
-              :options="regionTree"
-              :props="regionCascaderProps"
-              placeholder="请选择出发地"
-              filterable
-              style="width: 100%"
+              label="请选择出发地"
+              type="cascader"
+              :cascader-options="regionTree"
+              :cascader-option-props="regionCascaderProps"
+              :cascader-filterable="true"
               @change="onOriginChange"
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="目的地" prop="destinationCode">
-            <el-cascader
+          <el-form-item prop="destinationCode">
+            <floating-label
               v-model="destCodes"
-              :options="regionTree"
-              :props="regionCascaderProps"
-              placeholder="请选择目的地"
-              filterable
-              style="width: 100%"
+              label="请选择目的地"
+              type="cascader"
+              :cascader-options="regionTree"
+              :cascader-option-props="regionCascaderProps"
+              :cascader-filterable="true"
               @change="onDestChange"
             />
           </el-form-item>
         </el-col>
         <template v-if="form.billingMode !== 2">
           <el-col :span="12">
-            <el-form-item label="品牌">
-              <el-select
+            <el-form-item>
+              <floating-label
                 v-model="form.vehicleBrand"
-                placeholder="请选择品牌(选填)"
+                label="请选择品牌（选填）"
+                type="select"
                 filterable
                 clearable
-                style="width: 100%"
                 @change="onBrandChange"
               >
                 <el-option
@@ -69,17 +73,17 @@
                   :label="b.brandNameCn"
                   :value="b.brandNameCn"
                 />
-              </el-select>
+              </floating-label>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="车型">
-              <el-select
+            <el-form-item>
+              <floating-label
                 v-model="form.vehicleModel"
-                placeholder="请选择车型(选填)"
+                label="请选择车型（选填）"
+                type="select"
                 filterable
                 clearable
-                style="width: 100%"
                 :disabled="!selectedBrandId"
               >
                 <el-option
@@ -88,34 +92,38 @@
                   :label="s.seriesName"
                   :value="s.seriesName"
                 />
-              </el-select>
+              </floating-label>
             </el-form-item>
           </el-col>
         </template>
-        <el-col :span="12" v-if="form.billingMode === 1">
-          <el-form-item label="线路公里数" prop="distanceKm">
+        <el-col v-if="form.billingMode === 1" :span="12">
+          <el-form-item prop="distanceKm" class="rate-num-item">
+            <div class="rate-num-item__cap">线路公里数</div>
             <el-input-number
               v-model="form.distanceKm"
+              class="rate-num-item__ctl ele-fluid"
               :precision="2"
               :min="0.01"
-              placeholder="公里"
-              style="width: 100%"
+              controls-position="right"
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item :label="priceLabel" prop="unitPrice">
+          <el-form-item prop="unitPrice" class="rate-num-item">
+            <div class="rate-num-item__cap">{{ priceLabel }}</div>
             <el-input-number
               v-model="form.unitPrice"
+              class="rate-num-item__ctl ele-fluid"
               :precision="2"
               :min="0"
               :placeholder="pricePlaceholder"
-              style="width: 100%"
+              controls-position="right"
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="运价类型" prop="priceType">
+          <el-form-item prop="priceType" class="rate-block-item">
+            <div class="rate-block-cap">运价类型</div>
             <el-radio-group v-model="form.priceType">
               <el-radio :value="0">明确运价</el-radio>
               <el-radio :value="1">预估运价</el-radio>
@@ -123,24 +131,24 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="生效日期" prop="effectiveDate">
-            <el-date-picker
+          <el-form-item prop="effectiveDate">
+            <floating-label
               v-model="form.effectiveDate"
+              label="请选择生效日期"
               type="date"
               value-format="YYYY-MM-DD"
-              placeholder="请选择生效日期"
-              style="width: 100%"
+              clearable
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="失效日期" prop="expiryDate">
-            <el-date-picker
+          <el-form-item prop="expiryDate">
+            <floating-label
               v-model="form.expiryDate"
+              label="请选择失效日期"
               type="date"
               value-format="YYYY-MM-DD"
-              placeholder="请选择失效日期"
-              style="width: 100%"
+              clearable
             />
           </el-form-item>
         </el-col>
@@ -156,9 +164,10 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive, watch, computed } from 'vue';
+  import { ref, reactive, watch, computed, nextTick } from 'vue';
   import type { FormInstance, FormRules, CascaderProps } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { addRate, updateRate } from '@/api/billing/contract';
   import { listVehicleBrandOptions } from '@/api/basic-data/vehicle-brand';
   import { pageVehicleSeries } from '@/api/basic-data/vehicle-series';
@@ -235,14 +244,15 @@
     return base;
   });
 
-  const onBillingModeChange = (val: number) => {
-    if (val === 2) {
+  const onBillingModeRadioChange = () => {
+    const v = Number(form.billingMode ?? 0);
+    if (v === 2) {
       form.vehicleBrand = undefined;
       form.vehicleModel = undefined;
       selectedBrandId.value = null;
       seriesOptions.value = [];
     }
-    if (val !== 1) {
+    if (v !== 1) {
       form.distanceKm = undefined;
     }
   };
@@ -274,7 +284,7 @@
     return names.join('/');
   };
 
-  const onOriginChange = (val: string[]) => {
+  const onOriginChange = (val?: string[]) => {
     if (val && val.length) {
       form.originCode = val[val.length - 1];
       form.origin = findRegionName(val);
@@ -284,7 +294,7 @@
     }
   };
 
-  const onDestChange = (val: string[]) => {
+  const onDestChange = (val?: string[]) => {
     if (val && val.length) {
       form.destinationCode = val[val.length - 1];
       form.destination = findRegionName(val);
@@ -318,29 +328,38 @@
   watch(
     () => props.visible,
     (val) => {
-      if (val) {
-        loadBaseData();
-        selectedBrandId.value = null;
-        originCodes.value = [];
-        destCodes.value = [];
-        if (props.data) {
-          Object.assign(form, props.data);
-          if (form.billingMode === undefined) form.billingMode = 0;
-          if (form.priceType === undefined) form.priceType = 0;
-          if (props.data.originCode) {
-            originCodes.value = [props.data.originCode];
-          }
-          if (props.data.destinationCode) {
-            destCodes.value = [props.data.destinationCode];
-          }
-        } else {
-          Object.keys(form).forEach((k) => {
-            (form as any)[k] = undefined;
-          });
-          form.billingMode = 0;
-          form.priceType = 0;
+      if (!val) return;
+      loadBaseData();
+      selectedBrandId.value = null;
+      originCodes.value = [];
+      destCodes.value = [];
+      if (props.data) {
+        Object.assign(form, props.data);
+        if (form.billingMode === undefined) form.billingMode = 0;
+        if (form.priceType === undefined) form.priceType = 0;
+        if (props.data.originCode) {
+          originCodes.value = [props.data.originCode];
         }
+        if (props.data.destinationCode) {
+          destCodes.value = [props.data.destinationCode];
+        }
+        if (props.data.vehicleBrand) {
+          const savedModel = props.data.vehicleModel;
+          void (async () => {
+            await onBrandChange(props.data!.vehicleBrand!);
+            if (savedModel) {
+              form.vehicleModel = savedModel;
+            }
+          })();
+        }
+      } else {
+        Object.keys(form).forEach((k) => {
+          (form as Record<string, unknown>)[k] = undefined;
+        });
+        form.billingMode = 0;
+        form.priceType = 0;
       }
+      nextTick(() => formRef.value?.clearValidate());
     }
   );
 
@@ -369,3 +388,44 @@
     });
   };
 </script>
+
+<style scoped>
+  .rate-edit-form :deep(.el-form-item) {
+    margin-bottom: 18px;
+  }
+</style>
+
+<style scoped lang="scss">
+  .rate-block-item {
+    margin-bottom: 18px;
+  }
+
+  .rate-block-cap {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    margin-bottom: 8px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  .rate-num-item__cap {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    margin-bottom: 6px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  .rate-num-item__ctl {
+    width: 100%;
+  }
+
+  .rate-edit-dialog :deep(.floating-label-wrapper.is-focused .floating-label),
+  .rate-edit-dialog :deep(.floating-label-wrapper.has-value .floating-label) {
+    color: var(--el-color-primary);
+  }
+
+  .rate-edit-dialog :deep(.el-input-number .el-input__wrapper) {
+    width: 100%;
+  }
+</style>

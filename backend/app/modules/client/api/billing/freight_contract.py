@@ -107,6 +107,18 @@ async def terminate_contract(
     return success(data=FreightContractOut.from_model(contract).model_dump())
 
 
+@router.put("/{contract_id}/resume")
+@operation_log(module="运价合同", action="恢复生效", description="恢复已终止的运价合同")
+async def resume_contract(
+    request: Request,
+    contract_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    contract = await FreightContractService.resume_contract(db, contract_id)
+    return success(data=FreightContractOut.from_model(contract).model_dump())
+
+
 @router.delete("/{contract_id}")
 @operation_log(module="运价合同", action="删除", description="删除运价合同")
 async def delete_contract(

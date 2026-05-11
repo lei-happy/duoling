@@ -77,6 +77,13 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       path: '/user/message',
       component: () => import('@/views/user/message/index.vue'),
       meta: { title: '消息中心' }
+    },
+    // 运价合同详情（独立页，不在后端菜单中注册）
+    {
+      path: '/billing/contract/detail/:id',
+      name: 'BillingContractDetail',
+      component: () => import('@/views/billing/contract/detail.vue'),
+      meta: { title: '合同详情' }
     }
   ];
   const layoutRoutes: RouteRecordRaw[] = [

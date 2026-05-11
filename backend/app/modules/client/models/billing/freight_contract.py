@@ -35,7 +35,7 @@ class FreightContract(TenantModelBase):
         Date, nullable=False, comment="到期日期"
     )
     status: Mapped[int] = mapped_column(
-        SmallInteger, default=0, comment="状态 0-草稿 1-生效 2-终止"
+        SmallInteger, default=0, comment="状态 0-草稿 1-生效 2-已终止"
     )
     remark: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="备注"
