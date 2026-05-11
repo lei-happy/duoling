@@ -7,6 +7,7 @@
       'has-value': hasValue,
       'is-disabled': disabled,
       'is-date-picker': type === 'date',
+      'is-range-date-picker': isRangeDateType,
       'is-select': type === 'select',
       'is-cascader': type === 'cascader'
     }"
@@ -41,7 +42,7 @@
       class="ele-fluid"
       @focus="handleFocus"
       @blur="handleBlur"
-      @clear="handleClear"
+      @clear="handleDateClear"
     />
 
     <el-cascader
@@ -92,7 +93,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed } from 'vue';
+  import { ref, computed, nextTick } from 'vue';
   import type { CascaderProps, InputInstance } from 'element-plus';
 
   defineOptions({ name: 'FloatingLabel' });
@@ -185,6 +186,21 @@
 
   const cascaderOptionsList = computed(() => props.cascaderOptions ?? []);
 
+  /** 是否为范围类日期（中间有分隔符） */
+  const isRangeDateType = computed(() =>
+    ['daterange', 'datetimerange', 'monthrange'].includes(props.dateType ?? '')
+  );
+
+  /** 将空范围值规范为 null，避免 EP 残留 ['',''] 导致「-」与浮动标签错位 */
+  const normalizeRangeModel = () => {
+    if (props.type !== 'date' || !isRangeDateType.value) return;
+    const v = model.value;
+    if (v == null) return;
+    if (Array.isArray(v) && v.length === 2 && v.every((x) => x == null || x === '')) {
+      model.value = null;
+    }
+  };
+
   /** 输入框引用 */
   const inputRef = ref<InputInstance>();
   const datePickerRef = ref<any>();
@@ -240,11 +256,21 @@
   /** 失焦事件 */
   const handleBlur = () => {
     isFocused.value = false;
+    void nextTick(() => {
+      normalizeRangeModel();
+    });
   };
 
   /** 清除事件 */
   const handleClear = () => {
     isFocused.value = false;
+  };
+
+  /** 日期清除后规范 v-model，避免范围分隔符与浮动标签叠层错位 */
+  const handleDateClear = async () => {
+    handleClear();
+    await nextTick();
+    normalizeRangeModel();
   };
 
   /** 下拉框显示/隐藏事件 */
@@ -301,6 +327,31 @@
   // 日期选择器的标签位置需要避开左侧图标
   &.is-date-picker .floating-label {
     left: 34px; // 日期图标宽度约30px，加上间距
+  }
+
+  // 范围选择无值且未聚焦：隐藏中间「-」，否则清空后仍占位，与浮动标签/空态错位
+  &.is-date-picker.is-range-date-picker:not(.has-value):not(.is-focused)
+    :deep(.el-range-separator) {
+    visibility: hidden;
+    width: 0;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  // 范围选择器空态：用整行高度做 flex 垂直居中，避免 top:50% + line-height:1 相对 range 编辑框视觉偏下
+  &.is-date-picker.is-range-date-picker {
+    min-height: var(--el-component-size);
+  }
+
+  &.is-date-picker.is-range-date-picker:not(.has-value):not(.is-focused) .floating-label {
+    top: 0;
+    bottom: 0;
+    transform: none;
+    display: flex;
+    align-items: center;
+    line-height: normal;
   }
 
   // 聚焦或有值时的标签样式
