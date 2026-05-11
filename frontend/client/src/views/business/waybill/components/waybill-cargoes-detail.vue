@@ -40,11 +40,7 @@
         </div>
         <div class="wcd-summary__meta">
           <span class="wcd-pill">
-            <el-icon><Van /></el-icon>
             共 {{ totalUnits }} 台
-          </span>
-          <span v-if="displayRows.length" class="wcd-pill wcd-pill--muted">
-            {{ displayRows.length }} 个明细行
           </span>
         </div>
       </div>
@@ -301,13 +297,9 @@
     padding: 4px 10px;
     border-radius: 999px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     background: var(--el-color-primary);
     color: var(--el-color-white);
-  }
-
-  .wcd-pill .el-icon {
-    font-size: 14px;
   }
 
   .wcd-pill--muted {
