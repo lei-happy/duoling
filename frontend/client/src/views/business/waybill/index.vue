@@ -9,6 +9,7 @@
         :datasource="datasource"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
+        v-model:selections="selections"
         cache-key="WaybillTable"
       >
         <template #toolbar>
@@ -17,6 +18,15 @@
               { preset: 'add', title: '新增运单', onClick: () => openEdit() }
             ]"
           />
+          <el-button
+            type="primary"
+            plain
+            class="ele-btn-icon"
+            :disabled="!selections.some((r) => r.status === 0)"
+            @click="batchConfirm"
+          >
+            批量确认
+          </el-button>
         </template>
         <template #route="{ row }">
           {{ row.origin }} → {{ row.destination }}
@@ -83,10 +93,19 @@
   defineOptions({ name: 'Waybill' });
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
+  const selections = ref<Waybill[]>([]);
   const editVisible = ref(false);
   const editData = ref<Waybill | null>(null);
 
   const columns = ref<Columns>([
+    {
+      type: 'selection',
+      columnKey: 'selection',
+      width: 48,
+      align: 'center',
+      fixed: 'left',
+      selectable: (row: Waybill) => row.status === 0
+    },
     { prop: 'waybillNo', label: '运单编号', minWidth: 140 },
     { prop: 'customerName', label: '客户名称', minWidth: 120 },
     {
@@ -156,7 +175,7 @@
     if (row.status === 0 || row.status === 1) {
       items.push({ preset: 'edit', onClick: () => openEdit(row) });
     }
-    if (row.status === 0 || row.status === 6) {
+    if (row.status === 0 || row.status === 1 || row.status === 6) {
       items.push({ preset: 'del', onClick: () => remove(row) });
     }
     return items;
@@ -177,6 +196,49 @@
           .then((msg) => {
             loading.close();
             EleMessage.success({ message: msg, plain: true });
+            reload();
+          })
+          .catch((e: Error) => {
+            loading.close();
+            EleMessage.error({ message: e.message, plain: true });
+          });
+      })
+      .catch(() => {});
+  };
+
+  const batchConfirm = () => {
+    const pending = selections.value.filter((r) => r.status === 0 && r.id != null);
+    if (!pending.length) {
+      EleMessage.warning({ message: '请勾选待确认的运单', plain: true });
+      return;
+    }
+    ElMessageBox.confirm(
+      `将确认 ${pending.length} 条运单，状态将变为「已确认」，是否继续？`,
+      '批量确认',
+      { type: 'warning', draggable: true }
+    )
+      .then(() => {
+        const loading = EleMessage.loading({
+          message: '请求中..',
+          plain: true
+        });
+        Promise.allSettled(pending.map((r) => updateWaybillStatus(r.id!, 1)))
+          .then((results) => {
+            loading.close();
+            const ok = results.filter((r) => r.status === 'fulfilled').length;
+            const fail = results.length - ok;
+            if (fail === 0) {
+              EleMessage.success({
+                message: `已成功确认 ${ok} 条运单`,
+                plain: true
+              });
+            } else {
+              EleMessage.warning({
+                message: `成功 ${ok} 条，失败 ${fail} 条，请刷新后核对`,
+                plain: true
+              });
+            }
+            selections.value = [];
             reload();
           })
           .catch((e: Error) => {

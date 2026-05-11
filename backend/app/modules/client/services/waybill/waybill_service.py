@@ -253,6 +253,7 @@ class WaybillService:
                     WaybillOut.from_model(item, cargo_map.get(item.id, [])).model_dump()
                     for item in page_items
                 ],
+                "count": total,
                 "total": total,
                 "page": page,
                 "page_size": page_size,
@@ -275,6 +276,7 @@ class WaybillService:
                 WaybillOut.from_model(item, cargo_map.get(item.id, [])).model_dump()
                 for item in items
             ],
+            "count": total,
             "total": total,
             "page": page,
             "page_size": page_size,
@@ -478,8 +480,8 @@ class WaybillService:
         waybill = result.scalar_one_or_none()
         if not waybill:
             raise BizException("运单不存在")
-        if waybill.status not in (0, 6):
-            raise BizException("只有待处理或已取消的运单可以删除")
+        if waybill.status not in (0, 1, 6):
+            raise BizException("仅待确认、已确认或已取消的运单可以删除")
         waybill.is_deleted = 1
         await WaybillService._soft_delete_cargoes(db, waybill_id)
         await db.flush()
