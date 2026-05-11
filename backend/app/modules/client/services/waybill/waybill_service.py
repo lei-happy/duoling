@@ -4,7 +4,7 @@
 
 import random
 from typing import Optional
-from datetime import datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 
 from sqlalchemy import select, func, update
@@ -15,12 +15,15 @@ from app.common.exceptions import BizException
 from app.common.pinyin_utils import match_pinyin
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
+from app.modules.client.models.vehicle_basic.biz_vehicle_brand import BizVehicleBrand
+from app.modules.client.models.vehicle_basic.biz_vehicle_series import BizVehicleSeries
 from app.modules.client.schemas.waybill.waybill import (
     WaybillCreate,
     WaybillUpdate,
     WaybillStatusUpdate,
     WaybillOut,
     WaybillCargoLineIn,
+    waybill_brand_model_key,
 )
 from app.modules.client.services.system_config_service import SystemConfigService
 from app.modules.client.services.billing.billing_engine_service import BillingEngineService
@@ -107,6 +110,29 @@ class WaybillService:
         for wid in by_wb:
             by_wb[wid].sort(key=lambda x: (x.sort_order, x.id))
         return by_wb
+
+    @staticmethod
+    async def _series_image_lookup_map(db: AsyncSession) -> dict[str, Optional[str]]:
+        """品牌中文名 + 车系名 → 车系图（与运单货物行匹配）。"""
+        result = await db.execute(
+            select(
+                BizVehicleBrand.brand_name_cn,
+                BizVehicleSeries.series_name,
+                BizVehicleSeries.series_image,
+            )
+            .select_from(BizVehicleSeries)
+            .join(
+                BizVehicleBrand,
+                BizVehicleBrand.brand_id == BizVehicleSeries.brand_id,
+            )
+        )
+        out: dict[str, Optional[str]] = {}
+        for brand_cn, series_name, series_image in result.all():
+            if not (brand_cn and series_name):
+                continue
+            k = waybill_brand_model_key(brand_cn, series_name)
+            out[k] = series_image
+        return out
 
     @staticmethod
     async def _fetch_cargoes_for_waybill(
@@ -210,6 +236,8 @@ class WaybillService:
         origin_keyword: Optional[str] = None,
         destination_keyword: Optional[str] = None,
         vehicle_keyword: Optional[str] = None,
+        created_at_start: Optional[date] = None,
+        created_at_end: Optional[date] = None,
     ) -> dict:
         use_pinyin_filters = any(
             [
@@ -222,18 +250,20 @@ class WaybillService:
         base = select(Waybill).where(Waybill.is_deleted == 0)
 
         if keyword:
-            base = base.where(
-                (Waybill.waybill_no.contains(keyword))
-                | (Waybill.customer_name.contains(keyword))
-                | (Waybill.dealer_name.contains(keyword))
-            )
+            base = base.where(Waybill.waybill_no.contains(keyword))
         if customer_id is not None:
             base = base.where(Waybill.customer_id == customer_id)
         if status is not None:
             base = base.where(Waybill.status == status)
+        if created_at_start is not None:
+            start_dt = datetime.combine(created_at_start, time.min)
+            base = base.where(Waybill.created_at >= start_dt)
+        if created_at_end is not None:
+            end_dt = datetime.combine(created_at_end, time.max)
+            base = base.where(Waybill.created_at <= end_dt)
 
         if use_pinyin_filters:
-            stmt = base.order_by(Waybill.created_at.desc())
+            stmt = base.order_by(Waybill.created_at.desc(), Waybill.id.desc())
             result = await db.execute(stmt)
             rows = list(result.scalars().all())
             filtered = [
@@ -248,9 +278,14 @@ class WaybillService:
             page_items = filtered[offset : offset + page_size]
             wb_ids = [w.id for w in page_items]
             cargo_map = await WaybillService._fetch_cargoes_batch(db, wb_ids)
+            series_lookup = await WaybillService._series_image_lookup_map(db)
             return {
                 "list": [
-                    WaybillOut.from_model(item, cargo_map.get(item.id, [])).model_dump()
+                    WaybillOut.from_model(
+                        item,
+                        cargo_map.get(item.id, []),
+                        series_image_lookup=series_lookup,
+                    ).model_dump()
                     for item in page_items
                 ],
                 "count": total,
@@ -263,17 +298,22 @@ class WaybillService:
         total = (await db.execute(count_q)).scalar() or 0
 
         result = await db.execute(
-            base.order_by(Waybill.created_at.desc())
+            base.order_by(Waybill.created_at.desc(), Waybill.id.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
         items = result.scalars().all()
         wb_ids = [w.id for w in items]
         cargo_map = await WaybillService._fetch_cargoes_batch(db, wb_ids)
+        series_lookup = await WaybillService._series_image_lookup_map(db)
 
         return {
             "list": [
-                WaybillOut.from_model(item, cargo_map.get(item.id, [])).model_dump()
+                WaybillOut.from_model(
+                    item,
+                    cargo_map.get(item.id, []),
+                    series_image_lookup=series_lookup,
+                ).model_dump()
                 for item in items
             ],
             "count": total,
@@ -285,7 +325,10 @@ class WaybillService:
     @staticmethod
     async def waybill_to_out(db: AsyncSession, waybill: Waybill) -> WaybillOut:
         cargoes = await WaybillService._fetch_cargoes_for_waybill(db, waybill.id)
-        return WaybillOut.from_model(waybill, cargoes)
+        series_lookup = await WaybillService._series_image_lookup_map(db)
+        return WaybillOut.from_model(
+            waybill, cargoes, series_image_lookup=series_lookup
+        )
 
     @staticmethod
     async def waybill_no_exists(

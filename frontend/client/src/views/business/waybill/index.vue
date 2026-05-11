@@ -10,6 +10,7 @@
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
         v-model:selections="selections"
+        :default-sort="{ prop: 'createdAt', order: 'descending' }"
         cache-key="WaybillTable"
       >
         <template #toolbar>
@@ -28,6 +29,21 @@
             批量确认
           </el-button>
         </template>
+        <template #waybillNo="{ row }">
+          <div class="waybill-no-cell">
+            <span class="waybill-no-cell__text" :title="row.waybillNo">{{
+              row.waybillNo
+            }}</span>
+            <el-button
+              text
+              class="waybill-no-cell__copy"
+              title="复制运单号"
+              @click.stop="copyWaybillNo(row.waybillNo)"
+            >
+              <el-icon :size="14"><DocumentCopy /></el-icon>
+            </el-button>
+          </div>
+        </template>
         <template #route="{ row }">
           {{ row.origin }} → {{ row.destination }}
         </template>
@@ -38,6 +54,17 @@
             }}{{ row.vehicleModel ? '/' + row.vehicleModel : '' }}
           </span>
           <span v-else>-</span>
+        </template>
+        <template #quantity="{ row }">
+          <el-tag
+            type="primary"
+            effect="plain"
+            size="small"
+            class="waybill-qty-tag"
+            @click.stop="openCargoDetail(row)"
+          >
+            {{ row.quantity ?? 0 }}
+          </el-tag>
         </template>
         <template #status="{ row }">
           <el-tag v-if="row.status === 0" type="info" size="small">
@@ -72,12 +99,17 @@
       :data="editData"
       @done="reload"
     />
+    <waybill-cargoes-detail
+      v-model:visible="cargoDetailVisible"
+      :waybill="cargoDetailWaybill"
+    />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
   import { ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
+  import { DocumentCopy } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
@@ -86,6 +118,7 @@
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import WaybillEdit from './components/waybill-edit.vue';
   import WaybillSearch from './components/waybill-search.vue';
+  import WaybillCargoesDetail from './components/waybill-cargoes-detail.vue';
   import { pageWaybills, removeWaybill, updateWaybillStatus } from '@/api/waybill';
   import type { Waybill, WaybillParam } from '@/api/waybill/model';
   import { formatDateTime } from '@/utils/date-util';
@@ -96,6 +129,8 @@
   const selections = ref<Waybill[]>([]);
   const editVisible = ref(false);
   const editData = ref<Waybill | null>(null);
+  const cargoDetailVisible = ref(false);
+  const cargoDetailWaybill = ref<Waybill | null>(null);
 
   const columns = ref<Columns>([
     {
@@ -106,7 +141,7 @@
       fixed: 'left',
       selectable: (row: Waybill) => row.status === 0
     },
-    { prop: 'waybillNo', label: '运单编号', minWidth: 140 },
+    { prop: 'waybillNo', label: '运单编号', minWidth: 168, slot: 'waybillNo' },
     { prop: 'customerName', label: '客户名称', minWidth: 120 },
     {
       columnKey: 'route',
@@ -120,7 +155,14 @@
       minWidth: 120,
       slot: 'vehicleInfo'
     },
-    { prop: 'quantity', label: '台数', width: 70, align: 'center' },
+    {
+      columnKey: 'quantity',
+      prop: 'quantity',
+      label: '台数',
+      width: 88,
+      align: 'center',
+      slot: 'quantity'
+    },
     {
       prop: 'freightAmount',
       label: '运费金额',
@@ -165,6 +207,31 @@
 
   const reload = (where?: WaybillParam, page?: number) => {
     tableRef.value?.reload?.({ where, page });
+  };
+
+  const copyWaybillNo = async (no?: string) => {
+    const t = no?.trim();
+    if (!t) {
+      EleMessage.warning({ message: '无可复制的单号', plain: true });
+      return;
+    }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(t);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = t;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      EleMessage.success({ message: '已复制运单号', plain: true });
+    } catch {
+      EleMessage.error({ message: '复制失败', plain: true });
+    }
   };
 
   const actionItems = (row: Waybill) => {
@@ -254,6 +321,11 @@
     editVisible.value = true;
   };
 
+  const openCargoDetail = (row: Waybill) => {
+    cargoDetailWaybill.value = row;
+    cargoDetailVisible.value = true;
+  };
+
   const remove = (row: Waybill) => {
     ElMessageBox.confirm(`确定要删除运单"${row.waybillNo}"吗?`, '系统提示', {
       type: 'warning',
@@ -278,3 +350,41 @@
       .catch(() => {});
   };
 </script>
+
+<style scoped>
+  .waybill-no-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    max-width: 100%;
+    vertical-align: middle;
+  }
+
+  .waybill-no-cell__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .waybill-no-cell__copy {
+    flex-shrink: 0;
+    margin-left: 0;
+    padding: 2px 4px;
+    min-height: auto;
+    color: var(--el-text-color-secondary);
+  }
+
+  .waybill-no-cell__copy:hover {
+    color: var(--el-color-primary);
+  }
+
+  .waybill-qty-tag {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .waybill-qty-tag:hover {
+    opacity: 0.88;
+  }
+</style>

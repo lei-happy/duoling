@@ -2,7 +2,7 @@
 企业端运单管理 API
 """
 
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -62,6 +62,8 @@ async def page_waybills(
     originKeyword: Optional[str] = None,
     destinationKeyword: Optional[str] = None,
     vehicleKeyword: Optional[str] = None,
+    createdAtStart: Optional[date] = Query(None, description="创建日期起（含当日 0 点）"),
+    createdAtEnd: Optional[date] = Query(None, description="创建日期止（含当日结束）"),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
@@ -75,6 +77,8 @@ async def page_waybills(
         origin_keyword=originKeyword,
         destination_keyword=destinationKeyword,
         vehicle_keyword=vehicleKeyword,
+        created_at_start=createdAtStart,
+        created_at_end=createdAtEnd,
     )
     return success(data=data)
 

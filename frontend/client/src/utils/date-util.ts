@@ -22,3 +22,10 @@ export function getLast7DaysDateTimeRange(): [string, string] {
   const start = dayjs().subtract(6, 'day').startOf('day');
   return [start.format(DATE_TIME_FORMAT), end.format(DATE_TIME_FORMAT)];
 }
+
+/** 含今天在内涵盖 3 个自然日：自 (今天−2) 至当日，日期字符串 YYYY-MM-DD（用于 daterange） */
+export function getLast3DaysDateRange(): [string, string] {
+  const end = dayjs().format('YYYY-MM-DD');
+  const start = dayjs().subtract(2, 'day').format('YYYY-MM-DD');
+  return [start, end];
+}

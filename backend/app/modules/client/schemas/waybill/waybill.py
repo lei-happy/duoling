@@ -8,6 +8,13 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
+def waybill_brand_model_key(brand: Optional[str], model: Optional[str]) -> str:
+    """品牌+车型 → 与 biz 车系表匹配用的键（均为 strip 后原文）。"""
+    b = (brand or "").strip()
+    m = (model or "").strip()
+    return f"{b}\x1f{m}"
+
+
 class WaybillCargoLineIn(BaseModel):
     """货物明细入参（创建/整单替换）"""
 
@@ -31,17 +38,22 @@ class WaybillCargoOut(BaseModel):
     vehicleModel: Optional[str] = None
     quantity: int
     sortOrder: int
+    seriesImage: Optional[str] = Field(
+        default=None,
+        description="车系图（biz_vehicle_series.series_image，与品牌+车型匹配）",
+    )
 
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_cargo(cls, c) -> "WaybillCargoOut":
+    def from_cargo(cls, c, series_image: Optional[str] = None) -> "WaybillCargoOut":
         return cls(
             id=c.id,
             vehicleBrand=c.vehicle_brand,
             vehicleModel=c.vehicle_model,
             quantity=c.quantity,
             sortOrder=c.sort_order,
+            seriesImage=series_image,
         )
 
 
@@ -141,6 +153,10 @@ class WaybillOut(BaseModel):
     quantity: int
     cargoes: list[WaybillCargoOut] = Field(default_factory=list)
     cargoSummary: Optional[str] = None
+    primarySeriesImage: Optional[str] = Field(
+        default=None,
+        description="首条货物或主档品牌/车型对应的车系图",
+    )
     planIssueTime: Optional[datetime] = None
     requiredLoadTime: Optional[datetime] = None
     requiredDeliverTime: Optional[datetime] = None
@@ -160,10 +176,33 @@ class WaybillOut(BaseModel):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_model(cls, m, cargoes: Optional[list] = None) -> "WaybillOut":
+    def from_model(
+        cls,
+        m,
+        cargoes: Optional[list] = None,
+        *,
+        series_image_lookup: Optional[dict[str, Optional[str]]] = None,
+    ) -> "WaybillOut":
         cargo_list = cargoes or []
-        cargo_out = [WaybillCargoOut.from_cargo(c) for c in cargo_list]
+        cargo_out: list[WaybillCargoOut] = []
+        for c in cargo_list:
+            key = waybill_brand_model_key(c.vehicle_brand, c.vehicle_model)
+            img = (
+                series_image_lookup.get(key)
+                if series_image_lookup is not None
+                else None
+            )
+            cargo_out.append(WaybillCargoOut.from_cargo(c, img))
         summary = _cargo_summary_from_lines(cargo_list) or None
+        primary_series_image: Optional[str] = None
+        for co in cargo_out:
+            if co.seriesImage:
+                primary_series_image = co.seriesImage
+                break
+        if primary_series_image is None and series_image_lookup is not None:
+            primary_series_image = series_image_lookup.get(
+                waybill_brand_model_key(m.vehicle_brand, m.vehicle_model)
+            )
         return cls(
             id=m.id,
             waybillNo=m.waybill_no,
@@ -178,6 +217,7 @@ class WaybillOut(BaseModel):
             quantity=m.quantity,
             cargoes=cargo_out,
             cargoSummary=summary,
+            primarySeriesImage=primary_series_image,
             planIssueTime=m.plan_issue_time,
             requiredLoadTime=m.required_load_time,
             requiredDeliverTime=m.required_deliver_time,

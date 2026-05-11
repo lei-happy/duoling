@@ -7,6 +7,8 @@ export interface WaybillCargoLine {
   vehicleModel?: string;
   quantity?: number;
   sortOrder?: number;
+  /** 车系图路径/URL（列表/详情由后端匹配 biz_vehicle_series） */
+  seriesImage?: string | null;
 }
 
 export interface Waybill {
@@ -23,6 +25,8 @@ export interface Waybill {
   quantity?: number;
   cargoes?: WaybillCargoLine[];
   cargoSummary?: string;
+  /** 首条货物或主档对应的车系图 */
+  primarySeriesImage?: string | null;
   planIssueTime?: string;
   requiredLoadTime?: string;
   requiredDeliverTime?: string;
@@ -41,6 +45,7 @@ export interface Waybill {
 }
 
 export interface WaybillParam extends PageParam {
+  /** 关键词：仅模糊匹配运单号（客户请用 customerId） */
   keyword?: string;
   customerId?: number;
   status?: number;
@@ -50,4 +55,8 @@ export interface WaybillParam extends PageParam {
   destinationKeyword?: string;
   /** 品牌或车型模糊 */
   vehicleKeyword?: string;
+  /** 创建日期起 YYYY-MM-DD（含当日 0 点） */
+  createdAtStart?: string;
+  /** 创建日期止 YYYY-MM-DD（含当日结束） */
+  createdAtEnd?: string;
 }

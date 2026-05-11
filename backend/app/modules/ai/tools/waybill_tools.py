@@ -23,7 +23,7 @@ from app.modules.client.services.waybill.waybill_service import WaybillService
 class WaybillSearchParams(BaseModel):
     keyword: Optional[str] = Field(
         None,
-        description="模糊关键词，匹配运单号 / 客户名 / 经销商名",
+        description="模糊匹配运单号（客户请用 customer_id）",
     )
     customer_id: Optional[int] = Field(None, description="客户ID")
     status: Optional[int] = Field(
@@ -39,7 +39,7 @@ class WaybillSearchParams(BaseModel):
     name="查询运单",
     category="waybill",
     description=(
-        "按关键词、客户、状态分页查询当前租户的运单列表。"
+        "按运单号关键词、客户、状态分页查询当前租户的运单列表。"
         "返回运单号、客户、起讫地、状态、运费等概要信息。"
     ),
     params_schema=WaybillSearchParams,
