@@ -179,12 +179,21 @@
       });
     }
     if (st === 2) {
-      dropdown.push({
-        title: '恢复生效',
-        icon: RefreshRight,
-        divided: true,
-        onClick: () => resume(rowNorm)
-      });
+      dropdown.push(
+        {
+          title: '恢复生效',
+          icon: RefreshRight,
+          divided: true,
+          onClick: () => resume(rowNorm)
+        },
+        {
+          title: '删除',
+          icon: DeleteOutlined,
+          divided: true,
+          danger: true,
+          onClick: () => remove(rowNorm)
+        }
+      );
     }
     return [
       { preset: 'detail', onClick: () => openDetail(rowNorm) },
