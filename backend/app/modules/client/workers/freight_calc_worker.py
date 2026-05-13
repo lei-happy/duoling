@@ -43,6 +43,9 @@ class FreightCalcWorker:
         self._enabled = self._read_enabled()
         self._interval_sec = int(os.getenv("FREIGHT_CALC_WORKER_INTERVAL", "5"))
         self._batch_size = int(os.getenv("FREIGHT_CALC_WORKER_BATCH", "20"))
+        # 表缺失的租户：跳过本轮，并降噪日志（每个租户只警告一次，
+        # 重启 worker 或下次 ready_set 重置后再触发警告）
+        self._tenants_missing_table: set[str] = set()
 
     @staticmethod
     def _read_enabled() -> bool:
@@ -113,7 +116,19 @@ class FreightCalcWorker:
             try:
                 await self._process_tenant(code)
             except Exception as e:  # noqa: BLE001
-                logger.warning(f"[FreightCalcWorker] 处理租户 {code} 失败: {e}")
+                # 表不存在（1146）通常是新租户库尚未跑过迁移脚本，
+                # 跳过该租户，每个租户只打印一次警告，避免日志刷屏。
+                msg = str(e)
+                if "1146" in msg or "doesn't exist" in msg:
+                    if code not in self._tenants_missing_table:
+                        self._tenants_missing_table.add(code)
+                        logger.warning(
+                            f"[FreightCalcWorker] 跳过租户 {code}：业务表缺失（"
+                            f"未跑 migrate_freight_engine.py？）。后续轮询将静默跳过，"
+                            f"如已建表请重启 worker 触发重检。"
+                        )
+                else:
+                    logger.warning(f"[FreightCalcWorker] 处理租户 {code} 失败: {e}")
 
     async def _list_active_tenant_codes(self) -> list[str]:
         """从平台库查 db_initialized=1 的租户编码"""
@@ -129,6 +144,10 @@ class FreightCalcWorker:
 
     async def _process_tenant(self, tenant_code: str) -> None:
         """处理单个租户库的待办任务"""
+        # 已知表缺失的租户直接跳过，不再连库
+        if tenant_code in self._tenants_missing_table:
+            return
+
         # 直接拿 session（不走 dependency 包装）
         db_manager._get_or_create_tenant_engine(tenant_code)  # noqa: SLF001
         factory = db_manager._tenant_session_factories[tenant_code]  # noqa: SLF001
