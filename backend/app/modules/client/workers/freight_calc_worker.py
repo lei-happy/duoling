@@ -1,12 +1,18 @@
 """
 运费计算 Worker
 
+部署形态：
+  - 推荐：作为独立 docker service 运行（参见
+    deploy/docker/docker-compose.yml 的 backend-worker 服务），
+    入口是 app/workers/freight_calc_main.py。
+  - 兼容：通过环境变量 FREIGHT_CALC_WORKER_ENABLED=1 也能让 API 进程
+    内嵌启动（仅供本地开发或单实例小流量场景，不要在多 uvicorn worker
+    生产环境下打开，否则会出现多实例重复扫表）。
+
 实现要点：
-  - 通过 APScheduler 在主进程内嵌运行，定时（默认 5s）扫所有
-    db_initialized=1 的租户库，认领并执行 biz_freight_calc_task。
+  - APScheduler 定时（默认 5s）扫所有 db_initialized=1 的租户库，
+    认领并执行 biz_freight_calc_task。
   - 每次每个租户最多处理 batch_size 条，避免占住事件循环。
-  - 与运维开关 settings.FREIGHT_CALC_WORKER_ENABLED 联动；
-    若未设置环境变量则保持启用（开发友好）。
 """
 
 from __future__ import annotations
@@ -40,15 +46,28 @@ class FreightCalcWorker:
 
     @staticmethod
     def _read_enabled() -> bool:
-        v = os.getenv("FREIGHT_CALC_WORKER_ENABLED", "1").strip().lower()
+        # 默认关闭：避免与独立 worker 容器重复扫表；
+        # 独立 worker 容器内通过 setup_force() 强制启动。
+        v = os.getenv("FREIGHT_CALC_WORKER_ENABLED", "0").strip().lower()
         return v not in ("0", "false", "no", "off")
 
     # ---------- 调度入口 ----------
 
     def start(self) -> None:
+        """API 进程内嵌启动（仅当 FREIGHT_CALC_WORKER_ENABLED=1 时生效）。"""
         if not self._enabled:
-            logger.info("[FreightCalcWorker] 已通过 FREIGHT_CALC_WORKER_ENABLED=0 禁用，跳过启动")
+            logger.info(
+                "[FreightCalcWorker] API 进程内未启动（FREIGHT_CALC_WORKER_ENABLED!=1）；"
+                "请确认独立 backend-worker 容器已运行"
+            )
             return
+        self._do_start()
+
+    def start_force(self) -> None:
+        """独立 worker 进程入口强制启动（不受 FREIGHT_CALC_WORKER_ENABLED 影响）。"""
+        self._do_start()
+
+    def _do_start(self) -> None:
         if self._scheduler is not None:
             return
         self._scheduler = AsyncIOScheduler()

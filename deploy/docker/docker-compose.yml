@@ -59,6 +59,9 @@ services:
       - LOG_LEVEL=INFO
       - LOG_DIR=logs
       - DOC_ROOT=/app/docs
+      # 计费引擎 worker 默认在 API 进程内不启动；
+      # 由独立的 backend-worker 容器运行，避免 4 个 uvicorn 进程重复扫表。
+      - FREIGHT_CALC_WORKER_ENABLED=0
     volumes:
       - backend_logs:/app/logs
       # 上传图片落盘到宿主机，便于 XFTP/备份；与 app.main 中 /app/uploads 一致
@@ -86,6 +89,61 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
+
+  # ---- 计费引擎 Worker（独立进程） ----
+  # 与 backend (uvicorn) 共用同一镜像、同一份环境变量，
+  # 但启动命令是 python -m app.workers.freight_calc_main。
+  # 单实例即可：claim_pending 走「先 SELECT pending → UPDATE→running」抢占，
+  # 当前 1000 企业 + 几千单/天的体量单实例完全够用；
+  # 未来运单量翻 10 倍以上再考虑横向扩多实例（worker 内已具备
+  # 行级抢占语义，多实例只会出现极小概率的重复执行，不影响一致性）。
+  backend-worker:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.backend
+    container_name: zhitu-backend-worker
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_SECRET_KEY=${APP_SECRET_KEY:-change-me-in-production}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-me-in-production}
+      - JWT_ALGORITHM=HS256
+      - DB_SUFFIX=
+      - PLATFORM_DB_HOST=host.docker.internal
+      - PLATFORM_DB_PORT=3306
+      - PLATFORM_DB_USER=${DB_USER:-root}
+      - PLATFORM_DB_PASSWORD=${DB_PASSWORD:-zhitu2026}
+      - PLATFORM_DB_NAME=zt_platform
+      - TENANT_DB_HOST=host.docker.internal
+      - TENANT_DB_PORT=3306
+      - TENANT_DB_USER=${DB_USER:-root}
+      - TENANT_DB_PASSWORD=${DB_PASSWORD:-zhitu2026}
+      - TENANT_DB_PREFIX=zt_biz_
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_PASSWORD=
+      - LOG_LEVEL=INFO
+      - LOG_DIR=logs
+      # worker 容器强制启用计费引擎 scheduler
+      - FREIGHT_CALC_WORKER_ENABLED=1
+      # worker 调度参数（按需在 .env 覆盖）
+      - FREIGHT_CALC_WORKER_INTERVAL=${FREIGHT_CALC_WORKER_INTERVAL:-5}
+      - FREIGHT_CALC_WORKER_BATCH=${FREIGHT_CALC_WORKER_BATCH:-20}
+    volumes:
+      - backend_logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+    command:
+      - python
+      - -m
+      - app.workers.freight_calc_main
+    # worker 没有 HTTP 端口；进程崩溃由 restart: unless-stopped 自动拉起，
+    # 这里不再单独配 healthcheck（python:slim 默认不带 ps，避免镜像膨胀）。
 
   # ---- Nginx 反向代理 + 静态文件服务 ----
   nginx:
