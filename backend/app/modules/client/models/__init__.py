@@ -44,8 +44,21 @@ from app.modules.client.models.partner.carrier_settlement import CarrierSettleme
 from app.modules.client.models.partner.carrier_invitation import CarrierInvitation
 from app.modules.client.models.billing.freight_contract import FreightContract
 from app.modules.client.models.billing.freight_rate import FreightRate
+from app.modules.client.models.billing.freight_calc_result import (
+    WaybillFreightResult,
+    WaybillFreightResultDetail,
+)
+from app.modules.client.models.billing.freight_calc_task import FreightCalcTask
+from app.modules.client.models.billing.freight_calc_exception import FreightCalcException
+from app.modules.client.models.billing.freight_rate_change_log import FreightRateChangeLog
+from app.modules.client.models.billing.region_alias import RegionAlias
+from app.modules.client.models.billing.vehicle_alias import VehicleAlias
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
+from app.modules.client.models.waybill.waybill_import import (
+    WaybillImportBatch,
+    WaybillImportRow,
+)
 
 # ---- Tier 2: Business - AI 数字员工（biz_ai_*） ----
 from app.modules.ai.models.tenant.biz_ai_session import BizAiSession
@@ -86,8 +99,17 @@ __all__ = [
     "CarrierInvitation",
     "FreightContract",
     "FreightRate",
+    "WaybillFreightResult",
+    "WaybillFreightResultDetail",
+    "FreightCalcTask",
+    "FreightCalcException",
+    "FreightRateChangeLog",
+    "RegionAlias",
+    "VehicleAlias",
     "Waybill",
     "WaybillCargo",
+    "WaybillImportBatch",
+    "WaybillImportRow",
     "Capacity",
     "CapacityLog",
     "BizCompanyActivity",

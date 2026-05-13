@@ -11,6 +11,7 @@ from starlette.requests import Request
 from app.common.operation_log import operation_log
 from app.core.dependencies import get_tenant_db, get_current_user
 from app.common.response import success
+from app.core.security import TokenData
 from app.modules.client.schemas.billing.freight_contract import (
     FreightContractCreate, FreightContractUpdate, FreightContractOut,
 )
@@ -77,9 +78,11 @@ async def update_contract(
     contract_id: int,
     data: FreightContractUpdate,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    current_user: TokenData = Depends(get_current_user),
 ):
-    contract = await FreightContractService.update_contract(db, contract_id, data)
+    contract = await FreightContractService.update_contract(
+        db, contract_id, data, current_user_id=current_user.user_id,
+    )
     return success(data=FreightContractOut.from_model(contract).model_dump())
 
 
@@ -89,9 +92,11 @@ async def activate_contract(
     request: Request,
     contract_id: int,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    current_user: TokenData = Depends(get_current_user),
 ):
-    contract = await FreightContractService.activate_contract(db, contract_id)
+    contract = await FreightContractService.activate_contract(
+        db, contract_id, current_user_id=current_user.user_id,
+    )
     return success(data=FreightContractOut.from_model(contract).model_dump())
 
 
@@ -101,9 +106,11 @@ async def terminate_contract(
     request: Request,
     contract_id: int,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    current_user: TokenData = Depends(get_current_user),
 ):
-    contract = await FreightContractService.terminate_contract(db, contract_id)
+    contract = await FreightContractService.terminate_contract(
+        db, contract_id, current_user_id=current_user.user_id,
+    )
     return success(data=FreightContractOut.from_model(contract).model_dump())
 
 
@@ -113,9 +120,11 @@ async def resume_contract(
     request: Request,
     contract_id: int,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    current_user: TokenData = Depends(get_current_user),
 ):
-    contract = await FreightContractService.resume_contract(db, contract_id)
+    contract = await FreightContractService.resume_contract(
+        db, contract_id, current_user_id=current_user.user_id,
+    )
     return success(data=FreightContractOut.from_model(contract).model_dump())
 
 
@@ -148,10 +157,12 @@ async def create_rate(
     contract_id: int,
     data: FreightRateCreate,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    current_user: TokenData = Depends(get_current_user),
 ):
     contract = await FreightContractService.get_contract(db, contract_id)
     data.contractId = contract_id
     data.customerId = contract.customer_id
-    rate = await FreightRateService.create_rate(db, data)
+    rate = await FreightRateService.create_rate(
+        db, data, current_user_id=current_user.user_id,
+    )
     return success(data=FreightRateOut.from_model(rate).model_dump())

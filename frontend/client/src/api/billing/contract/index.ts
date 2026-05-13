@@ -143,3 +143,75 @@ export async function calculateFreight(data: FreightCalcRequest) {
   }
   return Promise.reject(new Error(res.data.message));
 }
+
+/** 运价规则版本变更历史 */
+export async function listRateVersionHistory(rateId: number) {
+  const res = await request.get<ApiResult<unknown[]>>(
+    `/billing/rate/${rateId}/version-history`
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 触发该运价规则的受影响运单批量重算 */
+export async function recalculateAffectedByRate(rateId: number) {
+  const res = await request.post<ApiResult<{
+    affectedWaybillCount: number;
+    enqueuedTaskCount: number;
+  }>>(
+    `/billing/rate/${rateId}/recalculate-affected`
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export interface CheckConflictPayload {
+  rateId?: number;
+  contractId: number;
+  customerId: number;
+  originCode?: string | null;
+  originRegionId?: number | null;
+  destinationCode?: string | null;
+  destinationRegionId?: number | null;
+  brandId?: number | null;
+  seriesId?: number | null;
+  priority?: number;
+  priceType?: number;
+  isBidirectional?: number;
+  effectiveDate?: string | null;
+  expiryDate?: string | null;
+}
+
+export interface RateConflictItem {
+  rateId: number;
+  contractId: number;
+  ruleVersion: number;
+  origin: string;
+  destination: string;
+  unitPrice?: number;
+  priority?: number;
+  priceType?: number;
+  effectiveDate?: string;
+  expiryDate?: string;
+  severity: 'error' | 'warning';
+}
+
+/** 规则保存前冲突预校验 */
+export async function checkRateConflict(payload: CheckConflictPayload) {
+  const res = await request.post<ApiResult<{
+    conflicts: RateConflictItem[];
+    hasError: boolean;
+    count: number;
+  }>>(
+    '/billing/rate/check-conflict',
+    payload
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}

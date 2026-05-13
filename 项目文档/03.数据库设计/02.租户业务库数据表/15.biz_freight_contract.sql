@@ -9,6 +9,7 @@ CREATE TABLE `biz_freight_contract` (
   `effective_date` date NOT NULL COMMENT '生效日期',
   `expiry_date` date NOT NULL COMMENT '失效日期',
   `status` smallint NOT NULL DEFAULT '0' COMMENT '状态 0-草稿 1-生效 2-已过期 3-已终止',
+  `contract_version` int NOT NULL DEFAULT '1' COMMENT '合同版本号',
   `remark` text COLLATE utf8mb4_unicode_ci COMMENT '备注',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -18,3 +19,7 @@ CREATE TABLE `biz_freight_contract` (
   KEY `idx_customer_id` (`customer_id`),
   KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='运价合同表';
+
+-- 升级脚本 v1（已有租户库 - 增加合同版本号）
+ALTER TABLE `biz_freight_contract`
+  ADD COLUMN `contract_version` int NOT NULL DEFAULT 1 COMMENT '合同版本号' AFTER `status`;

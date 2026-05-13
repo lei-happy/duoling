@@ -63,8 +63,10 @@ class WaybillCreate(BaseModel):
     customerName: Optional[str] = None
     origin: Optional[str] = None
     originCode: Optional[str] = None
+    originRegionId: Optional[int] = None
     destination: Optional[str] = None
     destinationCode: Optional[str] = None
+    destinationRegionId: Optional[int] = None
     vehicleBrand: Optional[str] = None
     vehicleModel: Optional[str] = None
     quantity: Optional[int] = 1
@@ -104,8 +106,10 @@ class WaybillUpdate(BaseModel):
     customerName: Optional[str] = None
     origin: Optional[str] = None
     originCode: Optional[str] = None
+    originRegionId: Optional[int] = None
     destination: Optional[str] = None
     destinationCode: Optional[str] = None
+    destinationRegionId: Optional[int] = None
     vehicleBrand: Optional[str] = None
     vehicleModel: Optional[str] = None
     quantity: Optional[int] = None
@@ -146,8 +150,10 @@ class WaybillOut(BaseModel):
     customerName: Optional[str] = None
     origin: Optional[str] = None
     originCode: Optional[str] = None
+    originRegionId: Optional[int] = None
     destination: Optional[str] = None
     destinationCode: Optional[str] = None
+    destinationRegionId: Optional[int] = None
     vehicleBrand: Optional[str] = None
     vehicleModel: Optional[str] = None
     quantity: int
@@ -169,6 +175,11 @@ class WaybillOut(BaseModel):
     contractId: Optional[int] = None
     rateId: Optional[int] = None
     status: int
+    calcStatus: Optional[str] = None
+    isLocked: Optional[int] = None
+    waybillVersion: Optional[int] = None
+    lastCalcAt: Optional[datetime] = None
+    lastResultId: Optional[int] = None
     remark: Optional[str] = None
     createdBy: Optional[int] = None
     createdAt: datetime
@@ -210,8 +221,10 @@ class WaybillOut(BaseModel):
             customerName=m.customer_name,
             origin=m.origin,
             originCode=m.origin_code,
+            originRegionId=getattr(m, "origin_region_id", None),
             destination=m.destination,
             destinationCode=m.destination_code,
+            destinationRegionId=getattr(m, "destination_region_id", None),
             vehicleBrand=m.vehicle_brand,
             vehicleModel=m.vehicle_model,
             quantity=m.quantity,
@@ -232,6 +245,11 @@ class WaybillOut(BaseModel):
             contractId=m.contract_id,
             rateId=m.rate_id,
             status=m.status,
+            calcStatus=getattr(m, "calc_status", None),
+            isLocked=getattr(m, "is_locked", None),
+            waybillVersion=getattr(m, "waybill_version", None),
+            lastCalcAt=getattr(m, "last_calc_at", None),
+            lastResultId=getattr(m, "last_result_id", None),
             remark=m.remark,
             createdBy=m.created_by,
             createdAt=m.created_at,

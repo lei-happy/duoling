@@ -79,3 +79,161 @@ export async function removeWaybill(id: number) {
   }
   return Promise.reject(new Error(res.data.message));
 }
+
+/** 手动触发运费重算（异步任务） */
+export async function recalculateWaybill(id: number) {
+  const res = await request.post<ApiResult<{ taskId: number }>>(
+    `/business/waybill/${id}/recalculate`
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 获取运单当前活跃的计算结果 + 明细 + match_trace */
+export async function getWaybillFreightResult(id: number) {
+  const res = await request.get<ApiResult<unknown>>(
+    `/business/waybill/${id}/freight-result`
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 锁定运单（禁止重算） */
+export async function lockWaybill(id: number) {
+  const res = await request.put<ApiResult<unknown>>(
+    `/business/waybill/${id}/lock`
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 解锁运单 */
+export async function unlockWaybill(id: number) {
+  const res = await request.put<ApiResult<unknown>>(
+    `/business/waybill/${id}/unlock`
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export interface PreviewCargoLine {
+  vehicleBrand?: string | null;
+  vehicleModel?: string | null;
+  quantity: number;
+}
+
+export interface PreviewRequest {
+  customerId: number;
+  originCode?: string | null;
+  originRegionId?: number | null;
+  origin?: string | null;
+  destinationCode?: string | null;
+  destinationRegionId?: number | null;
+  destination?: string | null;
+  cargoes: PreviewCargoLine[];
+  billingDate?: string | null;
+}
+
+/** 整单试算（dry_run）：一次传所有 cargoes，返回每行结果 + match_trace */
+export async function previewFreight(data: PreviewRequest) {
+  const res = await request.post<ApiResult<unknown>>(
+    '/billing/calculate/preview',
+    data
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export interface ImportBatchSummary {
+  id: number;
+  fileName?: string;
+  totalCount: number;
+  successCount: number;
+  failCount: number;
+  calcSuccessCount: number;
+  calcExceptionCount: number;
+  status: string;
+  errorMessage?: string;
+  createdBy?: number;
+  createdAt?: string;
+}
+
+export interface ImportRowItem {
+  id: number;
+  batchId: number;
+  rowNo: number;
+  rawData?: Record<string, unknown>;
+  validateStatus: string;
+  validateMessage?: string;
+  waybillId?: number;
+  calcStatus?: string;
+  createdAt?: string;
+}
+
+/** 上传 Excel 批量导入运单 */
+export async function importWaybillExcel(file: File) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await request.post<ApiResult<{
+    batchId: number;
+    totalCount: number;
+    successCount: number;
+    failCount: number;
+    status: string;
+  }>>('/business/waybill/import', fd, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function pageImportBatches(page: number, limit = 20) {
+  const res = await request.get<ApiResult<{
+    list: ImportBatchSummary[];
+    total: number;
+    page: number;
+    limit: number;
+  }>>('/business/waybill/import/batches', { params: { page, limit } });
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function getImportBatch(batchId: number) {
+  const res = await request.get<ApiResult<ImportBatchSummary>>(
+    `/business/waybill/import/batch/${batchId}`
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function listImportRows(
+  batchId: number,
+  params: { validateStatus?: string; page?: number; limit?: number } = {}
+) {
+  const res = await request.get<ApiResult<{
+    list: ImportRowItem[];
+    total: number;
+    page: number;
+    limit: number;
+  }>>(`/business/waybill/import/batch/${batchId}/rows`, { params });
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}

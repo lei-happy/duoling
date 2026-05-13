@@ -148,8 +148,14 @@
     <rate-edit
       v-model:visible="rateEditVisible"
       :contract-id="contract?.id"
+      :customer-id="contract?.customerId"
       :data="rateEditData"
       @done="onRateEditDone"
+    />
+
+    <rate-version-history
+      v-model:visible="versionHistoryVisible"
+      :rate-id="versionHistoryRateId"
     />
   </ele-page>
 </template>
@@ -168,7 +174,13 @@
   import type { ButtonItem } from 'ele-admin-plus/es/ele-buttons/types';
   import RateEdit from './components/rate-edit.vue';
   import RateSearch from './components/rate-search.vue';
-  import { getContract, listRates, removeRate } from '@/api/billing/contract';
+  import RateVersionHistory from './components/rate-version-history.vue';
+  import {
+    getContract,
+    listRates,
+    removeRate,
+    recalculateAffectedByRate
+  } from '@/api/billing/contract';
   import type {
     FreightContract,
     FreightRate,
@@ -200,6 +212,38 @@
   const rateTableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const rateEditVisible = ref(false);
   const rateEditData = ref<FreightRate | null>(null);
+  const versionHistoryVisible = ref(false);
+  const versionHistoryRateId = ref<number | null>(null);
+
+  const openVersionHistory = (row: FreightRate) => {
+    if (!row?.id) return;
+    versionHistoryRateId.value = row.id;
+    versionHistoryVisible.value = true;
+  };
+
+  const recalcAffected = (row: FreightRate) => {
+    if (!row?.id) return;
+    ElMessageBox.confirm(
+      '将查找受该运价规则影响的运单并入队批量重算，确定继续？',
+      '重算受影响运单',
+      { type: 'warning' }
+    )
+      .then(async () => {
+        const loading = EleMessage.loading({ message: '请求中..', plain: true });
+        try {
+          const data = await recalculateAffectedByRate(row.id!);
+          loading.close();
+          EleMessage.success({
+            message: `已入队，影响 ${data?.affectedWaybillCount ?? 0} 单，新增任务 ${data?.enqueuedTaskCount ?? 0} 条`,
+            plain: true
+          });
+        } catch (e: any) {
+          loading.close();
+          EleMessage.error({ message: e.message, plain: true });
+        }
+      })
+      .catch(() => {});
+  };
 
   const ratesTableCacheKey = computed(
     () => `BillingContractRateTable-${contract.value?.id ?? '0'}`
@@ -299,6 +343,28 @@
       slot: 'priceType'
     },
     {
+      prop: 'priority',
+      label: '优先级',
+      width: 70,
+      align: 'center'
+    },
+    {
+      prop: 'isBidirectional',
+      label: '双向',
+      width: 64,
+      align: 'center',
+      formatter: (row: FreightRate) =>
+        row.isBidirectional === 1 ? '是' : '否'
+    },
+    {
+      prop: 'minAmount',
+      label: '最低运费',
+      width: 100,
+      align: 'right',
+      formatter: (row: FreightRate) =>
+        row.minAmount != null ? Number(row.minAmount).toFixed(2) : '--'
+    },
+    {
       prop: 'effectiveDate',
       label: '生效日期',
       minWidth: 112,
@@ -311,6 +377,12 @@
       align: 'center'
     },
     {
+      prop: 'ruleVersion',
+      label: '版本',
+      width: 64,
+      align: 'center'
+    },
+    {
       prop: 'status',
       label: '状态',
       width: 80,
@@ -320,7 +392,7 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 140,
+      width: 220,
       align: 'center',
       slot: 'action',
       hideInPrint: true,
@@ -333,6 +405,14 @@
     {
       preset: 'edit',
       onClick: () => openRateEdit(row)
+    },
+    {
+      title: '版本',
+      onClick: () => openVersionHistory(row)
+    },
+    {
+      title: '重算受影响',
+      onClick: () => recalcAffected(row)
     },
     {
       preset: 'del',

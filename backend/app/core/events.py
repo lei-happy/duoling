@@ -29,12 +29,24 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"AI 数字员工模块启动初始化失败（不影响其他服务）：{e!r}")
 
+    # 计费引擎 worker：扫 biz_freight_calc_task 异步执行
+    try:
+        from app.modules.client.workers.freight_calc_worker import setup_worker_with_settings
+        setup_worker_with_settings()
+    except Exception as e:
+        logger.warning(f"运费计算 Worker 启动失败（不影响其他服务）：{e!r}")
+
     logger.info("智途(ZhiTu)后端服务启动完成")
 
     yield
 
     # ---- 关闭 ----
     logger.info("正在关闭智途(ZhiTu)后端服务...")
+    try:
+        from app.modules.client.workers.freight_calc_worker import shutdown_worker
+        shutdown_worker()
+    except Exception as e:
+        logger.warning(f"运费计算 Worker 关闭异常: {e!r}")
     await db_manager.close_all()
     logger.info("智途(ZhiTu)后端服务已关闭")
 

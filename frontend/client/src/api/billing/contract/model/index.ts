@@ -25,17 +25,26 @@ export interface FreightRate {
   customerId?: number;
   origin?: string;
   originCode?: string;
+  originRegionId?: number | null;
   destination?: string;
   destinationCode?: string;
+  destinationRegionId?: number | null;
   vehicleBrand?: string;
   vehicleModel?: string;
+  brandId?: number | null;
+  seriesId?: number | null;
+  matchType?: string;
   billingMode?: number;
   distanceKm?: number;
   unitPrice?: number;
+  minAmount?: number | null;
   priceType?: number;
+  isBidirectional?: number;
+  priority?: number;
   effectiveDate?: string;
   expiryDate?: string;
   status?: number;
+  ruleVersion?: number;
 }
 
 /** 合同详情页运价明细本地筛选 */

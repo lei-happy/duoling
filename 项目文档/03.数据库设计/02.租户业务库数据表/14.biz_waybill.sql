@@ -7,8 +7,10 @@ CREATE TABLE `biz_waybill` (
   `customer_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '客户名称（冗余）',
   `origin` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '出发地',
   `origin_code` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '出发地编码',
+  `origin_region_id` bigint DEFAULT NULL COMMENT '出发地行政区ID（biz_region.id）',
   `destination` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '目的地',
   `destination_code` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '目的地编码',
+  `destination_region_id` bigint DEFAULT NULL COMMENT '目的地行政区ID（biz_region.id）',
   `vehicle_brand` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '商品车品牌',
   `vehicle_model` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '商品车车型',
   `quantity` int NOT NULL DEFAULT '1' COMMENT '台数',
@@ -24,6 +26,11 @@ CREATE TABLE `biz_waybill` (
   `contract_id` bigint DEFAULT NULL COMMENT '匹配的合同ID',
   `rate_id` bigint DEFAULT NULL COMMENT '匹配的运价明细ID',
   `status` smallint NOT NULL DEFAULT '0' COMMENT '状态 0-待确认 1-已确认 2-已调度 3-运输中 4-已送达 5-已完成 6-已取消',
+  `calc_status` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending' COMMENT '计算状态 pending/calculating/calculated/exception/locked',
+  `is_locked` smallint NOT NULL DEFAULT '0' COMMENT '是否锁定 0-否 1-是（已结算/已开票后置1）',
+  `waybill_version` int NOT NULL DEFAULT '1' COMMENT '运单版本号（计费敏感字段每变更1次+1）',
+  `last_calc_at` datetime DEFAULT NULL COMMENT '最近一次正式计算时间',
+  `last_result_id` bigint DEFAULT NULL COMMENT '最近一次计算结果主表ID',
   `remark` text COLLATE utf8mb4_unicode_ci COMMENT '备注',
   `created_by` bigint DEFAULT NULL COMMENT '创建人ID',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -33,5 +40,17 @@ CREATE TABLE `biz_waybill` (
   UNIQUE KEY `uk_waybill_no` (`waybill_no`),
   KEY `idx_customer_id` (`customer_id`),
   KEY `idx_status` (`status`),
+  KEY `idx_calc_status` (`calc_status`),
   KEY `idx_plan_issue_time` (`plan_issue_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='运单表（商品车运输）';
+
+-- 升级脚本 v3（已有租户库 - 增加运费匹配引擎所需字段）
+ALTER TABLE `biz_waybill`
+  ADD COLUMN `origin_region_id` bigint DEFAULT NULL COMMENT '出发地行政区ID' AFTER `origin_code`,
+  ADD COLUMN `destination_region_id` bigint DEFAULT NULL COMMENT '目的地行政区ID' AFTER `destination_code`,
+  ADD COLUMN `calc_status` varchar(32) NOT NULL DEFAULT 'pending' COMMENT '计算状态' AFTER `status`,
+  ADD COLUMN `is_locked` smallint NOT NULL DEFAULT 0 COMMENT '是否锁定' AFTER `calc_status`,
+  ADD COLUMN `waybill_version` int NOT NULL DEFAULT 1 COMMENT '运单版本号' AFTER `is_locked`,
+  ADD COLUMN `last_calc_at` datetime DEFAULT NULL COMMENT '最近一次正式计算时间' AFTER `waybill_version`,
+  ADD COLUMN `last_result_id` bigint DEFAULT NULL COMMENT '最近一次计算结果主表ID' AFTER `last_calc_at`,
+  ADD INDEX `idx_calc_status` (`calc_status`);

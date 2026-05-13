@@ -28,6 +28,14 @@
           >
             批量确认
           </el-button>
+          <el-button
+            type="success"
+            plain
+            class="ele-btn-icon"
+            @click="goImportPage"
+          >
+            批量导入
+          </el-button>
         </template>
         <template #waybillNo="{ row }">
           <div class="waybill-no-cell">
@@ -64,6 +72,19 @@
             @click.stop="openCargoDetail(row)"
           >
             {{ row.quantity ?? 0 }}
+          </el-tag>
+        </template>
+        <template #calcStatus="{ row }">
+          <el-tag :type="calcStatusType(row.calcStatus)" size="small">
+            {{ calcStatusText(row.calcStatus) }}
+          </el-tag>
+        </template>
+        <template #isLocked="{ row }">
+          <el-tag
+            :type="row.isLocked === 1 ? 'warning' : 'info'"
+            size="small"
+          >
+            {{ row.isLocked === 1 ? '已锁' : '正常' }}
           </el-tag>
         </template>
         <template #status="{ row }">
@@ -103,6 +124,10 @@
       v-model:visible="cargoDetailVisible"
       :waybill="cargoDetailWaybill"
     />
+    <waybill-freight-detail
+      v-model:visible="freightDetailVisible"
+      :waybill-id="freightDetailWaybillId"
+    />
   </ele-page>
 </template>
 
@@ -116,12 +141,23 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { useRouter } from 'vue-router';
   import WaybillEdit from './components/waybill-edit.vue';
   import WaybillSearch from './components/waybill-search.vue';
   import WaybillCargoesDetail from './components/waybill-cargoes-detail.vue';
-  import { pageWaybills, removeWaybill, updateWaybillStatus } from '@/api/waybill';
+  import WaybillFreightDetail from './components/waybill-freight-detail.vue';
+  import {
+    pageWaybills,
+    removeWaybill,
+    updateWaybillStatus,
+    recalculateWaybill,
+    lockWaybill,
+    unlockWaybill
+  } from '@/api/waybill';
   import type { Waybill, WaybillParam } from '@/api/waybill/model';
   import { formatDateTime } from '@/utils/date-util';
+
+  const router = useRouter();
 
   defineOptions({ name: 'Waybill' });
 
@@ -131,6 +167,27 @@
   const editData = ref<Waybill | null>(null);
   const cargoDetailVisible = ref(false);
   const cargoDetailWaybill = ref<Waybill | null>(null);
+  const freightDetailVisible = ref(false);
+  const freightDetailWaybillId = ref<number | null>(null);
+
+  const calcStatusType = (s?: string) => {
+    if (s === 'calculated') return 'success';
+    if (s === 'pending') return 'info';
+    if (s === 'calculating') return 'primary';
+    if (s === 'exception') return 'danger';
+    if (s === 'locked') return 'warning';
+    return 'info';
+  };
+  const calcStatusText = (s?: string) => {
+    const m: Record<string, string> = {
+      pending: '待计算',
+      calculating: '计算中',
+      calculated: '已计算',
+      exception: '异常',
+      locked: '已锁定'
+    };
+    return s ? m[s] || s : '--';
+  };
 
   const columns = ref<Columns>([
     {
@@ -168,6 +225,20 @@
       label: '运费金额',
       minWidth: 100,
       align: 'right'
+    },
+    {
+      prop: 'calcStatus',
+      label: '计算状态',
+      width: 100,
+      align: 'center',
+      slot: 'calcStatus'
+    },
+    {
+      prop: 'isLocked',
+      label: '锁定',
+      width: 64,
+      align: 'center',
+      slot: 'isLocked'
     },
     {
       prop: 'status',
@@ -242,10 +313,69 @@
     if (row.status === 0 || row.status === 1) {
       items.push({ preset: 'edit', onClick: () => openEdit(row) });
     }
+    items.push({ title: '计算明细', onClick: () => openFreightDetail(row) });
+    if ((row as any).isLocked !== 1) {
+      items.push({ title: '重算', onClick: () => recalcRow(row) });
+      items.push({ title: '锁定', onClick: () => lockRow(row) });
+    } else {
+      items.push({ title: '解锁', onClick: () => unlockRow(row) });
+    }
     if (row.status === 0 || row.status === 1 || row.status === 6) {
       items.push({ preset: 'del', onClick: () => remove(row) });
     }
     return items;
+  };
+
+  const goImportPage = () => {
+    router.push('/business/waybill/import');
+  };
+
+  const openFreightDetail = (row: Waybill) => {
+    if (!row.id) return;
+    freightDetailWaybillId.value = row.id;
+    freightDetailVisible.value = true;
+  };
+
+  const recalcRow = (row: Waybill) => {
+    if (!row.id) return;
+    const loading = EleMessage.loading({ message: '请求中..', plain: true });
+    recalculateWaybill(row.id)
+      .then(() => {
+        loading.close();
+        EleMessage.success({ message: '已入队，等待 worker 处理', plain: true });
+        reload();
+      })
+      .catch((e) => {
+        loading.close();
+        EleMessage.error({ message: e.message, plain: true });
+      });
+  };
+
+  const lockRow = (row: Waybill) => {
+    if (!row.id) return;
+    ElMessageBox.confirm(
+      '锁定后该运单将不再被自动重算，确定继续？',
+      '锁定运单',
+      { type: 'warning' }
+    )
+      .then(() => lockWaybill(row.id!))
+      .then(() => {
+        EleMessage.success({ message: '已锁定', plain: true });
+        reload();
+      })
+      .catch(() => {});
+  };
+
+  const unlockRow = (row: Waybill) => {
+    if (!row.id) return;
+    unlockWaybill(row.id)
+      .then(() => {
+        EleMessage.success({ message: '已解锁', plain: true });
+        reload();
+      })
+      .catch((e) => {
+        EleMessage.error({ message: e.message, plain: true });
+      });
   };
 
   const confirmWaybill = (row: Waybill) => {

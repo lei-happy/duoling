@@ -345,7 +345,7 @@
   import { EleMessage } from 'ele-admin-plus';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { addWaybill, updateWaybill, getWaybill, checkWaybillNoAvailable } from '@/api/waybill';
-  import { calculateFreight } from '@/api/billing/contract';
+  import { previewFreight } from '@/api/waybill';
   import { selectCustomers } from '@/api/partner/customer';
   import { listVehicleBrandOptions } from '@/api/basic-data/vehicle-brand';
   import { pageVehicleSeries } from '@/api/basic-data/vehicle-series';
@@ -990,43 +990,70 @@
     calcLoading.value = true;
     calcResults.value = [];
     try {
-      let sum = 0;
-      let firstContractId: number | undefined;
-      let firstRateId: number | undefined;
-      const results: FreightCalcResult[] = [];
+      const cargoes = cargoRows.value.map((row) => ({
+        vehicleBrand: row.vehicleBrand,
+        vehicleModel: row.vehicleModel,
+        quantity: parseRowQty(row)
+      }));
+      const preview = (await previewFreight({
+        customerId: form.customerId!,
+        originCode: form.originCode!,
+        originRegionId: form.originRegionId ?? null,
+        origin: form.origin,
+        destinationCode: form.destinationCode!,
+        destinationRegionId: form.destinationRegionId ?? null,
+        destination: form.destination,
+        cargoes
+      })) as {
+        calcStatus: string;
+        totalAmount?: number | null;
+        items: Array<{
+          calcStatus: string;
+          amount?: number | null;
+          unitPrice?: number | null;
+          matchedContractId?: number | null;
+          matchedContractNo?: string | null;
+          matchedRuleId?: number | null;
+          modelMatchType?: string | null;
+          direction?: string | null;
+          score?: number | null;
+          errorMessage?: string | null;
+        }>;
+      };
 
-      for (const row of cargoRows.value) {
-        const qty = parseRowQty(row);
-        const result = await calculateFreight({
-          customerId: form.customerId!,
-          originCode: form.originCode!,
-          destinationCode: form.destinationCode!,
-          vehicleBrand: row.vehicleBrand,
-          vehicleModel: row.vehicleModel,
-          quantity: qty
-        });
-        results.push(result as FreightCalcResult);
-        if (result) {
-          const lineAmt =
-            result.totalAmount ?? Number(result.unitPrice) * (Number.isFinite(qty) ? qty : 1);
-          sum += lineAmt;
-          if (firstContractId == null) {
-            firstContractId = result.contractId;
-            firstRateId = result.rateId;
-          }
-        }
-      }
+      const items = preview?.items ?? [];
+      const results: (FreightCalcResult | null)[] = items.map((it) => {
+        if (it.calcStatus !== 'success') return null;
+        return {
+          contractId: it.matchedContractId ?? undefined,
+          contractNo: it.matchedContractNo ?? '',
+          rateId: it.matchedRuleId ?? undefined,
+          unitPrice: it.unitPrice ?? 0,
+          totalAmount: it.amount ?? 0,
+          matchLevel: it.modelMatchType || (it.direction === 'reverse' ? '反向' : '匹配')
+        } as FreightCalcResult;
+      });
       calcResults.value = results;
 
       const anyHit = results.some(Boolean);
       if (anyHit) {
-        form.freightAmount = Math.round(sum * 100) / 100;
+        const sum = preview?.totalAmount ?? 0;
+        form.freightAmount = Math.round(Number(sum) * 100) / 100;
         freightAmountStr.value =
           form.freightAmount != null ? String(form.freightAmount) : '';
         form.freightSource = 0;
-        if (firstContractId != null) form.contractId = firstContractId;
-        if (firstRateId != null) form.rateId = firstRateId;
-        EleMessage.success({ message: '运费计算成功', plain: true });
+        const firstHit = items.find((it) => it.calcStatus === 'success');
+        if (firstHit?.matchedContractId != null) form.contractId = firstHit.matchedContractId;
+        if (firstHit?.matchedRuleId != null) form.rateId = firstHit.matchedRuleId;
+
+        if (preview.calcStatus === 'partial_success') {
+          EleMessage.warning({
+            message: `部分明细未匹配到运价，请检查后手动调整`,
+            plain: true
+          });
+        } else {
+          EleMessage.success({ message: '运费计算成功', plain: true });
+        }
       } else {
         EleMessage.warning({ message: '未匹配到运价，请手动填写运费', plain: true });
       }

@@ -4,7 +4,7 @@
 
 from typing import Optional
 from datetime import datetime
-from sqlalchemy import String, SmallInteger, BigInteger, DateTime, Integer, Text, Numeric
+from sqlalchemy import String, SmallInteger, BigInteger, DateTime, Integer, Text, Numeric, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.modules.client.models.base import TenantModelBase
@@ -31,11 +31,17 @@ class Waybill(TenantModelBase):
     origin_code: Mapped[Optional[str]] = mapped_column(
         String(20), nullable=True, comment="出发地编码"
     )
+    origin_region_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, comment="出发地行政区ID（biz_region.id）"
+    )
     destination: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True, comment="目的地"
     )
     destination_code: Mapped[Optional[str]] = mapped_column(
         String(20), nullable=True, comment="目的地编码"
+    )
+    destination_region_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, comment="目的地行政区ID（biz_region.id）"
     )
     vehicle_brand: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, comment="车辆品牌"
@@ -82,6 +88,25 @@ class Waybill(TenantModelBase):
     status: Mapped[int] = mapped_column(
         SmallInteger, default=0,
         comment="状态 0-待确认 1-已确认 2-已调度 3-运输中 4-已送达 5-已完成 6-已取消"
+    )
+    calc_status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending",
+        server_default=text("'pending'"),
+        comment="计算状态 pending/calculating/calculated/exception/locked"
+    )
+    is_locked: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, default=0, server_default=text("0"),
+        comment="是否锁定 0-否 1-是（已结算/已开票后置1，禁止自动重算）"
+    )
+    waybill_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1"),
+        comment="运单版本号（计费敏感字段每变更1次+1）"
+    )
+    last_calc_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, comment="最近一次正式计算时间"
+    )
+    last_result_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, comment="最近一次计算结果主表ID（biz_waybill_freight_result.id）"
     )
     remark: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="备注"

@@ -4,7 +4,7 @@
 
 from typing import Optional
 
-from sqlalchemy import BigInteger, Integer, String
+from sqlalchemy import BigInteger, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.modules.client.models.base import TenantModelBase
@@ -29,6 +29,16 @@ class WaybillCargo(TenantModelBase):
     vehicle_model: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, comment="商品车车型"
     )
+    brand_id: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True, comment="标准品牌ID（biz_vehicle_brand.brand_id）"
+    )
+    series_id: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True, comment="标准车系ID（biz_vehicle_series.series_id）"
+    )
     quantity: Mapped[int] = mapped_column(
         Integer, default=1, nullable=False, comment="台数"
+    )
+    cargo_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1"),
+        comment="明细版本号"
     )

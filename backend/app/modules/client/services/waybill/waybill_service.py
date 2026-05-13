@@ -27,6 +27,31 @@ from app.modules.client.schemas.waybill.waybill import (
 )
 from app.modules.client.services.system_config_service import SystemConfigService
 from app.modules.client.services.billing.billing_engine_service import BillingEngineService
+from app.modules.client.services.billing.freight_calc_task_service import (
+    FreightCalcTaskService,
+    TASK_MANUAL_RECALC,
+    TASK_WAYBILL_CHANGED,
+)
+
+
+# 运单"计费敏感字段"（Schema 字段名）：变更时触发重算
+WAYBILL_BILLING_SENSITIVE_FIELDS = {
+    "customerId", "originCode", "originRegionId",
+    "destinationCode", "destinationRegionId",
+    "planIssueTime", "requiredLoadTime", "requiredDeliverTime",
+}
+
+# Schema 字段名 → ORM 字段名（供敏感字段比对使用）
+_SCHEMA_TO_MODEL = {
+    "customerId": "customer_id",
+    "originCode": "origin_code",
+    "originRegionId": "origin_region_id",
+    "destinationCode": "destination_code",
+    "destinationRegionId": "destination_region_id",
+    "planIssueTime": "plan_issue_time",
+    "requiredLoadTime": "required_load_time",
+    "requiredDeliverTime": "required_deliver_time",
+}
 
 
 class WaybillService:
@@ -409,8 +434,10 @@ class WaybillService:
             customer_name=data.customerName,
             origin=data.origin,
             origin_code=data.originCode,
+            origin_region_id=getattr(data, "originRegionId", None),
             destination=data.destination,
             destination_code=data.destinationCode,
+            destination_region_id=getattr(data, "destinationRegionId", None),
             vehicle_brand=brand_mirr,
             vehicle_model=model_mirr,
             quantity=qty_sum,
@@ -427,6 +454,9 @@ class WaybillService:
             rate_id=rate_id,
             remark=data.remark,
             status=0,
+            calc_status="pending",
+            is_locked=0,
+            waybill_version=1,
             created_by=current_user_id,
         )
         db.add(waybill)
@@ -437,13 +467,24 @@ class WaybillService:
             WaybillService._raise_biz_if_duplicate_waybill_no(exc)
         await WaybillService._insert_cargoes(db, waybill.id, data.cargoes)
         await db.flush()
+        # 写一条计算任务，由 worker 异步落正式 result + match_trace 留痕
+        try:
+            await FreightCalcTaskService.enqueue_waybill_recalc(
+                db, waybill.id,
+                task_type=TASK_WAYBILL_CHANGED,
+                priority=10,
+                triggered_by_user_id=current_user_id,
+            )
+        except Exception:
+            pass
         cargoes = await WaybillService._fetch_cargoes_for_waybill(db, waybill.id)
         await db.refresh(waybill)
         return waybill, cargoes
 
     @staticmethod
     async def update_waybill(
-        db: AsyncSession, waybill_id: int, data: WaybillUpdate
+        db: AsyncSession, waybill_id: int, data: WaybillUpdate,
+        *, current_user_id: Optional[int] = None,
     ) -> tuple[Waybill, list[WaybillCargo]]:
         result = await db.execute(
             select(Waybill).where(
@@ -455,13 +496,29 @@ class WaybillService:
         if not waybill:
             raise BizException("运单不存在")
 
+        if waybill.is_locked == 1:
+            raise BizException("运单已锁定（已结算/已开票），不允许修改")
+
+        # 计费敏感字段变更判定
+        billing_field_changed = False
+
+        def _sensitive_changed(schema_field: str, new_val) -> bool:
+            if schema_field not in WAYBILL_BILLING_SENSITIVE_FIELDS:
+                return False
+            if new_val is None:
+                return False
+            old_val = getattr(waybill, _SCHEMA_TO_MODEL.get(schema_field, ""), None)
+            return old_val != new_val
+
         field_map = {
             "customerId": "customer_id",
             "customerName": "customer_name",
             "origin": "origin",
             "originCode": "origin_code",
+            "originRegionId": "origin_region_id",
             "destination": "destination",
             "destinationCode": "destination_code",
+            "destinationRegionId": "destination_region_id",
             "vehicleBrand": "vehicle_brand",
             "vehicleModel": "vehicle_model",
             "quantity": "quantity",
@@ -478,20 +535,77 @@ class WaybillService:
         for schema_field, model_field in field_map.items():
             val = getattr(data, schema_field, None)
             if val is not None:
+                if _sensitive_changed(schema_field, val):
+                    billing_field_changed = True
                 setattr(waybill, model_field, val)
 
         if data.cargoes is not None:
             WaybillService._validate_cargo_lines(data.cargoes)
+            old_cargoes = await WaybillService._fetch_cargoes_for_waybill(db, waybill_id)
+            if WaybillService._cargoes_changed(old_cargoes, data.cargoes):
+                billing_field_changed = True
             await WaybillService._replace_cargoes(db, waybill_id, data.cargoes)
             b, m, q = WaybillService._mirror_main_vehicle_fields(data.cargoes)
             waybill.vehicle_brand = b
             waybill.vehicle_model = m
             waybill.quantity = q
 
+        if billing_field_changed:
+            waybill.waybill_version = (waybill.waybill_version or 1) + 1
+            waybill.calc_status = "pending"
+
         await db.flush()
+
+        if billing_field_changed:
+            try:
+                await FreightCalcTaskService.enqueue_waybill_recalc(
+                    db, waybill.id,
+                    task_type=TASK_WAYBILL_CHANGED,
+                    priority=10,
+                    triggered_by_user_id=current_user_id,
+                )
+            except Exception:
+                pass
+
         cargoes = await WaybillService._fetch_cargoes_for_waybill(db, waybill_id)
         await db.refresh(waybill)
         return waybill, cargoes
+
+    @staticmethod
+    def _cargoes_changed(
+        old: list[WaybillCargo], new: list[WaybillCargoLineIn]
+    ) -> bool:
+        old_keys = sorted([
+            (waybill_brand_model_key(c.vehicle_brand, c.vehicle_model),
+             int(c.quantity or 0))
+            for c in old
+        ])
+        new_keys = sorted([
+            (waybill_brand_model_key(c.vehicleBrand, c.vehicleModel),
+             int(c.quantity or 0))
+            for c in new
+        ])
+        return old_keys != new_keys
+
+    # ---- 手动重算入口 ----
+
+    @staticmethod
+    async def request_recalc(
+        db: AsyncSession, waybill_id: int, *, current_user_id: Optional[int] = None,
+    ) -> int:
+        """手动触发重算：写一条高优先级 task。返回 task.id。"""
+        waybill = await WaybillService.get_waybill(db, waybill_id)
+        if waybill.is_locked == 1:
+            raise BizException("运单已锁定，禁止自动重算；请先解锁")
+        waybill.calc_status = "pending"
+        await db.flush()
+        task = await FreightCalcTaskService.enqueue_waybill_recalc(
+            db, waybill_id,
+            task_type=TASK_MANUAL_RECALC,
+            priority=20,
+            triggered_by_user_id=current_user_id,
+        )
+        return task.id
 
     @staticmethod
     async def update_status(

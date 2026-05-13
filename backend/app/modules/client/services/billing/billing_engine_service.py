@@ -1,20 +1,36 @@
 """
-计费引擎服务（租户库）
+计费引擎服务（对外门面）
+
+历史上 BillingEngineService 提供按 (customer_id + 出发/目的地编码 + 品牌+车型 + 数量)
+的硬过滤计算入口；本次升级保留该入口供试算/AI 工具继续使用，但底层全部
+替换为新的 FreightCalcService + FreightMatcher（综合评分 + 留痕）。
+
+核心入口：
+  - calculate_freight   : 单条货物试算（保持旧签名，用于 /billing/calculate）
+  - preview_for_waybill : 整单试算（试算模式 dry_run，用于编辑表单批量试算）
+  - calculate_and_persist: 正式计算（写 result，刷新 waybill）
 """
 
-from typing import Optional
+from __future__ import annotations
+
 from datetime import date
 from decimal import Decimal
+from typing import Optional
 
 from pydantic import BaseModel
-from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.client.models.billing.freight_contract import FreightContract
-from app.modules.client.models.billing.freight_rate import FreightRate
+from app.modules.client.models.waybill.waybill import Waybill
+from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
+from app.modules.client.services.billing.freight_calc_service import (
+    FreightCalcService,
+    WaybillCalcSummary,
+)
 
 
 class FreightResult(BaseModel):
+    """与旧 schema 兼容的单条计算结果（供前端 /billing/calculate 沿用）"""
+
     unitPrice: Decimal
     billingMode: int = 0
     distanceKm: Optional[Decimal] = None
@@ -29,40 +45,6 @@ class FreightResult(BaseModel):
 class BillingEngineService:
 
     @staticmethod
-    def _calc_total(r, quantity: int) -> Decimal:
-        if r.billing_mode == 1:
-            km = r.distance_km or Decimal("0")
-            return r.unit_price * km * quantity
-        elif r.billing_mode == 2:
-            return r.unit_price
-        else:
-            return r.unit_price * quantity
-
-    @staticmethod
-    def _pick_by_price_type(
-        candidates: list, contract_map: dict, match_level: str,
-        quantity: int = 1,
-    ) -> Optional[FreightResult]:
-        """在同级别候选运价中，优先取明确运价(0)，其次预估运价(1)"""
-        candidates.sort(key=lambda r: (r.price_type, -r.id))
-        if not candidates:
-            return None
-        r = candidates[0]
-        contract = contract_map[r.contract_id]
-        total = BillingEngineService._calc_total(r, quantity)
-        return FreightResult(
-            unitPrice=r.unit_price,
-            billingMode=r.billing_mode,
-            distanceKm=r.distance_km,
-            totalAmount=total,
-            contractId=contract.id,
-            contractNo=contract.contract_no,
-            rateId=r.id,
-            matchLevel=match_level,
-            priceType=r.price_type,
-        )
-
-    @staticmethod
     async def calculate_freight(
         db: AsyncSession,
         customer_id: int,
@@ -73,81 +55,51 @@ class BillingEngineService:
         quantity: int = 1,
         billing_date: Optional[date] = None,
     ) -> Optional[FreightResult]:
+        """单条货物的试算入口（旧 API 兼容）
+
+        组装一个临时 Waybill + WaybillCargo 调用新引擎，返回首条命中明细。
+        """
         if billing_date is None:
             billing_date = date.today()
 
-        active_contracts = await db.execute(
-            select(FreightContract).where(
-                FreightContract.customer_id == customer_id,
-                FreightContract.status == 1,
-                FreightContract.is_deleted == 0,
-                FreightContract.effective_date <= billing_date,
-                FreightContract.expiry_date >= billing_date,
-            )
+        # 临时对象（不持久化）
+        waybill = Waybill(
+            id=0,
+            waybill_no="__preview__",
+            customer_id=customer_id,
+            origin_code=origin_code,
+            destination_code=destination_code,
+            origin=None,
+            destination=None,
         )
-        contracts = active_contracts.scalars().all()
-        if not contracts:
-            return None
-
-        contract_ids = [c.id for c in contracts]
-        contract_map = {c.id: c for c in contracts}
-
-        base_filter = and_(
-            FreightRate.contract_id.in_(contract_ids),
-            FreightRate.customer_id == customer_id,
-            FreightRate.origin_code == origin_code,
-            FreightRate.destination_code == destination_code,
-            FreightRate.status == 1,
-            FreightRate.is_deleted == 0,
+        cargo = WaybillCargo(
+            id=0,
+            waybill_id=0,
+            sort_order=0,
+            vehicle_brand=vehicle_brand,
+            vehicle_model=vehicle_model,
+            quantity=max(int(quantity or 1), 1),
         )
 
-        result = await db.execute(
-            select(FreightRate).where(base_filter)
+        summary: WaybillCalcSummary = await FreightCalcService.preview_for_waybill(
+            db, waybill, [cargo], billing_date,
         )
-        rates = result.scalars().all()
-        if not rates:
+
+        first = next(
+            (r for r in summary.cargo_results if r.calc_status == "success"),
+            None,
+        )
+        if not first or not first.matched_rule or not first.matched_contract:
             return None
 
-        valid_rates = []
-        for r in rates:
-            if r.effective_date and r.effective_date > billing_date:
-                continue
-            if r.expiry_date and r.expiry_date < billing_date:
-                continue
-            valid_rates.append(r)
-
-        if not valid_rates:
-            return None
-
-        pick = BillingEngineService._pick_by_price_type
-
-        # 精确匹配：客户+出发地+目的地+品牌+车型
-        if vehicle_brand and vehicle_model:
-            exact = [
-                r for r in valid_rates
-                if r.vehicle_brand == vehicle_brand and r.vehicle_model == vehicle_model
-            ]
-            hit = pick(exact, contract_map, "exact", quantity)
-            if hit:
-                return hit
-
-        # 品牌匹配：客户+出发地+目的地+品牌
-        if vehicle_brand:
-            brand = [
-                r for r in valid_rates
-                if r.vehicle_brand == vehicle_brand and not r.vehicle_model
-            ]
-            hit = pick(brand, contract_map, "brand", quantity)
-            if hit:
-                return hit
-
-        # 通用匹配：客户+出发地+目的地
-        general = [
-            r for r in valid_rates
-            if not r.vehicle_brand and not r.vehicle_model
-        ]
-        hit = pick(general, contract_map, "general", quantity)
-        if hit:
-            return hit
-
-        return None
+        return FreightResult(
+            unitPrice=first.matched_rule.unit_price,
+            billingMode=first.matched_rule.billing_mode,
+            distanceKm=first.matched_rule.distance_km,
+            totalAmount=first.amount,
+            contractId=first.matched_contract.id,
+            contractNo=first.matched_contract.contract_no,
+            rateId=first.matched_rule.id,
+            matchLevel=first.model_match_type or "general",
+            priceType=first.matched_rule.price_type,
+        )

@@ -42,6 +42,13 @@ export interface Waybill {
   remark?: string;
   createdBy?: number;
   createdAt?: string;
+  originRegionId?: number | null;
+  destinationRegionId?: number | null;
+  calcStatus?: string;
+  isLocked?: number;
+  waybillVersion?: number;
+  lastCalcAt?: string | null;
+  lastResultId?: number | null;
 }
 
 export interface WaybillParam extends PageParam {

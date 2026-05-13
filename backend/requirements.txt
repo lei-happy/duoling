@@ -29,6 +29,7 @@ python-dotenv>=1.0.1
 loguru>=0.7.3
 httpx>=0.28.0
 pypinyin>=0.55.0
+apscheduler>=3.10.0
 
 # AI Digital Employee
 openai>=1.50.0

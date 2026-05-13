@@ -5,7 +5,7 @@
 from datetime import datetime, date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
@@ -156,7 +156,9 @@ async def update_waybill(
     _: None = Depends(ensure_biz_company_activity_table),
 ):
     _require_tenant_for_activity(current_user)
-    waybill, _cargoes = await WaybillService.update_waybill(db, waybill_id, data)
+    waybill, _cargoes = await WaybillService.update_waybill(
+        db, waybill_id, data, current_user_id=current_user.user_id,
+    )
     op_name = await CompanyActivityService.actor_display_name(
         db, current_user.user_id
     )
@@ -226,6 +228,159 @@ async def update_waybill_status(
     )
     out = await WaybillService.waybill_to_out(db, waybill)
     return success(data=out.model_dump())
+
+
+@router.post("/{waybill_id}/recalculate")
+@operation_log(module="运单管理", action="重算运费", description="手动触发运费重算")
+async def recalculate_waybill(
+    request: Request,
+    waybill_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """手动触发运费重算（写入高优先级 task，由 worker 异步执行）"""
+    task_id = await WaybillService.request_recalc(
+        db, waybill_id, current_user_id=current_user.user_id,
+    )
+    return success(data={"taskId": task_id})
+
+
+@router.get("/{waybill_id}/freight-result")
+async def get_waybill_freight_result(
+    waybill_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    """获取运单的最新计算结果（含明细 + match_trace_json）"""
+    from app.modules.client.services.billing.freight_result_service import (
+        FreightResultService,
+    )
+    data = await FreightResultService.get_active_result_with_detail(db, waybill_id)
+    return success(data=data)
+
+
+@router.put("/{waybill_id}/lock")
+@operation_log(module="运单管理", action="锁定", description="锁定运单（禁止重算）")
+async def lock_waybill(
+    request: Request,
+    waybill_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    waybill = await WaybillService.get_waybill(db, waybill_id)
+    waybill.is_locked = 1
+    waybill.calc_status = "locked"
+    await db.flush()
+    out = await WaybillService.waybill_to_out(db, waybill)
+    return success(data=out.model_dump())
+
+
+@router.put("/{waybill_id}/unlock")
+@operation_log(module="运单管理", action="解锁", description="解锁运单")
+async def unlock_waybill(
+    request: Request,
+    waybill_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    waybill = await WaybillService.get_waybill(db, waybill_id)
+    waybill.is_locked = 0
+    if waybill.calc_status == "locked":
+        waybill.calc_status = "pending"
+    await db.flush()
+    out = await WaybillService.waybill_to_out(db, waybill)
+    return success(data=out.model_dump())
+
+
+@router.post("/import")
+@operation_log(module="运单管理", action="批量导入", description="Excel 批量导入运单")
+async def import_waybills(
+    request: Request,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """上传 Excel 批量导入运单（同步解析，行级失败不影响其他行）。"""
+    file_bytes = await file.read()
+    if not file_bytes:
+        from app.common.exceptions import BizException
+        raise BizException("上传文件为空")
+    from app.modules.client.services.waybill.waybill_import_service import (
+        WaybillImportService,
+    )
+    batch = await WaybillImportService.import_excel(
+        db,
+        file_name=file.filename or "import.xlsx",
+        file_bytes=file_bytes,
+        current_user_id=current_user.user_id,
+    )
+    return success(data={
+        "batchId": batch.id,
+        "totalCount": batch.total_count,
+        "successCount": batch.success_count,
+        "failCount": batch.fail_count,
+        "status": batch.status,
+    })
+
+
+@router.get("/import/batches")
+async def page_import_batches(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, alias="limit", ge=1, le=100),
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    from app.modules.client.services.waybill.waybill_import_service import (
+        WaybillImportService,
+    )
+    data = await WaybillImportService.page_batches(db, page=page, limit=page_size)
+    return success(data=data)
+
+
+@router.get("/import/batch/{batch_id}")
+async def get_import_batch(
+    batch_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    from app.modules.client.services.waybill.waybill_import_service import (
+        WaybillImportService,
+    )
+    batch = await WaybillImportService.get_batch(db, batch_id)
+    if not batch:
+        return success(code=404, msg="批次不存在")
+    return success(data={
+        "id": batch.id,
+        "fileName": batch.file_name,
+        "totalCount": batch.total_count,
+        "successCount": batch.success_count,
+        "failCount": batch.fail_count,
+        "calcSuccessCount": batch.calc_success_count,
+        "calcExceptionCount": batch.calc_exception_count,
+        "status": batch.status,
+        "errorMessage": batch.error_message,
+        "createdBy": batch.created_by,
+        "createdAt": batch.created_at,
+    })
+
+
+@router.get("/import/batch/{batch_id}/rows")
+async def list_import_rows(
+    batch_id: int,
+    validateStatus: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, alias="limit", ge=1, le=200),
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    from app.modules.client.services.waybill.waybill_import_service import (
+        WaybillImportService,
+    )
+    data = await WaybillImportService.list_rows(
+        db, batch_id, validate_status=validateStatus,
+        page=page, limit=page_size,
+    )
+    return success(data=data)
 
 
 @router.delete("/{waybill_id}")

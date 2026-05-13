@@ -85,6 +85,7 @@
                 filterable
                 clearable
                 :disabled="!selectedBrandId"
+                @change="onSeriesNameChange"
               >
                 <el-option
                   v-for="s in seriesOptions"
@@ -152,6 +153,39 @@
             />
           </el-form-item>
         </el-col>
+        <el-col :span="8">
+          <el-form-item class="rate-num-item">
+            <div class="rate-num-item__cap">最低运费(元，可空)</div>
+            <el-input-number
+              v-model="form.minAmount"
+              class="rate-num-item__ctl ele-fluid"
+              :precision="2"
+              :min="0"
+              controls-position="right"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item class="rate-num-item">
+            <div class="rate-num-item__cap">优先级（数值越大越优先）</div>
+            <el-input-number
+              v-model="form.priority"
+              class="rate-num-item__ctl ele-fluid"
+              :min="0"
+              :step="1"
+              controls-position="right"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item class="rate-block-item">
+            <div class="rate-block-cap">线路方向</div>
+            <el-radio-group v-model="form.isBidirectional">
+              <el-radio :value="0">单向</el-radio>
+              <el-radio :value="1">双向</el-radio>
+            </el-radio-group>
+          </el-form-item>
+        </el-col>
       </el-row>
     </el-form>
     <template #footer>
@@ -168,7 +202,12 @@
   import type { FormInstance, FormRules, CascaderProps } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
-  import { addRate, updateRate } from '@/api/billing/contract';
+  import { ElMessageBox } from 'element-plus';
+  import {
+    addRate,
+    updateRate,
+    checkRateConflict
+  } from '@/api/billing/contract';
   import { listVehicleBrandOptions } from '@/api/basic-data/vehicle-brand';
   import { pageVehicleSeries } from '@/api/basic-data/vehicle-series';
   import { getRegionNavTree } from '@/api/basic-data/region';
@@ -180,6 +219,7 @@
   const props = defineProps<{
     visible: boolean;
     contractId?: number;
+    customerId?: number;
     data: FreightRate | null;
   }>();
 
@@ -191,7 +231,12 @@
   const isEdit = computed(() => !!props.data?.id);
   const formRef = ref<FormInstance>();
   const loading = ref(false);
-  const form = reactive<FreightRate>({ billingMode: 0, priceType: 0 });
+  const form = reactive<FreightRate>({
+    billingMode: 0,
+    priceType: 0,
+    priority: 0,
+    isBidirectional: 0
+  });
 
   const regionTree = ref<RegionNavNode[]>([]);
   const brandOptions = ref<VehicleBrandOption[]>([]);
@@ -306,10 +351,12 @@
 
   const onBrandChange = async (brandName: string) => {
     form.vehicleModel = undefined;
+    form.seriesId = null;
     seriesOptions.value = [];
     const brand = brandOptions.value.find((b) => b.brandNameCn === brandName);
     if (brand) {
       selectedBrandId.value = brand.brandId;
+      form.brandId = brand.brandId;
       try {
         const data = await pageVehicleSeries({
           brandId: brand.brandId,
@@ -322,7 +369,17 @@
       }
     } else {
       selectedBrandId.value = null;
+      form.brandId = null;
     }
+  };
+
+  const onSeriesNameChange = (seriesName?: string) => {
+    if (!seriesName) {
+      form.seriesId = null;
+      return;
+    }
+    const item = seriesOptions.value.find((s) => s.seriesName === seriesName);
+    form.seriesId = item ? item.seriesId : null;
   };
 
   watch(
@@ -358,6 +415,11 @@
         });
         form.billingMode = 0;
         form.priceType = 0;
+        form.priority = 0;
+        form.isBidirectional = 0;
+      }
+      if (props.customerId && !form.customerId) {
+        form.customerId = props.customerId;
       }
       nextTick(() => formRef.value?.clearValidate());
     }
@@ -367,11 +429,76 @@
     emit('update:visible', val);
   };
 
+  const buildConflictPayload = () => {
+    return {
+      rateId: form.id,
+      contractId: props.contractId!,
+      customerId: form.customerId!,
+      originRegionId: form.originRegionId ?? null,
+      originCode: form.originCode ?? null,
+      destinationRegionId: form.destinationRegionId ?? null,
+      destinationCode: form.destinationCode ?? null,
+      brandId: form.brandId ?? null,
+      seriesId: form.seriesId ?? null,
+      priority: form.priority ?? 0,
+      priceType: form.priceType ?? 0,
+      isBidirectional: form.isBidirectional ?? 0,
+      effectiveDate: form.effectiveDate ?? null,
+      expiryDate: form.expiryDate ?? null
+    };
+  };
+
+  const confirmConflict = async (
+    conflicts: Array<{
+      rateId: number;
+      origin?: string;
+      destination?: string;
+      effectiveDate?: string | null;
+      expiryDate?: string | null;
+      severity?: string;
+    }>
+  ) => {
+    const list = conflicts
+      .slice(0, 5)
+      .map((c, i) => {
+        const sev = c.severity === 'error' ? '[强冲突]' : '[弱冲突]';
+        const period = `${c.effectiveDate || ''}~${c.expiryDate || ''}`;
+        return `${i + 1}. #${c.rateId} ${sev} ${c.origin || ''} → ${c.destination || ''} (${period})`;
+      })
+      .join('<br/>');
+    return ElMessageBox.confirm(
+      `检测到 ${conflicts.length} 条冲突运价，是否仍要保存？<br/>${list}`,
+      '运价冲突提醒',
+      {
+        confirmButtonText: '继续保存',
+        cancelButtonText: '取消',
+        type: 'warning',
+        dangerouslyUseHTMLString: true
+      }
+    )
+      .then(() => true)
+      .catch(() => false);
+  };
+
   const handleSubmit = () => {
     formRef.value?.validate(async (valid) => {
       if (!valid) return;
       loading.value = true;
       try {
+        try {
+          if (form.customerId && props.contractId) {
+            const conflict = await checkRateConflict(buildConflictPayload());
+            if (conflict && conflict.count > 0) {
+              const ok = await confirmConflict(conflict.conflicts);
+              if (!ok) {
+                loading.value = false;
+                return;
+              }
+            }
+          }
+        } catch (_) {
+          /* ignore conflict check errors and continue */
+        }
         if (isEdit.value) {
           await updateRate(form.id!, form);
         } else {

@@ -12,6 +12,37 @@ from app.modules.client.models.billing.freight_contract import FreightContract
 from app.modules.client.schemas.billing.freight_contract import (
     FreightContractCreate, FreightContractUpdate, FreightContractOut,
 )
+from app.modules.client.services.billing.freight_calc_service import FreightCalcService
+from app.modules.client.services.billing.freight_calc_task_service import (
+    FreightCalcTaskService,
+    TASK_CONTRACT_CHANGED,
+)
+
+
+# 合同变更涉及的字段（除 status 之外，影响运单计算的字段）
+CONTRACT_BILLING_FIELDS = {"effective_date", "expiry_date", "customer_id"}
+
+
+async def _enqueue_for_contract(
+    db: AsyncSession,
+    contract: FreightContract,
+    *,
+    triggered_by_user_id: Optional[int] = None,
+) -> int:
+    """合同变更后扫客户运单入队重算。返回新建任务条数。"""
+    waybill_ids = await FreightCalcService.find_affected_waybills_for_contract(
+        db, contract,
+    )
+    if not waybill_ids:
+        return 0
+    return await FreightCalcTaskService.enqueue_many_waybills(
+        db, waybill_ids,
+        task_type=TASK_CONTRACT_CHANGED,
+        source_target_type="contract",
+        source_target_id=contract.id,
+        priority=5,
+        triggered_by_user_id=triggered_by_user_id,
+    )
 
 
 class FreightContractService:
@@ -124,7 +155,8 @@ class FreightContractService:
 
     @staticmethod
     async def update_contract(
-        db: AsyncSession, contract_id: int, data: FreightContractUpdate
+        db: AsyncSession, contract_id: int, data: FreightContractUpdate,
+        *, current_user_id: Optional[int] = None,
     ) -> FreightContract:
         result = await db.execute(
             select(FreightContract).where(
@@ -145,18 +177,35 @@ class FreightContractService:
             "status": "status",
             "remark": "remark",
         }
+        billing_changed = False
         for schema_field, model_field in field_map.items():
             val = getattr(data, schema_field, None)
             if val is not None:
+                if model_field in CONTRACT_BILLING_FIELDS:
+                    if getattr(contract, model_field, None) != val:
+                        billing_changed = True
                 setattr(contract, model_field, val)
+
+        if billing_changed:
+            contract.contract_version = (contract.contract_version or 1) + 1
 
         await db.flush()
         await db.refresh(contract)
+
+        if billing_changed and contract.status == 1:
+            try:
+                await _enqueue_for_contract(
+                    db, contract, triggered_by_user_id=current_user_id,
+                )
+            except Exception:
+                pass
+
         return contract
 
     @staticmethod
     async def activate_contract(
-        db: AsyncSession, contract_id: int
+        db: AsyncSession, contract_id: int,
+        *, current_user_id: Optional[int] = None,
     ) -> FreightContract:
         result = await db.execute(
             select(FreightContract).where(
@@ -170,13 +219,21 @@ class FreightContractService:
         if contract.status != 0:
             raise BizException("仅草稿状态的合同可以激活")
         contract.status = 1
+        contract.contract_version = (contract.contract_version or 1) + 1
         await db.flush()
         await db.refresh(contract)
+        try:
+            await _enqueue_for_contract(
+                db, contract, triggered_by_user_id=current_user_id,
+            )
+        except Exception:
+            pass
         return contract
 
     @staticmethod
     async def terminate_contract(
-        db: AsyncSession, contract_id: int
+        db: AsyncSession, contract_id: int,
+        *, current_user_id: Optional[int] = None,
     ) -> FreightContract:
         result = await db.execute(
             select(FreightContract).where(
@@ -191,13 +248,21 @@ class FreightContractService:
             raise BizException("仅生效中的合同可以终止")
 
         contract.status = 2
+        contract.contract_version = (contract.contract_version or 1) + 1
         await db.flush()
         await db.refresh(contract)
+        try:
+            await _enqueue_for_contract(
+                db, contract, triggered_by_user_id=current_user_id,
+            )
+        except Exception:
+            pass
         return contract
 
     @staticmethod
     async def resume_contract(
-        db: AsyncSession, contract_id: int
+        db: AsyncSession, contract_id: int,
+        *, current_user_id: Optional[int] = None,
     ) -> FreightContract:
         """将已终止的合同恢复为生效（可逆终止）。"""
         result = await db.execute(
@@ -213,8 +278,15 @@ class FreightContractService:
             raise BizException("仅已终止的合同可以恢复生效")
 
         contract.status = 1
+        contract.contract_version = (contract.contract_version or 1) + 1
         await db.flush()
         await db.refresh(contract)
+        try:
+            await _enqueue_for_contract(
+                db, contract, triggered_by_user_id=current_user_id,
+            )
+        except Exception:
+            pass
         return contract
 
     @staticmethod

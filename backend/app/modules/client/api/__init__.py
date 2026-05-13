@@ -41,6 +41,13 @@ from app.modules.client.api.partner.carrier_inbound import router as partner_inb
 from app.modules.client.api.billing.freight_contract import router as freight_contract_router
 from app.modules.client.api.billing.freight_rate import router as freight_rate_router
 from app.modules.client.api.billing.calculate import router as freight_calc_router
+from app.modules.client.api.billing.freight_engine import (
+    task_router as freight_calc_task_router,
+    exception_router as freight_calc_exception_router,
+    region_alias_router as basic_data_region_alias_router,
+    vehicle_alias_router as basic_data_vehicle_alias_router,
+    regression_router as freight_calc_regression_router,
+)
 from app.modules.client.api.waybill.waybill import router as waybill_router
 from app.modules.ai.api.client import router as ai_client_router
 
@@ -134,5 +141,30 @@ router.include_router(partner_inbound_router, prefix="/partner/inbound", tags=["
 router.include_router(freight_contract_router, prefix="/billing/contract", tags=["客户端-运价合同"])
 router.include_router(freight_rate_router, prefix="/billing/rate", tags=["客户端-运价费率"])
 router.include_router(freight_calc_router, prefix="/billing/calculate", tags=["客户端-运费计算"])
+router.include_router(
+    freight_calc_task_router,
+    prefix="/billing/freight-calc/tasks",
+    tags=["客户端-计费引擎-任务"],
+)
+router.include_router(
+    freight_calc_exception_router,
+    prefix="/billing/freight-calc/exceptions",
+    tags=["客户端-计费引擎-异常"],
+)
+router.include_router(
+    basic_data_region_alias_router,
+    prefix="/basic-data/region-alias",
+    tags=["客户端-基础数据-地名别名"],
+)
+router.include_router(
+    basic_data_vehicle_alias_router,
+    prefix="/basic-data/vehicle-alias",
+    tags=["客户端-基础数据-车型别名"],
+)
+router.include_router(
+    freight_calc_regression_router,
+    prefix="/billing/freight-calc/regression",
+    tags=["客户端-计费引擎-双引擎回归"],
+)
 router.include_router(waybill_router, prefix="/business/waybill", tags=["客户端-运单管理V2"])
 router.include_router(ai_client_router, prefix="/ai", tags=["客户端-AI数字员工"])
