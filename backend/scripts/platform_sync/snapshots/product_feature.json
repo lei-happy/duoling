@@ -609,6 +609,24 @@
     "status": 1
   },
   {
+    "feature_code": "bi_cockpit",
+    "feature_name": "经营驾驶舱",
+    "module": "insight",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 93,
+    "status": 1
+  },
+  {
+    "feature_code": "bi_cockpit_overview",
+    "feature_name": "经营驾驶舱-经营总览",
+    "module": "insight",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 94,
+    "status": 1
+  },
+  {
     "feature_code": "ecosystem_cargo_hall",
     "feature_name": "货源大厅",
     "module": "ecosystem",

@@ -36,6 +36,8 @@
     "basic_data_region",
     "basic_data_vehicle_brand_series",
     "bi_analytics",
+    "bi_cockpit",
+    "bi_cockpit_overview",
     "bi_overview",
     "bi_prediction",
     "bi_report",
