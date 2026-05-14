@@ -91,6 +91,31 @@ def _parse_int(val: Any, default: Optional[int] = None) -> Optional[int]:
         return default
 
 
+def _norm_region_code(val: Any) -> Optional[str]:
+    """Excel 中区划码可能是数字类型或带小数点的字符串，统一为整数字符串。"""
+    if val is None or val == "":
+        return None
+    if isinstance(val, bool):
+        return None
+    if isinstance(val, (int, float)):
+        try:
+            return str(int(val))
+        except (OverflowError, ValueError):
+            return str(val).strip() or None
+    s = str(val).strip()
+    if not s:
+        return None
+    if s.isdigit():
+        return s
+    try:
+        f = float(s)
+        if f > 0 and f == int(f):
+            return str(int(f))
+    except (TypeError, ValueError):
+        pass
+    return s
+
+
 def _parse_dt(val: Any):
     if val is None or val == "":
         return None
@@ -186,13 +211,11 @@ class WaybillImportService:
             customerName=(str(row["customerName"]).strip()
                           if row.get("customerName") else None),
             origin=(str(row["origin"]).strip() if row.get("origin") else None),
-            originCode=(str(row["originCode"]).strip()
-                        if row.get("originCode") else None),
+            originCode=_norm_region_code(row.get("originCode")),
             originRegionId=_parse_int(row.get("originRegionId")),
             destination=(str(row["destination"]).strip()
                          if row.get("destination") else None),
-            destinationCode=(str(row["destinationCode"]).strip()
-                             if row.get("destinationCode") else None),
+            destinationCode=_norm_region_code(row.get("destinationCode")),
             destinationRegionId=_parse_int(row.get("destinationRegionId")),
             cargoes=cargoes,
             planIssueTime=_parse_dt(row.get("planIssueTime")),

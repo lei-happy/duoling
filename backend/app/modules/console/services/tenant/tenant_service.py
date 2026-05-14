@@ -426,6 +426,14 @@ class TenantService:
                         value_type="enum",
                         default_value="auto_preferred",
                     ),
+                    SystemConfig(
+                        config_key="waybill.list_show_freight_amount",
+                        config_value="false",
+                        config_group="waybill",
+                        description="运单列表是否展示运费金额（敏感信息，默认关闭）",
+                        value_type="boolean",
+                        default_value="false",
+                    ),
                 ]
                 session.add_all(default_configs)
 

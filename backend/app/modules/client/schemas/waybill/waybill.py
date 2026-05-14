@@ -193,6 +193,7 @@ class WaybillOut(BaseModel):
         cargoes: Optional[list] = None,
         *,
         series_image_lookup: Optional[dict[str, Optional[str]]] = None,
+        redact_freight_amount: bool = False,
     ) -> "WaybillOut":
         cargo_list = cargoes or []
         cargo_out: list[WaybillCargoOut] = []
@@ -214,6 +215,11 @@ class WaybillOut(BaseModel):
             primary_series_image = series_image_lookup.get(
                 waybill_brand_model_key(m.vehicle_brand, m.vehicle_model)
             )
+        freight_amount: Optional[float] = (
+            float(m.freight_amount) if m.freight_amount is not None else None
+        )
+        if redact_freight_amount:
+            freight_amount = None
         return cls(
             id=m.id,
             waybillNo=m.waybill_no,
@@ -238,9 +244,7 @@ class WaybillOut(BaseModel):
             dealerContact=m.dealer_contact,
             dealerPhone=m.dealer_phone,
             dealerAddress=m.dealer_address,
-            freightAmount=float(m.freight_amount)
-            if m.freight_amount is not None
-            else None,
+            freightAmount=freight_amount,
             freightSource=m.freight_source,
             contractId=m.contract_id,
             rateId=m.rate_id,

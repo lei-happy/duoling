@@ -27,6 +27,7 @@ from app.modules.client.schemas.waybill.waybill import (
 )
 from app.modules.client.services.system_config_service import SystemConfigService
 from app.modules.client.services.billing.billing_engine_service import BillingEngineService
+from app.modules.client.services.billing.standardize_service import StandardizeService
 from app.modules.client.services.billing.freight_calc_task_service import (
     FreightCalcTaskService,
     TASK_MANUAL_RECALC,
@@ -204,6 +205,51 @@ class WaybillService:
         await WaybillService._insert_cargoes(db, waybill_id, lines)
 
     @staticmethod
+    async def _hydrate_waybill_create_region_ids(
+        db: AsyncSession, data: WaybillCreate,
+    ) -> WaybillCreate:
+        """创建运单时 origin/destination_region_id 为空则用编码或名称补全。"""
+        update: dict = {}
+        if data.originRegionId is None and (data.originCode or data.origin):
+            oc = (data.originCode or "").strip() or None
+            r = await StandardizeService.resolve_region(
+                db, region_id=None, code=oc, raw_name=data.origin,
+            )
+            if r.region_id is not None:
+                update["originRegionId"] = r.region_id
+        if data.destinationRegionId is None and (data.destinationCode or data.destination):
+            dc = (data.destinationCode or "").strip() or None
+            r = await StandardizeService.resolve_region(
+                db, region_id=None, code=dc, raw_name=data.destination,
+            )
+            if r.region_id is not None:
+                update["destinationRegionId"] = r.region_id
+        if not update:
+            return data
+        return data.model_copy(update=update)
+
+    @staticmethod
+    async def _hydrate_waybill_row_region_ids(db: AsyncSession, waybill: Waybill) -> None:
+        """已落库运单若 region_id 为空，用当前编码/名称补全（编辑、导入、历史数据自愈）。"""
+        if waybill.origin_region_id is None and (waybill.origin_code or waybill.origin):
+            oc = (waybill.origin_code or "").strip() or None
+            r = await StandardizeService.resolve_region(
+                db, region_id=None, code=oc, raw_name=waybill.origin,
+            )
+            if r.region_id is not None:
+                waybill.origin_region_id = r.region_id
+        if (
+            waybill.destination_region_id is None
+            and (waybill.destination_code or waybill.destination)
+        ):
+            dc = (waybill.destination_code or "").strip() or None
+            r = await StandardizeService.resolve_region(
+                db, region_id=None, code=dc, raw_name=waybill.destination,
+            )
+            if r.region_id is not None:
+                waybill.destination_region_id = r.region_id
+
+    @staticmethod
     async def _resolve_auto_freight(
         db: AsyncSession,
         calc_mode: str,
@@ -264,6 +310,12 @@ class WaybillService:
         created_at_start: Optional[date] = None,
         created_at_end: Optional[date] = None,
     ) -> dict:
+        list_show_raw = await SystemConfigService.get_by_key(
+            db, "waybill.list_show_freight_amount"
+        )
+        show_freight_in_list = (list_show_raw or "").strip().lower() == "true"
+        redact_freight_amount = not show_freight_in_list
+
         use_pinyin_filters = any(
             [
                 (origin_keyword or "").strip(),
@@ -310,6 +362,7 @@ class WaybillService:
                         item,
                         cargo_map.get(item.id, []),
                         series_image_lookup=series_lookup,
+                        redact_freight_amount=redact_freight_amount,
                     ).model_dump()
                     for item in page_items
                 ],
@@ -338,6 +391,7 @@ class WaybillService:
                     item,
                     cargo_map.get(item.id, []),
                     series_image_lookup=series_lookup,
+                    redact_freight_amount=redact_freight_amount,
                 ).model_dump()
                 for item in items
             ],
@@ -391,6 +445,7 @@ class WaybillService:
     async def create_waybill(
         db: AsyncSession, data: WaybillCreate, current_user_id: int
     ) -> tuple[Waybill, list[WaybillCargo]]:
+        data = await WaybillService._hydrate_waybill_create_region_ids(db, data)
         waybill_no = data.waybillNo or WaybillService._generate_waybill_no()
         WaybillService._validate_cargo_lines(data.cargoes)
 
@@ -549,6 +604,8 @@ class WaybillService:
             waybill.vehicle_brand = b
             waybill.vehicle_model = m
             waybill.quantity = q
+
+        await WaybillService._hydrate_waybill_row_region_ids(db, waybill)
 
         if billing_field_changed:
             waybill.waybill_version = (waybill.waybill_version or 1) + 1

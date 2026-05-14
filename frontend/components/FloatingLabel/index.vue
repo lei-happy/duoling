@@ -9,7 +9,8 @@
       'is-date-picker': type === 'date',
       'is-range-date-picker': isRangeDateType,
       'is-select': type === 'select',
-      'is-cascader': type === 'cascader'
+      'is-cascader': type === 'cascader',
+      'is-input-number': type === 'input-number'
     }"
   >
     <el-input
@@ -61,6 +62,21 @@
       @change="$emit('change', $event)"
     />
 
+    <el-input-number
+      v-else-if="type === 'input-number'"
+      ref="inputNumberRef"
+      v-model="model"
+      class="ele-fluid fl-input-number"
+      :disabled="disabled"
+      :min="inputNumberMin"
+      :max="inputNumberMax"
+      :step="inputNumberStep"
+      :precision="inputNumberPrecision"
+      :controls-position="inputNumberControlsPosition"
+      @focus="handleFocus"
+      @blur="handleBlur"
+    />
+
     <el-select
       v-else-if="type === 'select'"
       ref="selectRef"
@@ -108,7 +124,7 @@
       /** 激活状态的标签文本（可选，不传则自动从 label 提取） */
       floatedLabel?: string;
       /** 组件类型 */
-      type?: 'input' | 'date' | 'select' | 'cascader';
+      type?: 'input' | 'date' | 'select' | 'cascader' | 'input-number';
       /** 是否禁用 */
       disabled?: boolean;
       /** 是否可清除 */
@@ -157,6 +173,16 @@
       cascaderOptionProps?: CascaderProps;
       /** 级联是否可筛选 */
       cascaderFilterable?: boolean;
+      /** type=input-number：最小值 */
+      inputNumberMin?: number;
+      /** type=input-number：最大值 */
+      inputNumberMax?: number;
+      /** type=input-number：步长 */
+      inputNumberStep?: number;
+      /** type=input-number：小数位 */
+      inputNumberPrecision?: number;
+      /** type=input-number：步进器位置 */
+      inputNumberControlsPosition?: '' | 'right';
     }>(),
     {
       type: 'input',
@@ -171,7 +197,9 @@
       remote: false,
       loading: false,
       teleported: true,
-      cascaderFilterable: true
+      cascaderFilterable: true,
+      inputNumberStep: 1,
+      inputNumberControlsPosition: 'right'
     }
   );
 
@@ -206,6 +234,7 @@
   const datePickerRef = ref<any>();
   const selectRef = ref<any>();
   const cascaderRef = ref<any>();
+  const inputNumberRef = ref<any>();
 
   /** 是否聚焦 */
   const isFocused = ref(false);
@@ -298,6 +327,8 @@
       selectRef.value?.focus();
     } else if (props.type === 'cascader') {
       cascaderRef.value?.focus?.();
+    } else if (props.type === 'input-number') {
+      inputNumberRef.value?.focus?.();
     }
   };
 </script>
@@ -410,6 +441,14 @@
   }
 
   :deep(.el-cascader) {
+    width: 100%;
+  }
+
+  &.is-input-number :deep(.el-input-number) {
+    width: 100%;
+  }
+
+  &.is-input-number :deep(.el-input__wrapper) {
     width: 100%;
   }
 

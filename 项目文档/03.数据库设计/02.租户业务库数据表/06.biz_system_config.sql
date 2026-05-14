@@ -17,4 +17,5 @@ CREATE TABLE `biz_system_config` (
 
 -- 初始配置数据
 INSERT INTO `biz_system_config` (`config_key`, `config_value`, `config_group`, `description`, `value_type`, `default_value`) VALUES
-('waybill.freight_calc_mode', 'auto_preferred', 'waybill', '运费计算模式：auto_required-强制自动计费 auto_preferred-优先自动允许手动 manual_only-仅手动', 'enum', 'auto_preferred');
+('waybill.freight_calc_mode', 'auto_preferred', 'waybill', '运费计算模式：auto_required-强制自动计费 auto_preferred-优先自动允许手动 manual_only-仅手动', 'enum', 'auto_preferred'),
+('waybill.list_show_freight_amount', 'false', 'waybill', '运单列表是否展示运费金额（敏感信息，默认关闭）', 'boolean', 'false');

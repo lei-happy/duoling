@@ -80,8 +80,11 @@
           </el-tag>
         </template>
         <template #isLocked="{ row }">
-          <el-tag :type="row.isLocked === 1 ? 'warning' : 'info'" size="small">
-            {{ row.isLocked === 1 ? '已锁' : '正常' }}
+          <el-tag
+            :type="isWaybillLocked(row) ? 'warning' : 'info'"
+            size="small"
+          >
+            {{ isWaybillLocked(row) ? '已锁' : '正常' }}
           </el-tag>
         </template>
         <template #status="{ row }">
@@ -108,7 +111,10 @@
           </el-tag>
         </template>
         <template #action="{ row }">
-          <div class="waybill-actions">
+          <div
+            class="waybill-actions"
+            :key="`waybill-actions-${row.id}-${row.status ?? ''}-${row.isLocked ?? ''}-${row.calcStatus ?? ''}`"
+          >
             <btn-items
               divider
               type="link"
@@ -131,14 +137,22 @@
     <waybill-freight-detail
       v-model:visible="freightDetailVisible"
       :waybill-id="freightDetailWaybillId"
+      @sync-list="reloadAfterMutation"
     />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue';
+  import { computed, nextTick, onActivated, onMounted, ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
-  import { DocumentCopy } from '@element-plus/icons-vue';
+  import {
+    CircleCheck,
+    Document,
+    DocumentCopy,
+    Lock,
+    RefreshRight,
+    Unlock
+  } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
@@ -154,6 +168,7 @@
   import WaybillSearch from './components/waybill-search.vue';
   import WaybillCargoesDetail from './components/waybill-cargoes-detail.vue';
   import WaybillFreightDetail from './components/waybill-freight-detail.vue';
+  import { listConfigsByGroup } from '@/api/system/config';
   import {
     pageWaybills,
     removeWaybill,
@@ -164,8 +179,13 @@
   } from '@/api/waybill';
   import type { Waybill, WaybillParam } from '@/api/waybill/model';
   import { formatDateTime } from '@/utils/date-util';
+  import { DeleteOutlined } from '@/components/icons';
 
   const router = useRouter();
+
+  /** 提交重新计算后的提示（避免「worker」等技术用语） */
+  const FREIGHT_RECALC_SUBMIT_MSG =
+    '已提交运费重新计算，请稍候查看「计算明细」或列表中的计算状态。';
 
   defineOptions({ name: 'Waybill' });
 
@@ -177,6 +197,23 @@
   const cargoDetailWaybill = ref<Waybill | null>(null);
   const freightDetailVisible = ref(false);
   const freightDetailWaybillId = ref<number | null>(null);
+
+  /** 与系统设置 waybill.list_show_freight_amount 一致，默认不展示列表运费 */
+  const listShowFreightAmount = ref(false);
+
+  const syncListFreightSetting = () => {
+    listConfigsByGroup('waybill')
+      .then((list) => {
+        const item = list?.find(
+          (i) => i.configKey === 'waybill.list_show_freight_amount'
+        );
+        listShowFreightAmount.value = item?.configValue === 'true';
+      })
+      .catch(() => {});
+  };
+
+  onMounted(syncListFreightSetting);
+  onActivated(syncListFreightSetting);
 
   const calcStatusType = (s?: string) => {
     if (s === 'calculated') return 'success';
@@ -197,7 +234,7 @@
     return s ? m[s] || s : '--';
   };
 
-  const columns = ref<Columns>([
+  const allWaybillColumns: Columns = [
     {
       type: 'selection',
       columnKey: 'selection',
@@ -272,7 +309,12 @@
       hideInPrint: true,
       hideInExport: true
     }
-  ]);
+  ];
+
+  const columns = computed<Columns>(() => {
+    if (listShowFreightAmount.value) return allWaybillColumns;
+    return allWaybillColumns.filter((c) => c.prop !== 'freightAmount');
+  });
 
   const datasource: DatasourceFunction = ({ pages, where }) => {
     return pageWaybills({
@@ -285,7 +327,25 @@
   };
 
   const reload = (where?: WaybillParam, page?: number) => {
-    tableRef.value?.reload?.({ where, page });
+    const t = tableRef.value;
+    if (!t) return;
+    const hasWhere = where !== undefined;
+    const hasPage = page !== undefined;
+    if (!hasWhere && !hasPage) {
+      nextTick(() => t.reload?.());
+      return;
+    }
+    const opt: { where?: WaybillParam; page?: number } = {};
+    if (hasWhere) opt.where = where;
+    if (hasPage) opt.page = page;
+    t.reload?.(opt);
+  };
+
+  /** 与下拉、弹层关闭错开一帧再拉表，避免操作列状态不同步 */
+  const reloadAfterMutation = () => {
+    nextTick(() => {
+      tableRef.value?.reload?.();
+    });
   };
 
   const copyWaybillNo = async (no?: string) => {
@@ -315,21 +375,44 @@
 
   const canEditWaybill = (row: Waybill) => row.status === 0 || row.status === 1;
 
+  const isWaybillLocked = (row: Waybill) => Number(row.isLocked) === 1;
+
   const actionItems = (row: Waybill): ButtonItem[] => {
     const dropdown: ButtonDropdownItem[] = [];
     if (row.status === 0) {
-      dropdown.push({ title: '确认', onClick: () => confirmWaybill(row) });
+      dropdown.push({
+        title: '确认',
+        icon: CircleCheck,
+        onClick: () => confirmWaybill(row)
+      });
     }
-    dropdown.push({ title: '计算明细', onClick: () => openFreightDetail(row) });
-    if ((row as Waybill & { isLocked?: number }).isLocked !== 1) {
-      dropdown.push({ title: '重算', onClick: () => recalcRow(row) });
-      dropdown.push({ title: '锁定', onClick: () => lockRow(row) });
+    dropdown.push({
+      title: '计算明细',
+      icon: Document,
+      onClick: () => openFreightDetail(row)
+    });
+    if (!isWaybillLocked(row)) {
+      dropdown.push({
+        title: '重算',
+        icon: RefreshRight,
+        onClick: () => recalcRow(row)
+      });
+      dropdown.push({
+        title: '锁定',
+        icon: Lock,
+        onClick: () => lockRow(row)
+      });
     } else {
-      dropdown.push({ title: '解锁', onClick: () => unlockRow(row) });
+      dropdown.push({
+        title: '解锁',
+        icon: Unlock,
+        onClick: () => unlockRow(row)
+      });
     }
     if (row.status === 0 || row.status === 1 || row.status === 6) {
       dropdown.push({
-        preset: 'del',
+        title: '删除',
+        icon: DeleteOutlined,
         divided: true,
         danger: true,
         onClick: () => remove(row)
@@ -366,10 +449,10 @@
       .then(() => {
         loading.close();
         EleMessage.success({
-          message: '已入队，等待 worker 处理',
+          message: FREIGHT_RECALC_SUBMIT_MSG,
           plain: true
         });
-        reload();
+        reloadAfterMutation();
       })
       .catch((e) => {
         loading.close();
@@ -387,7 +470,7 @@
       .then(() => lockWaybill(row.id!))
       .then(() => {
         EleMessage.success({ message: '已锁定', plain: true });
-        reload();
+        reloadAfterMutation();
       })
       .catch(() => {});
   };
@@ -397,7 +480,7 @@
     unlockWaybill(row.id)
       .then(() => {
         EleMessage.success({ message: '已解锁', plain: true });
-        reload();
+        reloadAfterMutation();
       })
       .catch((e) => {
         EleMessage.error({ message: e.message, plain: true });

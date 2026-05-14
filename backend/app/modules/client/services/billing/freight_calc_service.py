@@ -139,6 +139,42 @@ class FreightCalcService:
             for row in r.scalars().all()
         }
 
+    @staticmethod
+    async def _hydrate_rules_region_ids_from_codes(
+        db: AsyncSession, rules: list[FreightRate],
+    ) -> None:
+        """规则表 origin/destination_region_id 为空时，用国标码或名称反查 biz_region.id。
+
+        仅填充内存中的 ORM 属性，供匹配使用；调用方应对 rule 做 expunge，避免 flush 误写回库。
+        """
+        for rule in rules:
+            if rule.origin_region_id is None:
+                oc = (rule.origin_code or "").strip() or None
+                on = (rule.origin or "").strip() or None
+                if oc or on:
+                    res = await StandardizeService.resolve_region(
+                        db, region_id=None, code=oc, raw_name=on,
+                    )
+                    if res.region_id is not None:
+                        rule.origin_region_id = res.region_id
+            if rule.destination_region_id is None:
+                dc = (rule.destination_code or "").strip() or None
+                dn = (rule.destination or "").strip() or None
+                if dc or dn:
+                    res = await StandardizeService.resolve_region(
+                        db, region_id=None, code=dc, raw_name=dn,
+                    )
+                    if res.region_id is not None:
+                        rule.destination_region_id = res.region_id
+
+    @staticmethod
+    def _detach_freight_rates_from_session(
+        db: AsyncSession, rules: list[FreightRate],
+    ) -> None:
+        """将运价规则从会话中分离，防止后续 flush 把内存补全的 region_id 写回 biz_freight_rate。"""
+        for rule in rules:
+            db.expunge(rule)
+
     # ---------- 内部：单次计算（不写库） ----------
 
     @staticmethod
@@ -160,12 +196,16 @@ class FreightCalcService:
             code=waybill.origin_code,
             raw_name=waybill.origin,
         )
+        if waybill.origin_region_id is None and origin.region_id is not None:
+            waybill.origin_region_id = origin.region_id
         destination = await StandardizeService.resolve_region(
             db,
             region_id=waybill.destination_region_id,
             code=waybill.destination_code,
             raw_name=waybill.destination,
         )
+        if waybill.destination_region_id is None and destination.region_id is not None:
+            waybill.destination_region_id = destination.region_id
         ctx = WaybillContext(
             customer_id=waybill.customer_id or 0,
             transport_date=billing_date,
@@ -215,6 +255,8 @@ class FreightCalcService:
                     [c.id for c in contracts],
                     billing_date,
                 )
+                await FreightCalcService._hydrate_rules_region_ids_from_codes(db, rules)
+                FreightCalcService._detach_freight_rates_from_session(db, rules)
                 contract_map = {c.id: c for c in contracts}
                 region_cache = await FreightCalcService._build_region_level_cache(db, rules)
 

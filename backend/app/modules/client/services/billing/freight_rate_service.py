@@ -18,6 +18,7 @@ from app.modules.client.services.billing.freight_calc_task_service import (
     FreightCalcTaskService,
     TASK_RULE_CHANGED,
 )
+from app.modules.client.services.billing.standardize_service import StandardizeService
 
 
 # 影响计算的字段（用于判定 update 是否要触发重算 + 版本号自增）
@@ -93,6 +94,28 @@ async def _enqueue_for_rule(
 class FreightRateService:
 
     @staticmethod
+    async def _hydrate_freight_rate_row_regions(db: AsyncSession, rate: FreightRate) -> None:
+        """origin/destination_region_id 为空时，用国标码或名称反查并写入（落库）。"""
+        if rate.origin_region_id is None:
+            oc = (rate.origin_code or "").strip() or None
+            on = (rate.origin or "").strip() or None
+            if oc or on:
+                r = await StandardizeService.resolve_region(
+                    db, region_id=None, code=oc, raw_name=on,
+                )
+                if r.region_id is not None:
+                    rate.origin_region_id = r.region_id
+        if rate.destination_region_id is None:
+            dc = (rate.destination_code or "").strip() or None
+            dn = (rate.destination or "").strip() or None
+            if dc or dn:
+                r = await StandardizeService.resolve_region(
+                    db, region_id=None, code=dc, raw_name=dn,
+                )
+                if r.region_id is not None:
+                    rate.destination_region_id = r.region_id
+
+    @staticmethod
     async def list_by_contract(db: AsyncSession, contract_id: int) -> list:
         result = await db.execute(
             select(FreightRate).where(
@@ -144,6 +167,7 @@ class FreightRateService:
             expiry_date=data.expiryDate,
             rule_version=1,
         )
+        await FreightRateService._hydrate_freight_rate_row_regions(db, rate)
         rate.match_type = _infer_match_type(rate)
         db.add(rate)
         await db.flush()
@@ -231,6 +255,11 @@ class FreightRateService:
                 if getattr(rate, model_field) != val:
                     billing_changed = True
             setattr(rate, model_field, val)
+
+        o0, d0 = rate.origin_region_id, rate.destination_region_id
+        await FreightRateService._hydrate_freight_rate_row_regions(db, rate)
+        if rate.origin_region_id != o0 or rate.destination_region_id != d0:
+            billing_changed = True
 
         rate.match_type = _infer_match_type(rate)
 

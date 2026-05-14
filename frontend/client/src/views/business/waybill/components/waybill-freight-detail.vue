@@ -6,7 +6,6 @@
     direction="rtl"
     size="920px"
     @update:model-value="updateVisible"
-    @open="onOpen"
   >
     <div v-if="loading" class="empty-block" v-loading="loading"></div>
     <div v-else-if="!result" class="empty-block">
@@ -259,7 +258,11 @@
 
   const emit = defineEmits<{
     (e: 'update:visible', value: boolean): void;
+    (e: 'sync-list'): void;
   }>();
+
+  const FREIGHT_RECALC_SUBMIT_MSG =
+    '已提交运费重新计算，请稍候在本抽屉查看结果；列表中的计算状态也会更新。';
 
   const loading = ref(false);
   const result = ref<FreightResult | null>(null);
@@ -401,6 +404,9 @@
       )) as FreightResult | null;
       result.value = data;
       exceptionOnly.value = false;
+      if (data != null) {
+        emit('sync-list');
+      }
     } catch (_) {
       result.value = null;
     } finally {
@@ -408,14 +414,16 @@
     }
   };
 
-  const onOpen = () => load();
-
   const onRecalc = async () => {
     if (!props.waybillId) return;
     try {
       await recalculateWaybill(props.waybillId);
-      EleMessage.success({ message: '已入队，等待 worker 处理', plain: true });
-      setTimeout(load, 1000);
+      EleMessage.success({
+        message: FREIGHT_RECALC_SUBMIT_MSG,
+        plain: true
+      });
+      emit('sync-list');
+      setTimeout(() => void load(), 1200);
     } catch (e: any) {
       EleMessage.error({ message: e.message, plain: true });
     }

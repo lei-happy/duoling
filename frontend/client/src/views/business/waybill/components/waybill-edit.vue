@@ -20,13 +20,22 @@
       :validate-on-rule-change="false"
       @submit.prevent=""
     >
-      <el-tabs v-model="activeTab" class="waybill-edit-tabs" @tab-change="onTabChange">
+      <el-tabs
+        v-model="activeTab"
+        class="waybill-edit-tabs"
+        @tab-change="onTabChange"
+      >
         <el-tab-pane name="basic">
           <template #label>
             <span class="waybill-tab-label">
-              <span class="waybill-tab-idx" :class="{ 'is-done': basicStepDone }">
-                <el-icon v-if="basicStepDone" class="waybill-tab-check"><CircleCheck /></el-icon>
-                <template v-else>1</template>
+              <span
+                class="waybill-tab-idx"
+                :class="{ 'is-done': basicStepDone }"
+              >
+                <el-icon v-if="basicStepDone" class="waybill-tab-check"
+                  ><CircleCheck
+                /></el-icon>
+                <template v-else>{{ tabStepNo('basic') }}</template>
               </span>
               <span class="waybill-tab-text">基础信息</span>
             </span>
@@ -120,9 +129,14 @@
         <el-tab-pane name="cargo">
           <template #label>
             <span class="waybill-tab-label">
-              <span class="waybill-tab-idx" :class="{ 'is-done': cargoStepDone }">
-                <el-icon v-if="cargoStepDone" class="waybill-tab-check"><CircleCheck /></el-icon>
-                <template v-else>2</template>
+              <span
+                class="waybill-tab-idx"
+                :class="{ 'is-done': cargoStepDone }"
+              >
+                <el-icon v-if="cargoStepDone" class="waybill-tab-check"
+                  ><CircleCheck
+                /></el-icon>
+                <template v-else>{{ tabStepNo('cargo') }}</template>
               </span>
               <span class="waybill-tab-text">
                 商品车信息
@@ -133,10 +147,16 @@
             </span>
           </template>
           <div class="waybill-tab-pane">
-            <div v-for="(row, idx) in cargoRows" :key="idx" class="waybill-cargo-row">
+            <div
+              v-for="(row, idx) in cargoRows"
+              :key="idx"
+              class="waybill-cargo-row"
+            >
               <div class="waybill-cargo-row__line">
                 <div class="waybill-cargo-row__meta">
-                  <span class="waybill-cargo-row__label">商品车 {{ idx + 1 }}</span>
+                  <span class="waybill-cargo-row__label"
+                    >商品车 {{ idx + 1 }}</span
+                  >
                   <el-button
                     v-if="cargoRows.length > 1"
                     type="danger"
@@ -149,7 +169,9 @@
                   </el-button>
                 </div>
                 <div class="waybill-cargo-row__fields">
-                  <el-form-item class="waybill-cargo-field waybill-cargo-field--brand">
+                  <el-form-item
+                    class="waybill-cargo-field waybill-cargo-field--brand"
+                  >
                     <floating-label
                       v-model="row.vehicleBrand"
                       label="品牌"
@@ -167,7 +189,9 @@
                       />
                     </floating-label>
                   </el-form-item>
-                  <el-form-item class="waybill-cargo-field waybill-cargo-field--model">
+                  <el-form-item
+                    class="waybill-cargo-field waybill-cargo-field--model"
+                  >
                     <floating-label
                       v-model="row.vehicleModel"
                       label="车型"
@@ -185,7 +209,9 @@
                       />
                     </floating-label>
                   </el-form-item>
-                  <el-form-item class="waybill-cargo-field waybill-cargo-field--qty">
+                  <el-form-item
+                    class="waybill-cargo-field waybill-cargo-field--qty"
+                  >
                     <floating-label
                       label="台数"
                       type="input"
@@ -198,7 +224,12 @@
                 </div>
               </div>
             </div>
-            <el-button type="primary" plain class="waybill-cargo-add" @click="addCargoRow">
+            <el-button
+              type="primary"
+              plain
+              class="waybill-cargo-add"
+              @click="addCargoRow"
+            >
               添加新车
             </el-button>
           </div>
@@ -207,9 +238,14 @@
         <el-tab-pane name="receive">
           <template #label>
             <span class="waybill-tab-label">
-              <span class="waybill-tab-idx" :class="{ 'is-done': receiveStepDone }">
-                <el-icon v-if="receiveStepDone" class="waybill-tab-check"><CircleCheck /></el-icon>
-                <template v-else>3</template>
+              <span
+                class="waybill-tab-idx"
+                :class="{ 'is-done': receiveStepDone }"
+              >
+                <el-icon v-if="receiveStepDone" class="waybill-tab-check"
+                  ><CircleCheck
+                /></el-icon>
+                <template v-else>{{ tabStepNo('receive') }}</template>
               </span>
               <span class="waybill-tab-text">收车信息</span>
             </span>
@@ -271,12 +307,17 @@
           </div>
         </el-tab-pane>
 
-        <el-tab-pane name="freight">
+        <el-tab-pane v-if="showFreightTab" name="freight">
           <template #label>
             <span class="waybill-tab-label">
-              <span class="waybill-tab-idx" :class="{ 'is-done': freightStepDone }">
-                <el-icon v-if="freightStepDone" class="waybill-tab-check"><CircleCheck /></el-icon>
-                <template v-else>4</template>
+              <span
+                class="waybill-tab-idx"
+                :class="{ 'is-done': freightStepDone }"
+              >
+                <el-icon v-if="freightStepDone" class="waybill-tab-check"
+                  ><CircleCheck
+                /></el-icon>
+                <template v-else>{{ tabStepNo('freight') }}</template>
               </span>
               <span class="waybill-tab-text">运费信息</span>
             </span>
@@ -301,11 +342,20 @@
                   :sm="14"
                   :md="16"
                 >
-                  <el-form-item :label-width="0" class="waybill-freight-actions">
-                    <el-button type="success" :loading="calcLoading" @click="calcFreight">
+                  <el-form-item
+                    :label-width="0"
+                    class="waybill-freight-actions"
+                  >
+                    <el-button
+                      type="success"
+                      :loading="calcLoading"
+                      @click="calcFreight"
+                    >
                       计算运费
                     </el-button>
-                    <span v-if="calcHint" class="waybill-calc-hint">{{ calcHint }}</span>
+                    <span v-if="calcHint" class="waybill-calc-hint">{{
+                      calcHint
+                    }}</span>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -323,16 +373,20 @@
     <template #footer>
       <div class="waybill-edit-dialog__footer">
         <el-button @click="updateVisible(false)">取消</el-button>
-        <el-button :disabled="stepActive <= 0" @click="prevStep">上一步</el-button>
+        <el-button :disabled="stepActive <= 0" @click="prevStep"
+          >上一步</el-button
+        >
         <el-button
-          :disabled="stepActive >= TAB_ORDER.length - 1"
+          :disabled="isLastTabStep"
           type="primary"
           plain
           @click="onClickNextStep"
         >
           下一步
         </el-button>
-        <el-button type="primary" :loading="loading" @click="handleSubmit">保存</el-button>
+        <el-button type="primary" :loading="loading" @click="handleSubmit"
+          >保存</el-button
+        >
       </div>
     </template>
   </el-dialog>
@@ -344,7 +398,12 @@
   import { CircleCheck } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
-  import { addWaybill, updateWaybill, getWaybill, checkWaybillNoAvailable } from '@/api/waybill';
+  import {
+    addWaybill,
+    updateWaybill,
+    getWaybill,
+    checkWaybillNoAvailable
+  } from '@/api/waybill';
   import { previewFreight } from '@/api/waybill';
   import { selectCustomers } from '@/api/partner/customer';
   import { listVehicleBrandOptions } from '@/api/basic-data/vehicle-brand';
@@ -359,6 +418,10 @@
   import type { VehicleSeries } from '@/api/basic-data/vehicle-series/model';
   import type { RegionNavNode } from '@/api/basic-data/region/model';
   import type { Dealer } from '@/api/basic-data/dealer/model';
+  import {
+    findLeafRegionByCodePath,
+    findRegionCodePath
+  } from '@/utils/region-nav-tree';
   import { pinyinMatch } from '@/utils/pinyin-match';
 
   /** 经销商全量分页较慢，短时缓存减轻重复打开弹窗等待 */
@@ -376,6 +439,20 @@
 
   const TAB_ORDER = ['basic', 'cargo', 'receive', 'freight'] as const;
   type TabName = (typeof TAB_ORDER)[number];
+
+  const freightCalcMode = ref('auto_preferred');
+  /** 与系统设置 waybill.list_show_freight_amount 一致，默认不展示运费 Tab */
+  const showFreightTab = ref(false);
+
+  const visibleTabOrder = computed((): TabName[] =>
+    showFreightTab.value ? [...TAB_ORDER] : ['basic', 'cargo', 'receive']
+  );
+
+  function tabStepNo(tab: TabName): number {
+    const order = visibleTabOrder.value;
+    const i = order.indexOf(tab);
+    return i >= 0 ? i + 1 : 1;
+  }
 
   const FIELD_TAB: Record<string, TabName> = {
     customerId: 'basic',
@@ -402,7 +479,16 @@
 
   const isEdit = computed(() => !!props.data?.id);
   const activeTab = ref<TabName>('basic');
-  const stepActive = computed(() => TAB_ORDER.indexOf(activeTab.value));
+  const stepActive = computed(() => {
+    const i = visibleTabOrder.value.indexOf(activeTab.value);
+    return i >= 0 ? i : 0;
+  });
+  const isLastTabStep = computed(() => {
+    const order = visibleTabOrder.value;
+    const i = order.indexOf(activeTab.value);
+    if (i < 0) return true;
+    return i >= order.length - 1;
+  });
   const formRef = ref<FormInstance>();
   const loading = ref(false);
   const calcLoading = ref(false);
@@ -422,7 +508,6 @@
   const selectedDealerId = ref<number | null>(null);
   const originCodes = ref<string[]>([]);
   const destCodes = ref<string[]>([]);
-  const freightCalcMode = ref('auto_preferred');
 
   /** 按 Tab 懒加载：本弹窗内是否已拉品牌 / 经销商、是否已 hydrate 商品车下拉 */
   const brandsReadyThisOpen = ref(false);
@@ -472,8 +557,9 @@
       )
   );
 
-  /** 以金额展示字符串为准，避免 reactive 数值残留、纯自动模式隐藏输入框时误显示对勾 */
+  /** 未开启运费 Tab 时不在此页校验手工金额（与列表敏感信息策略一致） */
   const freightStepDone = computed(() => {
+    if (!showFreightTab.value) return true;
     const raw = freightAmountStr.value.trim();
     if (raw === '') return false;
     const n = parseFloat(raw);
@@ -490,19 +576,25 @@
   const customersShown = computed(() => {
     const q = filterQ.customer.trim();
     if (!q) return customerOptions.value;
-    return customerOptions.value.filter((c) => pinyinMatch(c.customerName ?? '', q));
+    return customerOptions.value.filter((c) =>
+      pinyinMatch(c.customerName ?? '', q)
+    );
   });
 
   const brandsShown = computed(() => {
     const q = filterQ.brand.trim();
     if (!q) return brandOptions.value;
-    return brandOptions.value.filter((b) => pinyinMatch(b.brandNameCn ?? '', q));
+    return brandOptions.value.filter((b) =>
+      pinyinMatch(b.brandNameCn ?? '', q)
+    );
   });
 
   const dealersShown = computed(() => {
     const q = filterQ.dealer.trim();
     if (!q) return dealerOptions.value;
-    return dealerOptions.value.filter((d) => pinyinMatch(d.dealerName ?? '', q));
+    return dealerOptions.value.filter((d) =>
+      pinyinMatch(d.dealerName ?? '', q)
+    );
   });
 
   function seriesShownForRow(row: CargoEditRow) {
@@ -536,7 +628,9 @@
     const rs = calcResults.value;
     if (!rs.length) return '';
     const parts = rs
-      .map((r, i) => (r ? `#${i + 1} ${r.contractNo} (${r.matchLevel})` : `#${i + 1} 未匹配`))
+      .map((r, i) =>
+        r ? `#${i + 1} ${r.contractNo} (${r.matchLevel})` : `#${i + 1} 未匹配`
+      )
       .filter(Boolean);
     return parts.length ? `分行匹配: ${parts.join('；')}` : '';
   });
@@ -563,14 +657,28 @@
         trigger: 'blur'
       }
     ],
-    originCode: [{ required: true, message: '请选择出发地', trigger: 'change' }],
-    destinationCode: [{ required: true, message: '请选择目的地', trigger: 'change' }],
-    dealerName: [{ required: true, message: '请选择收车门店', trigger: 'change' }],
-    dealerContact: [{ required: true, message: '请输入联系人姓名', trigger: 'blur' }],
-    dealerPhone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }],
+    originCode: [
+      { required: true, message: '请选择出发地', trigger: 'change' }
+    ],
+    destinationCode: [
+      { required: true, message: '请选择目的地', trigger: 'change' }
+    ],
+    dealerName: [
+      { required: true, message: '请选择收车门店', trigger: 'change' }
+    ],
+    dealerContact: [
+      { required: true, message: '请输入联系人姓名', trigger: 'blur' }
+    ],
+    dealerPhone: [
+      { required: true, message: '请输入联系电话', trigger: 'blur' }
+    ],
     freightAmount: [
       {
         validator: (_rule, _val, callback) => {
+          if (!showFreightTab.value) {
+            callback();
+            return;
+          }
           if (freightCalcMode.value !== 'manual_only') {
             callback();
             return;
@@ -631,8 +739,9 @@
   }
 
   function prevStep() {
-    const i = stepActive.value;
-    if (i > 0) activeTab.value = TAB_ORDER[i - 1];
+    const order = visibleTabOrder.value;
+    const i = order.indexOf(activeTab.value);
+    if (i > 0) activeTab.value = order[i - 1]!;
   }
 
   async function validateFieldsOrCatch(fields: string[]): Promise<boolean> {
@@ -645,8 +754,10 @@
   }
 
   async function onClickNextStep() {
-    const i = stepActive.value;
-    const tab = TAB_ORDER[i];
+    const order = visibleTabOrder.value;
+    const i = order.indexOf(activeTab.value);
+    if (i < 0) return;
+    const tab = order[i]!;
     let ok = true;
     if (tab === 'basic') {
       ok = await validateFieldsOrCatch([
@@ -658,15 +769,20 @@
     } else if (tab === 'cargo') {
       ok = validateCargoes();
     } else if (tab === 'receive') {
-      ok = await validateFieldsOrCatch(['dealerName', 'dealerContact', 'dealerPhone']);
+      ok = await validateFieldsOrCatch([
+        'dealerName',
+        'dealerContact',
+        'dealerPhone'
+      ]);
     }
     if (!ok) return;
-    if (i < TAB_ORDER.length - 1) activeTab.value = TAB_ORDER[i + 1];
+    if (i < order.length - 1) activeTab.value = order[i + 1]!;
   }
 
   function onTabChange(name: string | number) {
     const n = String(name) as TabName;
-    if (TAB_ORDER.includes(n)) activeTab.value = n;
+    const order = visibleTabOrder.value;
+    if (order.includes(n)) activeTab.value = n;
     void (async () => {
       try {
         if (n === 'cargo') await ensureCargoSeriesHydrated();
@@ -720,11 +836,17 @@
       regionTree.value = regions ?? [];
 
       const modeConfig = (configs ?? []).find(
-        (c: { configKey?: string }) => c.configKey === 'waybill.freight_calc_mode'
+        (c: { configKey?: string }) =>
+          c.configKey === 'waybill.freight_calc_mode'
       );
       if (modeConfig?.configValue) {
         freightCalcMode.value = modeConfig.configValue;
       }
+      const listFreightCfg = (configs ?? []).find(
+        (c: { configKey?: string }) =>
+          c.configKey === 'waybill.list_show_freight_amount'
+      );
+      showFreightTab.value = listFreightCfg?.configValue === 'true';
     } catch (_) {
       /* ignore */
     }
@@ -755,7 +877,9 @@
       selectedDealerId.value = null;
       return;
     }
-    const dealer = dealerOptions.value.find((d) => d.dealerName === form.dealerName);
+    const dealer = dealerOptions.value.find(
+      (d) => d.dealerName === form.dealerName
+    );
     selectedDealerId.value = dealer?.dealerId ?? null;
   }
 
@@ -781,7 +905,9 @@
   async function hydrateCargoRowSeries(row: CargoEditRow) {
     row.vehicleModel = undefined;
     row.seriesOptions = [];
-    const brand = brandOptions.value.find((b) => b.brandNameCn === row.vehicleBrand);
+    const brand = brandOptions.value.find(
+      (b) => b.brandNameCn === row.vehicleBrand
+    );
     if (brand) {
       row.brandId = brand.brandId;
       try {
@@ -817,9 +943,12 @@
     if (val && val.length) {
       form.originCode = val[val.length - 1];
       form.origin = findRegionName(val);
+      const leaf = findLeafRegionByCodePath(regionTree.value, val);
+      form.originRegionId = leaf?.regionId ?? undefined;
     } else {
       form.originCode = undefined;
       form.origin = undefined;
+      form.originRegionId = undefined;
     }
     calcResults.value = [];
   };
@@ -828,9 +957,12 @@
     if (val && val.length) {
       form.destinationCode = val[val.length - 1];
       form.destination = findRegionName(val);
+      const leaf = findLeafRegionByCodePath(regionTree.value, val);
+      form.destinationRegionId = leaf?.regionId ?? undefined;
     } else {
       form.destinationCode = undefined;
       form.destination = undefined;
+      form.destinationRegionId = undefined;
     }
     calcResults.value = [];
   };
@@ -851,7 +983,9 @@
   };
 
   const onCustomerChange = () => {
-    const customer = customerOptions.value.find((c) => c.id === form.customerId);
+    const customer = customerOptions.value.find(
+      (c) => c.id === form.customerId
+    );
     if (customer) {
       form.customerName = customer.customerName;
     }
@@ -916,11 +1050,26 @@
         freightAmountStr.value =
           form.freightAmount != null ? String(form.freightAmount) : '';
         if (detail.originCode) {
-          originCodes.value = [detail.originCode];
+          const op = findRegionCodePath(regionTree.value, detail.originCode);
+          originCodes.value = op ?? [detail.originCode];
         }
         if (detail.destinationCode) {
-          destCodes.value = [detail.destinationCode];
+          const dp = findRegionCodePath(
+            regionTree.value,
+            detail.destinationCode
+          );
+          destCodes.value = dp ?? [detail.destinationCode];
         }
+        const oLeaf = findLeafRegionByCodePath(
+          regionTree.value,
+          originCodes.value
+        );
+        const dLeaf = findLeafRegionByCodePath(
+          regionTree.value,
+          destCodes.value
+        );
+        if (oLeaf) form.originRegionId = oLeaf.regionId;
+        if (dLeaf) form.destinationRegionId = dLeaf.regionId;
         buildCargoRowsFromWaybill(detail);
       } else {
         Object.keys(form).forEach((k) => {
@@ -935,6 +1084,12 @@
     }
   );
 
+  watch(showFreightTab, (show) => {
+    if (!show && activeTab.value === 'freight') {
+      activeTab.value = 'receive';
+    }
+  });
+
   const updateVisible = (v: boolean) => {
     emit('update:visible', v);
   };
@@ -948,18 +1103,27 @@
     for (let i = 0; i < cargoRows.value.length; i++) {
       const row = cargoRows.value[i];
       if (!row.vehicleBrand?.trim()) {
-        EleMessage.warning({ message: `商品车第 ${i + 1} 行：请选择品牌`, plain: true });
+        EleMessage.warning({
+          message: `商品车第 ${i + 1} 行：请选择品牌`,
+          plain: true
+        });
         activeTab.value = 'cargo';
         return false;
       }
       if (!row.vehicleModel?.trim()) {
-        EleMessage.warning({ message: `商品车第 ${i + 1} 行：请选择车型`, plain: true });
+        EleMessage.warning({
+          message: `商品车第 ${i + 1} 行：请选择车型`,
+          plain: true
+        });
         activeTab.value = 'cargo';
         return false;
       }
       const q = parseRowQty(row);
       if (!Number.isFinite(q)) {
-        EleMessage.warning({ message: `商品车第 ${i + 1} 行：台数至少为 1`, plain: true });
+        EleMessage.warning({
+          message: `商品车第 ${i + 1} 行：台数至少为 1`,
+          plain: true
+        });
         activeTab.value = 'cargo';
         return false;
       }
@@ -1030,7 +1194,8 @@
           rateId: it.matchedRuleId ?? undefined,
           unitPrice: it.unitPrice ?? 0,
           totalAmount: it.amount ?? 0,
-          matchLevel: it.modelMatchType || (it.direction === 'reverse' ? '反向' : '匹配')
+          matchLevel:
+            it.modelMatchType || (it.direction === 'reverse' ? '反向' : '匹配')
         } as FreightCalcResult;
       });
       calcResults.value = results;
@@ -1043,8 +1208,10 @@
           form.freightAmount != null ? String(form.freightAmount) : '';
         form.freightSource = 0;
         const firstHit = items.find((it) => it.calcStatus === 'success');
-        if (firstHit?.matchedContractId != null) form.contractId = firstHit.matchedContractId;
-        if (firstHit?.matchedRuleId != null) form.rateId = firstHit.matchedRuleId;
+        if (firstHit?.matchedContractId != null)
+          form.contractId = firstHit.matchedContractId;
+        if (firstHit?.matchedRuleId != null)
+          form.rateId = firstHit.matchedRuleId;
 
         if (preview.calcStatus === 'partial_success') {
           EleMessage.warning({
@@ -1055,7 +1222,10 @@
           EleMessage.success({ message: '运费计算成功', plain: true });
         }
       } else {
-        EleMessage.warning({ message: '未匹配到运价，请手动填写运费', plain: true });
+        EleMessage.warning({
+          message: '未匹配到运价，请手动填写运费',
+          plain: true
+        });
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -1066,6 +1236,10 @@
   };
 
   function focusTabForField(fieldKey: string) {
+    if (fieldKey === 'freightAmount' && !showFreightTab.value) {
+      activeTab.value = 'receive';
+      return;
+    }
     const tab = FIELD_TAB[fieldKey];
     if (tab) activeTab.value = tab;
   }
@@ -1257,8 +1431,10 @@
     scrollbar-gutter: stable;
   }
 
-  .waybill-edit-dialog :deep(.floating-label-wrapper.is-focused .floating-label),
-  .waybill-edit-dialog :deep(.floating-label-wrapper.has-value .floating-label) {
+  .waybill-edit-dialog
+    :deep(.floating-label-wrapper.is-focused .floating-label),
+  .waybill-edit-dialog
+    :deep(.floating-label-wrapper.has-value .floating-label) {
     transform: translateY(-62%);
     padding: 2px 6px;
     z-index: 4;
@@ -1266,7 +1442,8 @@
     box-shadow: 0 0 0 2px var(--el-bg-color);
   }
 
-  .waybill-edit-dialog :deep(.waybill-tab-pane > .el-row > .el-col > .el-form-item) {
+  .waybill-edit-dialog
+    :deep(.waybill-tab-pane > .el-row > .el-col > .el-form-item) {
     margin-bottom: 14px;
   }
 

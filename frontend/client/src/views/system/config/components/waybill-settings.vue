@@ -1,6 +1,6 @@
 <template>
-  <div v-if="freightItem" class="waybill-settings">
-    <div class="waybill-setting-row">
+  <div class="waybill-settings">
+    <div v-if="freightItem" class="waybill-setting-row">
       <div class="waybill-setting-label">
         运费计算模式：
         <ele-tooltip
@@ -56,6 +56,41 @@
         </span>
       </div>
     </div>
+    <div v-if="listShowFreightItem" class="waybill-setting-row">
+      <div class="waybill-setting-label">
+        列表显示运费：
+        <ele-tooltip
+          placement="top-start"
+          effect="light"
+          :width="340"
+          :offset="4"
+        >
+          <template #content>
+            <div class="freight-help-tip">
+              <p class="freight-help-tip__title">说明</p>
+              <p class="freight-help-tip__plain">
+                运费属于敏感信息。关闭后，运单列表与列表分页接口均不返回具体金额，编辑运单时亦不显示「运费信息」步骤；计算明细等仍可查看与维护运费。
+              </p>
+            </div>
+          </template>
+          <el-icon class="field-help-icon" tabindex="-1">
+            <QuestionCircleOutlined />
+          </el-icon>
+        </ele-tooltip>
+      </div>
+      <div class="waybill-setting-body">
+        <el-switch
+          :model-value="listShowFreightItem.configValue === 'true'"
+          @update:model-value="
+            (val: boolean) =>
+              emitChange(listShowFreightItem!, val ? 'true' : 'false')
+          "
+        />
+        <span class="config-default config-default--inline">
+          默认值：不显示
+        </span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -82,6 +117,10 @@
     props.items.find((i) => i.configKey === 'waybill.freight_calc_mode')
   );
 
+  const listShowFreightItem = computed(() =>
+    props.items.find((i) => i.configKey === 'waybill.list_show_freight_amount')
+  );
+
   const freightOptions = CONFIG_ENUM_OPTIONS['waybill.freight_calc_mode'] || [];
 
   const emitChange = (item: SystemConfig, val: string) => {
@@ -92,6 +131,9 @@
 <style scoped>
   .waybill-settings {
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
 
   .waybill-setting-row {
@@ -149,6 +191,11 @@
     margin: 0 0 8px;
     font-weight: 600;
     color: var(--el-text-color-primary);
+  }
+
+  .freight-help-tip__plain {
+    margin: 0;
+    color: var(--el-text-color-regular);
   }
 
   .freight-help-tip ul {

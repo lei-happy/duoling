@@ -18,15 +18,16 @@
     >
       <el-row :gutter="20">
         <el-col :span="24">
-          <el-form-item prop="billingMode" class="rate-block-item">
-            <div class="rate-block-cap">计费模式</div>
+          <el-form-item prop="billingMode" class="rate-radio-field">
+            <div class="rate-radio-field__title">计费模式</div>
             <el-radio-group
               v-model="form.billingMode"
+              class="rate-radio-field__group"
               @change="onBillingModeRadioChange"
             >
-              <el-radio :value="0">台单价</el-radio>
-              <el-radio :value="1">单公里单价</el-radio>
-              <el-radio :value="2">整单价格</el-radio>
+              <el-radio :value="0">按台计价（元/台）</el-radio>
+              <el-radio :value="1">按公里计价（元/台·公里）</el-radio>
+              <el-radio :value="2">整单一口价（元）</el-radio>
             </el-radio-group>
           </el-form-item>
         </el-col>
@@ -98,34 +99,36 @@
           </el-col>
         </template>
         <el-col v-if="form.billingMode === 1" :span="12">
-          <el-form-item prop="distanceKm" class="rate-num-item">
-            <div class="rate-num-item__cap">线路公里数</div>
-            <el-input-number
+          <el-form-item prop="distanceKm">
+            <floating-label
               v-model="form.distanceKm"
-              class="rate-num-item__ctl ele-fluid"
-              :precision="2"
-              :min="0.01"
-              controls-position="right"
+              label="请输入线路公里数"
+              type="input-number"
+              :input-number-min="0.01"
+              :input-number-precision="2"
+              :input-number-step="0.1"
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item prop="unitPrice" class="rate-num-item">
-            <div class="rate-num-item__cap">{{ priceLabel }}</div>
-            <el-input-number
+          <el-form-item prop="unitPrice">
+            <floating-label
               v-model="form.unitPrice"
-              class="rate-num-item__ctl ele-fluid"
-              :precision="2"
-              :min="0"
-              :placeholder="pricePlaceholder"
-              controls-position="right"
+              :label="priceLabel"
+              type="input-number"
+              :input-number-min="0"
+              :input-number-precision="2"
+              :input-number-step="0.01"
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item prop="priceType" class="rate-block-item">
-            <div class="rate-block-cap">运价类型</div>
-            <el-radio-group v-model="form.priceType">
+          <el-form-item prop="priceType" class="rate-radio-field">
+            <div class="rate-radio-field__title">运价类型</div>
+            <el-radio-group
+              v-model="form.priceType"
+              class="rate-radio-field__group"
+            >
               <el-radio :value="0">明确运价</el-radio>
               <el-radio :value="1">预估运价</el-radio>
             </el-radio-group>
@@ -154,14 +157,14 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item class="rate-num-item">
-            <div class="rate-num-item__cap">最低运费(元，可空)</div>
-            <el-input-number
+          <el-form-item>
+            <floating-label
               v-model="form.minAmount"
-              class="rate-num-item__ctl ele-fluid"
-              :precision="2"
-              :min="0"
-              controls-position="right"
+              label="最低运费(元，可空)"
+              type="input-number"
+              :input-number-min="0"
+              :input-number-precision="2"
+              :input-number-step="0.01"
             />
           </el-form-item>
         </el-col>
@@ -178,9 +181,12 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item class="rate-block-item">
-            <div class="rate-block-cap">线路方向</div>
-            <el-radio-group v-model="form.isBidirectional">
+          <el-form-item class="rate-radio-field">
+            <div class="rate-radio-field__title">线路方向</div>
+            <el-radio-group
+              v-model="form.isBidirectional"
+              class="rate-radio-field__group"
+            >
               <el-radio :value="0">单向</el-radio>
               <el-radio :value="1">双向</el-radio>
             </el-radio-group>
@@ -215,6 +221,10 @@
   import type { VehicleBrandOption } from '@/api/basic-data/vehicle-brand/model';
   import type { VehicleSeries } from '@/api/basic-data/vehicle-series/model';
   import type { RegionNavNode } from '@/api/basic-data/region/model';
+  import {
+    findLeafRegionByCodePath,
+    findRegionCodePath
+  } from '@/utils/region-nav-tree';
 
   const props = defineProps<{
     visible: boolean;
@@ -246,15 +256,9 @@
   const destCodes = ref<string[]>([]);
 
   const priceLabel = computed(() => {
-    if (form.billingMode === 1) return '单价(元/台·km)';
+    if (form.billingMode === 1) return '单价(元/台·公里)';
     if (form.billingMode === 2) return '整单价格(元)';
     return '单车运费(元/台)';
-  });
-
-  const pricePlaceholder = computed(() => {
-    if (form.billingMode === 1) return '元/台/公里';
-    if (form.billingMode === 2) return '元/整单';
-    return '元/台';
   });
 
   const regionCascaderProps: CascaderProps = {
@@ -333,9 +337,12 @@
     if (val && val.length) {
       form.originCode = val[val.length - 1];
       form.origin = findRegionName(val);
+      const leaf = findLeafRegionByCodePath(regionTree.value, val);
+      form.originRegionId = leaf?.regionId ?? undefined;
     } else {
       form.originCode = undefined;
       form.origin = undefined;
+      form.originRegionId = undefined;
     }
   };
 
@@ -343,9 +350,12 @@
     if (val && val.length) {
       form.destinationCode = val[val.length - 1];
       form.destination = findRegionName(val);
+      const leaf = findLeafRegionByCodePath(regionTree.value, val);
+      form.destinationRegionId = leaf?.regionId ?? undefined;
     } else {
       form.destinationCode = undefined;
       form.destination = undefined;
+      form.destinationRegionId = undefined;
     }
   };
 
@@ -384,30 +394,63 @@
 
   watch(
     () => props.visible,
-    (val) => {
+    async (val) => {
       if (!val) return;
-      loadBaseData();
       selectedBrandId.value = null;
       originCodes.value = [];
       destCodes.value = [];
+      seriesOptions.value = [];
+
+      await loadBaseData();
+
       if (props.data) {
         Object.assign(form, props.data);
         if (form.billingMode === undefined) form.billingMode = 0;
         if (form.priceType === undefined) form.priceType = 0;
-        if (props.data.originCode) {
-          originCodes.value = [props.data.originCode];
+
+        const d = props.data;
+        if (d.originCode) {
+          const path = findRegionCodePath(regionTree.value, d.originCode);
+          originCodes.value = path ?? [d.originCode];
         }
-        if (props.data.destinationCode) {
-          destCodes.value = [props.data.destinationCode];
+        if (d.destinationCode) {
+          const path = findRegionCodePath(regionTree.value, d.destinationCode);
+          destCodes.value = path ?? [d.destinationCode];
         }
-        if (props.data.vehicleBrand) {
-          const savedModel = props.data.vehicleModel;
-          void (async () => {
-            await onBrandChange(props.data!.vehicleBrand!);
-            if (savedModel) {
-              form.vehicleModel = savedModel;
+
+        const oLeaf = findLeafRegionByCodePath(
+          regionTree.value,
+          originCodes.value
+        );
+        const dLeaf = findLeafRegionByCodePath(
+          regionTree.value,
+          destCodes.value
+        );
+        if (oLeaf) form.originRegionId = oLeaf.regionId;
+        if (dLeaf) form.destinationRegionId = dLeaf.regionId;
+
+        const brandEntry =
+          brandOptions.value.find(
+            (b) =>
+              (d.vehicleBrand?.trim() &&
+                b.brandNameCn === d.vehicleBrand.trim()) ||
+              (d.brandId != null && b.brandId === d.brandId)
+          ) ?? null;
+
+        if (brandEntry) {
+          const savedModel = d.vehicleModel?.trim();
+          const savedSeriesId = d.seriesId;
+          await onBrandChange(brandEntry.brandNameCn);
+          if (savedModel) {
+            form.vehicleModel = savedModel;
+          } else if (savedSeriesId != null) {
+            const hit = seriesOptions.value.find(
+              (s) => s.seriesId === savedSeriesId
+            );
+            if (hit) {
+              form.vehicleModel = hit.seriesName;
             }
-          })();
+          }
         }
       } else {
         Object.keys(form).forEach((k) => {
@@ -421,7 +464,8 @@
       if (props.customerId && !form.customerId) {
         form.customerId = props.customerId;
       }
-      nextTick(() => formRef.value?.clearValidate());
+      await nextTick();
+      formRef.value?.clearValidate();
     }
   );
 
@@ -523,16 +567,42 @@
 </style>
 
 <style scoped lang="scss">
-  .rate-block-item {
+  .rate-radio-field {
     margin-bottom: 18px;
   }
 
-  .rate-block-cap {
+  .rate-radio-field__title {
     font-size: 12px;
     color: var(--el-text-color-secondary);
     margin-bottom: 8px;
     font-weight: 500;
     line-height: 1.2;
+  }
+
+  .rate-radio-field__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 20px;
+  }
+
+  .rate-edit-dialog .rate-radio-field__group :deep(.el-radio) {
+    margin-right: 0;
+    height: auto;
+    min-height: 22px;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+  }
+
+  .rate-edit-dialog .rate-radio-field__group :deep(.el-radio__input) {
+    display: flex;
+    align-items: center;
+  }
+
+  .rate-edit-dialog .rate-radio-field__group :deep(.el-radio__label) {
+    line-height: 1.25;
+    padding-left: 8px;
   }
 
   .rate-num-item__cap {
