@@ -80,10 +80,7 @@
           </el-tag>
         </template>
         <template #isLocked="{ row }">
-          <el-tag
-            :type="row.isLocked === 1 ? 'warning' : 'info'"
-            size="small"
-          >
+          <el-tag :type="row.isLocked === 1 ? 'warning' : 'info'" size="small">
             {{ row.isLocked === 1 ? '已锁' : '正常' }}
           </el-tag>
         </template>
@@ -111,7 +108,14 @@
           </el-tag>
         </template>
         <template #action="{ row }">
-          <btn-items divider type="link" :items="actionItems(row)" />
+          <div class="waybill-actions">
+            <btn-items
+              divider
+              type="link"
+              :wrap="false"
+              :items="actionItems(row)"
+            />
+          </div>
         </template>
       </ele-pro-table>
     </ele-card>
@@ -141,6 +145,10 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
   import { useRouter } from 'vue-router';
   import WaybillEdit from './components/waybill-edit.vue';
   import WaybillSearch from './components/waybill-search.vue';
@@ -257,7 +265,7 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 200,
+      width: 132,
       align: 'center',
       slot: 'action',
       fixed: 'right',
@@ -305,25 +313,40 @@
     }
   };
 
-  const actionItems = (row: Waybill) => {
-    const items: Array<{ preset?: string; title?: string; onClick: () => void }> = [];
+  const canEditWaybill = (row: Waybill) => row.status === 0 || row.status === 1;
+
+  const actionItems = (row: Waybill): ButtonItem[] => {
+    const dropdown: ButtonDropdownItem[] = [];
     if (row.status === 0) {
-      items.push({ title: '确认', onClick: () => confirmWaybill(row) });
+      dropdown.push({ title: '确认', onClick: () => confirmWaybill(row) });
     }
-    if (row.status === 0 || row.status === 1) {
-      items.push({ preset: 'edit', onClick: () => openEdit(row) });
-    }
-    items.push({ title: '计算明细', onClick: () => openFreightDetail(row) });
-    if ((row as any).isLocked !== 1) {
-      items.push({ title: '重算', onClick: () => recalcRow(row) });
-      items.push({ title: '锁定', onClick: () => lockRow(row) });
+    dropdown.push({ title: '计算明细', onClick: () => openFreightDetail(row) });
+    if ((row as Waybill & { isLocked?: number }).isLocked !== 1) {
+      dropdown.push({ title: '重算', onClick: () => recalcRow(row) });
+      dropdown.push({ title: '锁定', onClick: () => lockRow(row) });
     } else {
-      items.push({ title: '解锁', onClick: () => unlockRow(row) });
+      dropdown.push({ title: '解锁', onClick: () => unlockRow(row) });
     }
     if (row.status === 0 || row.status === 1 || row.status === 6) {
-      items.push({ preset: 'del', onClick: () => remove(row) });
+      dropdown.push({
+        preset: 'del',
+        divided: true,
+        danger: true,
+        onClick: () => remove(row)
+      });
     }
-    return items;
+    return [
+      {
+        preset: 'edit',
+        title: '修改',
+        type: 'link',
+        props: { disabled: !canEditWaybill(row) },
+        onClick: () => {
+          if (canEditWaybill(row)) openEdit(row);
+        }
+      },
+      { preset: 'more', dropdownItems: dropdown }
+    ];
   };
 
   const goImportPage = () => {
@@ -342,7 +365,10 @@
     recalculateWaybill(row.id)
       .then(() => {
         loading.close();
-        EleMessage.success({ message: '已入队，等待 worker 处理', plain: true });
+        EleMessage.success({
+          message: '已入队，等待 worker 处理',
+          plain: true
+        });
         reload();
       })
       .catch((e) => {
@@ -404,7 +430,9 @@
   };
 
   const batchConfirm = () => {
-    const pending = selections.value.filter((r) => r.status === 0 && r.id != null);
+    const pending = selections.value.filter(
+      (r) => r.status === 0 && r.id != null
+    );
     if (!pending.length) {
       EleMessage.warning({ message: '请勾选待确认的运单', plain: true });
       return;
@@ -516,5 +544,10 @@
 
   .waybill-qty-tag:hover {
     opacity: 0.88;
+  }
+
+  .waybill-actions {
+    text-align: center;
+    white-space: nowrap;
   }
 </style>
