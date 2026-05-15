@@ -21,8 +21,9 @@
         <el-date-picker
           v-model="dateRange"
           type="daterange"
+          size="default"
           unlink-panels
-          range-separator="—"
+          range-separator="-"
           value-format="YYYY-MM-DD"
           start-placeholder="开始"
           end-placeholder="结束"
@@ -42,6 +43,7 @@
               ref="trendChartRef"
               :option="trendOption"
               class="trend-chart-inner"
+              autoresize
               @click="onChartClick"
             />
           </div>
@@ -499,15 +501,28 @@
 <style lang="scss" scoped>
   .trend-card {
     margin-bottom: 16px;
+
+    /* 标题区域高度与标准卡片（如「运营效率」）保持一致：52px */
+    :deep(.ele-card-header) {
+      min-height: 52px;
+    }
+
+    :deep(.ele-card-title) {
+      flex: 1;
+      min-width: 0;
+    }
   }
 
   .trend-card-extra {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
   }
 
-  .trend-date-range {
-    width: 260px;
+  /* 与客户类型分布 #extra 日期选择器同规格：default + 220px（仅显示 YYYY-MM-DD）
+     需要用 :deep 提升优先级，覆盖 el-date-editor--daterange 默认 352px */
+  .trend-card-extra :deep(.el-date-editor.el-date-editor--daterange) {
+    width: 250px;
   }
 
   .trend-body {
@@ -523,14 +538,14 @@
   .trend-rank-col {
     display: flex;
     flex-direction: column;
-    min-height: 300px;
+    min-height: 360px;
   }
 
   @media (min-width: 768px) {
     .trend-chart-col,
     .trend-rank-col {
-      height: 320px;
-      min-height: 320px;
+      height: 420px;
+      min-height: 420px;
     }
   }
 
@@ -546,7 +561,7 @@
   .trend-chart-inner {
     flex: 1;
     width: 100%;
-    min-height: 260px;
+    min-height: 340px;
     height: 100%;
   }
 

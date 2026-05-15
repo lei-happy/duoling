@@ -375,6 +375,7 @@ class CockpitService:
         end: datetime,
         limit: int = 10,
         sort_by: str = "revenue",
+        customer_type: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """TopN 客户：默认按运费收入排序，可选按商品车台数排序。"""
         start_dt = _coerce_dt(start)
@@ -390,9 +391,18 @@ class CockpitService:
         customer_name_expr = func.coalesce(
             Customer.customer_name, Waybill.customer_name, literal(_UNKNOWN_LABEL)
         )
+        type_expr = func.coalesce(Customer.customer_type, literal(-1))
         revenue_sum = func.coalesce(func.sum(Waybill.freight_amount), 0)
         vehicle_sum = func.coalesce(func.sum(Waybill.quantity), 0)
         order_expr = vehicle_sum.desc() if sort_key == "vehicle_quantity" else revenue_sum.desc()
+
+        where_clauses = [
+            Waybill.is_deleted == 0,
+            Waybill.created_at >= start_dt,
+            Waybill.created_at < end_dt,
+        ]
+        if customer_type is not None:
+            where_clauses.append(type_expr == int(customer_type))
 
         stmt = (
             select(
@@ -407,11 +417,7 @@ class CockpitService:
                 Customer,
                 and_(Customer.id == Waybill.customer_id, Customer.is_deleted == 0),
             )
-            .where(
-                Waybill.is_deleted == 0,
-                Waybill.created_at >= start_dt,
-                Waybill.created_at < end_dt,
-            )
+            .where(*where_clauses)
             .group_by(Waybill.customer_id, customer_name_expr)
             .order_by(order_expr)
             .limit(limit)

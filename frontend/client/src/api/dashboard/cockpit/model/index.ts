@@ -81,6 +81,10 @@ export interface CustomerRankParam extends CockpitDateRangeParam {
   limit?: number;
   /** 排序：revenue 按运单收入；vehicle_quantity 按商品车台数 */
   sort_by?: 'revenue' | 'vehicle_quantity';
+  /**
+   * 按客户类型筛选（与类型分布一致，NULL 为 -1 未知）；不传表示全部
+   */
+  customer_type?: number;
 }
 
 /** 客户类型分布项 */

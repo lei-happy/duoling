@@ -85,13 +85,22 @@ async def customer_rank(
         "revenue",
         description="排序字段: revenue（运费收入）| vehicle_quantity（商品车台数）",
     ),
+    customer_type: Optional[int] = Query(
+        None,
+        description="按客户类型筛选（与类型分布一致：NULL 为 -1 未知）；不传则全部",
+    ),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     """客户运费贡献排行"""
     start_dt, end_dt = _resolve_window(start, end)
     data = await CockpitService.customer_rank(
-        db, start_dt, end_dt, limit, sort_by=sort_by
+        db,
+        start_dt,
+        end_dt,
+        limit,
+        sort_by=sort_by,
+        customer_type=customer_type,
     )
     return success(data=data)
 
