@@ -19,7 +19,7 @@ from app.core.dependencies import (
     get_current_user,
     get_tenant_db,
 )
-from app.common.response import success
+from app.common.response import fail, success
 from app.core.security import TokenData
 from app.modules.client.schemas.waybill.waybill import (
     WaybillCreate,
@@ -369,7 +369,7 @@ async def get_import_batch(
     )
     batch = await WaybillImportService.get_batch(db, batch_id)
     if not batch:
-        return success(code=404, msg="批次不存在")
+        return fail(message="批次不存在", code=404)
     return success(data={
         "id": batch.id,
         "fileName": batch.file_name,

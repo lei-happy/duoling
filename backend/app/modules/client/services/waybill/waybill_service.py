@@ -242,6 +242,8 @@ class WaybillService:
             )
             if r.region_id is not None:
                 waybill.origin_region_id = r.region_id
+                if not (waybill.origin_code or "").strip() and r.region_code:
+                    waybill.origin_code = r.region_code
         if (
             waybill.destination_region_id is None
             and (waybill.destination_code or waybill.destination)
@@ -252,6 +254,8 @@ class WaybillService:
             )
             if r.region_id is not None:
                 waybill.destination_region_id = r.region_id
+                if not (waybill.destination_code or "").strip() and r.region_code:
+                    waybill.destination_code = r.region_code
 
     @staticmethod
     async def _resolve_auto_freight(

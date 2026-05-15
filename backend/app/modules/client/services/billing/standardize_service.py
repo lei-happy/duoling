@@ -36,6 +36,71 @@ def _norm(s: Optional[str]) -> str:
     return (s or "").strip()
 
 
+def _split_region_path_segments(raw_name: Optional[str]) -> list[str]:
+    """将「省/市/区」类字符串拆成逐级名称；无斜杠时返回单元素或空。"""
+    s = _norm(raw_name)
+    if not s:
+        return []
+    s = s.replace("／", "/").replace("\\", "/")
+    return [p.strip() for p in s.split("/") if p.strip()]
+
+
+def _expand_leaf_name_variants(leaf: str) -> list[str]:
+    """末级地名常见省略后缀（如 包头→包头市），生成候选名去重（保持顺序）。"""
+    s = _norm(leaf)
+    if not s:
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+    trials = [s]
+    last_ch = s[-1]
+    if last_ch not in "省市县区盟州旗":
+        for sfx in ("市", "地区", "盟", "州", "县", "区", "旗"):
+            trials.append(s + sfx)
+    for t in trials:
+        if t not in seen:
+            seen.add(t)
+            out.append(t)
+    return out
+
+
+def _strip_extra_chain_roots(names_rtl: list[str]) -> list[str]:
+    """去掉链首仅用于展示、不参与用户录入的国家节点。"""
+    rtl = list(names_rtl)
+    while rtl and rtl[0] in ("中国", "中华人民共和国"):
+        rtl = rtl[1:]
+    return rtl
+
+
+def _trial_matches_region_chain_names(
+    trial: list[str], names_rtl: list[str],
+) -> bool:
+    """用户逐级名称 trial 是否与库中 root→leaf 链 names_rtl 一致。
+
+    要求首级、末级与库链 **名称完全一致**；中间级允许库中多出节点（如直辖市下的「市辖区」），
+    以便「北京市/大兴区」命中「北京市 / 市辖区 / 大兴区」。
+    三级及以上时，中间用户段须在链的中间段上按顺序做子序列匹配。
+    """
+    rtl = _strip_extra_chain_roots(names_rtl)
+    if not trial or not rtl:
+        return False
+    if trial[0] != rtl[0] or trial[-1] != rtl[-1]:
+        return False
+    if len(trial) == 2:
+        return True
+    mid_t = trial[1:-1]
+    mid_r = rtl[1:-1]
+    i, j = 0, 0
+    n_mt, n_mr = len(mid_t), len(mid_r)
+    while i < n_mt and j < n_mr:
+        if mid_t[i] == mid_r[j]:
+            i += 1
+            j += 1
+        else:
+            j += 1
+    return i == n_mt
+
+
 @dataclass
 class RegionResolution:
     """单个地区解析结果"""
@@ -44,7 +109,7 @@ class RegionResolution:
     region_code: Optional[str]
     region_name: Optional[str]
     level: Optional[int]
-    matched_by: str  # id_input / code_input / alias / name / unresolved
+    matched_by: str  # id_input / code_input / alias / path / name / unresolved
     chain: list["RegionNode"]  # 该 region 自下而上到省的链路
 
 
@@ -162,6 +227,56 @@ class StandardizeService:
         return r.scalars().first()
 
     @staticmethod
+    async def _list_regions_by_leaf_name(
+        db: AsyncSession, leaf_name: str,
+    ) -> list[BizRegion]:
+        s = _norm(leaf_name)
+        if not s:
+            return []
+        r = await db.execute(
+            select(BizRegion).where(
+                BizRegion.name == s,
+                BizRegion.is_deleted == 0,
+            ).order_by(BizRegion.level.desc(), BizRegion.id.asc())
+        )
+        return list(r.scalars().all())
+
+    @staticmethod
+    async def _resolve_region_by_hierarchical_path(
+        db: AsyncSession, parts: list[str],
+    ) -> Optional[BizRegion]:
+        """按「省/市/…/区」逐级匹配库中 root→leaf 名称链。
+
+        末级支持常见后缀补全（如 包头→包头市）。链对齐采用 **有序子序列** 规则：
+        用户输入的各级名称须在链上按顺序出现，中间可跳过库中多出的层级（直辖市「市辖区」等）。
+        """
+        if len(parts) < 2:
+            return None
+        prefixes = parts[:-1]
+        chosen: Optional[BizRegion] = None
+
+        for leaf_try in _expand_leaf_name_variants(parts[-1]):
+            trial = prefixes + [leaf_try]
+            candidates = await StandardizeService._list_regions_by_leaf_name(
+                db, leaf_try,
+            )
+            for cand in candidates:
+                chain = await StandardizeService._load_region_chain(db, cand)
+                names_rtl = [n.name for n in reversed(chain)]
+                if not _trial_matches_region_chain_names(trial, names_rtl):
+                    continue
+                pick = False
+                if chosen is None:
+                    pick = True
+                elif cand.level > chosen.level:
+                    pick = True
+                elif cand.level == chosen.level and cand.id < chosen.id:
+                    pick = True
+                if pick:
+                    chosen = cand
+        return chosen
+
+    @staticmethod
     async def resolve_region(
         db: AsyncSession,
         *,
@@ -191,9 +306,17 @@ class StandardizeService:
             if region:
                 matched_by = "alias"
             else:
-                region = await StandardizeService._find_region_by_name(db, raw_name)
-                if region:
-                    matched_by = "name"
+                path_parts = _split_region_path_segments(raw_name)
+                if len(path_parts) >= 2:
+                    region = await StandardizeService._resolve_region_by_hierarchical_path(
+                        db, path_parts,
+                    )
+                    if region:
+                        matched_by = "path"
+                if not region:
+                    region = await StandardizeService._find_region_by_name(db, raw_name)
+                    if region:
+                        matched_by = "name"
 
         if not region:
             return RegionResolution(
