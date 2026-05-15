@@ -8,7 +8,7 @@
 >
 > **作者**：智途产研团队
 >
-> **更新日期**：2026-05-14
+> **更新日期**：2026-05-15
 
 ---
 
@@ -40,8 +40,8 @@
 ### 2.2 目标
 
 - 1 屏（首屏）展示老板最关心的 4 个 KPI 卡 + 1 张趋势主图
-- 提供 5 个分析视角（趋势 / 客户 / 路线 / 品牌 / 效率），均支持自定义时间筛选
-- UI 风格与现有 `运营看板`（`/insight/overview`）一致，复用 ele-card / ECharts 配色
+- 提供 5 个分析视角（趋势 / 客户 / 路线 / 品牌 / 效率）；**无顶栏时间切换**，趋势及以下模块默认按**当月**时间窗拉数（与 KPI 卡独立）
+- UI 风格与现有 `运营看板`（`/insight/overview`）一致；顶部 KPI 卡为「当日大数 + 近 30 日迷你折线/柱图 + 周同比/日同比」并排（参考运营看板统计卡）
 - 接口聚合查询，单页加载 < 1.5s（百万行运单数据量级）
 
 ### 2.3 非目标（本期不做）
@@ -80,23 +80,28 @@
 
 ### 4.1 核心 KPI（顶部 4 卡片）
 
-| 指标 | 定义 | 公式 | 单位 | 数据源 |
-|------|------|------|------|--------|
-| 运费总收入 | 期间内所有运单的应收运费合计 | `SUM(biz_waybill.freight_amount)` | 元 | `biz_waybill.freight_amount` |
-| 总运单数 | 期间内创建的运单条数 | `COUNT(*)` | 单 | `biz_waybill.id` |
-| 总发运台数 | 期间内所有运单的商品车合计 | `SUM(biz_waybill.quantity)` | 台 | `biz_waybill.quantity` |
-| 服务客户数 | 期间内有运单产生的去重客户 | `COUNT(DISTINCT customer_id)` | 个 | `biz_waybill.customer_id` |
+> **与下方图表解耦**：4 张 KPI 卡按**服务端当前时刻**聚合，不随下方图表时间窗变化；便于打开页面即看「今天跑得怎样」。
 
-每个卡片附带：
-- 本期值（大字体）
-- 环比箭头与百分比（对照期：等长前一期）
-- 迷你 sparkline（按 day 粒度，最多 30 个数据点）
+| 指标 | 主数值口径 | 迷你图 | 单位（主数值 / 接口） | 数据源 |
+|------|------------|--------|----------------------|--------|
+| 运费总收入 | 当日 0 点至今 `SUM(freight_amount)` | 近 30 个自然日、按日 `SUM`（折线面积图） | **万元** / 元 | `biz_waybill.freight_amount` |
+| 总运单数 | 当日 0 点至今 `COUNT(*)` | 近 30 日按日单量（柱图） | 单 | `biz_waybill.id` |
+| 总发运台数 | 当日 0 点至今 `SUM(quantity)` | 近 30 日按日台数（折线面积图） | 台 | `biz_waybill.quantity` |
+| 服务客户数 | 当日 0 点至今有运单的去重客户 | 近 30 日按日 `COUNT(DISTINCT customer_id)`（柱图） | 个 | `biz_waybill.customer_id` |
+
+每个卡片统一结构：
+
+- **主区**：标题 + 指标说明（问号 tooltip）+ **当日**累计（运费卡主数值以**万元**展示，保留 2 位小数）
+- **中区**：ECharts 迷你图（高度约 36px），展示**近 30 个自然日**（含当日；当日桶为 0 点至今，与主数值一致）
+- **底部**：**周同比**与**日同比**并排（参考运营看板统计卡），均用「箭头图标 + 百分比」；对照期为 0 无法计算时显示「—」
+  - **周同比**：本周一 0 点～当前时刻，对比上周一 0 点～（上周一 0 点 + 与本周已过的**相同时长**）
+  - **日同比**：今天 0 点～当前时刻，对比昨天 0 点～**昨天与当前同一时刻**（即与今天等长的「昨日同时段」）
 
 ### 4.2 主体图表（6 个分析模块）
 
 | 模块 | 图表类型 | 维度 | 度量 | 备注 |
 |------|---------|------|------|------|
-| 收入与单量趋势 | 双 Y 轴折/柱 | 时间（日/周/月） | 收入、单量 | 顶部时间筛选联动 |
+| 收入与单量趋势 | 双 Y 轴折/柱 | 时间（日/周/月） | 收入、单量 | 默认统计**当月**（无顶栏时间切换；由前端传入本月 `start`/`end`） |
 | TopN 客户运费贡献 | 横向柱状 + 排行列表 | 客户 | 收入、占比、单量 | 默认 Top10 |
 | 客户类型分布 | 环形图 | `customer_type` | 收入、单量 | 主机厂/贸易商/经销商/个人/其他 |
 | 热门起讫点 | 双柱状（左右分栏） | 出发地省 / 目的地省 | 单量、收入 | 默认 Top10 |
@@ -124,13 +129,18 @@
 | 状态 | `biz_waybill.status`（0–6 七态） | — |
 | 计算状态 | `biz_waybill.calc_status`（pending/calculating/calculated/exception/locked） | 异常率分子取 `exception` |
 
-### 4.4 时间筛选与环比口径
+### 4.4 时间窗与对比口径
 
-- 时间预设：`今天 / 本周 / 本月 / 本年 / 自定义`
-- 时间字段：本期固定使用 `biz_waybill.created_at`
-- 环比对照期：等长滚动窗口（窗口长度 = `end - start`，向前平移一个窗口长度）
-  - 例：本期 `2026-05-01 ~ 2026-05-14`（14 天），对照期 `2026-04-17 ~ 2026-04-30`
-- 同比、年度对比放到二期
+**下方图表与分析模块**
+
+- 经营总览页**无**顶栏「经营总览」标题行，**无**本月/本年或自定义时间切换。
+- 时间窗由前端 `provide` **当月**起止（自然月 1 日 0 点～月末结束）作为各图表接口的 `start` / `end`；与 KPI 卡独立。
+- 时间字段：本期固定使用 `biz_waybill.created_at`。
+
+**顶部 KPI 4 卡片**
+
+- `GET /kpi-summary` **不使用**上述 `start` / `end`；按服务端「当前时刻」计算当日累计、近 30 日序列及周/日同比（见 4.1 底部说明）。
+- 周同比、日同比分母为 0 时增长率置空（前端「—」）。
 
 ---
 
@@ -168,15 +178,18 @@
 - **公共参数**：
   - `start`（可选，ISO 日期，默认本月 1 号 00:00）
   - `end`（可选，ISO 日期，默认现在）
+  - **例外**：`GET /insight/cockpit/kpi-summary` 的 `start` / `end` 为兼容保留，**不参与**本期顶部 KPI 卡计算（见 6.2.1）。
   - 所有接口返回 `{code, message, data}` 标准结构
 
 ### 6.2 接口列表
 
-#### 6.2.1 核心 KPI
+#### 6.2.1 核心 KPI（顶部卡片专用）
 
 ```http
-GET /insight/cockpit/kpi-summary?start=2026-05-01&end=2026-05-14
+GET /insight/cockpit/kpi-summary?start=...&end=...
 ```
+
+> `start` / `end` 为历史兼容保留，**本期响应不依赖该窗口**，卡片数据均按服务端**当前自然日**与近 30 日计算。
 
 **响应**：
 
@@ -185,17 +198,24 @@ GET /insight/cockpit/kpi-summary?start=2026-05-01&end=2026-05-14
   "code": 0,
   "data": {
     "revenue": {
-      "value": 1234567.89,
-      "previous": 1100000.00,
-      "growthRate": 0.1223,
-      "sparkline": [{"date": "2026-05-01", "value": 92000}, ...]
+      "todayValue": 1234567.89,
+      "weekOverWeekRate": 0.05,
+      "dayOverDayRate": 0.1223,
+      "trend30d": [{ "date": "2026-04-16", "value": 92000.0 }, { "date": "2026-04-17", "value": 88000.0 }]
     },
-    "waybillCount": { "value": 320, "previous": 280, "growthRate": 0.1428, "sparkline": [...] },
-    "vehicleQuantity": { "value": 1280, "previous": 1100, "growthRate": 0.1636, "sparkline": [...] },
-    "customerCount": { "value": 28, "previous": 25, "growthRate": 0.12, "sparkline": [...] }
+    "waybillCount": {
+      "todayValue": 32,
+      "weekOverWeekRate": -0.02,
+      "dayOverDayRate": 0.1428,
+      "trend30d": [{ "date": "2026-04-16", "value": 5 }, ...]
+    },
+    "vehicleQuantity": { "todayValue": 128, "weekOverWeekRate": null, "dayOverDayRate": 0.1636, "trend30d": [...] },
+    "customerCount": { "todayValue": 8, "weekOverWeekRate": 0.1, "dayOverDayRate": 0.1428, "trend30d": [...] }
   }
 }
 ```
+
+说明：`revenue.trend30d[].value` 与 `todayValue` 均为**元**；前端「运费总收入」主数值展示为**万元**。`weekOverWeekRate` / `dayOverDayRate` 为小数增长率；分母为 0 时为 `null`。其余指标 `value` / `todayValue` 为整数计数。
 
 #### 6.2.2 收入与单量趋势
 
@@ -327,10 +347,8 @@ GET /insight/cockpit/operation-efficiency?start=...&end=...
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  [时间筛选: 今天 本周 本月 本年 自定义]  [日期范围 picker]              │
-├──────────────────────────────────────────────────────────────────────────┤
 │  ┌─KPI 1─┐ ┌─KPI 2─┐ ┌─KPI 3─┐ ┌─KPI 4─┐  ← 顶部 4 KPI 卡（el-col 6）   │
-│  │收入   │ │运单数 │ │发运台 │ │客户数 │   每个卡片含 sparkline + 环比 │
+│  │收入   │ │运单数 │ │发运台 │ │客户数 │   迷你图 + 周同比 / 日同比   │
 │  └───────┘ └───────┘ └───────┘ └───────┘                                 │
 ├──────────────────────────────────────────────────────────────────────────┤
 │  ┌─收入与单量趋势 (md=18)─────────────────┐ ┌─客户运费排行 (md=6)─┐   │
@@ -355,8 +373,8 @@ GET /insight/cockpit/operation-efficiency?start=...&end=...
 
 | 文件路径 | 说明 |
 |---------|------|
-| `frontend/client/src/views/dashboard/business-cockpit/overview/index.vue` | 经营总览页面入口（仿 analysis/index.vue） |
-| `business-cockpit/overview/components/filter-bar.vue` | 顶部时间筛选条 |
+| `frontend/client/src/views/dashboard/business-cockpit/overview/index.vue` | 经营总览页面入口 |
+| `business-cockpit/overview/composables/use-cockpit-filter.ts` | 注入当月时间窗（供趋势及以下图表） |
 | `business-cockpit/overview/components/kpi-card.vue` | 顶部 4 KPI 卡 |
 | `business-cockpit/overview/components/trend-card.vue` | 收入/单量趋势 + 客户排行 |
 | `business-cockpit/overview/components/customer-analysis.vue` | 客户类型分布 + Top 客户 |
@@ -368,7 +386,7 @@ GET /insight/cockpit/operation-efficiency?start=...&end=...
 
 ### 7.3 交互规则
 
-- **时间筛选**：用 `provide/inject` 在页面顶层注入响应式时间范围，所有子组件通过 `inject` 拿到并 `watch` 重新拉数
+- **时间窗**：页面无顶栏筛选；由 `provideCockpitFilter()` 注入**当月** `start`/`end`，子组件 `watch` 后拉数
 - **加载态**：每个卡片独立 loading，加载失败用 `EleMessage.error`
 - **空数据**：图表展示"暂无数据"占位（参考 ele-admin-plus 默认）
 - **配色**：主色 `#5b8ff9`（蓝），辅色 `#975fe5`（紫）/ `#61ddaa`（绿）/ `#ff9c6e`（橙），与现有 analysis 一致
@@ -397,7 +415,7 @@ GET /insight/cockpit/operation-efficiency?start=...&end=...
 
 - 时间筛选边界：`start` ≥ `end` 时 KPI 全部为 0
 - 空数据态：新租户无运单时所有接口返回空数组/0 值（不报错）
-- 环比口径：本期 0、对照期 100 → growthRate = -1.0（前端显示 -100%）；本期 100、对照期 0 → growthRate = null（前端显示 "—"）
+- KPI 周/日同比：对照段为 0 → 对应 `weekOverWeekRate` / `dayOverDayRate` = null（前端显示 "—"）；有值时为小数增长率
 - NULL 处理：`freight_amount` 为 NULL 的运单计为 0；`customer_id` 为 NULL 计为"未知客户"
 - 软删过滤：`is_deleted=1` 的运单 / 客户 / 区域 不参与聚合
 

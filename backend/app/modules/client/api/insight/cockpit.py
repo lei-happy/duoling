@@ -52,7 +52,7 @@ async def kpi_summary(
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """核心 KPI（含环比与 sparkline）"""
+    """核心 KPI 卡片：当日值、近 30 日趋势、周同比 + 日同比（与 start/end 无关，兼容入参）"""
     start_dt, end_dt = _resolve_window(start, end)
     data = await CockpitService.kpi_summary(db, start_dt, end_dt)
     return success(data=data)

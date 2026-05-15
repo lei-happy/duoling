@@ -16,20 +16,22 @@ export interface SparklinePoint {
   value: number;
 }
 
-/** 单个 KPI 指标的本期值 + 环比 + sparkline */
+/** 单个 KPI 指标：当日累计 + 周同比 + 日同比 + 近 30 个自然日趋势 */
 export interface KpiMetric {
-  /** 本期值 */
-  value: number;
-  /** 对照期值 */
-  previous: number;
+  /** 当日 0 点至今累计（自然日，与服务器日历一致） */
+  todayValue: number;
   /**
-   * 环比增长率：
-   *  - null 表示对照期为 0、无法计算
-   *  - 否则为小数（如 0.123 → +12.3%）
+   * 周同比（本周一 0 点至今 vs 上周一 0 点起相同时长）：
+   *  - null 表示对照为 0、无法计算
    */
-  growthRate: number | null;
-  /** 迷你趋势点序列（按日） */
-  sparkline: SparklinePoint[];
+  weekOverWeekRate: number | null;
+  /**
+   * 日同比（今天 0 点至今 vs 昨天 0 点至昨天与当前同一时刻）：
+   *  - null 表示对照为 0、无法计算
+   */
+  dayOverDayRate: number | null;
+  /** 近 30 个自然日（含当日）按日序列；收入为「元」 */
+  trend30d: SparklinePoint[];
 }
 
 /** KPI 总览 */

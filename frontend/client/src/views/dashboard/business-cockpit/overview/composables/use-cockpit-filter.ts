@@ -1,88 +1,53 @@
 /**
- * 经营驾驶舱 - 全局时间筛选 composable
+ * 经营驾驶舱 - 图表时间范围 composable
  *
  * 在 overview/index.vue 顶层调用 provideCockpitFilter() 注入；
- * 各子组件调用 useCockpitFilter() 拿到响应式的 [start, end] 区间，
- * 并通过 watch(range) 触发数据重拉。
+ * 趋势及以下模块读取「当月」起止（无顶部筛选条，与 KPI 卡无关）。
  */
 import { inject, provide, reactive, readonly, type InjectionKey } from 'vue';
 import dayjs from 'dayjs';
 
-export type DatePreset = '1' | '2' | '3' | '4' | 'custom';
-
 export interface CockpitFilterState {
-  /** 起始时间（YYYY-MM-DD HH:mm:ss） */
+  /** 起始时间（YYYY-MM-DD HH:mm:ss），当月 1 日 0 点 */
   start: string;
-  /** 截止时间（YYYY-MM-DD HH:mm:ss） */
+  /** 截止时间（YYYY-MM-DD HH:mm:ss），当月最后一天结束 */
   end: string;
-  /** 当前生效的预设：1今天 2本周 3本月 4本年 custom 自定义 */
-  preset: DatePreset;
 }
 
 export interface CockpitFilterContext {
   state: Readonly<CockpitFilterState>;
-  setRange(start: string, end: string, preset?: DatePreset): void;
-  setPreset(preset: DatePreset): void;
 }
 
 const FMT = 'YYYY-MM-DD HH:mm:ss';
 
-function presetRange(preset: DatePreset): { start: string; end: string } {
+function currentMonthRange(): { start: string; end: string } {
   const now = dayjs();
-  if (preset === '1') {
-    return { start: now.startOf('day').format(FMT), end: now.endOf('day').format(FMT) };
-  }
-  if (preset === '2') {
-    return { start: now.startOf('week').format(FMT), end: now.endOf('week').format(FMT) };
-  }
-  if (preset === '4') {
-    return { start: now.startOf('year').format(FMT), end: now.endOf('year').format(FMT) };
-  }
-  return { start: now.startOf('month').format(FMT), end: now.endOf('month').format(FMT) };
+  return {
+    start: now.startOf('month').format(FMT),
+    end: now.endOf('month').format(FMT)
+  };
 }
 
 const COCKPIT_FILTER_KEY: InjectionKey<CockpitFilterContext> = Symbol(
   'CockpitFilter'
 );
 
-/** 在 overview 页面顶层调用，向后代组件提供筛选状态 */
-export function provideCockpitFilter(
-  initialPreset: DatePreset = '3'
-): CockpitFilterContext {
-  const init = presetRange(initialPreset);
+/** 在 overview 页面顶层调用，向后代组件提供当月时间窗 */
+export function provideCockpitFilter(): CockpitFilterContext {
+  const init = currentMonthRange();
   const state = reactive<CockpitFilterState>({
     start: init.start,
-    end: init.end,
-    preset: initialPreset
+    end: init.end
   });
 
-  const setRange = (start: string, end: string, preset: DatePreset = 'custom') => {
-    state.start = start;
-    state.end = end;
-    state.preset = preset;
-  };
-
-  const setPreset = (preset: DatePreset) => {
-    if (preset === 'custom') {
-      state.preset = 'custom';
-      return;
-    }
-    const r = presetRange(preset);
-    state.start = r.start;
-    state.end = r.end;
-    state.preset = preset;
-  };
-
   const ctx: CockpitFilterContext = {
-    state: readonly(state) as Readonly<CockpitFilterState>,
-    setRange,
-    setPreset
+    state: readonly(state) as Readonly<CockpitFilterState>
   };
   provide(COCKPIT_FILTER_KEY, ctx);
   return ctx;
 }
 
-/** 在子组件中调用，获取共享筛选状态 */
+/** 在子组件中调用，获取共享时间窗 */
 export function useCockpitFilter(): CockpitFilterContext {
   const ctx = inject(COCKPIT_FILTER_KEY);
   if (!ctx) {

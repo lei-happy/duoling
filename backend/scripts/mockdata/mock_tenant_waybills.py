@@ -17,6 +17,11 @@ created_by 置 NULL（模型允许）。
   python scripts/mockdata/mock_tenant_waybills.py --tenant-code demo --count 20
   python scripts/mockdata/mock_tenant_waybills.py --tenant-code demo --count 5 --dry-run
   python scripts/mockdata/mock_tenant_waybills.py --tenant-code demo --count 10 --cargo-lines 2
+  python scripts/mockdata/mock_tenant_waybills.py --tenant-code demo --count 30 \\
+    --date-from 2026-05-01 --date-to 2026-05-20
+
+时间范围：省略 --date-from/--date-to 时，计划下发时间随机落在「当天」自然日；
+二者同时指定时，随机落在该闭区间 [date-from 00:00:00, date-to 23:59:59]。
 
 可选：--seed、--cargo-lines（每单货物行数，默认 1~2 随机）、--fetch-limit（每类主数据最多拉取条数，默认 800）
 """
@@ -26,7 +31,7 @@ from __future__ import annotations
 import argparse
 import random
 import sys
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Optional
@@ -126,9 +131,46 @@ def _pick_two_distinct_codes(rng: random.Random, codes: list[str]) -> tuple[str,
     return a, b
 
 
-def _new_waybill_no(session: Session, rng: random.Random, seq: int) -> str:
+def _parse_iso_date(s: str) -> date:
+    return datetime.strptime(s.strip(), "%Y-%m-%d").date()
+
+
+def _time_window(
+    date_from: Optional[str],
+    date_to: Optional[str],
+) -> tuple[datetime, datetime]:
+    """返回 [含起点当日 0 点, 含终点当日最后一秒]。"""
+    if (date_from is None) ^ (date_to is None):
+        raise ValueError("--date-from 与 --date-to 必须同时提供或同时省略")
+    if date_from is None:
+        d = datetime.now().date()
+        start = datetime.combine(d, time.min)
+        end = datetime.combine(d, time(23, 59, 59))
+    else:
+        df = _parse_iso_date(date_from)
+        dt = _parse_iso_date(date_to)
+        if df > dt:
+            raise ValueError("--date-from 不能晚于 --date-to")
+        start = datetime.combine(df, time.min)
+        end = datetime.combine(dt, time(23, 59, 59))
+    return start, end
+
+
+def _random_dt_in_window(
+    rng: random.Random, window_start: datetime, window_end: datetime
+) -> datetime:
+    span_s = int((window_end - window_start).total_seconds())
+    if span_s < 0:
+        raise ValueError("时间窗口无效")
+    off = rng.randint(0, span_s) if span_s > 0 else 0
+    return (window_start + timedelta(seconds=off)).replace(microsecond=0)
+
+
+def _new_waybill_no(
+    session: Session, rng: random.Random, seq: int, ref: datetime
+) -> str:
     for _ in range(80):
-        wn = f"YD{datetime.now().strftime('%Y%m%d%H%M%S')}{rng.randint(1000, 9999)}{seq % 10000}"
+        wn = f"YD{ref.strftime('%Y%m%d%H%M%S')}{rng.randint(1000, 9999)}{seq % 10000}"
         wn = wn[:50]
         taken = session.execute(
             select(Waybill.id).where(Waybill.waybill_no == wn, Waybill.is_deleted == 0)
@@ -148,6 +190,8 @@ def generate_waybills(
     fetch_limit: int,
     cargo_lines_min: int,
     cargo_lines_max: int,
+    window_start: datetime,
+    window_end: datetime,
 ) -> tuple[int, int]:
     customers = _load_customers(session, fetch_limit)
     brand_series = _load_brand_series_pairs(session, fetch_limit)
@@ -188,20 +232,21 @@ def generate_waybills(
 
         brand_m, model_m, qty_sum = cargo_specs[0][0], cargo_specs[0][1], sum(t[2] for t in cargo_specs)
 
-        plan_t = datetime.now().replace(microsecond=0) + timedelta(hours=rng.randint(1, 72))
+        plan_t = _random_dt_in_window(rng, window_start, window_end)
         load_t = plan_t + timedelta(hours=rng.randint(2, 24))
         deliver_t = load_t + timedelta(days=rng.randint(1, 10))
 
         freight_amt = Decimal(str(round(rng.uniform(500.0, 25000.0), 2)))
-        waybill_no = _new_waybill_no(session, rng, i)
+        waybill_no = _new_waybill_no(session, rng, i, plan_t)
         remark = (
-            f"[mockdata] waybill ts={datetime.now().strftime('%Y-%m-%d %H:%M:%S')} "
+            f"[mockdata] waybill ts={plan_t.strftime('%Y-%m-%d %H:%M:%S')} "
             f"customer_id={cust_id}"
         )
 
         if dry_run:
             print(
-                f"[dry-run] {waybill_no} cust={cust_name[:20]} origin={origin_txt[:24]} "
+                f"[dry-run] {waybill_no} plan_issue={plan_t.strftime('%Y-%m-%d %H:%M')} "
+                f"cust={cust_name[:20]} origin={origin_txt[:24]} "
                 f"dest={dest_txt[:24]} dealer={dealer.dealer_name[:20]} "
                 f"cargoes={n_lines} freight={freight_amt}"
             )
@@ -225,7 +270,7 @@ def generate_waybills(
             required_deliver_time=deliver_t,
             dealer_name=dealer.dealer_name[:200],
             dealer_contact=("门店联系人" + str(rng.randint(100, 999)))[:50],
-            dealer_phone=f"1{rng.randint(3, 9)}{(int(datetime.now().timestamp()) + i) % 10**9:09d}"[:20],
+            dealer_phone=f"1{rng.randint(3, 9)}{(int(plan_t.timestamp()) + i) % 10**9:09d}"[:20],
             dealer_address=dealer_addr,
             freight_amount=str(freight_amt),
             freight_source=1,
@@ -234,6 +279,8 @@ def generate_waybills(
             status=0,
             remark=remark[:2000] if len(remark) > 2000 else remark,
             created_by=None,
+            created_at=plan_t,
+            updated_at=plan_t,
         )
         session.add(wb)
         session.flush()
@@ -246,6 +293,8 @@ def generate_waybills(
                     vehicle_brand=vb[:100],
                     vehicle_model=vm[:100],
                     quantity=q,
+                    created_at=plan_t,
+                    updated_at=plan_t,
                 )
             )
         session.flush()
@@ -278,6 +327,18 @@ def main() -> None:
         metavar="N",
         help="每单固定货物行数（>=1）；默认 0 表示每单随机 1~2 行",
     )
+    parser.add_argument(
+        "--date-from",
+        default=None,
+        metavar="YYYY-MM-DD",
+        help="与 --date-to 成对使用：计划下发时间随机落在此日期区间内；均省略则为当天",
+    )
+    parser.add_argument(
+        "--date-to",
+        default=None,
+        metavar="YYYY-MM-DD",
+        help="与 --date-from 成对使用；闭区间含首尾两日全天",
+    )
     args = parser.parse_args()
 
     fetch_limit = max(50, min(5000, args.fetch_limit))
@@ -289,6 +350,11 @@ def main() -> None:
     settings = get_settings()
     url = settings.tenant_db_url_sync(args.tenant_code)
     rng = random.Random(args.seed)
+    try:
+        w_start, w_end = _time_window(args.date_from, args.date_to)
+    except ValueError as e:
+        print(f"[错误] {e}", file=sys.stderr)
+        sys.exit(2)
 
     engine = create_engine(url, echo=False)
     with Session(engine) as session:
@@ -300,10 +366,20 @@ def main() -> None:
             fetch_limit=fetch_limit,
             cargo_lines_min=lo,
             cargo_lines_max=hi,
+            window_start=w_start,
+            window_end=w_end,
         )
 
     action = "预览" if args.dry_run else "已写入"
-    print(f"[OK] 租户 {args.tenant_code}：{action} {nw} 张运单，{nc} 条货物明细。")
+    win_desc = (
+        f"{w_start.strftime('%Y-%m-%d')} ~ {w_end.strftime('%Y-%m-%d')}"
+        if args.date_from
+        else f"当天 {w_start.strftime('%Y-%m-%d')}"
+    )
+    print(
+        f"[OK] 租户 {args.tenant_code}：{action} {nw} 张运单，{nc} 条货物明细。"
+        f" 计划下发时间窗口：{win_desc}。"
+    )
 
 
 if __name__ == "__main__":

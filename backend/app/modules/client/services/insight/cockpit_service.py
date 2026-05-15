@@ -8,8 +8,9 @@
 设计要点：
 1. 所有时间筛选统一基于 `biz_waybill.created_at`
 2. 软删除过滤：`is_deleted = 0`
-3. 环比口径：对照期为等长滚动窗口（前一周期）
-4. NULL 兜底：客户/客户类型/区域名/品牌名 为空时归入"未知"
+3. 顶部 KPI 卡片：自然日口径（当日值 + 近 30 天趋势）；对比区为周同比（本周一 0 点至今 vs 上周一 0 点起相同时长）与日同比（今天 0 点至今 vs 昨天 0 点至昨天同一时刻）
+4. 其余图表接口：仍使用请求参数 `start`/`end` 窗口；环比口径见各接口说明
+5. NULL 兜底：客户/客户类型/区域名/品牌名 为空时归入"未知"
 """
 
 from __future__ import annotations
@@ -99,73 +100,114 @@ class CockpitService:
     # ---------- 1. 核心 KPI ----------
 
     @staticmethod
+    def _week_monday_start(d: date) -> datetime:
+        """自然周：周一 00:00:00（date.weekday(): 周一=0）。"""
+        monday = d - timedelta(days=d.weekday())
+        return datetime.combine(monday, datetime.min.time())
+
+    @staticmethod
     async def kpi_summary(
         db: AsyncSession,
         start: datetime,
         end: datetime,
     ) -> Dict[str, Any]:
-        """4 KPI + 环比 + sparkline。
+        """4 KPI 卡片：当日累计、近 30 日趋势、周同比 + 日同比。
+
+        说明：`start`/`end` 为接口兼容保留，本期卡片数据**不依赖**该窗口，
+        一律按服务端当前时刻聚合。
+
+        周同比：本周一 0 点～当前时刻 vs 上周一 0 点～（上周一 + 与本周已过的相同时长）。
+        日同比：今天 0 点～当前时刻 vs 昨天 0 点～当前时刻的前一天同一时刻。
 
         Returns:
             {
-              "revenue": { value, previous, growthRate, sparkline:[{date, value}] },
-              "waybillCount": { ... },
-              "vehicleQuantity": { ... },
-              "customerCount": { ... },
+              "revenue": {
+                todayValue, weekOverWeekRate, dayOverDayRate,
+                trend30d: [{date, value}],
+              },
+              ...
             }
         """
-        start_dt = _coerce_dt(start)
-        end_dt = _coerce_dt(end)
-        prev_start, prev_end = _previous_window(start_dt, end_dt)
+        _ = (start, end)  # 兼容入参；本期 KPI 卡片不按该窗口计算
 
-        current = await CockpitService._kpi_totals(db, start_dt, end_dt)
-        previous = await CockpitService._kpi_totals(db, prev_start, prev_end)
-        sparkline = await CockpitService._kpi_sparkline(db, start_dt, end_dt)
+        now = datetime.now()
+        today_d = now.date()
+        today_start = datetime.combine(today_d, datetime.min.time())
+        yesterday_d = today_d - timedelta(days=1)
+        yesterday_start = datetime.combine(yesterday_d, datetime.min.time())
+        trend_start = datetime.combine(today_d - timedelta(days=29), datetime.min.time())
+
+        today_m = await CockpitService._kpi_totals_inclusive_end(
+            db, today_start, now
+        )
+        yesterday_same_m = await CockpitService._kpi_totals_inclusive_end(
+            db, yesterday_start, now - timedelta(days=1)
+        )
+
+        this_monday = CockpitService._week_monday_start(today_d)
+        last_monday = this_monday - timedelta(days=7)
+        span_from_this_monday = now - this_monday
+        last_week_slice_end = last_monday + span_from_this_monday
+        this_week_m = await CockpitService._kpi_totals_inclusive_end(
+            db, this_monday, now
+        )
+        last_week_slice_m = await CockpitService._kpi_totals_inclusive_end(
+            db, last_monday, last_week_slice_end
+        )
+
+        daily_rows = await CockpitService._kpi_daily_rows_inclusive_end(
+            db, trend_start, now
+        )
+
+        def _fill_trend30d(field: str) -> List[Dict[str, Any]]:
+            by_d: Dict[str, Dict[str, Any]] = {
+                str(r["date"]): r for r in daily_rows
+            }
+            out: List[Dict[str, Any]] = []
+            for i in range(30):
+                d = today_d - timedelta(days=29 - i)
+                key = str(d)
+                row = by_d.get(key)
+                if row:
+                    v = row[field]
+                else:
+                    v = 0.0 if field == "revenue" else 0
+                out.append({"date": key, "value": float(v) if field == "revenue" else int(v)})
+            return out
+
+        def _pack_metric(trend_field: str) -> Dict[str, Any]:
+            tv = (
+                float(today_m[trend_field])
+                if trend_field == "revenue"
+                else int(today_m[trend_field])
+            )
+            y_same = (
+                float(yesterday_same_m[trend_field])
+                if trend_field == "revenue"
+                else int(yesterday_same_m[trend_field])
+            )
+            w_cur = (
+                float(this_week_m[trend_field])
+                if trend_field == "revenue"
+                else int(this_week_m[trend_field])
+            )
+            w_prev = (
+                float(last_week_slice_m[trend_field])
+                if trend_field == "revenue"
+                else int(last_week_slice_m[trend_field])
+            )
+            return {
+                "todayValue": tv,
+                "weekOverWeekRate": _safe_growth_rate(float(w_cur), float(w_prev)),
+                "dayOverDayRate": _safe_growth_rate(float(tv), float(y_same)),
+                "trend30d": _fill_trend30d(trend_field),
+            }
 
         return {
-            "revenue": {
-                "value": current["revenue"],
-                "previous": previous["revenue"],
-                "growthRate": _safe_growth_rate(
-                    current["revenue"], previous["revenue"]
-                ),
-                "sparkline": [
-                    {"date": p["date"], "value": p["revenue"]} for p in sparkline
-                ],
-            },
-            "waybillCount": {
-                "value": current["waybill_count"],
-                "previous": previous["waybill_count"],
-                "growthRate": _safe_growth_rate(
-                    current["waybill_count"], previous["waybill_count"]
-                ),
-                "sparkline": [
-                    {"date": p["date"], "value": p["waybill_count"]}
-                    for p in sparkline
-                ],
-            },
-            "vehicleQuantity": {
-                "value": current["vehicle_quantity"],
-                "previous": previous["vehicle_quantity"],
-                "growthRate": _safe_growth_rate(
-                    current["vehicle_quantity"], previous["vehicle_quantity"]
-                ),
-                "sparkline": [
-                    {"date": p["date"], "value": p["vehicle_quantity"]}
-                    for p in sparkline
-                ],
-            },
-            "customerCount": {
-                "value": current["customer_count"],
-                "previous": previous["customer_count"],
-                "growthRate": _safe_growth_rate(
-                    current["customer_count"], previous["customer_count"]
-                ),
-                "sparkline": [
-                    {"date": p["date"], "value": p["customer_count"]}
-                    for p in sparkline
-                ],
-            },
+            "revenue": _pack_metric("revenue"),
+            "waybillCount": _pack_metric("waybill_count"),
+            "vehicleQuantity": _pack_metric("vehicle_quantity"),
+            "customerCount": _pack_metric("customer_count"),
         }
 
     @staticmethod
@@ -198,10 +240,40 @@ class CockpitService:
         }
 
     @staticmethod
-    async def _kpi_sparkline(
+    async def _kpi_totals_inclusive_end(
+        db: AsyncSession, start: datetime, end: datetime
+    ) -> Dict[str, Any]:
+        """与 _kpi_totals 相同聚合，右边界为闭区间（含 end 时刻）。"""
+        stmt = (
+            select(
+                func.coalesce(func.sum(Waybill.freight_amount), 0).label("revenue"),
+                func.count(Waybill.id).label("waybill_count"),
+                func.coalesce(func.sum(Waybill.quantity), 0).label(
+                    "vehicle_quantity"
+                ),
+                func.count(func.distinct(Waybill.customer_id)).label(
+                    "customer_count"
+                ),
+            )
+            .where(
+                Waybill.is_deleted == 0,
+                Waybill.created_at >= start,
+                Waybill.created_at <= end,
+            )
+        )
+        row = (await db.execute(stmt)).one()
+        return {
+            "revenue": _to_float(row.revenue),
+            "waybill_count": int(row.waybill_count or 0),
+            "vehicle_quantity": int(row.vehicle_quantity or 0),
+            "customer_count": int(row.customer_count or 0),
+        }
+
+    @staticmethod
+    async def _kpi_daily_rows_inclusive_end(
         db: AsyncSession, start: datetime, end: datetime
     ) -> List[Dict[str, Any]]:
-        """按日聚合的 sparkline；最多 30 天，过长会按天降采样到 ≤ 30 个点。"""
+        """按自然日聚合多指标，含 end 时刻前数据；用于近 30 日趋势。"""
         date_expr = func.date(Waybill.created_at).label("d")
         stmt = (
             select(
@@ -218,13 +290,13 @@ class CockpitService:
             .where(
                 Waybill.is_deleted == 0,
                 Waybill.created_at >= start,
-                Waybill.created_at < end,
+                Waybill.created_at <= end,
             )
             .group_by(date_expr)
             .order_by(date_expr.asc())
         )
         rows = (await db.execute(stmt)).all()
-        items = [
+        return [
             {
                 "date": str(r.d),
                 "revenue": _to_float(r.revenue),
@@ -234,11 +306,6 @@ class CockpitService:
             }
             for r in rows
         ]
-        # 超过 30 天降采样
-        if len(items) > 30:
-            step = len(items) / 30.0
-            items = [items[int(i * step)] for i in range(30)]
-        return items
 
     # ---------- 2. 收入与单量趋势 ----------
 
