@@ -1,4 +1,5 @@
 import request from '@/utils/request';
+import { download } from '@/utils/common';
 import type { ApiResult, PageResult } from '@/api';
 import type { Waybill, WaybillParam } from './model';
 
@@ -178,6 +179,30 @@ export interface ImportRowItem {
   waybillId?: number;
   calcStatus?: string;
   createdAt?: string;
+}
+
+/** 下载运单批量导入 Excel 模板（表头与后端解析一致） */
+export async function downloadWaybillImportTemplate(): Promise<void> {
+  const res = await request.get('/business/waybill/import/template', {
+    responseType: 'blob'
+  });
+  const blob = res.data as Blob;
+  if (
+    blob.type?.includes('application/json') ||
+    blob.type?.includes('text/json')
+  ) {
+    const text = await blob.text();
+    let msg = '下载失败';
+    try {
+      const j = JSON.parse(text) as { message?: string; msg?: string };
+      msg = j.message || j.msg || msg;
+    } catch {
+      // ignore
+    }
+    throw new Error(msg);
+  }
+  const buf = await blob.arrayBuffer();
+  download(buf, '运单批量导入模板.xlsx');
 }
 
 /** 上传 Excel 批量导入运单 */

@@ -67,6 +67,16 @@ CARRIER_NAME_SUFFIX = (
     "个体运输户",
 )
 
+CARRIER_GEO = (
+    "华东", "华南", "华北", "西南", "上海", "江苏", "浙江", "广东",
+    "川渝", "京津", "深莞", "杭绍", "武汉", "西安", "南京", "苏州",
+)
+
+CARRIER_BRAND = (
+    "顺达", "宏泰", "远航", "金穗", "联众", "汇通", "迅捷", "安达",
+    "城际", "恒通", "嘉禾", "瑞丰", "德信", "新程", "众诚", "华通",
+)
+
 BANK_NAMES = ("中国工商银行", "中国建设银行", "中国农业银行", "中国银行", "交通银行", "招商银行")
 BANK_BRANCHES = ("某某支行", "高新支行", "开发区支行", "营业部")
 
@@ -139,11 +149,38 @@ def _alloc_unique_phone(session: Session, rng: random.Random, idx: int) -> str:
     raise RuntimeError("无法分配唯一联系电话，请减小 --count 或清理库内数据")
 
 
-def _unique_carrier_name(rng: random.Random, seq: int) -> str:
-    salt = rng.randint(1000, 9999)
-    ts = datetime.now().strftime("%H%M%S")
-    base = rng.choice(CARRIER_NAME_SUFFIX)
-    return f"[mockdata]承运商-{base}-{ts}-{seq:04d}-{salt}"
+def _compose_carrier_display_name(rng: random.Random) -> str:
+    """纯中文承运商名称，不含 mock 标识或数字盐值。"""
+    brand = rng.choice(CARRIER_BRAND)
+    suf = rng.choice(CARRIER_NAME_SUFFIX)
+    if rng.random() < 0.65:
+        geo = rng.choice(CARRIER_GEO)
+        return f"{geo}{brand}{suf}"
+    return f"{brand}{suf}"
+
+
+def _unique_carrier_name(
+    session: Session,
+    rng: random.Random,
+    used_this_run: set[str],
+) -> str:
+    """本租户内未删除承运商名称不与本次脚本、库内已有记录冲突。"""
+    for _ in range(120):
+        name = _compose_carrier_display_name(rng)[:100]
+        if name in used_this_run:
+            continue
+        exists = session.execute(
+            select(Carrier.id).where(
+                Carrier.carrier_name == name,
+                Carrier.is_deleted == 0,
+            )
+        ).first()
+        if not exists:
+            used_this_run.add(name)
+            return name
+    raise RuntimeError(
+        "无法在限定次数内生成唯一承运商名称，请减小 --count、更换 --seed 或清理库内重名数据。"
+    )
 
 
 def _mock_settlements(
@@ -194,7 +231,7 @@ def _mock_settlements(
                 is_default=is_def,
                 status=1 if j == 0 or rng.random() < 0.85 else 0,
                 sort_order=j,
-                remark=f"[mockdata] settlement #{j + 1} carrier_id={carrier_id}",
+                remark=f"脚本生成结算账户 #{j + 1} carrier_id={carrier_id}",
             )
         )
     return rows
@@ -211,10 +248,11 @@ def generate_carriers(
     """返回 (承运商条数, 结算账户条数)。"""
     carriers_done = 0
     settlements_done = 0
+    used_names: set[str] = set()
     for i in range(count):
         carrier_type = rng.choices((0, 1, 2), weights=(0.45, 0.45, 0.10), k=1)[0]
-        carrier_name = _unique_carrier_name(rng, i)[:100]
-        short_name = carrier_name.replace("[mockdata]", "")[:20]
+        carrier_name = _unique_carrier_name(session, rng, used_names)
+        short_name = carrier_name[:20]
         carrier_code = _next_carrier_code(session)
         contact_person = rng.choice(SURNAMES) + rng.choice(GIVEN_NAMES)
         contact_phone = _alloc_unique_phone(session, rng, i)
@@ -239,14 +277,17 @@ def generate_carriers(
         status = rng.choices((0, 1, 2), weights=(0.08, 0.87, 0.05), k=1)[0]
 
         remark = (
-            f"[mockdata] biz_carrier ts={datetime.now().strftime('%Y-%m-%d %H:%M:%S')} "
+            f"脚本批量生成 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} "
             f"type={carrier_type} settlements={accounts_per_carrier}"
         )
 
         if dry_run:
             fake_phone = f"1{rng.randint(3, 9)}*********"
+            name_disp = (
+                carrier_name if len(carrier_name) <= 40 else f"{carrier_name[:40]}…"
+            )
             print(
-                f"[dry-run] name={carrier_name[:40]}... phone≈{fake_phone} "
+                f"[dry-run] name={name_disp} phone≈{fake_phone} "
                 f"type={carrier_type} credit={credit_code or '-'} idcard={id_card_no or '-'} "
                 f"accounts={accounts_per_carrier}"
             )

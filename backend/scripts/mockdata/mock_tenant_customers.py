@@ -50,6 +50,13 @@ INDUSTRY = (
 )
 ORG_SUFFIX = ("有限公司", "股份有限公司", "集团", "供应链公司", "贸易公司")
 
+BRAND_PREFIX = (
+    "顺达", "宏泰", "远航", "金穗", "联众", "汇通", "迅捷", "安达",
+    "城际", "恒通", "嘉禾", "瑞丰", "德信", "新程", "众诚", "华通",
+)
+
+CITY_PREFIX = ("上海", "北京", "广州", "杭州", "成都", "深圳", "武汉", "西安", "南京", "苏州")
+
 SURNAMES = (
     "张", "王", "李", "赵", "刘", "陈", "杨", "黄", "周", "吴",
     "徐", "孙", "胡", "朱", "高", "林", "何", "郭", "马", "罗",
@@ -102,15 +109,45 @@ def _fake_credit_code_18(rng: random.Random) -> str:
     return "".join(rng.choice(chars) for _ in range(18))
 
 
-def _unique_customer_name(rng: random.Random, seq: int) -> str:
-    """保证与库内未删除记录 customer_name 不重复（服务层按名称唯一）。"""
-    base = (
-        f"{rng.choice(REGION_PREFIX)}{rng.choice(INDUSTRY)}"
-        f"{rng.choice(ORG_SUFFIX)}"
+def _compose_customer_display_name(rng: random.Random) -> str:
+    """纯中文客户名称（公司/组织风格），不含 mock 标识或数字盐值。"""
+    if rng.random() < 0.55:
+        core = (
+            f"{rng.choice(REGION_PREFIX)}{rng.choice(INDUSTRY)}"
+            f"{rng.choice(ORG_SUFFIX)}"
+        )
+    else:
+        core = (
+            f"{rng.choice(BRAND_PREFIX)}{rng.choice(INDUSTRY)}"
+            f"{rng.choice(ORG_SUFFIX)}"
+        )
+    if rng.random() < 0.35:
+        return f"{rng.choice(CITY_PREFIX)}{core}"
+    return core
+
+
+def _unique_customer_name(
+    session: Session,
+    rng: random.Random,
+    used_this_run: set[str],
+) -> str:
+    """与库内未删除记录及本脚本本次已用名不重复（服务层按名称唯一）。"""
+    for _ in range(120):
+        name = _compose_customer_display_name(rng)[:100]
+        if name in used_this_run:
+            continue
+        exists = session.execute(
+            select(Customer.id).where(
+                Customer.customer_name == name,
+                Customer.is_deleted == 0,
+            )
+        ).first()
+        if not exists:
+            used_this_run.add(name)
+            return name
+    raise RuntimeError(
+        "无法在限定次数内生成唯一客户名称，请减小 --count、更换 --seed 或清理库内重名数据。"
     )
-    salt = rng.randint(1000, 9999)
-    ts = datetime.now().strftime("%H%M%S")
-    return f"[mockdata]{base}-{ts}-{seq:04d}-{salt}"
 
 
 def generate_customers(
@@ -122,9 +159,10 @@ def generate_customers(
     auto_code: bool,
 ) -> int:
     created = 0
+    used_names: set[str] = set()
     for i in range(count):
-        customer_name = _unique_customer_name(rng, i)
-        short_name = customer_name.replace("[mockdata]", "")[:20]
+        customer_name = _unique_customer_name(session, rng, used_names)
+        short_name = customer_name[:20]
         customer_type = rng.randint(0, 4)
         settlement_type = rng.randint(0, 2)
         contact_person = rng.choice(SURNAMES) + rng.choice(GIVEN_NAMES) + (
@@ -137,7 +175,7 @@ def generate_customers(
         address = f"{rng.choice(CITIES)}测试路{rng.randint(1, 999)}号"
         credit_code = _fake_credit_code_18(rng)
         remark = (
-            f"[mockdata] 脚本生成 ts={datetime.now().strftime('%Y-%m-%d %H:%M:%S')} "
+            f"脚本批量生成 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} "
             f"type={customer_type} settlement={settlement_type}"
         )
 
@@ -149,8 +187,11 @@ def generate_customers(
 
         if dry_run:
             code_disp = code or "(入库时按 KH+日期+序号 生成)"
+            name_disp = (
+                customer_name if len(customer_name) <= 40 else f"{customer_name[:40]}…"
+            )
             print(
-                f"[dry-run] name={customer_name[:40]}... code={code_disp} "
+                f"[dry-run] name={name_disp} code={code_disp} "
                 f"type={customer_type} settlement={settlement_type} "
                 f"contact={contact_person} phone={contact_phone} status={status}"
             )

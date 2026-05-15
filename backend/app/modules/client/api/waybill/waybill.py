@@ -2,10 +2,12 @@
 企业端运单管理 API
 """
 
+import io
 from datetime import datetime, date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
@@ -321,6 +323,25 @@ async def import_waybills(
         "failCount": batch.fail_count,
         "status": batch.status,
     })
+
+
+@router.get("/import/template")
+async def download_waybill_import_template(_=Depends(get_current_user)):
+    """下载运单批量导入 Excel 模板（表头与解析逻辑一致）。"""
+    from app.modules.client.services.waybill.waybill_import_service import (
+        WaybillImportService,
+    )
+
+    data = WaybillImportService.build_template_workbook_bytes()
+    return StreamingResponse(
+        io.BytesIO(data),
+        media_type=(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ),
+        headers={
+            "Content-Disposition": 'attachment; filename="waybill-import-template.xlsx"'
+        },
+    )
 
 
 @router.get("/import/batches")

@@ -16,7 +16,8 @@ const modules = import.meta.glob('/src/views/**/index.vue');
 const STATIC_LAYOUT_MENU_PATHS = [
   { path: '/enterprise/manage' },
   { path: '/user/profile' },
-  { path: '/user/message' }
+  { path: '/user/message' },
+  { path: '/business/waybill/import' }
 ] as const;
 
 /**
@@ -84,6 +85,12 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       name: 'BillingContractDetail',
       component: () => import('@/views/billing/contract/detail.vue'),
       meta: { title: '合同详情' }
+    },
+    // 运单批量导入（从运单列表进入，不在后端菜单中单独挂路由）
+    {
+      path: '/business/waybill/import',
+      component: () => import('@/views/business/waybill/import/index.vue'),
+      meta: { title: '运单批量导入' }
     }
   ];
   const layoutRoutes: RouteRecordRaw[] = [

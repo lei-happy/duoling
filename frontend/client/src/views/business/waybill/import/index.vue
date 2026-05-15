@@ -5,79 +5,68 @@
         <div class="import-page-title">
           <span class="title-text">运单批量导入</span>
           <span class="title-tip">
-            支持 .xlsx；同一行多车型可用 + 拼接（品牌/车型/数量列同步对齐）
+            请先下载模板按列填写；支持 .xlsx / .xls。客户名称须与客户档案一致；出发地/目的地按行政区逐级用
+            / 填写，无需编码。同一行多车型用 + 拼接（商品车品牌/车型/数量列对齐）
           </span>
-        </div>
-        <div class="import-page-actions">
-          <el-upload
-            :show-file-list="false"
-            accept=".xlsx,.xls"
-            :before-upload="beforeUpload"
-            :http-request="onUpload"
-            :disabled="uploading"
-          >
-            <el-button type="primary" :loading="uploading">上传 Excel</el-button>
-          </el-upload>
-          <el-button @click="loadBatches">刷新</el-button>
         </div>
       </div>
     </ele-card>
 
-    <ele-card class="import-page-card">
-      <div class="batches-cap">导入批次</div>
-      <el-table
-        v-loading="loading"
-        :data="batches"
-        border
-        stripe
-        size="small"
-        @row-click="onRowClick"
+    <ele-card :body-style="{ paddingTop: '8px' }">
+      <ele-pro-table
+        ref="tableRef"
+        row-key="id"
+        :columns="columns"
+        :datasource="datasource"
+        :show-overflow-tooltip="true"
+        :highlight-current-row="true"
+        cache-key="WaybillImportBatchesTable"
       >
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="fileName" label="文件名" min-width="180" />
-        <el-table-column prop="totalCount" label="总数" width="80" align="center" />
-        <el-table-column prop="successCount" label="导入成功" width="92" align="center">
-          <template #default="{ row }">
-            <el-tag type="success" size="small">{{ row.successCount }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="failCount" label="导入失败" width="92" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.failCount > 0" type="danger" size="small">
-              {{ row.failCount }}
-            </el-tag>
-            <span v-else>0</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="110" align="center">
-          <template #default="{ row }">
-            <el-tag :type="statusType(row.status)" size="small">
-              {{ statusText(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createdAt" label="时间" width="170" align="center" />
-        <el-table-column label="操作" width="120" align="center">
-          <template #default="{ row }">
-            <el-button
-              text
-              type="primary"
-              @click.stop="openBatch(row)"
+        <template #toolbar>
+          <div class="import-toolbar-btns">            
+            <el-upload
+              :show-file-list="false"
+              accept=".xlsx,.xls"
+              :before-upload="beforeUpload"
+              :http-request="onUpload"
+              :disabled="uploading"
             >
-              查看明细
+              <el-button type="primary" :loading="uploading">
+                上传 Excel
+              </el-button>
+            </el-upload>
+            <el-button type="primary" plain @click="onDownloadTemplate">
+              下载模板
             </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="pager-row">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="pageSize"
-          :total="total"
-          layout="total, prev, pager, next, jumper"
-          @current-change="loadBatches"
-        />
-      </div>
+          </div>
+        </template>
+        <template #successCount="{ row }">
+          <el-tag type="success" size="small">{{ row.successCount }}</el-tag>
+        </template>
+        <template #failCount="{ row }">
+          <el-tag v-if="row.failCount > 0" type="danger" size="small">
+            {{ row.failCount }}
+          </el-tag>
+          <span v-else>0</span>
+        </template>
+        <template #status="{ row }">
+          <el-tag :type="statusType(row.status)" size="small">
+            {{ statusText(row.status) }}
+          </el-tag>
+        </template>
+        <template #action="{ row }">
+          <btn-items
+            type="link"
+            :wrap="false"
+            :items="[
+              {
+                title: '查看明细',
+                onClick: () => openBatch(row)
+              }
+            ]"
+          />
+        </template>
+      </ele-pro-table>
     </ele-card>
 
     <waybill-import-batch
@@ -91,23 +80,79 @@
   import { ref, onMounted } from 'vue';
   import type { UploadRequestOptions } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import type { EleProTable } from 'ele-admin-plus';
+  import type {
+    DatasourceFunction
+  } from 'ele-admin-plus/es/ele-pro-table/types';
   import {
     importWaybillExcel,
     pageImportBatches,
+    downloadWaybillImportTemplate,
     type ImportBatchSummary
   } from '@/api/waybill';
+  import { formatDateTime } from '@/utils/date-util';
   import WaybillImportBatch from '../components/waybill-import-batch.vue';
 
   defineOptions({ name: 'WaybillImportPage' });
 
+  const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const uploading = ref(false);
-  const loading = ref(false);
-  const batches = ref<ImportBatchSummary[]>([]);
-  const page = ref(1);
-  const pageSize = ref(20);
-  const total = ref(0);
   const batchDetailVisible = ref(false);
   const activeBatchId = ref<number | null>(null);
+
+  const columns = ref([
+    { prop: 'id', label: 'ID', width: 80, align: 'center' },
+    { prop: 'fileName', label: '文件名', minWidth: 200 },
+    { prop: 'totalCount', label: '总数', width: 80, align: 'center' },
+    {
+      columnKey: 'successCount',
+      prop: 'successCount',
+      label: '导入成功',
+      width: 96,
+      align: 'center',
+      slot: 'successCount'
+    },
+    {
+      columnKey: 'failCount',
+      prop: 'failCount',
+      label: '导入失败',
+      width: 96,
+      align: 'center',
+      slot: 'failCount'
+    },
+    {
+      columnKey: 'status',
+      prop: 'status',
+      label: '状态',
+      width: 110,
+      align: 'center',
+      slot: 'status'
+    },
+    {
+      prop: 'createdAt',
+      label: '时间',
+      width: 176,
+      align: 'center',
+      formatter: (row: { createdAt?: string }) => formatDateTime(row.createdAt)
+    },
+    {
+      columnKey: 'action',
+      label: '操作',
+      width: 112,
+      align: 'center',
+      slot: 'action',
+      fixed: 'right',
+      hideInPrint: true,
+      hideInExport: true
+    }
+  ]);
+
+  const datasource: DatasourceFunction = ({ pages }) => {
+    return pageImportBatches(pages.page, pages.limit ?? 20).then((res) => ({
+      list: res?.list ?? [],
+      count: res?.total ?? 0
+    }));
+  };
 
   const statusType = (s?: string) => {
     if (s === 'done') return 'success';
@@ -129,6 +174,10 @@
     return s ? m[s] || s : '--';
   };
 
+  const reloadTable = () => {
+    tableRef.value?.reload?.();
+  };
+
   const beforeUpload = (file: File) => {
     const ok = /\.(xlsx|xls)$/i.test(file.name);
     if (!ok) {
@@ -136,6 +185,16 @@
       return false;
     }
     return true;
+  };
+
+  const onDownloadTemplate = async () => {
+    try {
+      await downloadWaybillImportTemplate();
+      EleMessage.success({ message: '模板已开始下载', plain: true });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '下载失败';
+      EleMessage.error({ message: msg, plain: true });
+    }
   };
 
   const onUpload = async (opts: UploadRequestOptions) => {
@@ -146,29 +205,16 @@
         message: `导入完成：成功 ${data?.successCount ?? 0}，失败 ${data?.failCount ?? 0}`,
         plain: true
       });
-      await loadBatches();
+      reloadTable();
       if (data?.batchId) {
         activeBatchId.value = data.batchId;
         batchDetailVisible.value = true;
       }
-    } catch (e: any) {
-      EleMessage.error({ message: e.message, plain: true });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '上传失败';
+      EleMessage.error({ message: msg, plain: true });
     } finally {
       uploading.value = false;
-    }
-  };
-
-  const loadBatches = async () => {
-    loading.value = true;
-    try {
-      const data = await pageImportBatches(page.value, pageSize.value);
-      batches.value = data?.list ?? [];
-      total.value = data?.total ?? 0;
-    } catch (_) {
-      batches.value = [];
-      total.value = 0;
-    } finally {
-      loading.value = false;
     }
   };
 
@@ -177,10 +223,8 @@
     batchDetailVisible.value = true;
   };
 
-  const onRowClick = (row: ImportBatchSummary) => openBatch(row);
-
   onMounted(() => {
-    loadBatches();
+    reloadTable();
   });
 </script>
 
@@ -191,7 +235,7 @@
   .import-page-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: 16px;
   }
   .import-page-title {
@@ -206,20 +250,12 @@
   .title-tip {
     font-size: 12px;
     color: var(--el-text-color-secondary);
+    line-height: 1.5;
   }
-  .import-page-actions {
-    display: flex;
-    gap: 8px;
+  .import-toolbar-btns {
+    display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
-  }
-  .batches-cap {
-    margin-bottom: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-  }
-  .pager-row {
-    margin-top: 12px;
-    text-align: right;
+    gap: 8px;
   }
 </style>

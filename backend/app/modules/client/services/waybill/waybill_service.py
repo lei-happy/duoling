@@ -217,6 +217,8 @@ class WaybillService:
             )
             if r.region_id is not None:
                 update["originRegionId"] = r.region_id
+                if not oc and r.region_code:
+                    update["originCode"] = r.region_code
         if data.destinationRegionId is None and (data.destinationCode or data.destination):
             dc = (data.destinationCode or "").strip() or None
             r = await StandardizeService.resolve_region(
@@ -224,6 +226,8 @@ class WaybillService:
             )
             if r.region_id is not None:
                 update["destinationRegionId"] = r.region_id
+                if not dc and r.region_code:
+                    update["destinationCode"] = r.region_code
         if not update:
             return data
         return data.model_copy(update=update)

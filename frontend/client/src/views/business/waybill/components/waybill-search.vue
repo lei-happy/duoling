@@ -66,7 +66,7 @@
         </el-col>
       </el-row>
       <el-row :gutter="10" class="waybill-search-bar__row waybill-search-bar__row--second">
-        <el-col :lg="8" :md="10" :sm="24" :xs="24">
+        <el-col :lg="5" :md="8" :sm="12" :xs="24">
           <floating-label
             v-model="form.createdAtRange"
             label="运单创建时间"
@@ -79,7 +79,7 @@
             end-placeholder="结束"
           />
         </el-col>
-        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+        <el-col :lg="5" :md="8" :sm="12" :xs="24">
           <floating-label
             label="品牌/车型"
             type="input"

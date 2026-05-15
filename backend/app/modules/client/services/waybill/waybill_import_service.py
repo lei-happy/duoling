@@ -9,18 +9,20 @@
 
 Excel 列约定（按表头中文匹配，大小写不敏感、去空格）：
   - 运单编号 (可空，自动生成)
-  - 客户名称 / 客户ID
-  - 出发地 / 目的地  (区域名称，逐级 / 分隔，例如 "广东省/广州市/天河区")
-  - 出发地编码 / 目的地编码
-  - 货物品牌 / 车型 / 数量
+  - 客户名称（必填；后台按名称匹配 biz_customer.id，勿填客户ID）
+  - 出发地 / 目的地（必填其一或组合；逐级用 / 分隔，如「广东省/广州市/天河区」；
+    后台用 StandardizeService 解析区划编码与 region_id，勿填编码/区域ID）
+  - 商品车品牌（或兼容旧表头「货物品牌」）/ 车型 / 数量
   - 计划开单时间 / 要求装车时间 / 要求送达时间 (yyyy-mm-dd HH:MM)
   - 经销商名称 / 联系人 / 电话 / 地址
   - 备注
 
 多明细：以「+」串接同一行的多车型，例如：
-  - 货物品牌列 = "比亚迪+长安"
-  - 车型列     = "汉EV+逸动"
-  - 数量列     = "2+3"
+  - 商品车品牌列 = "比亚迪+长安"
+  - 车型列       = "汉EV+逸动"
+  - 数量列       = "2+3"
+
+兼容旧模板：仍识别 客户ID、出发地/目的地编码与区域ID、货物品牌 等列。
 """
 
 from __future__ import annotations
@@ -32,6 +34,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
+from app.modules.client.models.partner.customer import Customer
 from app.modules.client.models.waybill.waybill_import import (
     WaybillImportBatch,
     WaybillImportRow,
@@ -56,6 +59,7 @@ HEADER_MAP: dict[str, str] = {
     "出发地区域id": "originRegionId",
     "目的地区域id": "destinationRegionId",
     "货物品牌": "vehicleBrand",
+    "商品车品牌": "vehicleBrand",
     "品牌": "vehicleBrand",
     "车型": "vehicleModel",
     "数量": "quantity",
@@ -68,6 +72,25 @@ HEADER_MAP: dict[str, str] = {
     "经销商地址": "dealerAddress",
     "备注": "remark",
 }
+
+# 下载模板用表头顺序（须与 HEADER_MAP 中文键一致，便于解析首行识别列）
+IMPORT_TEMPLATE_HEADERS: tuple[str, ...] = (
+    "运单编号",
+    "客户名称",
+    "出发地",
+    "目的地",
+    "商品车品牌",
+    "车型",
+    "数量",
+    "计划开单时间",
+    "要求装车时间",
+    "要求送达时间",
+    "经销商名称",
+    "经销商联系人",
+    "经销商电话",
+    "经销商地址",
+    "备注",
+)
 
 
 def _norm_header(s: Any) -> str:
@@ -136,7 +159,158 @@ def _parse_dt(val: Any):
     return None
 
 
+def _str_cell(row: dict, key: str) -> Optional[str]:
+    v = row.get(key)
+    if v is None or v == "":
+        return None
+    s = str(v).strip()
+    return s if s else None
+
+
+def _waybill_no_from_row(row: dict) -> Optional[str]:
+    return _str_cell(row, "waybillNo")
+
+
 class WaybillImportService:
+
+    @staticmethod
+    async def _resolve_customer_for_import(
+        db: AsyncSession, row: dict,
+    ) -> tuple[Optional[int], Optional[str]]:
+        """优先按客户名称精确匹配启用客户；无名称时可退回旧模板的客户ID。"""
+        name = _str_cell(row, "customerName")
+        if name:
+            r = await db.execute(
+                select(Customer).where(
+                    Customer.customer_name == name,
+                    Customer.is_deleted == 0,
+                    Customer.status == 1,
+                ).order_by(Customer.id.asc())
+            )
+            rows = list(r.scalars().all())
+            if len(rows) == 0:
+                raise BizException(
+                    f"未找到启用状态的客户「{name}」，请与客户档案中的名称完全一致"
+                )
+            if len(rows) > 1:
+                raise BizException(
+                    f"客户名称「{name}」对应多条启用记录，请在客户管理中区分后再导入"
+                )
+            c = rows[0]
+            return c.id, (c.customer_name or name)
+
+        cid = _parse_int(row.get("customerId"))
+        if cid is not None:
+            r = await db.execute(
+                select(Customer).where(
+                    Customer.id == cid,
+                    Customer.is_deleted == 0,
+                )
+            )
+            c = r.scalar_one_or_none()
+            if c is None:
+                raise BizException(f"客户ID「{cid}」不存在或已删除")
+            if int(c.status or 0) != 1:
+                raise BizException(f"客户ID「{cid}」已停用，无法导入")
+            cn2 = _str_cell(row, "customerName")
+            return cid, (cn2 or (c.customer_name or None))
+
+        raise BizException("请填写客户名称")
+
+    @staticmethod
+    async def _build_waybill_create_from_row(
+        db: AsyncSession, row: dict,
+    ) -> WaybillCreate:
+        """解析行 → WaybillCreate（客户名称匹配 ID；地区仍走 create 内 hydrate）。"""
+        customer_id, customer_name = (
+            await WaybillImportService._resolve_customer_for_import(db, row)
+        )
+
+        cargoes: list[WaybillCargoLineIn] = []
+        brands = _split_multi(row.get("vehicleBrand"))
+        models = _split_multi(row.get("vehicleModel"))
+        qtys = _split_multi(row.get("quantity"))
+        n = max(len(brands), len(models), len(qtys), 1)
+        for i in range(n):
+            brand = brands[i] if i < len(brands) else (brands[0] if brands else None)
+            model = models[i] if i < len(models) else (models[0] if models else None)
+            qty_raw = qtys[i] if i < len(qtys) else (qtys[0] if qtys else None)
+            qty = _parse_int(qty_raw, 1) or 1
+            if not brand and not model:
+                continue
+            cargoes.append(WaybillCargoLineIn(
+                vehicleBrand=brand,
+                vehicleModel=model,
+                quantity=qty,
+                sortOrder=i,
+            ))
+        if not cargoes:
+            raise BizException("缺少商品车品牌/车型/数量")
+
+        origin = _str_cell(row, "origin")
+        dest = _str_cell(row, "destination")
+        if not origin or not dest:
+            raise BizException("请同时填写出发地与目的地（多级行政区用 / 分隔）")
+
+        return WaybillCreate(
+            waybillNo=_waybill_no_from_row(row),
+            customerId=customer_id,
+            customerName=customer_name,
+            origin=origin,
+            originCode=_norm_region_code(row.get("originCode")),
+            originRegionId=_parse_int(row.get("originRegionId")),
+            destination=dest,
+            destinationCode=_norm_region_code(row.get("destinationCode")),
+            destinationRegionId=_parse_int(row.get("destinationRegionId")),
+            cargoes=cargoes,
+            planIssueTime=_parse_dt(row.get("planIssueTime")),
+            requiredLoadTime=_parse_dt(row.get("requiredLoadTime")),
+            requiredDeliverTime=_parse_dt(row.get("requiredDeliverTime")),
+            dealerName=_str_cell(row, "dealerName"),
+            dealerContact=_str_cell(row, "dealerContact"),
+            dealerPhone=_str_cell(row, "dealerPhone"),
+            dealerAddress=_str_cell(row, "dealerAddress"),
+            remark=_str_cell(row, "remark"),
+        )
+
+    @staticmethod
+    def build_template_workbook_bytes() -> bytes:
+        """生成带标准表头的空 xlsx，供用户下载填写。"""
+        try:
+            import openpyxl  # type: ignore
+            from openpyxl.styles import Alignment, Font, PatternFill
+            from openpyxl.utils import get_column_letter
+        except ImportError as e:  # pragma: no cover
+            raise BizException("缺少 openpyxl 依赖") from e
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "运单导入"
+        headers = list(IMPORT_TEMPLATE_HEADERS)
+        ws.append(headers)
+        # 空行便于用户从第 3 行起填；解析时会跳过全空行
+        ws.append([""] * len(headers))
+
+        header_fill = PatternFill(
+            "solid", fgColor="FFE7EEF8"
+        )
+        header_font = Font(bold=True, size=11)
+        for col_idx in range(1, len(headers) + 1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        widths = (
+            14, 18, 28, 28, 14, 14, 8, 18, 18, 18, 16, 12, 14, 24, 20,
+        )
+        for i, w in enumerate(widths, start=1):
+            if i <= len(headers):
+                ws.column_dimensions[get_column_letter(i)].width = w
+
+        bio = io.BytesIO()
+        wb.save(bio)
+        return bio.getvalue()
 
     @staticmethod
     def _parse_excel(file_bytes: bytes) -> list[dict]:
@@ -181,58 +355,6 @@ class WaybillImportService:
         return out
 
     @staticmethod
-    def _row_to_create(row: dict) -> WaybillCreate:
-        """单行 dict → WaybillCreate"""
-        cargoes: list[WaybillCargoLineIn] = []
-        brands = _split_multi(row.get("vehicleBrand"))
-        models = _split_multi(row.get("vehicleModel"))
-        qtys = _split_multi(row.get("quantity"))
-        n = max(len(brands), len(models), len(qtys), 1)
-        for i in range(n):
-            brand = brands[i] if i < len(brands) else (brands[0] if brands else None)
-            model = models[i] if i < len(models) else (models[0] if models else None)
-            qty_raw = qtys[i] if i < len(qtys) else (qtys[0] if qtys else None)
-            qty = _parse_int(qty_raw, 1) or 1
-            if not brand and not model:
-                continue
-            cargoes.append(WaybillCargoLineIn(
-                vehicleBrand=brand,
-                vehicleModel=model,
-                quantity=qty,
-                sortOrder=i,
-            ))
-        if not cargoes:
-            raise BizException("缺少品牌/车型/数量")
-
-        return WaybillCreate(
-            waybillNo=(str(row["waybillNo"]).strip()
-                       if row.get("waybillNo") not in (None, "") else None),
-            customerId=_parse_int(row.get("customerId")),
-            customerName=(str(row["customerName"]).strip()
-                          if row.get("customerName") else None),
-            origin=(str(row["origin"]).strip() if row.get("origin") else None),
-            originCode=_norm_region_code(row.get("originCode")),
-            originRegionId=_parse_int(row.get("originRegionId")),
-            destination=(str(row["destination"]).strip()
-                         if row.get("destination") else None),
-            destinationCode=_norm_region_code(row.get("destinationCode")),
-            destinationRegionId=_parse_int(row.get("destinationRegionId")),
-            cargoes=cargoes,
-            planIssueTime=_parse_dt(row.get("planIssueTime")),
-            requiredLoadTime=_parse_dt(row.get("requiredLoadTime")),
-            requiredDeliverTime=_parse_dt(row.get("requiredDeliverTime")),
-            dealerName=(str(row["dealerName"]).strip()
-                        if row.get("dealerName") else None),
-            dealerContact=(str(row["dealerContact"]).strip()
-                           if row.get("dealerContact") else None),
-            dealerPhone=(str(row["dealerPhone"]).strip()
-                         if row.get("dealerPhone") else None),
-            dealerAddress=(str(row["dealerAddress"]).strip()
-                           if row.get("dealerAddress") else None),
-            remark=(str(row["remark"]).strip() if row.get("remark") else None),
-        )
-
-    @staticmethod
     async def import_excel(
         db: AsyncSession,
         *,
@@ -274,7 +396,9 @@ class WaybillImportService:
             await db.flush()
 
             try:
-                payload = WaybillImportService._row_to_create(row)
+                payload = await WaybillImportService._build_waybill_create_from_row(
+                    db, row
+                )
                 waybill, _ = await WaybillService.create_waybill(
                     db, payload, current_user_id
                 )
