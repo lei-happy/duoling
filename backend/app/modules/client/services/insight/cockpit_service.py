@@ -374,25 +374,33 @@ class CockpitService:
         start: datetime,
         end: datetime,
         limit: int = 10,
+        sort_by: str = "revenue",
     ) -> List[Dict[str, Any]]:
-        """TopN 客户按运费贡献排序。"""
+        """TopN 客户：默认按运费收入排序，可选按商品车台数排序。"""
         start_dt = _coerce_dt(start)
         end_dt = _coerce_dt(end)
-        limit = max(1, min(int(limit or 10), 50))
+        limit = max(1, min(int(limit or 10), 5000))
+        sort_key = (sort_by or "revenue").strip().lower()
+        if sort_key in ("vehicle_quantity", "vehiclequantity", "qty"):
+            sort_key = "vehicle_quantity"
+        else:
+            sort_key = "revenue"
 
         # 客户名优先取 biz_customer.customer_name；NULL 时回退 biz_waybill.customer_name
         customer_name_expr = func.coalesce(
             Customer.customer_name, Waybill.customer_name, literal(_UNKNOWN_LABEL)
         )
+        revenue_sum = func.coalesce(func.sum(Waybill.freight_amount), 0)
+        vehicle_sum = func.coalesce(func.sum(Waybill.quantity), 0)
+        order_expr = vehicle_sum.desc() if sort_key == "vehicle_quantity" else revenue_sum.desc()
+
         stmt = (
             select(
                 Waybill.customer_id.label("customer_id"),
                 customer_name_expr.label("customer_name"),
-                func.coalesce(func.sum(Waybill.freight_amount), 0).label("revenue"),
+                revenue_sum.label("revenue"),
                 func.count(Waybill.id).label("waybill_count"),
-                func.coalesce(func.sum(Waybill.quantity), 0).label(
-                    "vehicle_quantity"
-                ),
+                vehicle_sum.label("vehicle_quantity"),
             )
             .select_from(Waybill)
             .outerjoin(
@@ -405,24 +413,29 @@ class CockpitService:
                 Waybill.created_at < end_dt,
             )
             .group_by(Waybill.customer_id, customer_name_expr)
-            .order_by(func.coalesce(func.sum(Waybill.freight_amount), 0).desc())
+            .order_by(order_expr)
             .limit(limit)
         )
         rows = (await db.execute(stmt)).all()
 
-        # 计算总收入用于 share（基于本期全部运单）
         total_revenue = await CockpitService._sum_revenue(db, start_dt, end_dt)
+        total_vehicles = await CockpitService._sum_vehicle_quantity(db, start_dt, end_dt)
         items: List[Dict[str, Any]] = []
         for r in rows:
             revenue = _to_float(r.revenue)
+            vqty = int(r.vehicle_quantity or 0)
+            if sort_key == "vehicle_quantity":
+                share = (vqty / total_vehicles) if total_vehicles > 0 else 0.0
+            else:
+                share = (revenue / total_revenue) if total_revenue > 0 else 0.0
             items.append(
                 {
                     "customerId": r.customer_id,
                     "customerName": r.customer_name or _UNKNOWN_LABEL,
                     "revenue": revenue,
                     "waybillCount": int(r.waybill_count or 0),
-                    "vehicleQuantity": int(r.vehicle_quantity or 0),
-                    "share": (revenue / total_revenue) if total_revenue > 0 else 0,
+                    "vehicleQuantity": vqty,
+                    "share": share,
                 }
             )
         return items
@@ -439,6 +452,20 @@ class CockpitService:
             Waybill.created_at < end,
         )
         return _to_float((await db.execute(stmt)).scalar())
+
+    @staticmethod
+    async def _sum_vehicle_quantity(
+        db: AsyncSession, start: datetime, end: datetime
+    ) -> int:
+        stmt = select(
+            func.coalesce(func.sum(Waybill.quantity), 0)
+        ).where(
+            Waybill.is_deleted == 0,
+            Waybill.created_at >= start,
+            Waybill.created_at < end,
+        )
+        row = (await db.execute(stmt)).scalar()
+        return int(row or 0)
 
     # ---------- 4. 客户类型分布 ----------
 

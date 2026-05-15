@@ -80,13 +80,19 @@ async def revenue_trend(
 async def customer_rank(
     start: Optional[datetime] = Query(None),
     end: Optional[datetime] = Query(None),
-    limit: int = Query(10, ge=1, le=50),
+    limit: int = Query(10, ge=1, le=5000, description="返回条数上限，最大 5000"),
+    sort_by: str = Query(
+        "revenue",
+        description="排序字段: revenue（运费收入）| vehicle_quantity（商品车台数）",
+    ),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     """客户运费贡献排行"""
     start_dt, end_dt = _resolve_window(start, end)
-    data = await CockpitService.customer_rank(db, start_dt, end_dt, limit)
+    data = await CockpitService.customer_rank(
+        db, start_dt, end_dt, limit, sort_by=sort_by
+    )
     return success(data=data)
 
 

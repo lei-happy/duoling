@@ -77,7 +77,10 @@ export interface CustomerRankItem {
 
 /** TopN 客户查询参数 */
 export interface CustomerRankParam extends CockpitDateRangeParam {
+  /** 返回条数上限，最大 5000（服务端约束） */
   limit?: number;
+  /** 排序：revenue 按运单收入；vehicle_quantity 按商品车台数 */
+  sort_by?: 'revenue' | 'vehicle_quantity';
 }
 
 /** 客户类型分布项 */
