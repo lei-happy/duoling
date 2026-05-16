@@ -13,17 +13,6 @@ export async function pageOrders(params: OrderParam) {
   return Promise.reject(new Error(res.data.message));
 }
 
-export async function pageDispatchOrders(params: OrderParam) {
-  const res = await request.get<ApiResult<PageResult<Order>>>(
-    '/business/order/dispatch',
-    { params }
-  );
-  if (res.data.code === 0) {
-    return res.data.data;
-  }
-  return Promise.reject(new Error(res.data.message));
-}
-
 export async function pageTrackingOrders(params: OrderParam) {
   const res = await request.get<ApiResult<PageResult<Order>>>(
     '/business/order/tracking',

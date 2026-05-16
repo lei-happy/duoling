@@ -223,17 +223,6 @@
     "status": 1
   },
   {
-    "feature_code": "biz_dispatch",
-    "feature_name": "智能调度",
-    "module": "operation",
-    "description": null,
-    "required_tables": [
-      "biz_waybill"
-    ],
-    "sort_order": 31,
-    "status": 1
-  },
-  {
     "feature_code": "biz_tracking",
     "feature_name": "在途监控",
     "module": "operation",
