@@ -2,7 +2,7 @@
   <div class="cargo-picker">
     <div class="cargo-picker__panel">
       <div class="cargo-picker__title">
-        候选运单货物
+        候选商品车（运单明细）
         <span class="cargo-picker__hint">仅展示剩余可分配台数 &gt; 0</span>
       </div>
       <div class="cargo-picker__filter">
@@ -55,10 +55,17 @@
             {{ row.vehicleBrand || '--' }} / {{ row.vehicleModel || '--' }}
           </template>
         </el-table-column>
-        <el-table-column label="原台数" prop="quantity" width="76" align="center" />
+        <el-table-column
+          label="原台数"
+          prop="quantity"
+          width="76"
+          align="center"
+        />
         <el-table-column label="剩余" width="80" align="center">
           <template #default="{ row }">
-            <el-tag size="small" type="success">{{ row.remainingQuantity }}</el-tag>
+            <el-tag size="small" type="success">{{
+              row.remainingQuantity
+            }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="80" align="center">
@@ -78,7 +85,7 @@
 
     <div class="cargo-picker__panel">
       <div class="cargo-picker__title">
-        已挂接货物（{{ modelValue.length }} 项 / {{ totalQuantity }} 台）
+        已选商品车（{{ modelValue.length }} 项 / {{ totalQuantity }} 台）
         <span class="cargo-picker__hint">支持指定走某段</span>
       </div>
       <el-table
@@ -86,7 +93,7 @@
         size="small"
         border
         height="320"
-        empty-text="请从左侧添加货物"
+        empty-text="请从左侧添加商品车"
       >
         <el-table-column label="运单号" prop="waybillNo" width="140" />
         <el-table-column label="品牌/车型" min-width="160">

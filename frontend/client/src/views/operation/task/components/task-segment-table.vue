@@ -1,7 +1,7 @@
 <template>
   <div class="seg-table">
     <div class="seg-table__title">
-      <span>运输分段（{{ modelValue.length }} 段）</span>
+      <span>路线分段（{{ modelValue.length }} 段）</span>
       <el-button
         type="primary"
         link
@@ -9,7 +9,7 @@
         :disabled="modelValue.length >= 5"
         @click="addRow"
       >
-        新增分段
+        新增路段
       </el-button>
     </div>
     <el-table

@@ -434,6 +434,28 @@ class TenantService:
                         value_type="boolean",
                         default_value="false",
                     ),
+                    SystemConfig(
+                        config_key="task.no_gen_rule",
+                        config_value='{"parts":[{"type":"prefix","value":"TASK"},'
+                        '{"type":"date","format":"YYYYMMDD"},'
+                        '{"type":"seq","digits":4,"reset":"daily"}]}',
+                        config_group="task",
+                        description="任务单号生成规则 JSON（parts 三段 prefix/date/seq）",
+                        value_type="json",
+                        default_value='{"parts":[{"type":"prefix","value":"TASK"},'
+                        '{"type":"date","format":"YYYYMMDD"},'
+                        '{"type":"seq","digits":4,"reset":"daily"}]}',
+                    ),
+                    SystemConfig(
+                        config_key="task.name_gen_rule",
+                        config_value='{"joiner":" ","parts":[{"kind":"route_od"},'
+                        '{"kind":"vehicle_first"},{"kind":"carrier_driver_plate"}]}',
+                        config_group="task",
+                        description="任务名称生成规则 JSON（joiner + parts 三段 kind）",
+                        value_type="json",
+                        default_value='{"joiner":" ","parts":[{"kind":"route_od"},'
+                        '{"kind":"vehicle_first"},{"kind":"carrier_driver_plate"}]}',
+                    ),
                 ]
                 session.add_all(default_configs)
 

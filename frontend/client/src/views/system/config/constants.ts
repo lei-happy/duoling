@@ -1,8 +1,24 @@
-/** 左侧菜单与卡片标题 */
+/** 左侧菜单分组文案 */
 export const GROUP_LABELS: Record<string, string> = {
   waybill: '运单设置',
+  task: '任务单设置',
   default: '其它'
 };
+
+/** 右侧内容区卡片标题（可与侧栏不同，例如任务单：侧栏「任务单设置」、卡片「任务编号生成设置」） */
+export const GROUP_CARD_HEADER_LABELS: Record<string, string> = {
+  task: '任务编号生成设置'
+};
+
+/** 侧栏分组顺序（避免按字母序 task 排在 waybill 前） */
+export const CONFIG_GROUP_SORT_ORDER = ['waybill', 'task', 'default'];
+
+/** 与后端种子一致的默认 JSON（用于表单初始化/展示默认值文案） */
+export const TASK_NO_GEN_DEFAULT_JSON =
+  '{"parts":[{"type":"prefix","value":"TASK"},{"type":"date","format":"YYYYMMDD"},{"type":"seq","digits":4,"reset":"daily"}]}';
+
+export const TASK_NAME_GEN_DEFAULT_JSON =
+  '{"joiner":" ","parts":[{"kind":"route_od"},{"kind":"vehicle_first"},{"kind":"carrier_driver_plate"}]}';
 
 /** 各配置项在通用表单中的短标题（避免使用接口返回的长 description 作为表单项标签） */
 export const CONFIG_FIELD_LABELS: Record<string, string> = {};

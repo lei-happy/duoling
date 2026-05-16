@@ -29,6 +29,12 @@ from app.modules.client.schemas.task.task import (
     TaskUpdate,
 )
 from app.modules.client.schemas.task.task_segment import TaskSegmentIn
+from app.modules.client.services.system_config_service import SystemConfigService
+from app.modules.client.services.task.task_code_name_generator import (
+    build_task_name,
+    build_task_no,
+    legacy_default_task_name,
+)
 from app.modules.client.services.task.task_waybill_item_service import (
     TaskWaybillItemService,
 )
@@ -62,17 +68,14 @@ class TaskService:
     # ------------------------------------------------------------------
     @staticmethod
     async def generate_task_no(db: AsyncSession) -> str:
-        """简单策略：T + yyyymmdd + 当日序号 4 位"""
-        today = ddate.today().strftime("%Y%m%d")
-        prefix = f"T{today}"
-        like = f"{prefix}%"
-        res = await db.execute(
-            select(func.count(Task.id)).where(
-                Task.task_no.like(like),
-            )
-        )
-        cnt = int(res.scalar() or 0) + 1
-        return f"{prefix}{cnt:04d}"
+        """按系统配置 task.no_gen_rule 生成；缺省或无效时回退 T+日期+序号"""
+        raw = await SystemConfigService.get_by_key(db, "task.no_gen_rule")
+        return await build_task_no(db, raw)
+
+    @staticmethod
+    def default_task_name_for_create(data: TaskCreate) -> str:
+        """未配置或同步场景下的默认名称（历史逻辑）"""
+        return legacy_default_task_name(data)
 
     @staticmethod
     async def task_no_exists(
@@ -275,15 +278,21 @@ class TaskService:
         # 1. 任务单号
         task_no = (data.taskNo or "").strip()
         if not task_no:
-            task_no = await TaskService.generate_task_no(db)
+            raw_no = await SystemConfigService.get_by_key(db, "task.no_gen_rule")
+            task_no = await build_task_no(db, raw_no)
         else:
             if await TaskService.task_no_exists(db, task_no):
                 raise BizException(f"任务单号 {task_no} 已存在")
 
+        task_name_in = (data.taskName or "").strip()
+        if not task_name_in:
+            raw_name = await SystemConfigService.get_by_key(db, "task.name_gen_rule")
+            task_name_in = await build_task_name(db, data, raw_name)
+
         # 2. 创建主表（先空承运方）
         task = Task(
             task_no=task_no,
-            task_name=(data.taskName or None),
+            task_name=task_name_in or None,
             source=int(data.source or 1),
             planned_load_time=data.plannedLoadTime,
             planned_arrive_time=data.plannedArriveTime,

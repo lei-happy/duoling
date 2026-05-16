@@ -35,7 +35,7 @@
                 v-if="currentGroup"
                 :key="currentGroup.name"
                 class="config-group-card"
-                :header="currentGroup.label"
+                :header="currentGroup.cardHeader"
                 :header-style="configGroupCardHeaderStyle"
                 :body-style="configGroupCardBodyStyle"
               >
@@ -66,8 +66,13 @@
   import type { SystemConfig } from '@/api/system/config/model';
   import { useMobile } from '@/utils/use-mobile';
   import GenericGroupSettings from './components/generic-group-settings.vue';
+  import TaskSettings from './components/task-settings.vue';
   import WaybillSettings from './components/waybill-settings.vue';
-  import { GROUP_LABELS } from './constants';
+  import {
+    CONFIG_GROUP_SORT_ORDER,
+    GROUP_CARD_HEADER_LABELS,
+    GROUP_LABELS
+  } from './constants';
 
   defineOptions({ name: 'SystemConfig' });
 
@@ -80,7 +85,8 @@
   };
 
   const groupPanels: Record<string, Component> = {
-    waybill: WaybillSettings
+    waybill: WaybillSettings,
+    task: TaskSettings
   };
 
   const resolveGroupPanel = (name: string) =>
@@ -110,11 +116,20 @@
       if (!map.has(g)) map.set(g, []);
       map.get(g)!.push(c);
     }
-    return Array.from(map.entries()).map(([name, items]) => ({
+    const list = Array.from(map.entries()).map(([name, items]) => ({
       name,
       label: GROUP_LABELS[name] || name,
+      cardHeader: GROUP_CARD_HEADER_LABELS[name] ?? GROUP_LABELS[name] ?? name,
       items
     }));
+    return list.sort((a, b) => {
+      const ia = CONFIG_GROUP_SORT_ORDER.indexOf(a.name);
+      const ib = CONFIG_GROUP_SORT_ORDER.indexOf(b.name);
+      const ra = ia === -1 ? 999 : ia;
+      const rb = ib === -1 ? 999 : ib;
+      if (ra !== rb) return ra - rb;
+      return a.name.localeCompare(b.name);
+    });
   });
 
   const menuItems = computed<MenuItem[]>(() =>
