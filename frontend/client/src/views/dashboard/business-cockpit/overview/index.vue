@@ -15,12 +15,16 @@
   <ele-page>
     <kpi-card />
     <trend-card />
-    <el-row :gutter="16">
-      <el-col :md="16" :sm="14" :xs="24">
-        <customer-analysis />
+    <el-row :gutter="16" align="stretch" class="cockpit-customer-eff-row">
+      <el-col :md="16" :sm="14" :xs="24" class="cockpit-row-col">
+        <div class="cockpit-split-col">
+          <customer-analysis />
+        </div>
       </el-col>
-      <el-col :md="8" :sm="10" :xs="24">
-        <efficiency-card />
+      <el-col :md="8" :sm="10" :xs="24" class="cockpit-row-col">
+        <div class="cockpit-split-col">
+          <efficiency-card />
+        </div>
       </el-col>
     </el-row>
     <!-- <route-analysis /> -->
@@ -41,3 +45,23 @@
 
   provideCockpitFilter();
 </script>
+
+<style lang="scss" scoped>
+  /* 两卡同列等高：行内列纵向拉伸，子卡片填满列高 */
+  .cockpit-customer-eff-row {
+    align-items: stretch;
+  }
+
+  .cockpit-row-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cockpit-split-col {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+</style>

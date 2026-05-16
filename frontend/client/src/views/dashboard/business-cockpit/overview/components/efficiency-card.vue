@@ -1,4 +1,4 @@
-<!-- 经营驾驶舱 - 运单状态分布（环形 + 计算异常率 + 锁定单数） -->
+<!-- 经营驾驶舱 - 运单状态分布（环形 + 运费计算状态堆叠条） -->
 <template>
   <ele-card
     header="运单状态分布"
@@ -37,47 +37,80 @@
         </div>
         <el-divider style="margin: 12px 0" />
         <div class="eff-metrics">
-          <div class="eff-row">
-            <div class="eff-row-label">
-              <span>运费计算异常率</span>
-              <ele-tooltip
-                content="本期内未自动计算运费的运单占比"
-                placement="top"
-                :offset="6"
+          <div class="eff-calc-block">
+            <div class="eff-calc-strip-head">
+              <div class="eff-calc-head-left">
+                <span class="eff-calc-head-title">运费计算状态</span>
+                <ele-tooltip
+                  content="统计所选时间内，每张运单的「运费有没有被系统自动算出来、算得是否正常」。"
+                  placement="top"
+                  :offset="6"
+                >
+                  <el-icon class="eff-tip">
+                    <QuestionCircleOutlined />
+                  </el-icon>
+                </ele-tooltip>
+              </div>
+              <div
+                v-if="data.totalCount > 0"
+                class="eff-calc-head-right"
               >
-                <el-icon class="eff-tip">
-                  <QuestionCircleOutlined />
-                </el-icon>
-              </ele-tooltip>
+                <span class="eff-calc-head-meta">
+                  计算异常
+                  <span
+                    :class="[
+                      'eff-calc-ex-pct',
+                      data.calcExceptionRate >= 0.05
+                        ? 'is-warn'
+                        : 'is-ok'
+                    ]"
+                  >
+                    {{ calcExceptionPctText }}%
+                  </span>
+                </span>
+                <span class="eff-calc-head-meta eff-calc-head-total">
+                  · 共 {{ data.totalCount }} 单
+                </span>
+              </div>
             </div>
-            <div class="eff-row-value">
-              <ele-text
-                size="lg"
-                :type="data.calcExceptionRate >= 0.05 ? 'danger' : 'success'"
+            <div
+              v-if="data.totalCount > 0 && calcBarSegments.length"
+              class="eff-calc-track"
+              role="img"
+              :aria-label="calcBarAriaLabel"
+            >
+              <div
+                v-for="seg in calcBarSegments"
+                :key="seg.calcStatus"
+                class="eff-calc-seg"
+                :style="{
+                  flex: `0 0 ${seg.pct.toFixed(4)}%`,
+                  minWidth: seg.count ? '3px' : '0',
+                  backgroundColor: seg.color
+                }"
+                :title="`${seg.label} ${seg.count} 单（${seg.pct.toFixed(1)}%）`"
+              />
+            </div>
+            <div
+              v-else-if="data.totalCount > 0"
+              class="eff-calc-empty"
+            >
+              暂无计算状态分布
+            </div>
+            <div v-else class="eff-calc-empty">本期无运单</div>
+            <div v-if="calcBarSegments.length" class="eff-calc-legend">
+              <span
+                v-for="seg in calcBarSegments"
+                :key="'lg-' + seg.calcStatus"
+                class="eff-calc-legend-item"
               >
-                {{ (data.calcExceptionRate * 100).toFixed(2) }}%
-              </ele-text>
-              <ele-text type="placeholder" size="sm" style="margin-left: 6px">
-                ({{ data.calcExceptionCount }} / {{ data.totalCount }})
-              </ele-text>
-            </div>
-          </div>
-          <el-progress
-            :percentage="
-              Math.min(100, Math.round(data.calcExceptionRate * 100))
-            "
-            :color="data.calcExceptionRate >= 0.05 ? '#f5222d' : '#52c41a'"
-            :show-text="false"
-            :stroke-width="8"
-            style="margin-bottom: 12px"
-          />
-          <div class="eff-row">
-            <div class="eff-row-label">已锁定运单</div>
-            <div class="eff-row-value">
-              <ele-text size="lg">{{ data.lockedCount }}</ele-text>
-              <ele-text type="placeholder" size="sm" style="margin-left: 6px">
-                单（不参与重算）
-              </ele-text>
+                <i
+                  class="eff-calc-legend-dot"
+                  :style="{ backgroundColor: seg.color }"
+                />
+                <span>{{ seg.label }}</span>
+                <span class="eff-calc-legend-num">{{ seg.count }}</span>
+              </span>
             </div>
           </div>
         </div>
@@ -87,7 +120,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { reactive, ref } from 'vue';
+  import { computed, reactive, ref } from 'vue';
   import dayjs from 'dayjs';
   import { EleMessage } from 'ele-admin-plus';
   import { use } from 'echarts/core';
@@ -179,6 +212,55 @@
     '#e8684a' // 已取消
   ];
 
+  /** 与堆叠条一致：按 calc_status 着色 */
+  const CALC_STATUS_COLORS: Record<string, string> = {
+    pending: '#94a3b8',
+    calculating: '#40a9ff',
+    calculated: '#52c41a',
+    exception: '#f5222d',
+    locked: '#722ed1'
+  };
+
+  const colorForCalcStatus = (key: string) =>
+    CALC_STATUS_COLORS[key] ?? '#8c8c8c';
+
+  const calcBarSegments = computed(() => {
+    const d = data.value;
+    const rows = d?.calcStatusDist;
+    const total = d?.totalCount ?? 0;
+    if (!rows?.length || total <= 0) return [];
+    const segs = rows.map((row) => {
+      const pct = (row.count / total) * 100;
+      return {
+        calcStatus: row.calcStatus,
+        label: row.label,
+        count: row.count,
+        color: colorForCalcStatus(row.calcStatus),
+        pct
+      };
+    });
+    let sum = segs.reduce((s, x) => s + x.pct, 0);
+    if (segs.length && Math.abs(sum - 100) > 0.02) {
+      segs[segs.length - 1] = {
+        ...segs[segs.length - 1],
+        pct: segs[segs.length - 1].pct + (100 - sum)
+      };
+    }
+    return segs;
+  });
+
+  const calcExceptionPctText = computed(() => {
+    const d = data.value;
+    if (!d?.totalCount) return '0.00';
+    return (d.calcExceptionRate * 100).toFixed(2);
+  });
+
+  const calcBarAriaLabel = computed(() =>
+    calcBarSegments.value
+      .map((s) => `${s.label}${s.count}单`)
+      .join('，')
+  );
+
   const renderChart = () => {
     if (!data.value) return;
     const items = data.value.statusDist;
@@ -240,6 +322,19 @@
 <style lang="scss" scoped>
   .eff-card {
     margin-bottom: 16px;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+
+    :deep(.el-card__body),
+    :deep(.ele-card__body) {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
 
     :deep(.ele-card-header) {
       min-height: 52px;
@@ -261,13 +356,14 @@
     width: 220px;
   }
 
-  /* 与客户类型卡片 customer-body + 图表列纵向占位一致 */
+  /* 与客户类型卡片 body 同高：最小高度一致；同列拉伸时多余空间给饼图区 */
   .eff-body {
     box-sizing: border-box;
     padding: 16px 0 8px 0;
-    min-height: 364px;
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 364px;
   }
 
   @media (min-width: 768px) {
@@ -288,7 +384,7 @@
   .eff-chart-inner {
     flex: 1;
     width: 100%;
-    min-height: 200px;
+    min-height: 320px;
     height: 100%;
   }
 
@@ -303,32 +399,121 @@
 
   .eff-metrics {
     flex-shrink: 0;
-    padding: 4px 12px 0 12px;
+    padding: 4px 12px 12px 12px;
   }
 
-  .eff-row {
+  .eff-calc-block {
+    margin-bottom: 0;
+  }
+
+  .eff-calc-strip-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 6px;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
 
-    .eff-row-label {
-      display: flex;
-      align-items: center;
-      color: var(--el-text-color-regular);
-      gap: 4px;
-      font-size: 13px;
+  .eff-calc-head-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
 
-      .eff-tip {
-        font-size: 14px;
-        cursor: help;
-        color: var(--el-text-color-placeholder);
-      }
+    .eff-tip {
+      font-size: 14px;
+      cursor: help;
+      color: var(--el-text-color-placeholder);
     }
+  }
 
-    .eff-row-value {
-      display: flex;
-      align-items: baseline;
-    }
+  .eff-calc-head-title {
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+  }
+
+  .eff-calc-head-right {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .eff-calc-head-meta {
+    color: var(--el-text-color-secondary);
+  }
+
+  .eff-calc-ex-pct {
+    font-weight: 600;
+    margin-left: 2px;
+  }
+
+  .eff-calc-ex-pct.is-warn {
+    color: var(--el-color-danger);
+  }
+
+  .eff-calc-ex-pct.is-ok {
+    color: var(--el-color-success);
+  }
+
+  .eff-calc-head-total {
+    margin-left: 2px;
+  }
+
+  .eff-calc-track {
+    display: flex;
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+    background-color: var(--el-fill-color-dark, #e4e7ed);
+  }
+
+  .eff-calc-seg {
+    height: 100%;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    transition: opacity 0.15s ease;
+  }
+
+  .eff-calc-seg:hover {
+    opacity: 0.88;
+  }
+
+  .eff-calc-empty {
+    font-size: 12px;
+    color: var(--el-text-color-placeholder);
+    padding: 6px 0 4px;
+  }
+
+  .eff-calc-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--el-text-color-regular);
+  }
+
+  .eff-calc-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .eff-calc-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .eff-calc-legend-num {
+    color: var(--el-text-color-secondary);
+    font-variant-numeric: tabular-nums;
   }
 </style>

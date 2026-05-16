@@ -155,7 +155,7 @@ async def operation_efficiency(
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """运营效率（状态分布 + 计算异常率 + 锁定数）"""
+    """运营效率（状态分布 + 运费计算状态分布 + 锁定数）"""
     start_dt, end_dt = _resolve_window(start, end)
     data = await CockpitService.operation_efficiency(db, start_dt, end_dt)
     return success(data=data)

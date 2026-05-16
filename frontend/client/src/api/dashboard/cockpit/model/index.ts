@@ -146,9 +146,15 @@ export interface OperationEfficiency {
     label: string;
     count: number;
   }>;
-  /** 计算异常率（小数） */
+  /** 按运单 calc_status 的分布（待计算/已计算/计算异常等） */
+  calcStatusDist: Array<{
+    calcStatus: string;
+    label: string;
+    count: number;
+  }>;
+  /** 计算异常率（小数，= 计算异常单数 / 本期总单数，与 calcStatusDist 一致） */
   calcExceptionRate: number;
-  /** 计算异常单数 */
+  /** 计算异常单数（calc_status === exception） */
   calcExceptionCount: number;
   /** 锁定运单数 */
   lockedCount: number;

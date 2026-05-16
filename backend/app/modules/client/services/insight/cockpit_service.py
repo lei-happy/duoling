@@ -51,6 +51,22 @@ _WAYBILL_STATUS_LABELS = {
     6: "已取消",
 }
 
+# 运单运费计算状态（biz_waybill.calc_status）
+_CALC_STATUS_LABELS = {
+    "pending": "待计算",
+    "calculating": "计算中",
+    "calculated": "已计算",
+    "exception": "计算异常",
+    "locked": "计算锁定",
+}
+_CALC_STATUS_ORDER = (
+    "pending",
+    "calculating",
+    "calculated",
+    "exception",
+    "locked",
+)
+
 _UNKNOWN_LABEL = "未知"
 
 
@@ -665,7 +681,7 @@ class CockpitService:
         start: datetime,
         end: datetime,
     ) -> Dict[str, Any]:
-        """运单状态分布 + 计算异常率 + 锁定单数。"""
+        """运单状态分布 + 运费计算状态分布 + 锁定单数。"""
         start_dt = _coerce_dt(start)
         end_dt = _coerce_dt(end)
 
@@ -692,28 +708,60 @@ class CockpitService:
         ]
         status_dist.sort(key=lambda x: x["status"])
 
-        # 计算状态 + 锁定数
-        calc_stmt = select(
-            func.count(Waybill.id).label("total"),
-            func.sum(
-                case((Waybill.calc_status == "exception", 1), else_=0)
-            ).label("exception_count"),
-            func.sum(case((Waybill.is_locked == 1, 1), else_=0)).label(
-                "locked_count"
-            ),
-        ).where(
+        base_wb = and_(
             Waybill.is_deleted == 0,
             Waybill.created_at >= start_dt,
             Waybill.created_at < end_dt,
         )
-        row = (await db.execute(calc_stmt)).one()
-        total = int(row.total or 0)
-        exception_count = int(row.exception_count or 0)
-        locked_count = int(row.locked_count or 0)
+
+        # 按运单 calc_status 分布（与「异常率」旧口径解耦，避免与业务状态混淆）
+        calc_status_stmt = (
+            select(Waybill.calc_status, func.count(Waybill.id).label("c"))
+            .where(base_wb)
+            .group_by(Waybill.calc_status)
+        )
+        calc_rows = (await db.execute(calc_status_stmt)).all()
+        count_by_status: Dict[str, int] = {}
+        for r in calc_rows:
+            key = (r.calc_status or "pending").strip() or "pending"
+            count_by_status[key] = int(r.c or 0)
+        total = sum(count_by_status.values())
+
+        locked_stmt = select(
+            func.sum(case((Waybill.is_locked == 1, 1), else_=0)).label(
+                "locked_count"
+            ),
+        ).where(base_wb)
+        locked_row = (await db.execute(locked_stmt)).one()
+        locked_count = int(locked_row.locked_count or 0)
+
+        exception_count = int(count_by_status.get("exception", 0))
         exception_rate = (exception_count / total) if total > 0 else 0.0
+
+        def _calc_status_label(k: str) -> str:
+            return _CALC_STATUS_LABELS.get(k, f"状态({k})")
+
+        seen_keys: set[str] = set()
+        calc_status_dist: List[Dict[str, Any]] = []
+        for k in _CALC_STATUS_ORDER:
+            if k not in count_by_status:
+                continue
+            c = count_by_status[k]
+            calc_status_dist.append(
+                {"calcStatus": k, "label": _calc_status_label(k), "count": c}
+            )
+            seen_keys.add(k)
+        for k in sorted(count_by_status.keys()):
+            if k in seen_keys:
+                continue
+            c = count_by_status[k]
+            calc_status_dist.append(
+                {"calcStatus": k, "label": _calc_status_label(k), "count": c}
+            )
 
         return {
             "statusDist": status_dist,
+            "calcStatusDist": calc_status_dist,
             "calcExceptionRate": exception_rate,
             "calcExceptionCount": exception_count,
             "lockedCount": locked_count,

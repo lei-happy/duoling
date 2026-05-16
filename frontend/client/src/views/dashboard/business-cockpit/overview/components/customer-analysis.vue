@@ -42,8 +42,20 @@
         </el-col>
         <el-col :md="10" :sm="11" :xs="24" class="customer-rank-col">
           <div class="customer-rank-meta">
-            <ele-text type="placeholder" class="customer-rank-sub">
-              {{ rankMetaText }}
+            <ele-text type="placeholder" class="customer-rank-sub rank-meta-row">
+              <span>{{ rankMetaLead }}</span>
+              <span class="rank-meta-sep"> · </span>
+              <el-tag
+                v-if="selectedCustomerType !== null"
+                size="small"
+                effect="dark"
+                :color="selectedTypeColor"
+                class="customer-type-hint-tag"
+                :disable-transitions="true"
+              >
+                {{ selectedTypeLabel }}
+              </el-tag>
+              <span v-else>全部类型</span>
             </ele-text>
           </div>
           <div class="rank-list">
@@ -168,17 +180,23 @@
     return cur.isBefore(min, 'day') || cur.isAfter(max, 'day');
   };
 
-  const rankMetaText = computed(() => {
+  const rankMetaLead = computed(() => {
     const r = dateRange.value;
     const range = r?.[0] && r?.[1] ? `${r[0]} — ${r[1]}` : '';
-    const base = `${range} · 按运费`;
-    if (selectedCustomerType.value === null) {
-      return `${base} · 全部类型`;
-    }
-    const label =
+    return `${range} · 按运费`;
+  });
+
+  const selectedTypeLabel = computed(() => {
+    if (selectedCustomerType.value === null) return '';
+    return (
       dist.value.find((i) => i.customerType === selectedCustomerType.value)
-        ?.label ?? '该类型';
-    return `${base} · ${label}`;
+        ?.label ?? '该类型'
+    );
+  });
+
+  const selectedTypeColor = computed(() => {
+    if (selectedCustomerType.value === null) return '';
+    return colorFor(selectedCustomerType.value);
   });
 
   const rankParams = () => {
@@ -345,6 +363,11 @@
 <style lang="scss" scoped>
   .customer-card {
     margin-bottom: 16px;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 
     /* 标题区域高度与标准卡片（如「运营效率」）保持一致：52px */
     :deep(.ele-card-header) {
@@ -354,6 +377,14 @@
     :deep(.ele-card-title) {
       flex: 1;
       min-width: 0;
+    }
+
+    :deep(.el-card__body),
+    :deep(.ele-card__body) {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
   }
 
@@ -371,10 +402,17 @@
 
   .customer-body {
     padding: 16px 0 8px 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .customer-row {
     align-items: stretch;
+    flex: 1;
+    min-height: 0;
+    display: flex;
   }
 
   .customer-chart-col,
@@ -425,6 +463,24 @@
 
   .customer-rank-sub {
     font-size: 12px;
+  }
+
+  .rank-meta-row {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+    line-height: 1.5;
+  }
+
+  .rank-meta-sep {
+    white-space: pre;
+  }
+
+  .customer-type-hint-tag {
+    font-weight: 600;
+    border: none;
+    vertical-align: middle;
   }
 
   .rank-list {
