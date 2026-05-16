@@ -203,21 +203,21 @@
   };
 
   const STATUS_COLORS = [
-    '#bfbfbf', // 待确认
-    '#5b8ff9', // 已确认
-    '#5d7092', // 已调度
-    '#f6bd16', // 运输中
-    '#5ad8a6', // 已送达
-    '#52c41a', // 已完成
-    '#e8684a' // 已取消
+    '#c9cdd4', // 待确认
+    '#165dff', // 已确认
+    '#14c9c9', // 已调度
+    '#fadc19', // 运输中
+    '#722ed1', // 已送达
+    '#34c724', // 已完成
+    '#f5319d'  // 已取消
   ];
 
   /** 与堆叠条一致：按 calc_status 着色 */
   const CALC_STATUS_COLORS: Record<string, string> = {
-    pending: '#94a3b8',
-    calculating: '#40a9ff',
-    calculated: '#52c41a',
-    exception: '#f5222d',
+    pending: '#c9cdd4',
+    calculating: '#165dff',
+    calculated: '#34c724',
+    exception: '#f5319d',
     locked: '#722ed1'
   };
 

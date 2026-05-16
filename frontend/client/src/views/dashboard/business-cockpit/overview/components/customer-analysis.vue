@@ -263,10 +263,10 @@
               customerType: i.customerType,
               waybillCount: i.waybillCount,
               itemStyle: {
-                borderColor: on ? '#1d39c4' : '#fff',
+                borderColor: on ? '#0e42d2' : '#fff',
                 borderWidth: on ? 3 : 2,
                 shadowBlur: on ? 10 : 0,
-                shadowColor: 'rgba(29,57,196,0.22)'
+                shadowColor: 'rgba(22,93,255,0.22)'
               }
             };
           })

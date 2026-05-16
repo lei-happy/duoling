@@ -11,7 +11,7 @@
             </el-icon>
           </ele-tooltip>
         </ele-text>
-        <ele-text size="xxl" class="kpi-value" :style="{ color: item.color }">
+        <ele-text size="xxl" class="kpi-value">
           {{ formatMainValue(item) }}
         </ele-text>
         <v-chart
@@ -259,7 +259,7 @@
       tooltip:
         '统计当天 0 点至接口返回时刻的应收运费合计，主数字单位为万元；迷你图为近 30 天每日运费（元）。',
       display: 'wan',
-      color: '#5b8ff9',
+      color: '#165dff',
       chartType: 'line'
     },
     waybillCount: {
@@ -268,7 +268,7 @@
         '统计当天 0 点至接口返回时刻的运单条数，单位为「单」；迷你图为近 30 天每日运单量。',
       display: 'int',
       mainUnit: '单',
-      color: '#975fe5',
+      color: '#14c9c9',
       chartType: 'bar'
     },
     vehicleQuantity: {
@@ -277,7 +277,7 @@
         '统计当天 0 点至接口返回时刻的商品车台数合计，单位为「台」；迷你图为近 30 天每日台数。',
       display: 'int',
       mainUnit: '台',
-      color: '#61ddaa',
+      color: '#722ed1',
       chartType: 'line'
     },
     customerCount: {
@@ -286,7 +286,7 @@
         '统计当天 0 点至接口返回时刻、有运单的去重客户数，单位为「家」；迷你图为近 30 天每日去重客户数。',
       display: 'int',
       mainUnit: '家',
-      color: '#ff9c6e',
+      color: '#ff7d00',
       chartType: 'bar'
     }
   };

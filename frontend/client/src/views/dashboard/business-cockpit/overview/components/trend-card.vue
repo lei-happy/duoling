@@ -209,50 +209,31 @@
     return cur.isBefore(min, 'day') || cur.isAfter(max, 'day');
   };
 
-  const barGradientRevenue = {
-    type: 'linear' as const,
-    x: 0,
-    y: 0,
-    x2: 0,
-    y2: 1,
-    colorStops: [
-      { offset: 0, color: '#b0d0ff' },
-      { offset: 0.4, color: '#80a9fa' },
-      { offset: 1, color: '#5b8ff9' }
-    ]
-  };
+  /** 蓝系：初级柱 → 次深选中柱 → 最深折线（三者不重叠） */
+  const REV_BAR_LIGHT = '#93c5fd';
+  const REV_BAR_MID = '#3b82f6';
+  const REV_LINE_DEEP = '#1e3a8a';
 
-  const barGradientWaybill = {
-    type: 'linear' as const,
-    x: 0,
-    y: 0,
-    x2: 0,
-    y2: 1,
-    colorStops: [
-      { offset: 0, color: '#c2f0e0' },
-      { offset: 0.4, color: '#7cd7b5' },
-      { offset: 1, color: '#61ddaa' }
-    ]
-  };
+  /** 青绿系：同上 */
+  const WAY_BAR_LIGHT = '#7dd3c4';
+  const WAY_BAR_MID = '#14b8a6';
+  const WAY_LINE_DEEP = '#134e4a';
 
+  /** 未选中=初级色；有选中时该日为次深色 */
   function barItems(
     values: number[],
-    gradient: typeof barGradientRevenue,
+    colorLight: string,
+    colorMid: string,
     selIdx: number | null
   ) {
     return values.map((value, idx) => {
-      const on = selIdx === null || selIdx === idx;
-      const selected = selIdx === idx;
+      const selected = selIdx !== null && selIdx === idx;
       return {
         value,
         itemStyle: {
           borderRadius: [6, 6, 0, 0],
-          color: gradient,
-          opacity: on ? 1 : 0.88,
-          borderColor: selected ? '#1d39c4' : 'transparent',
-          borderWidth: selected ? 2 : 0,
-          shadowBlur: selected ? 10 : 0,
-          shadowColor: 'rgba(29,57,196,0.25)'
+          color: selected ? colorMid : colorLight,
+          opacity: 1
         }
       };
     });
@@ -291,6 +272,7 @@
           }
         },
         legend: { ...legendTop, data: ['运单收入', '运单数'] },
+        color: [REV_BAR_LIGHT, REV_LINE_DEEP],
         xAxis: [
           {
             type: 'category',
@@ -319,7 +301,8 @@
             barMaxWidth: 36,
             data: barItems(
               points.map((p) => p.revenue),
-              barGradientRevenue,
+              REV_BAR_LIGHT,
+              REV_BAR_MID,
               sel
             )
           },
@@ -330,8 +313,8 @@
             smooth: true,
             symbol: 'circle',
             symbolSize: 6,
-            lineStyle: { width: 2, color: '#975fe5' },
-            itemStyle: { color: '#975fe5' },
+            lineStyle: { width: 2, color: REV_LINE_DEEP },
+            itemStyle: { color: REV_LINE_DEEP },
             emphasis: { focus: 'series' as const },
             data: points.map((p) => p.waybillCount)
           }
@@ -342,6 +325,7 @@
         grid: baseGrid,
         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
         legend: { ...legendTop, data: ['运单数', '发运台数'] },
+        color: [WAY_BAR_LIGHT, WAY_LINE_DEEP],
         xAxis: [
           {
             type: 'category',
@@ -363,7 +347,8 @@
             barMaxWidth: 36,
             data: barItems(
               points.map((p) => p.waybillCount),
-              barGradientWaybill,
+              WAY_BAR_LIGHT,
+              WAY_BAR_MID,
               sel
             )
           },
@@ -374,8 +359,8 @@
             smooth: true,
             symbol: 'circle',
             symbolSize: 6,
-            lineStyle: { width: 2, color: '#ff9c6e' },
-            itemStyle: { color: '#ff9c6e' },
+            lineStyle: { width: 2, color: WAY_LINE_DEEP },
+            itemStyle: { color: WAY_LINE_DEEP },
             emphasis: { focus: 'series' as const },
             data: points.map((p) => p.vehicleQuantity)
           }

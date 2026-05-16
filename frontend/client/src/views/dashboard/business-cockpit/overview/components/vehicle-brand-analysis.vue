@@ -172,17 +172,7 @@
           data: sorted.map((it) => it.vehicleQuantity),
           itemStyle: {
             borderRadius: [0, 4, 4, 0],
-            color: {
-              type: 'linear',
-              x: 0,
-              y: 0,
-              x2: 1,
-              y2: 0,
-              colorStops: [
-                { offset: 0, color: '#b0d0ff' },
-                { offset: 1, color: '#5b8ff9' }
-              ]
-            }
+            color: '#5b8ff9'
           },
           label: {
             show: true,
