@@ -1,0 +1,380 @@
+"""
+企业端运输任务单 API
+
+接口前缀：/business/task
+- 任务单主接口（含详情聚合 segments + waybillItems + 当前财务摘要）
+- 货物挂接子接口
+- 分段子接口
+"""
+
+from datetime import date
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
+
+from app.common.exceptions import TenantException
+from app.common.operation_log import operation_log
+from app.common.response import success
+from app.core.dependencies import (
+    ensure_biz_company_activity_table,
+    get_current_user,
+    get_tenant_db,
+)
+from app.core.security import TokenData
+from app.modules.client.schemas.task.task import (
+    TaskAssignCarrierRequest,
+    TaskCancelRequest,
+    TaskCreate,
+    TaskListItemOut,
+    TaskOut,
+    TaskStatusUpdate,
+    TaskUpdate,
+)
+from app.modules.client.schemas.task.task_segment import (
+    TaskSegmentOut,
+    TaskSegmentStatusUpdate,
+)
+from app.modules.client.schemas.task.task_waybill_item import (
+    TaskWaybillItemIn,
+    TaskWaybillItemOut,
+    TaskWaybillItemStatusUpdate,
+)
+from app.modules.client.services.company_activity_service import (
+    CompanyActivityService,
+)
+from app.modules.client.services.task.task_finance_service import (
+    TaskFinanceService,
+)
+from app.modules.client.services.task.task_service import TaskService
+from app.modules.client.services.task.task_waybill_item_service import (
+    TaskWaybillItemService,
+)
+
+router = APIRouter()
+
+
+_TASK_STATUS_LABELS = {
+    0: "待派车", 1: "已派车", 2: "已装车", 3: "在途",
+    4: "已到达", 5: "已签收", 6: "已结算", 7: "已关闭", 9: "已取消",
+}
+
+
+def _require_tenant(current_user: TokenData) -> None:
+    if not current_user.tenant_code:
+        raise TenantException("缺少租户信息")
+
+
+# ============================================================
+# 任务单 CRUD
+# ============================================================
+
+@router.get("")
+async def page_tasks(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, alias="limit", ge=1, le=100),
+    keyword: Optional[str] = None,
+    carrierType: Optional[int] = None,
+    status: Optional[int] = None,
+    customerId: Optional[int] = None,
+    originKeyword: Optional[str] = None,
+    destinationKeyword: Optional[str] = None,
+    createdAtStart: Optional[date] = None,
+    createdAtEnd: Optional[date] = None,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    items, total = await TaskService.page_tasks(
+        db,
+        page=page, page_size=page_size,
+        keyword=keyword, carrier_type=carrierType, status=status,
+        customer_id=customerId,
+        origin_keyword=originKeyword,
+        destination_keyword=destinationKeyword,
+        created_at_start=createdAtStart,
+        created_at_end=createdAtEnd,
+    )
+    rows = [TaskListItemOut.from_model(t).model_dump() for t in items]
+    return success(data={
+        "list": rows,
+        "count": total,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    })
+
+
+@router.get("/check-task-no")
+async def check_task_no(
+    taskNo: str = Query(..., min_length=1, max_length=50),
+    excludeId: Optional[int] = Query(None, ge=1),
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    available = await TaskService.check_task_no(db, taskNo, excludeId)
+    return success(data={"available": available})
+
+
+@router.get("/candidate-waybills")
+async def list_candidate_waybills(
+    keyword: Optional[str] = None,
+    customerId: Optional[int] = None,
+    originKeyword: Optional[str] = None,
+    destinationKeyword: Optional[str] = None,
+    limit: int = Query(200, ge=1, le=500),
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    rows = await TaskWaybillItemService.list_candidate_cargoes(
+        db,
+        keyword=keyword,
+        customer_id=customerId,
+        origin_keyword=originKeyword,
+        destination_keyword=destinationKeyword,
+        limit=limit,
+    )
+    return success(data=[r.model_dump() for r in rows])
+
+
+@router.get("/{task_id}")
+async def get_task(
+    task_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    task = await TaskService.get_or_404(db, task_id)
+    segs = await TaskService.list_segments(db, task_id)
+    items = await TaskWaybillItemService.list_items_of_task(db, task_id)
+    return success(data=TaskOut.from_model(
+        task, segments=segs, waybill_items=items,
+    ).model_dump())
+
+
+@router.post("")
+@operation_log(module="运输任务单", action="新增", description="新增运输任务单")
+async def create_task(
+    request: Request,
+    data: TaskCreate,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+    _: None = Depends(ensure_biz_company_activity_table),
+):
+    _require_tenant(current_user)
+    op_name = await CompanyActivityService.actor_display_name(
+        db, current_user.user_id
+    )
+    task = await TaskService.create_task(
+        db, data,
+        current_user_id=current_user.user_id,
+        dispatcher_name=op_name,
+    )
+    segs = await TaskService.list_segments(db, task.id)
+    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+    return success(data=TaskOut.from_model(
+        task, segments=segs, waybill_items=items,
+    ).model_dump())
+
+
+@router.put("/{task_id}")
+@operation_log(module="运输任务单", action="编辑", description="编辑运输任务单")
+async def update_task(
+    request: Request,
+    task_id: int,
+    data: TaskUpdate,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    task = await TaskService.update_task(
+        db, task_id, data, current_user_id=current_user.user_id,
+    )
+    segs = await TaskService.list_segments(db, task.id)
+    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+    return success(data=TaskOut.from_model(
+        task, segments=segs, waybill_items=items,
+    ).model_dump())
+
+
+@router.delete("/{task_id}")
+@operation_log(module="运输任务单", action="删除", description="删除运输任务单")
+async def delete_task(
+    request: Request,
+    task_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    await TaskService.delete_task(db, task_id)
+    return success()
+
+
+@router.put("/{task_id}/status")
+@operation_log(module="运输任务单", action="状态变更", description="变更任务单状态")
+async def update_task_status(
+    request: Request,
+    task_id: int,
+    data: TaskStatusUpdate,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    task = await TaskService.update_status(db, task_id, data)
+    segs = await TaskService.list_segments(db, task.id)
+    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+    return success(data=TaskOut.from_model(
+        task, segments=segs, waybill_items=items,
+    ).model_dump())
+
+
+@router.post("/{task_id}/assign-carrier")
+@operation_log(module="运输任务单", action="派车", description="任务单派车/换车")
+async def assign_carrier(
+    request: Request,
+    task_id: int,
+    data: TaskAssignCarrierRequest,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    task = await TaskService.assign_carrier(db, task_id, data)
+    segs = await TaskService.list_segments(db, task.id)
+    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+    return success(data=TaskOut.from_model(
+        task, segments=segs, waybill_items=items,
+    ).model_dump())
+
+
+@router.post("/{task_id}/cancel")
+@operation_log(module="运输任务单", action="取消", description="取消任务单（释放台数）")
+async def cancel_task(
+    request: Request,
+    task_id: int,
+    data: Optional[TaskCancelRequest] = None,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    reason = data.reason if data else None
+    task = await TaskService.cancel_task(db, task_id, reason=reason)
+    segs = await TaskService.list_segments(db, task.id)
+    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+    return success(data=TaskOut.from_model(
+        task, segments=segs, waybill_items=items,
+    ).model_dump())
+
+
+# ============================================================
+# 货物挂接子接口
+# ============================================================
+
+@router.get("/{task_id}/waybill-items")
+async def list_waybill_items(
+    task_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    items = await TaskWaybillItemService.list_items_of_task(db, task_id)
+    return success(data=[TaskWaybillItemOut.from_model(i).model_dump() for i in items])
+
+
+@router.post("/{task_id}/waybill-items")
+@operation_log(module="运输任务单", action="挂接货物", description="批量挂接运单货物")
+async def add_waybill_items(
+    request: Request,
+    task_id: int,
+    items: list[TaskWaybillItemIn],
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    task = await TaskService.get_or_404(db, task_id)
+    rows = await TaskWaybillItemService.add_items(db, task, items)
+    return success(data=[TaskWaybillItemOut.from_model(r).model_dump() for r in rows])
+
+
+@router.put("/waybill-items/{item_id}")
+@operation_log(module="运输任务单", action="更新货物状态", description="更新挂接货物状态")
+async def update_waybill_item(
+    request: Request,
+    item_id: int,
+    data: TaskWaybillItemStatusUpdate,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    row = await TaskWaybillItemService.update_item_status(db, item_id, data)
+    return success(data=TaskWaybillItemOut.from_model(row).model_dump())
+
+
+@router.delete("/waybill-items/{item_id}")
+@operation_log(module="运输任务单", action="取消挂接", description="取消货物挂接（释放台数）")
+async def remove_waybill_item(
+    request: Request,
+    item_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    await TaskWaybillItemService.remove_item(db, item_id)
+    return success()
+
+
+# ============================================================
+# 分段子接口
+# ============================================================
+
+@router.get("/{task_id}/segments")
+async def list_segments(
+    task_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    segs = await TaskService.list_segments(db, task_id)
+    return success(data=[TaskSegmentOut.from_model(s).model_dump() for s in segs])
+
+
+@router.put("/segments/{seg_id}/status")
+@operation_log(module="运输任务单", action="段状态变更", description="变更分段状态")
+async def update_segment_status(
+    request: Request,
+    seg_id: int,
+    data: TaskSegmentStatusUpdate,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    seg = await TaskService.update_segment_status(
+        db, seg_id, data.status,
+        actual_load_time=data.actualLoadTime,
+        actual_arrive_time=data.actualArriveTime,
+        remark=data.remark,
+    )
+    return success(data=TaskSegmentOut.from_model(seg).model_dump())
+
+
+# ============================================================
+# 任务单维度费用单聚合（便捷接口，作为详情页 tab 数据源）
+# ============================================================
+
+@router.get("/{task_id}/finance-docs-summary")
+async def list_task_finance_summary(
+    task_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    docs = await TaskFinanceService.list_docs_by_task(db, task_id)
+    return success(data=[{
+        "id": d.id,
+        "docNo": d.doc_no,
+        "docType": d.doc_type,
+        "isFinal": d.is_final,
+        "payeeType": d.payee_type,
+        "payeeName": d.payee_name,
+        "plannedAmount": float(d.planned_amount or 0),
+        "actualAmount": float(d.actual_amount) if d.actual_amount is not None else None,
+        "status": d.status,
+        "createdAt": d.created_at,
+        "plannedPayTime": d.planned_pay_time,
+        "actualPayTime": d.actual_pay_time,
+    } for d in docs])

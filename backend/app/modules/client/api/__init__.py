@@ -49,6 +49,10 @@ from app.modules.client.api.billing.freight_engine import (
     regression_router as freight_calc_regression_router,
 )
 from app.modules.client.api.waybill.waybill import router as waybill_router
+from app.modules.client.api.task import (
+    task_router,
+    task_finance_router,
+)
 from app.modules.client.api.insight.cockpit import router as insight_cockpit_router
 from app.modules.ai.api.client import router as ai_client_router
 
@@ -168,6 +172,12 @@ router.include_router(
     tags=["客户端-计费引擎-双引擎回归"],
 )
 router.include_router(waybill_router, prefix="/business/waybill", tags=["客户端-运单管理V2"])
+router.include_router(task_router, prefix="/business/task", tags=["客户端-运输任务单"])
+router.include_router(
+    task_finance_router,
+    prefix="/business/task-finance",
+    tags=["客户端-任务单财务费用"],
+)
 router.include_router(
     insight_cockpit_router,
     prefix="/insight/cockpit",

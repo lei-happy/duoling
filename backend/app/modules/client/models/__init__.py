@@ -59,6 +59,13 @@ from app.modules.client.models.waybill.waybill_import import (
     WaybillImportBatch,
     WaybillImportRow,
 )
+from app.modules.client.models.task import (
+    Task,
+    TaskSegment,
+    TaskWaybillItem,
+    TaskFinanceDoc,
+    TaskFinanceItem,
+)
 
 # ---- Tier 2: Business - AI 数字员工（biz_ai_*） ----
 from app.modules.ai.models.tenant.biz_ai_session import BizAiSession
@@ -110,6 +117,11 @@ __all__ = [
     "WaybillCargo",
     "WaybillImportBatch",
     "WaybillImportRow",
+    "Task",
+    "TaskSegment",
+    "TaskWaybillItem",
+    "TaskFinanceDoc",
+    "TaskFinanceItem",
     "Capacity",
     "CapacityLog",
     "BizCompanyActivity",

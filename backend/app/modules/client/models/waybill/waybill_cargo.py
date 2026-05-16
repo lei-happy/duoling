@@ -38,6 +38,10 @@ class WaybillCargo(TenantModelBase):
     quantity: Mapped[int] = mapped_column(
         Integer, default=1, nullable=False, comment="台数"
     )
+    allocated_quantity: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0"),
+        comment="已分配到任务单的台数（应用层维护，约束 allocated<=quantity）"
+    )
     cargo_version: Mapped[int] = mapped_column(
         Integer, nullable=False, default=1, server_default=text("1"),
         comment="明细版本号"

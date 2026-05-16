@@ -256,6 +256,31 @@
     "status": 1
   },
   {
+    "feature_code": "biz_task",
+    "feature_name": "运输任务单",
+    "module": "operation",
+    "description": null,
+    "required_tables": [
+      "biz_task",
+      "biz_task_segment",
+      "biz_task_waybill_item"
+    ],
+    "sort_order": 34,
+    "status": 1
+  },
+  {
+    "feature_code": "biz_task_finance",
+    "feature_name": "任务单财务费用",
+    "module": "operation",
+    "description": null,
+    "required_tables": [
+      "biz_task_finance_doc",
+      "biz_task_finance_item"
+    ],
+    "sort_order": 35,
+    "status": 1
+  },
+  {
     "feature_code": "bi_analytics",
     "feature_name": "数据分析",
     "module": "bi",
