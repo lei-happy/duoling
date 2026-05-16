@@ -1,29 +1,54 @@
 <!-- 经营驾驶舱 - 商品车品牌排行（左：横向柱状 Top10；右：品牌词云 Top20） -->
 <template>
-  <ele-card header="商品车品牌排行" class="brand-card" v-loading="loading">
-    <el-row :gutter="16">
-      <el-col :md="16" :sm="14" :xs="24">
-        <div class="brand-section-title">Top10 品牌（按发运台数）</div>
-        <v-chart
-          ref="rankChartRef"
-          :option="rankOption"
-          style="height: 360px"
+  <ele-card
+    header="商品车品牌排行[Top10]"
+    :header-style="{ paddingTop: 0, paddingBottom: 0 }"
+    :body-style="{ padding: 0 }"
+    class="brand-card"
+  >
+    <template #extra>
+      <div class="hidden-xs-only brand-card-extra">
+        <el-date-picker
+          v-model="dateRange"
+          type="daterange"
+          size="default"
+          unlink-panels
+          range-separator="-"
+          value-format="YYYY-MM-DD"
+          start-placeholder="开始"
+          end-placeholder="结束"
+          :disabled-date="disabledDate"
+          :clearable="false"
+          class="brand-date-range"
+          @calendar-change="onCalendarChange"
+          @change="onDateRangeChange"
         />
-      </el-col>
-      <el-col :md="8" :sm="10" :xs="24">
-        <div class="brand-section-title">品牌词云</div>
-        <v-chart
-          ref="cloudChartRef"
-          :option="cloudOption"
-          style="height: 360px"
-        />
-      </el-col>
-    </el-row>
+      </div>
+    </template>
+    <div class="brand-body" v-loading="loading">
+      <el-row :gutter="16">
+        <el-col :md="16" :sm="14" :xs="24">
+          <v-chart
+            ref="rankChartRef"
+            :option="rankOption"
+            style="height: 360px"
+          />
+        </el-col>
+        <el-col :md="8" :sm="10" :xs="24">
+          <v-chart
+            ref="cloudChartRef"
+            :option="cloudOption"
+            style="height: 360px"
+          />
+        </el-col>
+      </el-row>
+    </div>
   </ele-card>
 </template>
 
 <script lang="ts" setup>
-  import { reactive, ref, watch } from 'vue';
+  import { reactive, ref } from 'vue';
+  import dayjs from 'dayjs';
   import { EleMessage } from 'ele-admin-plus';
   import { use } from 'echarts/core';
   import type { EChartsCoreOption } from 'echarts/core';
@@ -35,11 +60,21 @@
   import { useEcharts } from '@/utils/use-echarts';
   import { getVehicleBrandRank } from '@/api/dashboard/cockpit';
   import type { VehicleBrandRankItem } from '@/api/dashboard/cockpit/model';
-  import { useCockpitFilter } from '../composables/use-cockpit-filter';
 
   use([CanvasRenderer, BarChart, GridComponent, TooltipComponent]);
 
-  const { state } = useCockpitFilter();
+  const API_DT = 'YYYY-MM-DD HH:mm:ss';
+  const MAX_RANGE_DAYS = 60;
+  const DEFAULT_RANGE_DAYS = 15;
+
+  function defaultDateRange(): [string, string] {
+    const end = dayjs().startOf('day');
+    const start = end.subtract(DEFAULT_RANGE_DAYS - 1, 'day');
+    return [start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD')];
+  }
+
+  const dateRange = ref<[string, string]>(defaultDateRange());
+  const calendarAnchor = ref<dayjs.Dayjs | null>(null);
 
   const loading = ref(false);
   const rankChartRef = ref<InstanceType<typeof VChart> | null>(null);
@@ -48,6 +83,52 @@
 
   const rankOption: EChartsCoreOption = reactive({});
   const cloudOption: EChartsCoreOption = reactive({});
+
+  function rangeSpanDays(range: [string, string]): number {
+    return dayjs(range[1]).diff(dayjs(range[0]), 'day') + 1;
+  }
+
+  function toApiWindow(range: [string, string]): { start: string; end: string } {
+    return {
+      start: dayjs(range[0]).startOf('day').format(API_DT),
+      end: dayjs(range[1]).add(1, 'day').startOf('day').format(API_DT)
+    };
+  }
+
+  const disabledDate = (time: Date) => {
+    const cur = dayjs(time).startOf('day');
+    const today = dayjs().startOf('day');
+    if (cur.isAfter(today)) return true;
+    const anchor = calendarAnchor.value;
+    if (!anchor) return false;
+    const min = anchor.subtract(MAX_RANGE_DAYS - 1, 'day');
+    const max = anchor.add(MAX_RANGE_DAYS - 1, 'day');
+    return cur.isBefore(min, 'day') || cur.isAfter(max, 'day');
+  };
+
+  const onDateRangeChange = () => {
+    calendarAnchor.value = null;
+    const r = dateRange.value;
+    if (!r?.[0] || !r?.[1]) return;
+    if (rangeSpanDays(r) > MAX_RANGE_DAYS) {
+      EleMessage.warning({
+        message: `时间范围最长 ${MAX_RANGE_DAYS} 天，请重新选择`,
+        plain: true
+      });
+      dateRange.value = defaultDateRange();
+    }
+    void load();
+  };
+
+  const onCalendarChange = (dates: [Date, Date | null]) => {
+    const start = dates?.[0];
+    const end = dates?.[1];
+    if (start && !end) {
+      calendarAnchor.value = dayjs(start).startOf('day');
+    } else {
+      calendarAnchor.value = null;
+    }
+  };
 
   const CLOUD_COLORS = [
     '#5b8ff9',
@@ -155,9 +236,10 @@
   const load = async () => {
     loading.value = true;
     try {
+      const win = toApiWindow(dateRange.value);
       const data = await getVehicleBrandRank({
-        start: state.start,
-        end: state.end,
+        start: win.start,
+        end: win.end,
         limit: 20
       });
       Object.assign(rankOption, buildRankOption(data));
@@ -169,20 +251,36 @@
     }
   };
 
-  watch(
-    () => [state.start, state.end] as const,
-    () => load(),
-    { immediate: true }
-  );
+  void load();
 </script>
 
 <style lang="scss" scoped>
   .brand-card {
     margin-bottom: 16px;
+
+    :deep(.ele-card-header) {
+      min-height: 52px;
+    }
+
+    :deep(.ele-card-title) {
+      flex: 1;
+      min-width: 0;
+    }
   }
 
-  .brand-section-title {
-    padding: 6px 0;
-    color: var(--el-text-color-regular);
+  .brand-card-extra {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  /* 与趋势卡 / 客户类型分布 #extra 日期选择器同规格 */
+  .brand-card-extra :deep(.el-date-editor.el-date-editor--daterange) {
+    width: 250px;
+  }
+
+  .brand-body {
+    padding: 16px;
+    box-sizing: border-box;
   }
 </style>

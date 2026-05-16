@@ -7,7 +7,7 @@
   布局顺序：
     1. 4 KPI 卡：当日自然日大数 + 近 30 日迷你图 + 周同比 / 日同比
     2. 运单收入/单量趋势 + 客户排行（卡片内自选日期范围，柱图按日联动排行）
-    3. 客户类型分布 (16) + 运营效率 (8)
+    3. 客户类型分布 (16) + 运单状态分布 (8)
     4. 起讫点 Top10（双柱状）
     5. 商品车品牌排行（柱状 + 词云）
 -->
@@ -23,7 +23,7 @@
         <efficiency-card />
       </el-col>
     </el-row>
-    <route-analysis />
+    <!-- <route-analysis /> -->
     <vehicle-brand-analysis />
   </ele-page>
 </template>
