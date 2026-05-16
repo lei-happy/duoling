@@ -4,13 +4,16 @@
 #
 # 使用方法:
 #   首次部署:    bash deploy.sh init
-#   日常更新:    bash deploy.sh update                # 交互式（推荐人工值守发版）
-#                bash deploy.sh update --auto         # 无人值守（CI / 定时任务）
-#                bash deploy.sh update --skip-sync    # 应急：跳过平台元数据同步
+#   日常更新:    bash deploy.sh update                          # 交互式（推荐人工值守发版）
+#                bash deploy.sh update --auto                   # 无人值守（CI / 定时任务）
+#                bash deploy.sh update --skip-sync              # 应急：跳过平台元数据同步
+#                bash deploy.sh update --skip-tenant-migration  # 应急：跳过租户业务库 schema 迁移
 #   仅获SSL:     bash deploy.sh ssl
 #   初始化DB:    bash deploy.sh db-init
-#   同步配置:    bash deploy.sh db-sync               # 单独触发平台元数据同步
-#                bash deploy.sh db-sync --auto        # 无人值守
+#   同步配置:    bash deploy.sh db-sync                # 单独触发平台元数据 + 租户业务库 schema + 租户字典
+#                bash deploy.sh db-sync --auto
+#   仅租户迁移:  bash deploy.sh db-migrate             # 仅租户业务库 schema 迁移
+#                bash deploy.sh db-migrate --dry-run
 #   查看日志:    bash deploy.sh logs [service]
 #   查看状态:    bash deploy.sh status
 #
@@ -22,6 +25,13 @@
 #   工具   = backend/scripts/platform_sync/        （详见其 README.md）
 #   流程   = update 时先 plan（只读对比）→ 显示差异 → y/N 或 --auto 自动 apply
 #   首次部署需在 prod 服务器创建 /opt/zhitu/backend/scripts/platform_sync/envs/.env.prod
+#
+# 租户业务库 schema 自动迁移（v2 新增）:
+#   工具   = backend/scripts/migration/runner.py
+#   流程   = update 时在平台元数据同步之后自动跑：
+#            ① Phase 1: 按 feature.required_tables 给已开通租户补建缺失业务表
+#            ② Phase 2: 按 versions/ 下迁移文件顺序执行未应用的 ALTER 等不可逆变更
+#   事实源 = backend/scripts/migration/versions/*.py，执行记录写入每个租户库的 biz_migration_log
 # ============================================================
 
 set -e
@@ -397,9 +407,71 @@ sync_tenant_dicts() {
     log_info "租户字典数据已同步"
 }
 
+# ============================================================
+# 租户业务库 schema 自动迁移
+#
+# 两阶段（细节见 backend/scripts/migration/runner.py）：
+#   Phase 1: 按 sys_product_feature.required_tables 自动补表
+#            （把新版本带来的新表自动建到所有已开通对应 feature 的租户）
+#   Phase 2: 执行 backend/scripts/migration/versions/ 下的 versioned migration
+#            （记录在租户库 biz_migration_log，幂等，仅用于 ALTER 列等场景）
+#
+# 完全幂等：表/列已存在、migration 已执行均自动跳过；
+# 单租户失败不影响其它租户，runner 末尾返回非零退出码以告警。
+#
+# 必须在 sync_platform_metadata 之后执行：
+#   平台先把 feature.required_tables / version_feature 写好，
+#   runner 才能据此推算每个租户的目标表清单。
+#
+# 失败处理：
+#   退出码 != 0 时本函数返回非零，但不会 set -e 中止 deploy.sh 整个流程，
+#   因为单租户 schema 问题不应阻塞其它租户的服务重启；调用方仅打印告警。
+# ============================================================
+sync_tenant_business_schema() {
+    if [ "${SKIP_TENANT_MIGRATION:-0}" = "1" ]; then
+        log_warn "已设置 --skip-tenant-migration，跳过租户业务库 schema 迁移"
+        return 0
+    fi
+
+    log_info "==== 租户业务库 schema 自动迁移 ===="
+    cd "$DEPLOY_DIR"
+
+    # 注入执行者标识，便于 biz_migration_log 审计
+    local applied_by="deploy@$(hostname)"
+
+    set +e
+    if [ "${AUTO_MODE:-0}" = "1" ]; then
+        # auto 模式：先 plan 再 apply，便于在 CI 日志里留计划
+        docker compose exec -T -e MIGRATION_APPLIED_BY="$applied_by" backend \
+            python -m scripts.migration.runner --dry-run
+        docker compose exec -T -e MIGRATION_APPLIED_BY="$applied_by" backend \
+            python -m scripts.migration.runner
+        local rc=$?
+    else
+        # 交互式：直接 apply（runner 内部已是幂等的，且会打印计划）
+        docker compose exec -T -e MIGRATION_APPLIED_BY="$applied_by" backend \
+            python -m scripts.migration.runner
+        local rc=$?
+    fi
+    set -e
+
+    if [ "$rc" -eq 0 ]; then
+        log_info "[OK] 租户业务库 schema 已对齐"
+        return 0
+    fi
+    log_warn "租户业务库迁移返回退出码 $rc：至少一个租户失败，请翻阅上方日志"
+    log_warn "（不会中止部署；建议事后用 'bash deploy.sh db-migrate' 单独排查）"
+    return $rc
+}
+
 # 老接口保留，封装为顺序调用（向后兼容旧调用点）
+# 顺序：平台元数据 → 租户业务库 schema → 租户字典
+#   1) 平台先把 feature / version_feature / required_tables 写好
+#   2) 租户库再据此补表 + 跑 versioned migration
+#   3) 字典最后灌（依赖 biz_dict 表已存在，core 表本来就有，所以顺序其实无强约束）
 sync_platform_data() {
     sync_platform_metadata
+    sync_tenant_business_schema
     sync_tenant_dicts
 }
 
@@ -520,20 +592,22 @@ cmd_update() {
     # 解析 flags（$1=update 已被 case 消费，从 $2 开始）
     AUTO_MODE=0
     SKIP_PLATFORM_SYNC=0
+    SKIP_TENANT_MIGRATION=0
     shift  # 跳过子命令本身
     while [ $# -gt 0 ]; do
         case "$1" in
-            --auto)      AUTO_MODE=1 ;;
-            --skip-sync) SKIP_PLATFORM_SYNC=1 ;;
+            --auto)                    AUTO_MODE=1 ;;
+            --skip-sync)               SKIP_PLATFORM_SYNC=1 ;;
+            --skip-tenant-migration)   SKIP_TENANT_MIGRATION=1 ;;
             *)
                 log_warn "未知参数: $1（已忽略）"
                 ;;
         esac
         shift
     done
-    export AUTO_MODE SKIP_PLATFORM_SYNC
+    export AUTO_MODE SKIP_PLATFORM_SYNC SKIP_TENANT_MIGRATION
 
-    log_info "开始更新部署...  (auto=$AUTO_MODE, skip-sync=$SKIP_PLATFORM_SYNC)"
+    log_info "开始更新部署...  (auto=$AUTO_MODE, skip-sync=$SKIP_PLATFORM_SYNC, skip-tenant-migration=$SKIP_TENANT_MIGRATION)"
     cd "$PROJECT_DIR"
 
     # 拉取最新代码
@@ -606,19 +680,41 @@ cmd_db_sync() {
 
     AUTO_MODE=0
     SKIP_PLATFORM_SYNC=0
+    SKIP_TENANT_MIGRATION=0
     shift
     while [ $# -gt 0 ]; do
         case "$1" in
-            --auto)      AUTO_MODE=1 ;;
-            --skip-sync) SKIP_PLATFORM_SYNC=1 ;;
-            *)           log_warn "未知参数: $1（已忽略）" ;;
+            --auto)                    AUTO_MODE=1 ;;
+            --skip-sync)               SKIP_PLATFORM_SYNC=1 ;;
+            --skip-tenant-migration)   SKIP_TENANT_MIGRATION=1 ;;
+            *)                         log_warn "未知参数: $1（已忽略）" ;;
         esac
         shift
     done
-    export AUTO_MODE SKIP_PLATFORM_SYNC
+    export AUTO_MODE SKIP_PLATFORM_SYNC SKIP_TENANT_MIGRATION
 
     sync_platform_data
     log_info "平台配置数据同步完成"
+}
+
+# ============================================================
+# 命令: db-migrate（单独触发租户业务库 schema 迁移）
+#
+# 用法:
+#   bash deploy.sh db-migrate                  # 全租户 apply
+#   bash deploy.sh db-migrate --dry-run        # 只打印计划，不写库
+#   bash deploy.sh db-migrate --tenant 1001    # 只处理指定租户
+# ============================================================
+cmd_db_migrate() {
+    check_root "db-migrate"
+    check_env_file
+    cd "$DEPLOY_DIR"
+
+    shift
+    # 直接把后续参数透传给 runner
+    local applied_by="manual@$(hostname)"
+    docker compose exec -T -e MIGRATION_APPLIED_BY="$applied_by" backend \
+        python -m scripts.migration.runner "$@"
 }
 
 # ============================================================
@@ -704,6 +800,9 @@ case "${1:-}" in
     db-sync)
         cmd_db_sync "$@"
         ;;
+    db-migrate)
+        cmd_db_migrate "$@"
+        ;;
     logs)
         cmd_logs "$@"
         ;;
@@ -723,13 +822,16 @@ case "${1:-}" in
         echo ""
         echo "命令:"
         echo "  init                       首次完整部署（安装 Docker、配置、构建、启动）"
-        echo "  update [--auto|--skip-sync]"
+        echo "  update [--auto|--skip-sync|--skip-tenant-migration]"
         echo "                             日常更新；--auto 跳过 sync 的人工确认；"
-        echo "                             --skip-sync 完全跳过平台元数据同步（应急）"
+        echo "                             --skip-sync 跳过平台元数据同步（应急）；"
+        echo "                             --skip-tenant-migration 跳过租户业务库 schema 自动迁移（应急）"
         echo "  ssl                        检查并重载 SSL 证书（上传新证书后执行）"
         echo "  db-init                    初始化数据库（创建表结构和种子数据）"
-        echo "  db-sync [--auto|--skip-sync]"
-        echo "                             单独触发同步：平台元数据 + 租户字典"
+        echo "  db-sync [--auto|--skip-sync|--skip-tenant-migration]"
+        echo "                             单独触发: 平台元数据 + 租户业务库 schema + 租户字典"
+        echo "  db-migrate [--dry-run|--tenant <code>]"
+        echo "                             单独触发: 仅租户业务库 schema 迁移（runner）"
         echo "  logs [service]             查看日志（如 logs backend / logs nginx）"
         echo "  status                     查看服务状态"
         echo "  restart                    重启所有服务"
@@ -740,6 +842,12 @@ case "${1:-}" in
         echo "  首次部署需创建凭证文件:"
         echo "    /opt/zhitu/backend/scripts/platform_sync/envs/.env.prod"
         echo "  详见 backend/scripts/platform_sync/README.md"
+        echo ""
+        echo "租户业务库 schema 迁移说明:"
+        echo "  自动两阶段：按 feature.required_tables 补表 + 执行 versioned migrations"
+        echo "  迁移文件: backend/scripts/migration/versions/*.py"
+        echo "  执行记录: 每个租户库的 biz_migration_log 表（幂等，可重复运行）"
+        echo "  详见 backend/scripts/migration/__init__.py"
         echo ""
         ;;
 esac
