@@ -412,7 +412,6 @@
     align-items: stretch;
     flex: 1;
     min-height: 0;
-    display: flex;
   }
 
   .customer-chart-col,
