@@ -58,7 +58,7 @@
               <span v-else>全部类型</span>
             </ele-text>
           </div>
-          <div class="rank-list">
+          <el-scrollbar class="rank-list" height="100%" :view-style="rankListViewStyle">
             <div
               v-for="(item, index) in customerRank"
               :key="`${item.customerId ?? 'x'}-${index}`"
@@ -91,7 +91,7 @@
             <div v-if="customerRank.length === 0" class="rank-empty">
               暂无客户数据
             </div>
-          </div>
+          </el-scrollbar>
         </el-col>
       </el-row>
     </div>
@@ -133,6 +133,12 @@
   const loading = ref(false);
   const chartRef = ref<InstanceType<typeof VChart> | null>(null);
   useEcharts([chartRef]);
+
+  /** 与「最新动态」卡一致：el-scrollbar 无系统上下箭头 */
+  const rankListViewStyle = {
+    padding: '0 6px 4px 12px',
+    boxSizing: 'border-box' as const
+  };
 
   const chartOption: EChartsCoreOption = reactive({});
 
@@ -482,11 +488,10 @@
     vertical-align: middle;
   }
 
+  /* 与 workplace/activities-card 相同：Element Plus 自定义滚动条，无原生上下箭头 */
   .rank-list {
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
-    padding: 0 6px 4px 12px;
     box-sizing: border-box;
   }
 

@@ -1,5 +1,6 @@
 <template>
   <ele-page>
+    <task-search @search="(w) => reload(w, 1)" />
     <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
@@ -14,73 +15,11 @@
         cache-key="OperationTaskTable"
       >
         <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="任务单号/司机/车牌/承运商"
-                clearable
-                style="width: 240px"
-                @change="reload()"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.carrierType"
-                placeholder="承运方式"
-                clearable
-                style="width: 130px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in CARRIER_TYPE_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.status"
-                placeholder="状态"
-                clearable
-                style="width: 130px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in TASK_STATUS_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-input
-                v-model="where.originKeyword"
-                placeholder="起点关键字"
-                clearable
-                style="width: 140px"
-                @change="reload()"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-input
-                v-model="where.destinationKeyword"
-                placeholder="终点关键字"
-                clearable
-                style="width: 140px"
-                @change="reload()"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="openEdit()">
-                <el-icon><Plus /></el-icon>
-                新增任务单
-              </el-button>
-            </el-form-item>
-          </el-form>
+          <btn-items
+            :items="[
+              { preset: 'add', title: '新增任务单', onClick: () => openEdit() }
+            ]"
+          />
         </template>
 
         <template #carrierType="{ row }">
@@ -162,21 +101,17 @@
       </ele-pro-table>
     </ele-card>
 
-    <task-edit
-      v-model:visible="editVisible"
-      :data="editData"
-      @done="reload()"
-    />
+    <task-edit v-model:visible="editVisible" :data="editData" @done="reload" />
     <task-detail
       v-model:visible="detailVisible"
       :task-id="detailTaskId"
-      @done="reload()"
+      @done="reload"
     />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
-  import { computed, reactive, ref, nextTick } from 'vue';
+  import { computed, ref, nextTick } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
@@ -184,18 +119,14 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import { Plus, Right } from '@element-plus/icons-vue';
+  import { Right } from '@element-plus/icons-vue';
   import TaskEdit from './components/task-edit.vue';
   import TaskDetail from './components/task-detail.vue';
+  import TaskSearch from './components/task-search.vue';
   import { pageTasks, removeTask, cancelTask } from '@/api/operation/task';
   import type { Task, TaskParam } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
-  import {
-    CARRIER_TYPE_MAP,
-    CARRIER_TYPE_OPTIONS,
-    TASK_STATUS_MAP,
-    TASK_STATUS_OPTIONS
-  } from './status-config';
+  import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from './status-config';
 
   defineOptions({ name: 'OperationTask' });
 
@@ -205,14 +136,6 @@
   const editData = ref<Task | null>(null);
   const detailVisible = ref(false);
   const detailTaskId = ref<number | null>(null);
-
-  const where = reactive<TaskParam>({
-    keyword: '',
-    carrierType: undefined,
-    status: undefined,
-    originKeyword: '',
-    destinationKeyword: ''
-  });
 
   const formatAmount = (v?: number | null) => {
     if (v === null || v === undefined) return '--';
@@ -291,19 +214,29 @@
     }
   ]);
 
-  const datasource: DatasourceFunction = ({ pages }) => {
-    return pageTasks({ ...where, ...pages }).then((res) => ({
+  const datasource: DatasourceFunction = ({ pages, where }) => {
+    return pageTasks({
+      ...(where as TaskParam | undefined),
+      ...pages
+    }).then((res) => ({
       list: res?.list ?? [],
       count: res?.count ?? 0
     }));
   };
 
-  const reload = (page?: number) => {
+  const reload = (where?: TaskParam, page?: number) => {
     const t = tableRef.value;
     if (!t) return;
-    const opt: { page?: number } = {};
-    if (page !== undefined) opt.page = page;
-    nextTick(() => t.reload?.(opt));
+    const hasWhere = where !== undefined;
+    const hasPage = page !== undefined;
+    if (!hasWhere && !hasPage) {
+      nextTick(() => t.reload?.());
+      return;
+    }
+    const opt: { where?: TaskParam; page?: number } = {};
+    if (hasWhere) opt.where = where;
+    if (hasPage) opt.page = page;
+    t.reload?.(opt);
   };
 
   const canEdit = (row: Task) =>
