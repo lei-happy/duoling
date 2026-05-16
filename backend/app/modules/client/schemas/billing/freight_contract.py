@@ -38,6 +38,10 @@ class FreightContractOut(BaseModel):
     status: int
     remark: Optional[str] = None
     createdAt: datetime
+    # 当前在运价有效期内且启用、可参与匹配的运价条数（相对服务端当天日期）
+    activeRateCount: int = 0
+    # 未删除的运价总条数
+    totalRateCount: int = 0
 
     model_config = {"from_attributes": True}
 

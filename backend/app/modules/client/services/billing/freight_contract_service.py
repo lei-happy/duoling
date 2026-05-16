@@ -2,13 +2,15 @@
 运价合同服务（租户库）
 """
 
+from datetime import date
 from typing import Optional, Tuple
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
 from app.modules.client.models.billing.freight_contract import FreightContract
+from app.modules.client.models.billing.freight_rate import FreightRate
 from app.modules.client.schemas.billing.freight_contract import (
     FreightContractCreate, FreightContractUpdate, FreightContractOut,
 )
@@ -105,8 +107,59 @@ class FreightContractService:
         )
         items = result.scalars().all()
 
+        contract_ids = [c.id for c in items]
+        total_by_cid: dict[int, int] = {}
+        active_by_cid: dict[int, int] = {}
+        if contract_ids:
+            today = date.today()
+            tot_rows = (
+                await db.execute(
+                    select(FreightRate.contract_id, func.count())
+                    .where(
+                        FreightRate.contract_id.in_(contract_ids),
+                        FreightRate.is_deleted == 0,
+                    )
+                    .group_by(FreightRate.contract_id)
+                )
+            ).all()
+            for cid, cnt in tot_rows:
+                total_by_cid[int(cid)] = int(cnt)
+
+            act_rows = (
+                await db.execute(
+                    select(FreightRate.contract_id, func.count())
+                    .where(
+                        FreightRate.contract_id.in_(contract_ids),
+                        FreightRate.is_deleted == 0,
+                        FreightRate.status == 1,
+                        or_(
+                            FreightRate.effective_date.is_(None),
+                            FreightRate.effective_date <= today,
+                        ),
+                        or_(
+                            FreightRate.expiry_date.is_(None),
+                            FreightRate.expiry_date >= today,
+                        ),
+                    )
+                    .group_by(FreightRate.contract_id)
+                )
+            ).all()
+            for cid, cnt in act_rows:
+                active_by_cid[int(cid)] = int(cnt)
+
+        out_list = []
+        for item in items:
+            cid = int(item.id)
+            row = FreightContractOut.from_model(item).model_copy(
+                update={
+                    "totalRateCount": total_by_cid.get(cid, 0),
+                    "activeRateCount": active_by_cid.get(cid, 0),
+                }
+            )
+            out_list.append(row.model_dump())
+
         return {
-            "list": [FreightContractOut.from_model(item).model_dump() for item in items],
+            "list": out_list,
             "total": total,
             "page": page,
             "page_size": page_size,

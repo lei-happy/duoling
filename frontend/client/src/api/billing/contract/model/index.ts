@@ -10,7 +10,8 @@ export interface FreightContract {
   expiryDate?: string;
   status?: number;
   remark?: string;
-  rateCount?: number;
+  activeRateCount?: number;
+  totalRateCount?: number;
   createdAt?: string;
 }
 

@@ -101,10 +101,23 @@
   const editVisible = ref(false);
   const editData = ref<FreightContract | null>(null);
 
+  const formatRateCountSummary = (row: FreightContract) => {
+    const active = row.activeRateCount ?? 0;
+    const total = row.totalRateCount ?? 0;
+    return `${active}/${total}`;
+  };
+
   const columns = ref([
     { prop: 'customerName', label: '客户名称', minWidth: 210, fixed: 'left' },
     { prop: 'contractNo', label: '合同编号', minWidth: 140 },
     { prop: 'contractName', label: '合同名称', minWidth: 160 },
+    {
+      columnKey: 'rateCountSummary',
+      label: '运价数量',
+      minWidth: 110,
+      align: 'center',
+      formatter: (row: FreightContract) => formatRateCountSummary(row)
+    },
     {
       columnKey: 'validPeriod',
       label: '合同有效期',

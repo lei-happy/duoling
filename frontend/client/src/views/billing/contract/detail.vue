@@ -59,6 +59,7 @@
           row-key="id"
           :columns="rateColumns"
           :datasource="ratesDatasource"
+          :pagination="{ pageSize: 20 }"
           :show-overflow-tooltip="true"
           :highlight-current-row="true"
           :cache-key="ratesTableCacheKey"
@@ -87,24 +88,25 @@
             </el-tag>
           </template>
           <template #unitPrice="{ row }">
-            <div class="cd-price-cell">
+            <span class="cd-price-inline">
               <span>{{ row.unitPrice }}</span>
-              <span class="cd-unit-suffix">
-                {{
-                  row.billingMode === 1
-                    ? '元/台·km'
-                    : row.billingMode === 2
-                      ? '元/单'
-                      : '元/台'
-                }}
-              </span>
-              <div
-                v-if="row.billingMode === 1 && row.distanceKm"
-                class="cd-distance"
+              <span class="cd-unit-suffix">{{
+                row.billingMode === 1
+                  ? '元/台·km'
+                  : row.billingMode === 2
+                    ? '元/单'
+                    : '元/台'
+              }}</span>
+              <template
+                v-if="row.billingMode === 1 && row.distanceKm != null"
               >
-                {{ row.distanceKm }} km
-              </div>
-            </div>
+                <span class="cd-price-sep"> </span>
+                <span class="cd-distance-inline">{{ row.distanceKm }} km</span>
+              </template>
+            </span>
+          </template>
+          <template #vehicleBrandModel="{ row }">
+            <span>{{ formatRateBrandModel(row) }}</span>
           </template>
           <template #priceType="{ row }">
             <el-tag
@@ -133,7 +135,17 @@
             </el-tag>
           </template>
           <template #action="{ row }">
-            <btn-items divider type="link" :items="rateActionItems(row)" />
+            <div
+              class="cd-rate-actions"
+              :key="`rate-actions-${row.id}-${row.status ?? ''}`"
+            >
+              <btn-items
+                divider
+                type="link"
+                :wrap="false"
+                :items="rateActionItems(row)"
+              />
+            </div>
           </template>
         </ele-pro-table>
       </ele-card>
@@ -163,7 +175,7 @@
 <script lang="ts" setup>
   import { ref, watch, computed, nextTick } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
-  import { ArrowLeft } from '@element-plus/icons-vue';
+  import { ArrowLeft, Document, RefreshRight } from '@element-plus/icons-vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
@@ -171,7 +183,11 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import type { ButtonItem } from 'ele-admin-plus/es/ele-buttons/types';
+  import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
+  import { DeleteOutlined } from '@/components/icons';
   import RateEdit from './components/rate-edit.vue';
   import RateSearch from './components/rate-search.vue';
   import RateVersionHistory from './components/rate-version-history.vue';
@@ -306,7 +322,7 @@
     );
     const count = filtered.length;
     const page = Number((pages as { page?: number })?.page) || 1;
-    const limit = Number((pages as { limit?: number })?.limit) || 10;
+    const limit = Number((pages as { limit?: number })?.limit) || 20;
     const start = (page - 1) * limit;
     return {
       list: filtered.slice(start, start + limit),
@@ -325,15 +341,21 @@
       align: 'center',
       slot: 'billingMode'
     },
-    { prop: 'vehicleBrand', label: '品牌', minWidth: 90 },
-    { prop: 'vehicleModel', label: '车型', minWidth: 90 },
+    {
+      columnKey: 'vehicleBrandModel',
+      label: '品牌/车型',
+      minWidth: 120,
+      slot: 'vehicleBrandModel',
+      formatter: (row: FreightRate) => formatRateBrandModel(row)
+    },
     {
       columnKey: 'unitPrice',
       prop: 'unitPrice',
       label: '单价',
-      minWidth: 130,
+      minWidth: 168,
       align: 'right',
-      slot: 'unitPrice'
+      slot: 'unitPrice',
+      formatter: (row: FreightRate) => formatRateUnitPriceText(row)
     },
     {
       prop: 'priceType',
@@ -392,7 +414,7 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 220,
+      width: 132,
       align: 'center',
       slot: 'action',
       hideInPrint: true,
@@ -401,24 +423,59 @@
     }
   ]);
 
-  const rateActionItems = (row: FreightRate): ButtonItem[] => [
-    {
-      preset: 'edit',
-      onClick: () => openRateEdit(row)
-    },
-    {
-      title: '版本',
-      onClick: () => openVersionHistory(row)
-    },
-    {
-      title: '重算受影响',
-      onClick: () => recalcAffected(row)
-    },
-    {
-      preset: 'del',
-      onClick: () => removeRateRow(row)
+  const rateUnitSuffix = (row: FreightRate) =>
+    row.billingMode === 1
+      ? '元/台·km'
+      : row.billingMode === 2
+        ? '元/单'
+        : '元/台';
+
+  const formatRateUnitPriceText = (row: FreightRate) => {
+    const price = row.unitPrice ?? '';
+    const suf = rateUnitSuffix(row);
+    if (row.billingMode === 1 && row.distanceKm != null) {
+      return `${price} ${suf} ${row.distanceKm} km`;
     }
-  ];
+    return `${price} ${suf}`;
+  };
+
+  const formatRateBrandModel = (row: FreightRate) => {
+    const b = row.vehicleBrand?.trim();
+    const m = row.vehicleModel?.trim();
+    if (!b && !m) return '不限';
+    return `${b || '不限'}/${m || '不限'}`;
+  };
+
+  const rateActionItems = (row: FreightRate): ButtonItem[] => {
+    const dropdown: ButtonDropdownItem[] = [
+      {
+        title: '版本',
+        icon: Document,
+        onClick: () => openVersionHistory(row)
+      },
+      {
+        title: '重算受影响',
+        icon: RefreshRight,
+        onClick: () => recalcAffected(row)
+      },
+      {
+        title: '删除',
+        icon: DeleteOutlined,
+        divided: true,
+        danger: true,
+        onClick: () => removeRateRow(row)
+      }
+    ];
+    return [
+      {
+        preset: 'edit',
+        title: '修改',
+        type: 'link',
+        onClick: () => openRateEdit(row)
+      },
+      { preset: 'more', dropdownItems: dropdown }
+    ];
+  };
 
   const loadRates = async () => {
     const id = contract.value?.id ?? contractId.value;
@@ -575,7 +632,7 @@
   }
 
   .cd-chip--wide {
-    flex: 1 1 220px;
+    // flex: 1 1 220px;
     min-width: min(100%, 220px);
   }
 
@@ -592,8 +649,9 @@
     border-radius: var(--cd-hero-radius);
   }
 
-  .cd-price-cell {
-    line-height: 1.35;
+  .cd-price-inline {
+    display: inline;
+    white-space: nowrap;
   }
 
   .cd-unit-suffix {
@@ -602,10 +660,19 @@
     margin-left: 2px;
   }
 
-  .cd-distance {
+  .cd-price-sep {
+    display: inline;
+    margin: 0 2px;
+  }
+
+  .cd-distance-inline {
     color: var(--el-text-color-secondary);
     font-size: 12px;
-    margin-top: 2px;
+  }
+
+  .cd-rate-actions {
+    text-align: center;
+    white-space: nowrap;
   }
 
   .cd-error-card,
