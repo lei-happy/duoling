@@ -291,8 +291,12 @@ build_and_start() {
 
     docker compose up -d --build
 
-    log_info "等待服务启动..."
-    sleep 15
+    # 等待 backend HTTP 就绪（init 场景下也用同一函数，避免 sleep 15 偶发不足）
+    if ! wait_for_backend_http 180; then
+        log_error "backend 启动失败，请检查日志:"
+        docker compose logs --tail=80 backend
+        exit 1
+    fi
 
     # 检查服务状态（兼容 Compose V2 输出 "Up" 和 V1 输出 "running"）
     if docker compose ps | grep -qiE "(running|Up)"; then
@@ -315,6 +319,49 @@ reload_ssl() {
     log_info "重载 Nginx..."
     docker exec zhitu-nginx nginx -s reload
     log_info "SSL 证书已生效"
+}
+
+# ============================================================
+# 轮询等待 backend 容器 HTTP 就绪
+#
+# 为什么需要这个：
+#   - docker compose up -d 只代表容器已 spawn，并不代表 uvicorn 已经把
+#     8000 端口监听起来；冷启动加载 SQLAlchemy metadata + Pydantic schemas
+#     通常要 15-30 秒
+#   - 旧版 sleep 5 太短，后续 platform_sync 直接打 http://backend:8000
+#     会 ConnectError([Errno 111] Connection refused) 而中止部署
+#   - healthcheck start_period=15s，再加 interval/retries，靠 healthy 状态
+#     轮询太慢，不如直接在 backend 容器内 curl /health 主动探活
+#
+# 参数:  $1 = 最长等待秒数（默认 120）
+# 返回:  0=就绪；1=超时未就绪（调用方需自行决定是否中止）
+# ============================================================
+wait_for_backend_http() {
+    local max_wait="${1:-120}"
+    local elapsed=0
+    local step=3
+    cd "$DEPLOY_DIR"
+    log_info "等待 backend HTTP 就绪 (最长 ${max_wait}s)..."
+    while [ $elapsed -lt $max_wait ]; do
+        # 直接在容器内 curl /health，比等 docker healthcheck 周期快很多
+        # 静默全部输出，只关心 exit code
+        if docker compose exec -T backend python -c \
+            "import sys, httpx; sys.exit(0 if httpx.get('http://127.0.0.1:8000/health', timeout=2).status_code == 200 else 1)" \
+            >/dev/null 2>&1; then
+            echo ""
+            log_info "backend 已就绪（耗时 ${elapsed}s）"
+            return 0
+        fi
+        sleep $step
+        elapsed=$((elapsed + step))
+        printf '.'
+    done
+    echo ""
+    log_error "backend 在 ${max_wait}s 内未通过 /health 检查"
+    log_warn "请查看 backend 日志定位启动失败原因："
+    log_warn "  bash deploy.sh logs backend"
+    log_warn "（常见原因：DB 连接失败、ImportError、Pydantic schema 校验失败）"
+    return 1
 }
 
 # ============================================================
@@ -637,9 +684,15 @@ cmd_update() {
     docker compose up -d --build
     log_info "服务已重启"
 
-    # 同步菜单和产品功能模块（幂等，每次更新自动执行）
-    log_info "等待后端服务就绪..."
-    sleep 5
+    # 等待 backend HTTP 就绪后再做平台元数据/租户迁移
+    # （旧版 sleep 5 太短，新构建容器加载需 15-30s，导致 sync 因端口未开而失败）
+    if ! wait_for_backend_http 180; then
+        log_error "backend 未就绪，跳过后续 sync_platform_data 步骤"
+        log_warn "排查完成后请单独执行: bash deploy.sh db-sync"
+        docker compose ps
+        return 1
+    fi
+
     sync_platform_data
 
     # 清理旧镜像
@@ -692,6 +745,12 @@ cmd_db_sync() {
         shift
     done
     export AUTO_MODE SKIP_PLATFORM_SYNC SKIP_TENANT_MIGRATION
+
+    # 单独触发 db-sync 时也确保 backend HTTP 就绪（用户可能刚重启完）
+    if ! wait_for_backend_http 180; then
+        log_error "backend 未就绪，db-sync 中止"
+        return 1
+    fi
 
     sync_platform_data
     log_info "平台配置数据同步完成"
