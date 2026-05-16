@@ -25,6 +25,7 @@
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
         :pagination="{ pageSize: 5, pageSizes: [5, 10, 20] }"
+        :tools="proTableToolsWithExportPrint"
         :export-config="{
           fileName: (userType == '1' ? '男' : '女') + '用户数据',
           datasource: exportSource
@@ -49,6 +50,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import { usePageTab } from '@/utils/use-page-tab';
   import { pageUsers, listUsers } from '@/api/system/user';
   import type { User } from '@/api/system/user/model';

@@ -67,6 +67,7 @@
             :show-overflow-tooltip="true"
             v-model:selections="selections"
             :highlight-current-row="true"
+            :tools="proTableToolsWithExportPrint"
             :export-config="{ fileName: '用户数据', datasource: exportSource }"
             :print-config="{ datasource: exportSource }"
             :load-on-created="false"
@@ -145,6 +146,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import {
     CityOutlined,
     SearchOutlined,

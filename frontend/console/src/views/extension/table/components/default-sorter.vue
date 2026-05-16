@@ -7,6 +7,7 @@
       :datasource="datasource"
       :default-sort="{ prop: 'createTime', order: 'descending' }"
       :show-overflow-tooltip="true"
+      :tools="proTableToolsWithExportPrint"
       :export-config="{ fileName: '用户数据', datasource: exportSource }"
       :print-config="{ datasource: exportSource }"
     >
@@ -29,6 +30,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import { pageUsers, listUsers } from '@/api/system/user';
 
   /** 表格实例 */

@@ -5,6 +5,7 @@
       :columns="columns"
       :datasource="datasource"
       :show-overflow-tooltip="true"
+      :tools="proTableToolsWithExport"
       :export-config="{ fileName: '字典数据' }"
     >
       <template #toolbar>
@@ -46,6 +47,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExport } from '@/config/pro-table-tool-presets';
   import { pageDictionaries } from '@/api/system/dictionary';
   import type { Dictionary } from '@/api/system/dictionary/model';
   import ChildTable from './child-table.vue';

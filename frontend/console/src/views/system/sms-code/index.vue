@@ -12,6 +12,7 @@
         :datasource="datasource"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
+        :tools="proTableToolsWithExport"
         :export-config="{ fileName: '短信验证码数据' }"
         :where="defaultWhere"
         cache-key="SystemSmsCodeTable"
@@ -83,6 +84,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExport } from '@/config/pro-table-tool-presets';
   import ExcelJS from 'exceljs';
   import { download } from '@/utils/common';
   import SmsCodeSearch from './components/sms-code-search.vue';

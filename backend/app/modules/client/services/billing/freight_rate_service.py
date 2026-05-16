@@ -31,6 +31,20 @@ RATE_BILLING_FIELDS = {
     "effective_date", "expiry_date", "status",
 }
 
+# update 时允许显式置为 NULL 的可空列（与 FreightRate ORM 定义一致）
+RATE_UPDATE_NULLABLE_FIELDS = frozenset(
+    {
+        "origin_region_id",
+        "destination_region_id",
+        "vehicle_brand",
+        "vehicle_model",
+        "brand_id",
+        "series_id",
+        "distance_km",
+        "min_amount",
+    }
+)
+
 
 def _snapshot(rate: FreightRate) -> dict:
     return {
@@ -245,11 +259,13 @@ class FreightRateService:
             "status": "status",
         }
         billing_changed = False
+        # 仅处理请求体中显式出现的字段；显式 null 用于清空可空列（如品牌/车系）
+        update_payload = data.model_dump(exclude_unset=True, mode="python")
         for schema_field, model_field in field_map.items():
-            if not hasattr(data, schema_field):
+            if schema_field not in update_payload:
                 continue
-            val = getattr(data, schema_field, None)
-            if val is None:
+            val = update_payload[schema_field]
+            if val is None and model_field not in RATE_UPDATE_NULLABLE_FIELDS:
                 continue
             if model_field in RATE_BILLING_FIELDS:
                 if getattr(rate, model_field) != val:

@@ -296,8 +296,8 @@
   const onBillingModeRadioChange = () => {
     const v = Number(form.billingMode ?? 0);
     if (v === 2) {
-      form.vehicleBrand = undefined;
-      form.vehicleModel = undefined;
+      form.vehicleBrand = null;
+      form.vehicleModel = null;
       selectedBrandId.value = null;
       seriesOptions.value = [];
     }
@@ -359,11 +359,14 @@
     }
   };
 
-  const onBrandChange = async (brandName: string) => {
-    form.vehicleModel = undefined;
+  const onBrandChange = async (brandName?: string | null) => {
+    form.vehicleModel = null;
     form.seriesId = null;
     seriesOptions.value = [];
-    const brand = brandOptions.value.find((b) => b.brandNameCn === brandName);
+    const name = brandName?.trim();
+    const brand = name
+      ? brandOptions.value.find((b) => b.brandNameCn === name)
+      : undefined;
     if (brand) {
       selectedBrandId.value = brand.brandId;
       form.brandId = brand.brandId;
@@ -380,12 +383,15 @@
     } else {
       selectedBrandId.value = null;
       form.brandId = null;
+      // 清空时需显式传 null，否则 JSON 会省略 undefined，后端无法覆盖旧文本
+      form.vehicleBrand = null;
     }
   };
 
   const onSeriesNameChange = (seriesName?: string) => {
     if (!seriesName) {
       form.seriesId = null;
+      form.vehicleModel = null;
       return;
     }
     const item = seriesOptions.value.find((s) => s.seriesName === seriesName);

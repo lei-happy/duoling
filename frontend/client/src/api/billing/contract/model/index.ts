@@ -29,8 +29,8 @@ export interface FreightRate {
   destination?: string;
   destinationCode?: string;
   destinationRegionId?: number | null;
-  vehicleBrand?: string;
-  vehicleModel?: string;
+  vehicleBrand?: string | null;
+  vehicleModel?: string | null;
   brandId?: number | null;
   seriesId?: number | null;
   matchType?: string;

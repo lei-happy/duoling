@@ -7,6 +7,7 @@
       :datasource="datasource"
       :show-overflow-tooltip="true"
       :highlight-current-row="true"
+      :tools="proTableToolsWithExportPrint"
       :export-config="{ fileName: '用户数据', datasource: exportSource }"
       :print-config="{ datasource: exportSource }"
       @row-contextmenu="handleRowContextmenu"
@@ -43,6 +44,7 @@
     DatasourceFunction,
     Column
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import {
     LockOutlined,
     EditOutlined,

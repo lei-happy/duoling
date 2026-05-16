@@ -11,6 +11,7 @@
         pageSize: 1000,
         pageSizes: [1000, 2000]
       }"
+      :tools="proTableToolsWithExportPrint"
       :export-config="{ fileName: '用户数据', datasource: exportSource }"
       :print-config="{ datasource: exportSource }"
     >
@@ -61,6 +62,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
 
   interface User {
     userId?: number;

@@ -10,6 +10,7 @@
       :span-method="spanMethod"
       :toolbar="{ theme: 'default' }"
       :show-overflow-tooltip="true"
+      :tools="proTableToolsWithExport"
       :export-config="{ fileName: '成绩数据' }"
       :pagination="{
         pageSize: 20,
@@ -21,6 +22,7 @@
 
 <script lang="ts" setup>
   import { ref } from 'vue';
+  import { proTableToolsWithExport } from '@/config/pro-table-tool-presets';
   import type {
     DatasourceFunction,
     Columns

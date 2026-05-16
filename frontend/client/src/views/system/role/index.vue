@@ -9,6 +9,7 @@
         :datasource="datasource"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
+        :tools="proTableToolsWithExportPrint"
         :export-config="{ fileName: '角色数据', datasource: exportSource }"
         :print-config="{ datasource: exportSource }"
         cache-key="SystemRoleTable"
@@ -47,6 +48,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import { AppstoreAddOutlined } from '@/components/icons';
   import RoleSearch from './components/role-search.vue';
   import { pageRoles, removeRole, listRoles } from '@/api/system/role';

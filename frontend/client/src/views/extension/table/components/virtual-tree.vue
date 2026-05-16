@@ -9,6 +9,7 @@
       :lazy="true"
       :pagination="false"
       :show-overflow-tooltip="true"
+      :tools="proTableToolsWithExportPrint"
       :export-config="{ fileName: '菜单数据', datasource: exportSource }"
       :print-config="{ datasource: exportSource }"
     />
@@ -18,6 +19,7 @@
 <script lang="ts" setup>
   import { ref } from 'vue';
   import { toTree } from 'ele-admin-plus';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import type {
     DatasourceFunction,
     Columns

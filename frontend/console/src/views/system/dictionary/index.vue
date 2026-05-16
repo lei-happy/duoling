@@ -96,6 +96,7 @@
             :show-overflow-tooltip="true"
             v-model:selections="selections"
             :highlight-current-row="true"
+            :tools="proTableToolsWithExportPrint"
             :export-config="{ fileName: '字典数据', datasource: exportSource }"
             :print-config="{ datasource: exportSource }"
             :load-on-created="false"
@@ -136,6 +137,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import { SearchOutlined, BookOutlined } from '@/components/icons';
   import { useMobile } from '@/utils/use-mobile';
   import { useDictStore } from '@/store/modules/dict';

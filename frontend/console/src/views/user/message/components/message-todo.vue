@@ -8,6 +8,7 @@
       :show-overflow-tooltip="true"
       v-model:selections="selections"
       :highlight-current-row="true"
+      :tools="proTableToolsWithExport"
       :export-config="{ fileName: '待办事项数据' }"
     >
       <template #toolbar>
@@ -43,6 +44,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExport } from '@/config/pro-table-tool-presets';
   import { pageTodos } from '@/api/example';
   import type { Message } from '@/api/example/model';
 

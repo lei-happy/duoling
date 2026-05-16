@@ -9,6 +9,7 @@
       :pagination="false"
       v-model:selections="selections"
       class="sortable-table"
+      :tools="proTableToolsWithExport"
       :export-config="{ fileName: '用户数据' }"
     >
       <template #handle>
@@ -46,6 +47,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExport } from '@/config/pro-table-tool-presets';
   import { HolderOutlined } from '@/components/icons';
   import type { User } from '@/api/system/user/model';
   import { listUsers } from '@/api/system/user';

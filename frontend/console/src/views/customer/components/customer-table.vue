@@ -9,6 +9,7 @@
       :show-overflow-tooltip="true"
       v-model:selections="selections"
       :highlight-current-row="true"
+      :tools="proTableToolsWithExport"
       :export-config="{ fileName: '客户数据' }"
       cache-key="CustomerTable"
     >
@@ -128,6 +129,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExport } from '@/config/pro-table-tool-presets';
   import {
     pageCustomers,
     removeCustomers,

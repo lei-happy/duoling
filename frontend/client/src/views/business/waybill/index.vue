@@ -7,6 +7,7 @@
         row-key="id"
         :columns="columns"
         :datasource="datasource"
+        :pagination="{ pageSize: 20 }"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
         v-model:selections="selections"
@@ -44,6 +45,7 @@
             }}</span>
             <el-button
               text
+              size="small"
               class="waybill-no-cell__copy"
               title="复制运单号"
               @click.stop="copyWaybillNo(row.waybillNo)"
@@ -52,8 +54,56 @@
             </el-button>
           </div>
         </template>
-        <template #route="{ row }">
-          {{ row.origin }} → {{ row.destination }}
+        <template #customerName="{ row }">
+          <div class="waybill-no-cell">
+            <span
+              class="waybill-no-cell__text"
+              :title="row.customerName || undefined"
+            >{{ row.customerName }}</span>
+            <el-button
+              text
+              size="small"
+              class="waybill-no-cell__copy"
+              title="复制客户名称"
+              @click.stop="copyCustomerName(row.customerName)"
+            >
+              <el-icon :size="14"><DocumentCopy /></el-icon>
+            </el-button>
+          </div>
+        </template>
+        <template #origin="{ row }">
+          <div class="waybill-no-cell">
+            <span
+              class="waybill-no-cell__text"
+              :title="row.origin?.trim() || undefined"
+            >{{ row.origin || '-' }}</span>
+            <el-button
+              text
+              size="small"
+              class="waybill-no-cell__copy"
+              title="复制出发地"
+              @click.stop="copyOrigin(row.origin)"
+            >
+              <el-icon :size="14"><DocumentCopy /></el-icon>
+            </el-button>
+          </div>
+        </template>
+        <template #destination="{ row }">
+          <div class="waybill-no-cell">
+            <span
+              class="waybill-no-cell__text"
+              :title="row.destination?.trim() || undefined"
+            >{{ row.destination || '-' }}</span>
+            <el-button
+              text
+              size="small"
+              class="waybill-no-cell__copy"
+              title="复制目的地"
+              @click.stop="copyDestination(row.destination)"
+            >
+              <el-icon :size="14"><DocumentCopy /></el-icon>
+            </el-button>
+          </div>
         </template>
         <template #vehicleInfo="{ row }">
           <span v-if="row.cargoSummary">{{ row.cargoSummary }}</span>
@@ -244,12 +294,23 @@
       selectable: (row: Waybill) => row.status === 0
     },
     { prop: 'waybillNo', label: '运单编号', minWidth: 168, slot: 'waybillNo' },
-    { prop: 'customerName', label: '客户名称', minWidth: 120 },
     {
-      columnKey: 'route',
-      label: '出发地→目的地',
-      minWidth: 180,
-      slot: 'route'
+      prop: 'customerName',
+      label: '客户名称',
+      minWidth: 210,
+      slot: 'customerName'
+    },
+    {
+      prop: 'origin',
+      label: '出发地',
+      minWidth: 200,
+      slot: 'origin'
+    },
+    {
+      prop: 'destination',
+      label: '目的地',
+      minWidth: 200,
+      slot: 'destination'
     },
     {
       columnKey: 'vehicleInfo',
@@ -348,10 +409,14 @@
     });
   };
 
-  const copyWaybillNo = async (no?: string) => {
-    const t = no?.trim();
+  const copyTextWithFeedback = async (
+    raw: string | undefined,
+    emptyTip: string,
+    successTip: string
+  ) => {
+    const t = raw?.trim();
     if (!t) {
-      EleMessage.warning({ message: '无可复制的单号', plain: true });
+      EleMessage.warning({ message: emptyTip, plain: true });
       return;
     }
     try {
@@ -367,11 +432,23 @@
         document.execCommand('copy');
         document.body.removeChild(ta);
       }
-      EleMessage.success({ message: '已复制运单号', plain: true });
+      EleMessage.success({ message: successTip, plain: true });
     } catch {
       EleMessage.error({ message: '复制失败', plain: true });
     }
   };
+
+  const copyWaybillNo = (no?: string) =>
+    copyTextWithFeedback(no, '无可复制的单号', '已复制运单号');
+
+  const copyCustomerName = (name?: string) =>
+    copyTextWithFeedback(name, '无可复制的客户名称', '已复制客户名称');
+
+  const copyOrigin = (v?: string | null) =>
+    copyTextWithFeedback(v ?? undefined, '无可复制的出发地', '已复制出发地');
+
+  const copyDestination = (v?: string | null) =>
+    copyTextWithFeedback(v ?? undefined, '无可复制的目的地', '已复制目的地');
 
   const canEditWaybill = (row: Waybill) => row.status === 0 || row.status === 1;
 

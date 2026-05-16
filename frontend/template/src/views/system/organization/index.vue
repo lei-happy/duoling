@@ -10,6 +10,7 @@
         :datasource="datasource"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
+        :tools="proTableToolsWithExport"
         :export-config="{ fileName: '机构数据' }"
         :default-expand-all="true"
         :pagination="false"
@@ -52,6 +53,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExport } from '@/config/pro-table-tool-presets';
   import OrganizationSearch from './components/organization-search.vue';
   import {
     listOrganizations,

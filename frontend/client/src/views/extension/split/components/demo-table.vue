@@ -41,6 +41,7 @@
           '--ele-table-sm-radius': 0,
           '--ele-table-lg-radius': 0
         }"
+        :tools="proTableToolsWithExport"
         :export-config="{ fileName: '机构数据' }"
         style="padding-bottom: 0; overflow: hidden"
         @done="handleDone"
@@ -77,6 +78,7 @@
             '--ele-table-sm-radius': 0,
             '--ele-table-lg-radius': 0
           }"
+          :tools="proTableToolsWithExport"
           :export-config="{ fileName: '用户数据' }"
           style="padding-bottom: 0"
         >
@@ -106,6 +108,7 @@
   import type { User } from '@/api/system/user/model';
   import { pageOrganizations } from '@/api/system/organization';
   import { pageUsers } from '@/api/system/user';
+  import { proTableToolsWithExport } from '@/config/pro-table-tool-presets';
 
   const emit = defineEmits<{
     (e: 'change', type?: string): void;

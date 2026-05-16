@@ -8,6 +8,7 @@
       :span-method="spanMethod"
       :toolbar="{ theme: 'default' }"
       :show-overflow-tooltip="true"
+      :tools="proTableToolsWithExport"
       :export-config="{ fileName: '成绩数据' }"
       :pagination="{
         pageSize: 20,
@@ -23,6 +24,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExport } from '@/config/pro-table-tool-presets';
   import { pageUserScores } from '@/api/example';
 
   /** 表格列配置 */

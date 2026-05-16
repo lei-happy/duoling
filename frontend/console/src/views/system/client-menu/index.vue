@@ -10,6 +10,7 @@
         :datasource="datasource"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
+        :tools="proTableToolsWithExport"
         :export-config="{ fileName: '客户端菜单数据' }"
         :default-expand-all="false"
         :pagination="false"
@@ -111,6 +112,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExport } from '@/config/pro-table-tool-presets';
   import MenuIcon from '@/components/IconSelect/components/menu-icon.vue';
   import ClientMenuSearch from './components/client-menu-search.vue';
   import {

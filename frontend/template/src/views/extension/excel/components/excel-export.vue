@@ -7,7 +7,7 @@
       :show-overflow-tooltip="true"
       :pagination="false"
       v-model:selections="selections"
-      :tools="['export', 'print', 'size', 'columns', 'maximized']"
+      :tools="proTableToolsWithExportPrint"
       :toolbar="{ theme: 'default' }"
       :border="true"
     >
@@ -32,6 +32,7 @@
   import { ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
   import type { Columns } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import ExcelJS from 'exceljs';
   import { download } from '@/utils/common';
 

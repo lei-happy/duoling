@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import type { TableGlobalConfig } from 'ele-admin-plus/es/ele-config-provider/types';
 import { exceljsExportPlugin } from 'ele-admin-plus/es/ele-pro-table/exceljs-plugin';
+import { proTableToolsDefault } from './pro-table-tool-presets';
 
 /**
  * 组件全局配置
@@ -12,7 +13,7 @@ export function useGlobalConfig() {
       dataName: 'list',
       countName: 'count'
     },
-    tools: ['reload', 'export', 'print', 'size', 'columns', 'maximized'],
+    tools: proTableToolsDefault,
     exportConfig: {
       // 使用 exceljs 进行导出
       exportPlugin: exceljsExportPlugin

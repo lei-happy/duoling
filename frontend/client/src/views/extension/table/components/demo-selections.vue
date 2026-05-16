@@ -26,6 +26,7 @@
         pageSize: 10,
         pageSizes: [10, 20, 40]
       }"
+      :tools="proTableToolsWithExportPrint"
       :export-config="{ fileName: '档案数据', datasource: exportSource }"
       :print-config="{ datasource: exportSource }"
     >
@@ -82,6 +83,7 @@
     DatasourceFunction,
     Column
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import OptionItem from '@/views/extension/avatar/components/option-item.vue';
   const data = Array.from({ length: 39 }).map((_, i) => {
     const pieceId = i + 1;

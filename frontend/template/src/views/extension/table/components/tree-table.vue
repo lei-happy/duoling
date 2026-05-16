@@ -9,6 +9,7 @@
       :show-overflow-tooltip="true"
       :load="tableLoad"
       :pagination="{ pageSize: 5, pageSizes: [5, 10, 20] }"
+      :tools="proTableToolsWithExportPrint"
       :export-config="{ fileName: '菜单数据', datasource: exportSource }"
       :print-config="{ datasource: exportSource }"
       @done="handleDone"
@@ -46,6 +47,7 @@
     DataItem,
     DoneFunction
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import { pageMenus, listMenus } from '@/api/system/menu';
 
   /** 表格实例 */

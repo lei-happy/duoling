@@ -14,6 +14,7 @@
       :border="true"
       :toolbar="{ theme: 'default' }"
       :table-style="{ overflow: 'hidden' }"
+      :tools="proTableToolsWithExportPrint"
       :export-config="{ fileName: '用户数据', datasource: exportSource }"
       :print-config="{ datasource: exportSource }"
     />
@@ -27,6 +28,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   const addresses = [
     ['浙江', '杭州', '西湖区'],
     ['江苏', '苏州', '姑苏区'],

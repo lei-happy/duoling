@@ -43,6 +43,7 @@
         v-model:current="current"
         v-model:selections="selections"
         :show-overflow-tooltip="true"
+        :tools="proTableToolsWithExportPrint"
         :export-config="exportConfig"
         :print-config="{ datasource: exportSource }"
         :border="bordered"
@@ -203,6 +204,7 @@
     DoneFunction,
     ExportConfig
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import { useI18n } from 'vue-i18n';
   import {
     PlusOutlined,

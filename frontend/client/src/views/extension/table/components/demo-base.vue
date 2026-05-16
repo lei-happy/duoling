@@ -46,6 +46,7 @@
       :show-header="showHeader"
       :show-summary="showSummary"
       :summary-method="getSummaries"
+      :tools="proTableToolsWithExportPrint"
       :export-config="{ fileName: '档案数据', datasource: exportSource }"
       :print-config="printConfig"
     >
@@ -145,6 +146,7 @@
     Column,
     BeforeExportParams
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
   import OptionItem from '@/views/extension/avatar/components/option-item.vue';
 
   /** 案卷 */
