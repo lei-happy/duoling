@@ -58,12 +58,8 @@
                 <span class="eff-calc-head-meta">
                   计算异常
                   <span
-                    :class="[
-                      'eff-calc-ex-pct',
-                      data.calcExceptionRate >= 0.05
-                        ? 'is-warn'
-                        : 'is-ok'
-                    ]"
+                    class="eff-calc-ex-pct"
+                    :style="{ color: colorForCalcStatus('exception') }"
                   >
                     {{ calcExceptionPctText }}%
                   </span>
@@ -450,14 +446,6 @@
   .eff-calc-ex-pct {
     font-weight: 600;
     margin-left: 2px;
-  }
-
-  .eff-calc-ex-pct.is-warn {
-    color: var(--el-color-danger);
-  }
-
-  .eff-calc-ex-pct.is-ok {
-    color: var(--el-color-success);
   }
 
   .eff-calc-head-total {
