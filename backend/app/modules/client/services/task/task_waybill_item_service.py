@@ -23,6 +23,8 @@ from app.modules.client.schemas.task.task_waybill_item import (
     TaskWaybillItemIn,
     TaskWaybillItemStatusUpdate,
 )
+from app.modules.client.schemas.waybill.waybill import waybill_brand_model_key
+from app.modules.client.services.waybill.waybill_service import WaybillService
 
 # 挂接行未完结的状态阈值：status < UNFINISHED_THRESHOLD 才占用台数
 # 0-待装车 1-已装车 2-已卸车 都计入"占用"；3-已签收 视为已完成可释放
@@ -83,6 +85,8 @@ class TaskWaybillItemService:
         ).order_by(WaybillCargo.waybill_id, WaybillCargo.sort_order)
         cargoes = list((await db.execute(cg_q)).scalars().all())
 
+        series_lookup = await WaybillService._series_image_lookup_map(db)
+
         out: List[CandidateCargoOut] = []
         for c in cargoes:
             remaining = max(0, int(c.quantity) - int(c.allocated_quantity or 0))
@@ -91,6 +95,8 @@ class TaskWaybillItemService:
             w = wb_map.get(c.waybill_id)
             if w is None:
                 continue
+            img_key = waybill_brand_model_key(c.vehicle_brand, c.vehicle_model)
+            series_image = series_lookup.get(img_key)
             out.append(CandidateCargoOut(
                 waybillId=w.id,
                 waybillNo=w.waybill_no,
@@ -104,6 +110,7 @@ class TaskWaybillItemService:
                 cargoId=c.id,
                 vehicleBrand=c.vehicle_brand,
                 vehicleModel=c.vehicle_model,
+                seriesImage=series_image,
                 quantity=int(c.quantity),
                 allocatedQuantity=int(c.allocated_quantity or 0),
                 remainingQuantity=remaining,

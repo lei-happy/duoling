@@ -223,18 +223,25 @@ def generate_waybills(
             x for x in (dealer.province, dealer.city, dealer.address_detail) if x
         )[:500]
 
-        n_lines = rng.randint(cargo_lines_min, cargo_lines_max)
-        cargo_specs: list[tuple[str, str, int]] = []
-        for _ in range(n_lines):
-            b, m = rng.choice(brand_series)
-            qty = rng.randint(1, 5)
-            cargo_specs.append((b, m, qty))
-
-        brand_m, model_m, qty_sum = cargo_specs[0][0], cargo_specs[0][1], sum(t[2] for t in cargo_specs)
-
         plan_t = _random_dt_in_window(rng, window_start, window_end)
         load_t = plan_t + timedelta(hours=rng.randint(2, 24))
         deliver_t = load_t + timedelta(days=rng.randint(1, 10))
+
+        n_lines = rng.randint(cargo_lines_min, cargo_lines_max)
+        cargo_specs: list[tuple[str, str, str]] = []
+        for line_idx in range(n_lines):
+            b, m = rng.choice(brand_series)
+            vin = (
+                f"ZMOCK{int(plan_t.timestamp()) % 10**7:07d}"
+                f"{i % 100000:05d}{line_idx:02d}{rng.randint(0, 10**6 - 1):06d}"
+            )
+            cargo_specs.append((b, m, vin))
+
+        brand_m, model_m, qty_sum = (
+            cargo_specs[0][0],
+            cargo_specs[0][1],
+            len(cargo_specs),
+        )
 
         freight_amt = Decimal(str(round(rng.uniform(500.0, 25000.0), 2)))
         waybill_no = _new_waybill_no(session, rng, i, plan_t)
@@ -285,14 +292,15 @@ def generate_waybills(
         session.add(wb)
         session.flush()
 
-        for idx, (vb, vm, q) in enumerate(cargo_specs):
+        for idx, (vb, vm, vin) in enumerate(cargo_specs):
             session.add(
                 WaybillCargo(
                     waybill_id=int(wb.id),
                     sort_order=idx,
                     vehicle_brand=vb[:100],
                     vehicle_model=vm[:100],
-                    quantity=q,
+                    vin=vin[:50],
+                    quantity=1,
                     created_at=plan_t,
                     updated_at=plan_t,
                 )

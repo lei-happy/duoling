@@ -23,6 +23,7 @@ from app.modules.client.schemas.waybill.waybill import (
     WaybillStatusUpdate,
     WaybillOut,
     WaybillCargoLineIn,
+    normalize_waybill_vin,
     waybill_brand_model_key,
 )
 from app.modules.client.services.system_config_service import SystemConfigService
@@ -70,14 +71,55 @@ class WaybillService:
         return f"YD{now.strftime('%Y%m%d%H%M%S')}{random.randint(1000, 9999)}"
 
     @staticmethod
-    def _validate_cargo_lines(lines: list[WaybillCargoLineIn]) -> None:
+    def _vin_len_ok(v: Optional[str]) -> bool:
+        if not v:
+            return False
+        return 10 <= len(v) <= 50
+
+    @staticmethod
+    def _validate_cargo_lines(
+        lines: list[WaybillCargoLineIn], *, is_create: bool = False,
+    ) -> None:
         if not lines:
             raise BizException("请至少录入一行货物信息")
+        seen_vins: set[str] = set()
         for i, line in enumerate(lines):
             if not (line.vehicleBrand and str(line.vehicleBrand).strip()):
                 raise BizException(f"货物第{i + 1}行：请填写商品车品牌")
             if not (line.vehicleModel and str(line.vehicleModel).strip()):
                 raise BizException(f"货物第{i + 1}行：请填写车型")
+            vin = line.vin
+            q = int(line.quantity or 0)
+            if is_create:
+                if not WaybillService._vin_len_ok(vin):
+                    raise BizException(
+                        f"货物第{i + 1}行：请填写有效 VIN（10~50 位字母或数字）"
+                    )
+                if q != 1:
+                    raise BizException(f"货物第{i + 1}行：带 VIN 时每行台数须为 1")
+            else:
+                legacy = line.id is not None
+                new_row = line.id is None
+                if new_row:
+                    if not WaybillService._vin_len_ok(vin):
+                        raise BizException(
+                            f"货物第{i + 1}行：新增明细须填写有效 VIN（10~50 位字母或数字）"
+                        )
+                    if q != 1:
+                        raise BizException(f"货物第{i + 1}行：新增明细台数须为 1")
+                elif legacy:
+                    if WaybillService._vin_len_ok(vin):
+                        if q != 1:
+                            raise BizException(
+                                f"货物第{i + 1}行：填写 VIN 时每行台数须为 1"
+                            )
+                    else:
+                        if q < 1:
+                            raise BizException(f"货物第{i + 1}行：台数至少为 1")
+            if vin:
+                if vin in seen_vins:
+                    raise BizException(f"货物第{i + 1}行：VIN 与本单其他行重复")
+                seen_vins.add(vin)
 
     @staticmethod
     def _ordered_cargoes(lines: list[WaybillCargoLineIn]) -> list[WaybillCargoLineIn]:
@@ -192,6 +234,7 @@ class WaybillService:
                     sort_order=idx,
                     vehicle_brand=(line.vehicleBrand or "").strip() or None,
                     vehicle_model=(line.vehicleModel or "").strip() or None,
+                    vin=line.vin if line.vin else None,
                     quantity=line.quantity,
                 )
             )
@@ -455,7 +498,7 @@ class WaybillService:
     ) -> tuple[Waybill, list[WaybillCargo]]:
         data = await WaybillService._hydrate_waybill_create_region_ids(db, data)
         waybill_no = data.waybillNo or WaybillService._generate_waybill_no()
-        WaybillService._validate_cargo_lines(data.cargoes)
+        WaybillService._validate_cargo_lines(data.cargoes, is_create=True)
 
         brand_mirr, model_mirr, qty_sum = WaybillService._mirror_main_vehicle_fields(
             data.cargoes
@@ -603,7 +646,7 @@ class WaybillService:
                 setattr(waybill, model_field, val)
 
         if data.cargoes is not None:
-            WaybillService._validate_cargo_lines(data.cargoes)
+            WaybillService._validate_cargo_lines(data.cargoes, is_create=False)
             old_cargoes = await WaybillService._fetch_cargoes_for_waybill(db, waybill_id)
             if WaybillService._cargoes_changed(old_cargoes, data.cargoes):
                 billing_field_changed = True
@@ -641,13 +684,19 @@ class WaybillService:
         old: list[WaybillCargo], new: list[WaybillCargoLineIn]
     ) -> bool:
         old_keys = sorted([
-            (waybill_brand_model_key(c.vehicle_brand, c.vehicle_model),
-             int(c.quantity or 0))
+            (
+                waybill_brand_model_key(c.vehicle_brand, c.vehicle_model),
+                int(c.quantity or 0),
+                normalize_waybill_vin(getattr(c, "vin", None)) or "",
+            )
             for c in old
         ])
         new_keys = sorted([
-            (waybill_brand_model_key(c.vehicleBrand, c.vehicleModel),
-             int(c.quantity or 0))
+            (
+                waybill_brand_model_key(c.vehicleBrand, c.vehicleModel),
+                int(c.quantity or 0),
+                (c.vin or ""),
+            )
             for c in new
         ])
         return old_keys != new_keys

@@ -60,6 +60,7 @@ async def calculate_freight(
 class PreviewCargoLine(BaseModel):
     vehicleBrand: Optional[str] = None
     vehicleModel: Optional[str] = None
+    vin: Optional[str] = None
     quantity: int = Field(1, ge=1)
 
 
@@ -107,6 +108,7 @@ async def preview_freight(
             sort_order=idx,
             vehicle_brand=c.vehicleBrand,
             vehicle_model=c.vehicleModel,
+            vin=c.vin,
             quantity=int(c.quantity or 1),
         ))
 

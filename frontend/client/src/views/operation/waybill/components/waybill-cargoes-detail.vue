@@ -82,6 +82,13 @@
               <div class="wcd-card__line wcd-card__line--muted">
                 品牌 · 车型
               </div>
+              <div
+                v-if="row.vin"
+                class="wcd-card__line wcd-card__line--vin"
+                :title="row.vin"
+              >
+                VIN {{ row.vin }}
+              </div>
             </div>
           </li>
         </ul>
@@ -136,6 +143,7 @@
     vehicleBrand: string;
     vehicleModel: string;
     quantity: number;
+    vin?: string | null;
     seriesImage?: string | null;
   }
 
@@ -164,6 +172,7 @@
         vehicleBrand: line.vehicleBrand?.trim() || '—',
         vehicleModel: line.vehicleModel?.trim() || '—',
         quantity: line.quantity ?? 0,
+        vin: line.vin?.trim() || null,
         seriesImage: line.seriesImage
       }));
     }
@@ -177,6 +186,7 @@
           vehicleBrand: brand || '—',
           vehicleModel: model || '—',
           quantity: qty,
+          vin: null,
           seriesImage: w.primarySeriesImage
         }
       ];
@@ -404,6 +414,15 @@
   .wcd-card__line--muted {
     font-size: 12px;
     color: var(--el-text-color-secondary);
+  }
+
+  .wcd-card__line--vin {
+    font-size: 12px;
+    font-family: ui-monospace, monospace;
+    color: var(--el-text-color-regular);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .wcd-empty {

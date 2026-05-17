@@ -2,8 +2,8 @@
   商品车配载选择器（左右布局）
 
   设计：
-  - 左侧：待选运单（按线路 / 车型分组），每行点「加入」推到右侧
-  - 右侧：已选商品车面板（汇总条 / 数量微调 / 段归属 / 移除 / 清空）
+  - 左侧：待选运单（按线路/客户分组；同运单合并行，可展开按 cargo 行追加台数；主按钮整单加入）
+  - 右侧：已选商品车（车型图 + 台数标签只读；可展开查看「每一台」占位明细）
   - 列表区采用 sticky 分组头，避免嵌套 flex 内部高度塌陷
 
   业务偏好：相同起终点(线路) > 同品牌车型 > 台数充裕
@@ -17,16 +17,15 @@
         <el-tag size="small" type="info" effect="plain">
           {{ filteredCandidates.length }} 条 / {{ candidatesTotalQty }} 台
         </el-tag>
-        <div class="cargo-picker__flex-spacer" />
-        <el-tooltip
-          content="智能配载将基于运力、车型、台数自动拼板，即将上线"
-          placement="top"
+        <el-radio-group
+          v-model="groupMode"
+          size="small"
+          class="cargo-picker__group-mode"
         >
-          <el-button type="primary" link disabled size="small">
-            <el-icon style="margin-right: 4px"><MagicStick /></el-icon>
-            智能配载
-          </el-button>
-        </el-tooltip>
+          <el-radio-button value="route">按线路</el-radio-button>
+          <el-radio-button value="customer">按客户</el-radio-button>
+        </el-radio-group>
+        <div class="cargo-picker__flex-spacer" />
         <el-button :icon="Refresh" size="small" @click="loadCandidates">
           刷新
         </el-button>
@@ -64,11 +63,6 @@
           size="small"
           style="width: 130px"
         />
-        <div class="cargo-picker__flex-spacer" />
-        <el-radio-group v-model="groupMode" size="small">
-          <el-radio-button value="route">按线路</el-radio-button>
-          <el-radio-button value="model">按车型</el-radio-button>
-        </el-radio-group>
       </div>
 
       <div v-loading="loading" class="cargo-picker__scroll">
@@ -96,14 +90,6 @@
             <span class="cargo-group__meta">
               {{ group.totalCount }} 条 · {{ group.totalQuantity }} 台
             </span>
-            <el-tag
-              v-if="group.pickedQuantity > 0"
-              size="small"
-              type="success"
-              effect="plain"
-            >
-              已选 {{ group.pickedQuantity }} 台
-            </el-tag>
             <div class="cargo-picker__flex-spacer" />
             <el-button
               type="primary"
@@ -123,7 +109,10 @@
               :key="sub.key"
             >
               <div
-                v-if="group.subgroups.length > 1 || (sub.title && sub.title.trim())"
+                v-if="
+                  groupMode === 'customer' &&
+                  (group.subgroups.length > 1 || (sub.title && sub.title.trim()))
+                "
                 class="cargo-subheader"
               >
                 <span class="cargo-subheader__label">{{ sub.title }}</span>
@@ -132,70 +121,165 @@
                 </span>
               </div>
               <div
-                v-for="row in sub.rows"
-                :key="row.cargoId"
-                class="cargo-row"
-                :class="{ 'is-picked': pickedQty(row) > 0 }"
+                v-for="mw in sub.mergedRows"
+                :key="mw.key"
+                class="cargo-merge"
               >
-                <div class="cargo-row__main">
-                  <div class="cargo-row__line1">
-                    <span class="cargo-row__wb" :title="row.waybillNo">{{
-                      row.waybillNo || `#${row.cargoId}`
-                    }}</span>
-                    <span class="cargo-row__customer">{{
-                      row.customerName || '—'
-                    }}</span>
-                  </div>
-                  <div class="cargo-row__line2">
-                    <span
-                      v-if="groupMode === 'route'"
-                      class="cargo-row__chip"
-                    >
-                      {{ row.vehicleBrand || '—' }} /
-                      {{ row.vehicleModel || '—' }}
-                    </span>
-                    <span
-                      v-else
-                      class="cargo-row__chip"
-                      :title="`${row.origin || ''} → ${row.destination || ''}`"
-                    >
-                      {{ row.origin || '—' }} → {{ row.destination || '—' }}
-                    </span>
-                    <span
-                      v-if="row.dealerName"
-                      class="cargo-row__dealer"
-                      :title="row.dealerName"
-                    >
-                      {{ row.dealerName }}
-                    </span>
-                  </div>
-                </div>
-                <div class="cargo-row__action">
-                  <span class="cargo-row__remaining">
-                    剩 <b>{{ row.remainingQuantity }}</b>
-                  </span>
+                <div class="cargo-row">
                   <el-button
-                    v-if="pickedQty(row) === 0"
-                    type="primary"
-                    size="small"
-                    :disabled="row.remainingQuantity <= 0"
-                    @click="addRow(row)"
+                    text
+                    class="cargo-merge__toggle"
+                    @click.stop="
+                      toggleMergeExpand(mergeExpandKey(group.key, mw.key))
+                    "
                   >
-                    加入
+                    <el-icon
+                      class="cargo-merge__toggle-icon"
+                      :class="{
+                        'is-collapsed': !mergeExpandOpen(group.key, mw.key)
+                      }"
+                    >
+                      <CaretBottom />
+                    </el-icon>
                   </el-button>
-                  <template v-else>
-                    <el-tag size="small" type="success" effect="dark">
-                      已选 {{ pickedQty(row) }}
-                    </el-tag>
+                  <div class="cargo-row__main">
+                    <div class="cargo-row__line1">
+                      <span
+                        class="cargo-row__wb"
+                        :title="mw.lines[0]?.waybillNo"
+                      >{{
+                        mw.lines[0]?.waybillNo ||
+                          `#${mw.lines[0]?.waybillId}`
+                      }}</span>
+                      <span class="cargo-row__customer">{{
+                        mw.lines[0]?.customerName || '—'
+                      }}</span>
+                    </div>
+                    <div class="cargo-row__line2">
+                      <span class="cargo-row__chip">{{
+                        mergedModelSummary(mw)
+                      }}</span>
+                      <span
+                        class="cargo-row__dest"
+                        :title="mergedEndPointTitle(mw)"
+                      >
+                        {{ mergedEndPointLabel(mw) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="cargo-row__action">
+                    <span class="cargo-row__remaining">
+                      剩
+                      <span class="cargo-row__remaining-num">{{
+                        mergedRemainingTotal(mw)
+                      }}</span>
+                    </span>
+                    <template v-if="!mergedHasPick(mw)">
+                      <el-tooltip
+                        content="将该运单下本组全部车型按剩余台数一次性加入右侧"
+                        placement="top"
+                      >
+                        <el-button
+                          type="primary"
+                          size="small"
+                          :disabled="mergedRemainingTotal(mw) <= 0"
+                          @click="addMerged(mw)"
+                        >
+                          整单加入
+                        </el-button>
+                      </el-tooltip>
+                    </template>
                     <el-button
-                      type="danger"
+                      v-else
+                      type="primary"
                       link
                       size="small"
-                      @click="removeByRow(row)"
+                      @click="removeMerged(mw)"
                     >
-                      移除
+                      撤回
                     </el-button>
-                  </template>
+                  </div>
+                </div>
+                <div
+                  v-show="mergeExpandOpen(group.key, mw.key)"
+                  class="cargo-merge__detail"
+                >
+                  <div
+                    v-for="line in mw.lines"
+                    :key="line.cargoId"
+                    class="cargo-subline"
+                  >
+                    <div class="cargo-subline__thumb">
+                      <el-image
+                        :src="seriesImageUrl(line.seriesImage)"
+                        fit="cover"
+                        class="cargo-subline__img"
+                        lazy
+                      >
+                        <template #error>
+                          <div class="cargo-subline__ph">
+                            <el-icon :size="18"><Picture /></el-icon>
+                          </div>
+                        </template>
+                      </el-image>
+                    </div>
+                    <div class="cargo-subline__main">
+                      <div class="cargo-subline__model">
+                        {{ line.vehicleBrand || '—' }} /
+                        {{ line.vehicleModel || '—' }}
+                      </div>
+                      <div class="cargo-subline__ep">
+                        {{ endPointLabel(line) }}
+                      </div>
+                    </div>
+                    <div class="cargo-subline__remain">
+                      可再配
+                      <span class="cargo-subline__remain-num">{{
+                        maxIncrementForLine(line)
+                      }}</span>
+                      台
+                    </div>
+                    <div class="cargo-subline__act">
+                      <template v-if="maxIncrementForLine(line) > 0">
+                        <el-input-number
+                          :model-value="incrementDraftFor(line)"
+                          :min="1"
+                          :max="maxIncrementForLine(line)"
+                          :precision="0"
+                          size="small"
+                          class="cargo-subline__inc"
+                          controls-position="right"
+                          @update:model-value="
+                            (v) =>
+                              setIncrementDraft(
+                                line,
+                                v === undefined ? undefined : Number(v)
+                              )
+                          "
+                        />
+                        <el-button
+                          type="primary"
+                          size="small"
+                          @click="addCargoIncrement(line)"
+                        >
+                          加入
+                        </el-button>
+                      </template>
+                      <template v-if="pickedQty(line) > 0">
+                        <el-tag size="small" type="info" effect="plain">
+                          已选 {{ pickedQty(line) }} 台
+                        </el-tag>
+                        <el-button
+                          type="primary"
+                          link
+                          size="small"
+                          @click="removeCargoLine(line)"
+                        >
+                          撤回
+                        </el-button>
+                      </template>
+                    </div>
+                  </div>
                 </div>
               </div>
             </template>
@@ -264,63 +348,134 @@
         <div
           v-for="(p, idx) in modelValue"
           :key="`${p.waybillCargoId}_${idx}`"
-          class="picked-row"
+          class="picked-block"
         >
-          <div class="picked-row__main">
-            <div class="picked-row__line1">
-              <span class="picked-row__wb" :title="p.waybillNo">{{
-                p.waybillNo || `#${p.waybillCargoId}`
-              }}</span>
-              <span class="picked-row__customer">{{
-                p.customerName || '—'
-              }}</span>
-            </div>
-            <div class="picked-row__line2">
-              <span class="picked-row__chip">
-                {{ p.vehicleBrand || '—' }} / {{ p.vehicleModel || '—' }}
-              </span>
-              <span
-                v-if="routeOfPicked(p)"
-                class="picked-row__chip"
-                :title="routeOfPicked(p)"
+          <div class="picked-row">
+            <el-button
+              text
+              class="picked-block__toggle"
+              @click="togglePickedExpand(p.waybillCargoId)"
+            >
+              <el-icon
+                class="picked-block__toggle-icon"
+                :class="{
+                  'is-collapsed': !pickedExpandOpen(p.waybillCargoId)
+                }"
               >
-                {{ routeOfPicked(p) }}
-              </span>
+                <CaretBottom />
+              </el-icon>
+            </el-button>
+            <div class="picked-row__thumb">
+              <el-image
+                :src="pickedSeriesImageUrl(p)"
+                fit="cover"
+                class="picked-row__img"
+                lazy
+              >
+                <template #error>
+                  <div class="picked-row__ph">
+                    <el-icon :size="20"><Picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
+            </div>
+            <div class="picked-row__main">
+              <div class="picked-row__line1">
+                <span class="picked-row__wb" :title="p.waybillNo">{{
+                  p.waybillNo || `#${p.waybillCargoId}`
+                }}</span>
+                <span class="picked-row__customer">{{
+                  p.customerName || '—'
+                }}</span>
+              </div>
+              <div class="picked-row__line2">
+                <span class="picked-row__chip picked-row__chip--model">
+                  {{ p.vehicleBrand || '—' }} / {{ p.vehicleModel || '—' }}
+                </span>
+                <div
+                  v-if="routeOfPicked(p)"
+                  class="picked-row__route-row"
+                >
+                  <span
+                    class="picked-row__route"
+                    :title="routeOfPicked(p)"
+                  >
+                    {{ routeOfPicked(p) }}
+                  </span>
+                  <el-tooltip
+                    v-if="routeDiffersFromDominant(p)"
+                    content="该运单起讫点与汇总「主线路」不一致，混板前请确认。"
+                    placement="top"
+                  >
+                    <el-tag
+                      size="small"
+                      type="warning"
+                      effect="plain"
+                      class="picked-row__route-warn"
+                    >
+                      异主线路
+                    </el-tag>
+                  </el-tooltip>
+                </div>
+              </div>
+            </div>
+            <div class="picked-row__rest">
+              <el-tag type="primary" effect="dark" size="small">
+                {{ p.quantity }} 台
+              </el-tag>
+              <el-select
+                v-if="segments && segments.length > 1"
+                v-model="p.segmentId"
+                size="small"
+                clearable
+                placeholder="跟随主任务"
+                class="picked-row__segment"
+                @change="emitPickedRefresh"
+              >
+                <el-option
+                  v-for="seg in segments"
+                  :key="seg.segmentNo"
+                  :value="seg.segmentNo"
+                  :label="`第 ${seg.segmentNo} 段`"
+                />
+              </el-select>
+              <el-button
+                type="danger"
+                link
+                size="small"
+                :icon="Close"
+                @click="removePick(idx)"
+              />
             </div>
           </div>
-          <div class="picked-row__rest">
-            <el-input-number
-              v-model="p.quantity"
-              :min="1"
-              :max="getMaxForPicked(p)"
-              :precision="0"
-              controls-position="right"
-              size="small"
-              class="picked-row__qty"
-              @change="syncQuantity(idx)"
-            />
-            <el-select
-              v-if="segments && segments.length > 1"
-              v-model="p.segmentId"
-              size="small"
-              clearable
-              placeholder="跟随主任务"
-              class="picked-row__segment"
+          <div
+            v-show="pickedExpandOpen(p.waybillCargoId)"
+            class="picked-units"
+          >
+            <div
+              v-for="n in p.quantity"
+              :key="`${p.waybillCargoId}_u_${n}`"
+              class="picked-unit"
             >
-              <el-option
-                v-for="seg in segments"
-                :key="seg.segmentNo"
-                :value="seg.segmentNo"
-                :label="`第 ${seg.segmentNo} 段`"
-              />
-            </el-select>
-            <el-button
-              type="danger"
-              link
-              size="small"
-              :icon="Close"
-              @click="removePick(idx)"
-            />
+              <span class="picked-unit__idx">第 {{ n }} 台</span>
+              <div class="picked-unit__img-wrap">
+                <el-image
+                  :src="pickedSeriesImageUrl(p)"
+                  fit="cover"
+                  class="picked-unit__img"
+                  lazy
+                >
+                  <template #error>
+                    <div class="picked-unit__ph">
+                      <el-icon :size="16"><Picture /></el-icon>
+                    </div>
+                  </template>
+                </el-image>
+              </div>
+              <span class="picked-unit__model">
+                {{ p.vehicleBrand || '—' }} / {{ p.vehicleModel || '—' }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -334,7 +489,7 @@
   import {
     CaretBottom,
     Close,
-    MagicStick,
+    Picture,
     Refresh,
     Top
   } from '@element-plus/icons-vue';
@@ -350,12 +505,18 @@
     _availableRemaining?: number;
   };
 
-  type GroupMode = 'route' | 'model';
+  type GroupMode = 'route' | 'customer';
+
+  /** 同分组内同一运单合并展示（底层仍为多 cargo 行） */
+  interface MergedWaybillRow {
+    key: string;
+    lines: CandidateCargo[];
+  }
 
   interface SubGroup {
     key: string;
     title: string;
-    rows: CandidateCargo[];
+    mergedRows: MergedWaybillRow[];
     totalCount: number;
     totalQuantity: number;
   }
@@ -382,6 +543,12 @@
   const loading = ref(false);
   const groupMode = ref<GroupMode>('route');
   const collapsedGroups = ref<Set<string>>(new Set());
+  /** 左侧：合并运单行内展开（按 cargo 行追加台数） */
+  const expandedMergeKeys = ref<Set<string>>(new Set());
+  /** 右侧：已选行展开显示「每一台」占位明细 */
+  const expandedPickedCargoIds = ref<Set<number>>(new Set());
+  /** cargoId → 本次要追加的台数（1..可再配） */
+  const pickIncrementDraft = reactive<Record<number, number>>({});
 
   const filter = reactive({
     keyword: '',
@@ -433,78 +600,293 @@
   function routeTitleOf(c: CandidateCargo): string {
     return `${c.origin || '未填起点'} → ${c.destination || '未填终点'}`;
   }
-  function modelKeyOf(c: CandidateCargo): string {
-    return `${c.vehicleBrand || '未填'}__${c.vehicleModel || '未填'}`;
+  function customerKeyOf(c: CandidateCargo): string {
+    if (c.customerId != null) {
+      return `id:${c.customerId}`;
+    }
+    return `name:${c.customerName || '未填客户'}`;
   }
-  function modelTitleOf(c: CandidateCargo): string {
-    return `${c.vehicleBrand || '未填品牌'} / ${c.vehicleModel || '未填车型'}`;
+  function customerTitleOf(c: CandidateCargo): string {
+    return c.customerName || '未填客户';
+  }
+
+  /** 行内展示的终点/交车点文案 */
+  function endPointLabel(c: CandidateCargo): string {
+    const d = c.dealerName?.trim();
+    if (d) return d;
+    const dest = c.destination?.trim();
+    if (dest) return dest;
+    return '—';
+  }
+
+  function endPointTitle(c: CandidateCargo): string {
+    const parts = [c.destination, c.dealerName].filter(
+      (x) => x && String(x).trim()
+    ) as string[];
+    return parts.join(' · ') || '';
+  }
+
+  /** 与运单货物明细弹窗一致：相对路径补前缀 */
+  function resolveMediaUrl(p?: string | null): string {
+    const s = p?.trim();
+    if (!s) return '';
+    if (s.startsWith('http://') || s.startsWith('https://')) return s;
+    return s.startsWith('/') ? s : `/${s}`;
+  }
+
+  function seriesImageUrl(p?: string | null): string {
+    return resolveMediaUrl(p);
+  }
+
+  function mergedLinesRemaining(m: MergedWaybillRow): number {
+    return m.lines.reduce((s, c) => s + (c.remainingQuantity || 0), 0);
+  }
+
+  /** 同一分组（同线路+同客户 或 同客户+同线路）内按运单号合并 */
+  function mergeLinesByWaybill(raw: CandidateCargo[]): MergedWaybillRow[] {
+    const map = new Map<number, CandidateCargo[]>();
+    for (const c of raw) {
+      let lines = map.get(c.waybillId);
+      if (!lines) {
+        lines = [];
+        map.set(c.waybillId, lines);
+      }
+      lines.push(c);
+    }
+    const merged: MergedWaybillRow[] = [];
+    for (const [waybillId, lines] of map) {
+      lines.sort((a, b) => b.remainingQuantity - a.remainingQuantity);
+      merged.push({ key: `wb_${waybillId}`, lines });
+    }
+    merged.sort((a, b) => {
+      const d = mergedLinesRemaining(b) - mergedLinesRemaining(a);
+      if (d !== 0) return d;
+      const wa = a.lines[0]?.waybillNo || '';
+      const wb = b.lines[0]?.waybillNo || '';
+      return wa.localeCompare(wb, 'zh-CN');
+    });
+    return merged;
+  }
+
+  function mergedModelSummary(m: MergedWaybillRow): string {
+    const parts = m.lines.map(
+      (l) => `${l.vehicleBrand || '—'} / ${l.vehicleModel || '—'}`
+    );
+    return [...new Set(parts)].join('、');
+  }
+
+  function mergedEndPointLabel(m: MergedWaybillRow): string {
+    const labels = m.lines
+      .map((l) => endPointLabel(l))
+      .filter((x) => x && x !== '—');
+    return [...new Set(labels)].join(' · ') || '—';
+  }
+
+  function mergedEndPointTitle(m: MergedWaybillRow): string {
+    const titles = m.lines
+      .map((l) => endPointTitle(l))
+      .filter((x) => x && String(x).trim());
+    return [...new Set(titles)].join('；') || '';
+  }
+
+  const pickedQty = (row: CandidateCargo): number => {
+    const p = (props.modelValue || []).find(
+      (x) => x.waybillCargoId === row.cargoId
+    );
+    return p?.quantity || 0;
+  };
+
+  function upsertPickedQuantity(
+    list: PickedItem[],
+    row: CandidateCargo,
+    qty: number
+  ): PickedItem[] {
+    const cap = row.remainingQuantity;
+    const q = Math.max(0, Math.min(Math.floor(qty), cap));
+    const i = list.findIndex((x) => x.waybillCargoId === row.cargoId);
+    const next = [...list];
+    if (q <= 0) {
+      if (i >= 0) next.splice(i, 1);
+      return next;
+    }
+    const patch = {
+      waybillId: row.waybillId,
+      waybillCargoId: row.cargoId,
+      waybillNo: row.waybillNo,
+      customerId: row.customerId,
+      customerName: row.customerName,
+      vehicleBrand: row.vehicleBrand,
+      vehicleModel: row.vehicleModel,
+      dealerName: row.dealerName,
+      quantity: q,
+      _availableRemaining: cap,
+      seriesImage: row.seriesImage
+    };
+    if (i >= 0) {
+      next[i] = {
+        ...next[i],
+        ...patch,
+        segmentId: next[i].segmentId,
+        seriesImage: row.seriesImage ?? next[i].seriesImage
+      };
+    } else {
+      next.push({
+        ...patch,
+        segmentId: undefined
+      } as PickedItem);
+    }
+    return next;
+  }
+
+  function maxIncrementForLine(row: CandidateCargo): number {
+    return Math.max(0, row.remainingQuantity - pickedQty(row));
+  }
+
+  function incrementDraftFor(row: CandidateCargo): number {
+    const m = maxIncrementForLine(row);
+    if (m <= 0) return 1;
+    const k = row.cargoId;
+    let v = pickIncrementDraft[k];
+    if (v == null || v < 1 || v > m) {
+      v = Math.min(1, m);
+      pickIncrementDraft[k] = v;
+    }
+    return pickIncrementDraft[k] ?? 1;
+  }
+
+  function setIncrementDraft(row: CandidateCargo, v: number | undefined): void {
+    const m = maxIncrementForLine(row);
+    if (m <= 0) return;
+    const n = Math.min(m, Math.max(1, Math.floor(Number(v) || 1)));
+    pickIncrementDraft[row.cargoId] = n;
+  }
+
+  function addCargoIncrement(row: CandidateCargo): void {
+    const inc = incrementDraftFor(row);
+    const cur = pickedQty(row);
+    const nextQty = Math.min(row.remainingQuantity, cur + inc);
+    const list = upsertPickedQuantity(
+      [...(props.modelValue || [])],
+      row,
+      nextQty
+    );
+    emit('update:modelValue', list);
+    const left = Math.max(0, row.remainingQuantity - nextQty);
+    if (left <= 0) delete pickIncrementDraft[row.cargoId];
+    else pickIncrementDraft[row.cargoId] = Math.min(left, 1);
+  }
+
+  function removeCargoLine(row: CandidateCargo): void {
+    const list = upsertPickedQuantity(
+      [...(props.modelValue || [])],
+      row,
+      0
+    );
+    emit('update:modelValue', list);
+    delete pickIncrementDraft[row.cargoId];
+  }
+
+  function mergedHasPick(m: MergedWaybillRow): boolean {
+    return m.lines.some((c) => pickedQty(c) > 0);
+  }
+
+  function mergedRemainingTotal(m: MergedWaybillRow): number {
+    return mergedLinesRemaining(m);
   }
 
   const groupedCandidates = computed<Group[]>(() => {
     const list = filteredCandidates.value;
     if (!list.length) return [];
 
-    const primary = groupMode.value === 'route' ? routeKeyOf : modelKeyOf;
+    const primary =
+      groupMode.value === 'route' ? routeKeyOf : customerKeyOf;
     const primaryTitle =
-      groupMode.value === 'route' ? routeTitleOf : modelTitleOf;
-    const secondary = groupMode.value === 'route' ? modelKeyOf : routeKeyOf;
+      groupMode.value === 'route' ? routeTitleOf : customerTitleOf;
+    const secondary =
+      groupMode.value === 'route' ? customerKeyOf : routeKeyOf;
     const secondaryTitle =
-      groupMode.value === 'route' ? modelTitleOf : routeTitleOf;
+      groupMode.value === 'route' ? customerTitleOf : routeTitleOf;
 
     const pickedMap = new Map<number, number>();
     (props.modelValue || []).forEach((p) => {
       pickedMap.set(p.waybillCargoId, p.quantity || 0);
     });
 
-    const groupsMap = new Map<string, Group>();
+    type AccSub = { key: string; title: string; raw: CandidateCargo[] };
+    type AccGrp = { key: string; title: string; subs: Map<string, AccSub> };
+
+    const groupsMap = new Map<string, AccGrp>();
     for (const c of list) {
       const gKey = primary(c);
       let g = groupsMap.get(gKey);
       if (!g) {
-        g = {
-          key: gKey,
-          title: primaryTitle(c),
-          subgroups: [],
-          totalCount: 0,
-          totalQuantity: 0,
-          pickedQuantity: 0,
-          addableQuantity: 0
-        };
+        g = { key: gKey, title: primaryTitle(c), subs: new Map() };
         groupsMap.set(gKey, g);
       }
       const sKey = secondary(c);
-      let sg = g.subgroups.find((x) => x.key === sKey);
+      let sg = g.subs.get(sKey);
       if (!sg) {
-        sg = {
-          key: sKey,
-          title: secondaryTitle(c),
-          rows: [],
-          totalCount: 0,
-          totalQuantity: 0
-        };
-        g.subgroups.push(sg);
+        sg = { key: sKey, title: secondaryTitle(c), raw: [] };
+        g.subs.set(sKey, sg);
       }
-      sg.rows.push(c);
-      sg.totalCount += 1;
-      sg.totalQuantity += c.remainingQuantity;
-      g.totalCount += 1;
-      g.totalQuantity += c.remainingQuantity;
-
-      const pickedQ = pickedMap.get(c.cargoId) || 0;
-      if (pickedQ > 0) g.pickedQuantity += pickedQ;
-      g.addableQuantity += Math.max(0, c.remainingQuantity - pickedQ);
+      sg.raw.push(c);
     }
 
-    const groups = Array.from(groupsMap.values());
-    groups.sort(
-      (a, b) =>
-        b.addableQuantity - a.addableQuantity ||
-        b.totalQuantity - a.totalQuantity
-    );
+    const groups: Group[] = [];
+    for (const g of groupsMap.values()) {
+      const subgroups: SubGroup[] = [];
+      let totalCount = 0;
+      let totalQuantity = 0;
+      let pickedQuantity = 0;
+      let addableQuantity = 0;
+
+      const subsArr = Array.from(g.subs.values());
+      for (const sg of subsArr) {
+        const mergedRows = mergeLinesByWaybill(sg.raw);
+        const sq = mergedRows.reduce((s, m) => s + mergedLinesRemaining(m), 0);
+        const sc = mergedRows.length;
+
+        for (const m of mergedRows) {
+          for (const c of m.lines) {
+            const pickedQ = pickedMap.get(c.cargoId) || 0;
+            if (pickedQ > 0) pickedQuantity += pickedQ;
+            addableQuantity += Math.max(0, c.remainingQuantity - pickedQ);
+          }
+        }
+
+        subgroups.push({
+          key: sg.key,
+          title: sg.title,
+          mergedRows,
+          totalCount: sc,
+          totalQuantity: sq
+        });
+        totalCount += sc;
+        totalQuantity += sq;
+      }
+
+      groups.push({
+        key: g.key,
+        title: g.title,
+        subgroups,
+        totalCount,
+        totalQuantity,
+        pickedQuantity,
+        addableQuantity
+      });
+    }
+
+    groups.sort((a, b) => {
+      // 不要用 addableQuantity 排序：会随右侧已选变化，导致左侧分组/运单行「跳动」
+      const dq = b.totalQuantity - a.totalQuantity;
+      if (dq !== 0) return dq;
+      return String(a.title).localeCompare(String(b.title), 'zh-CN');
+    });
     groups.forEach((g) => {
-      g.subgroups.sort((a, b) => b.totalQuantity - a.totalQuantity);
-      g.subgroups.forEach((sg) => {
-        sg.rows.sort((a, b) => b.remainingQuantity - a.remainingQuantity);
+      g.subgroups.sort((a, b) => {
+        const d = b.totalQuantity - a.totalQuantity;
+        if (d !== 0) return d;
+        return String(a.title).localeCompare(String(b.title), 'zh-CN');
       });
     });
     return groups;
@@ -517,99 +899,90 @@
     collapsedGroups.value = next;
   };
 
-  const pickedQty = (row: CandidateCargo): number => {
-    const p = (props.modelValue || []).find(
-      (x) => x.waybillCargoId === row.cargoId
-    );
-    return p?.quantity || 0;
+  function mergeExpandKey(groupKey: string, mwKey: string): string {
+    return `${groupKey}|${mwKey}`;
+  }
+
+  function mergeExpandOpen(groupKey: string, mwKey: string): boolean {
+    return expandedMergeKeys.value.has(mergeExpandKey(groupKey, mwKey));
+  }
+
+  function toggleMergeExpand(key: string): void {
+    const next = new Set(expandedMergeKeys.value);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    expandedMergeKeys.value = next;
+  }
+
+  function pickedExpandOpen(cargoId: number): boolean {
+    return expandedPickedCargoIds.value.has(cargoId);
+  }
+
+  function togglePickedExpand(cargoId: number): void {
+    const next = new Set(expandedPickedCargoIds.value);
+    if (next.has(cargoId)) next.delete(cargoId);
+    else next.add(cargoId);
+    expandedPickedCargoIds.value = next;
+  }
+
+  const emitPickedRefresh = () => {
+    emit('update:modelValue', [...(props.modelValue || [])]);
   };
 
-  const addRow = (row: CandidateCargo) => {
-    if (row.remainingQuantity <= 0) return;
-    const list = [...(props.modelValue || [])];
-    const exists = list.find((x) => x.waybillCargoId === row.cargoId);
-    if (exists) {
-      exists.quantity = row.remainingQuantity;
-      exists._availableRemaining = row.remainingQuantity;
-    } else {
-      list.push({
-        waybillId: row.waybillId,
-        waybillCargoId: row.cargoId,
-        waybillNo: row.waybillNo,
-        customerId: row.customerId,
-        customerName: row.customerName,
-        vehicleBrand: row.vehicleBrand,
-        vehicleModel: row.vehicleModel,
-        dealerName: row.dealerName,
-        quantity: row.remainingQuantity,
-        segmentId: undefined,
-        _availableRemaining: row.remainingQuantity
-      });
+  const addMerged = (m: MergedWaybillRow) => {
+    let list = [...(props.modelValue || [])];
+    for (const row of m.lines) {
+      if (row.remainingQuantity <= 0) continue;
+      list = upsertPickedQuantity(list, row, row.remainingQuantity);
     }
     emit('update:modelValue', list);
   };
 
-  const removeByRow = (row: CandidateCargo) => {
-    const list = [...(props.modelValue || [])];
-    const i = list.findIndex((x) => x.waybillCargoId === row.cargoId);
-    if (i >= 0) list.splice(i, 1);
+  const removeMerged = (m: MergedWaybillRow) => {
+    let list = [...(props.modelValue || [])];
+    for (const row of m.lines) {
+      list = upsertPickedQuantity(list, row, 0);
+      delete pickIncrementDraft[row.cargoId];
+    }
     emit('update:modelValue', list);
   };
 
   const removePick = (idx: number) => {
+    const cur = props.modelValue[idx];
     const next = [...(props.modelValue || [])];
     next.splice(idx, 1);
+    if (cur?.waybillCargoId != null) {
+      const idSet = new Set(expandedPickedCargoIds.value);
+      idSet.delete(cur.waybillCargoId);
+      expandedPickedCargoIds.value = idSet;
+    }
     emit('update:modelValue', next);
   };
 
   const clearAllPicked = () => {
+    expandedPickedCargoIds.value = new Set();
     emit('update:modelValue', []);
   };
 
-  const getMaxForPicked = (row: PickedItem) => row._availableRemaining ?? 999;
-
-  const syncQuantity = (_idx: number) => {
-    emit('update:modelValue', [...(props.modelValue || [])]);
-  };
-
   const quickFillGroup = (group: Group) => {
-    const existingMap = new Map<number, PickedItem>();
-    (props.modelValue || []).forEach((p) =>
-      existingMap.set(p.waybillCargoId, p)
-    );
-
+    let list = [...(props.modelValue || [])];
     let touchedCount = 0;
     let addedQuantity = 0;
-    const list: PickedItem[] = [...(props.modelValue || [])];
 
     group.subgroups.forEach((sg) => {
-      sg.rows.forEach((row) => {
-        if (row.remainingQuantity <= 0) return;
-        const existing = existingMap.get(row.cargoId);
-        if (existing) {
-          if (existing.quantity < row.remainingQuantity) {
-            addedQuantity += row.remainingQuantity - existing.quantity;
-            existing.quantity = row.remainingQuantity;
-            existing._availableRemaining = row.remainingQuantity;
+      sg.mergedRows.forEach((mw) => {
+        mw.lines.forEach((row) => {
+          if (row.remainingQuantity <= 0) return;
+          const before = list.find((x) => x.waybillCargoId === row.cargoId);
+          const prevQty = before?.quantity || 0;
+          list = upsertPickedQuantity(list, row, row.remainingQuantity);
+          const after = list.find((x) => x.waybillCargoId === row.cargoId);
+          const newQty = after?.quantity || 0;
+          if (newQty > prevQty) {
             touchedCount += 1;
+            addedQuantity += newQty - prevQty;
           }
-        } else {
-          list.push({
-            waybillId: row.waybillId,
-            waybillCargoId: row.cargoId,
-            waybillNo: row.waybillNo,
-            customerId: row.customerId,
-            customerName: row.customerName,
-            vehicleBrand: row.vehicleBrand,
-            vehicleModel: row.vehicleModel,
-            dealerName: row.dealerName,
-            quantity: row.remainingQuantity,
-            segmentId: undefined,
-            _availableRemaining: row.remainingQuantity
-          });
-          touchedCount += 1;
-          addedQuantity += row.remainingQuantity;
-        }
+        });
       });
     });
 
@@ -633,6 +1006,12 @@
     candidates.value.forEach((c) => m.set(c.cargoId, c));
     return m;
   });
+
+  function pickedSeriesImageUrl(p: PickedItem): string {
+    return seriesImageUrl(
+      p.seriesImage ?? candidateById.value.get(p.waybillCargoId)?.seriesImage
+    );
+  }
 
   function routeOfPicked(p: PickedItem): string {
     const c = candidateById.value.get(p.waybillCargoId);
@@ -679,6 +1058,17 @@
     return Array.from(set);
   });
 
+  /** 已选行起讫是否与汇总「主线路」（按台数加权最多）不一致 */
+  function routeDiffersFromDominant(p: PickedItem): boolean {
+    const dr = dominantRoute.value;
+    if (!dr) return false;
+    if ((props.modelValue || []).length < 2) return false;
+    if (routeBreakdown.value.length <= 1) return false;
+    const mine = routeOfPicked(p);
+    if (!mine) return false;
+    return mine.trim() !== dr.trim();
+  }
+
   defineExpose({ reload: loadCandidates });
 </script>
 
@@ -688,7 +1078,7 @@
   // ============================================
   .cargo-picker {
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr);
+    grid-template-columns: minmax(0, 1.5fr) minmax(400px, 1fr);
     gap: 12px;
     /* 关键：固定容器高度，让两栏 100% 撑高度，内部 overflow 才能生效 */
     height: 480px;
@@ -735,6 +1125,11 @@
     &.is-primary {
       color: var(--el-color-primary);
     }
+  }
+
+  .cargo-picker__group-mode {
+    flex-shrink: 0;
+    margin-left: 4px;
   }
 
   .cargo-picker__filter {
@@ -868,6 +1263,129 @@
     color: var(--el-text-color-secondary);
   }
 
+  .cargo-merge {
+    border-top: 1px solid var(--el-fill-color);
+    &:first-child {
+      border-top: 0;
+    }
+  }
+
+  .cargo-merge .cargo-row {
+    border-top: 0;
+  }
+
+  .cargo-merge__toggle {
+    flex-shrink: 0;
+    width: 28px;
+    padding: 0;
+    margin: 0 0 0 -4px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .cargo-merge__toggle-icon {
+    font-size: 14px;
+    transition: transform 0.2s;
+    &.is-collapsed {
+      transform: rotate(-90deg);
+    }
+  }
+
+  .cargo-merge__detail {
+    padding: 0 10px 8px 38px;
+    background: var(--el-fill-color-blank);
+    border-top: 1px dashed var(--el-border-color-extra-light);
+  }
+
+  .cargo-subline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-top: 1px solid var(--el-border-color-extra-light);
+    &:first-child {
+      border-top: 0;
+    }
+  }
+
+  .cargo-subline__thumb {
+    flex-shrink: 0;
+    width: 48px;
+    aspect-ratio: 133 / 100;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--el-border-color-lighter);
+    background: var(--el-fill-color);
+    line-height: 0;
+  }
+
+  .cargo-subline__img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .cargo-subline__thumb :deep(.el-image__inner),
+  .cargo-subline__thumb :deep(.el-image__wrapper) {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .cargo-subline__ph {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border-radius: 0;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--el-text-color-placeholder);
+    background: var(--el-fill-color-light);
+  }
+
+  .cargo-subline__main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cargo-subline__model {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--el-text-color-primary);
+  }
+
+  .cargo-subline__ep {
+    font-size: 12px;
+    color: var(--el-color-primary);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  .cargo-subline__remain {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .cargo-subline__remain-num {
+    font-weight: 700;
+    color: var(--el-color-warning);
+    margin: 0 2px;
+  }
+
+  .cargo-subline__act {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .cargo-subline__inc {
+    width: 92px;
+  }
+
   // ============================================
   // 行
   // ============================================
@@ -884,10 +1402,6 @@
     }
     &:hover {
       background: var(--el-fill-color-lighter);
-    }
-    &.is-picked {
-      background: var(--el-color-success-light-9);
-      box-shadow: inset 3px 0 0 var(--el-color-success);
     }
   }
 
@@ -917,7 +1431,7 @@
 
   .cargo-row__wb {
     font-variant-numeric: tabular-nums;
-    font-weight: 500;
+    font-weight: 700;
     color: var(--el-text-color-primary);
     font-size: 13px;
   }
@@ -941,10 +1455,11 @@
     white-space: nowrap;
   }
 
-  .cargo-row__dealer {
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-    max-width: 180px;
+  .cargo-row__dest {
+    color: var(--el-color-primary);
+    font-weight: 600;
+    font-size: 13px;
+    max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -958,27 +1473,161 @@
   }
 
   .cargo-row__remaining {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 2px;
     color: var(--el-text-color-secondary);
     font-size: 12px;
-    b {
-      color: var(--el-color-success);
-      font-weight: 600;
-      margin: 0 2px;
-    }
+    font-weight: 500;
+  }
+
+  .cargo-row__remaining-num {
+    display: inline-block;
+    min-width: 1.25em;
+    padding: 0 5px;
+    margin-left: 2px;
+    font-size: 14px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--el-color-warning);
+    background: var(--el-color-warning-light-9);
+    border-radius: 4px;
+    line-height: 1.35;
   }
 
   // ============================================
   // 右侧：已选行
   // ============================================
+  .picked-block {
+    border-radius: 8px;
+    border: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
   .picked-row {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 8px;
     padding: 8px 10px;
-    border-radius: 6px;
-    background: var(--el-bg-color);
-    border: 1px solid var(--el-border-color-lighter);
+  }
+
+  .picked-block__toggle {
     flex-shrink: 0;
+    width: 26px;
+    padding: 0;
+    margin-top: 2px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .picked-block__toggle-icon {
+    font-size: 14px;
+    transition: transform 0.2s;
+    &.is-collapsed {
+      transform: rotate(-90deg);
+    }
+  }
+
+  .picked-row__thumb {
+    flex-shrink: 0;
+    width: 56px;
+    aspect-ratio: 133 / 100;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--el-border-color-lighter);
+    background: var(--el-fill-color);
+    line-height: 0;
+  }
+
+  .picked-row__img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .picked-row__thumb :deep(.el-image__inner),
+  .picked-row__thumb :deep(.el-image__wrapper) {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .picked-row__ph {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border-radius: 0;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--el-text-color-placeholder);
+    background: var(--el-fill-color-light);
+  }
+
+  .picked-units {
+    padding: 4px 10px 10px 46px;
+    background: var(--el-fill-color-blank);
+    border-top: 1px dashed var(--el-border-color-extra-light);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .picked-unit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--el-text-color-regular);
+  }
+
+  .picked-unit__idx {
+    flex-shrink: 0;
+    width: 48px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .picked-unit__img-wrap {
+    flex-shrink: 0;
+    width: 40px;
+    aspect-ratio: 133 / 100;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--el-border-color-lighter);
+    background: var(--el-fill-color);
+    line-height: 0;
+  }
+
+  .picked-unit__img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .picked-unit__img-wrap :deep(.el-image__inner),
+  .picked-unit__img-wrap :deep(.el-image__wrapper) {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .picked-unit__ph {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border-radius: 0;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--el-text-color-placeholder);
+    background: var(--el-fill-color);
+  }
+
+  .picked-unit__model {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.35;
   }
 
   .picked-row__main {
@@ -994,41 +1643,76 @@
     align-items: center;
     gap: 8px;
     min-width: 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
 
   .picked-row__line2 {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
     min-width: 0;
-    flex-wrap: wrap;
   }
 
   .picked-row__wb {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 58%;
     font-variant-numeric: tabular-nums;
-    font-weight: 500;
+    font-weight: 600;
     font-size: 13px;
     color: var(--el-text-color-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .picked-row__customer {
+    flex: 1 1 0;
+    min-width: 0;
     color: var(--el-text-color-regular);
     font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .picked-row__chip {
     display: inline-flex;
     align-items: center;
+    align-self: flex-start;
     color: var(--el-text-color-regular);
     font-size: 12px;
     background: var(--el-fill-color);
     padding: 1px 6px;
     border-radius: 4px;
-    max-width: 220px;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .picked-row__route-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .picked-row__route {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--el-text-color-secondary);
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .picked-row__route-warn {
+    flex-shrink: 0;
+    cursor: default;
   }
 
   .picked-row__rest {
@@ -1036,10 +1720,8 @@
     align-items: center;
     gap: 6px;
     flex-shrink: 0;
-  }
-
-  .picked-row__qty {
-    width: 100px;
+    align-self: center;
+    padding-top: 1px;
   }
 
   .picked-row__segment {

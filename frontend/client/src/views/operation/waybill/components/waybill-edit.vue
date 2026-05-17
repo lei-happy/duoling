@@ -210,6 +210,21 @@
                     </floating-label>
                   </el-form-item>
                   <el-form-item
+                    v-if="row.requireVin"
+                    class="waybill-cargo-field waybill-cargo-field--vin"
+                  >
+                    <floating-label
+                      label="VIN码"
+                      type="input"
+                      v-model.trim="row.vinStr"
+                      clearable
+                      maxlength="50"
+                      show-word-limit
+                      @blur="normalizeRowVin(row)"
+                    />
+                  </el-form-item>
+                  <el-form-item
+                    v-else
                     class="waybill-cargo-field waybill-cargo-field--qty"
                   >
                     <floating-label
@@ -433,6 +448,12 @@
     vehicleBrand?: string;
     vehicleModel?: string;
     quantityStr: string;
+    /** 与后端 normalize 一致：仅大写字母数字 */
+    vinStr: string;
+    /** 编辑时回填的 cargo.id；无 id 表示本次新增行（须填 VIN） */
+    cargoId?: number | null;
+    /** 新建与「添加新车」为 true；编辑时无 VIN 的旧行仅台数 */
+    requireVin: boolean;
     brandId?: number | null;
     seriesOptions: VehicleSeries[];
   };
@@ -524,12 +545,30 @@
       )
   );
 
-  /** 商品车明细台数合计（仅统计已填有效整数台数） */
+  function normalizeVinStr(s: string | undefined | null): string {
+    if (s == null || s === '') return '';
+    return [...String(s).trim().toUpperCase()]
+      .filter((c) => /[A-Z0-9]/.test(c))
+      .join('');
+  }
+
+  function vinLenOk(v: string): boolean {
+    return v.length >= 10 && v.length <= 50;
+  }
+
+  function normalizeRowVin(row: CargoEditRow) {
+    row.vinStr = normalizeVinStr(row.vinStr);
+  }
+
+  /** 商品车明细台数合计（VIN 行计 1 台；仅台数行按整数累加） */
   const cargoTotalQty = computed(() => {
     let sum = 0;
     for (const row of cargoRows.value) {
-      const q = parseRowQty(row);
-      if (Number.isFinite(q)) sum += q;
+      if (row.requireVin) sum += 1;
+      else {
+        const q = parseRowQty(row);
+        if (Number.isFinite(q)) sum += q;
+      }
     }
     return sum;
   });
@@ -537,9 +576,14 @@
   const cargoStepDone = computed(() => {
     if (!cargoRows.value.length) return false;
     return cargoRows.value.every((r) => {
+      const brandOk = !!(r.vehicleBrand?.trim() && r.vehicleModel?.trim());
+      if (!brandOk) return false;
+      if (r.requireVin) {
+        const v = normalizeVinStr(r.vinStr);
+        return vinLenOk(v);
+      }
       const n = parseInt(String(r.quantityStr ?? '').trim(), 10);
-      const qtyOk = Number.isFinite(n) && n >= 1;
-      return !!(r.vehicleBrand?.trim() && r.vehicleModel?.trim() && qtyOk);
+      return Number.isFinite(n) && n >= 1;
     });
   });
 
@@ -725,6 +769,9 @@
   function emptyCargoRow(): CargoEditRow {
     return {
       quantityStr: '1',
+      vinStr: '',
+      cargoId: undefined,
+      requireVin: true,
       brandId: null,
       seriesOptions: []
     };
@@ -1003,13 +1050,21 @@
               quantity: data.quantity ?? 1
             }
           ];
-    cargoRows.value = lines.map((c) => ({
-      vehicleBrand: c.vehicleBrand,
-      vehicleModel: c.vehicleModel,
-      quantityStr: String(c.quantity ?? 1),
-      brandId: null,
-      seriesOptions: [] as VehicleSeries[]
-    }));
+    cargoRows.value = lines.map((c) => {
+      const vinNorm = normalizeVinStr(c.vin ?? undefined);
+      const cid = c.id;
+      const requireVin = cid != null ? !!vinNorm : true;
+      return {
+        vehicleBrand: c.vehicleBrand,
+        vehicleModel: c.vehicleModel,
+        quantityStr: String(c.quantity ?? 1),
+        vinStr: vinNorm || (c.vin != null ? String(c.vin).trim() : '') || '',
+        cargoId: cid,
+        requireVin,
+        brandId: null,
+        seriesOptions: [] as VehicleSeries[]
+      };
+    });
   }
 
   const onCargoBrandChange = async (row: CargoEditRow) => {
@@ -1100,6 +1155,7 @@
       activeTab.value = 'cargo';
       return false;
     }
+    const seenVins = new Set<string>();
     for (let i = 0; i < cargoRows.value.length; i++) {
       const row = cargoRows.value[i];
       if (!row.vehicleBrand?.trim()) {
@@ -1118,26 +1174,56 @@
         activeTab.value = 'cargo';
         return false;
       }
-      const q = parseRowQty(row);
-      if (!Number.isFinite(q)) {
-        EleMessage.warning({
-          message: `商品车第 ${i + 1} 行：台数至少为 1`,
-          plain: true
-        });
-        activeTab.value = 'cargo';
-        return false;
+      if (row.requireVin) {
+        const v = normalizeVinStr(row.vinStr);
+        if (!vinLenOk(v)) {
+          EleMessage.warning({
+            message: `商品车第 ${i + 1} 行：请填写有效 VIN（10~50 位字母或数字）`,
+            plain: true
+          });
+          activeTab.value = 'cargo';
+          return false;
+        }
+        if (seenVins.has(v)) {
+          EleMessage.warning({
+            message: `商品车第 ${i + 1} 行：VIN 与本单其他行重复`,
+            plain: true
+          });
+          activeTab.value = 'cargo';
+          return false;
+        }
+        seenVins.add(v);
+      } else {
+        const q = parseRowQty(row);
+        if (!Number.isFinite(q)) {
+          EleMessage.warning({
+            message: `商品车第 ${i + 1} 行：台数至少为 1`,
+            plain: true
+          });
+          activeTab.value = 'cargo';
+          return false;
+        }
       }
     }
     return true;
   }
 
   function buildCargoesPayload() {
-    return cargoRows.value.map((row, i) => ({
-      vehicleBrand: row.vehicleBrand?.trim(),
-      vehicleModel: row.vehicleModel?.trim(),
-      quantity: parseRowQty(row),
-      sortOrder: i
-    }));
+    return cargoRows.value.map((row, i) => {
+      const base: Record<string, unknown> = {
+        vehicleBrand: row.vehicleBrand?.trim(),
+        vehicleModel: row.vehicleModel?.trim(),
+        sortOrder: i
+      };
+      if (row.cargoId != null) base.id = row.cargoId;
+      if (row.requireVin) {
+        base.quantity = 1;
+        base.vin = normalizeVinStr(row.vinStr);
+      } else {
+        base.quantity = parseRowQty(row);
+      }
+      return base;
+    });
   }
 
   const calcFreight = async () => {
@@ -1157,7 +1243,8 @@
       const cargoes = cargoRows.value.map((row) => ({
         vehicleBrand: row.vehicleBrand,
         vehicleModel: row.vehicleModel,
-        quantity: parseRowQty(row)
+        quantity: row.requireVin ? 1 : parseRowQty(row),
+        vin: row.requireVin ? normalizeVinStr(row.vinStr) : undefined
       }));
       const preview = (await previewFreight({
         customerId: form.customerId!,
@@ -1520,6 +1607,12 @@
   .waybill-cargo-field--qty {
     flex: 0 1 96px;
     max-width: 104px;
+  }
+
+  .waybill-cargo-field--vin {
+    flex: 1 1 160px;
+    min-width: 140px;
+    max-width: 260px;
   }
 
   .waybill-cargo-field :deep(.el-form-item__content) {

@@ -13,9 +13,6 @@
     destroy-on-close
     @update:model-value="updateVisible"
   >
-    <!-- ============================================================
-         编辑分支：4 Tab，每 Tab 独立保存（独立 API）
-         ============================================================ -->
     <el-form
       v-if="isEdit"
       ref="formRef"
@@ -158,13 +155,6 @@
       v-loading="submitting"
       @submit.prevent=""
     >
-      <el-alert
-        type="info"
-        :closable="false"
-        show-icon
-        class="task-create-tip"
-        title="保存后将生成「待派车」任务单。下一步可在列表/详情点「派车」选择承运方；自有车再点「规划路线」补齐路线与里程。任务单号 / 名称由系统自动生成。"
-      />
       <div class="waybill-tab-pane">
         <task-cargo-picker
           v-model="form.waybillItems"

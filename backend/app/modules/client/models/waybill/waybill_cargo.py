@@ -35,6 +35,9 @@ class WaybillCargo(TenantModelBase):
     series_id: Mapped[Optional[int]] = mapped_column(
         Integer, nullable=True, comment="标准车系ID（biz_vehicle_series.series_id）"
     )
+    vin: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, comment="车架号(VIN)"
+    )
     quantity: Mapped[int] = mapped_column(
         Integer, default=1, nullable=False, comment="台数"
     )

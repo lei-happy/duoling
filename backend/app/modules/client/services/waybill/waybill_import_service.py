@@ -12,7 +12,7 @@ Excel 列约定（按表头中文匹配，大小写不敏感、去空格）：
   - 客户名称（必填；后台按名称匹配 biz_customer.id，勿填客户ID）
   - 出发地 / 目的地（必填其一或组合；逐级用 / 分隔，如「广东省/广州市/天河区」；
     后台用 StandardizeService 解析区划编码与 region_id，勿填编码/区域ID）
-  - 商品车品牌（或兼容旧表头「货物品牌」）/ 车型 / 数量
+  - 商品车品牌（或兼容旧表头「货物品牌」）/ 车型 / VIN码（新模板）或 数量（旧模板）
   - 计划开单时间 / 要求装车时间 / 要求送达时间 (yyyy-mm-dd HH:MM)
   - 经销商名称 / 联系人 / 电话 / 地址
   - 备注
@@ -20,7 +20,9 @@ Excel 列约定（按表头中文匹配，大小写不敏感、去空格）：
 多明细：以「+」串接同一行的多车型，例如：
   - 商品车品牌列 = "比亚迪+长安"
   - 车型列       = "汉EV+逸动"
-  - 数量列       = "2+3"
+  - VIN码列      = "LGWHXXXXXXXXXXXX1+LGWHYYYYYYYYYYYY2"（分段数须与品牌/车型一致）
+
+旧模板仍支持「数量」列：后台按台数拆成多行，并为每行生成占位 VIN（ZIMP…）以满足创建校验。
 
 兼容旧模板：仍识别 客户ID、出发地/目的地编码与区域ID、货物品牌 等列。
 """
@@ -42,6 +44,7 @@ from app.modules.client.models.waybill.waybill_import import (
 from app.modules.client.schemas.waybill.waybill import (
     WaybillCargoLineIn,
     WaybillCreate,
+    normalize_waybill_vin,
 )
 from app.modules.client.services.waybill.waybill_service import WaybillService
 
@@ -62,6 +65,9 @@ HEADER_MAP: dict[str, str] = {
     "商品车品牌": "vehicleBrand",
     "品牌": "vehicleBrand",
     "车型": "vehicleModel",
+    "vin码": "vin",
+    "车架号": "vin",
+    "vin": "vin",
     "数量": "quantity",
     "计划开单时间": "planIssueTime",
     "要求装车时间": "requiredLoadTime",
@@ -81,7 +87,7 @@ IMPORT_TEMPLATE_HEADERS: tuple[str, ...] = (
     "目的地",
     "商品车品牌",
     "车型",
-    "数量",
+    "VIN码",
     "计划开单时间",
     "要求装车时间",
     "要求送达时间",
@@ -218,8 +224,13 @@ class WaybillImportService:
         raise BizException("请填写客户名称")
 
     @staticmethod
+    def _import_synthetic_vin(row_no: int, seq: int) -> str:
+        """旧模板按台数拆行时的占位 VIN（10~50 位，仅导入兼容用）。"""
+        return f"ZIMP{int(row_no) % 100000:05d}{int(seq) % 100000000:08d}"
+
+    @staticmethod
     async def _build_waybill_create_from_row(
-        db: AsyncSession, row: dict,
+        db: AsyncSession, row: dict, *, row_no: int = 0,
     ) -> WaybillCreate:
         """解析行 → WaybillCreate（客户名称匹配 ID；地区仍走 create 内 hydrate）。"""
         customer_id, customer_name = (
@@ -229,23 +240,68 @@ class WaybillImportService:
         cargoes: list[WaybillCargoLineIn] = []
         brands = _split_multi(row.get("vehicleBrand"))
         models = _split_multi(row.get("vehicleModel"))
+        vins_raw = _split_multi(row.get("vin"))
         qtys = _split_multi(row.get("quantity"))
-        n = max(len(brands), len(models), len(qtys), 1)
-        for i in range(n):
-            brand = brands[i] if i < len(brands) else (brands[0] if brands else None)
-            model = models[i] if i < len(models) else (models[0] if models else None)
-            qty_raw = qtys[i] if i < len(qtys) else (qtys[0] if qtys else None)
-            qty = _parse_int(qty_raw, 1) or 1
-            if not brand and not model:
-                continue
-            cargoes.append(WaybillCargoLineIn(
-                vehicleBrand=brand,
-                vehicleModel=model,
-                quantity=qty,
-                sortOrder=i,
-            ))
+
+        use_vin_column = bool(vins_raw)
+        if use_vin_column:
+            if len(brands) != len(models) or len(brands) != len(vins_raw):
+                raise BizException(
+                    "使用 VIN 导入时，商品车品牌、车型、VIN码三列以「+」分段的数量须完全一致"
+                )
+            seq = 0
+            for i in range(len(brands)):
+                brand = brands[i]
+                model = models[i]
+                vn = vins_raw[i]
+                nv = normalize_waybill_vin(vn)
+                if not nv or len(nv) < 10 or len(nv) > 50:
+                    raise BizException(
+                        f"VIN码第 {i + 1} 段无效（须为 10~50 位字母或数字）"
+                    )
+                if not brand and not model:
+                    continue
+                cargoes.append(
+                    WaybillCargoLineIn(
+                        vehicleBrand=brand,
+                        vehicleModel=model,
+                        vin=nv,
+                        quantity=1,
+                        sortOrder=seq,
+                    )
+                )
+                seq += 1
+        else:
+            n = max(len(brands), len(models), len(qtys), 1)
+            seq = 0
+            for i in range(n):
+                brand = brands[i] if i < len(brands) else (
+                    brands[0] if brands else None
+                )
+                model = models[i] if i < len(models) else (
+                    models[0] if models else None
+                )
+                qty_raw = qtys[i] if i < len(qtys) else (qtys[0] if qtys else None)
+                qty = _parse_int(qty_raw, 1) or 1
+                if not brand and not model:
+                    continue
+                if qty < 1:
+                    qty = 1
+                for _k in range(int(qty)):
+                    seq += 1
+                    cargoes.append(
+                        WaybillCargoLineIn(
+                            vehicleBrand=brand,
+                            vehicleModel=model,
+                            vin=WaybillImportService._import_synthetic_vin(
+                                row_no, seq,
+                            ),
+                            quantity=1,
+                            sortOrder=len(cargoes),
+                        )
+                    )
         if not cargoes:
-            raise BizException("缺少商品车品牌/车型/数量")
+            raise BizException("缺少商品车品牌/车型及 VIN 或数量")
 
         origin = _str_cell(row, "origin")
         dest = _str_cell(row, "destination")
@@ -302,7 +358,7 @@ class WaybillImportService:
             cell.alignment = Alignment(horizontal="center", vertical="center")
 
         widths = (
-            14, 18, 28, 28, 14, 14, 8, 18, 18, 18, 16, 12, 14, 24, 20,
+            14, 18, 28, 28, 14, 14, 22, 18, 18, 18, 16, 12, 14, 24, 20,
         )
         for i, w in enumerate(widths, start=1):
             if i <= len(headers):
@@ -397,7 +453,7 @@ class WaybillImportService:
 
             try:
                 payload = await WaybillImportService._build_waybill_create_from_row(
-                    db, row
+                    db, row, row_no=idx,
                 )
                 waybill, _ = await WaybillService.create_waybill(
                     db, payload, current_user_id

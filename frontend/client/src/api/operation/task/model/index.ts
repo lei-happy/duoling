@@ -33,6 +33,8 @@ export interface TaskWaybillItem {
   vehicleBrand?: string;
   vehicleModel?: string;
   dealerName?: string;
+  /** 车系图（挂接时带入，仅展示；提交 payload 不含此字段） */
+  seriesImage?: string | null;
   quantity: number;
   segmentId?: number | null;
   status?: number;
@@ -67,6 +69,8 @@ export interface CandidateCargo {
   cargoId: number;
   vehicleBrand?: string;
   vehicleModel?: string;
+  /** 车系图（与基础数据车系匹配） */
+  seriesImage?: string | null;
   quantity: number;
   allocatedQuantity: number;
   remainingQuantity: number;

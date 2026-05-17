@@ -88,6 +88,10 @@ class CandidateCargoOut(BaseModel):
     cargoId: int
     vehicleBrand: Optional[str] = None
     vehicleModel: Optional[str] = None
+    seriesImage: Optional[str] = Field(
+        default=None,
+        description="车系图（与基础数据品牌+车系匹配，供前端展示）",
+    )
     quantity: int = Field(description="cargo 行原始台数")
     allocatedQuantity: int = Field(description="已分配台数")
     remainingQuantity: int = Field(description="剩余可分配台数 = quantity - allocated")

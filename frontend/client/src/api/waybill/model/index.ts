@@ -5,6 +5,8 @@ export interface WaybillCargoLine {
   id?: number;
   vehicleBrand?: string;
   vehicleModel?: string;
+  /** 车架号 VIN（创建/新增行必填；与后端一致为去空格后大写字母数字） */
+  vin?: string | null;
   quantity?: number;
   sortOrder?: number;
   /** 车系图路径/URL（列表/详情由后端匹配 biz_vehicle_series） */

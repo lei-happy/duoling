@@ -96,11 +96,11 @@ class WaybillRow(BaseModel):
     originCode: Optional[str] = Field(None, description="出发地编码")
     destination: Optional[str] = Field(None, description="目的地")
     destinationCode: Optional[str] = Field(None, description="目的地编码")
-    vehicleBrand: Optional[str] = Field(None, description="车辆品牌（无 cargoes 时与 vehicleModel/quantity 生成一行明细）")
+    vehicleBrand: Optional[str] = Field(None, description="车辆品牌（无 cargoes 时与 vehicleModel/quantity 生成一行明细；创建时每行须含 VIN，勿仅用本字段）")
     vehicleModel: Optional[str] = Field(None, description="车型")
-    quantity: Optional[int] = Field(None, description="数量，默认1")
+    quantity: Optional[int] = Field(None, description="数量，默认1（无 cargoes 时；创建时建议改用 cargoes 且每行含 vin）")
     cargoes: Optional[list[WaybillCargoLineIn]] = Field(
-        None, description="货物明细（多品牌车型）；优先于顶层 vehicleBrand/vehicleModel"
+        None, description="货物明细；创建时每行须含 vin（10~50 位）且 quantity=1"
     )
     dealerName: Optional[str] = Field(None, description="经销商名称")
     dealerContact: Optional[str] = Field(None, description="经销商联系人")

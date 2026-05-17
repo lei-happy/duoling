@@ -15,11 +15,24 @@ def waybill_brand_model_key(brand: Optional[str], model: Optional[str]) -> str:
     return f"{b}\x1f{m}"
 
 
+def normalize_waybill_vin(v: Optional[str]) -> Optional[str]:
+    """去空格、转大写、仅保留字母数字。"""
+    if v is None:
+        return None
+    s = "".join(c for c in str(v).strip().upper() if c.isalnum())
+    return s if s else None
+
+
 class WaybillCargoLineIn(BaseModel):
     """货物明细入参（创建/整单替换）"""
 
+    id: Optional[int] = Field(
+        default=None,
+        description="编辑时回填的原 cargo 主键；无 id 表示本次新增行（须填 VIN）",
+    )
     vehicleBrand: Optional[str] = None
     vehicleModel: Optional[str] = None
+    vin: Optional[str] = None
     quantity: int = Field(1, ge=1)
     sortOrder: int = Field(0, ge=0)
 
@@ -31,11 +44,17 @@ class WaybillCargoLineIn(BaseModel):
         s = str(v).strip()
         return s if s else None
 
+    @field_validator("vin", mode="before")
+    @classmethod
+    def norm_vin_in(cls, v):
+        return normalize_waybill_vin(v) if v is not None else None
+
 
 class WaybillCargoOut(BaseModel):
     id: int
     vehicleBrand: Optional[str] = None
     vehicleModel: Optional[str] = None
+    vin: Optional[str] = None
     quantity: int
     sortOrder: int
     seriesImage: Optional[str] = Field(
@@ -51,6 +70,7 @@ class WaybillCargoOut(BaseModel):
             id=c.id,
             vehicleBrand=c.vehicle_brand,
             vehicleModel=c.vehicle_model,
+            vin=getattr(c, "vin", None),
             quantity=c.quantity,
             sortOrder=c.sort_order,
             seriesImage=series_image,
@@ -94,6 +114,7 @@ class WaybillCreate(BaseModel):
                 WaybillCargoLineIn(
                     vehicleBrand=brand,
                     vehicleModel=model,
+                    vin=None,
                     quantity=max(1, int(qty)),
                     sortOrder=0,
                 )
@@ -139,7 +160,11 @@ def _cargo_summary_from_lines(cargo_models: list) -> str:
         brand = (r.vehicle_brand or "").strip()
         model = (r.vehicle_model or "").strip()
         mid = "/".join(x for x in (brand, model) if x) or "—"
-        parts.append(f"{mid}×{r.quantity}")
+        vn = normalize_waybill_vin(getattr(r, "vin", None))
+        if vn:
+            parts.append(f"{mid}×{r.quantity}({vn})")
+        else:
+            parts.append(f"{mid}×{r.quantity}")
     return "；".join(parts)
 
 
