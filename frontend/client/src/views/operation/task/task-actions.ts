@@ -9,6 +9,7 @@
 
 export type TaskActionKey =
   | 'dispatch' // 派车 (status 0 → 1)
+  | 'plan-route' // 规划路线（独立动作，不改 status）
   | 'confirm-load' // 确认装车 (1 → 2)
   | 'depart' // 标记出发 (2 → 3)
   | 'confirm-arrive' // 确认到达 (3 → 4)
@@ -22,7 +23,12 @@ export interface TaskActionConfig {
   buttonType: 'primary' | 'success' | 'warning' | 'info' | 'danger';
   permission: string;
   /** 需要打开弹窗时填，对应 action-*.vue 组件名 */
-  dialog?: 'dispatch' | 'confirm-load' | 'confirm-arrive' | 'confirm-sign';
+  dialog?:
+    | 'dispatch'
+    | 'plan-route'
+    | 'confirm-load'
+    | 'confirm-arrive'
+    | 'confirm-sign';
   /** 是否纯 confirm（不打开弹窗，直接 ElMessageBox.confirm） */
   confirm?: boolean;
   /** 是否需要跳转打开费用单创建（生成结算单） */
@@ -36,6 +42,13 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     buttonType: 'primary',
     permission: 'operation:task:dispatch',
     dialog: 'dispatch'
+  },
+  'plan-route': {
+    key: 'plan-route',
+    label: '规划路线',
+    buttonType: 'primary',
+    permission: 'operation:task:plan-route',
+    dialog: 'plan-route'
   },
   'confirm-load': {
     key: 'confirm-load',
@@ -119,4 +132,22 @@ export const getSecondaryTaskActions = (
   if (status === null || status === undefined) return [];
   if (status === 5) return [TASK_ACTION_CONFIGS.close];
   return [];
+};
+
+/**
+ * 是否应展示「规划路线」入口。
+ *
+ * 触发条件：
+ * - 任务状态 ∈ {待派车/已派车/已装车}（plan_route 接口允许的范围）
+ * - 且 (自有车) 必出现；(承运商/社会运力) 仅在尚未规划过路线（segmentCount=0）时出现，作为可选补录
+ */
+export const shouldShowPlanRoute = (task: {
+  status?: number | null;
+  carrierType?: number | null;
+  segmentCount?: number | null;
+}): boolean => {
+  const st = task.status ?? -1;
+  if (![0, 1, 2].includes(st)) return false;
+  if (task.carrierType === 1) return true;
+  return (task.segmentCount ?? 0) === 0;
 };

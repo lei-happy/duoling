@@ -2,31 +2,39 @@
   <el-dialog
     :title="isEdit ? '编辑任务单' : '新增任务单'"
     :model-value="visible"
-    width="880px"
+    :width="isEdit ? '880px' : '1280px'"
     draggable
+    align-center
     class="waybill-edit-dialog"
+    :class="{ 'is-create-mode': !isEdit }"
     :close-on-click-modal="false"
     :body-style="dialogBodyStyle"
     append-to-body
     destroy-on-close
     @update:model-value="updateVisible"
   >
+    <!-- ============================================================
+         编辑分支：4 Tab，每 Tab 独立保存（独立 API）
+         ============================================================ -->
     <el-form
+      v-if="isEdit"
       ref="formRef"
       :model="form"
-      :rules="rules"
       label-width="110px"
       class="waybill-edit-form"
       :validate-on-rule-change="false"
       v-loading="submitting"
       @submit.prevent=""
     >
-      <div v-if="isEdit" class="task-edit-meta-bar">
+      <div class="task-edit-meta-bar">
         <span class="task-edit-meta-bar__item"
           >任务单号：<b>{{ form.taskNo || '—' }}</b></span
         >
         <span class="task-edit-meta-bar__item"
           >任务名称：<b>{{ form.taskName || '—' }}</b></span
+        >
+        <span class="task-edit-meta-bar__item ele-text-secondary"
+          >说明：每个 Tab 独立保存，互不影响</span
         >
       </div>
       <el-tabs
@@ -44,10 +52,10 @@
                 <el-icon v-if="cargoStepDone" class="waybill-tab-check"
                   ><CircleCheck
                 /></el-icon>
-                <template v-else>{{ tabStepNo('cargo') }}</template>
+                <template v-else>1</template>
               </span>
               <span class="waybill-tab-text">
-                选择商品车
+                商品车
                 <span v-if="cargoTabSubVisible" class="waybill-tab-sub">
                   · {{ form.waybillItems.length }} 条 / {{ cargoTotalQty }} 台
                 </span>
@@ -55,43 +63,10 @@
             </span>
           </template>
           <div class="waybill-tab-pane">
-            <el-alert
-              v-if="!isEdit"
-              type="info"
-              :closable="false"
-              show-icon
-              class="task-cargo-open-tip"
-              title="任务单号、任务名称将在保存时由系统自动生成；若各段填写了计划装车/到达时间，将同步为任务计划时间。"
-            />
             <task-cargo-picker
               v-model="form.waybillItems"
               :segments="form.segments"
             />
-          </div>
-        </el-tab-pane>
-
-        <el-tab-pane name="segments">
-          <template #label>
-            <span class="waybill-tab-label">
-              <span
-                class="waybill-tab-idx"
-                :class="{ 'is-done': segmentsStepDone }"
-              >
-                <el-icon v-if="segmentsStepDone" class="waybill-tab-check"
-                  ><CircleCheck
-                /></el-icon>
-                <template v-else>{{ tabStepNo('segments') }}</template>
-              </span>
-              <span class="waybill-tab-text">
-                运输路线规划
-                <span v-if="form.segments?.length" class="waybill-tab-sub">
-                  · {{ form.segments.length }} 段
-                </span>
-              </span>
-            </span>
-          </template>
-          <div class="waybill-tab-pane">
-            <task-segment-table v-model="form.segments" />
           </div>
         </el-tab-pane>
 
@@ -105,13 +80,38 @@
                 <el-icon v-if="carrierStepDone" class="waybill-tab-check"
                   ><CircleCheck
                 /></el-icon>
-                <template v-else>{{ tabStepNo('carrier') }}</template>
+                <template v-else>2</template>
               </span>
-              <span class="waybill-tab-text">选择承运方</span>
+              <span class="waybill-tab-text">承运方</span>
             </span>
           </template>
           <div class="waybill-tab-pane">
             <task-carrier-picker ref="carrierRef" v-model="form.carrier" />
+          </div>
+        </el-tab-pane>
+
+        <el-tab-pane name="segments">
+          <template #label>
+            <span class="waybill-tab-label">
+              <span
+                class="waybill-tab-idx"
+                :class="{ 'is-done': segmentsStepDone }"
+              >
+                <el-icon v-if="segmentsStepDone" class="waybill-tab-check"
+                  ><CircleCheck
+                /></el-icon>
+                <template v-else>3</template>
+              </span>
+              <span class="waybill-tab-text">
+                路线规划
+                <span v-if="form.segments?.length" class="waybill-tab-sub">
+                  · {{ form.segments.length }} 段
+                </span>
+              </span>
+            </span>
+          </template>
+          <div class="waybill-tab-pane">
+            <task-segment-table v-model="form.segments" />
           </div>
         </el-tab-pane>
 
@@ -125,19 +125,12 @@
                 <el-icon v-if="remarkStepDone" class="waybill-tab-check"
                   ><CircleCheck
                 /></el-icon>
-                <template v-else>{{ tabStepNo('remark') }}</template>
+                <template v-else>4</template>
               </span>
               <span class="waybill-tab-text">备注</span>
             </span>
           </template>
           <div class="waybill-tab-pane">
-            <el-alert
-              type="info"
-              :closable="false"
-              show-icon
-              class="task-remark-tip"
-              title="可选。承运成本等由系统/后续流程计算，此处仅作说明性备注。"
-            />
             <el-form-item label="备注" label-position="top">
               <el-input
                 v-model="form.remark"
@@ -153,22 +146,54 @@
       </el-tabs>
     </el-form>
 
+    <!-- ============================================================
+         新建分支：单步表单 —— 仅挑商品车（+ 折叠备注）
+         ============================================================ -->
+    <el-form
+      v-else
+      ref="formRef"
+      :model="form"
+      class="waybill-edit-form"
+      label-width="0"
+      v-loading="submitting"
+      @submit.prevent=""
+    >
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        class="task-create-tip"
+        title="保存后将生成「待派车」任务单。下一步可在列表/详情点「派车」选择承运方；自有车再点「规划路线」补齐路线与里程。任务单号 / 名称由系统自动生成。"
+      />
+      <div class="waybill-tab-pane">
+        <task-cargo-picker
+          v-model="form.waybillItems"
+          :segments="form.segments"
+        />
+        <el-collapse v-model="createCollapse" style="margin-top: 12px">
+          <el-collapse-item title="备注（选填）" name="remark">
+            <el-input
+              v-model="form.remark"
+              type="textarea"
+              :rows="3"
+              maxlength="500"
+              show-word-limit
+              placeholder="调度说明、客户特殊要求等（选填）"
+            />
+          </el-collapse-item>
+        </el-collapse>
+      </div>
+    </el-form>
+
     <template #footer>
       <div class="waybill-edit-dialog__footer">
         <el-button @click="updateVisible(false)">取消</el-button>
-        <el-button :disabled="stepActive <= 0" @click="prevStep">
-          上一步
-        </el-button>
         <el-button
-          :disabled="isLastTabStep"
           type="primary"
-          plain
-          @click="onClickNextStep"
+          :loading="saveLoading"
+          @click="submit"
         >
-          下一步
-        </el-button>
-        <el-button type="primary" :loading="saveLoading" @click="submit">
-          保存
+          {{ submitLabel }}
         </el-button>
       </div>
     </template>
@@ -177,13 +202,19 @@
 
 <script lang="ts" setup>
   import { computed, reactive, ref, watch, nextTick } from 'vue';
-  import type { FormInstance, FormRules } from 'element-plus';
+  import type { FormInstance } from 'element-plus';
   import { CircleCheck } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import TaskSegmentTable from './task-segment-table.vue';
   import TaskCargoPicker from './task-cargo-picker.vue';
   import TaskCarrierPicker from './task-carrier-picker.vue';
-  import { addTask, getTask, updateTask } from '@/api/operation/task';
+  import {
+    addTask,
+    assignCarrier,
+    getTask,
+    planTaskRoute,
+    updateTask
+  } from '@/api/operation/task';
   import type {
     Task,
     TaskCarrierInfo,
@@ -192,8 +223,7 @@
     TaskWaybillItem
   } from '@/api/operation/task/model';
 
-  const TAB_ORDER = ['cargo', 'segments', 'carrier', 'remark'] as const;
-  type TabName = (typeof TAB_ORDER)[number];
+  type TabName = 'cargo' | 'carrier' | 'segments' | 'remark';
 
   const props = defineProps<{ visible: boolean; data: Task | null }>();
   const emit = defineEmits<{
@@ -205,6 +235,7 @@
   const carrierRef = ref<{ init: () => void } | null>(null);
   const submitting = ref(false);
   const saveLoading = ref(false);
+  const createCollapse = ref<string[]>([]);
 
   const isEdit = computed(() => Boolean(props.data?.id));
   const activeTab = ref<TabName>('cargo');
@@ -212,26 +243,6 @@
   const dialogBodyStyle = {
     padding: '0 12px 8px'
   };
-
-  const visibleTabOrder = computed((): TabName[] => [...TAB_ORDER]);
-
-  function tabStepNo(tab: TabName): number {
-    const order = visibleTabOrder.value;
-    const i = order.indexOf(tab);
-    return i >= 0 ? i + 1 : 1;
-  }
-
-  const stepActive = computed(() => {
-    const i = visibleTabOrder.value.indexOf(activeTab.value);
-    return i >= 0 ? i : 0;
-  });
-
-  const isLastTabStep = computed(() => {
-    const order = visibleTabOrder.value;
-    const i = order.indexOf(activeTab.value);
-    if (i < 0) return true;
-    return i >= order.length - 1;
-  });
 
   const defaultForm = (): TaskCreatePayload => ({
     taskNo: '',
@@ -252,21 +263,11 @@
       carrierName: '',
       carrierShortName: ''
     },
-    segments: [
-      {
-        segmentNo: 1,
-        fromLocation: '',
-        toLocation: '',
-        plannedLoadTime: undefined,
-        plannedArriveTime: undefined
-      }
-    ],
+    segments: [],
     waybillItems: []
   });
 
   const form = reactive<TaskCreatePayload>(defaultForm());
-
-  const rules: FormRules = {};
 
   const segmentsStepDone = computed(() => {
     if (!form.segments?.length) return false;
@@ -312,14 +313,31 @@
     return false;
   });
 
-  /** 备注为选填：填写内容后 Tab 上显示完成态 */
   const remarkStepDone = computed(() => !!form.remark?.trim());
+
+  /** 编辑场景下 submit 按钮 label 跟随当前 Tab 语义 */
+  const submitLabel = computed(() => {
+    if (!isEdit.value) return '保存为待派车';
+    switch (activeTab.value) {
+      case 'cargo':
+        return '保存商品车';
+      case 'carrier':
+        return '保存承运方';
+      case 'segments':
+        return '保存路线';
+      case 'remark':
+        return '保存备注';
+      default:
+        return '保存';
+    }
+  });
 
   watch(
     () => props.visible,
     async (v) => {
       if (!v) return;
       activeTab.value = 'cargo';
+      createCollapse.value = [];
       Object.assign(form, defaultForm());
       if (props.data?.id) {
         await loadDetail(props.data.id);
@@ -393,10 +411,9 @@
     emit('update:visible', v);
   };
 
-  function validateSegments(): boolean {
+  function validateSegmentsTab(): boolean {
     if (form.segments.length < 1) {
       EleMessage.warning({ message: '至少需要 1 段运输路线', plain: true });
-      activeTab.value = 'segments';
       return false;
     }
     for (const s of form.segments) {
@@ -405,7 +422,6 @@
           message: `第 ${s.segmentNo} 段起点/终点不能为空`,
           plain: true
         });
-        activeTab.value = 'segments';
         return false;
       }
     }
@@ -415,7 +431,6 @@
   function validateCargoTab(): boolean {
     if (form.waybillItems.length < 1) {
       EleMessage.warning({ message: '请至少选择一条商品车挂接', plain: true });
-      activeTab.value = 'cargo';
       return false;
     }
     for (const it of form.waybillItems) {
@@ -424,7 +439,6 @@
           message: '所有挂接商品车台数必须大于 0',
           plain: true
         });
-        activeTab.value = 'cargo';
         return false;
       }
     }
@@ -439,7 +453,6 @@
           message: '自有车任务请选择运力或填写主驾+车牌',
           plain: true
         });
-        activeTab.value = 'carrier';
         return false;
       }
     } else if (c.carrierType === 2) {
@@ -448,7 +461,6 @@
           message: '请选择承运商或填写承运商名称',
           plain: true
         });
-        activeTab.value = 'carrier';
         return false;
       }
     } else if (c.carrierType === 3) {
@@ -457,61 +469,19 @@
           message: '社会运力需填写司机姓名/电话/车牌',
           plain: true
         });
-        activeTab.value = 'carrier';
         return false;
       }
     }
     return true;
   }
 
-  function prevStep() {
-    const order = visibleTabOrder.value;
-    const i = order.indexOf(activeTab.value);
-    if (i > 0) activeTab.value = order[i - 1]!;
-  }
-
-  function onClickNextStep() {
-    const order = visibleTabOrder.value;
-    const i = order.indexOf(activeTab.value);
-    if (i < 0) return;
-    const tab = order[i]!;
-    let ok = true;
-    if (tab === 'cargo') {
-      ok = validateCargoTab();
-    } else if (tab === 'segments') {
-      ok = validateSegments();
-    } else if (tab === 'carrier') {
-      ok = validateCarrierTab();
-    } else if (tab === 'remark') {
-      ok = true;
-    }
-    if (!ok) return;
-    if (i < order.length - 1) activeTab.value = order[i + 1]!;
-  }
-
   function onTabChange(name: string | number) {
     const n = String(name) as TabName;
-    if (visibleTabOrder.value.includes(n)) activeTab.value = n;
+    if (['cargo', 'carrier', 'segments', 'remark'].includes(n))
+      activeTab.value = n;
     if (n === 'carrier') {
       nextTick(() => carrierRef.value?.init());
     }
-  }
-
-  const validateAllSteps = (): boolean => {
-    if (!validateCargoTab()) return false;
-    if (!validateSegments()) return false;
-    if (!validateCarrierTab()) return false;
-    return true;
-  };
-
-  /** 任务级计划时间：优先取首段装车、末段到达（与后端 _replace_segments 回填一致） */
-  function syncTaskScheduleFromSegments() {
-    const segs = form.segments || [];
-    if (!segs.length) return;
-    const head = segs[0]!;
-    const tail = segs[segs.length - 1]!;
-    if (head.plannedLoadTime) form.plannedLoadTime = head.plannedLoadTime;
-    if (tail.plannedArriveTime) form.plannedArriveTime = tail.plannedArriveTime;
   }
 
   const buildSegmentsPayload = () =>
@@ -538,50 +508,6 @@
       remark: w.remark
     }));
 
-  const submit = async () => {
-    if (!validateAllSteps()) {
-      return;
-    }
-    syncTaskScheduleFromSegments();
-
-    saveLoading.value = true;
-    try {
-      const carrier = cleanCarrier(form.carrier);
-      const segments = buildSegmentsPayload();
-      const waybillItems = buildWaybillItemsPayload();
-
-      if (isEdit.value && props.data?.id) {
-        await updateTask(props.data.id, {
-          plannedLoadTime: form.plannedLoadTime,
-          plannedArriveTime: form.plannedArriveTime,
-          remark: form.remark,
-          carrier,
-          segments,
-          waybillItems
-        });
-        EleMessage.success({ message: '已保存', plain: true });
-      } else {
-        await addTask({
-          source: form.source || 1,
-          plannedLoadTime: form.plannedLoadTime,
-          plannedArriveTime: form.plannedArriveTime,
-          remark: form.remark,
-          carrier,
-          segments,
-          waybillItems
-        } as TaskCreatePayload);
-        EleMessage.success({ message: '已创建', plain: true });
-      }
-      emit('done');
-      emit('update:visible', false);
-    } catch (e: unknown) {
-      const msg = (e as { message?: string }).message || '保存失败';
-      EleMessage.error({ message: msg, plain: true });
-    } finally {
-      saveLoading.value = false;
-    }
-  };
-
   const cleanCarrier = (c?: TaskCarrierInfo): TaskCarrierInfo | undefined => {
     if (!c) return undefined;
     const out: TaskCarrierInfo = { carrierType: c.carrierType };
@@ -600,6 +526,83 @@
     if (c.carrierShortName?.trim())
       out.carrierShortName = c.carrierShortName.trim();
     return out;
+  };
+
+  // ============================================================
+  // 提交分发：新建一次性 / 编辑按 Tab 拆分独立 API
+  // ============================================================
+  const submit = async () => {
+    if (saveLoading.value) return;
+    if (isEdit.value) {
+      await submitEditByTab();
+    } else {
+      await submitCreate();
+    }
+  };
+
+  /** 新建：仅必填商品车，作为「待派车」配载草稿落库 */
+  const submitCreate = async () => {
+    if (!validateCargoTab()) return;
+    saveLoading.value = true;
+    try {
+      await addTask({
+        source: form.source || 1,
+        remark: form.remark,
+        waybillItems: buildWaybillItemsPayload(),
+        segments: [],
+        carrier: undefined
+      } as TaskCreatePayload);
+      EleMessage.success({
+        message: '已创建配载草稿（待派车），可在列表点「派车」继续',
+        plain: true
+      });
+      emit('done');
+      emit('update:visible', false);
+    } catch (e: unknown) {
+      const msg = (e as { message?: string }).message || '保存失败';
+      EleMessage.error({ message: msg, plain: true });
+    } finally {
+      saveLoading.value = false;
+    }
+  };
+
+  /** 编辑：按当前 Tab 走对应 API，最小化变更面 */
+  const submitEditByTab = async () => {
+    const id = props.data?.id;
+    if (!id) return;
+    saveLoading.value = true;
+    try {
+      switch (activeTab.value) {
+        case 'cargo':
+          if (!validateCargoTab()) return;
+          await updateTask(id, { waybillItems: buildWaybillItemsPayload() });
+          EleMessage.success({ message: '商品车已保存', plain: true });
+          break;
+        case 'carrier':
+          if (!validateCarrierTab()) return;
+          await assignCarrier(id, {
+            carrier: cleanCarrier(form.carrier) as TaskCarrierInfo
+          });
+          EleMessage.success({ message: '承运方已保存', plain: true });
+          break;
+        case 'segments':
+          if (!validateSegmentsTab()) return;
+          await planTaskRoute(id, { segments: buildSegmentsPayload() });
+          EleMessage.success({ message: '路线已保存', plain: true });
+          break;
+        case 'remark':
+          await updateTask(id, { remark: form.remark || '' });
+          EleMessage.success({ message: '备注已保存', plain: true });
+          break;
+      }
+      emit('done');
+      emit('update:visible', false);
+    } catch (e: unknown) {
+      const msg = (e as { message?: string }).message || '保存失败';
+      EleMessage.error({ message: msg, plain: true });
+    } finally {
+      saveLoading.value = false;
+    }
   };
 </script>
 
@@ -622,20 +625,11 @@
     color: var(--el-text-color-primary);
   }
 
-  .task-cargo-open-tip {
+  .task-create-tip {
     margin-bottom: 14px;
   }
 
-  .task-cargo-open-tip :deep(.el-alert__title) {
-    line-height: 1.5;
-    font-size: 13px;
-  }
-
-  .task-remark-tip {
-    margin-bottom: 14px;
-  }
-
-  .task-remark-tip :deep(.el-alert__title) {
+  .task-create-tip :deep(.el-alert__title) {
     line-height: 1.5;
     font-size: 13px;
   }
@@ -773,11 +767,18 @@
   }
 
   .waybill-tab-pane {
-    max-height: min(420px, calc(100vh - 320px));
+    max-height: min(640px, calc(100vh - 220px));
     overflow-y: auto;
     overflow-x: hidden;
     padding: 14px 6px 12px 4px;
     scrollbar-gutter: stable;
+  }
+
+  /* 新建模式：picker 自身已固定高 + 内部滚动，外层只需轻包裹 */
+  .waybill-edit-dialog.is-create-mode .waybill-tab-pane {
+    max-height: none;
+    overflow: visible;
+    padding: 6px 2px 2px;
   }
 
   .waybill-edit-dialog

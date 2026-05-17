@@ -3,6 +3,7 @@ import type { ApiResult, PageResult } from '@/api';
 import type {
   BatchActionResult,
   CandidateCargo,
+  RouteDistanceLookup,
   Task,
   TaskBatchStatusPayload,
   TaskCarrierInfo,
@@ -100,6 +101,40 @@ export async function assignCarrier(
     data
   );
   if (res.data.code === 0) return res.data.data;
+  return Promise.reject(new Error(res.data.message));
+}
+
+/**
+ * 规划任务单运输路线（补齐 / 重做分段，独立于派车）
+ *
+ * 适用状态：待派车 / 已派车 / 已装车
+ */
+export async function planTaskRoute(
+  id: number,
+  data: { segments: TaskSegment[] }
+) {
+  const res = await request.post<ApiResult<Task>>(
+    `/business/task/${id}/plan-route`,
+    data
+  );
+  if (res.data.code === 0) return res.data.data;
+  return Promise.reject(new Error(res.data.message));
+}
+
+/**
+ * 段表里程联想：按起终行政区匹配 biz_route 中已维护的线路
+ *
+ * 未匹配返回 null。
+ */
+export async function lookupRouteDistance(params: {
+  originRegionId: number;
+  destinationRegionId: number;
+}) {
+  const res = await request.get<ApiResult<RouteDistanceLookup | null>>(
+    '/business/task/route-distance',
+    { params }
+  );
+  if (res.data.code === 0) return res.data.data ?? null;
   return Promise.reject(new Error(res.data.message));
 }
 

@@ -44,7 +44,14 @@ class TaskCarrierInfo(BaseModel):
 
 
 class TaskCreate(BaseModel):
-    """创建任务单"""
+    """创建任务单
+
+    分阶段创建：
+    - 必填：waybillItems（商品车挂接，至少 1 条）
+    - 可选：carrier（不填则任务保存为「待派车」status=0；填则同步派车至 status=1）
+    - 可选：segments（不填则任务无分段，task.origin/destination 由 waybillItems 兜底；
+            后续可通过 POST /business/task/{id}/plan-route 补齐分段路线）
+    """
     taskNo: Optional[str] = None
     taskName: Optional[str] = None
     source: int = 1
@@ -58,8 +65,8 @@ class TaskCreate(BaseModel):
     # 承运方（可选，未填则保存为"待派车"）
     carrier: Optional[TaskCarrierInfo] = None
 
-    # 至少 1 段
-    segments: List[TaskSegmentIn] = Field(default_factory=list, min_length=1)
+    # 分段路线（可选，零段允许，仅校验非空时段号连续）
+    segments: List[TaskSegmentIn] = Field(default_factory=list)
     # 至少 1 条挂接
     waybillItems: List[TaskWaybillItemIn] = Field(
         default_factory=list, min_length=1
@@ -67,6 +74,8 @@ class TaskCreate(BaseModel):
 
     @model_validator(mode="after")
     def _check_segments(self):
+        if not self.segments:
+            return self
         nos = [s.segmentNo for s in self.segments]
         if len(set(nos)) != len(nos):
             raise ValueError("段序号不允许重复")
@@ -102,6 +111,24 @@ class TaskAssignCarrierRequest(BaseModel):
     carrierCostType: Optional[int] = None
     carrierCostAmount: Optional[float] = None
     costRemark: Optional[str] = None
+
+
+class TaskPlanRouteRequest(BaseModel):
+    """规划路线（替换分段）
+
+    仅用于已存在的任务单补齐 / 重做路线规划；不影响承运方与商品车挂接。
+    至少 1 段；段号必须从 1 开始连续。
+    """
+    segments: List[TaskSegmentIn] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _check_segments(self):
+        nos = [s.segmentNo for s in self.segments]
+        if len(set(nos)) != len(nos):
+            raise ValueError("段序号不允许重复")
+        if sorted(nos) != list(range(1, len(nos) + 1)):
+            raise ValueError("段序号必须从 1 开始连续")
+        return self
 
 
 class TaskCancelRequest(BaseModel):

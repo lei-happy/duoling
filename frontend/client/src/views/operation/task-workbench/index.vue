@@ -43,6 +43,11 @@
     <action-dispatch
       v-model:visible="actionVisible.dispatch"
       :task="actionSingleTask"
+      @done="onDispatchDone"
+    />
+    <action-plan-route
+      v-model:visible="actionVisible['plan-route']"
+      :task="actionSingleTask"
       @done="reloadAll"
     />
     <action-confirm-load
@@ -81,6 +86,7 @@
   import KpiCards from './components/kpi-cards.vue';
   import TaskPool from './components/task-pool.vue';
   import ActionDispatch from './components/action-dispatch.vue';
+  import ActionPlanRoute from './components/action-plan-route.vue';
   import ActionConfirmLoad from './components/action-confirm-load.vue';
   import ActionConfirmArrive from './components/action-confirm-arrive.vue';
   import ActionConfirmSign from './components/action-confirm-sign.vue';
@@ -88,6 +94,7 @@
   import FinanceEdit from '../task-finance/components/finance-edit.vue';
   import {
     batchUpdateTaskStatus,
+    getTask,
     getTaskWorkbenchStats,
     updateTaskStatus
   } from '@/api/operation/task';
@@ -210,6 +217,7 @@
   const actionTargets = ref<Task[]>([]);
   const actionVisible = reactive({
     dispatch: false,
+    'plan-route': false,
     'confirm-load': false,
     'confirm-arrive': false,
     'confirm-sign': false
@@ -230,6 +238,13 @@
     if (act.key === 'dispatch') {
       EleMessage.warning({
         message: '派车涉及承运方选择，请逐单操作',
+        plain: true
+      });
+      return;
+    }
+    if (act.key === 'plan-route') {
+      EleMessage.warning({
+        message: '路线规划需逐单填写起终点，请逐单操作',
         plain: true
       });
       return;
@@ -311,6 +326,43 @@
   const reloadAll = async () => {
     reloadToken.value += 1;
     await loadStats();
+  };
+
+  /** 派车成功后：若自有车且尚未规划路线，引导继续规划 */
+  const onDispatchDone = async () => {
+    const t = actionSingleTask.value;
+    if (!t?.id) {
+      await reloadAll();
+      return;
+    }
+    let updated: Task | null = null;
+    try {
+      updated = await getTask(t.id);
+    } catch {
+      updated = null;
+    }
+    await reloadAll();
+    if (
+      updated &&
+      updated.carrierType === 1 &&
+      (updated.segmentCount ?? 0) === 0
+    ) {
+      try {
+        await ElMessageBox.confirm(
+          '已派车成功。该任务是自有车且尚未规划运输路线，建议立即规划（含起终点、里程）。',
+          '继续规划路线？',
+          {
+            type: 'info',
+            confirmButtonText: '立即规划',
+            cancelButtonText: '稍后再说'
+          }
+        );
+        actionTargets.value = [updated];
+        actionVisible['plan-route'] = true;
+      } catch {
+        // ignore
+      }
+    }
   };
 
   onMounted(() => {

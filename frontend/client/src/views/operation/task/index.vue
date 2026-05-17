@@ -107,6 +107,21 @@
               {{ getPrimaryAction(row)!.label }}
             </el-link>
           </template>
+          <template v-if="canPlanRoute(row)">
+            <el-divider direction="vertical" />
+            <el-link
+              type="primary"
+              :underline="false"
+              v-permission="'operation:task:plan-route'"
+              @click="triggerAction(row, planRouteAction)"
+            >
+              规划路线<span
+                v-if="(row.segmentCount ?? 0) === 0"
+                style="margin-left: 2px"
+                >·未规划</span
+              >
+            </el-link>
+          </template>
           <template v-if="canCancel(row)">
             <el-divider direction="vertical" />
             <el-link
@@ -143,6 +158,11 @@
     <!-- 行内主按钮触发的语义化弹窗 -->
     <action-dispatch
       v-model:visible="actionVisible.dispatch"
+      :task="actionTask"
+      @done="onDispatchDone"
+    />
+    <action-plan-route
+      v-model:visible="actionVisible['plan-route']"
       :task="actionTask"
       @done="reload"
     />
@@ -190,11 +210,13 @@
   import TaskDetail from './components/task-detail.vue';
   import TaskSearch from './components/task-search.vue';
   import ActionDispatch from '../task-workbench/components/action-dispatch.vue';
+  import ActionPlanRoute from '../task-workbench/components/action-plan-route.vue';
   import ActionConfirmLoad from '../task-workbench/components/action-confirm-load.vue';
   import ActionConfirmArrive from '../task-workbench/components/action-confirm-arrive.vue';
   import ActionConfirmSign from '../task-workbench/components/action-confirm-sign.vue';
   import FinanceEdit from '../task-finance/components/finance-edit.vue';
   import {
+    getTask,
     pageTasks,
     removeTask,
     cancelTask,
@@ -203,7 +225,11 @@
   import type { Task, TaskParam } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
   import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from './status-config';
-  import { getPrimaryTaskAction } from './task-actions';
+  import {
+    TASK_ACTION_CONFIGS,
+    getPrimaryTaskAction,
+    shouldShowPlanRoute
+  } from './task-actions';
   import type { TaskActionConfig } from './task-actions';
 
   defineOptions({ name: 'OperationTask' });
@@ -287,7 +313,7 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 260,
+      width: 340,
       align: 'center',
       fixed: 'right',
       slot: 'action'
@@ -346,14 +372,56 @@
   const actionTask = ref<Task | null>(null);
   const actionVisible = reactive({
     dispatch: false,
+    'plan-route': false,
     'confirm-load': false,
     'confirm-arrive': false,
     'confirm-sign': false
   });
   const financeEditVisible = ref(false);
 
+  const planRouteAction = TASK_ACTION_CONFIGS['plan-route'];
+
   const getPrimaryAction = (row: Task): TaskActionConfig | null => {
     return getPrimaryTaskAction(row.status);
+  };
+
+  const canPlanRoute = (row: Task): boolean => shouldShowPlanRoute(row);
+
+  /** 派车成功后：若自有车且尚未规划路线，引导继续规划 */
+  const onDispatchDone = async () => {
+    const t = actionTask.value;
+    if (!t?.id) {
+      reload();
+      return;
+    }
+    let updated: Task | null = null;
+    try {
+      updated = await getTask(t.id);
+    } catch {
+      updated = null;
+    }
+    reload();
+    if (
+      updated &&
+      updated.carrierType === 1 &&
+      (updated.segmentCount ?? 0) === 0
+    ) {
+      try {
+        await ElMessageBox.confirm(
+          '已派车成功。该任务是自有车且尚未规划运输路线，建议立即规划（含起终点、里程）。',
+          '继续规划路线？',
+          {
+            type: 'info',
+            confirmButtonText: '立即规划',
+            cancelButtonText: '稍后再说'
+          }
+        );
+        actionTask.value = updated;
+        actionVisible['plan-route'] = true;
+      } catch {
+        // 用户选择稍后
+      }
+    }
   };
 
   const triggerAction = async (row: Task, act: TaskActionConfig) => {

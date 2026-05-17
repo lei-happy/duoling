@@ -43,11 +43,17 @@ class TaskWaybillItemService:
         destination_keyword: Optional[str] = None,
         limit: int = 200,
     ) -> List[CandidateCargoOut]:
-        """挂接器左栏：返回剩余台数 > 0 的运单 cargo 行候选"""
+        """挂接器左栏：返回剩余台数 > 0 的运单 cargo 行候选。
+
+        发运准入：仅"已确认 / 已调度"的运单可被挂入新任务单。
+        - 0 待确认：客户未确认，不允许发运；
+        - 1 已确认：完全可发运；
+        - 2 已调度：仍可挂接（前提是 cargo.remaining_quantity > 0，支持拆单分批）；
+        - 3+ 运输中/已完成/已取消：不允许新挂接。
+        """
         wb_q = select(Waybill).where(
             Waybill.is_deleted == 0,
-            # 仅展示尚未进入终态的运单
-            Waybill.status.in_([0, 1, 2, 3]),
+            Waybill.status.in_([1, 2]),
         )
         if keyword:
             kw = f"%{keyword.strip()}%"

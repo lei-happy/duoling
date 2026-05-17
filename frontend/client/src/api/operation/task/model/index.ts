@@ -43,6 +43,16 @@ export interface TaskWaybillItem {
   createdAt?: string;
 }
 
+/** 段表里程联想结果（按起终行政区匹配 biz_route） */
+export interface RouteDistanceLookup {
+  routeId: number;
+  routeName: string;
+  origin: string;
+  destination: string;
+  distance: number | null;
+  estimatedHours: number | null;
+}
+
 /** 候选挂接行（挂接器左栏） */
 export interface CandidateCargo {
   waybillId: number;

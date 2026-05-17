@@ -18,17 +18,29 @@ from app.modules.client.schemas.task.task import TaskCarrierInfo, TaskCreate
 
 
 async def legacy_build_task_no(db: AsyncSession) -> str:
-    """历史：T + yyyymmdd + 4 位当日序号（COUNT+1，与旧版一致）"""
+    """历史：T + yyyymmdd + 4 位当日序号。
+
+    注意：扫描时 **不过滤** is_deleted —— 因为 task_no 的 UNIQUE 索引
+    对软删行同样生效，已删除的单号仍占位，必须递增到未使用的序号。
+    """
     today = ddate.today().strftime("%Y%m%d")
     prefix = f"T{today}"
     like = f"{prefix}%"
     res = await db.execute(
-        select(func.count(Task.id)).where(
+        select(Task.task_no).where(
             Task.task_no.like(like),
         )
     )
-    cnt = int(res.scalar() or 0) + 1
-    return f"{prefix}{cnt:04d}"
+    rows = [r[0] for r in res.all()]
+    max_n = 0
+    plen = len(prefix)
+    for tn in rows:
+        if not tn or len(tn) <= plen:
+            continue
+        suf = tn[plen:]
+        if suf.isdigit():
+            max_n = max(max_n, int(suf))
+    return f"{prefix}{(max_n + 1):04d}"
 
 
 def legacy_default_task_name(data: TaskCreate) -> str:
@@ -122,32 +134,34 @@ async def build_task_no(db: AsyncSession, raw_json: Optional[str]) -> str:
     if not base_key:
         return await legacy_build_task_no(db)
 
+    # 扫描时 **不过滤** is_deleted —— UNIQUE 索引对软删行同样生效
     esc = _escape_like(base_key)
     pattern = f"{esc}%"
     res = await db.execute(
         select(Task.task_no).where(
             Task.task_no.like(pattern, escape="\\"),
-            Task.is_deleted == 0,
         )
     )
     rows = [r[0] for r in res.all()]
-    max_n = 0
-    blen = len(base_key)
-    for tn in rows:
-        if not tn or len(tn) < blen:
-            continue
-        if not tn.startswith(base_key):
-            continue
-        suf = tn[blen:]
-        if suf.isdigit():
-            max_n = max(max_n, int(suf))
-    next_n = max_n + 1
-    suffix = str(next_n).zfill(digits)
 
     tail = ""
     for p in parts[seq_idx + 1 :]:
         tail += _render_no_part(p, now)
 
+    max_n = 0
+    blen = len(base_key)
+    tlen = len(tail)
+    for tn in rows:
+        if not tn or len(tn) <= blen + tlen:
+            continue
+        if not tn.startswith(base_key):
+            continue
+        # 末尾若有 tail（如 "-某客户"），需先剥掉
+        body = tn[blen : len(tn) - tlen] if tail and tn.endswith(tail) else tn[blen:]
+        if body.isdigit():
+            max_n = max(max_n, int(body))
+    next_n = max_n + 1
+    suffix = str(next_n).zfill(digits)
     return f"{base_key}{suffix}{tail}"
 
 

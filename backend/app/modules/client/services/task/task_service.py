@@ -14,17 +14,22 @@ from datetime import datetime, time as dtime, date as ddate
 from typing import List, Optional, Tuple
 
 from sqlalchemy import and_, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
 from app.modules.client.models.capacity.self_capacity.capacity import Capacity
 from app.modules.client.models.partner.carrier import Carrier
+from app.modules.client.models.route import Route
 from app.modules.client.models.task.task import Task
 from app.modules.client.models.task.task_segment import TaskSegment
+from app.modules.client.models.task.task_waybill_item import TaskWaybillItem
+from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.schemas.task.task import (
     TaskAssignCarrierRequest,
     TaskCarrierInfo,
     TaskCreate,
+    TaskPlanRouteRequest,
     TaskStatusUpdate,
     TaskUpdate,
 )
@@ -225,6 +230,122 @@ class TaskService:
         return rows
 
     @staticmethod
+    async def _fill_route_from_waybills(
+        db: AsyncSession,
+        task: Task,
+    ) -> None:
+        """零段任务的"线路兜底"：
+        从已挂接 waybillItems 的运单聚合出 origin/destination 写入 task 主表，
+        以便列表 / 详情 / 派车弹窗有"起→终"展示。
+
+        策略：按挂接顺序（id 升序）取第一条运单的 origin / 最后一条的 destination；
+        如运单缺失则保持原值（可能为空字符串）。
+        """
+        items_r = await db.execute(
+            select(TaskWaybillItem.waybill_id)
+            .where(
+                TaskWaybillItem.task_id == task.id,
+                TaskWaybillItem.is_deleted == 0,
+            )
+            .order_by(TaskWaybillItem.id.asc())
+        )
+        wb_ids = [int(i) for (i,) in items_r.all()]
+        if not wb_ids:
+            return
+
+        # 去重保持顺序
+        seen: set[int] = set()
+        ordered_ids: List[int] = []
+        for wid in wb_ids:
+            if wid in seen:
+                continue
+            seen.add(wid)
+            ordered_ids.append(wid)
+
+        wb_res = await db.execute(
+            select(Waybill).where(
+                Waybill.id.in_(ordered_ids),
+                Waybill.is_deleted == 0,
+            )
+        )
+        wb_map = {w.id: w for w in wb_res.scalars().all()}
+        ordered_wbs = [wb_map[i] for i in ordered_ids if i in wb_map]
+        if not ordered_wbs:
+            return
+
+        head = ordered_wbs[0]
+        tail = ordered_wbs[-1]
+        if not task.origin:
+            task.origin = head.origin
+            task.origin_code = head.origin_code
+            task.origin_region_id = head.origin_region_id
+        if not task.destination:
+            task.destination = tail.destination
+            task.destination_code = tail.destination_code
+            task.destination_region_id = tail.destination_region_id
+        await db.flush()
+
+    # ------------------------------------------------------------------
+    # 路线规划（独立动作）
+    # ------------------------------------------------------------------
+    @staticmethod
+    async def plan_route(
+        db: AsyncSession,
+        task_id: int,
+        data: TaskPlanRouteRequest,
+    ) -> Task:
+        """补齐 / 重做任务单的分段路线。仅在「待派车 / 已派车 / 已装车」可用。"""
+        task = await TaskService.get_or_404(db, task_id)
+        if int(task.status) not in (0, 1, 2):
+            raise BizException(
+                f"任务单当前状态「{_STATUS_LABELS.get(task.status, task.status)}」"
+                f"不允许调整路线（仅待派车/已派车/已装车可规划）"
+            )
+        await TaskService._replace_segments(db, task, data.segments)
+        await db.refresh(task)
+        return task
+
+    # ------------------------------------------------------------------
+    # 里程联想（按起终地区匹配 biz_route）
+    # ------------------------------------------------------------------
+    @staticmethod
+    async def lookup_route_distance(
+        db: AsyncSession,
+        origin_region_id: int,
+        destination_region_id: int,
+    ) -> Optional[dict]:
+        """根据起终行政区匹配已维护的线路，返回 {routeId, routeName, distance, estimatedHours}。
+        命中多条时取最新一条（created_at 倒序）；未命中返回 None。
+        """
+        r = await db.execute(
+            select(Route)
+            .where(
+                Route.is_deleted == 0,
+                Route.status == 1,
+                Route.origin_region_id == origin_region_id,
+                Route.destination_region_id == destination_region_id,
+            )
+            .order_by(Route.created_at.desc())
+            .limit(1)
+        )
+        route = r.scalar_one_or_none()
+        if not route:
+            return None
+        return {
+            "routeId": route.id,
+            "routeName": route.route_name,
+            "origin": route.origin,
+            "destination": route.destination,
+            "distance": (
+                float(route.distance) if route.distance is not None else None
+            ),
+            "estimatedHours": (
+                float(route.estimated_hours)
+                if route.estimated_hours is not None else None
+            ),
+        }
+
+    @staticmethod
     async def list_segments(
         db: AsyncSession, task_id: int
     ) -> List[TaskSegment]:
@@ -276,13 +397,14 @@ class TaskService:
         dispatcher_name: Optional[str] = None,
     ) -> Task:
         # 1. 任务单号
+        user_supplied_no = bool((data.taskNo or "").strip())
         task_no = (data.taskNo or "").strip()
-        if not task_no:
-            raw_no = await SystemConfigService.get_by_key(db, "task.no_gen_rule")
-            task_no = await build_task_no(db, raw_no)
-        else:
+        if user_supplied_no:
             if await TaskService.task_no_exists(db, task_no):
                 raise BizException(f"任务单号 {task_no} 已存在")
+        else:
+            raw_no = await SystemConfigService.get_by_key(db, "task.no_gen_rule")
+            task_no = await build_task_no(db, raw_no)
 
         task_name_in = (data.taskName or "").strip()
         if not task_name_in:
@@ -290,39 +412,67 @@ class TaskService:
             task_name_in = await build_task_name(db, data, raw_name)
 
         # 2. 创建主表（先空承运方）
-        task = Task(
-            task_no=task_no,
-            task_name=task_name_in or None,
-            source=int(data.source or 1),
-            planned_load_time=data.plannedLoadTime,
-            planned_arrive_time=data.plannedArriveTime,
-            carrier_cost_amount=data.carrierCostAmount,
-            carrier_cost_type=data.carrierCostType,
-            cost_remark=data.costRemark,
-            status=0,
-            dispatcher_id=current_user_id,
-            dispatcher_name=dispatcher_name,
-            remark=data.remark,
-            carrier_type=1,  # 占位，下面 carrier 字段会覆盖
-        )
+        # 用户未手填单号时，加入重试：极端并发或软删占位场景下，
+        # 即便生成器算出的序号在查询时未冲突，也可能在 INSERT 瞬间被抢占。
+        max_retries = 5 if not user_supplied_no else 1
+        last_err: Optional[IntegrityError] = None
+        task: Optional[Task] = None
+        for attempt in range(max_retries):
+            task = Task(
+                task_no=task_no,
+                task_name=task_name_in or None,
+                source=int(data.source or 1),
+                planned_load_time=data.plannedLoadTime,
+                planned_arrive_time=data.plannedArriveTime,
+                carrier_cost_amount=data.carrierCostAmount,
+                carrier_cost_type=data.carrierCostType,
+                cost_remark=data.costRemark,
+                status=0,
+                dispatcher_id=current_user_id,
+                dispatcher_name=dispatcher_name,
+                remark=data.remark,
+                carrier_type=1,  # 占位，下面 carrier 字段会覆盖
+            )
 
-        # 3. 承运方快照
-        if data.carrier is not None:
-            snap = await TaskService._resolve_carrier_snapshot(db, data.carrier)
-            for k, v in snap.items():
-                setattr(task, k, v)
-            task.status = 1  # 已派车
-        else:
-            task.carrier_type = 1  # 默认自有车占位
+            # 3. 承运方快照
+            if data.carrier is not None:
+                snap = await TaskService._resolve_carrier_snapshot(db, data.carrier)
+                for k, v in snap.items():
+                    setattr(task, k, v)
+                task.status = 1  # 已派车
+            else:
+                task.carrier_type = 1  # 默认自有车占位
 
-        db.add(task)
-        await db.flush()
+            db.add(task)
+            try:
+                await db.flush()
+                last_err = None
+                break
+            except IntegrityError as e:
+                last_err = e
+                await db.rollback()
+                if user_supplied_no:
+                    raise BizException(f"任务单号 {task_no} 已存在") from e
+                # 仅在 task_no UNIQUE 冲突时重试；其它完整性问题原样抛出
+                msg = str(getattr(e, "orig", e)).lower()
+                if "task_no" not in msg and "duplicate entry" not in msg:
+                    raise
+                # 重新生成单号
+                raw_no = await SystemConfigService.get_by_key(db, "task.no_gen_rule")
+                task_no = await build_task_no(db, raw_no)
+        if last_err is not None or task is None:
+            assert last_err is not None
+            raise BizException("任务单号生成冲突，请重试") from last_err
 
-        # 4. 分段
+        # 4. 分段（允许为空：表示"配载草稿"，由 _fill_route_from_waybills 兜底起终）
         await TaskService._replace_segments(db, task, data.segments)
 
         # 5. 货物挂接
         await TaskWaybillItemService.add_items(db, task, data.waybillItems)
+
+        # 6. 若无分段，根据已挂接的运单聚合 origin/destination
+        if not data.segments:
+            await TaskService._fill_route_from_waybills(db, task)
 
         await db.refresh(task)
         return task
@@ -364,11 +514,10 @@ class TaskService:
                 task.status = 1
 
         if data.segments is not None:
-            if len(data.segments) < 1:
-                raise BizException("至少需要 1 段运输")
-            nos = [s.segmentNo for s in data.segments]
-            if sorted(nos) != list(range(1, len(nos) + 1)):
-                raise BizException("段序号必须从 1 开始连续")
+            if data.segments:
+                nos = [s.segmentNo for s in data.segments]
+                if sorted(nos) != list(range(1, len(nos) + 1)):
+                    raise BizException("段序号必须从 1 开始连续")
             await TaskService._replace_segments(db, task, data.segments)
 
         if data.waybillItems is not None:
@@ -377,6 +526,9 @@ class TaskService:
             await TaskWaybillItemService.replace_items(
                 db, task, data.waybillItems
             )
+            # 若当前任务没有有效分段，用最新挂接的运单回填起终地
+            if int(task.segment_count or 0) == 0:
+                await TaskService._fill_route_from_waybills(db, task)
 
         await db.flush()
         await db.refresh(task)

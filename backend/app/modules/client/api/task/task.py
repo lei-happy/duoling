@@ -30,6 +30,7 @@ from app.modules.client.schemas.task.task import (
     TaskCreate,
     TaskListItemOut,
     TaskOut,
+    TaskPlanRouteRequest,
     TaskStatusUpdate,
     TaskUpdate,
 )
@@ -146,6 +147,24 @@ async def batch_update_status(
     return success(data=result)
 
 
+@router.get("/route-distance")
+async def lookup_route_distance(
+    originRegionId: int = Query(..., ge=1),
+    destinationRegionId: int = Query(..., ge=1),
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """规划路线时的里程联想：
+    给定起终地区主键，从 biz_route 中匹配最新一条已启用线路，
+    返回 {routeId, routeName, origin, destination, distance, estimatedHours}；
+    未匹配返回 data=null。
+    """
+    row = await TaskService.lookup_route_distance(
+        db, originRegionId, destinationRegionId,
+    )
+    return success(data=row)
+
+
 @router.get("/candidate-waybills")
 async def list_candidate_waybills(
     keyword: Optional[str] = None,
@@ -250,6 +269,26 @@ async def update_task_status(
 ):
     _require_tenant(current_user)
     task = await TaskService.update_status(db, task_id, data)
+    segs = await TaskService.list_segments(db, task.id)
+    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+    return success(data=TaskOut.from_model(
+        task, segments=segs, waybill_items=items,
+    ).model_dump())
+
+
+@router.post("/{task_id}/plan-route")
+@operation_log(
+    module="运输任务单", action="规划路线", description="补齐/重做任务单分段路线",
+)
+async def plan_route(
+    request: Request,
+    task_id: int,
+    data: TaskPlanRouteRequest,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    task = await TaskService.plan_route(db, task_id, data)
     segs = await TaskService.list_segments(db, task.id)
     items = await TaskWaybillItemService.list_items_of_task(db, task.id)
     return success(data=TaskOut.from_model(

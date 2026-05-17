@@ -125,6 +125,21 @@
             {{ primaryAction.label }}
           </el-link>
         </template>
+        <template v-if="canPlanRoute(row)">
+          <el-divider direction="vertical" />
+          <el-link
+            type="primary"
+            :underline="false"
+            v-permission="planRouteAction.permission"
+            @click="emit('action', row, planRouteAction)"
+          >
+            规划路线<span
+              v-if="(row.segmentCount ?? 0) === 0"
+              style="margin-left: 2px"
+              >·未规划</span
+            >
+          </el-link>
+        </template>
       </template>
     </ele-pro-table>
   </div>
@@ -142,7 +157,10 @@
   import type { Task } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
   import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from '../../task/status-config';
-  import { TASK_ACTION_CONFIGS } from '../../task/task-actions';
+  import {
+    TASK_ACTION_CONFIGS,
+    shouldShowPlanRoute
+  } from '../../task/task-actions';
   import type { TaskActionConfig, TaskActionKey } from '../../task/task-actions';
 
   const props = defineProps<{
@@ -169,6 +187,14 @@
   const primaryAction = computed(() =>
     props.primaryActionKey ? TASK_ACTION_CONFIGS[props.primaryActionKey] : null
   );
+
+  const planRouteAction = TASK_ACTION_CONFIGS['plan-route'];
+
+  /** 行内是否展示"规划路线"次按钮（避免与主按钮重复或对终态任务展示） */
+  const canPlanRoute = (row: Task): boolean => {
+    if (props.primaryActionKey === 'plan-route') return false;
+    return shouldShowPlanRoute(row);
+  };
 
   const columns = computed<Columns>(() => [
     { type: 'selection', width: 48, align: 'center' },
@@ -215,7 +241,7 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 160,
+      width: 240,
       align: 'center',
       fixed: 'right',
       slot: 'action'
