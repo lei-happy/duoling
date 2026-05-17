@@ -2,7 +2,7 @@
   调度工作台 KPI 卡片区
 
   6 个状态计数卡片 + 2 个异常告警卡片，
-  点击可触发 emit('selectStatus') 切换主区域 Tab。
+  点击可触发 emit('selectCard') 切换下方列表筛选状态。
 -->
 <template>
   <div class="kpi-cards">
@@ -10,15 +10,29 @@
       v-for="card in cards"
       :key="card.key"
       class="kpi-card"
-      :class="[`kpi-card--${card.type}`, { 'is-alert': card.isAlert }]"
+      :class="[
+        `kpi-card--${card.type}`,
+        { 'is-alert': card.isAlert, 'is-selected': card.key === activeCardKey }
+      ]"
       @click="onClick(card)"
     >
-      <div class="kpi-card__label">{{ card.label }}</div>
+      <div class="kpi-card__label-wrap">
+        <el-tooltip
+          v-if="card.hint"
+          :content="card.hint"
+          placement="top"
+          :show-after="400"
+        >
+          <span class="kpi-card__label kpi-card__label--has-tip">{{
+            card.label
+          }}</span>
+        </el-tooltip>
+        <span v-else class="kpi-card__label">{{ card.label }}</span>
+      </div>
       <div class="kpi-card__value">
         <span class="kpi-card__count">{{ card.value }}</span>
         <span class="kpi-card__suffix">单</span>
       </div>
-      <div v-if="card.hint" class="kpi-card__hint">{{ card.hint }}</div>
     </div>
   </div>
 </template>
@@ -30,10 +44,15 @@
   const props = defineProps<{
     stats: TaskWorkbenchStats | null;
     loading?: boolean;
+    /** 当前选中的卡片 key，与父组件状态同步 */
+    activeCardKey?: string;
   }>();
 
   const emit = defineEmits<{
-    (e: 'selectStatus', status: number | number[]): void;
+    (
+      e: 'selectCard',
+      payload: { cardKey: string; status: number | number[] }
+    ): void;
   }>();
 
   interface Card {
@@ -45,6 +64,8 @@
     hint?: string;
     isAlert?: boolean;
   }
+
+  const activeCardKey = computed(() => props.activeCardKey ?? '');
 
   const cards = computed<Card[]>(() => {
     const t = props.stats?.totals;
@@ -100,50 +121,69 @@
         value: a?.overdueArrive ?? 0,
         type: 'danger',
         status: [2, 3],
-        hint: '计划到达时间已过仍未到达',
+        hint: '计划到货时间已过仍未到达',
         isAlert: true
       }
     ];
   });
 
   const onClick = (card: Card) => {
-    if (card.status !== undefined) emit('selectStatus', card.status);
+    if (card.status !== undefined) {
+      emit('selectCard', { cardKey: card.key, status: card.status });
+    }
   };
 </script>
 
 <style lang="scss" scoped>
   .kpi-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
     margin-bottom: 12px;
   }
   .kpi-card {
     background: var(--el-bg-color);
     border: 1px solid var(--el-border-color-light);
     border-radius: 6px;
-    padding: 14px 16px;
+    padding: 8px 12px 10px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
     position: relative;
 
     &:hover {
-      border-color: var(--el-color-primary);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border-color: var(--el-color-primary-light-5);
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
     }
 
+    &.is-selected {
+      border-color: var(--el-color-primary);
+      box-shadow:
+        0 0 0 1px var(--el-color-primary-light-7),
+        0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    &__label-wrap {
+      min-height: 18px;
+    }
     &__label {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--el-text-color-secondary);
-      margin-bottom: 6px;
+      line-height: 1.35;
+      &--has-tip {
+        border-bottom: 1px dashed var(--el-border-color);
+        cursor: help;
+      }
     }
     &__value {
       display: flex;
       align-items: baseline;
       gap: 4px;
+      margin-top: 4px;
     }
     &__count {
-      font-size: 26px;
+      font-size: 22px;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
       line-height: 1;
@@ -151,11 +191,6 @@
     &__suffix {
       font-size: 12px;
       color: var(--el-text-color-secondary);
-    }
-    &__hint {
-      font-size: 12px;
-      color: var(--el-text-color-placeholder);
-      margin-top: 6px;
     }
 
     &--info .kpi-card__count {
@@ -177,6 +212,13 @@
     &.is-alert {
       background-color: var(--el-color-danger-light-9);
       border-color: var(--el-color-danger-light-7);
+    }
+
+    &.is-alert.is-selected {
+      border-color: var(--el-color-primary);
+      box-shadow:
+        0 0 0 1px var(--el-color-primary-light-7),
+        0 2px 8px rgba(0, 0, 0, 0.06);
     }
   }
 </style>

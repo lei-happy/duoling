@@ -2,34 +2,30 @@
   调度工作台 - 按状态聚合的"待我处理"驾驶舱
 
   布局：
-    - 顶部 KPI 卡片区（点击切换 Tab）
-    - 主 Tab 池：待派车 / 待装车 / 在途中 / 待签收 / 待结算
-    - 每个 Tab 内：状态池表格 + 行内主按钮（语义化）+ 批量主按钮
+    - 顶部 KPI 卡片区（点击切换列表筛选状态）
+    - 下方标准列表：状态池表格 + 行内主按钮（语义化）+ 批量主按钮
 -->
 <template>
   <ele-page>
     <ele-card :body-style="{ paddingTop: '12px' }">
-      <kpi-cards :stats="stats" :loading="statsLoading" @select-status="onSelectStatus" />
+      <kpi-cards
+        :stats="stats"
+        :loading="statsLoading"
+        :active-card-key="selectedCardKey"
+        @select-card="onSelectCard"
+      />
 
-      <el-tabs v-model="activeTab" type="border-card" @tab-change="onTabChange">
-        <el-tab-pane
-          v-for="tab in TABS"
-          :key="tab.key"
-          :name="tab.key"
-          :label="tabLabel(tab)"
-        >
-          <task-pool
-            v-if="activeTab === tab.key"
-            :tab-key="tab.key"
-            :status="tab.status"
-            :primary-action-key="tab.actionKey"
-            :reload-token="reloadToken"
-            @action="onRowAction"
-            @batch-action="onBatchAction"
-            @open-detail="onOpenDetail"
-          />
-        </el-tab-pane>
-      </el-tabs>
+      <task-pool
+        v-if="currentTab"
+        :tab-key="currentTab.key"
+        :status="currentTab.status"
+        :primary-action-key="currentTab.actionKey"
+        :reload-token="reloadToken"
+        @action="onRowAction"
+        @batch-action="onBatchAction"
+        @open-detail="onOpenDetail"
+        @sync-stats="loadStats"
+      />
     </ele-card>
 
     <!-- 任务单详情抽屉 -->
@@ -80,7 +76,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, onMounted, reactive, ref } from 'vue';
+  import { computed, onActivated, onMounted, reactive, ref, watch } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import KpiCards from './components/kpi-cards.vue';
@@ -108,7 +104,6 @@
     label: string;
     status: number | number[];
     actionKey: TaskActionKey | null;
-    countKey: keyof TaskWorkbenchStats['totals'];
   }
 
   const TABS: TabConfig[] = [
@@ -116,57 +111,42 @@
       key: 'pending-dispatch',
       label: '待派车',
       status: 0,
-      actionKey: 'dispatch',
-      countKey: 'pendingDispatch'
+      actionKey: 'dispatch'
     },
     {
       key: 'pending-load',
       label: '待装车',
       status: 1,
-      actionKey: 'confirm-load',
-      countKey: 'pendingLoad'
+      actionKey: 'confirm-load'
     },
     {
       key: 'on-way',
       label: '在途中',
       status: [2, 3],
-      actionKey: 'confirm-arrive',
-      countKey: 'onWay'
+      actionKey: 'confirm-arrive'
     },
     {
       key: 'pending-sign',
       label: '待签收',
       status: 4,
-      actionKey: 'confirm-sign',
-      countKey: 'pendingSign'
+      actionKey: 'confirm-sign'
     },
     {
       key: 'pending-settle',
       label: '待结算',
       status: 5,
-      actionKey: 'create-settlement',
-      countKey: 'pendingSettle'
+      actionKey: 'create-settlement'
     }
   ];
 
   const activeTab = ref<string>(TABS[0].key);
+  /** 与 KPI 卡片一一对应，用于选中态（含「逾期未派车」「在途逾期」与主状态卡同筛但不同卡） */
+  const selectedCardKey = ref<string>('pending-dispatch');
   const reloadToken = ref(0);
 
-  const tabLabel = (tab: TabConfig) => {
-    const count = computeCount(tab);
-    if (!stats.value) return tab.label;
-    return `${tab.label} (${count})`;
-  };
-
-  const computeCount = (tab: TabConfig): number => {
-    if (!stats.value) return 0;
-    if (tab.key === 'on-way') {
-      return (
-        (stats.value.totals.loading || 0) + (stats.value.totals.onWay || 0)
-      );
-    }
-    return stats.value.totals[tab.countKey] || 0;
-  };
+  const currentTab = computed<TabConfig | undefined>(() =>
+    TABS.find((t) => t.key === activeTab.value)
+  );
 
   // ============================================
   // KPI
@@ -186,7 +166,12 @@
     }
   };
 
-  const onSelectStatus = (status: number | number[]) => {
+  const onSelectCard = (payload: {
+    cardKey: string;
+    status: number | number[];
+  }) => {
+    selectedCardKey.value = payload.cardKey;
+    const status = payload.status;
     const targetTab = TABS.find((t) => {
       const a = Array.isArray(t.status) ? t.status : [t.status];
       const b = Array.isArray(status) ? status : [status];
@@ -195,10 +180,9 @@
     if (targetTab) activeTab.value = targetTab.key;
   };
 
-  const onTabChange = () => {
-    // 切 Tab 时清理 actionTargets
+  watch(activeTab, () => {
     actionTargets.value = [];
-  };
+  });
 
   // ============================================
   // 详情
@@ -324,8 +308,7 @@
   };
 
   const reloadAll = async () => {
-    reloadToken.value += 1;
-    await loadStats();
+    await refreshWorkbench();
   };
 
   /** 派车成功后：若自有车且尚未规划路线，引导继续规划 */
@@ -365,7 +348,16 @@
     }
   };
 
+  const refreshWorkbench = async () => {
+    await loadStats();
+    reloadToken.value += 1;
+  };
+
   onMounted(() => {
-    loadStats();
+    refreshWorkbench();
+  });
+
+  onActivated(() => {
+    refreshWorkbench();
   });
 </script>

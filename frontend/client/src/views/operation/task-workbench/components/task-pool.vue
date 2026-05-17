@@ -10,6 +10,7 @@
     - action: 行内动作触发 (row, action)
     - batchAction: 批量动作触发 (rows, action)
     - openDetail: 点击任务单号查看详情 (row)
+    - syncStats: 表格数据加载完成后请求父级刷新 KPI（与列表同源、避免只刷表不刷统计）
 
   设计：
     - 行内只展示当前状态对应的"主按钮"
@@ -47,6 +48,7 @@
       v-model:selections="selections"
       :default-sort="{ prop: 'plannedLoadTime', order: 'ascending' }"
       :cache-key="`OperationTaskPool-${tabKey}`"
+      @done="onTableDone"
     >
       <template #carrierType="{ row }">
         <el-tag
@@ -58,16 +60,16 @@
       </template>
 
       <template #route="{ row }">
-        <div class="route-cell">
-          <span>{{ row.origin || '--' }}</span>
-          <el-icon style="margin: 0 6px"><Right /></el-icon>
-          <span>{{ row.destination || '--' }}</span>
+        <div class="route-cell cell-ellipsis">
+          <span class="cell-ellipsis">{{ row.origin || '--' }}</span>
+          <el-icon class="route-cell__arrow"><Right /></el-icon>
+          <span class="cell-ellipsis">{{ row.destination || '--' }}</span>
           <el-tag
             v-if="(row.segmentCount || 0) > 1"
             size="small"
             type="info"
             effect="plain"
-            style="margin-left: 6px"
+            class="route-cell__seg"
           >
             {{ row.segmentCount }} 段
           </el-tag>
@@ -75,10 +77,10 @@
       </template>
 
       <template #carrierResource="{ row }">
-        <div v-if="row.carrierType === 2">
+        <div v-if="row.carrierType === 2" class="cell-ellipsis">
           {{ row.carrierName || '--' }}
         </div>
-        <div v-else>
+        <div v-else class="cell-ellipsis">
           {{ row.mainDriverName || '--' }}
           <span v-if="row.plateNumber" class="ele-text-secondary">
             / {{ row.plateNumber }}
@@ -87,21 +89,23 @@
       </template>
 
       <template #status="{ row }">
-        <el-tag
-          :type="(TASK_STATUS_MAP[row.status]?.type as any) || 'info'"
-          size="small"
-        >
-          {{ TASK_STATUS_MAP[row.status]?.label || '--' }}
-        </el-tag>
-        <el-tag
-          v-if="isOverdue(row)"
-          type="danger"
-          size="small"
-          effect="plain"
-          style="margin-left: 4px"
-        >
-          逾期
-        </el-tag>
+        <div class="status-cell">
+          <el-tag
+            :type="(TASK_STATUS_MAP[row.status]?.type as any) || 'info'"
+            size="small"
+          >
+            {{ TASK_STATUS_MAP[row.status]?.label || '--' }}
+          </el-tag>
+          <el-tag
+            v-if="isOverdue(row)"
+            type="danger"
+            size="small"
+            effect="plain"
+            class="status-cell__overdue"
+          >
+            逾期
+          </el-tag>
+        </div>
       </template>
 
       <template #plannedLoadTime="{ row }">
@@ -111,46 +115,49 @@
       </template>
 
       <template #action="{ row }">
-        <el-link type="primary" :underline="false" @click="emit('openDetail', row)">
-          详情
-        </el-link>
-        <template v-if="primaryAction">
-          <el-divider direction="vertical" />
-          <el-link
-            :type="primaryAction.buttonType as any"
-            :underline="false"
-            v-permission="primaryAction.permission"
-            @click="emit('action', row, primaryAction)"
-          >
-            {{ primaryAction.label }}
+        <div class="action-cell">
+          <el-link type="primary" :underline="false" @click="emit('openDetail', row)">
+            详情
           </el-link>
-        </template>
-        <template v-if="canPlanRoute(row)">
-          <el-divider direction="vertical" />
-          <el-link
-            type="primary"
-            :underline="false"
-            v-permission="planRouteAction.permission"
-            @click="emit('action', row, planRouteAction)"
-          >
-            规划路线<span
-              v-if="(row.segmentCount ?? 0) === 0"
-              style="margin-left: 2px"
-              >·未规划</span
+          <template v-if="primaryAction">
+            <el-divider direction="vertical" />
+            <el-link
+              :type="primaryAction.buttonType as any"
+              :underline="false"
+              v-permission="primaryAction.permission"
+              @click="emit('action', row, primaryAction)"
             >
-          </el-link>
-        </template>
+              {{ primaryAction.label }}
+            </el-link>
+          </template>
+          <template v-if="canPlanRoute(row)">
+            <el-divider direction="vertical" />
+            <el-link
+              type="primary"
+              :underline="false"
+              v-permission="planRouteAction.permission"
+              @click="emit('action', row, planRouteAction)"
+            >
+              规划路线<span
+                v-if="(row.segmentCount ?? 0) === 0"
+                style="margin-left: 2px"
+                >·未规划</span
+              >
+            </el-link>
+          </template>
+        </div>
       </template>
     </ele-pro-table>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { computed, nextTick, ref, watch } from 'vue';
+  import { computed, nextTick, onMounted, ref, watch } from 'vue';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
     Columns,
-    DatasourceFunction
+    DatasourceFunction,
+    DoneParams
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import { Operation, Refresh, Right } from '@element-plus/icons-vue';
   import { pageTasks } from '@/api/operation/task';
@@ -178,6 +185,7 @@
     (e: 'action', row: Task, action: TaskActionConfig): void;
     (e: 'batchAction', rows: Task[], action: TaskActionConfig): void;
     (e: 'openDetail', row: Task): void;
+    (e: 'syncStats'): void;
   }>();
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
@@ -295,11 +303,21 @@
     nextTick(() => tableRef.value?.reload?.({ page: 1 }));
   };
 
+  /** 工具栏刷新 / 工具栏「刷新」等任意数据重载完成后，同步刷新工作台统计卡片 */
+  const onTableDone = (_result: DoneParams<Task>, parent?: Task) => {
+    if (parent != null) return;
+    emit('syncStats');
+  };
+
   watch(() => props.reloadToken, () => doReload());
   watch(
     () => [props.status, props.primaryActionKey] as const,
     () => doReload()
   );
+
+  onMounted(() => {
+    nextTick(() => doReload());
+  });
 
   const onBatch = () => {
     if (!primaryAction.value || selections.value.length === 0) return;
@@ -327,13 +345,61 @@
       margin-bottom: 8px;
     }
   }
+
+  .cell-ellipsis {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .route-cell {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    min-width: 0;
+    gap: 0;
+
+    > .cell-ellipsis {
+      flex: 1 1 0;
+    }
+
+    &__arrow {
+      flex-shrink: 0;
+      margin: 0 6px;
+    }
+    &__seg {
+      flex-shrink: 0;
+      margin-left: 6px;
+    }
   }
+
+  .action-cell {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .status-cell {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+
+    &__overdue {
+      margin-left: 4px;
+    }
+  }
+
   .is-overdue {
     color: var(--el-color-danger);
     font-weight: 500;
+  }
+
+  /* 列表单元格单行展示，悬停由表格 tooltip 展示全文 */
+  .task-pool :deep(.el-table .cell) {
+    white-space: nowrap;
+    overflow: hidden;
   }
 </style>
