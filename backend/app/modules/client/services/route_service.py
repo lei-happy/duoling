@@ -2,16 +2,72 @@
 路线管理服务（租户库）
 """
 
+from datetime import date, datetime, time
 from typing import Optional
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
 from app.modules.client.models.route import Route
-from app.modules.client.schemas.route import (
-    RouteCreate, RouteUpdate, RouteOut,
+from app.modules.client.schemas.route import RouteCreate, RouteOut, RouteUpdate
+from app.modules.client.services.billing.standardize_service import (
+    RegionResolution,
+    StandardizeService,
 )
+
+
+def _format_region_path(res: RegionResolution) -> str:
+    if res.chain:
+        return "/".join(n.name for n in reversed(res.chain))
+    return (res.region_name or "").strip()
+
+
+def _default_route_name(origin_disp: str, dest_disp: str) -> str:
+    raw = f"{origin_disp}-{dest_disp}".strip("-")
+    if len(raw) <= 100:
+        return raw or "未命名线路"
+    return raw[:100]
+
+
+async def _next_route_code(db: AsyncSession) -> str:
+    """当日序号在「含已软删除」的全表上取 max，避免唯一键 route_code 仍被删除行占用时重复插入。"""
+    today = date.today().strftime("%Y%m%d")
+    base = f"R{today}"
+    res = await db.execute(
+        select(Route.route_code).where(
+            Route.route_code.isnot(None),
+            Route.route_code.like(f"{base}%"),
+        )
+    )
+    max_n = 0
+    blen = len(base)
+    for (code,) in res.all():
+        if not code or len(code) <= blen:
+            continue
+        suf = code[blen:]
+        if suf.isdigit():
+            max_n = max(max_n, int(suf))
+    return f"{base}{max_n + 1:04d}"
+
+
+async def _assert_unique_region_pair(
+    db: AsyncSession,
+    origin_region_id: int,
+    destination_region_id: int,
+    *,
+    exclude_route_id: Optional[int] = None,
+) -> None:
+    q = select(Route.id).where(
+        Route.is_deleted == 0,
+        Route.origin_region_id == origin_region_id,
+        Route.destination_region_id == destination_region_id,
+    )
+    if exclude_route_id is not None:
+        q = q.where(Route.id != exclude_route_id)
+    hit = (await db.execute(q)).scalar_one_or_none()
+    if hit is not None:
+        raise BizException("该出发地—目的地线路已存在，请勿重复创建")
 
 
 class RouteService:
@@ -21,26 +77,34 @@ class RouteService:
         db: AsyncSession,
         page: int = 1,
         page_size: int = 20,
-        keyword: Optional[str] = None,
+        origin_keyword: Optional[str] = None,
+        destination_keyword: Optional[str] = None,
         status: Optional[int] = None,
+        created_at_start: Optional[date] = None,
+        created_at_end: Optional[date] = None,
     ) -> dict:
         base = select(Route).where(Route.is_deleted == 0)
 
-        if keyword:
-            base = base.where(
-                (Route.route_name.contains(keyword)) |
-                (Route.route_code.contains(keyword)) |
-                (Route.origin.contains(keyword)) |
-                (Route.destination.contains(keyword))
-            )
+        ow = (origin_keyword or "").strip()
+        if ow:
+            base = base.where(Route.origin.contains(ow))
+        dw = (destination_keyword or "").strip()
+        if dw:
+            base = base.where(Route.destination.contains(dw))
         if status is not None:
             base = base.where(Route.status == status)
+        if created_at_start is not None:
+            start_dt = datetime.combine(created_at_start, time.min)
+            base = base.where(Route.created_at >= start_dt)
+        if created_at_end is not None:
+            end_dt = datetime.combine(created_at_end, time.max)
+            base = base.where(Route.created_at <= end_dt)
 
         count_q = select(func.count()).select_from(base.subquery())
         total = (await db.execute(count_q)).scalar() or 0
 
         result = await db.execute(
-            base.order_by(Route.id.desc())
+            base.order_by(Route.created_at.desc(), Route.id.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
@@ -48,33 +112,54 @@ class RouteService:
 
         return {
             "list": [RouteOut.from_model(item).model_dump() for item in items],
-            "total": total,
+            "count": total,
             "page": page,
             "page_size": page_size,
         }
 
     @staticmethod
-    async def create_route(
-        db: AsyncSession, data: RouteCreate
-    ) -> Route:
-        if data.routeCode:
-            existing = await db.execute(
-                select(Route).where(
-                    Route.route_code == data.routeCode,
-                    Route.is_deleted == 0,
-                )
-            )
-            if existing.scalar_one_or_none():
-                raise BizException(f"路线编码 {data.routeCode} 已存在")
+    async def list_routes(db: AsyncSession) -> list[Route]:
+        result = await db.execute(
+            select(Route)
+            .where(Route.is_deleted == 0)
+            .order_by(Route.created_at.desc(), Route.id.desc())
+        )
+        return list(result.scalars().all())
+
+    @staticmethod
+    async def create_route(db: AsyncSession, data: RouteCreate) -> Route:
+        res_o = await StandardizeService.resolve_region(
+            db, region_id=data.originRegionId
+        )
+        res_d = await StandardizeService.resolve_region(
+            db, region_id=data.destinationRegionId
+        )
+        if res_o.region_id is None:
+            raise BizException("出发地无效或已删除")
+        if res_d.region_id is None:
+            raise BizException("目的地无效或已删除")
+
+        await _assert_unique_region_pair(
+            db, res_o.region_id, res_d.region_id,
+        )
+
+        disp_o = _format_region_path(res_o)
+        disp_d = _format_region_path(res_d)
+        name_in = (data.routeName or "").strip()
+        route_name = name_in if name_in else _default_route_name(disp_o, disp_d)
+        route_code = await _next_route_code(db)
 
         route = Route(
-            route_name=data.routeName,
-            route_code=data.routeCode,
-            origin=data.origin,
-            destination=data.destination,
+            route_name=route_name,
+            route_code=route_code,
+            origin=disp_o,
+            destination=disp_d,
+            origin_region_id=res_o.region_id,
+            destination_region_id=res_d.region_id,
+            origin_code=res_o.region_code,
+            destination_code=res_d.region_code,
             distance=data.distance,
             estimated_hours=data.estimatedHours,
-            waypoints=data.waypoints,
             remark=data.remark,
         )
         db.add(route)
@@ -83,9 +168,7 @@ class RouteService:
         return route
 
     @staticmethod
-    async def update_route(
-        db: AsyncSession, route_id: int, data: RouteUpdate
-    ) -> Route:
+    async def update_route(db: AsyncSession, route_id: int, data: RouteUpdate) -> Route:
         result = await db.execute(
             select(Route).where(
                 Route.id == route_id,
@@ -96,21 +179,46 @@ class RouteService:
         if not route:
             raise BizException("路线不存在")
 
-        field_map = {
-            "routeName": "route_name",
-            "routeCode": "route_code",
-            "origin": "origin",
-            "destination": "destination",
+        dump = data.model_dump(exclude_unset=True)
+
+        if any(k in dump for k in ("originRegionId", "destinationRegionId")):
+            oid = dump.get("originRegionId", route.origin_region_id)
+            did = dump.get("destinationRegionId", route.destination_region_id)
+            if oid is None or did is None:
+                raise BizException("请选择出发地与目的地")
+            res_o = await StandardizeService.resolve_region(db, region_id=int(oid))
+            res_d = await StandardizeService.resolve_region(db, region_id=int(did))
+            if res_o.region_id is None or res_d.region_id is None:
+                raise BizException("出发地或目的地无效或已删除")
+            await _assert_unique_region_pair(
+                db, res_o.region_id, res_d.region_id,
+                exclude_route_id=route.id,
+            )
+            route.origin_region_id = res_o.region_id
+            route.destination_region_id = res_d.region_id
+            route.origin_code = res_o.region_code
+            route.destination_code = res_d.region_code
+            route.origin = _format_region_path(res_o)
+            route.destination = _format_region_path(res_d)
+
+        if "routeName" in dump:
+            val = dump["routeName"]
+            if val is None:
+                raise BizException("线路名称不能为空")
+            rn = str(val).strip()
+            if not rn:
+                raise BizException("线路名称不能为空")
+            route.route_name = rn
+
+        simple_map = {
             "distance": "distance",
             "estimatedHours": "estimated_hours",
-            "waypoints": "waypoints",
             "status": "status",
             "remark": "remark",
         }
-        for schema_field, model_field in field_map.items():
-            val = getattr(data, schema_field, None)
-            if val is not None:
-                setattr(route, model_field, val)
+        for schema_field, model_field in simple_map.items():
+            if schema_field in dump:
+                setattr(route, model_field, dump[schema_field])
 
         await db.flush()
         await db.refresh(route)

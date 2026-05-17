@@ -2,6 +2,7 @@
 企业端路线管理 API
 """
 
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
@@ -23,14 +24,23 @@ router = APIRouter()
 async def page_routes(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, alias="limit", ge=1, le=100),
-    keyword: Optional[str] = None,
+    originKeyword: Optional[str] = None,
+    destinationKeyword: Optional[str] = None,
     status: Optional[int] = None,
+    createdAtStart: Optional[date] = Query(None, description="创建日期起（含当日 0 点）"),
+    createdAtEnd: Optional[date] = Query(None, description="创建日期止（含当日结束）"),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     data = await RouteService.page_routes(
-        db, page=page, page_size=page_size,
-        keyword=keyword, status=status,
+        db,
+        page=page,
+        page_size=page_size,
+        origin_keyword=originKeyword,
+        destination_keyword=destinationKeyword,
+        status=status,
+        created_at_start=createdAtStart,
+        created_at_end=createdAtEnd,
     )
     return success(data=data)
 
