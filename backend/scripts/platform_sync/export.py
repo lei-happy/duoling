@@ -91,6 +91,14 @@ def main() -> int:
         choices=["dev", "prod"],
         help="拉取源环境（默认 dev；从 prod 拉取仅供灾难恢复基线场景）",
     )
+    parser.add_argument(
+        "--check-frontend",
+        action="store_true",
+        help=(
+            "校验 client_menu / platform_menu 中每条 component 字段在前端 views 下"
+            "都能找到对应 .vue 文件；任一缺失视为致命错误。"
+        ),
+    )
     args = parser.parse_args()
 
     try:
@@ -126,7 +134,13 @@ def main() -> int:
         return 3
 
     # ---- 校验 ----
-    report = validate_snapshots(new_data)
+    frontend_dirs = None
+    if args.check_frontend:
+        frontend_dirs = {
+            "client_menu": REPO_ROOT / "frontend" / "client" / "src" / "views",
+            "platform_menu": REPO_ROOT / "frontend" / "console" / "src" / "views",
+        }
+    report = validate_snapshots(new_data, frontend_dirs=frontend_dirs)
     print("\n" + report.format())
     if not report.ok:
         print("\n[ERROR] 校验未通过，已中止写盘", file=sys.stderr)

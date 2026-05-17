@@ -48,6 +48,7 @@ from scripts.platform_sync.config import load_config, ConfigError, REPO_ROOT
 from scripts.platform_sync.http_client import ConsoleClient, ConsoleApiError
 from scripts.platform_sync.exporters import EXPORTERS
 from scripts.platform_sync.snapshot_io import read_json
+from scripts.platform_sync.validators import validate_snapshots
 from scripts.platform_sync.diff_utils import (
     diff_list,
     diff_version_feature,
@@ -213,6 +214,14 @@ def main() -> int:
             "适合自动化部署脚本先 plan、再决定是否 apply。"
         ),
     )
+    parser.add_argument(
+        "--check-frontend",
+        action="store_true",
+        help=(
+            "在比对/写库前先离线校验快照里的 component 字段是否在前端 views 下存在。"
+            "任一缺失视为致命错误，立刻中止。"
+        ),
+    )
     args = parser.parse_args()
 
     if args.yes and args.plan:
@@ -232,6 +241,27 @@ def main() -> int:
     # ---- 检查快照齐全 ----
     if not _ensure_snapshots_exist(cfg.snapshot_dir):
         return 2
+
+    # ---- 可选：前端组件存在性离线校验 ----
+    if args.check_frontend:
+        snapshots: Dict[str, Any] = {}
+        for key, (_, filename) in EXPORTERS.items():
+            snapshots[key] = read_json(cfg.snapshot_dir / filename)
+        report = validate_snapshots(
+            snapshots,
+            frontend_dirs={
+                "client_menu": REPO_ROOT / "frontend" / "client" / "src" / "views",
+                "platform_menu": REPO_ROOT / "frontend" / "console" / "src" / "views",
+            },
+        )
+        print(report.format())
+        if not report.ok:
+            print(
+                "\n[ERROR] 快照与前端工程不一致，已中止 sync。"
+                "请修复 component 路径或补齐 .vue 文件后重试。",
+                file=sys.stderr,
+            )
+            return 4
 
     print(f">>> 同步目标: env={cfg.env}  api={cfg.api_base}")
 

@@ -15,6 +15,9 @@
   3. 数据完整性
      - menu_code 与 feature_code 不允许首尾空白
      - menu 树不允许出现父节点缺失（parent_id 不在已知 id 集合且 != 0）
+  4. 前端组件存在性（可选，通过 frontend_dirs 开启）
+     - client_menu[*].component 在 frontend/client/src/views 下确实存在
+     - platform_menu[*].component 在 frontend/console/src/views 下确实存在
 
 任何一项 ERROR 都会让 pull/verify 中止；WARN 仅打印不阻塞。
 """
@@ -22,6 +25,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # 导出器键名常量，避免拼写错误
@@ -81,7 +85,9 @@ def _check_unique(
 
 
 def validate_snapshots(
-    snapshots: Dict[str, Any]
+    snapshots: Dict[str, Any],
+    *,
+    frontend_dirs: Optional[Dict[str, Path]] = None,
 ) -> ValidationReport:
     """
     snapshots 形如：
@@ -94,6 +100,10 @@ def validate_snapshots(
         }
 
     每一项都允许为 None（表示本次 pull --only 跳过了该项），跳过相关交叉校验。
+
+    frontend_dirs：可选，形如 {"client_menu": Path(.../client/src/views),
+                                "platform_menu": Path(.../console/src/views)}；
+    给定时会额外做组件文件存在性检查，将不存在的 component 计为 ERROR。
     """
     report = ValidationReport()
 
@@ -180,7 +190,52 @@ def validate_snapshots(
                 f"以下 {len(unbound)} 个 feature_code 未绑定到任何版本（客户端将永远不可见）：{unbound}"
             )
 
+    # ---- 5. 前端组件存在性（可选）----
+    if frontend_dirs:
+        for menu_key, views_dir in frontend_dirs.items():
+            menus = snapshots.get(menu_key)
+            if isinstance(menus, list):
+                report.errors.extend(_check_component_files(menus, views_dir, menu_key))
+
     return report
+
+
+def _check_component_files(
+    rows: List[Dict[str, Any]], views_dir: Path, label: str
+) -> List[str]:
+    """检查 menu_type==0 的页面菜单 component 字段对应的 .vue 文件是否存在。
+
+    解析规则与前端 `import.meta.glob('/src/views/**/index.vue')` 保持一致：
+        component 为 "/foo/bar/index"   →  <views>/foo/bar/index.vue
+        component 为 "/foo/bar"         →  <views>/foo/bar.vue 或 <views>/foo/bar/index.vue
+    component 为空/None 视为「目录型」父菜单，跳过；按钮（menu_type==1）也跳过。
+    """
+    errors: List[str] = []
+    if not views_dir.exists():
+        errors.append(
+            f"{label}: 前端 views 目录不存在 {views_dir}（无法做组件存在性校验）"
+        )
+        return errors
+    for idx, r in enumerate(rows):
+        if int(r.get("menu_type") or 0) != 0:
+            continue
+        comp = (r.get("component") or "").strip()
+        if not comp:
+            continue
+        # iframe / 外链直接放行
+        if comp.startswith(("http://", "https://", "//")):
+            continue
+        rel = comp.lstrip("/")
+        candidates = [
+            views_dir / f"{rel}.vue",
+            views_dir / rel / "index.vue",
+        ]
+        if not any(p.exists() for p in candidates):
+            errors.append(
+                f"{label}[{idx}] (menu_name={r.get('menu_name')!r}, path={r.get('path')!r})"
+                f" 的 component={comp!r} 在 {views_dir.name}/ 下找不到对应的 .vue 文件"
+            )
+    return errors
 
 
 def _check_menu_tree(rows: List[Dict[str, Any]], label: str) -> List[str]:
