@@ -88,11 +88,7 @@
       </el-row>
 
       <el-divider content-position="left">收款对象</el-divider>
-      <payee-picker
-        ref="payeeRef"
-        v-model="payee"
-        :disabled="!editable"
-      />
+      <payee-picker ref="payeeRef" v-model="payee" :disabled="!editable" />
 
       <el-divider content-position="left">费用项明细</el-divider>
       <finance-item-table
@@ -102,7 +98,7 @@
       />
     </el-form>
 
-    <!-- 详情/状态推进时的操作按钮 -->
+    <!-- 详情时仅展示当前状态对应的语义化主按钮 + 撤销次按钮 -->
     <template #footer>
       <div class="finance-edit__footer">
         <div>
@@ -116,94 +112,47 @@
         </div>
         <div class="finance-edit__btns">
           <el-button @click="emit('update:visible', false)">关闭</el-button>
-          <el-button v-if="editable" type="primary" :loading="submitting" @click="submit">
-            保存
-          </el-button>
           <el-button
-            v-if="doc?.status === 0"
-            type="warning"
-            :loading="submitting"
-            @click="onSubmitFlow"
-          >
-            提交审批
-          </el-button>
-          <el-button
-            v-if="doc?.status === 1"
+            v-if="editable"
             type="primary"
             :loading="submitting"
-            @click="onApprove"
+            @click="submit"
           >
-            审批通过
+            保存
           </el-button>
+          <!-- 当前状态唯一的语义化主按钮 -->
           <el-button
-            v-if="doc?.status === 2"
-            type="success"
+            v-if="primaryAction"
+            :type="primaryAction.buttonType"
             :loading="submitting"
-            @click="openPayDialog"
+            v-permission="primaryAction.permission"
+            @click="triggerPrimary"
           >
-            标记已支付
+            {{ primaryAction.label }}
           </el-button>
+          <!-- 次要动作（撤销） -->
           <el-button
-            v-if="doc && [0, 1, 2].includes(doc.status!)"
-            type="danger"
+            v-for="act in secondaryActions"
+            :key="act.key"
+            :type="act.buttonType"
+            plain
             :loading="submitting"
-            @click="onCancel"
+            v-permission="act.permission"
+            @click="triggerSecondary(act)"
           >
-            撤销
+            {{ act.label }}
           </el-button>
         </div>
       </div>
     </template>
 
-    <!-- 标记已支付弹窗 -->
-    <el-dialog
-      v-model="payDialogVisible"
-      title="标记已支付"
-      width="480px"
-      destroy-on-close
-    >
-      <el-form :model="payForm" label-width="110px">
-        <el-form-item label="实际金额" required>
-          <el-input-number
-            v-model="payForm.actualAmount"
-            :min="0.01"
-            :precision="2"
-            controls-position="right"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="支付方式" required>
-          <el-select v-model="payForm.payMethod" style="width: 100%">
-            <el-option
-              v-for="o in PAY_METHOD_OPTIONS"
-              :key="o.value"
-              :value="o.value"
-              :label="o.label"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="支付时间" required>
-          <el-date-picker
-            v-model="payForm.actualPayTime"
-            type="datetime"
-            value-format="YYYY-MM-DDTHH:mm:ss"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="凭证 URL">
-          <el-input v-model="payForm.payVoucherUrl" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="payForm.remark" type="textarea" :rows="2" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="payDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="onPay">
-          确定
-        </el-button>
-      </template>
-    </el-dialog>
+    <!-- 标记已支付弹窗（复用工作台抽出的组件） -->
+    <action-pay
+      v-if="doc"
+      v-model:visible="payDialogVisible"
+      :docs="[doc]"
+      @done="onActionDone"
+    />
   </el-drawer>
 </template>
 
@@ -215,12 +164,12 @@
   import FinanceItemTable from './finance-item-table.vue';
   import PayeePicker from './payee-picker.vue';
   import type { PayeeFormData } from './payee-picker.vue';
+  import ActionPay from '../../task-finance-workbench/components/action-pay.vue';
   import {
     addFinanceDoc,
     approveFinanceDoc,
     cancelFinanceDoc,
     getFinanceDoc,
-    payFinanceDoc,
     submitFinanceDoc,
     updateFinanceDoc
   } from '@/api/operation/task-finance';
@@ -236,11 +185,20 @@
     PAY_METHOD_OPTIONS
   } from '../status-config';
   import { CARRIER_TYPE_MAP } from '../../task/status-config';
+  import {
+    getPrimaryFinanceAction,
+    getSecondaryFinanceActions
+  } from '../task-finance-actions';
+  import type { FinanceActionConfig } from '../task-finance-actions';
 
   const props = defineProps<{
     visible: boolean;
     task: Task;
     docId: number | null;
+    /** 新建场景下的预填类型（如生成结算单时传 3） */
+    initDocType?: number;
+    /** 新建场景下的预填 is_final（如生成最终结算单时传 1） */
+    initIsFinal?: number;
   }>();
   const emit = defineEmits<{
     (e: 'update:visible', v: boolean): void;
@@ -248,7 +206,9 @@
   }>();
 
   const formRef = ref<FormInstance | null>(null);
-  const payeeRef = ref<{ init: (d?: { driverId?: number; carrierId?: number }) => void } | null>(null);
+  const payeeRef = ref<{
+    init: (d?: { driverId?: number; carrierId?: number }) => void;
+  } | null>(null);
   const loading = ref(false);
   const submitting = ref(false);
 
@@ -256,8 +216,8 @@
   const carrierLabel = computed(() => {
     if (!taskInfo.value) return '--';
     return (
-      CARRIER_TYPE_MAP[taskInfo.value.carrierType || 1]?.label
-      + (taskInfo.value.carrierType === 2
+      CARRIER_TYPE_MAP[taskInfo.value.carrierType || 1]?.label +
+      (taskInfo.value.carrierType === 2
         ? ` · ${taskInfo.value.carrierName || ''}`
         : ` · ${taskInfo.value.mainDriverName || ''} ${taskInfo.value.plateNumber || ''}`)
     );
@@ -266,7 +226,6 @@
   const doc = ref<TaskFinanceDoc | null>(null);
 
   const defaultPayee = (): PayeeFormData => {
-    // 根据任务单 carrier_type 默认推断收款类型
     const ct = props.task?.carrierType || 1;
     if (ct === 2) {
       return {
@@ -283,8 +242,8 @@
   };
 
   const defaultForm = (): TaskFinanceDocCreatePayload => ({
-    docType: 1,
-    isFinal: 0,
+    docType: props.initDocType ?? 1,
+    isFinal: props.initIsFinal ?? 0,
     payeeType: 1,
     payeeId: null,
     payeeName: '',
@@ -302,12 +261,17 @@
   const payee = reactive<PayeeFormData>(defaultPayee());
 
   const editable = computed(() => {
-    if (!doc.value) return true; // 新增模式
+    if (!doc.value) return true;
     return doc.value.status === 0 || doc.value.status === 1;
   });
 
   const dialogTitle = computed(() => {
-    if (!doc.value) return '新建费用单';
+    if (!doc.value) {
+      if ((props.initDocType ?? 1) === 3 && (props.initIsFinal ?? 0) === 1) {
+        return '生成最终结算单';
+      }
+      return '新建费用单';
+    }
     return `费用单 ${doc.value.docNo}`;
   });
 
@@ -341,9 +305,7 @@
       form.payMethod = d.payMethod ?? undefined;
       form.plannedPayTime = d.plannedPayTime;
       form.remark = d.remark || '';
-      form.items = (d.items || []).map((it: TaskFinanceItem) => ({
-        ...it
-      }));
+      form.items = (d.items || []).map((it: TaskFinanceItem) => ({ ...it }));
       Object.assign(payee, {
         payeeType: d.payeeType,
         payeeId: d.payeeId,
@@ -421,40 +383,73 @@
     }
   };
 
-  const onSubmitFlow = async () => {
-    if (!props.docId) return;
+  // ============================================
+  // 语义化主按钮：根据当前状态确定主动作（提交审批 / 审批通过 / 标记已支付）
+  // ============================================
+  const primaryAction = computed(() =>
+    getPrimaryFinanceAction(doc.value?.status)
+  );
+  const secondaryActions = computed(() =>
+    getSecondaryFinanceActions(doc.value?.status)
+  );
+
+  const payDialogVisible = ref(false);
+
+  const triggerPrimary = async () => {
+    const act = primaryAction.value;
+    if (!act || !doc.value?.id) return;
+    if (act.dialog === 'pay') {
+      payDialogVisible.value = true;
+      return;
+    }
+    if (act.confirm) {
+      await runSimpleAction(act);
+    }
+  };
+
+  const triggerSecondary = async (act: FinanceActionConfig) => {
+    if (!doc.value?.id) return;
+    if (act.key === 'cancel') {
+      await runCancelAction();
+    }
+  };
+
+  const runSimpleAction = async (act: FinanceActionConfig) => {
+    if (!doc.value?.id) return;
+    const confirmMessages: Record<string, string> = {
+      submit: `确认提交费用单「${doc.value.docNo}」进行审批？`,
+      approve: `确认审批通过费用单「${doc.value.docNo}」？`
+    };
+    try {
+      await ElMessageBox.confirm(
+        confirmMessages[act.key] || `确认执行「${act.label}」？`,
+        '操作确认',
+        { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' }
+      );
+    } catch {
+      return;
+    }
     submitting.value = true;
     try {
-      const updated = await submitFinanceDoc(props.docId);
-      doc.value = updated;
-      EleMessage.success({ message: '已提交审批', plain: true });
+      let updated: TaskFinanceDoc | null = null;
+      if (act.key === 'submit') {
+        updated = await submitFinanceDoc(doc.value.id);
+      } else if (act.key === 'approve') {
+        updated = await approveFinanceDoc(doc.value.id);
+      }
+      if (updated) doc.value = updated;
+      EleMessage.success({ message: `${act.label}成功`, plain: true });
       emit('done');
     } catch (e: unknown) {
-      const msg = (e as { message?: string }).message || '操作失败';
+      const msg = (e as { message?: string }).message || `${act.label}失败`;
       EleMessage.error({ message: msg, plain: true });
     } finally {
       submitting.value = false;
     }
   };
 
-  const onApprove = async () => {
-    if (!props.docId) return;
-    submitting.value = true;
-    try {
-      const updated = await approveFinanceDoc(props.docId);
-      doc.value = updated;
-      EleMessage.success({ message: '审批通过', plain: true });
-      emit('done');
-    } catch (e: unknown) {
-      const msg = (e as { message?: string }).message || '操作失败';
-      EleMessage.error({ message: msg, plain: true });
-    } finally {
-      submitting.value = false;
-    }
-  };
-
-  const onCancel = async () => {
-    if (!props.docId) return;
+  const runCancelAction = async () => {
+    if (!doc.value?.id) return;
     try {
       const { value: reason } = await ElMessageBox.prompt(
         '请输入撤销原因（可选）',
@@ -462,7 +457,7 @@
         { confirmButtonText: '确定', cancelButtonText: '不撤销' }
       );
       submitting.value = true;
-      const updated = await cancelFinanceDoc(props.docId, reason || undefined);
+      const updated = await cancelFinanceDoc(doc.value.id, reason || undefined);
       doc.value = updated;
       EleMessage.success({ message: '已撤销', plain: true });
       emit('done');
@@ -476,55 +471,9 @@
     }
   };
 
-  // 标记已支付
-  const payDialogVisible = ref(false);
-  const payForm = reactive({
-    actualAmount: 0,
-    payMethod: 1,
-    actualPayTime: '',
-    payVoucherUrl: '',
-    remark: ''
-  });
-
-  const openPayDialog = () => {
-    if (!doc.value) return;
-    payForm.actualAmount = Number(doc.value.plannedAmount || 0);
-    payForm.payMethod = doc.value.payMethod || 1;
-    payForm.actualPayTime = new Date().toISOString().slice(0, 19);
-    payForm.payVoucherUrl = '';
-    payForm.remark = '';
-    payDialogVisible.value = true;
-  };
-
-  const onPay = async () => {
-    if (!props.docId) return;
-    if (!payForm.actualAmount || payForm.actualAmount <= 0) {
-      EleMessage.error({ message: '请填写实际金额', plain: true });
-      return;
-    }
-    if (!payForm.actualPayTime) {
-      EleMessage.error({ message: '请选择支付时间', plain: true });
-      return;
-    }
-    submitting.value = true;
-    try {
-      const updated = await payFinanceDoc(props.docId, {
-        actualAmount: payForm.actualAmount,
-        payMethod: payForm.payMethod,
-        actualPayTime: payForm.actualPayTime,
-        payVoucherUrl: payForm.payVoucherUrl || undefined,
-        remark: payForm.remark || undefined
-      });
-      doc.value = updated;
-      EleMessage.success({ message: '已支付', plain: true });
-      payDialogVisible.value = false;
-      emit('done');
-    } catch (e: unknown) {
-      const msg = (e as { message?: string }).message || '操作失败';
-      EleMessage.error({ message: msg, plain: true });
-    } finally {
-      submitting.value = false;
-    }
+  const onActionDone = async () => {
+    if (props.docId) await loadDetail(props.docId);
+    emit('done');
   };
 </script>
 
@@ -538,5 +487,6 @@
   .finance-edit__btns {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
   }
 </style>

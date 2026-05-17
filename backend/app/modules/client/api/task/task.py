@@ -25,6 +25,7 @@ from app.core.dependencies import (
 from app.core.security import TokenData
 from app.modules.client.schemas.task.task import (
     TaskAssignCarrierRequest,
+    TaskBatchStatusRequest,
     TaskCancelRequest,
     TaskCreate,
     TaskListItemOut,
@@ -114,6 +115,35 @@ async def check_task_no(
 ):
     available = await TaskService.check_task_no(db, taskNo, excludeId)
     return success(data={"available": available})
+
+
+@router.get("/workbench-stats")
+async def get_workbench_stats(
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """调度工作台 KPI 聚合：各状态计数 + 异常计数（逾期未派车 / 在途逾期）"""
+    stats = await TaskService.workbench_stats(db)
+    return success(data=stats)
+
+
+@router.post("/batch-status")
+@operation_log(module="运输任务单", action="批量状态变更", description="批量推进任务单状态")
+async def batch_update_status(
+    request: Request,
+    data: TaskBatchStatusRequest,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    payload = TaskStatusUpdate(
+        status=data.status,
+        actualLoadTime=data.actualLoadTime,
+        actualArriveTime=data.actualArriveTime,
+        remark=data.remark,
+    )
+    result = await TaskService.batch_update_status(db, data.ids, payload)
+    return success(data=result)
 
 
 @router.get("/candidate-waybills")

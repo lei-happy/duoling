@@ -548,3 +548,86 @@ class TaskService:
     ) -> bool:
         """返回 True = 可用（未被占用）"""
         return not (await TaskService.task_no_exists(db, task_no, exclude_id))
+
+    # ------------------------------------------------------------------
+    # 工作台聚合 + 批量操作
+    # ------------------------------------------------------------------
+    @staticmethod
+    async def workbench_stats(db: AsyncSession) -> dict:
+        """返回各状态计数 + 关键异常计数（用于调度工作台 KPI）"""
+        # 各状态计数
+        r = await db.execute(
+            select(Task.status, func.count(Task.id))
+            .where(Task.is_deleted == 0)
+            .group_by(Task.status)
+        )
+        status_counts: dict[int, int] = {int(s): int(c) for s, c in r.all()}
+
+        # 异常：计划装车时间已过但 status<1（待派车逾期）
+        now = datetime.now()
+        r_overdue_dispatch = await db.execute(
+            select(func.count(Task.id)).where(
+                Task.is_deleted == 0,
+                Task.status == 0,
+                Task.planned_load_time.isnot(None),
+                Task.planned_load_time < now,
+            )
+        )
+        overdue_dispatch = int(r_overdue_dispatch.scalar() or 0)
+
+        # 异常：计划到达时间已过但 status<4（在途逾期未到达）
+        r_overdue_arrive = await db.execute(
+            select(func.count(Task.id)).where(
+                Task.is_deleted == 0,
+                Task.status.in_([2, 3]),
+                Task.planned_arrive_time.isnot(None),
+                Task.planned_arrive_time < now,
+            )
+        )
+        overdue_arrive = int(r_overdue_arrive.scalar() or 0)
+
+        return {
+            "statusCounts": status_counts,
+            "totals": {
+                "pendingDispatch": status_counts.get(0, 0),
+                "pendingLoad": status_counts.get(1, 0),
+                "loading": status_counts.get(2, 0),
+                "onWay": status_counts.get(3, 0),
+                "arrived": status_counts.get(4, 0),
+                "pendingSign": status_counts.get(4, 0),
+                "signed": status_counts.get(5, 0),
+                "pendingSettle": status_counts.get(5, 0),
+                "settled": status_counts.get(6, 0),
+                "closed": status_counts.get(7, 0),
+                "cancelled": status_counts.get(9, 0),
+            },
+            "alerts": {
+                "overdueDispatch": overdue_dispatch,
+                "overdueArrive": overdue_arrive,
+            },
+        }
+
+    @staticmethod
+    async def batch_update_status(
+        db: AsyncSession,
+        ids: List[int],
+        data: TaskStatusUpdate,
+    ) -> dict:
+        """批量推进状态。
+        逐条复用 update_status；任一失败不阻塞其他，但收集失败原因返回。
+        """
+        if not ids:
+            return {"success": 0, "failed": 0, "failures": []}
+        success = 0
+        failures: List[dict] = []
+        for task_id in ids:
+            try:
+                await TaskService.update_status(db, int(task_id), data)
+                success += 1
+            except Exception as e:  # noqa: BLE001
+                failures.append({"id": int(task_id), "error": str(e)})
+        return {
+            "success": success,
+            "failed": len(failures),
+            "failures": failures,
+        }

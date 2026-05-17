@@ -100,3 +100,38 @@ export interface TaskFinanceDocParam extends PageParam {
   createdAtStart?: string;
   createdAtEnd?: string;
 }
+
+/** 费用工作台 KPI */
+export interface TaskFinanceWorkbenchStats {
+  statusCounts: Record<number, number>;
+  totals: {
+    draft: number;
+    pendingReview: number;
+    pendingPay: number;
+    paid: number;
+    cancelled: number;
+  };
+  amounts: {
+    pendingReviewAmount: number;
+    pendingPayAmount: number;
+    todayPaidAmount: number;
+  };
+}
+
+/** 批量动作请求 */
+export interface TaskFinanceBatchActionPayload {
+  ids: number[];
+  action: 'approve' | 'pay' | 'cancel' | 'submit';
+  actualAmount?: number;
+  payMethod?: number;
+  actualPayTime?: string;
+  payVoucherUrl?: string;
+  reason?: string;
+  remark?: string;
+}
+
+export interface TaskFinanceBatchActionResult {
+  success: number;
+  failed: number;
+  failures: Array<{ id: number; error: string }>;
+}

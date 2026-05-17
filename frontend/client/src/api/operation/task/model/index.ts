@@ -171,3 +171,41 @@ export interface TaskFinanceSummaryItem {
   plannedPayTime?: string;
   actualPayTime?: string;
 }
+
+/** 调度工作台 KPI 聚合 */
+export interface TaskWorkbenchStats {
+  statusCounts: Record<number, number>;
+  totals: {
+    pendingDispatch: number;
+    pendingLoad: number;
+    loading: number;
+    onWay: number;
+    arrived: number;
+    pendingSign: number;
+    signed: number;
+    pendingSettle: number;
+    settled: number;
+    closed: number;
+    cancelled: number;
+  };
+  alerts: {
+    overdueDispatch: number;
+    overdueArrive: number;
+  };
+}
+
+/** 批量状态推进请求 */
+export interface TaskBatchStatusPayload {
+  ids: number[];
+  status: number;
+  actualLoadTime?: string;
+  actualArriveTime?: string;
+  remark?: string;
+}
+
+/** 批量动作结果 */
+export interface BatchActionResult {
+  success: number;
+  failed: number;
+  failures: Array<{ id: number; error: string }>;
+}

@@ -17,6 +17,7 @@ from app.common.response import success
 from app.core.dependencies import get_current_user, get_tenant_db
 from app.core.security import TokenData
 from app.modules.client.schemas.task.task_finance_doc import (
+    TaskFinanceDocBatchActionRequest,
     TaskFinanceDocCancelRequest,
     TaskFinanceDocCreate,
     TaskFinanceDocListItem,
@@ -98,6 +99,52 @@ async def page_docs(
         "page": page,
         "page_size": page_size,
     })
+
+
+@router.get("/workbench-stats")
+async def get_workbench_stats(
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """费用工作台 KPI：草稿/待审批/待支付计数 + 待审批/待支付/今日已支付金额"""
+    stats = await TaskFinanceService.workbench_stats(db)
+    return success(data=stats)
+
+
+@router.post("/batch-action")
+@operation_log(module="任务单财务", action="批量动作", description="批量审批/支付/撤销/提交")
+async def batch_action(
+    request: Request,
+    data: TaskFinanceDocBatchActionRequest,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    pay_payload = None
+    if data.action == "pay":
+        if (
+            data.actualAmount is None
+            or data.payMethod is None
+            or data.actualPayTime is None
+        ):
+            from app.common.exceptions import BizException
+            raise BizException("批量支付必须传入 actualAmount / payMethod / actualPayTime")
+        pay_payload = TaskFinanceDocPayRequest(
+            actualAmount=data.actualAmount,
+            payMethod=data.payMethod,
+            actualPayTime=data.actualPayTime,
+            payVoucherUrl=data.payVoucherUrl,
+            remark=data.remark,
+        )
+    result = await TaskFinanceService.batch_action(
+        db,
+        ids=data.ids,
+        action=data.action,
+        current_user_id=current_user.user_id,
+        pay_payload=pay_payload,
+        cancel_reason=data.reason,
+    )
+    return success(data=result)
 
 
 @router.get("/by-task/{task_id}")

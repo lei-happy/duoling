@@ -60,6 +60,20 @@ class TaskFinanceDocCancelRequest(BaseModel):
     reason: Optional[str] = None
 
 
+class TaskFinanceDocBatchActionRequest(BaseModel):
+    """批量执行费用单动作（approve / pay / cancel / submit）"""
+    ids: List[int] = Field(min_length=1)
+    action: str = Field(description="approve | pay | cancel | submit")
+    # pay 才需要
+    actualAmount: Optional[float] = None
+    payMethod: Optional[int] = None
+    actualPayTime: Optional[datetime] = None
+    payVoucherUrl: Optional[str] = None
+    # cancel 才需要
+    reason: Optional[str] = None
+    remark: Optional[str] = None
+
+
 class TaskFinanceDocOut(BaseModel):
     id: int
     taskId: int

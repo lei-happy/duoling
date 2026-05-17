@@ -1,12 +1,15 @@
 import request from '@/utils/request';
 import type { ApiResult, PageResult } from '@/api';
 import type {
+  TaskFinanceBatchActionPayload,
+  TaskFinanceBatchActionResult,
   TaskFinanceDoc,
   TaskFinanceDocCreatePayload,
   TaskFinanceDocListItem,
   TaskFinanceDocParam,
   TaskFinanceDocPayPayload,
-  TaskFinanceDocUpdatePayload
+  TaskFinanceDocUpdatePayload,
+  TaskFinanceWorkbenchStats
 } from './model';
 
 export async function pageFinanceDocs(params: TaskFinanceDocParam) {
@@ -98,6 +101,27 @@ export async function cancelFinanceDoc(docId: number, reason?: string) {
   const res = await request.post<ApiResult<TaskFinanceDoc>>(
     `/business/task-finance/${docId}/cancel`,
     { reason }
+  );
+  if (res.data.code === 0) return res.data.data;
+  return Promise.reject(new Error(res.data.message));
+}
+
+// ============================
+// 费用工作台聚合 & 批量动作
+// ============================
+
+export async function getFinanceWorkbenchStats() {
+  const res = await request.get<ApiResult<TaskFinanceWorkbenchStats>>(
+    '/business/task-finance/workbench-stats'
+  );
+  if (res.data.code === 0) return res.data.data;
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function batchFinanceAction(data: TaskFinanceBatchActionPayload) {
+  const res = await request.post<ApiResult<TaskFinanceBatchActionResult>>(
+    '/business/task-finance/batch-action',
+    data
   );
   if (res.data.code === 0) return res.data.data;
   return Promise.reject(new Error(res.data.message));

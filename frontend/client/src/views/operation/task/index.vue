@@ -20,6 +20,17 @@
               { preset: 'add', title: '新增任务单', onClick: () => openEdit() }
             ]"
           />
+          <el-text type="info" size="small" style="margin-left: 12px">
+            常用作业请前往
+            <el-link
+              type="primary"
+              :underline="false"
+              @click="goWorkbench"
+            >
+              「调度工作台」
+            </el-link>
+            按状态批量处理
+          </el-text>
         </template>
 
         <template #carrierType="{ row }">
@@ -85,15 +96,36 @@
               编辑
             </el-link>
           </template>
+          <template v-if="getPrimaryAction(row)">
+            <el-divider direction="vertical" />
+            <el-link
+              :type="getPrimaryAction(row)!.buttonType as any"
+              :underline="false"
+              v-permission="getPrimaryAction(row)!.permission"
+              @click="triggerAction(row, getPrimaryAction(row)!)"
+            >
+              {{ getPrimaryAction(row)!.label }}
+            </el-link>
+          </template>
           <template v-if="canCancel(row)">
             <el-divider direction="vertical" />
-            <el-link type="warning" :underline="false" @click="cancelRow(row)">
+            <el-link
+              type="warning"
+              :underline="false"
+              v-permission="'operation:task:cancel'"
+              @click="cancelRow(row)"
+            >
               取消
             </el-link>
           </template>
           <template v-if="canDelete(row)">
             <el-divider direction="vertical" />
-            <el-link type="danger" :underline="false" @click="remove(row)">
+            <el-link
+              type="danger"
+              :underline="false"
+              v-permission="'operation:task:delete'"
+              @click="remove(row)"
+            >
               删除
             </el-link>
           </template>
@@ -107,11 +139,45 @@
       :task-id="detailTaskId"
       @done="reload"
     />
+
+    <!-- 行内主按钮触发的语义化弹窗 -->
+    <action-dispatch
+      v-model:visible="actionVisible.dispatch"
+      :task="actionTask"
+      @done="reload"
+    />
+    <action-confirm-load
+      v-model:visible="actionVisible['confirm-load']"
+      :tasks="actionTask ? [actionTask] : []"
+      @done="reload"
+    />
+    <action-confirm-arrive
+      v-model:visible="actionVisible['confirm-arrive']"
+      :tasks="actionTask ? [actionTask] : []"
+      @done="reload"
+    />
+    <action-confirm-sign
+      v-model:visible="actionVisible['confirm-sign']"
+      :tasks="actionTask ? [actionTask] : []"
+      @done="reload"
+    />
+
+    <!-- 生成结算单 → 直接打开费用单创建 -->
+    <finance-edit
+      v-if="actionTask"
+      v-model:visible="financeEditVisible"
+      :task="actionTask"
+      :doc-id="null"
+      :init-doc-type="3"
+      :init-is-final="1"
+      @done="reload"
+    />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
-  import { computed, ref, nextTick } from 'vue';
+  import { computed, ref, reactive, nextTick } from 'vue';
+  import { useRouter } from 'vue-router';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
@@ -123,12 +189,26 @@
   import TaskEdit from './components/task-edit.vue';
   import TaskDetail from './components/task-detail.vue';
   import TaskSearch from './components/task-search.vue';
-  import { pageTasks, removeTask, cancelTask } from '@/api/operation/task';
+  import ActionDispatch from '../task-workbench/components/action-dispatch.vue';
+  import ActionConfirmLoad from '../task-workbench/components/action-confirm-load.vue';
+  import ActionConfirmArrive from '../task-workbench/components/action-confirm-arrive.vue';
+  import ActionConfirmSign from '../task-workbench/components/action-confirm-sign.vue';
+  import FinanceEdit from '../task-finance/components/finance-edit.vue';
+  import {
+    pageTasks,
+    removeTask,
+    cancelTask,
+    updateTaskStatus
+  } from '@/api/operation/task';
   import type { Task, TaskParam } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
   import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from './status-config';
+  import { getPrimaryTaskAction } from './task-actions';
+  import type { TaskActionConfig } from './task-actions';
 
   defineOptions({ name: 'OperationTask' });
+
+  const router = useRouter();
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const selections = ref<Task[]>([]);
@@ -207,7 +287,7 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 200,
+      width: 260,
       align: 'center',
       fixed: 'right',
       slot: 'action'
@@ -254,6 +334,68 @@
   const openDetail = (row: Task) => {
     detailTaskId.value = row.id ?? null;
     detailVisible.value = true;
+  };
+
+  const goWorkbench = () => {
+    router.push('/operation/task-workbench');
+  };
+
+  // ============================================
+  // 行内语义化动作
+  // ============================================
+  const actionTask = ref<Task | null>(null);
+  const actionVisible = reactive({
+    dispatch: false,
+    'confirm-load': false,
+    'confirm-arrive': false,
+    'confirm-sign': false
+  });
+  const financeEditVisible = ref(false);
+
+  const getPrimaryAction = (row: Task): TaskActionConfig | null => {
+    return getPrimaryTaskAction(row.status);
+  };
+
+  const triggerAction = async (row: Task, act: TaskActionConfig) => {
+    actionTask.value = row;
+    if (act.dialog) {
+      actionVisible[act.dialog] = true;
+      return;
+    }
+    if (act.openSettlement) {
+      financeEditVisible.value = true;
+      return;
+    }
+    if (act.confirm) {
+      await runConfirmAction(row, act);
+    }
+  };
+
+  const runConfirmAction = async (row: Task, act: TaskActionConfig) => {
+    const confirmMessages: Record<string, string> = {
+      depart: `确认任务单「${row.taskNo}」已出发？将推进到「在途」状态。`,
+      close: `确认关闭任务单「${row.taskNo}」？关闭后不可再变更状态。`
+    };
+    try {
+      await ElMessageBox.confirm(
+        confirmMessages[act.key] || `确认执行「${act.label}」？`,
+        '操作确认',
+        { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' }
+      );
+    } catch {
+      return;
+    }
+    const targetStatus =
+      act.key === 'depart' ? 3 : act.key === 'close' ? 7 : null;
+    if (targetStatus === null || !row.id) return;
+    try {
+      await updateTaskStatus(row.id, { status: targetStatus });
+      EleMessage.success({ message: `${act.label}成功`, plain: true });
+      reload();
+    } catch (e: unknown) {
+      const msg = (e as { message?: string }).message || `${act.label}失败`;
+      EleMessage.error({ message: msg, plain: true });
+    }
   };
 
   const cancelRow = async (row: Task) => {

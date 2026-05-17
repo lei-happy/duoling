@@ -1,15 +1,18 @@
 import request from '@/utils/request';
 import type { ApiResult, PageResult } from '@/api';
 import type {
+  BatchActionResult,
   CandidateCargo,
   Task,
+  TaskBatchStatusPayload,
   TaskCarrierInfo,
   TaskCreatePayload,
   TaskFinanceSummaryItem,
   TaskParam,
   TaskSegment,
   TaskUpdatePayload,
-  TaskWaybillItem
+  TaskWaybillItem,
+  TaskWorkbenchStats
 } from './model';
 
 export async function pageTasks(params: TaskParam) {
@@ -219,5 +222,26 @@ export async function listTaskFinanceSummary(taskId: number) {
     `/business/task/${taskId}/finance-docs-summary`
   );
   if (res.data.code === 0) return res.data.data || [];
+  return Promise.reject(new Error(res.data.message));
+}
+
+// ============================
+// 调度工作台聚合 & 批量操作
+// ============================
+
+export async function getTaskWorkbenchStats() {
+  const res = await request.get<ApiResult<TaskWorkbenchStats>>(
+    '/business/task/workbench-stats'
+  );
+  if (res.data.code === 0) return res.data.data;
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function batchUpdateTaskStatus(data: TaskBatchStatusPayload) {
+  const res = await request.post<ApiResult<BatchActionResult>>(
+    '/business/task/batch-status',
+    data
+  );
+  if (res.data.code === 0) return res.data.data;
   return Promise.reject(new Error(res.data.message));
 }

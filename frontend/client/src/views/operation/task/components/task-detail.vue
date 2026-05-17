@@ -34,17 +34,30 @@
           </div>
           <div class="task-detail__actions">
             <el-button
-              v-if="canAdvance"
-              type="primary"
+              v-if="primaryAction"
+              :type="primaryAction.buttonType"
               size="small"
-              @click="openStatusMenu"
+              v-permission="primaryAction.permission"
+              @click="triggerAction(primaryAction)"
             >
-              推进状态
+              {{ primaryAction.label }}
+            </el-button>
+            <el-button
+              v-for="act in secondaryActions"
+              :key="act.key"
+              :type="act.buttonType"
+              size="small"
+              plain
+              v-permission="act.permission"
+              @click="triggerAction(act)"
+            >
+              {{ act.label }}
             </el-button>
             <el-button
               type="success"
               size="small"
               :icon="Plus"
+              v-permission="'operation:task-finance:add'"
               @click="openFinanceEdit(null)"
             >
               新建费用单
@@ -226,57 +239,27 @@
       </template>
     </div>
 
-    <!-- 状态推进抽屉 -->
-    <el-dialog
-      v-model="statusDialogVisible"
-      title="推进任务单状态"
-      width="420px"
-      destroy-on-close
-    >
-      <el-form :model="statusForm" label-width="100px">
-        <el-form-item label="目标状态">
-          <el-select v-model="statusForm.status" style="width: 100%">
-            <el-option
-              v-for="o in nextStatusOptions"
-              :key="o.value"
-              :value="o.value"
-              :label="o.label"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item
-          v-if="statusForm.status === 2 || statusForm.status === 3"
-          label="实际装车"
-        >
-          <el-date-picker
-            v-model="statusForm.actualLoadTime"
-            type="datetime"
-            value-format="YYYY-MM-DDTHH:mm:ss"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item
-          v-if="statusForm.status === 4 || statusForm.status === 5"
-          label="实际到达"
-        >
-          <el-date-picker
-            v-model="statusForm.actualArriveTime"
-            type="datetime"
-            value-format="YYYY-MM-DDTHH:mm:ss"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="statusForm.remark" type="textarea" :rows="2" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="statusDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="advancing" @click="advanceStatus">
-          确定
-        </el-button>
-      </template>
-    </el-dialog>
+    <!-- 语义化动作弹窗 -->
+    <action-dispatch
+      v-model:visible="actionVisible.dispatch"
+      :task="task"
+      @done="onActionDone"
+    />
+    <action-confirm-load
+      v-model:visible="actionVisible['confirm-load']"
+      :tasks="task ? [task] : []"
+      @done="onActionDone"
+    />
+    <action-confirm-arrive
+      v-model:visible="actionVisible['confirm-arrive']"
+      :tasks="task ? [task] : []"
+      @done="onActionDone"
+    />
+    <action-confirm-sign
+      v-model:visible="actionVisible['confirm-sign']"
+      :tasks="task ? [task] : []"
+      @done="onActionDone"
+    />
 
     <!-- 费用单创建/编辑 -->
     <finance-edit
@@ -284,6 +267,8 @@
       v-model:visible="financeEditVisible"
       :task="task"
       :doc-id="editingFinanceId"
+      :init-doc-type="financeInitDocType"
+      :init-is-final="financeInitIsFinal"
       @done="onFinanceDone"
     />
   </el-drawer>
@@ -291,6 +276,7 @@
 
 <script lang="ts" setup>
   import { computed, reactive, ref, watch } from 'vue';
+  import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import { Plus } from '@element-plus/icons-vue';
   import {
@@ -308,7 +294,16 @@
   } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
   import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from '../status-config';
+  import {
+    getPrimaryTaskAction,
+    getSecondaryTaskActions
+  } from '../task-actions';
+  import type { TaskActionConfig } from '../task-actions';
   import FinanceEdit from '../../task-finance/components/finance-edit.vue';
+  import ActionDispatch from '../../task-workbench/components/action-dispatch.vue';
+  import ActionConfirmLoad from '../../task-workbench/components/action-confirm-load.vue';
+  import ActionConfirmArrive from '../../task-workbench/components/action-confirm-arrive.vue';
+  import ActionConfirmSign from '../../task-workbench/components/action-confirm-sign.vue';
 
   const props = defineProps<{ visible: boolean; taskId: number | null }>();
   const emit = defineEmits<{
@@ -400,76 +395,94 @@
     return map[s] ?? 0;
   });
 
-  // 状态推进
-  const STATUS_TRANSITIONS: Record<number, number[]> = {
-    0: [1, 9],
-    1: [0, 2, 9],
-    2: [3, 9],
-    3: [4],
-    4: [5],
-    5: [6, 7],
-    6: [7]
-  };
+  // ============================================
+  // 语义化动作
+  // ============================================
+  const primaryAction = computed(() => getPrimaryTaskAction(task.value?.status));
+  const secondaryActions = computed(() =>
+    getSecondaryTaskActions(task.value?.status)
+  );
 
-  const nextStatusOptions = computed(() => {
-    const cur = task.value?.status ?? 0;
-    const allowed = STATUS_TRANSITIONS[cur] || [];
-    return allowed.map((v) => ({
-      value: v,
-      label: TASK_STATUS_MAP[v]?.label || `状态${v}`
-    }));
+  const actionVisible = reactive({
+    dispatch: false,
+    'confirm-load': false,
+    'confirm-arrive': false,
+    'confirm-sign': false
   });
 
-  const canAdvance = computed(() => nextStatusOptions.value.length > 0);
+  const financeInitDocType = ref<number | undefined>(undefined);
+  const financeInitIsFinal = ref<number | undefined>(undefined);
 
-  const statusDialogVisible = ref(false);
-  const advancing = ref(false);
-  const statusForm = reactive({
-    status: 1,
-    actualLoadTime: undefined as string | undefined,
-    actualArriveTime: undefined as string | undefined,
-    remark: ''
-  });
-
-  const openStatusMenu = () => {
-    if (!nextStatusOptions.value.length) return;
-    statusForm.status = nextStatusOptions.value[0].value;
-    statusForm.actualLoadTime = undefined;
-    statusForm.actualArriveTime = undefined;
-    statusForm.remark = '';
-    statusDialogVisible.value = true;
-  };
-
-  const advanceStatus = async () => {
+  const triggerAction = async (act: TaskActionConfig) => {
     if (!task.value?.id) return;
-    advancing.value = true;
-    try {
-      const updated = await updateTaskStatus(task.value.id, {
-        status: statusForm.status,
-        actualLoadTime: statusForm.actualLoadTime,
-        actualArriveTime: statusForm.actualArriveTime,
-        remark: statusForm.remark || undefined
-      });
-      task.value = updated;
-      EleMessage.success({ message: '已更新状态', plain: true });
-      statusDialogVisible.value = false;
-      emit('done');
-    } catch (e: unknown) {
-      const msg = (e as { message?: string }).message || '更新失败';
-      EleMessage.error({ message: msg, plain: true });
-    } finally {
-      advancing.value = false;
+    if (act.dialog) {
+      actionVisible[act.dialog] = true;
+      return;
+    }
+    if (act.openSettlement) {
+      // 生成结算单 → 打开费用单创建并预填类型=结算单 + is_final=1
+      financeInitDocType.value = 3;
+      financeInitIsFinal.value = 1;
+      editingFinanceId.value = null;
+      financeEditVisible.value = true;
+      return;
+    }
+    if (act.confirm) {
+      await runConfirmAction(act);
     }
   };
 
+  const runConfirmAction = async (act: TaskActionConfig) => {
+    if (!task.value?.id) return;
+    const confirmMessages: Record<string, string> = {
+      depart: `确认任务单「${task.value.taskNo}」已出发？将推进到「在途」状态。`,
+      close: `确认关闭任务单「${task.value.taskNo}」？关闭后不可再变更状态。`
+    };
+    try {
+      await ElMessageBox.confirm(
+        confirmMessages[act.key] || `确认执行「${act.label}」？`,
+        '操作确认',
+        { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' }
+      );
+    } catch {
+      return;
+    }
+    const targetStatus =
+      act.key === 'depart' ? 3 : act.key === 'close' ? 7 : null;
+    if (targetStatus === null) return;
+    try {
+      const updated = await updateTaskStatus(task.value.id, {
+        status: targetStatus
+      });
+      task.value = updated;
+      EleMessage.success({ message: `${act.label}成功`, plain: true });
+      await reload();
+      emit('done');
+    } catch (e: unknown) {
+      const msg = (e as { message?: string }).message || `${act.label}失败`;
+      EleMessage.error({ message: msg, plain: true });
+    }
+  };
+
+  const reload = async () => {
+    if (task.value?.id) await load(task.value.id);
+  };
+
+  const onActionDone = async () => {
+    await reload();
+    emit('done');
+  };
+
+  // ============================================
   // 费用单创建/编辑
+  // ============================================
   const financeEditVisible = ref(false);
   const editingFinanceId = ref<number | null>(null);
 
-  const openFinanceEdit = (
-    row: TaskFinanceSummaryItem | null
-  ) => {
+  const openFinanceEdit = (row: TaskFinanceSummaryItem | null) => {
     editingFinanceId.value = row?.id ?? null;
+    financeInitDocType.value = undefined;
+    financeInitIsFinal.value = undefined;
     financeEditVisible.value = true;
   };
 
@@ -501,6 +514,8 @@
     &__actions {
       display: flex;
       gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
     &__steps {
       margin: 8px 0 16px;

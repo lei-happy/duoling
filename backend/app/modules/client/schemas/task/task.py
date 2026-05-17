@@ -108,6 +108,15 @@ class TaskCancelRequest(BaseModel):
     reason: Optional[str] = None
 
 
+class TaskBatchStatusRequest(BaseModel):
+    """批量推进任务单状态"""
+    ids: List[int] = Field(min_length=1)
+    status: int = Field(ge=0, le=9)
+    actualLoadTime: Optional[datetime] = None
+    actualArriveTime: Optional[datetime] = None
+    remark: Optional[str] = None
+
+
 class TaskListItemOut(BaseModel):
     """列表行（不含 segments / items 详情）"""
     id: int

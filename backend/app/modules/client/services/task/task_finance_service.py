@@ -605,3 +605,119 @@ class TaskFinanceService:
             ).offset(offset).limit(page_size)
         )
         return list(r.scalars().all()), total
+
+    # ------------------------------------------------------------------
+    # 工作台聚合 + 批量动作
+    # ------------------------------------------------------------------
+    @staticmethod
+    async def workbench_stats(db: AsyncSession) -> dict:
+        """返回各状态计数 + 待审批/待支付金额合计 + 今日已支付金额"""
+        # 各状态计数
+        r = await db.execute(
+            select(TaskFinanceDoc.status, func.count(TaskFinanceDoc.id))
+            .where(TaskFinanceDoc.is_deleted == 0)
+            .group_by(TaskFinanceDoc.status)
+        )
+        status_counts: dict[int, int] = {int(s): int(c) for s, c in r.all()}
+
+        # 待审批合计（status=1，按 planned_amount）
+        r_pending_review = await db.execute(
+            select(func.coalesce(func.sum(TaskFinanceDoc.planned_amount), 0))
+            .where(
+                TaskFinanceDoc.is_deleted == 0,
+                TaskFinanceDoc.status == 1,
+            )
+        )
+        pending_review_amt = float(r_pending_review.scalar() or 0)
+
+        # 待支付合计（status=2，按 planned_amount）
+        r_pending_pay = await db.execute(
+            select(func.coalesce(func.sum(TaskFinanceDoc.planned_amount), 0))
+            .where(
+                TaskFinanceDoc.is_deleted == 0,
+                TaskFinanceDoc.status == 2,
+            )
+        )
+        pending_pay_amt = float(r_pending_pay.scalar() or 0)
+
+        # 今日已支付合计（status=3 且 actual_pay_time 在今日）
+        today = ddate.today()
+        today_start = datetime.combine(today, dtime.min)
+        today_end = datetime.combine(today, dtime.max)
+        r_today_paid = await db.execute(
+            select(func.coalesce(func.sum(TaskFinanceDoc.actual_amount), 0))
+            .where(
+                TaskFinanceDoc.is_deleted == 0,
+                TaskFinanceDoc.status == 3,
+                TaskFinanceDoc.actual_pay_time >= today_start,
+                TaskFinanceDoc.actual_pay_time <= today_end,
+            )
+        )
+        today_paid_amt = float(r_today_paid.scalar() or 0)
+
+        return {
+            "statusCounts": status_counts,
+            "totals": {
+                "draft": status_counts.get(0, 0),
+                "pendingReview": status_counts.get(1, 0),
+                "pendingPay": status_counts.get(2, 0),
+                "paid": status_counts.get(3, 0),
+                "cancelled": status_counts.get(4, 0),
+            },
+            "amounts": {
+                "pendingReviewAmount": pending_review_amt,
+                "pendingPayAmount": pending_pay_amt,
+                "todayPaidAmount": today_paid_amt,
+            },
+        }
+
+    @staticmethod
+    async def batch_action(
+        db: AsyncSession,
+        ids: List[int],
+        action: str,
+        current_user_id: Optional[int] = None,
+        pay_payload: Optional[TaskFinanceDocPayRequest] = None,
+        cancel_reason: Optional[str] = None,
+    ) -> dict:
+        """批量执行 approve / pay / cancel / submit。
+        - approve: 1 → 2
+        - pay   : 2 → 3 （需要 pay_payload）
+        - cancel: 0/1/2 → 4
+        - submit: 0 → 1
+        """
+        if action not in ("approve", "pay", "cancel", "submit"):
+            raise BizException(f"非法批量动作: {action}")
+        if action == "pay" and pay_payload is None:
+            raise BizException("批量支付需要 pay 详情")
+
+        success = 0
+        failures: List[dict] = []
+        for doc_id in ids:
+            try:
+                if action == "submit":
+                    await TaskFinanceService.submit_doc(
+                        db, int(doc_id), current_user_id
+                    )
+                elif action == "approve":
+                    await TaskFinanceService.approve_doc(
+                        db, int(doc_id), current_user_id
+                    )
+                elif action == "pay":
+                    await TaskFinanceService.pay_doc(
+                        db, int(doc_id), pay_payload, current_user_id
+                    )
+                elif action == "cancel":
+                    await TaskFinanceService.cancel_doc(
+                        db,
+                        int(doc_id),
+                        TaskFinanceDocCancelRequest(reason=cancel_reason),
+                    )
+                success += 1
+            except Exception as e:  # noqa: BLE001
+                failures.append({"id": int(doc_id), "error": str(e)})
+        return {
+            "success": success,
+            "failed": len(failures),
+            "failures": failures,
+        }
