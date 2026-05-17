@@ -15,7 +15,18 @@
     <template #header>
       <div class="wcd-header">
         <div class="wcd-header__title">商品车明细</div>
-        <div v-if="waybillNo" class="wcd-header__sub">{{ waybillNo }}</div>
+        <div v-if="waybillNo" class="wcd-header__sub-row">
+          <span class="wcd-header__sub">{{ waybillNo }}</span>
+          <el-button
+            v-if="canCopyWaybillNo"
+            type="primary"
+            link
+            class="wcd-header__copy"
+            :icon="DocumentCopy"
+            aria-label="复制运单号"
+            @click.stop="copyWaybillNo"
+          />
+        </div>
       </div>
     </template>
 
@@ -23,9 +34,7 @@
       <div class="wcd-summary">
         <div class="wcd-summary__customer">
           <el-icon class="wcd-summary__icon"><User /></el-icon>
-          <span class="wcd-summary__customer-text">{{
-            customerDisplay
-          }}</span>
+          <span class="wcd-summary__customer-text">{{ customerDisplay }}</span>
         </div>
         <div class="wcd-summary__route">
           <span class="wcd-route-chip wcd-route-chip--from">
@@ -39,19 +48,17 @@
           </span>
         </div>
         <div class="wcd-summary__meta">
-          <span class="wcd-pill">
-            共 {{ totalUnits }} 台
-          </span>
+          <span class="wcd-pill"> 共 {{ totalUnits }} 台 </span>
         </div>
       </div>
 
-      <el-scrollbar v-if="displayRows.length" max-height="420px" class="wcd-scroll">
+      <el-scrollbar
+        v-if="displayRows.length"
+        max-height="420px"
+        class="wcd-scroll"
+      >
         <ul class="wcd-list">
-          <li
-            v-for="(row, idx) in displayRows"
-            :key="idx"
-            class="wcd-card"
-          >
+          <li v-for="(row, idx) in displayRows" :key="idx" class="wcd-card">
             <div class="wcd-card__thumb">
               <el-image
                 v-if="imageSrc(row)"
@@ -104,8 +111,14 @@
 
 <script lang="ts" setup>
   import { computed } from 'vue';
-  import { Location, Van, User, Picture } from '@element-plus/icons-vue';
+  import {
+    DocumentCopy,
+    Location,
+    User,
+    Picture
+  } from '@element-plus/icons-vue';
   import type { Waybill } from '@/api/waybill/model';
+  import { EleMessage } from 'ele-admin-plus';
 
   defineOptions({ name: 'WaybillCargoesDetail' });
 
@@ -123,6 +136,39 @@
   };
 
   const waybillNo = computed(() => props.waybill?.waybillNo?.trim() || '');
+
+  /** 汇总类副标题不展示复制（如「N 张运单」「任务 xxx」） */
+  const canCopyWaybillNo = computed(() => {
+    const t = waybillNo.value;
+    if (!t) return false;
+    if (t.includes('张运单') || t.startsWith('任务')) return false;
+    return true;
+  });
+
+  const copyWaybillNo = async () => {
+    const t = waybillNo.value;
+    if (!t) {
+      EleMessage.warning({ message: '无可复制的运单号', plain: true });
+      return;
+    }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(t);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = t;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      EleMessage.success({ message: '已复制运单号', plain: true });
+    } catch {
+      EleMessage.error({ message: '复制失败', plain: true });
+    }
+  };
 
   const customerDisplay = computed(() => {
     const n = props.waybill?.customerName?.trim();
@@ -211,11 +257,24 @@
     color: var(--el-text-color-primary);
   }
 
-  .wcd-header__sub {
+  .wcd-header__sub-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin-top: 4px;
+    flex-wrap: wrap;
+  }
+
+  .wcd-header__sub {
     font-size: 13px;
     color: var(--el-text-color-secondary);
     font-family: ui-monospace, monospace;
+  }
+
+  .wcd-header__copy {
+    padding: 0 4px;
+    min-height: auto;
+    font-size: 16px;
   }
 
   .wcd-body {
@@ -335,7 +394,9 @@
     border: 1px solid var(--el-border-color-lighter);
     background: var(--el-bg-color);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
   }
 
   .wcd-card:hover {

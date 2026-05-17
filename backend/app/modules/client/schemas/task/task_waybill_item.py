@@ -1,9 +1,11 @@
 """任务单-运单货物挂接 Schemas"""
 
 from datetime import datetime
-from typing import Optional
+from typing import Mapping, Optional
 
 from pydantic import BaseModel, Field
+
+from app.modules.client.schemas.waybill.waybill import waybill_brand_model_key
 
 
 class TaskWaybillItemIn(BaseModel):
@@ -39,6 +41,10 @@ class TaskWaybillItemOut(BaseModel):
     vehicleBrand: Optional[str] = None
     vehicleModel: Optional[str] = None
     dealerName: Optional[str] = None
+    seriesImage: Optional[str] = Field(
+        default=None,
+        description="车系图（列表/明细由品牌+车型匹配 biz_vehicle_series，与运单侧一致）",
+    )
     quantity: int
     segmentId: Optional[int] = None
     status: int
@@ -51,7 +57,17 @@ class TaskWaybillItemOut(BaseModel):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_model(cls, m) -> "TaskWaybillItemOut":
+    def from_model(
+        cls,
+        m,
+        *,
+        series_lookup: Optional[Mapping[str, Optional[str]]] = None,
+    ) -> "TaskWaybillItemOut":
+        series_image = None
+        if series_lookup is not None:
+            series_image = series_lookup.get(
+                waybill_brand_model_key(m.vehicle_brand, m.vehicle_model)
+            )
         return cls(
             id=m.id,
             taskId=m.task_id,
@@ -63,6 +79,7 @@ class TaskWaybillItemOut(BaseModel):
             vehicleBrand=m.vehicle_brand,
             vehicleModel=m.vehicle_model,
             dealerName=m.dealer_name,
+            seriesImage=series_image,
             quantity=m.quantity,
             segmentId=m.segment_id,
             status=m.status,

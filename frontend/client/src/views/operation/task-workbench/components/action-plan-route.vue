@@ -30,11 +30,7 @@
 
     <template #footer>
       <el-button @click="emit('update:visible', false)">取消</el-button>
-      <el-button
-        type="primary"
-        :loading="submitting"
-        @click="submit"
-      >
+      <el-button type="primary" :loading="submitting" @click="submit">
         保存路线
       </el-button>
     </template>

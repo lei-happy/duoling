@@ -201,6 +201,7 @@
   import {
     addTask,
     assignCarrier,
+    completeCarrierAssignment,
     getTask,
     planTaskRoute,
     updateTask
@@ -307,7 +308,7 @@
 
   /** 编辑场景下 submit 按钮 label 跟随当前 Tab 语义 */
   const submitLabel = computed(() => {
-    if (!isEdit.value) return '保存为待派车';
+    if (!isEdit.value) return '保存为待分配';
     switch (activeTab.value) {
       case 'cargo':
         return '保存商品车';
@@ -435,6 +436,28 @@
     return true;
   }
 
+  function validateCarrierAssignmentTab(): boolean {
+    const c = form.carrier!;
+    if (c.carrierType === 2) {
+      if (!c.carrierId && !c.carrierName?.trim()) {
+        EleMessage.error({
+          message: '请选择承运商或填写承运商名称',
+          plain: true
+        });
+        return false;
+      }
+    } else if (c.carrierType === 3) {
+      if (!c.mainDriverName || !c.mainDriverPhone || !c.plateNumber) {
+        EleMessage.error({
+          message: '社会运力需填写司机姓名/电话/车牌',
+          plain: true
+        });
+        return false;
+      }
+    }
+    return true;
+  }
+
   function validateCarrierTab(): boolean {
     const c = form.carrier!;
     if (c.carrierType === 1) {
@@ -530,7 +553,7 @@
     }
   };
 
-  /** 新建：仅必填商品车，作为「待派车」配载草稿落库 */
+  /** 新建：仅必填商品车，作为「待分配」配载草稿落库 */
   const submitCreate = async () => {
     if (!validateCargoTab()) return;
     saveLoading.value = true;
@@ -543,7 +566,8 @@
         carrier: undefined
       } as TaskCreatePayload);
       EleMessage.success({
-        message: '已创建配载草稿（待派车），可在列表点「派车」继续',
+        message:
+          '已创建配载草稿（待分配），请在调度工作台「待分配」池点「分配承运」',
         plain: true
       });
       emit('done');
@@ -569,6 +593,18 @@
           EleMessage.success({ message: '商品车已保存', plain: true });
           break;
         case 'carrier':
+          if (props.data?.status === -1) {
+            if (!validateCarrierAssignmentTab()) return;
+            await completeCarrierAssignment(
+              id,
+              cleanCarrier(form.carrier) as TaskCarrierInfo
+            );
+            EleMessage.success({
+              message: '已确认承运分配，任务已进入待派车',
+              plain: true
+            });
+            break;
+          }
           if (!validateCarrierTab()) return;
           await assignCarrier(id, {
             carrier: cleanCarrier(form.carrier) as TaskCarrierInfo

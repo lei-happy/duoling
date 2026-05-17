@@ -169,6 +169,14 @@ export interface TaskParam extends PageParam {
   destinationKeyword?: string;
   createdAtStart?: string;
   createdAtEnd?: string;
+  /** 工作台：仅计划装车已逾期（待分配/待派车，配合 status=-1|0） */
+  onlyOverdue?: boolean;
+  /** 工作台：仅「正常」子集（与 onlyOverdue 互斥；待分配/待派车为计划装车未逾期） */
+  onlyNormal?: boolean;
+  /** 工作台：在途逾期（已装车/在途且计划到货已过，勿传 status 或与后端约定忽略） */
+  inTransitOverdue?: boolean;
+  /** 工作台：在途正常（status∈{2,3} 且计划到货未触发逾期） */
+  inTransitOnlyNormal?: boolean;
 }
 
 export interface TaskFinanceSummaryItem {
@@ -190,6 +198,7 @@ export interface TaskFinanceSummaryItem {
 export interface TaskWorkbenchStats {
   statusCounts: Record<number, number>;
   totals: {
+    pendingAssign: number;
     pendingDispatch: number;
     pendingLoad: number;
     loading: number;
@@ -203,8 +212,13 @@ export interface TaskWorkbenchStats {
     cancelled: number;
   };
   alerts: {
+    overdueAssignment: number;
     overdueDispatch: number;
     overdueArrive: number;
+    /** 待装车 / 待签收 / 待结算 预警数（占位，规则接入后由后端统计） */
+    pendingLoadAlert?: number;
+    pendingSignAlert?: number;
+    pendingSettleAlert?: number;
   };
 }
 

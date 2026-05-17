@@ -88,6 +88,7 @@
           finish-status="success"
           class="task-detail__steps"
         >
+          <el-step title="待分配" />
           <el-step title="待派车" />
           <el-step title="已派车" />
           <el-step title="已装车" />
@@ -255,6 +256,11 @@
     </div>
 
     <!-- 语义化动作弹窗 -->
+    <action-assign-carrier
+      v-model:visible="actionVisible['assign-carrier']"
+      :task="task"
+      @done="onActionDone"
+    />
     <action-dispatch
       v-model:visible="actionVisible.dispatch"
       :task="task"
@@ -322,6 +328,7 @@
   } from '../task-actions';
   import type { TaskActionConfig } from '../task-actions';
   import FinanceEdit from '../../task-finance/components/finance-edit.vue';
+  import ActionAssignCarrier from '../../task-workbench/components/action-assign-carrier.vue';
   import ActionDispatch from '../../task-workbench/components/action-dispatch.vue';
   import ActionPlanRoute from '../../task-workbench/components/action-plan-route.vue';
   import ActionConfirmLoad from '../../task-workbench/components/action-confirm-load.vue';
@@ -406,14 +413,15 @@
     const s = task.value?.status ?? 0;
     if (s === 9) return 0;
     const map: Record<number, number> = {
-      0: 0,
-      1: 1,
-      2: 2,
-      3: 3,
-      4: 4,
-      5: 5,
-      6: 6,
-      7: 7
+      [-1]: 0,
+      0: 1,
+      1: 2,
+      2: 3,
+      3: 4,
+      4: 5,
+      5: 6,
+      6: 7,
+      7: 8
     };
     return map[s] ?? 0;
   });
@@ -427,6 +435,7 @@
   );
 
   const actionVisible = reactive({
+    'assign-carrier': false,
     dispatch: false,
     'plan-route': false,
     'confirm-load': false,

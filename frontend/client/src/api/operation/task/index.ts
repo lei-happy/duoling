@@ -104,6 +104,19 @@ export async function assignCarrier(
   return Promise.reject(new Error(res.data.message));
 }
 
+/** 待分配 → 待派车：确认承运方式（不要求等同派车的完整运力） */
+export async function completeCarrierAssignment(
+  id: number,
+  data: TaskCarrierInfo
+) {
+  const res = await request.post<ApiResult<Task>>(
+    `/business/task/${id}/complete-carrier-assignment`,
+    data
+  );
+  if (res.data.code === 0) return res.data.data;
+  return Promise.reject(new Error(res.data.message));
+}
+
 /**
  * 规划任务单运输路线（补齐 / 重做分段，独立于派车）
  *

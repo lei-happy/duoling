@@ -11,15 +11,15 @@
       <kpi-cards
         :stats="stats"
         :loading="statsLoading"
-        :active-card-key="selectedCardKey"
+        :active-card-key="activeKpiCardKey"
         @select-card="onSelectCard"
       />
 
       <task-pool
         v-if="currentTab"
-        :tab-key="currentTab.key"
-        :status="currentTab.status"
-        :primary-action-key="currentTab.actionKey"
+        :key="`${activeTab}-${listSubset}`"
+        :tab-key="activeTab"
+        :list-subset="listSubset"
         :reload-token="reloadToken"
         @action="onRowAction"
         @batch-action="onBatchAction"
@@ -35,59 +35,26 @@
       @done="reloadAll"
     />
 
-    <!-- 语义化动作弹窗 -->
-    <action-dispatch
-      v-model:visible="actionVisible.dispatch"
-      :task="actionSingleTask"
-      @done="onDispatchDone"
-    />
-    <action-plan-route
-      v-model:visible="actionVisible['plan-route']"
-      :task="actionSingleTask"
+    <workbench-action-modals
+      v-model:action-dialog="openActionDialog"
+      v-model:finance-visible="financeEditVisible"
+      :targets="actionTargets"
       @done="reloadAll"
-    />
-    <action-confirm-load
-      v-model:visible="actionVisible['confirm-load']"
-      :tasks="actionTargets"
-      @done="reloadAll"
-    />
-    <action-confirm-arrive
-      v-model:visible="actionVisible['confirm-arrive']"
-      :tasks="actionTargets"
-      @done="reloadAll"
-    />
-    <action-confirm-sign
-      v-model:visible="actionVisible['confirm-sign']"
-      :tasks="actionTargets"
-      @done="reloadAll"
-    />
-
-    <!-- 生成结算单（5 → 6） -->
-    <finance-edit
-      v-if="actionSingleTask"
-      v-model:visible="financeEditVisible"
-      :task="actionSingleTask"
-      :doc-id="null"
-      :init-doc-type="3"
-      :init-is-final="1"
-      @done="reloadAll"
+      @dispatch-done="onDispatchDone"
     />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
-  import { computed, onActivated, onMounted, reactive, ref, watch } from 'vue';
+  import { computed, onActivated, onMounted, ref, watch } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import KpiCards from './components/kpi-cards.vue';
   import TaskPool from './components/task-pool.vue';
-  import ActionDispatch from './components/action-dispatch.vue';
-  import ActionPlanRoute from './components/action-plan-route.vue';
-  import ActionConfirmLoad from './components/action-confirm-load.vue';
-  import ActionConfirmArrive from './components/action-confirm-arrive.vue';
-  import ActionConfirmSign from './components/action-confirm-sign.vue';
+  import WorkbenchActionModals from './components/workbench-action-modals.vue';
   import TaskDetail from '../task/components/task-detail.vue';
-  import FinanceEdit from '../task-finance/components/finance-edit.vue';
+  import { WORKBENCH_POOLS, getWorkbenchPool } from './workbench-pool-registry';
+  import type { WorkbenchPool } from './workbench-pool-registry';
   import {
     batchUpdateTaskStatus,
     getTask,
@@ -95,57 +62,27 @@
     updateTaskStatus
   } from '@/api/operation/task';
   import type { Task, TaskWorkbenchStats } from '@/api/operation/task/model';
-  import type { TaskActionConfig, TaskActionKey } from '../task/task-actions';
+  import type { TaskActionConfig } from '../task/task-actions';
+
+  type WorkbenchListSubset = 'all' | 'normal' | 'alert';
 
   defineOptions({ name: 'OperationTaskWorkbench' });
 
-  interface TabConfig {
-    key: string;
-    label: string;
-    status: number | number[];
-    actionKey: TaskActionKey | null;
-  }
-
-  const TABS: TabConfig[] = [
-    {
-      key: 'pending-dispatch',
-      label: '待派车',
-      status: 0,
-      actionKey: 'dispatch'
-    },
-    {
-      key: 'pending-load',
-      label: '待装车',
-      status: 1,
-      actionKey: 'confirm-load'
-    },
-    {
-      key: 'on-way',
-      label: '在途中',
-      status: [2, 3],
-      actionKey: 'confirm-arrive'
-    },
-    {
-      key: 'pending-sign',
-      label: '待签收',
-      status: 4,
-      actionKey: 'confirm-sign'
-    },
-    {
-      key: 'pending-settle',
-      label: '待结算',
-      status: 5,
-      actionKey: 'create-settlement'
-    }
-  ];
-
-  const activeTab = ref<string>(TABS[0].key);
-  /** 与 KPI 卡片一一对应，用于选中态（含「逾期未派车」「在途逾期」与主状态卡同筛但不同卡） */
-  const selectedCardKey = ref<string>('pending-dispatch');
+  const activeTab = ref<string>(WORKBENCH_POOLS[0]!.key);
+  /** 与 KPI 卡片 key 一致（pending-assign、on-way 等） */
+  const selectedPoolKey = ref<string>(WORKBENCH_POOLS[0]!.key);
+  /** KPI：全部 / 正常(常) / 预警(警) */
+  const listSubset = ref<WorkbenchListSubset>('all');
   const reloadToken = ref(0);
 
-  const currentTab = computed<TabConfig | undefined>(() =>
-    TABS.find((t) => t.key === activeTab.value)
+  const activeKpiCardKey = computed(() =>
+    listSubset.value === 'all'
+      ? selectedPoolKey.value
+      : `${selectedPoolKey.value}:${listSubset.value}`
+  );
+
+  const currentTab = computed<WorkbenchPool | undefined>(() =>
+    getWorkbenchPool(activeTab.value)
   );
 
   // ============================================
@@ -157,7 +94,7 @@
   const loadStats = async () => {
     statsLoading.value = true;
     try {
-      stats.value = await getTaskWorkbenchStats();
+      stats.value = (await getTaskWorkbenchStats()) ?? null;
     } catch (e: unknown) {
       const msg = (e as { message?: string }).message;
       if (msg) EleMessage.error({ message: msg, plain: true });
@@ -169,10 +106,12 @@
   const onSelectCard = (payload: {
     cardKey: string;
     status: number | number[];
+    subset: WorkbenchListSubset;
   }) => {
-    selectedCardKey.value = payload.cardKey;
+    selectedPoolKey.value = payload.cardKey;
+    listSubset.value = payload.subset;
     const status = payload.status;
-    const targetTab = TABS.find((t) => {
+    const targetTab = WORKBENCH_POOLS.find((t) => {
       const a = Array.isArray(t.status) ? t.status : [t.status];
       const b = Array.isArray(status) ? status : [status];
       return a.every((s) => b.includes(s)) && b.every((s) => a.includes(s));
@@ -182,6 +121,8 @@
 
   watch(activeTab, () => {
     actionTargets.value = [];
+    openActionDialog.value = null;
+    financeEditVisible.value = false;
   });
 
   // ============================================
@@ -199,13 +140,9 @@
   // 行内 / 批量 语义化动作
   // ============================================
   const actionTargets = ref<Task[]>([]);
-  const actionVisible = reactive({
-    dispatch: false,
-    'plan-route': false,
-    'confirm-load': false,
-    'confirm-arrive': false,
-    'confirm-sign': false
-  });
+  const openActionDialog = ref<NonNullable<TaskActionConfig['dialog']> | null>(
+    null
+  );
   const financeEditVisible = ref(false);
 
   /** 单任务派车 / 生成结算单要求单选 */
@@ -219,6 +156,13 @@
   };
 
   const onBatchAction = async (rows: Task[], act: TaskActionConfig) => {
+    if (act.key === 'assign-carrier') {
+      EleMessage.warning({
+        message: '分配承运需确认承运方式，请逐单操作',
+        plain: true
+      });
+      return;
+    }
     if (act.key === 'dispatch') {
       EleMessage.warning({
         message: '派车涉及承运方选择，请逐单操作',
@@ -246,7 +190,7 @@
 
   const triggerAction = async (act: TaskActionConfig) => {
     if (act.dialog) {
-      actionVisible[act.dialog] = true;
+      openActionDialog.value = act.dialog;
       return;
     }
     if (act.openSettlement) {
@@ -320,7 +264,7 @@
     }
     let updated: Task | null = null;
     try {
-      updated = await getTask(t.id);
+      updated = (await getTask(t.id)) ?? null;
     } catch {
       updated = null;
     }
@@ -341,7 +285,7 @@
           }
         );
         actionTargets.value = [updated];
-        actionVisible['plan-route'] = true;
+        openActionDialog.value = 'plan-route';
       } catch {
         // ignore
       }

@@ -2,8 +2,7 @@
   任务池表格 - 调度工作台的核心列表
 
   Props:
-    - status: 当前 Tab 对应的 status（可以是单值或数组）
-    - primaryActionKey: 该 Tab 行内的主动作（如 'dispatch' / 'confirm-load' / ...）
+    - tabKey: 状态池 key（与 workbench-pool-registry 中配置一致，决定列、排序、status 筛选）
     - reloadToken: caller 通过修改这个值触发列表重新加载
 
   Emits:
@@ -14,20 +13,76 @@
 
   设计：
     - 行内只展示当前状态对应的"主按钮"
-    - 顶部支持"批量执行该状态主动作"
+    - 部分状态池支持「批量执行该状态主动作」与多选列（由注册表配置）
 -->
 <template>
   <div class="task-pool">
-    <div class="task-pool__toolbar">
-      <el-input
-        v-model="keyword"
-        placeholder="任务单号 / 司机 / 车牌 / 承运商"
-        clearable
-        style="width: 260px"
-        @change="doReload"
-      />
+    <el-alert
+      v-if="listSubset !== 'all'"
+      :type="subsetBanner.type"
+      :closable="false"
+      class="task-pool__alert-banner"
+      show-icon
+      :title="subsetBanner.title"
+    />
+    <div
+      class="task-pool__toolbar"
+      :class="{
+        'task-pool__toolbar--dispatch':
+          pool.toolbarPreset === 'pending-dispatch'
+      }"
+    >
+      <template v-if="pool.toolbarPreset === 'pending-dispatch'">
+        <el-input
+          v-model="keyword"
+          class="task-pool__toolbar-keyword"
+          placeholder="任务单号 / 运单号 / 任务名称"
+          clearable
+          @keyup.enter="doReload"
+          @clear="doReload"
+        />
+        <el-input
+          v-model="routeOriginKw"
+          placeholder="出发地"
+          clearable
+          class="task-pool__toolbar-field"
+          @keyup.enter="doReload"
+        />
+        <el-input
+          v-model="routeDestKw"
+          placeholder="目的地"
+          clearable
+          class="task-pool__toolbar-field"
+          @keyup.enter="doReload"
+        />
+        <el-date-picker
+          v-model="createdRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="制单起"
+          end-placeholder="制单止"
+          value-format="YYYY-MM-DD"
+          unlink-panels
+          class="task-pool__toolbar-dates"
+        />
+        <el-button type="primary" :icon="Search" @click="doReload">
+          查询
+        </el-button>
+        <el-button :icon="RefreshLeft" @click="resetDispatchFilters">
+          重置
+        </el-button>
+      </template>
+      <template v-else>
+        <el-input
+          v-model="keyword"
+          placeholder="任务单号 / 司机 / 车牌 / 承运商"
+          clearable
+          style="width: 260px"
+          @change="doReload"
+        />
+      </template>
       <el-button
-        v-if="primaryAction && selections.length > 0"
+        v-if="primaryAction && allowBatchPrimary && selections.length > 0"
         :type="primaryAction.buttonType"
         :icon="Operation"
         v-permission="primaryAction.permission"
@@ -35,7 +90,14 @@
       >
         批量{{ primaryAction.label }} ({{ selections.length }})
       </el-button>
-      <el-button :icon="Refresh" plain @click="doReload">刷新</el-button>
+      <el-button
+        v-if="pool.toolbarPreset !== 'pending-dispatch'"
+        :icon="Refresh"
+        plain
+        @click="doReload"
+      >
+        刷新
+      </el-button>
     </div>
 
     <ele-pro-table
@@ -46,10 +108,32 @@
       :pagination="{ pageSize: 20 }"
       :show-overflow-tooltip="true"
       v-model:selections="selections"
-      :default-sort="{ prop: 'plannedLoadTime', order: 'ascending' }"
-      :cache-key="`OperationTaskPool-${tabKey}`"
+      :default-sort="tableDefaultSort"
+      :cache-key="`OperationTaskPool-${tabKey}-${listSubset}`"
       @done="onTableDone"
     >
+      <template #waybillCount="{ row }">
+        {{ row.waybillCount ?? 0 }}
+      </template>
+
+      <template #createdAt="{ row }">
+        {{ formatDateTime(row.createdAt) || '--' }}
+      </template>
+
+      <template #totalQuantity="{ row }">
+        <el-tag
+          v-if="pool.quantityOpenCargoDetail && (row.totalQuantity ?? 0) > 0"
+          type="primary"
+          effect="plain"
+          size="small"
+          class="tb-qty-tag"
+          @click.stop="openTaskCargoDetail(row)"
+        >
+          {{ row.totalQuantity ?? 0 }}
+        </el-tag>
+        <span v-else>{{ row.totalQuantity ?? 0 }}</span>
+      </template>
+
       <template #carrierType="{ row }">
         <el-tag
           :type="(CARRIER_TYPE_MAP[row.carrierType]?.type as any) || 'info'"
@@ -98,25 +182,39 @@
           </el-tag>
           <el-tag
             v-if="isOverdue(row)"
-            type="danger"
+            type="warning"
             size="small"
             effect="plain"
             class="status-cell__overdue"
           >
-            逾期
+            预警
           </el-tag>
         </div>
       </template>
 
       <template #plannedLoadTime="{ row }">
-        <span :class="{ 'is-overdue': isOverdue(row) }">
+        <span :class="{ 'is-overdue': isDispatchOverdue(row) }">
           {{ formatDateTime(row.plannedLoadTime) || '--' }}
         </span>
       </template>
 
+      <template #plannedArriveTime="{ row }">
+        <span :class="{ 'is-overdue': isArriveOverdue(row) }">
+          {{ formatDateTime(row.plannedArriveTime) || '--' }}
+        </span>
+      </template>
+
+      <template #actualLoadTime="{ row }">
+        {{ formatDateTime(row.actualLoadTime) || '--' }}
+      </template>
+
       <template #action="{ row }">
         <div class="action-cell">
-          <el-link type="primary" :underline="false" @click="emit('openDetail', row)">
+          <el-link
+            type="primary"
+            :underline="false"
+            @click="emit('openDetail', row)"
+          >
             详情
           </el-link>
           <template v-if="primaryAction">
@@ -148,6 +246,11 @@
         </div>
       </template>
     </ele-pro-table>
+
+    <waybill-cargoes-detail
+      v-model:visible="cargoDetailVisible"
+      :waybill="cargoDetailWaybill"
+    />
   </div>
 </template>
 
@@ -155,30 +258,47 @@
   import { computed, nextTick, onMounted, ref, watch } from 'vue';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
-    Columns,
     DatasourceFunction,
     DoneParams
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import { Operation, Refresh, Right } from '@element-plus/icons-vue';
-  import { pageTasks } from '@/api/operation/task';
-  import type { Task } from '@/api/operation/task/model';
+  import {
+    Operation,
+    Refresh,
+    RefreshLeft,
+    Right,
+    Search
+  } from '@element-plus/icons-vue';
+  import { pageTasks, listTaskWaybillItems } from '@/api/operation/task';
+  import type { Task, TaskParam } from '@/api/operation/task/model';
+  import type { Waybill } from '@/api/waybill/model';
   import { formatDateTime } from '@/utils/date-util';
+  import { EleMessage } from 'ele-admin-plus';
   import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from '../../task/status-config';
   import {
     TASK_ACTION_CONFIGS,
     shouldShowPlanRoute
   } from '../../task/task-actions';
-  import type { TaskActionConfig, TaskActionKey } from '../../task/task-actions';
+  import type { TaskActionConfig } from '../../task/task-actions';
+  import WaybillCargoesDetail from '../../waybill/components/waybill-cargoes-detail.vue';
+  import { buildWaybillShapeForTaskCargoDetail } from '../task-cargo-detail-adapter';
+  import {
+    WORKBENCH_POOLS,
+    buildWorkbenchTableColumns,
+    getWorkbenchPool
+  } from '../workbench-pool-registry';
+
+  type WorkbenchListSubset = 'all' | 'normal' | 'alert';
 
   const props = defineProps<{
-    /** Tab 标识（用于缓存 key） */
+    /** 状态池 key（列、排序、筛选用 status 均来自注册表） */
     tabKey: string;
-    /** 当前 Tab 的 status，单值或多值（多值用 OR） */
-    status: number | number[];
-    /** 当前 Tab 对应的主动作 key */
-    primaryActionKey: TaskActionKey | null;
     /** 通过修改此值触发外部强制刷新 */
     reloadToken?: number;
+    /**
+     * KPI 子集：全部 / 正常(常) / 预警(警)。
+     * 待分配、待派车、在途中已接服务端筛选；其余阶段子集筛选能力建设中。
+     */
+    listSubset?: WorkbenchListSubset;
   }>();
 
   const emit = defineEmits<{
@@ -191,91 +311,167 @@
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const selections = ref<Task[]>([]);
   const keyword = ref('');
+  const routeOriginKw = ref('');
+  const routeDestKw = ref('');
+  const createdRange = ref<[string, string] | null>(null);
+
+  const cargoDetailVisible = ref(false);
+  const cargoDetailWaybill = ref<Waybill | null>(null);
+
+  const pool = computed(
+    () => getWorkbenchPool(props.tabKey) ?? WORKBENCH_POOLS[0]!
+  );
+
+  const SERVER_SUBSET_POOL_KEYS = [
+    'pending-assign',
+    'pending-dispatch',
+    'on-way'
+  ] as const;
+  type ServerSubsetPoolKey = (typeof SERVER_SUBSET_POOL_KEYS)[number];
+
+  const supportsServerSubset = computed(() =>
+    SERVER_SUBSET_POOL_KEYS.includes(pool.value.key as ServerSubsetPoolKey)
+  );
+
+  const listSubset = computed(() => props.listSubset ?? 'all');
+
+  const wantServerAlert = computed(
+    () => listSubset.value === 'alert' && supportsServerSubset.value
+  );
+
+  const wantServerNormal = computed(
+    () => listSubset.value === 'normal' && supportsServerSubset.value
+  );
+
+  const subsetBanner = computed(() => {
+    if (listSubset.value === 'all') {
+      return { type: 'info' as const, title: '' };
+    }
+    if (listSubset.value === 'alert') {
+      if (supportsServerSubset.value) {
+        return {
+          type: 'warning' as const,
+          title: '当前列表：仅展示本阶段「预警」任务（已接入的命中规则）'
+        };
+      }
+      return {
+        type: 'info' as const,
+        title:
+          '本阶段「预警」独立筛选能力建设中；当前列表与「全部」一致，预警数见上方卡片。'
+      };
+    }
+    if (supportsServerSubset.value) {
+      return {
+        type: 'success' as const,
+        title:
+          '当前列表：仅展示本阶段「正常」任务（未触发已接入的计划类预警规则）'
+      };
+    }
+    return {
+      type: 'info' as const,
+      title:
+        '本阶段「正常」独立筛选能力建设中；当前列表与「全部」一致，可参考上方「常」数量。'
+    };
+  });
+
+  const columns = computed(() => buildWorkbenchTableColumns(pool.value));
+
+  const tableDefaultSort = computed(() => pool.value.defaultSort);
+
+  const allowBatchPrimary = computed(
+    () => pool.value.allowBatchPrimary !== false
+  );
 
   const primaryAction = computed(() =>
-    props.primaryActionKey ? TASK_ACTION_CONFIGS[props.primaryActionKey] : null
+    pool.value.primaryActionKey
+      ? TASK_ACTION_CONFIGS[pool.value.primaryActionKey]
+      : null
   );
 
   const planRouteAction = TASK_ACTION_CONFIGS['plan-route'];
 
+  const listExtraParams = (): Partial<TaskParam> => {
+    if (pool.value.toolbarPreset !== 'pending-dispatch') return {};
+    const r = createdRange.value;
+    return {
+      originKeyword: routeOriginKw.value?.trim() || undefined,
+      destinationKeyword: routeDestKw.value?.trim() || undefined,
+      createdAtStart: r?.[0] || undefined,
+      createdAtEnd: r?.[1] || undefined
+    };
+  };
+
+  const resetDispatchFilters = () => {
+    keyword.value = '';
+    routeOriginKw.value = '';
+    routeDestKw.value = '';
+    createdRange.value = null;
+    doReload();
+  };
+
   /** 行内是否展示"规划路线"次按钮（避免与主按钮重复或对终态任务展示） */
   const canPlanRoute = (row: Task): boolean => {
-    if (props.primaryActionKey === 'plan-route') return false;
+    if (pool.value.primaryActionKey === 'plan-route') return false;
     return shouldShowPlanRoute(row);
   };
 
-  const columns = computed<Columns>(() => [
-    { type: 'selection', width: 48, align: 'center' },
-    { prop: 'taskNo', label: '任务单号', minWidth: 160 },
-    {
-      prop: 'carrierType',
-      label: '承运方式',
-      width: 96,
-      align: 'center',
-      slot: 'carrierType'
-    },
-    {
-      columnKey: 'route',
-      label: '运输线路',
-      minWidth: 240,
-      slot: 'route'
-    },
-    {
-      columnKey: 'carrierResource',
-      label: '司机/车牌/承运商',
-      minWidth: 180,
-      slot: 'carrierResource'
-    },
-    {
-      prop: 'totalQuantity',
-      label: '台数',
-      width: 70,
-      align: 'center'
-    },
-    {
-      prop: 'plannedLoadTime',
-      label: '计划装车',
-      width: 160,
-      align: 'center',
-      slot: 'plannedLoadTime'
-    },
-    {
-      prop: 'status',
-      label: '状态',
-      width: 110,
-      align: 'center',
-      slot: 'status'
-    },
-    {
-      columnKey: 'action',
-      label: '操作',
-      width: 240,
-      align: 'center',
-      fixed: 'right',
-      slot: 'action'
-    }
-  ]);
-
   const datasource: DatasourceFunction = ({ pages }) => {
-    const statusArr = Array.isArray(props.status) ? props.status : [props.status];
-    // 后端 page 接口当前只支持单值 status；多值时分别拉取后合并
+    const st = pool.value.status;
+    const statusArr = Array.isArray(st) ? st : [st];
+    const extra = listExtraParams();
+    const kw = keyword.value || undefined;
+
     if (statusArr.length === 1) {
+      const s0 = statusArr[0]!;
+      const overdue =
+        wantServerAlert.value && (s0 === -1 || s0 === 0);
+      const normalF =
+        wantServerNormal.value && (s0 === -1 || s0 === 0);
       return pageTasks({
         ...pages,
-        keyword: keyword.value || undefined,
-        status: statusArr[0]
+        keyword: kw,
+        status: s0,
+        ...(overdue ? { onlyOverdue: true } : {}),
+        ...(normalF ? { onlyNormal: true } : {}),
+        ...extra
       }).then((res) => ({
         list: res?.list ?? [],
         count: res?.count ?? 0
       }));
     }
+
+    if (wantServerAlert.value && pool.value.key === 'on-way') {
+      return pageTasks({
+        ...pages,
+        keyword: kw,
+        inTransitOverdue: true,
+        ...extra
+      }).then((res) => ({
+        list: res?.list ?? [],
+        count: res?.count ?? 0
+      }));
+    }
+
+    if (wantServerNormal.value && pool.value.key === 'on-way') {
+      return pageTasks({
+        ...pages,
+        keyword: kw,
+        inTransitOnlyNormal: true,
+        ...extra
+      }).then((res) => ({
+        list: res?.list ?? [],
+        count: res?.count ?? 0
+      }));
+    }
+
     return Promise.all(
       statusArr.map((s) =>
         pageTasks({
           page: 1,
           limit: 100,
-          keyword: keyword.value || undefined,
-          status: s
+          keyword: kw,
+          status: s,
+          ...extra
         })
       )
     ).then((results) => {
@@ -285,11 +481,19 @@
         merged.push(...(res?.list ?? []));
         count += res?.count ?? 0;
       });
-      // 按计划装车时间升序
+      const { prop, order } = pool.value.defaultSort;
+      const dir = order === 'ascending' ? 1 : -1;
       merged.sort((a, b) => {
-        const ta = a.plannedLoadTime ? Date.parse(a.plannedLoadTime) : 0;
-        const tb = b.plannedLoadTime ? Date.parse(b.plannedLoadTime) : 0;
-        return ta - tb;
+        if (prop === 'taskNo') {
+          const na = a.taskNo ?? '';
+          const nb = b.taskNo ?? '';
+          return na.localeCompare(nb, undefined, { numeric: true }) * dir;
+        }
+        const va = (a as Record<string, unknown>)[prop];
+        const vb = (b as Record<string, unknown>)[prop];
+        const ta = va ? Date.parse(String(va)) : 0;
+        const tb = vb ? Date.parse(String(vb)) : 0;
+        return (ta - tb) * dir;
       });
       const start = ((pages.page || 1) - 1) * (pages.limit || 20);
       return {
@@ -309,9 +513,30 @@
     emit('syncStats');
   };
 
-  watch(() => props.reloadToken, () => doReload());
   watch(
-    () => [props.status, props.primaryActionKey] as const,
+    () => props.listSubset,
+    () => {
+      selections.value = [];
+      doReload();
+    }
+  );
+
+  watch(
+    () => props.tabKey,
+    (next, prev) => {
+      if (prev !== undefined && next !== prev) {
+        keyword.value = '';
+        routeOriginKw.value = '';
+        routeDestKw.value = '';
+        createdRange.value = null;
+        selections.value = [];
+      }
+      doReload();
+    }
+  );
+
+  watch(
+    () => props.reloadToken,
     () => doReload()
   );
 
@@ -324,26 +549,80 @@
     emit('batchAction', selections.value, primaryAction.value);
   };
 
-  const isOverdue = (row: Task): boolean => {
-    const now = Date.now();
-    if (row.status === 0 && row.plannedLoadTime) {
-      return Date.parse(row.plannedLoadTime) < now;
-    }
-    if ((row.status === 2 || row.status === 3) && row.plannedArriveTime) {
-      return Date.parse(row.plannedArriveTime) < now;
-    }
+  /** 待派车 / 待分配：计划装车已过 */
+  const isDispatchOverdue = (row: Task): boolean => {
+    if (!row.plannedLoadTime) return false;
+    const overdue = Date.parse(row.plannedLoadTime) < Date.now();
+    if (row.status === -1 || row.status === 0) return overdue;
     return false;
+  };
+
+  /** 在途：计划到货已过 */
+  const isArriveOverdue = (row: Task): boolean => {
+    if ((row.status !== 2 && row.status !== 3) || !row.plannedArriveTime) {
+      return false;
+    }
+    return Date.parse(row.plannedArriveTime) < Date.now();
+  };
+
+  const isOverdue = (row: Task): boolean =>
+    isDispatchOverdue(row) || isArriveOverdue(row);
+
+  const openTaskCargoDetail = async (row: Task) => {
+    if (!row.id || (row.totalQuantity ?? 0) <= 0) return;
+    try {
+      const items = await listTaskWaybillItems(row.id);
+      cargoDetailWaybill.value = buildWaybillShapeForTaskCargoDetail(
+        row,
+        items
+      );
+      cargoDetailVisible.value = true;
+    } catch (e: unknown) {
+      const msg = (e as { message?: string }).message || '加载挂接明细失败';
+      EleMessage.error({ message: msg, plain: true });
+    }
   };
 </script>
 
 <style lang="scss" scoped>
   .task-pool {
+    &__alert-banner {
+      margin-bottom: 10px;
+    }
+
     &__toolbar {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       align-items: center;
       margin-bottom: 8px;
+
+      &--dispatch {
+        row-gap: 10px;
+      }
     }
+
+    &__toolbar-keyword {
+      width: min(240px, 100%);
+      min-width: 180px;
+    }
+
+    &__toolbar-field {
+      width: 140px;
+    }
+
+    &__toolbar-dates {
+      width: 260px;
+    }
+  }
+
+  .tb-qty-tag {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .tb-qty-tag:hover {
+    opacity: 0.88;
   }
 
   .cell-ellipsis {

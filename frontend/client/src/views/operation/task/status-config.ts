@@ -1,5 +1,6 @@
 /** 任务单状态配置（与后端 task.status 保持一致） */
 export const TASK_STATUS_OPTIONS = [
+  { value: -1, label: '待分配', type: 'warning' },
   { value: 0, label: '待派车', type: 'info' },
   { value: 1, label: '已派车', type: 'primary' },
   { value: 2, label: '已装车', type: 'warning' },

@@ -156,6 +156,11 @@
     />
 
     <!-- 行内主按钮触发的语义化弹窗 -->
+    <action-assign-carrier
+      v-model:visible="actionVisible['assign-carrier']"
+      :task="actionTask"
+      @done="reload"
+    />
     <action-dispatch
       v-model:visible="actionVisible.dispatch"
       :task="actionTask"
@@ -209,6 +214,7 @@
   import TaskEdit from './components/task-edit.vue';
   import TaskDetail from './components/task-detail.vue';
   import TaskSearch from './components/task-search.vue';
+  import ActionAssignCarrier from '../task-workbench/components/action-assign-carrier.vue';
   import ActionDispatch from '../task-workbench/components/action-dispatch.vue';
   import ActionPlanRoute from '../task-workbench/components/action-plan-route.vue';
   import ActionConfirmLoad from '../task-workbench/components/action-confirm-load.vue';
@@ -346,11 +352,11 @@
   };
 
   const canEdit = (row: Task) =>
-    row.status !== undefined && (row.status === 0 || row.status === 1);
+    row.status !== undefined && [-1, 0, 1].includes(row.status);
   const canCancel = (row: Task) =>
-    row.status !== undefined && [0, 1, 2].includes(row.status);
+    row.status !== undefined && [-1, 0, 1, 2].includes(row.status);
   const canDelete = (row: Task) =>
-    row.status !== undefined && (row.status === 0 || row.status === 9);
+    row.status !== undefined && [-1, 0, 9].includes(row.status);
 
   const openEdit = (row?: Task) => {
     editData.value = row ? { ...row } : null;
@@ -371,6 +377,7 @@
   // ============================================
   const actionTask = ref<Task | null>(null);
   const actionVisible = reactive({
+    'assign-carrier': false,
     dispatch: false,
     'plan-route': false,
     'confirm-load': false,

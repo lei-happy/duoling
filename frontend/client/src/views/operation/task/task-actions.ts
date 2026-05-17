@@ -8,6 +8,7 @@
  */
 
 export type TaskActionKey =
+  | 'assign-carrier' // 确认承运分配 (status -1 → 0)
   | 'dispatch' // 派车 (status 0 → 1)
   | 'plan-route' // 规划路线（独立动作，不改 status）
   | 'confirm-load' // 确认装车 (1 → 2)
@@ -24,6 +25,7 @@ export interface TaskActionConfig {
   permission: string;
   /** 需要打开弹窗时填，对应 action-*.vue 组件名 */
   dialog?:
+    | 'assign-carrier'
     | 'dispatch'
     | 'plan-route'
     | 'confirm-load'
@@ -36,6 +38,13 @@ export interface TaskActionConfig {
 }
 
 export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
+  'assign-carrier': {
+    key: 'assign-carrier',
+    label: '分配承运',
+    buttonType: 'primary',
+    permission: 'operation:task:dispatch',
+    dialog: 'assign-carrier'
+  },
   dispatch: {
     key: 'dispatch',
     label: '派车',
@@ -99,10 +108,11 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
  * - 5 (已签收)：默认主动作是「生成结算单」（财务关心）；
  *   关闭任务作为兜底动作放到下拉/列表的次要位置（caller 自己处理）。
  * - 6 (已结算)：主动作是「关闭任务」。
- * - 0,1,2,3,4：分别对应派车 / 装车 / 出发 / 到达 / 签收。
+ * - -1,0,1,2,3,4：分别对应分配承运 / 派车 / 装车 / 出发 / 到达 / 签收。
  * - 7,9：无主动作。
  */
 const PRIMARY_BY_STATUS: Record<number, TaskActionKey | null> = {
+  [-1]: 'assign-carrier',
   0: 'dispatch',
   1: 'confirm-load',
   2: 'depart',
@@ -147,7 +157,7 @@ export const shouldShowPlanRoute = (task: {
   segmentCount?: number | null;
 }): boolean => {
   const st = task.status ?? -1;
-  if (![0, 1, 2].includes(st)) return false;
+  if (![-1, 0, 1, 2].includes(st)) return false;
   if (task.carrierType === 1) return true;
   return (task.segmentCount ?? 0) === 0;
 };

@@ -1,7 +1,7 @@
 """任务单主表 Schemas"""
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Mapping, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -43,12 +43,45 @@ class TaskCarrierInfo(BaseModel):
         return self
 
 
+class TaskCarrierAssignmentInfo(BaseModel):
+    """待分配阶段：确定承运方式（及承运商/社会运力身份；自有车可仅选方式）。
+
+    提交后任务进入「待派车」(status=0)，具体运力在派车环节确认。
+    """
+    carrierType: int = Field(ge=1, le=3,
+                             description="1-自有车 2-承运商 3-社会运力")
+    capacityId: Optional[int] = None
+    carrierId: Optional[int] = None
+    socialDriverId: Optional[int] = None
+    mainDriverName: Optional[str] = None
+    mainDriverPhone: Optional[str] = None
+    mainDriverIdCard: Optional[str] = None
+    plateNumber: Optional[str] = None
+    trailerPlateNumber: Optional[str] = None
+    carrierName: Optional[str] = None
+    carrierShortName: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _check_required(self):
+        if self.carrierType == 2:
+            if not (self.carrierId or (self.carrierName and self.carrierName.strip())):
+                raise ValueError("承运商任务必须选择承运商或填写承运商名称")
+        elif self.carrierType == 3:
+            if not (
+                self.mainDriverName
+                and self.mainDriverPhone
+                and self.plateNumber
+            ):
+                raise ValueError("社会运力必须填写司机姓名/电话/车牌")
+        return self
+
+
 class TaskCreate(BaseModel):
     """创建任务单
 
     分阶段创建：
     - 必填：waybillItems（商品车挂接，至少 1 条）
-    - 可选：carrier（不填则任务保存为「待派车」status=0；填则同步派车至 status=1）
+    - 可选：carrier（不填则任务保存为「待分配」status=-1；填则同步派车至 status=1）
     - 可选：segments（不填则任务无分段，task.origin/destination 由 waybillItems 兜底；
             后续可通过 POST /business/task/{id}/plan-route 补齐分段路线）
     """
@@ -62,7 +95,7 @@ class TaskCreate(BaseModel):
     costRemark: Optional[str] = None
     remark: Optional[str] = None
 
-    # 承运方（可选，未填则保存为"待派车"）
+    # 承运方（可选，未填则保存为「待分配」）
     carrier: Optional[TaskCarrierInfo] = None
 
     # 分段路线（可选，零段允许，仅校验非空时段号连续）
@@ -85,7 +118,7 @@ class TaskCreate(BaseModel):
 
 
 class TaskUpdate(BaseModel):
-    """更新任务单（status=0/1 时允许）"""
+    """更新任务单（status=-1/0/1 时允许）"""
     taskName: Optional[str] = None
     plannedLoadTime: Optional[datetime] = None
     plannedArriveTime: Optional[datetime] = None
@@ -267,6 +300,8 @@ class TaskOut(BaseModel):
         m,
         segments: Optional[list] = None,
         waybill_items: Optional[list] = None,
+        *,
+        series_lookup: Optional[Mapping[str, Optional[str]]] = None,
     ) -> "TaskOut":
         return cls(
             id=m.id,
@@ -315,6 +350,7 @@ class TaskOut(BaseModel):
             updatedAt=m.updated_at,
             segments=[TaskSegmentOut.from_model(s) for s in (segments or [])],
             waybillItems=[
-                TaskWaybillItemOut.from_model(w) for w in (waybill_items or [])
+                TaskWaybillItemOut.from_model(w, series_lookup=series_lookup)
+                for w in (waybill_items or [])
             ],
         )

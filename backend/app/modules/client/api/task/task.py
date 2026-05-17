@@ -25,6 +25,7 @@ from app.core.dependencies import (
 from app.core.security import TokenData
 from app.modules.client.schemas.task.task import (
     TaskAssignCarrierRequest,
+    TaskCarrierAssignmentInfo,
     TaskBatchStatusRequest,
     TaskCancelRequest,
     TaskCreate,
@@ -53,11 +54,37 @@ from app.modules.client.services.task.task_service import TaskService
 from app.modules.client.services.task.task_waybill_item_service import (
     TaskWaybillItemService,
 )
+from app.modules.client.services.waybill.waybill_service import WaybillService
 
 router = APIRouter()
 
 
+async def _task_detail_dump(
+    db: AsyncSession,
+    task,
+    *,
+    segments=None,
+    waybill_items=None,
+):
+    """聚合 segments + waybillItems，并为挂接行补齐车系图（与运单列表一致）。"""
+    segs = (
+        segments
+        if segments is not None
+        else await TaskService.list_segments(db, task.id)
+    )
+    items = (
+        waybill_items
+        if waybill_items is not None
+        else await TaskWaybillItemService.list_items_of_task(db, task.id)
+    )
+    lookup = await WaybillService._series_image_lookup_map(db)
+    return TaskOut.from_model(
+        task, segments=segs, waybill_items=items, series_lookup=lookup
+    ).model_dump()
+
+
 _TASK_STATUS_LABELS = {
+    -1: "待分配",
     0: "待派车", 1: "已派车", 2: "已装车", 3: "在途",
     4: "已到达", 5: "已签收", 6: "已结算", 7: "已关闭", 9: "已取消",
 }
@@ -84,6 +111,19 @@ async def page_tasks(
     destinationKeyword: Optional[str] = None,
     createdAtStart: Optional[date] = None,
     createdAtEnd: Optional[date] = None,
+    onlyOverdue: bool = Query(False, description="仅计划装车/到货已逾期的子集（须配合 status 或 inTransitOverdue）"),
+    onlyNormal: bool = Query(
+        False,
+        description="仅「正常」子集：待分配/待派车为计划装车未逾期；单 status 2/3 为计划到货未逾期（与 onlyOverdue 互斥）",
+    ),
+    inTransitOverdue: bool = Query(
+        False,
+        description="在途逾期列表：status∈{2,3} 且计划到货已过",
+    ),
+    inTransitOnlyNormal: bool = Query(
+        False,
+        description="在途正常列表：status∈{2,3} 且（无计划到货或计划到货未过）",
+    ),
     db: AsyncSession = Depends(get_tenant_db),
     _: TokenData = Depends(get_current_user),
 ):
@@ -96,6 +136,10 @@ async def page_tasks(
         destination_keyword=destinationKeyword,
         created_at_start=createdAtStart,
         created_at_end=createdAtEnd,
+        only_overdue=onlyOverdue,
+        in_transit_overdue=inTransitOverdue,
+        only_normal=onlyNormal,
+        in_transit_only_normal=inTransitOnlyNormal,
     )
     rows = [TaskListItemOut.from_model(t).model_dump() for t in items]
     return success(data={
@@ -193,11 +237,7 @@ async def get_task(
     _: TokenData = Depends(get_current_user),
 ):
     task = await TaskService.get_or_404(db, task_id)
-    segs = await TaskService.list_segments(db, task_id)
-    items = await TaskWaybillItemService.list_items_of_task(db, task_id)
-    return success(data=TaskOut.from_model(
-        task, segments=segs, waybill_items=items,
-    ).model_dump())
+    return success(data=await _task_detail_dump(db, task))
 
 
 @router.post("")
@@ -218,11 +258,7 @@ async def create_task(
         current_user_id=current_user.user_id,
         dispatcher_name=op_name,
     )
-    segs = await TaskService.list_segments(db, task.id)
-    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
-    return success(data=TaskOut.from_model(
-        task, segments=segs, waybill_items=items,
-    ).model_dump())
+    return success(data=await _task_detail_dump(db, task))
 
 
 @router.put("/{task_id}")
@@ -238,11 +274,7 @@ async def update_task(
     task = await TaskService.update_task(
         db, task_id, data, current_user_id=current_user.user_id,
     )
-    segs = await TaskService.list_segments(db, task.id)
-    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
-    return success(data=TaskOut.from_model(
-        task, segments=segs, waybill_items=items,
-    ).model_dump())
+    return success(data=await _task_detail_dump(db, task))
 
 
 @router.delete("/{task_id}")
@@ -269,11 +301,7 @@ async def update_task_status(
 ):
     _require_tenant(current_user)
     task = await TaskService.update_status(db, task_id, data)
-    segs = await TaskService.list_segments(db, task.id)
-    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
-    return success(data=TaskOut.from_model(
-        task, segments=segs, waybill_items=items,
-    ).model_dump())
+    return success(data=await _task_detail_dump(db, task))
 
 
 @router.post("/{task_id}/plan-route")
@@ -289,11 +317,7 @@ async def plan_route(
 ):
     _require_tenant(current_user)
     task = await TaskService.plan_route(db, task_id, data)
-    segs = await TaskService.list_segments(db, task.id)
-    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
-    return success(data=TaskOut.from_model(
-        task, segments=segs, waybill_items=items,
-    ).model_dump())
+    return success(data=await _task_detail_dump(db, task))
 
 
 @router.post("/{task_id}/assign-carrier")
@@ -307,11 +331,25 @@ async def assign_carrier(
 ):
     _require_tenant(current_user)
     task = await TaskService.assign_carrier(db, task_id, data)
-    segs = await TaskService.list_segments(db, task.id)
-    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
-    return success(data=TaskOut.from_model(
-        task, segments=segs, waybill_items=items,
-    ).model_dump())
+    return success(data=await _task_detail_dump(db, task))
+
+
+@router.post("/{task_id}/complete-carrier-assignment")
+@operation_log(
+    module="运输任务单",
+    action="确认承运分配",
+    description="待分配任务确认承运方后进入待派车",
+)
+async def complete_carrier_assignment(
+    request: Request,
+    task_id: int,
+    data: TaskCarrierAssignmentInfo,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    task = await TaskService.complete_carrier_assignment(db, task_id, data)
+    return success(data=await _task_detail_dump(db, task))
 
 
 @router.post("/{task_id}/cancel")
@@ -326,11 +364,7 @@ async def cancel_task(
     _require_tenant(current_user)
     reason = data.reason if data else None
     task = await TaskService.cancel_task(db, task_id, reason=reason)
-    segs = await TaskService.list_segments(db, task.id)
-    items = await TaskWaybillItemService.list_items_of_task(db, task.id)
-    return success(data=TaskOut.from_model(
-        task, segments=segs, waybill_items=items,
-    ).model_dump())
+    return success(data=await _task_detail_dump(db, task))
 
 
 # ============================================================
@@ -344,7 +378,13 @@ async def list_waybill_items(
     _: TokenData = Depends(get_current_user),
 ):
     items = await TaskWaybillItemService.list_items_of_task(db, task_id)
-    return success(data=[TaskWaybillItemOut.from_model(i).model_dump() for i in items])
+    lookup = await WaybillService._series_image_lookup_map(db)
+    return success(
+        data=[
+            TaskWaybillItemOut.from_model(i, series_lookup=lookup).model_dump()
+            for i in items
+        ]
+    )
 
 
 @router.post("/{task_id}/waybill-items")
@@ -359,7 +399,13 @@ async def add_waybill_items(
     _require_tenant(current_user)
     task = await TaskService.get_or_404(db, task_id)
     rows = await TaskWaybillItemService.add_items(db, task, items)
-    return success(data=[TaskWaybillItemOut.from_model(r).model_dump() for r in rows])
+    lookup = await WaybillService._series_image_lookup_map(db)
+    return success(
+        data=[
+            TaskWaybillItemOut.from_model(r, series_lookup=lookup).model_dump()
+            for r in rows
+        ]
+    )
 
 
 @router.put("/waybill-items/{item_id}")
@@ -373,7 +419,10 @@ async def update_waybill_item(
 ):
     _require_tenant(current_user)
     row = await TaskWaybillItemService.update_item_status(db, item_id, data)
-    return success(data=TaskWaybillItemOut.from_model(row).model_dump())
+    lookup = await WaybillService._series_image_lookup_map(db)
+    return success(
+        data=TaskWaybillItemOut.from_model(row, series_lookup=lookup).model_dump()
+    )
 
 
 @router.delete("/waybill-items/{item_id}")

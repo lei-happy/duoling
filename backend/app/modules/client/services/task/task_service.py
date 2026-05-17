@@ -13,7 +13,7 @@
 from datetime import datetime, time as dtime, date as ddate
 from typing import List, Optional, Tuple
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import exists, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,6 +27,7 @@ from app.modules.client.models.task.task_waybill_item import TaskWaybillItem
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.schemas.task.task import (
     TaskAssignCarrierRequest,
+    TaskCarrierAssignmentInfo,
     TaskCarrierInfo,
     TaskCreate,
     TaskPlanRouteRequest,
@@ -46,7 +47,9 @@ from app.modules.client.services.task.task_waybill_item_service import (
 
 
 # 任务单状态机：合法跳转表
+# -1 待分配：仅允许 cancel_task 写 9；进入待派车(0) 走 complete_carrier_assignment
 _VALID_STATUS_TRANS = {
+    -1: set(),
     0: {1, 9},        # 待派车 → 已派车 / 已取消
     1: {0, 2, 9},     # 已派车 → 回退待派车 / 已装车 / 已取消
     2: {3, 9},        # 已装车 → 在途 / 已取消
@@ -61,6 +64,7 @@ _VALID_STATUS_TRANS = {
 
 # 状态 → 中文名（用于错误信息可读性）
 _STATUS_LABELS = {
+    -1: "待分配",
     0: "待派车", 1: "已派车", 2: "已装车", 3: "在途",
     4: "已到达", 5: "已签收", 6: "已结算", 7: "已关闭", 9: "已取消",
 }
@@ -173,6 +177,42 @@ class TaskService:
 
         # 社会运力：完全依赖前端传入的快照字段（已在 Schema 校验必填）
         return snapshot
+
+    @staticmethod
+    async def _resolve_carrier_assignment_snapshot(
+        db: AsyncSession,
+        data: TaskCarrierAssignmentInfo,
+    ) -> dict:
+        """待分配 → 待派车：写入承运方式及可得快照（自有车可不绑定具体运力）。"""
+        ct = int(data.carrierType)
+        if ct == 1 and not data.capacityId:
+            return {
+                "carrier_type": 1,
+                "capacity_id": None,
+                "carrier_id": None,
+                "social_driver_id": None,
+                "main_driver_name": None,
+                "main_driver_phone": None,
+                "main_driver_id_card": None,
+                "plate_number": None,
+                "trailer_plate_number": None,
+                "carrier_name": None,
+                "carrier_short_name": None,
+            }
+        info = TaskCarrierInfo(
+            carrierType=data.carrierType,
+            capacityId=data.capacityId,
+            carrierId=data.carrierId,
+            socialDriverId=data.socialDriverId,
+            mainDriverName=data.mainDriverName,
+            mainDriverPhone=data.mainDriverPhone,
+            mainDriverIdCard=data.mainDriverIdCard,
+            plateNumber=data.plateNumber,
+            trailerPlateNumber=data.trailerPlateNumber,
+            carrierName=data.carrierName,
+            carrierShortName=data.carrierShortName,
+        )
+        return await TaskService._resolve_carrier_snapshot(db, info)
 
     # ------------------------------------------------------------------
     # 分段
@@ -294,12 +334,12 @@ class TaskService:
         task_id: int,
         data: TaskPlanRouteRequest,
     ) -> Task:
-        """补齐 / 重做任务单的分段路线。仅在「待派车 / 已派车 / 已装车」可用。"""
+        """补齐 / 重做任务单的分段路线。仅在「待分配 / 待派车 / 已派车 / 已装车」可用。"""
         task = await TaskService.get_or_404(db, task_id)
-        if int(task.status) not in (0, 1, 2):
+        if int(task.status) not in (-1, 0, 1, 2):
             raise BizException(
                 f"任务单当前状态「{_STATUS_LABELS.get(task.status, task.status)}」"
-                f"不允许调整路线（仅待派车/已派车/已装车可规划）"
+                f"不允许调整路线（仅待分配/待派车/已派车/已装车可规划）"
             )
         await TaskService._replace_segments(db, task, data.segments)
         await db.refresh(task)
@@ -427,7 +467,7 @@ class TaskService:
                 carrier_cost_amount=data.carrierCostAmount,
                 carrier_cost_type=data.carrierCostType,
                 cost_remark=data.costRemark,
-                status=0,
+                status=-1,
                 dispatcher_id=current_user_id,
                 dispatcher_name=dispatcher_name,
                 remark=data.remark,
@@ -485,10 +525,10 @@ class TaskService:
         current_user_id: Optional[int] = None,
     ) -> Task:
         task = await TaskService.get_or_404(db, task_id)
-        if int(task.status) not in (0, 1):
+        if int(task.status) not in (-1, 0, 1):
             raise BizException(
                 f"任务单当前状态「{_STATUS_LABELS.get(task.status, task.status)}」"
-                f"不允许编辑（仅待派车/已派车可编辑）"
+                f"不允许编辑（仅待分配/待派车/已派车可编辑）"
             )
 
         if data.taskName is not None:
@@ -537,8 +577,8 @@ class TaskService:
     @staticmethod
     async def delete_task(db: AsyncSession, task_id: int) -> None:
         task = await TaskService.get_or_404(db, task_id)
-        if int(task.status) not in (0, 9):
-            raise BizException("仅「待派车/已取消」状态的任务单允许删除")
+        if int(task.status) not in (-1, 0, 9):
+            raise BizException("仅「待分配/待派车/已取消」状态的任务单允许删除")
 
         # 软删段
         for s in await TaskService.list_segments(db, task_id):
@@ -557,7 +597,7 @@ class TaskService:
         reason: Optional[str] = None,
     ) -> Task:
         task = await TaskService.get_or_404(db, task_id)
-        if int(task.status) not in (0, 1, 2):
+        if int(task.status) not in (-1, 0, 1, 2):
             raise BizException(
                 f"任务单状态「{_STATUS_LABELS.get(task.status)}」不允许取消"
             )
@@ -593,6 +633,27 @@ class TaskService:
         if data.remark:
             existing = (task.remark or "").rstrip()
             task.remark = (existing + "\n" if existing else "") + data.remark
+        await db.flush()
+        await db.refresh(task)
+        return task
+
+    @staticmethod
+    async def complete_carrier_assignment(
+        db: AsyncSession,
+        task_id: int,
+        data: TaskCarrierAssignmentInfo,
+    ) -> Task:
+        """待分配：确认承运方式后进入待派车（status=0）。"""
+        task = await TaskService.get_or_404(db, task_id)
+        if int(task.status) != -1:
+            raise BizException(
+                "仅「待分配」状态可确认承运方分配；当前："
+                f"{_STATUS_LABELS.get(int(task.status), task.status)}"
+            )
+        snap = await TaskService._resolve_carrier_assignment_snapshot(db, data)
+        for k, v in snap.items():
+            setattr(task, k, v)
+        task.status = 0
         await db.flush()
         await db.refresh(task)
         return task
@@ -637,27 +698,91 @@ class TaskService:
         destination_keyword: Optional[str] = None,
         created_at_start: Optional[ddate] = None,
         created_at_end: Optional[ddate] = None,
+        only_overdue: bool = False,
+        in_transit_overdue: bool = False,
+        only_normal: bool = False,
+        in_transit_only_normal: bool = False,
     ) -> Tuple[List[Task], int]:
         base = select(Task).where(Task.is_deleted == 0)
         cnt = select(func.count(Task.id)).where(Task.is_deleted == 0)
 
         if keyword:
             kw = f"%{keyword.strip()}%"
+            waybill_no_hit = exists(
+                select(1)
+                .select_from(TaskWaybillItem)
+                .where(
+                    TaskWaybillItem.task_id == Task.id,
+                    TaskWaybillItem.is_deleted == 0,
+                    TaskWaybillItem.waybill_no.isnot(None),
+                    TaskWaybillItem.waybill_no.like(kw),
+                )
+            )
             cond = or_(
                 Task.task_no.like(kw),
                 Task.task_name.like(kw),
                 Task.main_driver_name.like(kw),
                 Task.plate_number.like(kw),
                 Task.carrier_name.like(kw),
+                waybill_no_hit,
             )
             base = base.where(cond)
             cnt = cnt.where(cond)
         if carrier_type is not None:
             base = base.where(Task.carrier_type == carrier_type)
             cnt = cnt.where(Task.carrier_type == carrier_type)
-        if status is not None:
+        now = datetime.now()
+        if in_transit_overdue:
+            od = (
+                Task.status.in_([2, 3]),
+                Task.planned_arrive_time.isnot(None),
+                Task.planned_arrive_time < now,
+            )
+            base = base.where(*od)
+            cnt = cnt.where(*od)
+        elif in_transit_only_normal:
+            od = (
+                Task.status.in_([2, 3]),
+                or_(
+                    Task.planned_arrive_time.is_(None),
+                    Task.planned_arrive_time >= now,
+                ),
+            )
+            base = base.where(*od)
+            cnt = cnt.where(*od)
+        elif status is not None:
             base = base.where(Task.status == status)
             cnt = cnt.where(Task.status == status)
+            if only_overdue:
+                if status in (-1, 0):
+                    od = (
+                        Task.planned_load_time.isnot(None),
+                        Task.planned_load_time < now,
+                    )
+                    base = base.where(*od)
+                    cnt = cnt.where(*od)
+                elif status in (2, 3):
+                    od = (
+                        Task.planned_arrive_time.isnot(None),
+                        Task.planned_arrive_time < now,
+                    )
+                    base = base.where(*od)
+                    cnt = cnt.where(*od)
+            elif only_normal:
+                if status in (-1, 0):
+                    nm = or_(
+                        Task.planned_load_time.is_(None),
+                        Task.planned_load_time >= now,
+                    )
+                    base = base.where(nm)
+                    cnt = cnt.where(nm)
+                elif status in (2, 3):
+                    nm = or_(
+                        Task.planned_arrive_time.is_(None),
+                        Task.planned_arrive_time >= now,
+                    )
+                    base = base.where(nm)
+                    cnt = cnt.where(nm)
         if origin_keyword:
             kw = f"%{origin_keyword.strip()}%"
             base = base.where(Task.origin.like(kw))
@@ -676,7 +801,6 @@ class TaskService:
             cnt = cnt.where(Task.created_at <= end_dt)
         # customer_id 走挂接表，避免再多 join，使用 EXISTS
         if customer_id is not None:
-            from app.modules.client.models.task.task_waybill_item import TaskWaybillItem
             sub = select(TaskWaybillItem.task_id).where(
                 TaskWaybillItem.is_deleted == 0,
                 TaskWaybillItem.customer_id == customer_id,
@@ -715,8 +839,20 @@ class TaskService:
         )
         status_counts: dict[int, int] = {int(s): int(c) for s, c in r.all()}
 
-        # 异常：计划装车时间已过但 status<1（待派车逾期）
         now = datetime.now()
+
+        # 异常：计划装车时间已过但仍处于待分配
+        r_overdue_assign = await db.execute(
+            select(func.count(Task.id)).where(
+                Task.is_deleted == 0,
+                Task.status == -1,
+                Task.planned_load_time.isnot(None),
+                Task.planned_load_time < now,
+            )
+        )
+        overdue_assignment = int(r_overdue_assign.scalar() or 0)
+
+        # 异常：计划装车时间已过但 status<1（待派车逾期，不含待分配）
         r_overdue_dispatch = await db.execute(
             select(func.count(Task.id)).where(
                 Task.is_deleted == 0,
@@ -741,6 +877,7 @@ class TaskService:
         return {
             "statusCounts": status_counts,
             "totals": {
+                "pendingAssign": status_counts.get(-1, 0),
                 "pendingDispatch": status_counts.get(0, 0),
                 "pendingLoad": status_counts.get(1, 0),
                 "loading": status_counts.get(2, 0),
@@ -754,8 +891,12 @@ class TaskService:
                 "cancelled": status_counts.get(9, 0),
             },
             "alerts": {
+                "overdueAssignment": overdue_assignment,
                 "overdueDispatch": overdue_dispatch,
                 "overdueArrive": overdue_arrive,
+                "pendingLoadAlert": 0,
+                "pendingSignAlert": 0,
+                "pendingSettleAlert": 0,
             },
         }
 
