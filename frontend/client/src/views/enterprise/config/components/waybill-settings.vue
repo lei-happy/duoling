@@ -101,7 +101,7 @@
   import {
     CONFIG_ENUM_OPTIONS,
     getEnumDisplayLabel
-  } from '@/views/system/config/constants';
+  } from '@/views/enterprise/config/constants';
 
   defineOptions({ name: 'WaybillSettings' });
 

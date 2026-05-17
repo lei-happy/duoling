@@ -114,8 +114,8 @@
   import VehicleSearch from './components/vehicle-search.vue';
   import DictData from '@/components/DictData/index.vue';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
-  import { pageVehicles, removeVehicle } from '@/api/capacity/self_capacity/vehicle';
-  import type { Vehicle, VehicleParam } from '@/api/capacity/self_capacity/vehicle/model';
+  import { pageVehicles, removeVehicle } from '@/api/capacity/self-capacity/vehicle';
+  import type { Vehicle, VehicleParam } from '@/api/capacity/self-capacity/vehicle/model';
   import { DICT_CODE_VEHICLE_TYPE } from '@/constants/dict-codes';
   import { formatDateTime } from '@/utils/date-util';
 

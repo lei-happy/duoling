@@ -108,7 +108,7 @@
   /** 返回 */
   const handleBack = () => {
     removePageTab({ key: routeTabKey });
-    push('/system/user');
+    push('/enterprise/user');
   };
 
   /** 查询详情 */

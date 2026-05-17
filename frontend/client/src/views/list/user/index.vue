@@ -198,7 +198,7 @@
     FileOutlined,
   } from '@/components/icons';
   import { useMobile } from '@/utils/use-mobile';
-  import UserSearch from '@/views/system/user/components/user-search.vue';
+  import UserSearch from '@/views/enterprise/user/components/user-search.vue';
   import {
     listOrganizations,
     removeOrganization
@@ -288,7 +288,7 @@
     openModal({
       custom: true,
       asyncComponent: () =>
-        import('@/views/system/organization/components/organization-edit.vue'),
+        import('@/views/enterprise/organization/components/organization-edit.vue'),
       componentProps: {
         data: item,
         organizationId: id,

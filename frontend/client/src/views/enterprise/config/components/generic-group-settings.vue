@@ -56,7 +56,7 @@
     getConfigFieldLabel,
     getEnumDisplayLabel,
     getEnumOptions
-  } from '@/views/system/config/constants';
+  } from '@/views/enterprise/config/constants';
 
   defineOptions({ name: 'GenericGroupSettings' });
 

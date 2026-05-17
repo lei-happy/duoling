@@ -216,8 +216,8 @@
   import { EleMessage } from 'ele-admin-plus';
   import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
-  import { addTrailer, updateTrailer } from '@/api/capacity/self_capacity/trailer';
-  import type { Trailer } from '@/api/capacity/self_capacity/trailer/model';
+  import { addTrailer, updateTrailer } from '@/api/capacity/self-capacity/trailer';
+  import type { Trailer } from '@/api/capacity/self-capacity/trailer/model';
   import {
     DEFAULT_PLATE_CATEGORY,
     PLATE_CATEGORY_OPTIONS,

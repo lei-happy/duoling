@@ -40,8 +40,8 @@
   import LogSearch from './components/log-search.vue';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
   import { formatDateTime, getLast7DaysDateTimeRange } from '@/utils/date-util';
-  import { pageCapacityLogs } from '@/api/capacity/self_capacity/log';
-  import type { CapacityLogParam } from '@/api/capacity/self_capacity/log/model';
+  import { pageCapacityLogs } from '@/api/capacity/self-capacity/log';
+  import type { CapacityLogParam } from '@/api/capacity/self-capacity/log/model';
 
   defineOptions({ name: 'CapacityLog' });
 

@@ -314,12 +314,12 @@
   import { EleMessage } from 'ele-admin-plus';
   import { QuestionFilled } from '@element-plus/icons-vue';
   import type { TableInstance } from 'element-plus';
-  import { pageDrivers } from '@/api/capacity/self_capacity/driver';
-  import { pageVehicles } from '@/api/capacity/self_capacity/vehicle';
-  import type { Driver } from '@/api/capacity/self_capacity/driver/model';
-  import type { Vehicle } from '@/api/capacity/self_capacity/vehicle/model';
-  import { bindCapacity, pageCapacities } from '@/api/capacity/self_capacity/list';
-  import type { Capacity } from '@/api/capacity/self_capacity/list/model';
+  import { pageDrivers } from '@/api/capacity/self-capacity/driver';
+  import { pageVehicles } from '@/api/capacity/self-capacity/vehicle';
+  import type { Driver } from '@/api/capacity/self-capacity/driver/model';
+  import type { Vehicle } from '@/api/capacity/self-capacity/vehicle/model';
+  import { bindCapacity, pageCapacities } from '@/api/capacity/self-capacity/list';
+  import type { Capacity } from '@/api/capacity/self-capacity/list/model';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
 
   const PAGE_SIZE = 30;

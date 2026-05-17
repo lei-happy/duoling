@@ -126,9 +126,9 @@
 <script lang="ts" setup>
   import { reactive, ref, watch } from 'vue';
   import { selectCarriers, listSettlements } from '@/api/partner/carrier';
-  import { pageDrivers, listDriverAccounts } from '@/api/capacity/self_capacity/driver';
+  import { pageDrivers, listDriverAccounts } from '@/api/capacity/self-capacity/driver';
   import type { CarrierSelectItem, CarrierSettlement } from '@/api/partner/carrier/model';
-  import type { Driver, DriverAccount } from '@/api/capacity/self_capacity/driver/model';
+  import type { Driver, DriverAccount } from '@/api/capacity/self-capacity/driver/model';
   import { PAYEE_TYPE_OPTIONS } from '../status-config';
 
   export interface PayeeFormData {

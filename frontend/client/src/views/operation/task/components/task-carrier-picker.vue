@@ -153,8 +153,8 @@
 <script lang="ts" setup>
   import { reactive, ref, watch } from 'vue';
   import type { TaskCarrierInfo } from '@/api/operation/task/model';
-  import { pageCapacities } from '@/api/capacity/self_capacity/list';
-  import type { Capacity } from '@/api/capacity/self_capacity/list/model';
+  import { pageCapacities } from '@/api/capacity/self-capacity/list';
+  import type { Capacity } from '@/api/capacity/self-capacity/list/model';
   import { selectCarriers } from '@/api/partner/carrier';
   import type { CarrierSelectItem } from '@/api/partner/carrier/model';
   import { CARRIER_TYPE_OPTIONS } from '../status-config';

@@ -181,7 +181,7 @@
   import {
     TASK_NAME_GEN_DEFAULT_JSON,
     TASK_NO_GEN_DEFAULT_JSON
-  } from '@/views/system/config/constants';
+  } from '@/views/enterprise/config/constants';
 
   defineOptions({ name: 'TaskSettings' });
 

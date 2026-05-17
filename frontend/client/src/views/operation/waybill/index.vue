@@ -510,7 +510,7 @@
   };
 
   const goImportPage = () => {
-    router.push('/business/waybill/import');
+    router.push('/operation/waybill/import');
   };
 
   const openFreightDetail = (row: Waybill) => {

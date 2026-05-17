@@ -118,7 +118,7 @@
   import { useFormData } from '@/utils/use-form-data';
   import { useDictData } from '@/utils/use-dict-data';
   import RoleSelect from './role-select.vue';
-  import OrganizationSelect from '@/views/system/organization/components/organization-select.vue';
+  import OrganizationSelect from '@/views/enterprise/organization/components/organization-select.vue';
   import { addUser, updateUser, checkExistence } from '@/api/system/user';
   import type { User } from '@/api/system/user/model';
 

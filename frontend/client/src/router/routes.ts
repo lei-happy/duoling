@@ -17,7 +17,7 @@ const STATIC_LAYOUT_MENU_PATHS = [
   { path: '/enterprise/manage' },
   { path: '/user/profile' },
   { path: '/user/message' },
-  { path: '/business/waybill/import' }
+  { path: '/operation/waybill/import' }
 ] as const;
 
 /**
@@ -88,8 +88,8 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
     },
     // 运单批量导入（从运单列表进入，不在后端菜单中单独挂路由）
     {
-      path: '/business/waybill/import',
-      component: () => import('@/views/business/waybill/import/index.vue'),
+      path: '/operation/waybill/import',
+      component: () => import('@/views/operation/waybill/import/index.vue'),
       meta: { title: '运单批量导入' }
     }
   ];

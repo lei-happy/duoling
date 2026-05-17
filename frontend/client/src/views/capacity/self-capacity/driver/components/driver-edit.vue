@@ -479,12 +479,12 @@
     toggleAccountStatus as apiToggleAccountStatus,
     listDriverRoutes,
     saveDriverRoutes
-  } from '@/api/capacity/self_capacity/driver';
+  } from '@/api/capacity/self-capacity/driver';
   import type {
     Driver,
     DriverAccount,
     DriverRoute
-  } from '@/api/capacity/self_capacity/driver/model';
+  } from '@/api/capacity/self-capacity/driver/model';
   import { useDictData } from '@/utils/use-dict-data';
   import { DICT_CODE_SELF_CAPACITY_DRIVER_TYPE } from '@/constants/dict-codes';
 

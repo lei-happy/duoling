@@ -64,7 +64,7 @@
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import { useDictData } from '@/utils/use-dict-data';
-  import type { VehicleParam } from '@/api/capacity/self_capacity/vehicle/model';
+  import type { VehicleParam } from '@/api/capacity/self-capacity/vehicle/model';
   import { DICT_CODE_VEHICLE_TYPE } from '@/constants/dict-codes';
 
   const [vehicleTypeDict] = useDictData([DICT_CODE_VEHICLE_TYPE]);

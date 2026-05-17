@@ -61,7 +61,7 @@
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import { useDictData } from '@/utils/use-dict-data';
-  import type { TrailerParam } from '@/api/capacity/self_capacity/trailer/model';
+  import type { TrailerParam } from '@/api/capacity/self-capacity/trailer/model';
   import { DICT_CODE_TRAILER_TYPE } from '@/constants/dict-codes';
 
   const [trailerTypeDict] = useDictData([DICT_CODE_TRAILER_TYPE]);

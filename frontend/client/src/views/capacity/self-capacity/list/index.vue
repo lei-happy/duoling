@@ -116,11 +116,11 @@
   import {
     pageCapacities,
     unbindCapacity
-  } from '@/api/capacity/self_capacity/list';
+  } from '@/api/capacity/self-capacity/list';
   import type {
     Capacity,
     CapacityParam
-  } from '@/api/capacity/self_capacity/list/model';
+  } from '@/api/capacity/self-capacity/list/model';
   import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'CapacityList' });

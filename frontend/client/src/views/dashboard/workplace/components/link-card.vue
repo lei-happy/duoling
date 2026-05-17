@@ -58,13 +58,13 @@
       id: 1,
       icon: 'UserOutlined',
       title: '用户',
-      url: '/system/user'
+      url: '/enterprise/user'
     },
     {
       id: 2,
       icon: 'AnalysisOutlined',
       title: '分析',
-      url: '/dashboard/analysis',
+      url: '/insight/overview',
       color: '#95de64'
     },
     {

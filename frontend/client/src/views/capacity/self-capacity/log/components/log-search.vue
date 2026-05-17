@@ -80,7 +80,7 @@
     DATE_TIME_FORMAT,
     getLast7DaysDateTimeRange
   } from '@/utils/date-util';
-  import type { CapacityLogParam } from '@/api/capacity/self_capacity/log/model';
+  import type { CapacityLogParam } from '@/api/capacity/self-capacity/log/model';
 
   type SearchPayload = Pick<
     CapacityLogParam,

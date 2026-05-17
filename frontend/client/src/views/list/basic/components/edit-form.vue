@@ -88,7 +88,7 @@
   import { EleMessage, emailReg, phoneReg } from 'ele-admin-plus';
   import { useFormData } from '@/utils/use-form-data';
   import { usePageTab } from '@/utils/use-page-tab';
-  import RoleSelect from '@/views/system/user/components/role-select.vue';
+  import RoleSelect from '@/views/enterprise/user/components/role-select.vue';
   import { addUser, updateUser, checkExistence } from '@/api/system/user';
   import type { User } from '@/api/system/user/model';
 

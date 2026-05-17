@@ -96,8 +96,8 @@
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage, emailReg, phoneReg, useModal } from 'ele-admin-plus';
   import { useFormData } from '@/utils/use-form-data';
-  import RoleSelect from '@/views/system/user/components/role-select.vue';
-  import OrganizationSelect from '@/views/system/organization/components/organization-select.vue';
+  import RoleSelect from '@/views/enterprise/user/components/role-select.vue';
+  import OrganizationSelect from '@/views/enterprise/organization/components/organization-select.vue';
   import { addUser, updateUser, checkExistence } from '@/api/system/user';
   import type { User } from '@/api/system/user/model';
 

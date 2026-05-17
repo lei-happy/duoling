@@ -74,7 +74,7 @@
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import { useDictData } from '@/utils/use-dict-data';
-  import type { DriverParam } from '@/api/capacity/self_capacity/driver/model';
+  import type { DriverParam } from '@/api/capacity/self-capacity/driver/model';
   import { DICT_CODE_SELF_CAPACITY_DRIVER_TYPE } from '@/constants/dict-codes';
 
   const [driverTypeDict] = useDictData([DICT_CODE_SELF_CAPACITY_DRIVER_TYPE]);

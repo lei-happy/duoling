@@ -423,7 +423,7 @@
 
   /** 查看详情 */
   const openDetail = (row: User) => {
-    const path = `/system/user/details/${row.userId}`;
+    const path = `/enterprise/user/details/${row.userId}`;
     addPageTab({
       title: `用户详情[${row.nickname}]`,
       key: path,

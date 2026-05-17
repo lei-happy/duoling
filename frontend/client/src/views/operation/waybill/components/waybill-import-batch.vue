@@ -296,7 +296,7 @@
   };
 
   const goWaybill = (id: number) => {
-    router.push({ path: '/business/waybill', query: { focus: String(id) } });
+    router.push({ path: '/operation/waybill', query: { focus: String(id) } });
   };
 
   watch(

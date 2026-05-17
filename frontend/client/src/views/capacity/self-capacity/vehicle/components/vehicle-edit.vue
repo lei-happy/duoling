@@ -254,8 +254,8 @@
     addVehicle,
     updateVehicle,
     listAvailableTrailers
-  } from '@/api/capacity/self_capacity/vehicle';
-  import type { Vehicle, TrailerOption } from '@/api/capacity/self_capacity/vehicle/model';
+  } from '@/api/capacity/self-capacity/vehicle';
+  import type { Vehicle, TrailerOption } from '@/api/capacity/self-capacity/vehicle/model';
   import {
     DEFAULT_PLATE_CATEGORY,
     PLATE_CATEGORY_OPTIONS,
