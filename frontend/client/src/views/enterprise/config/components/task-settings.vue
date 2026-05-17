@@ -23,65 +23,71 @@
           </el-icon>
         </ele-tooltip>
       </div>
-      <div class="task-settings__slots">
+      <div class="task-settings__main">
+        <div class="task-settings__main-slots">
+          <div class="task-settings__slots">
+            <div
+              v-for="(slot, idx) in noSlots"
+              :key="'no-' + idx"
+              class="task-settings__slot-row"
+            >
+              <span class="task-settings__slot-label">第 {{ idx + 1 }} 段</span>
+              <el-select
+                v-model="slot.type"
+                class="task-settings__slot-type"
+                @change="onNoTypeChange(slot)"
+              >
+                <el-option
+                  v-for="opt in noTypeOptions"
+                  :key="opt.value"
+                  :label="opt.label"
+                  :value="opt.value"
+                />
+              </el-select>
+              <el-input
+                v-if="slot.type === 'prefix'"
+                v-model="slot.value"
+                maxlength="32"
+                show-word-limit
+                placeholder="如 TASK"
+                class="task-settings__slot-input"
+                clearable
+              />
+              <el-select
+                v-if="slot.type === 'date'"
+                v-model="slot.format"
+                class="task-settings__slot-input"
+              >
+                <el-option label="年月日 YYYYMMDD" value="YYYYMMDD" />
+                <el-option label="年月 YYYYMM" value="YYYYMM" />
+              </el-select>
+              <template v-if="slot.type === 'seq'">
+                <span class="task-settings__inline-label">位数</span>
+                <el-input-number
+                  v-model="slot.digits"
+                  :min="1"
+                  :max="6"
+                  controls-position="right"
+                />
+                <span class="task-settings__inline-label">重置</span>
+                <el-select v-model="slot.reset" style="width: 120px">
+                  <el-option label="按日" value="daily" />
+                  <el-option label="按月" value="monthly" />
+                  <el-option label="不按日期" value="global" />
+                </el-select>
+              </template>
+            </div>
+          </div>
+        </div>
         <div
-          v-for="(slot, idx) in noSlots"
-          :key="'no-' + idx"
-          class="task-settings__slot-row"
+          class="task-settings__preview task-settings__preview--prominent task-settings__main-preview"
         >
-          <span class="task-settings__slot-label">第 {{ idx + 1 }} 段</span>
-          <el-select
-            v-model="slot.type"
-            class="task-settings__slot-type"
-            @change="onNoTypeChange(slot)"
-          >
-            <el-option
-              v-for="opt in noTypeOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
-          <el-input
-            v-if="slot.type === 'prefix'"
-            v-model="slot.value"
-            maxlength="32"
-            show-word-limit
-            placeholder="如 TASK"
-            class="task-settings__slot-input"
-            clearable
-          />
-          <el-select
-            v-if="slot.type === 'date'"
-            v-model="slot.format"
-            class="task-settings__slot-input"
-          >
-            <el-option label="年月日 YYYYMMDD" value="YYYYMMDD" />
-            <el-option label="年月 YYYYMM" value="YYYYMM" />
-          </el-select>
-          <template v-if="slot.type === 'seq'">
-            <span class="task-settings__inline-label">位数</span>
-            <el-input-number
-              v-model="slot.digits"
-              :min="1"
-              :max="6"
-              controls-position="right"
-            />
-            <span class="task-settings__inline-label">重置</span>
-            <el-select v-model="slot.reset" style="width: 120px">
-              <el-option label="按日" value="daily" />
-              <el-option label="按月" value="monthly" />
-              <el-option label="不按日期" value="global" />
-            </el-select>
-          </template>
-        </div>
-      </div>
-      <div class="task-settings__preview task-settings__preview--prominent">
-        <div class="task-settings__preview-head">
-          <span class="task-settings__preview-badge">预览</span>
-        </div>
-        <div class="task-settings__preview-body">
-          <code class="task-settings__preview-value">{{ taskNoPreview }}</code>
+          <div class="task-settings__preview-head">
+            <span class="task-settings__preview-badge">预览</span>
+          </div>
+          <div class="task-settings__preview-body">
+            <code class="task-settings__preview-value">{{ taskNoPreview }}</code>
+          </div>
         </div>
       </div>
       <div class="task-settings__actions">
@@ -124,41 +130,50 @@
           </el-icon>
         </ele-tooltip>
       </div>
-      <div class="task-settings__slots">
+      <div class="task-settings__main">
+        <div class="task-settings__main-slots">
+          <div class="task-settings__slots">
+            <div
+              v-for="(slot, idx) in nameSlots"
+              :key="'nm-' + idx"
+              class="task-settings__slot-row"
+            >
+              <span class="task-settings__slot-label">第 {{ idx + 1 }} 段</span>
+              <el-select
+                v-model="slot.kind"
+                class="task-settings__slot-type-wide"
+              >
+                <el-option
+                  v-for="opt in nameKindOptions"
+                  :key="opt.value"
+                  :label="opt.label"
+                  :value="opt.value"
+                />
+              </el-select>
+            </div>
+            <div class="task-settings__slot-row task-settings__slot-row--joiner">
+              <span class="task-settings__slot-label">连接符</span>
+              <el-input
+                v-model="nameJoiner"
+                maxlength="8"
+                class="task-settings__joiner-input"
+                placeholder="默认空格"
+              />
+            </div>
+          </div>
+        </div>
         <div
-          v-for="(slot, idx) in nameSlots"
-          :key="'nm-' + idx"
-          class="task-settings__slot-row"
+          class="task-settings__preview task-settings__preview--prominent task-settings__main-preview"
         >
-          <span class="task-settings__slot-label">第 {{ idx + 1 }} 段</span>
-          <el-select v-model="slot.kind" class="task-settings__slot-type-wide">
-            <el-option
-              v-for="opt in nameKindOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
-        </div>
-        <div class="task-settings__slot-row task-settings__slot-row--joiner">
-          <span class="task-settings__slot-label">连接符</span>
-          <el-input
-            v-model="nameJoiner"
-            maxlength="8"
-            class="task-settings__joiner-input"
-            placeholder="默认空格"
-          />
-        </div>
-      </div>
-      <div class="task-settings__preview task-settings__preview--prominent">
-        <div class="task-settings__preview-head">
-          <span class="task-settings__preview-badge">预览</span>
-        </div>
-        <div class="task-settings__preview-body">
-          <span
-            class="task-settings__preview-value task-settings__preview-value--name"
-            >{{ taskNamePreview }}</span
-          >
+          <div class="task-settings__preview-head">
+            <span class="task-settings__preview-badge">预览</span>
+          </div>
+          <div class="task-settings__preview-body">
+            <span
+              class="task-settings__preview-value task-settings__preview-value--name"
+              >{{ taskNamePreview }}</span
+            >
+          </div>
         </div>
       </div>
       <div class="task-settings__actions">
@@ -563,6 +578,42 @@
     font-size: var(--el-form-label-font-size);
     font-weight: 500;
     color: var(--el-text-color-regular);
+  }
+
+  .task-settings__main {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 16px 20px;
+  }
+
+  .task-settings__main-slots {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .task-settings__main-preview {
+    flex: 0 1 300px;
+    min-width: 200px;
+    max-width: 360px;
+    align-self: stretch;
+  }
+
+  .task-settings__main-preview .task-settings__preview-body {
+    flex: 1;
+    min-height: 0;
+  }
+
+  @media (max-width: 900px) {
+    .task-settings__main {
+      flex-direction: column;
+    }
+
+    .task-settings__main-preview {
+      flex: 1 1 auto;
+      max-width: none;
+      width: 100%;
+    }
   }
 
   .task-settings__slots {

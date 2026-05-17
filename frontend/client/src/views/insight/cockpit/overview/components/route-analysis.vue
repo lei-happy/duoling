@@ -65,7 +65,7 @@
           return `${item.regionName}<br/>
             单量：${item.waybillCount}<br/>
             台数：${item.vehicleQuantity}<br/>
-            收入：¥${Math.round(item.revenue).toLocaleString('zh-CN')}`;
+            运费：¥${Math.round(item.revenue).toLocaleString('zh-CN')}`;
         }
       },
       grid: { left: 12, right: 24, top: 16, bottom: 12, containLabel: true },

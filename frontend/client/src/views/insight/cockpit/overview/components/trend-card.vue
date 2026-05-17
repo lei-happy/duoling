@@ -1,4 +1,4 @@
-<!-- 经营驾驶舱 - 运单收入/单量趋势 + 按日联动的客户排行 -->
+<!-- 经营驾驶舱 - 运单运费/单量趋势 + 按日联动的客户排行 -->
 <template>
   <ele-card
     :header-style="{ paddingTop: 0, paddingBottom: 0 }"
@@ -11,7 +11,7 @@
         size="large"
         v-model="metric"
         :items="[
-          { name: 'revenue', label: '运单收入趋势' },
+          { name: 'revenue', label: '运单运费趋势' },
           { name: 'waybill', label: '运单量趋势' }
         ]"
       />
@@ -56,7 +56,7 @@
               class="trend-rank-sub"
             >
               {{ selectedDate }}{{
-                metric === 'revenue' ? ' · 按收入' : ' · 按商品车台数'
+                metric === 'revenue' ? ' · 按运费' : ' · 按商品车台数'
               }}
             </ele-text>
             <ele-text v-else type="placeholder" class="trend-rank-sub">
@@ -277,7 +277,7 @@
             return String(val ?? '');
           }
         },
-        legend: { ...legendTop, data: ['运单收入', '运单数'] },
+        legend: { ...legendTop, data: ['运单运费', '运单数'] },
         color: [REV_BAR_LIGHT, REV_LINE_DEEP],
         xAxis: [
           {
@@ -291,7 +291,7 @@
         yAxis: [
           {
             type: 'value',
-            name: '收入 (元)',
+            name: '运费 (元)',
             axisLabel: {
               formatter: (val: number) =>
                 Math.abs(val) >= 10000 ? `${(val / 10000).toFixed(1)}万` : `${val}`
@@ -301,7 +301,7 @@
         ],
         series: [
           {
-            name: '运单收入',
+            name: '运单运费',
             type: 'bar',
             yAxisIndex: 0,
             barMaxWidth: 36,

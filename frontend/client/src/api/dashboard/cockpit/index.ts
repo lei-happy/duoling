@@ -31,7 +31,7 @@ export async function getKpiSummary(params: CockpitDateRangeParam = {}) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 收入与单量趋势 */
+/** 运费与单量趋势 */
 export async function getRevenueTrend(params: RevenueTrendParam = {}) {
   const res = await request.get<ApiResult<RevenueTrendPoint[]>>(
     `${BASE}/revenue-trend`,

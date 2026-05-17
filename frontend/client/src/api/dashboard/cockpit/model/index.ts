@@ -30,13 +30,13 @@ export interface KpiMetric {
    *  - null 表示对照为 0、无法计算
    */
   dayOverDayRate: number | null;
-  /** 近 30 个自然日（含当日）按日序列；收入为「元」 */
+  /** 近 30 个自然日（含当日）按日序列；运费为「元」 */
   trend30d: SparklinePoint[];
 }
 
 /** KPI 总览 */
 export interface KpiSummary {
-  /** 运费总收入 */
+  /** 运单应收运费合计（结算口径，非扣成本后的收入） */
   revenue: KpiMetric;
   /** 总运单数 */
   waybillCount: KpiMetric;
@@ -46,11 +46,11 @@ export interface KpiSummary {
   customerCount: KpiMetric;
 }
 
-/** 收入与单量趋势点 */
+/** 运费与单量趋势点 */
 export interface RevenueTrendPoint {
   /** 时间桶（如 '2026-05-01' 或 '2026-05'） */
   date: string;
-  /** 运费收入 */
+  /** 运单应收运费（元，结算口径） */
   revenue: number;
   /** 运单数 */
   waybillCount: number;
@@ -58,7 +58,7 @@ export interface RevenueTrendPoint {
   vehicleQuantity: number;
 }
 
-/** 收入趋势查询参数 */
+/** 运费趋势查询参数 */
 export interface RevenueTrendParam extends CockpitDateRangeParam {
   /** 聚合粒度：day | week | month */
   granularity?: 'day' | 'week' | 'month';
@@ -71,7 +71,7 @@ export interface CustomerRankItem {
   revenue: number;
   waybillCount: number;
   vehicleQuantity: number;
-  /** 该客户运费占本期总收入的比例 */
+  /** 该客户运费占本期总运费的比例 */
   share: number;
 }
 
@@ -79,7 +79,7 @@ export interface CustomerRankItem {
 export interface CustomerRankParam extends CockpitDateRangeParam {
   /** 返回条数上限，最大 5000（服务端约束） */
   limit?: number;
-  /** 排序：revenue 按运单收入；vehicle_quantity 按商品车台数 */
+  /** 排序：revenue 按运单运费；vehicle_quantity 按商品车台数 */
   sort_by?: 'revenue' | 'vehicle_quantity';
   /**
    * 按客户类型筛选（与类型分布一致，NULL 为 -1 未知）；不传表示全部
