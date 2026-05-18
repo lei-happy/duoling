@@ -23,7 +23,7 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "员工编码（全局唯一）"
-        },
+        },        
         {
           "name": "created_at",
           "type": "DATETIME",
