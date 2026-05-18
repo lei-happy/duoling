@@ -1,16 +1,16 @@
-"""为 biz_waybill 增加起讫点行政区 ID 列（与 ORM / 设计文档对齐）
+"""确保 biz_waybill 存在 origin/destination_region_id（修复漏跑 DDL）
 
-旧库若只跑过 Phase 1 补表、未执行过 migrate_freight_engine 手工脚本，
-则缺本列会导致运单列表 count 查询失败（1054 Unknown column）。
+若 20260518_001 已写入 biz_migration_log 但实际未执行 ALTER（曾用错误镜像、
+手工改库等），后续 runner 不会再跑 20260518。本迁移用 information_schema
++ DATABASE() 检测当前库，缺列则补列，避免 Inspector 与连接状态边界问题。
 
-幂等：用 information_schema + DATABASE() 检测当前库后再 ALTER，
-避免仅用 ORM Inspector 时与连接默认库不一致的边界情况。
+幂等：仅当 information_schema 中无对应列时 ALTER。
 """
 
 from sqlalchemy import text
 
-MIGRATION_ID = "20260518_001"
-MIGRATION_NAME = "biz_waybill: add origin/destination_region_id"
+MIGRATION_ID = "20260519_001"
+MIGRATION_NAME = "biz_waybill: ensure origin/destination_region_id (repair)"
 
 REQUIRES_TABLES = ["biz_waybill"]
 
