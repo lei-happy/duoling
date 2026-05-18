@@ -1,0 +1,32 @@
+# Gitee Go CI（gitee.com/{org}/{repo}/blob/master/.workflow）
+# 流水线：每次 PR / push 检查 ORM 与 snapshot 是否对齐
+
+name: migration-check
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+
+stages:
+  - drift-check
+
+jobs:
+  drift-check:
+    name: ORM ↔ snapshot drift
+    stage: drift-check
+    image: python:3.11-slim
+    steps:
+      - name: install pip deps
+        run: |
+          pip install --no-cache-dir \
+            'sqlalchemy>=2.0.36' \
+            'alembic>=1.14.0' \
+            'pydantic>=2.10.0' \
+            'pydantic-settings>=2.6.0' \
+            'loguru>=0.7.3'
+      - name: drift check
+        run: |
+          cd backend
+          python -m scripts.migration.check

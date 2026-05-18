@@ -16,6 +16,7 @@
   python -m scripts.migration.runner --tenant 1001 # 只处理指定租户
   python -m scripts.migration.runner --skip-ensure # 跳过 Phase 1，仅跑 versioned migrations
   python -m scripts.migration.runner --skip-versioned  # 跳过 Phase 2，仅自动补表
+  python -m scripts.migration.runner --check-drift # 仅报警：ORM vs 真实租户库列差异
 
 退出码：
   0  全部成功
@@ -275,7 +276,12 @@ def main() -> int:
                         help="跳过 Phase 1：按 feature 补表")
     parser.add_argument("--skip-versioned", action="store_true",
                         help="跳过 Phase 2：versioned migrations")
+    parser.add_argument("--check-drift", action="store_true",
+                        help="仅检查：连真实租户库对比 ORM 列差异，仅报警不写库")
     args = parser.parse_args()
+
+    if args.check_drift:
+        return _run_check_drift(args.tenant)
 
     settings = get_settings()
     applied_by = (
@@ -387,6 +393,94 @@ def main() -> int:
     print("=" * 30)
 
     return 0 if fail == 0 else 1
+
+
+# ---------------------------------------------------------------------------
+# --check-drift：连真实租户库对比 ORM 列，仅报警不写库
+# ---------------------------------------------------------------------------
+def _run_check_drift(tenant_filter: Optional[str]) -> int:
+    """对每个租户库做真实 schema vs ORM 列差异巡检。
+
+    用途：scripts.migration.check 是「ORM vs snapshot」静态对比；本子命令
+    则是「ORM vs 真实租户库」动态对比，能发现：
+      - 某租户的迁移意外失败但 biz_migration_log 已写入（参考 1054 事故）
+      - 老租户库被人手动改过 schema
+      - 某迁移文件因 REQUIRES_TABLES 被跳过，但实际该租户已有那张表
+
+    退出码：0 = 所有租户都对齐；1 = 至少 1 个租户存在 drift
+    （仅打印告警，不修复——修复请走 scripts.migration.versions/）
+    """
+    settings = get_settings()
+    plat_url = (
+        f"mysql+pymysql://{settings.TENANT_DB_USER}:{settings.TENANT_DB_PASSWORD}"
+        f"@{settings.TENANT_DB_HOST}:{settings.TENANT_DB_PORT}"
+        f"/{settings.platform_database_name}?charset=utf8mb4"
+    )
+    try:
+        platform_engine = create_engine(plat_url, pool_pre_ping=True)
+        with platform_engine.connect() as c:
+            c.execute(text("SELECT 1"))
+    except Exception as e:
+        print(f"[ERROR] 无法连接平台库: {e}", file=sys.stderr)
+        return 2
+
+    tenants = _list_active_tenants(platform_engine, tenant_filter)
+    if not tenants:
+        print("[INFO] 没有需要检查的租户")
+        platform_engine.dispose()
+        return 0
+
+    # 把 ORM 中所有租户表的「列名集合」预先算好，按表索引
+    orm_table_cols: Dict[str, Set[str]] = {}
+    for t in TenantBase.metadata.sorted_tables:
+        orm_table_cols[t.name] = {c.name for c in t.columns}
+
+    print(f"\n========== 租户库 drift 巡检（{len(tenants)} 个租户） ==========")
+    fail_tenants = []
+    for tc in tenants:
+        try:
+            tenant_url = settings.tenant_db_url_sync(tc)
+            engine = create_engine(tenant_url, pool_pre_ping=True)
+            insp = sa_inspect(engine)
+            tenant_tables = set(insp.get_table_names())
+            tenant_drift: List[str] = []
+            for tn in sorted(tenant_tables & set(orm_table_cols.keys())):
+                db_cols = {c["name"] for c in insp.get_columns(tn)}
+                orm_cols = orm_table_cols[tn]
+                missing_in_db = orm_cols - db_cols
+                extra_in_db = db_cols - orm_cols
+                if missing_in_db:
+                    tenant_drift.append(
+                        f"  [缺列] {tn}: {sorted(missing_in_db)}"
+                    )
+                if extra_in_db:
+                    tenant_drift.append(
+                        f"  [多列] {tn}: {sorted(extra_in_db)}（ORM 已删除？）"
+                    )
+            engine.dispose()
+            if tenant_drift:
+                print(f"\n>>> {tc} —— {len(tenant_drift)} 处 drift")
+                for line in tenant_drift:
+                    print(line)
+                fail_tenants.append(tc)
+            else:
+                print(f">>> {tc} —— OK")
+        except Exception as e:
+            print(f">>> {tc} —— [ERROR] {type(e).__name__}: {e}")
+            fail_tenants.append(tc)
+
+    platform_engine.dispose()
+
+    print("\n========== 巡检汇总 ==========")
+    if fail_tenants:
+        print(f"[DRIFT] 共 {len(fail_tenants)} 个租户存在 drift：{fail_tenants}")
+        print("修复路径：")
+        print("  1) 确认 ORM 模型为期望事实源")
+        print("  2) cd backend && python -m scripts.migration.autogen tenant --name '<desc>'")
+        print("  3) review/补全生成的迁移文件，提交 + 部署")
+        return 1
+    print("[OK] 所有租户库列结构与 ORM 一致")
+    return 0
 
 
 if __name__ == "__main__":

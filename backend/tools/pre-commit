@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# ============================================================
+# 本地 git pre-commit hook（软提示，不阻塞 commit）
+#
+# 安装：
+#   cd backend && make dev-setup
+#   或手动: cp tools/pre-commit ../.git/hooks/pre-commit && chmod +x ../.git/hooks/pre-commit
+#
+# 行为：
+#   - 仅当本次 commit 的 staged 文件包含 ORM 模型 / 迁移工具改动时触发
+#   - 跑 `python -m scripts.migration.check`
+#   - 有 drift → 打印 WARN + 修复指引；但 exit 0（不阻断 commit）
+#   - 真正硬阻塞由 CI 完成（防止本地装不了 Python 影响节奏）
+#
+# 设计：故意不要 pre-commit 框架（pre-commit/hooks 第三方）—— 减少新依赖；
+#       团队成员只需 `make dev-setup` 一次即可。
+# ============================================================
+set +e
+
+# 仓库根（hook 在 .git/hooks 下执行，repo root = ..）
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$REPO_ROOT" ]; then
+  exit 0
+fi
+cd "$REPO_ROOT"
+
+# 仅当 staged 列表里碰到模型或迁移相关时才跑（节省体感）
+staged=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
+need_check=0
+case "$staged" in
+  *backend/app/modules/*models*|\
+  *backend/scripts/migration/*|\
+  *backend/migrations/*|\
+  *backend/alembic.ini*) need_check=1 ;;
+esac
+
+# 也可显式跳过（紧急情况）
+if [ "${SKIP_DB_CHECK:-0}" = "1" ]; then
+  need_check=0
+fi
+
+if [ "$need_check" -eq 0 ]; then
+  exit 0
+fi
+
+if ! command -v python >/dev/null 2>&1; then
+  echo "[pre-commit][WARN] 未找到 python，跳过 drift 检查（CI 会兜底）"
+  exit 0
+fi
+
+(
+  cd backend && python -m scripts.migration.check >/dev/null 2>&1
+)
+rc=$?
+case "$rc" in
+  0)
+    # OK，安静通过
+    ;;
+  1)
+    cat <<'EOF'
+
+================================================================
+[pre-commit][WARN] 检测到 ORM ↔ snapshot drift。
+你 commit 后 CI 会强制阻塞合并。修复步骤：
+  cd backend
+  python -m scripts.migration.autogen tenant   --name '<desc>'   # 改了 TenantBase
+  python -m scripts.migration.autogen platform --name '<desc>'   # 改了 PlatformBase
+  # 然后人工 review 生成的迁移文件 + snapshots/*.json
+  git add backend/scripts/migration/versions/<new>.py \
+          backend/scripts/migration/snapshots/*.json \
+          backend/migrations/versions/<new>.py
+本次 commit 不会被阻断（应急时方便）。如想跳过本检查：SKIP_DB_CHECK=1 git commit ...
+================================================================
+EOF
+    ;;
+  *)
+    echo "[pre-commit][WARN] drift 检查工具异常退出 (exit=$rc)，已忽略；建议手动排查后再 push。"
+    ;;
+esac
+
+exit 0

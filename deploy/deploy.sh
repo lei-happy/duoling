@@ -10,10 +10,12 @@
 #                bash deploy.sh update --skip-tenant-migration  # 应急：跳过租户业务库 schema 迁移
 #   仅获SSL:     bash deploy.sh ssl
 #   初始化DB:    bash deploy.sh db-init
-#   同步配置:    bash deploy.sh db-sync                # 单独触发平台元数据 + 租户业务库 schema + 租户字典
+#   同步配置:    bash deploy.sh db-sync                # 平台库 schema + 平台元数据 + 租户业务库 schema + 租户字典
 #                bash deploy.sh db-sync --auto
+#   仅平台 schema:bash deploy.sh db-platform-migrate    # 仅平台库 alembic upgrade head（智能 stamp/upgrade）
 #   仅租户迁移:  bash deploy.sh db-migrate             # 仅租户业务库 schema 迁移
 #                bash deploy.sh db-migrate --dry-run
+#   drift 检查:  bash deploy.sh db-check               # ORM metadata vs snapshot 静态对比（无需 DB）
 #   查看日志:    bash deploy.sh logs [service]
 #   查看状态:    bash deploy.sh status
 #
@@ -32,6 +34,18 @@
 #            ① Phase 1: 按 feature.required_tables 给已开通租户补建缺失业务表
 #            ② Phase 2: 按 versions/ 下迁移文件顺序执行未应用的 ALTER 等不可逆变更
 #   事实源 = backend/scripts/migration/versions/*.py，执行记录写入每个租户库的 biz_migration_log
+#
+# 平台库 schema 自动迁移（v3 新增 / 解决 1054 Unknown column 类事故）:
+#   工具   = backend/migrations/ + backend/scripts/migration/platform_migrate.py
+#   流程   = update 时在租户迁移之前先跑 alembic upgrade head（智能 stamp/upgrade）
+#   事实源 = backend/migrations/versions/*.py
+#
+# Drift 检查（强约束）:
+#   工具   = backend/scripts/migration/check.py
+#   流程   = update 早期阶段做静态 drift 检查（ORM vs snapshot），有差异则
+#            提示并中止部署；快照位于 backend/scripts/migration/snapshots/*.json
+#   开发流 = 改 ORM 模型后必须 `python -m scripts.migration.autogen tenant|platform --name '...'`
+#            生成迁移文件 + 更新 snapshot，CI 与 deploy 均会强制校验
 # ============================================================
 
 set -e
@@ -511,12 +525,86 @@ sync_tenant_business_schema() {
     return $rc
 }
 
+# ============================================================
+# 平台库 schema 自动迁移（alembic）
+#
+# 调用 backend/scripts/migration/platform_migrate.py：
+#   - 老库（已有 sys_user 等业务表）首次纳管：alembic stamp head
+#   - 全新库或已纳管的库：alembic upgrade head
+#   - 失败即 return 非零，外层会中止部署
+#
+# 必须排在 sync_platform_metadata 之前：
+#   平台元数据同步会写 sys_product_feature 等表，前提是表结构必须最新
+# ============================================================
+sync_platform_schema() {
+    if [ "${SKIP_PLATFORM_SCHEMA:-0}" = "1" ]; then
+        log_warn "已设置 --skip-platform-schema，跳过平台库 alembic 迁移"
+        return 0
+    fi
+
+    log_info "==== 平台库 schema 自动迁移（alembic upgrade head） ===="
+    cd "$DEPLOY_DIR"
+    set +e
+    docker compose exec -T backend python -m scripts.migration.platform_migrate
+    local rc=$?
+    set -e
+    if [ "$rc" -ne 0 ]; then
+        log_error "平台库 schema 迁移失败 (exit=$rc)"
+        log_warn "请单独排查后再继续：docker compose exec backend python -m scripts.migration.platform_migrate --status"
+        return $rc
+    fi
+    log_info "[OK] 平台库 schema 已对齐"
+}
+
+# ============================================================
+# Drift 检查（ORM ↔ snapshot 静态对比，无需 DB）
+#
+# 用途：
+#   - update 入口最先跑一遍，万一开发者忘了 autogen 直接 push，部署能在改库前
+#     就退出，避免坏代码上线
+#   - 失败时打印 diff 摘要 + 修复指引；返回非零，cmd_update 会 exit 1
+#
+# 退出码：
+#   0 = 无 drift；1 = 有 drift；2 = 工具/导入异常
+# ============================================================
+run_drift_check() {
+    if [ "${SKIP_DRIFT_CHECK:-0}" = "1" ]; then
+        log_warn "已设置 --skip-drift-check，跳过 ORM vs snapshot drift 检查"
+        return 0
+    fi
+
+    log_info "==== Drift 检查（ORM vs snapshot） ===="
+    cd "$DEPLOY_DIR"
+    set +e
+    docker compose exec -T backend python -m scripts.migration.check
+    local rc=$?
+    set -e
+    case "$rc" in
+        0)
+            log_info "[OK] 无 drift，可以继续部署"
+            return 0
+            ;;
+        1)
+            log_error "检测到 schema drift：ORM 与 snapshot 不一致"
+            log_error "应在合并前由开发者执行 `python -m scripts.migration.autogen ...` 生成迁移文件 + 刷新 snapshot"
+            log_warn "如需应急绕过（自担风险），重新执行：bash deploy.sh update --skip-drift-check"
+            return 1
+            ;;
+        *)
+            log_error "drift 检查工具异常退出 (exit=$rc)，请翻阅上方日志"
+            return $rc
+            ;;
+    esac
+}
+
 # 老接口保留，封装为顺序调用（向后兼容旧调用点）
-# 顺序：平台元数据 → 租户业务库 schema → 租户字典
-#   1) 平台先把 feature / version_feature / required_tables 写好
+# 顺序：平台库 schema（alembic）→ 平台元数据 → 租户业务库 schema → 租户字典
+#   0) 平台库表结构必须先升到最新（否则后面写 sys_product_feature 等会失败）
+#   1) 平台再把 feature / version_feature / required_tables 写好
 #   2) 租户库再据此补表 + 跑 versioned migration
 #   3) 字典最后灌（依赖 biz_dict 表已存在，core 表本来就有，所以顺序其实无强约束）
 sync_platform_data() {
+    sync_platform_schema
     sync_platform_metadata
     sync_tenant_business_schema
     sync_tenant_dicts
@@ -640,21 +728,25 @@ cmd_update() {
     AUTO_MODE=0
     SKIP_PLATFORM_SYNC=0
     SKIP_TENANT_MIGRATION=0
+    SKIP_PLATFORM_SCHEMA=0
+    SKIP_DRIFT_CHECK=0
     shift  # 跳过子命令本身
     while [ $# -gt 0 ]; do
         case "$1" in
             --auto)                    AUTO_MODE=1 ;;
             --skip-sync)               SKIP_PLATFORM_SYNC=1 ;;
             --skip-tenant-migration)   SKIP_TENANT_MIGRATION=1 ;;
+            --skip-platform-schema)    SKIP_PLATFORM_SCHEMA=1 ;;
+            --skip-drift-check)        SKIP_DRIFT_CHECK=1 ;;
             *)
                 log_warn "未知参数: $1（已忽略）"
                 ;;
         esac
         shift
     done
-    export AUTO_MODE SKIP_PLATFORM_SYNC SKIP_TENANT_MIGRATION
+    export AUTO_MODE SKIP_PLATFORM_SYNC SKIP_TENANT_MIGRATION SKIP_PLATFORM_SCHEMA SKIP_DRIFT_CHECK
 
-    log_info "开始更新部署...  (auto=$AUTO_MODE, skip-sync=$SKIP_PLATFORM_SYNC, skip-tenant-migration=$SKIP_TENANT_MIGRATION)"
+    log_info "开始更新部署... (auto=$AUTO_MODE skip-sync=$SKIP_PLATFORM_SYNC skip-tenant-migration=$SKIP_TENANT_MIGRATION skip-platform-schema=$SKIP_PLATFORM_SCHEMA skip-drift-check=$SKIP_DRIFT_CHECK)"
     cd "$PROJECT_DIR"
 
     # 拉取最新代码
@@ -690,6 +782,15 @@ cmd_update() {
         log_error "backend 未就绪，跳过后续 sync_platform_data 步骤"
         log_warn "排查完成后请单独执行: bash deploy.sh db-sync"
         docker compose ps
+        return 1
+    fi
+
+    # ---- Drift 兜底：在 sync 前先校验 ORM 与 snapshot 是否一致 ----
+    # 这是第三道防线（前两道：开发者 pre-commit / CI）；任何一道漏掉，部署都
+    # 不再继续，避免重复出现「ORM 加列了但 snapshot 没更、versioned migration
+    # 也没人写」的事故（参考 1054 Unknown column 'biz_waybill.origin_region_id'）。
+    if ! run_drift_check; then
+        log_error "drift 检查未通过，已中止部署"
         return 1
     fi
 
@@ -734,17 +835,19 @@ cmd_db_sync() {
     AUTO_MODE=0
     SKIP_PLATFORM_SYNC=0
     SKIP_TENANT_MIGRATION=0
+    SKIP_PLATFORM_SCHEMA=0
     shift
     while [ $# -gt 0 ]; do
         case "$1" in
             --auto)                    AUTO_MODE=1 ;;
             --skip-sync)               SKIP_PLATFORM_SYNC=1 ;;
             --skip-tenant-migration)   SKIP_TENANT_MIGRATION=1 ;;
+            --skip-platform-schema)    SKIP_PLATFORM_SCHEMA=1 ;;
             *)                         log_warn "未知参数: $1（已忽略）" ;;
         esac
         shift
     done
-    export AUTO_MODE SKIP_PLATFORM_SYNC SKIP_TENANT_MIGRATION
+    export AUTO_MODE SKIP_PLATFORM_SYNC SKIP_TENANT_MIGRATION SKIP_PLATFORM_SCHEMA
 
     # 单独触发 db-sync 时也确保 backend HTTP 就绪（用户可能刚重启完）
     if ! wait_for_backend_http 180; then
@@ -763,6 +866,7 @@ cmd_db_sync() {
 #   bash deploy.sh db-migrate                  # 全租户 apply
 #   bash deploy.sh db-migrate --dry-run        # 只打印计划，不写库
 #   bash deploy.sh db-migrate --tenant 1001    # 只处理指定租户
+#   bash deploy.sh db-migrate --check-drift    # 连真实租户库对比 ORM（仅报警）
 # ============================================================
 cmd_db_migrate() {
     check_root "db-migrate"
@@ -774,6 +878,44 @@ cmd_db_migrate() {
     local applied_by="manual@$(hostname)"
     docker compose exec -T -e MIGRATION_APPLIED_BY="$applied_by" backend \
         python -m scripts.migration.runner "$@"
+}
+
+# ============================================================
+# 命令: db-platform-migrate（单独触发平台库 alembic 迁移）
+#
+# 用法:
+#   bash deploy.sh db-platform-migrate           # 智能模式（auto stamp/upgrade）
+#   bash deploy.sh db-platform-migrate --upgrade # 强制 upgrade head
+#   bash deploy.sh db-platform-migrate --stamp   # 强制 stamp head（仅记版本，不动表）
+#   bash deploy.sh db-platform-migrate --status  # 查看 alembic current
+# ============================================================
+cmd_db_platform_migrate() {
+    check_root "db-platform-migrate"
+    check_env_file
+    cd "$DEPLOY_DIR"
+
+    shift
+    docker compose exec -T backend \
+        python -m scripts.migration.platform_migrate "$@"
+}
+
+# ============================================================
+# 命令: db-check（drift 静态检查，无需 DB）
+#
+# 用法:
+#   bash deploy.sh db-check          # 检查全部
+#   bash deploy.sh db-check --tenant
+#   bash deploy.sh db-check --platform
+#   bash deploy.sh db-check --json   # CI 友好
+#
+# 退出码：0 无 drift / 1 有 drift / 2 工具异常
+# 不需要 root：只是在 backend 容器内静态检查 ORM 与 snapshot
+# ============================================================
+cmd_db_check() {
+    cd "$DEPLOY_DIR"
+    shift
+    docker compose exec -T backend \
+        python -m scripts.migration.check "$@"
 }
 
 # ============================================================
@@ -862,6 +1004,12 @@ case "${1:-}" in
     db-migrate)
         cmd_db_migrate "$@"
         ;;
+    db-platform-migrate)
+        cmd_db_platform_migrate "$@"
+        ;;
+    db-check)
+        cmd_db_check "$@"
+        ;;
     logs)
         cmd_logs "$@"
         ;;
@@ -880,21 +1028,34 @@ case "${1:-}" in
         echo "用法: bash deploy.sh <命令> [选项]"
         echo ""
         echo "命令:"
-        echo "  init                       首次完整部署（安装 Docker、配置、构建、启动）"
-        echo "  update [--auto|--skip-sync|--skip-tenant-migration]"
-        echo "                             日常更新；--auto 跳过 sync 的人工确认；"
-        echo "                             --skip-sync 跳过平台元数据同步（应急）；"
-        echo "                             --skip-tenant-migration 跳过租户业务库 schema 自动迁移（应急）"
-        echo "  ssl                        检查并重载 SSL 证书（上传新证书后执行）"
-        echo "  db-init                    初始化数据库（创建表结构和种子数据）"
-        echo "  db-sync [--auto|--skip-sync|--skip-tenant-migration]"
-        echo "                             单独触发: 平台元数据 + 租户业务库 schema + 租户字典"
-        echo "  db-migrate [--dry-run|--tenant <code>]"
-        echo "                             单独触发: 仅租户业务库 schema 迁移（runner）"
-        echo "  logs [service]             查看日志（如 logs backend / logs nginx）"
-        echo "  status                     查看服务状态"
-        echo "  restart                    重启所有服务"
-        echo "  stop                       停止所有服务"
+        echo "  init                                       首次完整部署（安装 Docker、配置、构建、启动）"
+        echo "  update [--auto|--skip-sync|--skip-tenant-migration|--skip-platform-schema|--skip-drift-check]"
+        echo "                                             日常更新（顺序：drift-check → 平台库 schema → 平台元数据 → 租户库 schema → 租户字典）"
+        echo "                                             --auto 无人值守跳过人工确认"
+        echo "                                             --skip-sync 跳过平台元数据同步（应急）"
+        echo "                                             --skip-tenant-migration 跳过租户业务库 schema 自动迁移（应急）"
+        echo "                                             --skip-platform-schema 跳过平台库 alembic（应急）"
+        echo "                                             --skip-drift-check 跳过 drift 兜底检查（应急，强烈不建议）"
+        echo "  ssl                                        检查并重载 SSL 证书（上传新证书后执行）"
+        echo "  db-init                                    初始化数据库（创建表结构和种子数据）"
+        echo "  db-sync [--auto|--skip-sync|--skip-tenant-migration|--skip-platform-schema]"
+        echo "                                             单独触发: 平台库 schema + 平台元数据 + 租户业务库 schema + 租户字典"
+        echo "  db-migrate [--dry-run|--tenant <code>|--check-drift]"
+        echo "                                             单独触发: 仅租户业务库 schema 迁移（runner）"
+        echo "  db-platform-migrate [--upgrade|--stamp|--status]"
+        echo "                                             单独触发: 仅平台库 schema 迁移（alembic 智能模式）"
+        echo "  db-check [--tenant|--platform|--json]      drift 检查：ORM metadata vs snapshot 静态对比（无需 DB）"
+        echo "  logs [service]                             查看日志（如 logs backend / logs nginx）"
+        echo "  status                                     查看服务状态"
+        echo "  restart                                    重启所有服务"
+        echo "  stop                                       停止所有服务"
+        echo ""
+        echo "数据库迁移规范（防止 'Unknown column' 类事故）:"
+        echo "  事实源: backend/scripts/migration/snapshots/*.json （ORM ↔ DB 对齐基线，git tracked）"
+        echo "  开发流: 改 ORM 模型后必须跑 autogen 生成迁移 + 刷新 snapshot:"
+        echo "    cd backend && python -m scripts.migration.autogen tenant   --name '<desc>'"
+        echo "    cd backend && python -m scripts.migration.autogen platform --name '<desc>'"
+        echo "  CI/部署会强制校验 drift；详见 backend/scripts/migration/README.md"
         echo ""
         echo "平台元数据同步说明（菜单/产品功能/版本）:"
         echo "  事实源: backend/scripts/platform_sync/snapshots/*.json（随代码 git push）"
@@ -906,7 +1067,6 @@ case "${1:-}" in
         echo "  自动两阶段：按 feature.required_tables 补表 + 执行 versioned migrations"
         echo "  迁移文件: backend/scripts/migration/versions/*.py"
         echo "  执行记录: 每个租户库的 biz_migration_log 表（幂等，可重复运行）"
-        echo "  详见 backend/scripts/migration/__init__.py"
         echo ""
         ;;
 esac

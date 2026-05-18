@@ -44,17 +44,25 @@ python scripts/seed/seed_data.py
 python scripts/init/init_tenant_db.py 1001
 ```
 
-### 4. 数据库迁移（Alembic）
+### 4. 数据库迁移
+
+本项目对**平台库**（zt_platform）和**租户业务库**（zt_biz_*）使用两套互补的迁移机制，
+统一入口在 `scripts/migration/`，详见 [scripts/migration/README.md](scripts/migration/README.md)。
 
 ```bash
-# 生成迁移脚本
-alembic revision --autogenerate -m "描述变更内容"
+# 检查 ORM 与 snapshot 是否对齐（CI 也跑这个）
+python -m scripts.migration.check
 
-# 执行迁移
-alembic upgrade head
+# 改了 ORM 模型后 → 自动生成迁移文件 + 刷新 snapshot
+python -m scripts.migration.autogen tenant   --name "add waybill region"
+python -m scripts.migration.autogen platform --name "add ai prompt template"
 
-# 查看当前版本
-alembic current
+# 本地应用
+python -m scripts.migration.platform_migrate    # 平台库（智能 stamp/upgrade）
+python -m scripts.migration.runner              # 所有租户库
+
+# 查看 alembic 当前版本
+python -m scripts.migration.platform_migrate --status
 ```
 
 ### 5. 启动服务
@@ -107,23 +115,23 @@ backend/
 │       ├── file_upload.py   # 共享文件上传路由工厂
 │       ├── enums.py         # 枚举常量
 │       └── utils.py         # 工具函数（to_decimal, hash_password 等）
-├── alembic/                 # Alembic 迁移
-│   ├── env.py               # 迁移环境配置
+├── migrations/              # Alembic 平台库迁移目录（注意：故意不叫 alembic/，避免与 alembic 包重名）
+│   ├── env.py               # 迁移环境配置（PlatformBase.metadata）
 │   ├── script.py.mako       # 迁移脚本模板
 │   └── versions/            # 迁移版本文件
 ├── scripts/                 # 运维脚本（按功能分类）
 │   ├── init/                # 初始化脚本
-│   │   ├── init_platform_db.py
-│   │   ├── init_tenant_db.py
-│   │   └── init_dev_env.py
 │   ├── seed/                # 种子数据脚本
-│   │   ├── seed_data.py
-│   │   ├── seed_client_menus.py
-│   │   └── seed_product_features.py
-│   └── fix/                 # 修复/迁移脚本
-│       ├── fix_tenant_tables.py
-│       └── fix_menu_type.py
-├── alembic.ini              # Alembic 配置文件
+│   ├── fix/                 # 一次性修复脚本
+│   └── migration/           # 数据库迁移工具（项目级规范）
+│       ├── runner.py        # 租户业务库 schema runner（两阶段：补表 + versioned）
+│       ├── platform_migrate.py # 平台库 alembic 智能入口（auto stamp/upgrade）
+│       ├── check.py         # ORM ↔ snapshot drift 检查（CI 用）
+│       ├── autogen.py       # 自动生成迁移 stub（tenant + platform）
+│       ├── dump_snapshots.py # 重新刷新 snapshots/*.json
+│       ├── snapshots/       # schema 快照（git tracked，作为对齐事实源）
+│       └── versions/        # 租户业务库 versioned migrations（runner 风格）
+├── alembic.ini              # Alembic 配置文件（script_location = migrations）
 ├── requirements.txt         # Python 依赖
 └── .env.example             # 环境变量模板
 ```

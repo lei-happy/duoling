@@ -1,0 +1,38 @@
+name: migration-check
+
+# ============================================================
+# 硬阻塞 CI：任何 ORM 改动必须伴随迁移文件 + snapshot 刷新
+#
+# 触发：PR 任何变更 + master/main 推送（兜底防止直推 master 漏检）
+# 失败时：禁止合并，开发者需在本地按提示生成迁移再推送
+# ============================================================
+
+on:
+  pull_request:
+    paths:
+      - "backend/app/modules/**/models/**"
+      - "backend/scripts/migration/**"
+      - "backend/migrations/**"
+      - "backend/alembic.ini"
+  push:
+    branches: [master, main]
+    paths:
+      - "backend/app/modules/**/models/**"
+      - "backend/scripts/migration/**"
+      - "backend/migrations/**"
+      - "backend/alembic.ini"
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run drift check
+        run: bash backend/scripts/ci/migration_check.sh

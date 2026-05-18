@@ -1,0 +1,80 @@
+---
+description: ORM 模型变更必须同步生成迁移文件 + 刷新 schema snapshot
+globs:
+  - backend/app/modules/**/models/**
+  - backend/scripts/migration/**
+  - backend/migrations/**
+alwaysApply: false
+---
+
+# 数据库迁移强制规范（zt_platform + zt_biz_*）
+
+本仓库对「ORM 改动 ↔ 迁移文件 ↔ 线上 DB」三方一致性有强约束。
+**任何改动 `backend/app/modules/**/models/**` 下文件的 PR 都必须同时
+提交对应的迁移文件 + snapshot 更新**，否则 CI 会硬阻塞合并、deploy.sh
+会拒绝部署。
+
+详细规范见 [backend/scripts/migration/README.md](mdc:backend/scripts/migration/README.md)。
+
+## AI Agent 操作守则
+
+### 改 ORM 模型时
+
+修改任何 `app/modules/**/models/**.py` 后，**必须**在同一轮对话内：
+
+1. 先跑 `python -m scripts.migration.check`（cwd=backend），看是否有 drift
+2. 如有 drift：
+   - 改了 `TenantBase` 子类（`biz_*` 表）→
+     `python -m scripts.migration.autogen tenant --name "<简短描述>"`
+   - 改了 `PlatformBase` 子类（`sys_*` / `ai_*` / `open_*` 表）→
+     `python -m scripts.migration.autogen platform --name "<简短描述>"`
+3. **人工 review** 生成的迁移文件，重点检查（按风险从高到低）：
+   - **NOT NULL 列且无 server_default**：autogen 已加 TODO 注释，必须改成
+     允许 NULL 或在 ALTER 之前 UPDATE 回填，否则线上有存量数据时 ALTER 失败
+   - **改类型**：是否会截断现有数据（如 VARCHAR(100) → VARCHAR(50)）
+   - **删除/重命名**：autogen 默认生成 `raise NotImplementedError`，
+     人工启用时需配套数据保留策略
+   - **新增唯一索引**：现有数据可能违反唯一约束
+4. 一并 commit：
+   - 改动的 ORM 文件
+   - `backend/scripts/migration/versions/<new>.py`（租户）或
+     `backend/migrations/versions/<rev>_*.py`（平台）
+   - `backend/scripts/migration/snapshots/*.json`（autogen 已自动改）
+
+### 不要做的事
+
+- **不要直接 `metadata.create_all` 在线上库执行 schema 变更** —— 这会跳过
+  `biz_migration_log` 的记录，下次 runner 跑会重复检测
+- **不要修改/删除已合并到 master 的 versioned migration 文件** ——
+  即使写错了，也只能加新文件做反向修正
+- **不要手编 `snapshots/*.json`** —— 必须由 `dump_snapshots.py` 或
+  `autogen.py` 生成；手编会导致 diff 算法误报
+- **不要把 `backend/migrations/` 改回 `backend/alembic/`** —— 会与已安装的
+  `alembic` Python 包重名导致 import 失败（详见 alembic.ini 注释）
+- **不要绕过 drift check 直接部署** —— `--skip-drift-check` 是应急口子，
+  正常流程禁用
+
+### 何时不需要写 versioned migration
+
+- **新增表**（如新增整张 `biz_xxx` 表）：
+  runner.py 的 Phase 1 会按 `sys_product_feature.required_tables` 自动
+  建表。只需要：
+  1. 把新表名加到对应 feature 的 `required_tables` 字段（通过 platform_sync）
+  2. autogen 仍会刷新 snapshot —— 这是必须做的
+  3. 不需要手写 versions/<id>.py 文件（autogen 默认会跳过 create_table，
+     只生成 TODO 注释）
+
+- **纯 Python 业务逻辑改动**（services / api / schemas）：完全不影响数据库。
+
+### 命令速查
+
+```bash
+cd backend
+make migrate-check                          # 检查 drift
+make migrate-new-tenant name="xxx"          # 改了 biz_* 模型
+make migrate-new-platform name="xxx"        # 改了 sys_* / ai_* 模型
+make migrate-snapshot                       # 误删快照后重建
+make migrate-apply-local                    # 本地一次性应用所有迁移
+make migrate-runner-drift                   # 连真实租户库巡检
+make platform-status                        # 查看 alembic current
+```
