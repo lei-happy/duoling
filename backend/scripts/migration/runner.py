@@ -7,18 +7,23 @@
      连接探活，连不上的直接跳过 + 打印 WARN，整体流程不受单个坏租户影响。
      如果想保留旧严格行为，可加 --strict-initialized。
   2. 对每个租户：
-       a) Phase 1 - ensure tables：根据其已开通版本对应的
+       a) Phase 1   - ensure tables：根据其已开通版本对应的
           sys_product_feature.required_tables，自动补建缺失业务表
-       b) Phase 2 - versioned migrations：扫描 scripts/migration/versions/
+       b) Phase 1.5 - reconcile columns：对照 ORM metadata 给已存在的表
+          自动 ADD COLUMN 补齐缺失列（只 ADD，不 DROP，不改类型）。
+          NOT NULL 且无法推断默认值的列会被跳过 + 打 WARN，要求人工写迁移。
+          解决"远古租户库 + ORM 加字段从未写迁移 → 1054"类问题。
+       c) Phase 2   - versioned migrations：扫描 scripts/migration/versions/
           下的迁移模块，按 MIGRATION_ID 字典序执行，
           跳过 biz_migration_log 已记录的、跳过 REQUIRES_TABLES 不齐的
-  3. 输出每个租户的"建表清单 / 执行迁移清单 / 错误清单"
+  3. 输出每个租户的"建表清单 / reconcile 清单 / 执行迁移清单 / 错误清单"
 
 执行模式：
   python -m scripts.migration.runner               # apply 全部
   python -m scripts.migration.runner --dry-run     # 只打印计划，不写库
   python -m scripts.migration.runner --tenant 1001 # 只处理指定租户
   python -m scripts.migration.runner --skip-ensure # 跳过 Phase 1，仅跑 versioned migrations
+  python -m scripts.migration.runner --skip-reconcile  # 跳过 Phase 1.5，不自动补列
   python -m scripts.migration.runner --skip-versioned  # 跳过 Phase 2，仅自动补表
   python -m scripts.migration.runner --check-drift # 仅报警：ORM vs 真实租户库列差异
 
@@ -159,6 +164,116 @@ def _ensure_tables(
 
 
 # ---------------------------------------------------------------------------
+# Phase 1.5：reconcile columns
+#   对照 ORM metadata，给「真实库已存在的表」补齐缺失列。
+#   只 ADD，不 DROP，不 ALTER 现有列类型，避免破坏性操作。
+#   适用场景：远古租户库的表是早期版本建的，后来 ORM 加了字段但没写迁移，
+#   导致线上查询缺列报 1054（参考 zt_biz_1006 calc_status 事故）。
+# ---------------------------------------------------------------------------
+def _safe_default_for_not_null(col) -> Optional[str]:
+    """没显式 server_default 但 NOT NULL 时，给一个安全的兜底 default。
+
+    返回 None 表示无法安全推断默认值，调用方应跳过这种列并打印警告，
+    要求开发者手写迁移文件。
+    """
+    from sqlalchemy import (
+        Boolean, Date, DateTime, Float, Integer, JSON, Numeric, String, Text,
+    )
+    from sqlalchemy.dialects.mysql import (
+        BIGINT, INTEGER, MEDIUMINT, SMALLINT, TINYINT, DECIMAL, DOUBLE,
+        VARCHAR, TEXT, LONGTEXT, MEDIUMTEXT, TINYTEXT, JSON as MYSQL_JSON,
+    )
+
+    t = col.type
+    if isinstance(
+        t, (Integer, BIGINT, INTEGER, MEDIUMINT, SMALLINT, TINYINT,
+            Numeric, DECIMAL, Float, DOUBLE, Boolean),
+    ):
+        return "0"
+    if isinstance(t, (String, VARCHAR, Text, TEXT, LONGTEXT, MEDIUMTEXT, TINYTEXT)):
+        return "''"
+    if isinstance(t, DateTime):
+        return "CURRENT_TIMESTAMP"
+    if isinstance(t, Date):
+        return "'1970-01-01'"
+    if isinstance(t, (JSON, MYSQL_JSON)):
+        return "(JSON_OBJECT())"
+    return None
+
+
+def _column_add_clause(col) -> Optional[str]:
+    """把 SQLAlchemy Column 编译成 MySQL `ADD COLUMN` 子句。
+
+    返回 None 表示该列无法被安全地自动补建（NOT NULL 且无法推断默认值）。
+    """
+    from sqlalchemy.dialects import mysql as mysql_dialect
+
+    type_repr = col.type.compile(dialect=mysql_dialect.dialect())
+    parts = [f"`{col.name}` {type_repr}"]
+    if not col.nullable:
+        parts.append("NOT NULL")
+    else:
+        parts.append("NULL")
+
+    default_expr: Optional[str] = None
+    if col.server_default is not None:
+        arg = getattr(col.server_default, "arg", None)
+        if arg is not None:
+            default_expr = (
+                str(arg.text) if hasattr(arg, "text") else str(arg)
+            )
+    if default_expr is None and not col.nullable:
+        default_expr = _safe_default_for_not_null(col)
+        if default_expr is None:
+            # 没法兜底：要求人工写迁移，避免破坏性 ADD COLUMN
+            return None
+    if default_expr is not None:
+        parts.append(f"DEFAULT {default_expr}")
+
+    if col.comment:
+        safe_comment = col.comment.replace("'", "''")
+        parts.append(f"COMMENT '{safe_comment}'")
+    return " ".join(parts)
+
+
+def _reconcile_columns(
+    engine: Engine, dry_run: bool,
+) -> Tuple[List[str], List[str]]:
+    """对照 ORM metadata 给已存在的表补齐缺失列。
+
+    返回 (executed_sqls, unsafe_warnings)：
+      - executed_sqls: 已执行（或 dry-run 计划）的 ALTER TABLE 列表
+      - unsafe_warnings: 因 NOT NULL 又无法推断默认值而**跳过**的列描述，
+        需要人工写迁移
+    """
+    insp = sa_inspect(engine)
+    existing_tables = set(insp.get_table_names())
+    executed: List[str] = []
+    warnings: List[str] = []
+
+    for tbl in TenantBase.metadata.sorted_tables:
+        if tbl.name not in existing_tables:
+            continue
+        live_cols = {c["name"] for c in insp.get_columns(tbl.name)}
+        for col in tbl.columns:
+            if col.name in live_cols:
+                continue
+            clause = _column_add_clause(col)
+            if clause is None:
+                warnings.append(
+                    f"{tbl.name}.{col.name} 是 NOT NULL 且无法推断默认值，"
+                    f"请手写 versions/ 迁移补建"
+                )
+                continue
+            ddl = f"ALTER TABLE `{tbl.name}` ADD COLUMN {clause}"
+            executed.append(ddl)
+            if not dry_run:
+                with engine.begin() as conn:
+                    conn.execute(text(ddl))
+    return executed, warnings
+
+
+# ---------------------------------------------------------------------------
 # Phase 2：versioned migrations
 # ---------------------------------------------------------------------------
 @dataclass
@@ -249,6 +364,8 @@ def _run_versioned_migrations(
 class TenantReport:
     tenant_code: str
     created_tables: List[str] = field(default_factory=list)
+    reconciled_columns: List[str] = field(default_factory=list)
+    reconcile_warnings: List[str] = field(default_factory=list)
     migration_result: Dict[str, List[str]] = field(default_factory=dict)
     error: Optional[str] = None
 
@@ -299,6 +416,8 @@ def main() -> int:
                         help="只处理指定 tenant_code")
     parser.add_argument("--skip-ensure", action="store_true",
                         help="跳过 Phase 1：按 feature 补表")
+    parser.add_argument("--skip-reconcile", action="store_true",
+                        help="跳过 Phase 1.5：自动 ADD COLUMN 补齐已存在表的缺失列")
     parser.add_argument("--skip-versioned", action="store_true",
                         help="跳过 Phase 2：versioned migrations")
     parser.add_argument("--check-drift", action="store_true",
@@ -376,6 +495,8 @@ def main() -> int:
               f"{[m.id for m in migrations] if migrations else '(无)'}")
     if not args.skip_ensure:
         print("Phase 1 启用：按 feature 自动补表")
+    if not args.skip_reconcile:
+        print("Phase 1.5 启用：自动 ADD COLUMN 补齐缺列（reconcile）")
     if not args.skip_versioned:
         print("Phase 2 启用：versioned migrations")
     print("=" * 60)
@@ -401,6 +522,26 @@ def main() -> int:
                         print(f"  Phase 1：表已齐全（需 {len(required)} 张）")
                 else:
                     print("  Phase 1：未开通任何带 required_tables 的 feature")
+
+            # Phase 1.5: reconcile columns（已存在表的缺列自动补齐）
+            if not args.skip_reconcile:
+                rec_executed, rec_warnings = _reconcile_columns(
+                    engine, args.dry_run,
+                )
+                if rec_executed:
+                    rep.reconciled_columns = rec_executed
+                    prefix = "[dry-run] 将执行" if args.dry_run else "已执行"
+                    print(f"  {prefix} reconcile ({len(rec_executed)}):")
+                    for sql in rec_executed:
+                        print(f"    - {sql}")
+                else:
+                    print("  Phase 1.5：所有已存在表的列与 ORM 一致")
+                if rec_warnings:
+                    print("  [WARN] 以下列因 NOT NULL 且无法推断默认值被跳过，"
+                          "请手写 versions/ 迁移：")
+                    for w in rec_warnings:
+                        print(f"    - {w}")
+                    rep.reconcile_warnings = rec_warnings
 
             # Phase 2: versioned migrations
             if not args.skip_versioned and migrations:
@@ -456,12 +597,19 @@ def main() -> int:
     ok = sum(1 for r in reports if r.error is None)
     fail = sum(1 for r in reports if r.error is not None)
     total_created = sum(len(r.created_tables) for r in reports)
+    total_reconciled = sum(len(r.reconciled_columns) for r in reports)
+    total_warnings = sum(len(r.reconcile_warnings) for r in reports)
     total_migrated = sum(
         len(r.migration_result.get("executed", []))
         for r in reports if not r.error
     )
     print(f"租户总数: {len(reports)}  成功: {ok}  失败: {fail}")
-    print(f"本次共补建表 {total_created} 张；执行 versioned migrations {total_migrated} 次")
+    print(
+        f"本次共补建表 {total_created} 张；reconcile ADD COLUMN "
+        f"{total_reconciled} 次；执行 versioned migrations {total_migrated} 次"
+    )
+    if total_warnings:
+        print(f"⚠ 有 {total_warnings} 个 NOT NULL 列需手写迁移（详见上方 [WARN]）")
     for r in reports:
         if r.error:
             print(f"  [FAIL] {r.tenant_code}: {r.error}")
