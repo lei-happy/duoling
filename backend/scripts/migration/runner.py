@@ -1,7 +1,11 @@
 """租户业务库 schema 自动迁移 runner（部署脚本 update 时自动调用）
 
 工作流：
-  1. 列出所有 active 租户（sys_tenant.is_deleted=0 AND db_initialized=1）
+  1. 列出所有 active 租户：默认 sys_tenant.is_deleted=0，**不再要求**
+     db_initialized=1（因为线上有不少存量租户 db_initialized=0 但实际在用，
+     参考 2026-05-18 zt_biz_1006 1054 事故）。runner 会先对每个租户库做轻量
+     连接探活，连不上的直接跳过 + 打印 WARN，整体流程不受单个坏租户影响。
+     如果想保留旧严格行为，可加 --strict-initialized。
   2. 对每个租户：
        a) Phase 1 - ensure tables：根据其已开通版本对应的
           sys_product_feature.required_tables，自动补建缺失业务表
@@ -35,14 +39,14 @@ import sys
 import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 _SCRIPT = Path(__file__).resolve()
 _BACKEND = _SCRIPT.parents[2]
 if str(_BACKEND) not in sys.path:
     sys.path.insert(0, str(_BACKEND))
 
-from sqlalchemy import create_engine, text, inspect as sa_inspect
+from sqlalchemy import bindparam, create_engine, text, inspect as sa_inspect
 from sqlalchemy.engine import Engine
 
 from app.core.config import get_settings
@@ -250,18 +254,39 @@ class TenantReport:
 
 
 def _list_active_tenants(
-    platform_engine: Engine, only: Optional[str] = None,
+    platform_engine: Engine,
+    only: Optional[str] = None,
+    *,
+    include_uninitialized: bool = True,
 ) -> List[str]:
+    """列出需要处理的租户。
+
+    ⚠ 历史教训（2026-05-18 zt_biz_1006 1054 事故）：
+    早期注册流程或某些分支没把 `sys_tenant.db_initialized` 写成 1，但租户库
+    其实早就建好且在线上正常使用。如果 runner 还按 `db_initialized = 1`
+    过滤，就会跳过这些"实际在用但 db_initialized=0"的存量租户，迁移
+    永远跑不到它们头上。
+
+    默认行为（include_uninitialized=True）：
+      - 取 sys_tenant.is_deleted=0 的全部租户
+      - 跑迁移之前对每个租户库做轻量 try-connect（在主流程里），连不上才跳过
+        （所以即使个别租户从未真正建库，也不会让整次部署失败）
+
+    `only` 参数：直接处理指定 tenant_code，**完全绕过 sys_tenant 过滤**，
+      用于事故应急（例如 sys_tenant 表被人误改字段时仍能强制修复）。
+    """
+    if only:
+        # 应急路径：完全不查表，直接尊重调用方
+        return [only]
+    where = "is_deleted = 0"
+    if not include_uninitialized:
+        where += " AND db_initialized = 1"
     with platform_engine.connect() as conn:
         rows = conn.execute(text(
-            "SELECT tenant_code FROM sys_tenant "
-            "WHERE is_deleted = 0 AND db_initialized = 1 "
-            "ORDER BY tenant_code"
+            f"SELECT tenant_code FROM sys_tenant "
+            f"WHERE {where} ORDER BY tenant_code"
         )).fetchall()
-    codes = [r[0] for r in rows]
-    if only:
-        codes = [c for c in codes if c == only]
-    return codes
+    return [r[0] for r in rows]
 
 
 def main() -> int:
@@ -278,10 +303,14 @@ def main() -> int:
                         help="跳过 Phase 2：versioned migrations")
     parser.add_argument("--check-drift", action="store_true",
                         help="仅检查：连真实租户库对比 ORM 列差异，仅报警不写库")
+    parser.add_argument("--strict-initialized", action="store_true",
+                        help="只处理 sys_tenant.db_initialized=1 的租户（旧行为，不推荐）")
     args = parser.parse_args()
 
     if args.check_drift:
-        return _run_check_drift(args.tenant)
+        return _run_check_drift(
+            args.tenant, include_uninitialized=not args.strict_initialized,
+        )
 
     settings = get_settings()
     applied_by = (
@@ -304,9 +333,36 @@ def main() -> int:
         print(f"[ERROR] 无法连接平台库: {e}", file=sys.stderr)
         return 2
 
-    tenants = _list_active_tenants(platform_engine, args.tenant)
+    tenants = _list_active_tenants(
+        platform_engine,
+        args.tenant,
+        include_uninitialized=not args.strict_initialized,
+    )
     if not tenants:
         print("[INFO] 没有需要处理的租户")
+        platform_engine.dispose()
+        return 0
+
+    # 探活：剔除"租户库根本不存在/连不上"的，避免单个坏租户拖垮整个迁移
+    reachable: List[str] = []
+    unreachable: List[Tuple[str, str]] = []
+    for tc in tenants:
+        try:
+            probe_url = settings.tenant_db_url_sync(tc)
+            probe_engine = create_engine(probe_url, pool_pre_ping=True)
+            with probe_engine.connect() as c:
+                c.execute(text("SELECT 1"))
+            probe_engine.dispose()
+            reachable.append(tc)
+        except Exception as e:
+            unreachable.append((tc, f"{type(e).__name__}: {e}"))
+    if unreachable:
+        print("[WARN] 以下租户库无法连接，已跳过：")
+        for tc, err in unreachable:
+            print(f"  - {tc}: {err}")
+    tenants = reachable
+    if not tenants:
+        print("[INFO] 没有可达的租户，结束")
         platform_engine.dispose()
         return 0
 
@@ -375,6 +431,25 @@ def main() -> int:
             traceback.print_exc()
         reports.append(rep)
 
+    # 把"成功跑通迁移"的租户在 sys_tenant 里回写成 db_initialized=1，
+    # 修复历史上漏置该字段的存量租户（参考 zt_biz_1006 事故）
+    if not args.dry_run:
+        ok_codes = [r.tenant_code for r in reports if r.error is None]
+        if ok_codes:
+            try:
+                stmt = text(
+                    "UPDATE sys_tenant SET db_initialized = 1 "
+                    "WHERE is_deleted = 0 AND db_initialized = 0 "
+                    "AND tenant_code IN :codes"
+                ).bindparams(bindparam("codes", expanding=True))
+                with platform_engine.begin() as c:
+                    res = c.execute(stmt, {"codes": ok_codes})
+                    if res.rowcount:
+                        print(f"[INFO] 已修正 sys_tenant.db_initialized=1，"
+                              f"影响 {res.rowcount} 行")
+            except Exception as e:
+                print(f"[WARN] 回写 sys_tenant.db_initialized 失败: {e}")
+
     platform_engine.dispose()
 
     print("\n========== 汇总 ==========")
@@ -398,7 +473,11 @@ def main() -> int:
 # ---------------------------------------------------------------------------
 # --check-drift：连真实租户库对比 ORM 列，仅报警不写库
 # ---------------------------------------------------------------------------
-def _run_check_drift(tenant_filter: Optional[str]) -> int:
+def _run_check_drift(
+    tenant_filter: Optional[str],
+    *,
+    include_uninitialized: bool = True,
+) -> int:
     """对每个租户库做真实 schema vs ORM 列差异巡检。
 
     用途：scripts.migration.check 是「ORM vs snapshot」静态对比；本子命令
@@ -424,9 +503,28 @@ def _run_check_drift(tenant_filter: Optional[str]) -> int:
         print(f"[ERROR] 无法连接平台库: {e}", file=sys.stderr)
         return 2
 
-    tenants = _list_active_tenants(platform_engine, tenant_filter)
+    tenants = _list_active_tenants(
+        platform_engine, tenant_filter, include_uninitialized=include_uninitialized,
+    )
     if not tenants:
         print("[INFO] 没有需要检查的租户")
+        platform_engine.dispose()
+        return 0
+
+    # 探活：连不上的租户库直接跳过，不影响整次巡检
+    reachable: List[str] = []
+    for tc in tenants:
+        try:
+            probe = create_engine(settings.tenant_db_url_sync(tc), pool_pre_ping=True)
+            with probe.connect() as c:
+                c.execute(text("SELECT 1"))
+            probe.dispose()
+            reachable.append(tc)
+        except Exception as e:
+            print(f"[WARN] 租户 {tc} 库不可达，已跳过: {type(e).__name__}: {e}")
+    tenants = reachable
+    if not tenants:
+        print("[INFO] 没有可达的租户")
         platform_engine.dispose()
         return 0
 
