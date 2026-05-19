@@ -41,6 +41,20 @@
     @update:visible="(v) => onDialogVisible('confirm-sign', v)"
     @done="emit('done')"
   />
+  <action-revert
+    v-if="revertActionKey"
+    :visible="actionDialog === 'revert'"
+    :tasks="targets"
+    :action-key="revertActionKey"
+    @update:visible="(v) => onDialogVisible('revert', v)"
+    @done="emit('done')"
+  />
+  <action-force-cancel
+    :visible="actionDialog === 'force-cancel'"
+    :tasks="targets"
+    @update:visible="(v) => onDialogVisible('force-cancel', v)"
+    @done="emit('done')"
+  />
 
   <finance-edit
     v-if="singleTask"
@@ -61,9 +75,14 @@
   import ActionConfirmLoad from './action-confirm-load.vue';
   import ActionConfirmArrive from './action-confirm-arrive.vue';
   import ActionConfirmSign from './action-confirm-sign.vue';
+  import ActionRevert from './action-revert.vue';
+  import ActionForceCancel from './action-force-cancel.vue';
   import FinanceEdit from '../../task-finance/components/finance-edit.vue';
   import type { Task } from '@/api/operation/task/model';
-  import type { TaskActionConfig } from '../../task/task-actions';
+  import type {
+    TaskActionConfig,
+    TaskActionKey
+  } from '../../task/task-actions';
 
   type DialogKey = NonNullable<TaskActionConfig['dialog']>;
 
@@ -77,6 +96,12 @@
   const financeVisible = defineModel<boolean>('financeVisible', {
     default: false
   });
+  // 当 actionDialog='revert' 时，调用方需同步设置具体的 revert 动作 key
+  // 用于通用撤销弹窗 (action-revert.vue) 决定 from→to 文案与 revertTo 参数
+  const revertActionKey = defineModel<TaskActionKey | null>(
+    'revertActionKey',
+    { default: null }
+  );
 
   const emit = defineEmits<{
     (e: 'done'): void;

@@ -29,9 +29,11 @@ from app.modules.client.schemas.task.task import (
     TaskBatchStatusRequest,
     TaskCancelRequest,
     TaskCreate,
+    TaskForceCancelRequest,
     TaskListItemOut,
     TaskOut,
     TaskPlanRouteRequest,
+    TaskRevertStatusRequest,
     TaskStatusUpdate,
     TaskUpdate,
 )
@@ -364,6 +366,60 @@ async def cancel_task(
     _require_tenant(current_user)
     reason = data.reason if data else None
     task = await TaskService.cancel_task(db, task_id, reason=reason)
+    return success(data=await _task_detail_dump(db, task))
+
+
+@router.post("/{task_id}/revert-status")
+@operation_log(
+    module="运输任务单", action="撤销状态", description="任务单单步反向跳转",
+)
+async def revert_task_status(
+    request: Request,
+    task_id: int,
+    data: TaskRevertStatusRequest,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """专项撤销：把任务单回退到上一态。
+
+    - 合法路径见《02.运单与任务单状态机联动设计.md》§4.5 反向跳转矩阵：
+      1→0 / 2→1 / 3→2 / 4→3 / 5→4
+    - 联动：Item 反向同步、Waybill 聚合允许 downgrade
+    """
+    _require_tenant(current_user)
+    task = await TaskService.revert_status(
+        db, task_id,
+        target_status=data.targetStatus,
+        reason=data.reason,
+        current_user_id=current_user.user_id,
+    )
+    return success(data=await _task_detail_dump(db, task))
+
+
+@router.post("/{task_id}/force-cancel")
+@operation_log(
+    module="运输任务单", action="强制取消", description="任务单线下强制取消（2/3/4 → 9）",
+)
+async def force_cancel_task(
+    request: Request,
+    task_id: int,
+    data: TaskForceCancelRequest,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """强制取消：直接置任务单为 ``9 已取消``。
+
+    适用：已装车 / 在途 / 已到达 区间内的线下取消。
+    - 联动：所有 item 推到 9，cargo 占用释放
+    - 未支付费用单一并撤销（``data.cancelUnpaidFinanceDocs`` 为 False 则跳过）
+    """
+    _require_tenant(current_user)
+    task = await TaskService.force_cancel(
+        db, task_id,
+        reason=data.reason,
+        current_user_id=current_user.user_id,
+        cancel_unpaid_finance_docs=bool(data.cancelUnpaidFinanceDocs),
+    )
     return success(data=await _task_detail_dump(db, task))
 
 

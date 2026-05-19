@@ -68,6 +68,28 @@
             >
               {{ act.label }}
             </el-button>
+            <el-dropdown
+              v-if="reverseActions.length"
+              trigger="click"
+            >
+              <el-button size="small" plain type="info">
+                更多操作<el-icon style="margin-left: 2px"
+                  ><ArrowDown
+                /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item
+                    v-for="act in reverseActions"
+                    :key="act.key"
+                    v-permission="act.permission"
+                    @click="triggerAction(act)"
+                  >
+                    {{ act.label }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
             <el-button
               type="success"
               size="small"
@@ -286,6 +308,18 @@
       :tasks="task ? [task] : []"
       @done="onActionDone"
     />
+    <action-revert
+      v-if="task && revertActionKey"
+      v-model:visible="actionVisible.revert"
+      :tasks="[task]"
+      :action-key="revertActionKey"
+      @done="onActionDone"
+    />
+    <action-force-cancel
+      v-model:visible="actionVisible['force-cancel']"
+      :tasks="task ? [task] : []"
+      @done="onActionDone"
+    />
 
     <!-- 费用单创建/编辑 -->
     <finance-edit
@@ -304,7 +338,7 @@
   import { computed, reactive, ref, watch } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
-  import { Plus } from '@element-plus/icons-vue';
+  import { ArrowDown, Plus } from '@element-plus/icons-vue';
   import {
     getTask,
     listTaskFinanceSummary,
@@ -323,10 +357,11 @@
   import {
     TASK_ACTION_CONFIGS,
     getPrimaryTaskAction,
+    getReverseTaskActions,
     getSecondaryTaskActions,
     shouldShowPlanRoute
   } from '../task-actions';
-  import type { TaskActionConfig } from '../task-actions';
+  import type { TaskActionConfig, TaskActionKey } from '../task-actions';
   import FinanceEdit from '../../task-finance/components/finance-edit.vue';
   import ActionAssignCarrier from '../../task-workbench/components/action-assign-carrier.vue';
   import ActionDispatch from '../../task-workbench/components/action-dispatch.vue';
@@ -334,6 +369,8 @@
   import ActionConfirmLoad from '../../task-workbench/components/action-confirm-load.vue';
   import ActionConfirmArrive from '../../task-workbench/components/action-confirm-arrive.vue';
   import ActionConfirmSign from '../../task-workbench/components/action-confirm-sign.vue';
+  import ActionRevert from '../../task-workbench/components/action-revert.vue';
+  import ActionForceCancel from '../../task-workbench/components/action-force-cancel.vue';
 
   const props = defineProps<{ visible: boolean; taskId: number | null }>();
   const emit = defineEmits<{
@@ -433,6 +470,7 @@
   const secondaryActions = computed(() =>
     getSecondaryTaskActions(task.value?.status)
   );
+  const reverseActions = computed(() => getReverseTaskActions(task.value?.status));
 
   const actionVisible = reactive({
     'assign-carrier': false,
@@ -440,8 +478,11 @@
     'plan-route': false,
     'confirm-load': false,
     'confirm-arrive': false,
-    'confirm-sign': false
+    'confirm-sign': false,
+    revert: false,
+    'force-cancel': false
   });
+  const revertActionKey = ref<TaskActionKey | null>(null);
 
   const planRouteAction = TASK_ACTION_CONFIGS['plan-route'];
   const showPlanRoute = computed(() =>
@@ -453,6 +494,11 @@
 
   const triggerAction = async (act: TaskActionConfig) => {
     if (!task.value?.id) return;
+    if (act.dialog === 'revert') {
+      revertActionKey.value = act.key;
+      actionVisible.revert = true;
+      return;
+    }
     if (act.dialog) {
       actionVisible[act.dialog] = true;
       return;

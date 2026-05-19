@@ -8,6 +8,7 @@
 4. 任务单 total_quantity / waybill_count 冗余聚合
 """
 
+from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy import and_, func, or_, select, update
@@ -24,11 +25,17 @@ from app.modules.client.schemas.task.task_waybill_item import (
     TaskWaybillItemStatusUpdate,
 )
 from app.modules.client.schemas.waybill.waybill import waybill_brand_model_key
+from app.modules.client.services.state_machine.item_state_machine import (
+    ITEM_UNFINISHED_THRESHOLD,
+    ItemStateMachine,
+)
 from app.modules.client.services.waybill.waybill_service import WaybillService
+from app.modules.client.services.waybill.waybill_status_aggregator import (
+    WaybillStatusAggregator,
+)
 
-# 挂接行未完结的状态阈值：status < UNFINISHED_THRESHOLD 才占用台数
-# 0-待装车 1-已装车 2-已卸车 都计入"占用"；3-已签收 视为已完成可释放
-UNFINISHED_THRESHOLD = 3
+# 兼容旧引用：直接复用状态机里定义的阈值
+UNFINISHED_THRESHOLD = ITEM_UNFINISHED_THRESHOLD
 
 
 class TaskWaybillItemService:
@@ -47,15 +54,16 @@ class TaskWaybillItemService:
     ) -> List[CandidateCargoOut]:
         """挂接器左栏：返回剩余台数 > 0 的运单 cargo 行候选。
 
-        发运准入：仅"已确认 / 已调度"的运单可被挂入新任务单。
-        - 0 待确认：客户未确认，不允许发运；
-        - 1 已确认：完全可发运；
-        - 2 已调度：仍可挂接（前提是 cargo.remaining_quantity > 0，支持拆单分批）；
-        - 3+ 运输中/已完成/已取消：不允许新挂接。
+        新语义（参考《02.运单与任务单状态机联动设计.md》§4.2）：
+
+        - 1 待调度：完全可发运；
+        - 2 调度中：仍可挂接（cargo.remaining_quantity > 0，支持拆单分批）；
+        - 3 运输中：仍允许新挂接尾段，只要剩余台数 > 0；
+        - 4+ 已送达/已完成/已关闭：不允许新挂接。
         """
         wb_q = select(Waybill).where(
             Waybill.is_deleted == 0,
-            Waybill.status.in_([1, 2]),
+            Waybill.status.in_([1, 2, 3]),
         )
         if keyword:
             kw = f"%{keyword.strip()}%"
@@ -205,6 +213,7 @@ class TaskWaybillItemService:
     ) -> List[TaskWaybillItem]:
         """批量挂接到任务单（不替换，追加）"""
         added: List[TaskWaybillItem] = []
+        affected_wb: set[int] = set()
         for it in items_in:
             await TaskWaybillItemService._bump_cargo_allocated(
                 db, it.waybillCargoId, int(it.quantity)
@@ -213,7 +222,12 @@ class TaskWaybillItemService:
             db.add(row)
             await db.flush()
             added.append(row)
+            affected_wb.add(int(row.waybill_id))
         await TaskWaybillItemService._refresh_task_aggregates(db, task)
+        # 挂接是正向推进：禁用 downgrade
+        await WaybillStatusAggregator.recompute_many(
+            db, affected_wb, allow_downgrade=False,
+        )
         return added
 
     @staticmethod
@@ -224,14 +238,21 @@ class TaskWaybillItemService:
     ) -> List[TaskWaybillItem]:
         """整单替换：先释放所有未签收的挂接，再批量挂接"""
         existing = await TaskWaybillItemService.list_items_of_task(db, task.id)
+        affected_wb: set[int] = set()
         for old in existing:
             if int(old.status) < UNFINISHED_THRESHOLD:
                 await TaskWaybillItemService._bump_cargo_allocated(
                     db, old.waybill_cargo_id, -int(old.quantity)
                 )
             old.is_deleted = 1
+            affected_wb.add(int(old.waybill_id))
         await db.flush()
-        return await TaskWaybillItemService.add_items(db, task, items_in)
+        new_rows = await TaskWaybillItemService.add_items(db, task, items_in)
+        # 替换可能让原本挂接的运单回退到待调度
+        await WaybillStatusAggregator.recompute_many(
+            db, affected_wb, allow_downgrade=True,
+        )
+        return new_rows
 
     @staticmethod
     async def remove_item(
@@ -249,6 +270,7 @@ class TaskWaybillItemService:
             raise BizException("挂接记录不存在")
         if int(item.status) >= UNFINISHED_THRESHOLD:
             raise BizException("已签收的货物不可取消挂接")
+        waybill_id = int(item.waybill_id)
         await TaskWaybillItemService._bump_cargo_allocated(
             db, item.waybill_cargo_id, -int(item.quantity)
         )
@@ -262,6 +284,10 @@ class TaskWaybillItemService:
         task = task_res.scalar_one_or_none()
         if task is not None:
             await TaskWaybillItemService._refresh_task_aggregates(db, task)
+        # 取消挂接可能让运单回退
+        await WaybillStatusAggregator.recompute(
+            db, waybill_id, allow_downgrade=True,
+        )
         return task
 
     @staticmethod
@@ -282,33 +308,151 @@ class TaskWaybillItemService:
 
         old_status = int(item.status)
         new_status = int(data.status)
-        if new_status not in (0, 1, 2, 3):
-            raise BizException(f"非法状态 {new_status}")
-
-        # 从未完结进入"已签收"，释放占用
-        if old_status < UNFINISHED_THRESHOLD <= new_status:
-            await TaskWaybillItemService._bump_cargo_allocated(
-                db, item.waybill_cargo_id, -int(item.quantity)
-            )
-        # 从"已签收"回退到未完结，重新占用
-        if old_status >= UNFINISHED_THRESHOLD > new_status:
-            await TaskWaybillItemService._bump_cargo_allocated(
-                db, item.waybill_cargo_id, int(item.quantity)
-            )
-
-        item.status = new_status
-        if data.loadedAt is not None:
-            item.loaded_at = data.loadedAt
-        if data.unloadedAt is not None:
-            item.unloaded_at = data.unloadedAt
-        if data.signedAt is not None:
-            item.signed_at = data.signedAt
+        await TaskWaybillItemService._switch_item_status(
+            db, item, new_status,
+            loaded_at=data.loadedAt,
+            unloaded_at=data.unloadedAt,
+            signed_at=data.signedAt,
+        )
         if data.segmentId is not None:
             item.segment_id = data.segmentId
         if data.remark is not None:
             item.remark = data.remark
         await db.flush()
+
+        # 单条 item 变更后聚合运单状态（含可能的回退）
+        await WaybillStatusAggregator.recompute(
+            db, int(item.waybill_id),
+            allow_downgrade=(new_status < old_status),
+        )
         return item
+
+    # ------------------------------------------------------------------
+    # Task → Item 同步（正向 / 反向）
+    # ------------------------------------------------------------------
+    @staticmethod
+    async def _switch_item_status(
+        db: AsyncSession,
+        item: TaskWaybillItem,
+        new_status: int,
+        *,
+        loaded_at: Optional[datetime] = None,
+        unloaded_at: Optional[datetime] = None,
+        signed_at: Optional[datetime] = None,
+    ) -> None:
+        """异步单条 item 切换：维护 allocated + 状态 + 时间字段。"""
+        old_status = int(item.status)
+        if old_status == new_status:
+            return
+        ItemStateMachine.assert_transition(old_status, new_status)
+
+        # 释放占用：未完结 → 完结/取消
+        if old_status < UNFINISHED_THRESHOLD <= new_status:
+            await TaskWaybillItemService._bump_cargo_allocated(
+                db, item.waybill_cargo_id, -int(item.quantity)
+            )
+        # 重新占用：完结 → 未完结（撤销签收）
+        elif old_status >= UNFINISHED_THRESHOLD > new_status:
+            await TaskWaybillItemService._bump_cargo_allocated(
+                db, item.waybill_cargo_id, int(item.quantity)
+            )
+
+        item.status = new_status
+        if loaded_at is not None:
+            item.loaded_at = loaded_at
+        if unloaded_at is not None:
+            item.unloaded_at = unloaded_at
+        if signed_at is not None:
+            item.signed_at = signed_at
+
+    @staticmethod
+    async def propagate_to_items(
+        db: AsyncSession,
+        task: Task,
+        *,
+        loaded_at: Optional[datetime] = None,
+        unloaded_at: Optional[datetime] = None,
+        signed_at: Optional[datetime] = None,
+        only_unfinished: bool = True,
+    ) -> List[int]:
+        """根据当前 ``task.status`` 把所有 active item 正向推进到对应状态。
+
+        - 只升不降（max progress）：如已超过推导目标则保持
+        - ``only_unfinished=True`` 时跳过 status == 9 (已取消) 的 item
+        - 返回受影响的运单 id 列表
+
+        本方法不调用 aggregator；调用方应在 propagate 完后调用
+        ``WaybillStatusAggregator.aggregate_by_task(task.id)`` 完成聚合。
+        """
+        target = ItemStateMachine.derive_from_task(int(task.status))
+        if target is None:
+            return []
+        items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+        affected_wb: set[int] = set()
+        for it in items:
+            if only_unfinished and int(it.status) == 9:
+                continue
+            cur = int(it.status)
+            if target <= cur:
+                continue
+            await TaskWaybillItemService._switch_item_status(
+                db, it, target,
+                loaded_at=loaded_at,
+                unloaded_at=unloaded_at,
+                signed_at=signed_at,
+            )
+            affected_wb.add(int(it.waybill_id))
+        await db.flush()
+        return list(affected_wb)
+
+    @staticmethod
+    async def propagate_revert_to_items(
+        db: AsyncSession,
+        task: Task,
+        *,
+        only_active: bool = True,
+    ) -> List[int]:
+        """根据当前 ``task.status`` 把所有 active item 反向回退到对应状态。
+
+        - 只降不升：如当前 item.status 已低于推导目标，保持不变
+        - 时间字段不清除（保留历史事实，参考设计文档 §4.5）
+        - 返回受影响的运单 id 列表
+        """
+        target = ItemStateMachine.derive_from_task(int(task.status))
+        if target is None:
+            return []
+        items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+        affected_wb: set[int] = set()
+        for it in items:
+            if only_active and int(it.status) == 9:
+                continue
+            cur = int(it.status)
+            if target >= cur:
+                continue
+            await TaskWaybillItemService._switch_item_status(db, it, target)
+            affected_wb.add(int(it.waybill_id))
+        await db.flush()
+        return list(affected_wb)
+
+    @staticmethod
+    async def propagate_cancel_to_items(
+        db: AsyncSession,
+        task: Task,
+    ) -> List[int]:
+        """强制取消任务时，把所有 item 推到 ``9 已取消`` 并释放台数。
+
+        与 ``release_all_items_of_task`` 不同：本方法不软删 item，
+        而是保留挂接记录、状态置 9，以便审计追溯。台数同步释放。
+        """
+        items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+        affected_wb: set[int] = set()
+        for it in items:
+            if int(it.status) == 9:
+                continue
+            await TaskWaybillItemService._switch_item_status(db, it, 9)
+            affected_wb.add(int(it.waybill_id))
+        await db.flush()
+        return list(affected_wb)
 
     # ------------------------------------------------------------------
     # 查询与冗余聚合
@@ -346,13 +490,21 @@ class TaskWaybillItemService:
     async def release_all_items_of_task(
         db: AsyncSession, task: Task,
     ) -> None:
-        """取消任务单时调用：释放所有未签收挂接占用的台数并软删"""
+        """取消任务单时调用：释放所有未签收挂接占用的台数并软删
+
+        软删后调用 aggregator 让对应运单回退到合理状态（待调度 / 调度中）。
+        """
         items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+        affected_wb: set[int] = set()
         for it in items:
             if int(it.status) < UNFINISHED_THRESHOLD:
                 await TaskWaybillItemService._bump_cargo_allocated(
                     db, it.waybill_cargo_id, -int(it.quantity)
                 )
             it.is_deleted = 1
+            affected_wb.add(int(it.waybill_id))
         await db.flush()
         await TaskWaybillItemService._refresh_task_aggregates(db, task)
+        await WaybillStatusAggregator.recompute_many(
+            db, affected_wb, allow_downgrade=True,
+        )

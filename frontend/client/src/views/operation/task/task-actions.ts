@@ -16,7 +16,13 @@ export type TaskActionKey =
   | 'confirm-arrive' // 确认到达 (3 → 4)
   | 'confirm-sign' // 确认签收 (4 → 5)
   | 'create-settlement' // 生成最终结算单（不直接改 task.status，结算单已支付后由后端推进到 6）
-  | 'close'; // 关闭任务 (5/6 → 7)
+  | 'close' // 关闭任务 (5/6 → 7)
+  // —— 逆向通道（参考 02.运单与任务单状态机联动设计.md §4.5）
+  | 'revert-load' // 撤销装车 (2 → 1)
+  | 'revert-depart' // 撤回出发 (3 → 2)
+  | 'revert-arrive' // 撤回到达 (4 → 3)
+  | 'revert-sign' // 撤销签收 (5 → 4)
+  | 'force-cancel'; // 强制取消（2/3/4 → 9，线下取消）
 
 export interface TaskActionConfig {
   key: TaskActionKey;
@@ -30,11 +36,17 @@ export interface TaskActionConfig {
     | 'plan-route'
     | 'confirm-load'
     | 'confirm-arrive'
-    | 'confirm-sign';
+    | 'confirm-sign'
+    | 'revert'
+    | 'force-cancel';
   /** 是否纯 confirm（不打开弹窗，直接 ElMessageBox.confirm） */
   confirm?: boolean;
   /** 是否需要跳转打开费用单创建（生成结算单） */
   openSettlement?: boolean;
+  /** 逆向跳转目标态（revert-* 才有） */
+  revertTo?: number;
+  /** 逆向动作能从哪个状态进入（用于运行时校验） */
+  revertFrom?: number;
 }
 
 export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
@@ -100,6 +112,50 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     buttonType: 'info',
     permission: 'operation:task:close',
     confirm: true
+  },
+  // —— 逆向通道 —— //
+  'revert-load': {
+    key: 'revert-load',
+    label: '撤销装车',
+    buttonType: 'warning',
+    permission: 'operation:task:revert-load',
+    dialog: 'revert',
+    revertFrom: 2,
+    revertTo: 1
+  },
+  'revert-depart': {
+    key: 'revert-depart',
+    label: '撤回出发',
+    buttonType: 'warning',
+    permission: 'operation:task:revert-depart',
+    dialog: 'revert',
+    revertFrom: 3,
+    revertTo: 2
+  },
+  'revert-arrive': {
+    key: 'revert-arrive',
+    label: '撤回到达',
+    buttonType: 'warning',
+    permission: 'operation:task:revert-arrive',
+    dialog: 'revert',
+    revertFrom: 4,
+    revertTo: 3
+  },
+  'revert-sign': {
+    key: 'revert-sign',
+    label: '撤销签收',
+    buttonType: 'warning',
+    permission: 'operation:task:revert-sign',
+    dialog: 'revert',
+    revertFrom: 5,
+    revertTo: 4
+  },
+  'force-cancel': {
+    key: 'force-cancel',
+    label: '强制取消',
+    buttonType: 'danger',
+    permission: 'operation:task:force-cancel',
+    dialog: 'force-cancel'
   }
 };
 
@@ -142,6 +198,31 @@ export const getSecondaryTaskActions = (
   if (status === null || status === undefined) return [];
   if (status === 5) return [TASK_ACTION_CONFIGS.close];
   return [];
+};
+
+/**
+ * 当前状态可用的逆向动作（撤销/强制取消）。
+ *
+ * 与 §4.5 反向跳转矩阵一致：
+ * - 1 → 撤销装车（1→0 在主动作里走"撤回派车"，此处不重复）
+ * - 2 → 撤销装车
+ * - 3 → 撤回出发；强制取消
+ * - 4 → 撤回到达；强制取消
+ * - 5 → 撤销签收（撤销结算单走财务侧）
+ */
+const REVERSE_BY_STATUS: Record<number, TaskActionKey[]> = {
+  2: ['revert-load', 'force-cancel'],
+  3: ['revert-depart', 'force-cancel'],
+  4: ['revert-arrive', 'force-cancel'],
+  5: ['revert-sign']
+};
+
+export const getReverseTaskActions = (
+  status: number | null | undefined
+): TaskActionConfig[] => {
+  if (status === null || status === undefined) return [];
+  const keys = REVERSE_BY_STATUS[status] ?? [];
+  return keys.map((k) => TASK_ACTION_CONFIGS[k]);
 };
 
 /**

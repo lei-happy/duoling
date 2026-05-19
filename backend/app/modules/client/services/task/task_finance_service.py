@@ -484,6 +484,11 @@ class TaskFinanceService:
         data: TaskFinanceDocCancelRequest,
     ) -> TaskFinanceDoc:
         doc = await TaskFinanceService.get_or_404(db, doc_id)
+        was_final_paid = (
+            doc.doc_type == 3
+            and int(doc.is_final or 0) == 1
+            and int(doc.status) == 3
+        )
         await TaskFinanceService._change_status(db, doc, 4)
         if data.reason:
             existing = (doc.remark or "").rstrip()
@@ -496,8 +501,58 @@ class TaskFinanceService:
         from app.modules.client.services.task.task_service import TaskService
         task = await TaskService.get_or_404(db, doc.task_id)
         await TaskFinanceService._refresh_task_finance_aggregates(db, task)
+
+        # 反向联动：已支付的最终结算单被撤销 → task 6 回退到 5
+        if was_final_paid and int(task.status) == 6:
+            from app.modules.client.services.state_machine.task_state_machine import (
+                TaskStateMachine,
+            )
+            TaskStateMachine.assert_revert(6, 5)
+            task.status = 5
+            actor = "system"
+            existing = (task.remark or "").rstrip()
+            task.remark = (
+                (existing + "\n" if existing else "")
+                + f"[结算撤销] 由最终结算单 {doc.doc_no} 撤销触发，"
+                f"by {actor}：{(data.reason or '').strip() or '未填写原因'}"
+            )
+            await db.flush()
+
         await db.refresh(doc)
         return doc
+
+    @staticmethod
+    async def cancel_all_unpaid_docs(
+        db: AsyncSession,
+        task_id: int,
+        reason: str,
+    ) -> List[TaskFinanceDoc]:
+        """任务被取消时调用：把所有未支付（status<3）的费用单批量撤销。
+
+        已支付（status=3）不动；调用方应在用户确认后再行单独操作。
+        返回受影响的费用单列表。
+        """
+        r = await db.execute(
+            select(TaskFinanceDoc).where(
+                TaskFinanceDoc.task_id == task_id,
+                TaskFinanceDoc.is_deleted == 0,
+                TaskFinanceDoc.status < 3,
+            )
+        )
+        docs = list(r.scalars().all())
+        for d in docs:
+            await TaskFinanceService._change_status(db, d, 4)
+            existing = (d.remark or "").rstrip()
+            d.remark = (
+                (existing + "\n" if existing else "")
+                + f"[随任务取消] {reason or '任务单被取消'}"
+            )
+        if docs:
+            await db.flush()
+            from app.modules.client.services.task.task_service import TaskService
+            task = await TaskService.get_or_404(db, task_id)
+            await TaskFinanceService._refresh_task_finance_aggregates(db, task)
+        return docs
 
     # ------------------------------------------------------------------
     # 主表冗余聚合

@@ -76,6 +76,7 @@ export async function updateTaskStatus(
     status: number;
     actualLoadTime?: string;
     actualArriveTime?: string;
+    signedAt?: string;
     remark?: string;
   }
 ) {
@@ -155,6 +156,35 @@ export async function cancelTask(id: number, reason?: string) {
   const res = await request.post<ApiResult<Task>>(
     `/business/task/${id}/cancel`,
     { reason }
+  );
+  if (res.data.code === 0) return res.data.data;
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 撤销至上一态（专项接口；见 02.运单与任务单状态机联动设计.md §4.5） */
+export async function revertTaskStatus(
+  id: number,
+  data: { targetStatus: number; reason: string }
+) {
+  const res = await request.post<ApiResult<Task>>(
+    `/business/task/${id}/revert-status`,
+    data
+  );
+  if (res.data.code === 0) return res.data.data;
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 强制取消（线下取消，2/3/4 → 9） */
+export async function forceCancelTask(
+  id: number,
+  data: { reason: string; cancelUnpaidFinanceDocs?: boolean }
+) {
+  const res = await request.post<ApiResult<Task>>(
+    `/business/task/${id}/force-cancel`,
+    {
+      reason: data.reason,
+      cancelUnpaidFinanceDocs: data.cancelUnpaidFinanceDocs ?? true
+    }
   );
   if (res.data.code === 0) return res.data.data;
   return Promise.reject(new Error(res.data.message));

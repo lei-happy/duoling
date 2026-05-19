@@ -135,6 +135,10 @@ class TaskStatusUpdate(BaseModel):
     status: int = Field(ge=0, le=9)
     actualLoadTime: Optional[datetime] = None
     actualArriveTime: Optional[datetime] = None
+    signedAt: Optional[datetime] = Field(
+        default=None,
+        description="客户签收时间（仅 status=5 时生效；用于 propagate 到 item.signed_at）",
+    )
     remark: Optional[str] = None
 
 
@@ -166,6 +170,20 @@ class TaskPlanRouteRequest(BaseModel):
 
 class TaskCancelRequest(BaseModel):
     reason: Optional[str] = None
+
+
+class TaskRevertStatusRequest(BaseModel):
+    """撤销至上一态（专项接口）。"""
+    targetStatus: int = Field(ge=0, le=7, description="目标态，需在反向跳转表内")
+    reason: str = Field(min_length=2, max_length=500, description="撤销原因（必填）")
+
+
+class TaskForceCancelRequest(BaseModel):
+    """强制取消（线下取消，2/3/4 → 9）。"""
+    reason: str = Field(min_length=2, max_length=500, description="强制取消原因（必填）")
+    cancelUnpaidFinanceDocs: bool = Field(
+        default=True, description="是否一并撤销该任务下所有未支付费用单（默认 True）",
+    )
 
 
 class TaskBatchStatusRequest(BaseModel):

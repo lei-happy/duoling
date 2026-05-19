@@ -51,6 +51,10 @@ export interface Waybill {
   waybillVersion?: number;
   lastCalcAt?: string | null;
   lastResultId?: number | null;
+  /** 是否存在未取消/未完结的任务挂接（用于禁用编辑/删除按钮） */
+  hasActiveTaskItems?: boolean | null;
+  /** 已分配到任务单的总台数（运单聚合视图） */
+  allocatedQuantity?: number | null;
 }
 
 export interface WaybillParam extends PageParam {

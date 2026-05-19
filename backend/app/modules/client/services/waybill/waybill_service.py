@@ -26,6 +26,7 @@ from app.modules.client.schemas.waybill.waybill import (
     normalize_waybill_vin,
     waybill_brand_model_key,
 )
+from app.modules.client.models.task.task_waybill_item import TaskWaybillItem
 from app.modules.client.services.system_config_service import SystemConfigService
 from app.modules.client.services.billing.billing_engine_service import BillingEngineService
 from app.modules.client.services.billing.standardize_service import StandardizeService
@@ -407,6 +408,7 @@ class WaybillService:
             wb_ids = [w.id for w in page_items]
             cargo_map = await WaybillService._fetch_cargoes_batch(db, wb_ids)
             series_lookup = await WaybillService._series_image_lookup_map(db)
+            active_map = await WaybillService._active_task_items_map(db, wb_ids)
             return {
                 "list": [
                     WaybillOut.from_model(
@@ -414,6 +416,7 @@ class WaybillService:
                         cargo_map.get(item.id, []),
                         series_image_lookup=series_lookup,
                         redact_freight_amount=redact_freight_amount,
+                        has_active_task_items=active_map.get(item.id, False),
                     ).model_dump()
                     for item in page_items
                 ],
@@ -435,6 +438,7 @@ class WaybillService:
         wb_ids = [w.id for w in items]
         cargo_map = await WaybillService._fetch_cargoes_batch(db, wb_ids)
         series_lookup = await WaybillService._series_image_lookup_map(db)
+        active_map = await WaybillService._active_task_items_map(db, wb_ids)
 
         return {
             "list": [
@@ -443,6 +447,7 @@ class WaybillService:
                     cargo_map.get(item.id, []),
                     series_image_lookup=series_lookup,
                     redact_freight_amount=redact_freight_amount,
+                    has_active_task_items=active_map.get(item.id, False),
                 ).model_dump()
                 for item in items
             ],
@@ -456,9 +461,36 @@ class WaybillService:
     async def waybill_to_out(db: AsyncSession, waybill: Waybill) -> WaybillOut:
         cargoes = await WaybillService._fetch_cargoes_for_waybill(db, waybill.id)
         series_lookup = await WaybillService._series_image_lookup_map(db)
+        active_map = await WaybillService._active_task_items_map(db, [waybill.id])
         return WaybillOut.from_model(
-            waybill, cargoes, series_image_lookup=series_lookup
+            waybill, cargoes,
+            series_image_lookup=series_lookup,
+            has_active_task_items=active_map.get(waybill.id, False),
         )
+
+    @staticmethod
+    async def _active_task_items_map(
+        db: AsyncSession, waybill_ids: list[int],
+    ) -> dict[int, bool]:
+        """批量计算每个 waybill_id 是否存在活跃任务挂接。
+
+        判定：``is_deleted=0`` 且 ``status != 9`` 的任意一条记录即视为活跃。
+        """
+        if not waybill_ids:
+            return {}
+        r = await db.execute(
+            select(TaskWaybillItem.waybill_id, func.count(TaskWaybillItem.id))
+            .where(
+                TaskWaybillItem.waybill_id.in_(waybill_ids),
+                TaskWaybillItem.is_deleted == 0,
+                TaskWaybillItem.status != 9,
+            )
+            .group_by(TaskWaybillItem.waybill_id)
+        )
+        out: dict[int, bool] = {int(wid): False for wid in waybill_ids}
+        for wid, cnt in r.all():
+            out[int(wid)] = int(cnt or 0) > 0
+        return out
 
     @staticmethod
     async def waybill_no_exists(
@@ -725,6 +757,15 @@ class WaybillService:
     async def update_status(
         db: AsyncSession, waybill_id: int, data: WaybillStatusUpdate
     ) -> Waybill:
+        """运营兜底入口：手动调整运单状态。
+
+        约束：
+        - 必须通过 ``WaybillStateMachine.assert_transition`` 校验
+        - 业务推进应优先走 ``WaybillStatusAggregator``；本接口主要用于关闭/特殊运维
+        """
+        from app.modules.client.services.state_machine.waybill_state_machine import (
+            WaybillStateMachine,
+        )
         result = await db.execute(
             select(Waybill).where(
                 Waybill.id == waybill_id,
@@ -735,13 +776,20 @@ class WaybillService:
         if not waybill:
             raise BizException("运单不存在")
 
-        waybill.status = data.status
+        old = int(waybill.status or 0)
+        new = int(data.status)
+        WaybillStateMachine.assert_transition(old, new)
+        waybill.status = new
         await db.flush()
         await db.refresh(waybill)
         return waybill
 
     @staticmethod
     async def delete_waybill(db: AsyncSession, waybill_id: int) -> None:
+        """删除运单：仅允许待调度/草稿/已关闭，且不能存在活跃挂接。"""
+        from app.modules.client.services.waybill.waybill_status_aggregator import (
+            WaybillStatusAggregator,
+        )
         result = await db.execute(
             select(Waybill).where(
                 Waybill.id == waybill_id,
@@ -752,7 +800,12 @@ class WaybillService:
         if not waybill:
             raise BizException("运单不存在")
         if waybill.status not in (0, 1, 6):
-            raise BizException("仅待确认、已确认或已取消的运单可以删除")
+            raise BizException("仅草稿、待调度或已关闭的运单可以删除")
+        if await WaybillStatusAggregator.has_active_task_items(db, waybill_id):
+            raise BizException(
+                "存在已挂接到任务单的活跃货物（含未签收 / 未取消），不允许删除运单。"
+                "请先取消相关任务单的挂接。"
+            )
         waybill.is_deleted = 1
         await WaybillService._soft_delete_cargoes(db, waybill_id)
         await db.flush()

@@ -208,6 +208,15 @@ class WaybillOut(BaseModel):
     remark: Optional[str] = None
     createdBy: Optional[int] = None
     createdAt: datetime
+    # —— 来自任务挂接的聚合视图（前端用于禁用编辑/删除按钮，参考状态机设计文档）
+    hasActiveTaskItems: Optional[bool] = Field(
+        default=None,
+        description="是否存在未取消/未完结的任务挂接（is_deleted=0 且 status != 9）",
+    )
+    allocatedQuantity: Optional[int] = Field(
+        default=None,
+        description="已分配到任务单的总台数（所有 cargo.allocated_quantity 之和）",
+    )
 
     model_config = {"from_attributes": True}
 
@@ -219,6 +228,8 @@ class WaybillOut(BaseModel):
         *,
         series_image_lookup: Optional[dict[str, Optional[str]]] = None,
         redact_freight_amount: bool = False,
+        has_active_task_items: Optional[bool] = None,
+        allocated_total: Optional[int] = None,
     ) -> "WaybillOut":
         cargo_list = cargoes or []
         cargo_out: list[WaybillCargoOut] = []
@@ -245,6 +256,14 @@ class WaybillOut(BaseModel):
         )
         if redact_freight_amount:
             freight_amount = None
+        # cargoes 已读，可以兜底计算 allocated_total
+        if allocated_total is None and cargo_list:
+            try:
+                allocated_total = int(
+                    sum(int(getattr(c, "allocated_quantity", 0) or 0) for c in cargo_list)
+                )
+            except Exception:
+                allocated_total = None
         return cls(
             id=m.id,
             waybillNo=m.waybill_no,
@@ -282,4 +301,6 @@ class WaybillOut(BaseModel):
             remark=m.remark,
             createdBy=m.created_by,
             createdAt=m.created_at,
+            hasActiveTaskItems=has_active_task_items,
+            allocatedQuantity=allocated_total,
         )

@@ -144,6 +144,26 @@
               删除
             </el-link>
           </template>
+          <template v-if="getReverseActions(row).length">
+            <el-divider direction="vertical" />
+            <el-dropdown trigger="click">
+              <el-link type="info" :underline="false">
+                更多<el-icon style="margin-left: 2px"><ArrowDown /></el-icon>
+              </el-link>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item
+                    v-for="act in getReverseActions(row)"
+                    :key="act.key"
+                    v-permission="act.permission"
+                    @click="triggerAction(row, act)"
+                  >
+                    {{ act.label }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
         </template>
       </ele-pro-table>
     </ele-card>
@@ -186,6 +206,18 @@
       :tasks="actionTask ? [actionTask] : []"
       @done="reload"
     />
+    <action-revert
+      v-if="actionTask && revertActionKey"
+      v-model:visible="actionVisible.revert"
+      :tasks="[actionTask]"
+      :action-key="revertActionKey"
+      @done="reload"
+    />
+    <action-force-cancel
+      v-model:visible="actionVisible['force-cancel']"
+      :tasks="actionTask ? [actionTask] : []"
+      @done="reload"
+    />
 
     <!-- 生成结算单 → 直接打开费用单创建 -->
     <finance-edit
@@ -210,7 +242,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import { Right } from '@element-plus/icons-vue';
+  import { ArrowDown, Right } from '@element-plus/icons-vue';
   import TaskEdit from './components/task-edit.vue';
   import TaskDetail from './components/task-detail.vue';
   import TaskSearch from './components/task-search.vue';
@@ -220,6 +252,8 @@
   import ActionConfirmLoad from '../task-workbench/components/action-confirm-load.vue';
   import ActionConfirmArrive from '../task-workbench/components/action-confirm-arrive.vue';
   import ActionConfirmSign from '../task-workbench/components/action-confirm-sign.vue';
+  import ActionRevert from '../task-workbench/components/action-revert.vue';
+  import ActionForceCancel from '../task-workbench/components/action-force-cancel.vue';
   import FinanceEdit from '../task-finance/components/finance-edit.vue';
   import {
     getTask,
@@ -234,9 +268,10 @@
   import {
     TASK_ACTION_CONFIGS,
     getPrimaryTaskAction,
+    getReverseTaskActions,
     shouldShowPlanRoute
   } from './task-actions';
-  import type { TaskActionConfig } from './task-actions';
+  import type { TaskActionConfig, TaskActionKey } from './task-actions';
 
   defineOptions({ name: 'OperationTask' });
 
@@ -382,15 +417,21 @@
     'plan-route': false,
     'confirm-load': false,
     'confirm-arrive': false,
-    'confirm-sign': false
+    'confirm-sign': false,
+    revert: false,
+    'force-cancel': false
   });
   const financeEditVisible = ref(false);
+  const revertActionKey = ref<TaskActionKey | null>(null);
 
   const planRouteAction = TASK_ACTION_CONFIGS['plan-route'];
 
   const getPrimaryAction = (row: Task): TaskActionConfig | null => {
     return getPrimaryTaskAction(row.status);
   };
+
+  const getReverseActions = (row: Task): TaskActionConfig[] =>
+    getReverseTaskActions(row.status);
 
   const canPlanRoute = (row: Task): boolean => shouldShowPlanRoute(row);
 
@@ -433,6 +474,11 @@
 
   const triggerAction = async (row: Task, act: TaskActionConfig) => {
     actionTask.value = row;
+    if (act.dialog === 'revert') {
+      revertActionKey.value = act.key;
+      actionVisible.revert = true;
+      return;
+    }
     if (act.dialog) {
       actionVisible[act.dialog] = true;
       return;

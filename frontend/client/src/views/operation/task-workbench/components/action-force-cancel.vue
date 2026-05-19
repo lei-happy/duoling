@@ -1,20 +1,32 @@
 <!--
-  确认签收弹窗（任务单 status 4 → 5）
+  强制取消弹窗（任务单 2/3/4 → 9，线下取消）
 
-  作业语义：签收员/调度员在客户签收后录入签收时间和签收信息，把任务推进到"已签收"。
-  后端 update_status 在 status=5 时无独立签收时间字段，签收时间会写入备注。
+  作业语义：装车后、运输中、到达后这三个阶段，因客户取消/事故等线下原因，
+  无法走常规取消的路径时，使用本动作直接置为「已取消」。
+  - 所有挂接货物会被推到 9 已取消，cargo 占用台数释放；
+  - 默认连带撤销该任务下所有"未支付"费用单（用户可关掉）。
+
+  权限：``operation:task:force-cancel``
 -->
 <template>
   <el-dialog
     :model-value="visible"
     :title="title"
-    width="520px"
+    width="560px"
     destroy-on-close
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+    <el-alert
+      type="error"
+      :closable="false"
+      show-icon
+      title="强制取消是不可逆的高危操作"
+      description="将释放所有运单挂接，已签收/已结算的任务请勿使用此入口。"
+      style="margin-bottom: 12px"
+    />
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
       <el-form-item label="任务单">
         <div class="action-task-info">
           <template v-if="tasks.length === 1">
@@ -24,40 +36,37 @@
             </span>
           </template>
           <template v-else>
-            <el-tag type="success" size="small">
+            <el-tag type="danger" size="small">
               批量操作 {{ tasks.length }} 张任务单
             </el-tag>
           </template>
         </div>
       </el-form-item>
-      <el-form-item label="签收时间" prop="signedAt" required>
-        <el-date-picker
-          v-model="form.signedAt"
-          type="datetime"
-          value-format="YYYY-MM-DDTHH:mm:ss"
-          placeholder="选择客户签收时间"
-          style="width: 100%"
-        />
-      </el-form-item>
-      <el-form-item label="签收人">
+      <el-form-item label="取消原因" prop="reason" required>
         <el-input
-          v-model="form.signedBy"
-          placeholder="客户签收人姓名（可选）"
-        />
-      </el-form-item>
-      <el-form-item label="备注">
-        <el-input
-          v-model="form.remark"
+          v-model="form.reason"
           type="textarea"
-          :rows="2"
-          placeholder="签收过程中的其他信息（可选）"
+          :rows="3"
+          maxlength="500"
+          show-word-limit
+          placeholder="必填，建议写清原因 + 处置方式（含客户沟通结论）"
         />
+      </el-form-item>
+      <el-form-item label="未支付费用单">
+        <el-switch
+          v-model="form.cancelUnpaidFinanceDocs"
+          active-text="一并撤销"
+          inactive-text="保留"
+        />
+        <div class="ele-text-secondary" style="font-size: 12px; margin-top: 4px">
+          仅"待审批/已审批/草稿"的费用单会被撤销；已支付费用单不会受影响。
+        </div>
       </el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="emit('update:visible', false)">取消</el-button>
-      <el-button type="success" :loading="submitting" @click="submit">
-        确认签收
+      <el-button type="danger" :loading="submitting" @click="submit">
+        强制取消任务
       </el-button>
     </template>
   </el-dialog>
@@ -67,7 +76,7 @@
   import { computed, reactive, ref } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
-  import { updateTaskStatus } from '@/api/operation/task';
+  import { forceCancelTask } from '@/api/operation/task';
   import type { Task } from '@/api/operation/task/model';
 
   const props = defineProps<{
@@ -83,31 +92,24 @@
   const submitting = ref(false);
 
   const form = reactive({
-    signedAt: '',
-    signedBy: '',
-    remark: ''
+    reason: '',
+    cancelUnpaidFinanceDocs: true
   });
 
   const rules: FormRules = {
-    signedAt: [{ required: true, message: '请选择签收时间' }]
+    reason: [
+      { required: true, message: '请填写取消原因' },
+      { min: 2, max: 500, message: '原因长度需在 2-500 字之间' }
+    ]
   };
 
   const title = computed(() =>
-    props.tasks.length > 1 ? '批量确认签收' : '确认签收'
+    props.tasks.length > 1 ? '批量强制取消' : '强制取消任务'
   );
 
   const onOpen = () => {
-    form.signedAt = new Date().toISOString().slice(0, 19);
-    form.signedBy = '';
-    form.remark = '';
-  };
-
-  const buildRemark = () => {
-    const parts: string[] = [];
-    parts.push(`[签收] ${form.signedAt}`);
-    if (form.signedBy.trim()) parts.push(`签收人：${form.signedBy.trim()}`);
-    if (form.remark.trim()) parts.push(form.remark.trim());
-    return parts.join(' / ');
+    form.reason = '';
+    form.cancelUnpaidFinanceDocs = true;
   };
 
   const submit = async () => {
@@ -123,14 +125,12 @@
     submitting.value = true;
     try {
       let failCount = 0;
-      const remark = buildRemark();
       for (const t of props.tasks) {
         if (!t.id) continue;
         try {
-          await updateTaskStatus(t.id, {
-            status: 5,
-            signedAt: form.signedAt,
-            remark
+          await forceCancelTask(t.id, {
+            reason: form.reason.trim(),
+            cancelUnpaidFinanceDocs: form.cancelUnpaidFinanceDocs
           });
         } catch {
           failCount += 1;
@@ -138,11 +138,11 @@
       }
       if (failCount > 0) {
         EleMessage.warning({
-          message: `已完成 ${props.tasks.length - failCount} 张，失败 ${failCount} 张`,
+          message: `已取消 ${props.tasks.length - failCount} 张，失败 ${failCount} 张`,
           plain: true
         });
       } else {
-        EleMessage.success({ message: '已确认签收', plain: true });
+        EleMessage.success({ message: '强制取消已完成', plain: true });
       }
       emit('done');
       emit('update:visible', false);

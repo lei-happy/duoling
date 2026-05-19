@@ -38,6 +38,7 @@
     <workbench-action-modals
       v-model:action-dialog="openActionDialog"
       v-model:finance-visible="financeEditVisible"
+      v-model:revert-action-key="revertActionKey"
       :targets="actionTargets"
       @done="reloadAll"
       @dispatch-done="onDispatchDone"
@@ -62,7 +63,10 @@
     updateTaskStatus
   } from '@/api/operation/task';
   import type { Task, TaskWorkbenchStats } from '@/api/operation/task/model';
-  import type { TaskActionConfig } from '../task/task-actions';
+  import type {
+    TaskActionConfig,
+    TaskActionKey
+  } from '../task/task-actions';
 
   type WorkbenchListSubset = 'all' | 'normal' | 'alert';
 
@@ -144,6 +148,7 @@
     null
   );
   const financeEditVisible = ref(false);
+  const revertActionKey = ref<TaskActionKey | null>(null);
 
   /** 单任务派车 / 生成结算单要求单选 */
   const actionSingleTask = computed<Task | null>(() =>
@@ -189,6 +194,11 @@
   };
 
   const triggerAction = async (act: TaskActionConfig) => {
+    if (act.dialog === 'revert') {
+      revertActionKey.value = act.key;
+      openActionDialog.value = 'revert';
+      return;
+    }
     if (act.dialog) {
       openActionDialog.value = act.dialog;
       return;

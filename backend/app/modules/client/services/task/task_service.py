@@ -35,6 +35,10 @@ from app.modules.client.schemas.task.task import (
     TaskUpdate,
 )
 from app.modules.client.schemas.task.task_segment import TaskSegmentIn
+from app.modules.client.services.state_machine.task_state_machine import (
+    TASK_STATUS_LABELS,
+    TaskStateMachine,
+)
 from app.modules.client.services.system_config_service import SystemConfigService
 from app.modules.client.services.task.task_code_name_generator import (
     build_task_name,
@@ -44,30 +48,13 @@ from app.modules.client.services.task.task_code_name_generator import (
 from app.modules.client.services.task.task_waybill_item_service import (
     TaskWaybillItemService,
 )
+from app.modules.client.services.waybill.waybill_status_aggregator import (
+    WaybillStatusAggregator,
+)
 
 
-# 任务单状态机：合法跳转表
-# -1 待分配：仅允许 cancel_task 写 9；进入待派车(0) 走 complete_carrier_assignment
-_VALID_STATUS_TRANS = {
-    -1: set(),
-    0: {1, 9},        # 待派车 → 已派车 / 已取消
-    1: {0, 2, 9},     # 已派车 → 回退待派车 / 已装车 / 已取消
-    2: {3, 9},        # 已装车 → 在途 / 已取消
-    3: {4},           # 在途 → 已到达
-    4: {5},           # 已到达 → 已签收
-    5: {6, 7},        # 已签收 → 已结算 / 已关闭
-    6: {7},           # 已结算 → 已关闭
-    7: set(),
-    9: set(),
-}
-
-
-# 状态 → 中文名（用于错误信息可读性）
-_STATUS_LABELS = {
-    -1: "待分配",
-    0: "待派车", 1: "已派车", 2: "已装车", 3: "在途",
-    4: "已到达", 5: "已签收", 6: "已结算", 7: "已关闭", 9: "已取消",
-}
+# 兼容旧引用（其它模块可能直接 import _STATUS_LABELS）
+_STATUS_LABELS = TASK_STATUS_LABELS
 
 
 class TaskService:
@@ -597,16 +584,68 @@ class TaskService:
         reason: Optional[str] = None,
     ) -> Task:
         task = await TaskService.get_or_404(db, task_id)
-        if int(task.status) not in (-1, 0, 1, 2):
-            raise BizException(
-                f"任务单状态「{_STATUS_LABELS.get(task.status)}」不允许取消"
-            )
+        TaskStateMachine.assert_cancellable(int(task.status))
         task.status = 9
         if reason:
             existing = (task.remark or "").rstrip()
             task.remark = (existing + "\n" if existing else "") + f"[取消原因] {reason}"
+        # 释放挂接并联动运单聚合（release 内部已带 aggregator）
         await TaskWaybillItemService.release_all_items_of_task(db, task)
+        # 联动撤销所有未支付的费用单（已支付走单独撤销链路）
+        from app.modules.client.services.task.task_finance_service import (
+            TaskFinanceService,
+        )
+        await TaskFinanceService.cancel_all_unpaid_docs(
+            db, task.id, reason or "任务单被取消",
+        )
         await db.flush()
+        await db.refresh(task)
+        return task
+
+    @staticmethod
+    async def force_cancel(
+        db: AsyncSession,
+        task_id: int,
+        reason: str,
+        current_user_id: Optional[int] = None,
+        cancel_unpaid_finance_docs: bool = True,
+    ) -> Task:
+        """强制取消（线下取消）。
+
+        允许从 ``2/3/4`` 直接进入 ``9``；保留挂接记录但置 item.status=9。
+        ``cancel_unpaid_finance_docs=True`` 时，未支付费用单一并撤销。
+        """
+        if not reason or not reason.strip():
+            raise BizException("强制取消必须填写原因")
+        task = await TaskService.get_or_404(db, task_id)
+        old = int(task.status)
+        TaskStateMachine.assert_force_cancellable(old)
+
+        task.status = 9
+        existing = (task.remark or "").rstrip()
+        actor = f"#{current_user_id}" if current_user_id else "system"
+        task.remark = (
+            (existing + "\n" if existing else "")
+            + f"[强制取消 {TASK_STATUS_LABELS.get(old)} → 已取消]"
+            + f" by {actor}：{reason.strip()}"
+        )
+        await db.flush()
+
+        # 推所有 item 到 9，并释放台数（保留挂接记录，便于追溯）
+        await TaskWaybillItemService.propagate_cancel_to_items(db, task)
+        await TaskWaybillItemService._refresh_task_aggregates(db, task)
+        # 联动撤销所有未支付费用单
+        if cancel_unpaid_finance_docs:
+            from app.modules.client.services.task.task_finance_service import (
+                TaskFinanceService,
+            )
+            await TaskFinanceService.cancel_all_unpaid_docs(
+                db, task.id, reason.strip(),
+            )
+        await WaybillStatusAggregator.aggregate_by_task(
+            db, task.id, allow_downgrade=True,
+        )
+
         await db.refresh(task)
         return task
 
@@ -619,12 +658,8 @@ class TaskService:
         task = await TaskService.get_or_404(db, task_id)
         old = int(task.status)
         new = int(data.status)
-        valid = _VALID_STATUS_TRANS.get(old, set())
-        if new not in valid:
-            raise BizException(
-                f"状态从「{_STATUS_LABELS.get(old)}」"
-                f"不能直接跳转到「{_STATUS_LABELS.get(new, new)}」"
-            )
+        TaskStateMachine.assert_transition(old, new)
+
         task.status = new
         if data.actualLoadTime is not None and new in (2, 3):
             task.actual_load_time = data.actualLoadTime
@@ -634,6 +669,68 @@ class TaskService:
             existing = (task.remark or "").rstrip()
             task.remark = (existing + "\n" if existing else "") + data.remark
         await db.flush()
+
+        # 正向推进：Task → Item 同步 → 聚合 Waybill
+        if new == 9:
+            # 走 cancel 路径不应进到这里；保底兜底
+            await TaskWaybillItemService.release_all_items_of_task(db, task)
+        else:
+            signed_at_value = None
+            if new == 5:
+                signed_at_value = data.signedAt or datetime.now()
+            await TaskWaybillItemService.propagate_to_items(
+                db, task,
+                loaded_at=data.actualLoadTime if new in (2, 3) else None,
+                unloaded_at=data.actualArriveTime if new in (4, 5) else None,
+                signed_at=signed_at_value,
+            )
+            await WaybillStatusAggregator.aggregate_by_task(
+                db, task.id, allow_downgrade=False,
+            )
+
+        await db.refresh(task)
+        return task
+
+    # ------------------------------------------------------------------
+    # 反向流程
+    # ------------------------------------------------------------------
+    @staticmethod
+    async def revert_status(
+        db: AsyncSession,
+        task_id: int,
+        target_status: int,
+        reason: str,
+        current_user_id: Optional[int] = None,
+    ) -> Task:
+        """撤销至上一态（专项接口）。
+
+        - 校验：``TaskStateMachine.assert_revert``
+        - 联动：Item 同步反向 → Waybill 聚合（允许 downgrade）
+        - 审计：必填 reason，写入 task.remark
+        """
+        if not reason or not reason.strip():
+            raise BizException("撤销操作必须填写原因")
+        task = await TaskService.get_or_404(db, task_id)
+        old = int(task.status)
+        target = int(target_status)
+        TaskStateMachine.assert_revert(old, target)
+
+        task.status = target
+        existing = (task.remark or "").rstrip()
+        actor = f"#{current_user_id}" if current_user_id else "system"
+        task.remark = (
+            (existing + "\n" if existing else "")
+            + f"[撤销 {TASK_STATUS_LABELS.get(old)} → {TASK_STATUS_LABELS.get(target)}]"
+            + f" by {actor}：{reason.strip()}"
+        )
+        await db.flush()
+
+        # 反向同步 Item：只降不升；时间字段不清除
+        await TaskWaybillItemService.propagate_revert_to_items(db, task)
+        await WaybillStatusAggregator.aggregate_by_task(
+            db, task.id, allow_downgrade=True,
+        )
+
         await db.refresh(task)
         return task
 

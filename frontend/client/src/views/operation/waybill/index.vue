@@ -138,27 +138,21 @@
           </el-tag>
         </template>
         <template #status="{ row }">
-          <el-tag v-if="row.status === 0" type="info" size="small">
-            待确认
-          </el-tag>
-          <el-tag v-else-if="row.status === 1" type="primary" size="small">
-            已确认
-          </el-tag>
-          <el-tag v-else-if="row.status === 2" type="warning" size="small">
-            已调度
-          </el-tag>
-          <el-tag v-else-if="row.status === 3" type="warning" size="small">
-            运输中
-          </el-tag>
-          <el-tag v-else-if="row.status === 4" type="success" size="small">
-            已送达
-          </el-tag>
-          <el-tag v-else-if="row.status === 5" type="success" size="small">
-            已完成
-          </el-tag>
-          <el-tag v-else-if="row.status === 6" type="danger" size="small">
-            已取消
-          </el-tag>
+          <waybill-status-tag :status="row.status" />
+          <el-tooltip
+            v-if="row.hasActiveTaskItems"
+            content="存在活跃任务挂接，编辑/删除受限"
+            placement="top"
+          >
+            <el-tag
+              type="warning"
+              size="small"
+              effect="plain"
+              style="margin-left: 4px"
+            >
+              挂接中
+            </el-tag>
+          </el-tooltip>
         </template>
         <template #action="{ row }">
           <div
@@ -189,6 +183,10 @@
       :waybill-id="freightDetailWaybillId"
       @sync-list="reloadAfterMutation"
     />
+    <waybill-detail
+      v-model:visible="detailVisible"
+      :waybill-id="detailWaybillId"
+    />
   </ele-page>
 </template>
 
@@ -218,6 +216,8 @@
   import WaybillSearch from './components/waybill-search.vue';
   import WaybillCargoesDetail from './components/waybill-cargoes-detail.vue';
   import WaybillFreightDetail from './components/waybill-freight-detail.vue';
+  import WaybillStatusTag from './components/waybill-status-tag.vue';
+  import WaybillDetail from './components/waybill-detail.vue';
   import { listConfigsByGroup } from '@/api/system/config';
   import {
     pageWaybills,
@@ -247,6 +247,8 @@
   const cargoDetailWaybill = ref<Waybill | null>(null);
   const freightDetailVisible = ref(false);
   const freightDetailWaybillId = ref<number | null>(null);
+  const detailVisible = ref(false);
+  const detailWaybillId = ref<number | null>(null);
 
   /** 与系统设置 waybill.list_show_freight_amount 一致，默认不展示列表运费 */
   const listShowFreightAmount = ref(false);
@@ -450,9 +452,25 @@
   const copyDestination = (v?: string | null) =>
     copyTextWithFeedback(v ?? undefined, '无可复制的目的地', '已复制目的地');
 
-  const canEditWaybill = (row: Waybill) => row.status === 0 || row.status === 1;
+  /**
+   * 是否允许编辑核心字段：
+   * - 状态必须 ≤ 1（待调度）
+   * - 不能存在活跃任务挂接（与后端 WaybillStateMachine.allows_delete 对齐）
+   */
+  const canEditWaybill = (row: Waybill) =>
+    (row.status === 0 || row.status === 1) && !row.hasActiveTaskItems;
 
   const isWaybillLocked = (row: Waybill) => Number(row.isLocked) === 1;
+
+  /** 状态 ≤ 1 或 = 6 已关闭，且无活跃挂接才允许删除 */
+  const canDeleteWaybill = (row: Waybill) =>
+    (row.status === 0 || row.status === 1 || row.status === 6) &&
+    !row.hasActiveTaskItems;
+
+  const openDetail = (row: Waybill) => {
+    detailWaybillId.value = row.id ?? null;
+    detailVisible.value = true;
+  };
 
   const actionItems = (row: Waybill): ButtonItem[] => {
     const dropdown: ButtonDropdownItem[] = [];
@@ -463,6 +481,11 @@
         onClick: () => confirmWaybill(row)
       });
     }
+    dropdown.push({
+      title: '详情',
+      icon: Document,
+      onClick: () => openDetail(row)
+    });
     dropdown.push({
       title: '计算明细',
       icon: Document,
@@ -486,7 +509,7 @@
         onClick: () => unlockRow(row)
       });
     }
-    if (row.status === 0 || row.status === 1 || row.status === 6) {
+    if (canDeleteWaybill(row)) {
       dropdown.push({
         title: '删除',
         icon: DeleteOutlined,
