@@ -435,6 +435,14 @@ class TenantService:
                         default_value="false",
                     ),
                     SystemConfig(
+                        config_key="waybill.auto_confirm_on_create",
+                        config_value="false",
+                        config_group="waybill",
+                        description="新建/导入运单时是否自动完成确认（关闭：待确认；开启：直接进入待调度）",
+                        value_type="boolean",
+                        default_value="false",
+                    ),
+                    SystemConfig(
                         config_key="task.no_gen_rule",
                         config_value='{"parts":[{"type":"prefix","value":"TASK"},'
                         '{"type":"date","format":"YYYYMMDD"},'

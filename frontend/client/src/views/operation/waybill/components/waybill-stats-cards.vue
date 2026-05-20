@@ -10,7 +10,10 @@
   栅格固定 7 列、永远单行——窄桌面上单卡会被压缩，但相比换行更易扫读。
 -->
 <template>
-  <div class="wb-cards">
+  <div
+    class="wb-cards"
+    :style="{ '--wb-cards-count': cards.length }"
+  >
     <button
       v-for="card in cards"
       :key="card.key"
@@ -43,6 +46,8 @@
   const props = defineProps<{
     stats: WaybillWorkbenchStats | null;
     activeCardKey?: string;
+    /** 自动确认开关打开 AND 待确认数=0 时，隐藏「待确认」卡片 */
+    pendingConfirmHidden?: boolean;
   }>();
 
   const emit = defineEmits<{
@@ -80,7 +85,9 @@
 
   const cards = computed<WaybillCard[]>(() => {
     const t = props.stats?.totals;
-    return WAYBILL_POOLS.map((pool) => {
+    return WAYBILL_POOLS.filter(
+      (pool) => !(pool.key === 'pending-confirm' && props.pendingConfirmHidden)
+    ).map((pool) => {
       const k = TOTAL_KEY_MAP[pool.key];
       const total = k && t ? (t[k] ?? 0) : 0;
       return {
@@ -96,7 +103,7 @@
 <style lang="scss" scoped>
   .wb-cards {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--wb-cards-count, 7), minmax(0, 1fr));
     gap: 10px;
   }
 

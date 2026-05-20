@@ -25,6 +25,7 @@
       class="waybill-page__cards"
       :stats="stats"
       :active-card-key="activeKey"
+      :pending-confirm-hidden="pendingConfirmHidden"
       @select-card="onSelectCard"
     />
 
@@ -63,7 +64,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { onActivated, onMounted, ref } from 'vue';
+  import { computed, onActivated, onMounted, ref, watch } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
   import { useRouter } from 'vue-router';
   import WaybillStatsCards from './components/waybill-stats-cards.vue';
@@ -105,17 +106,35 @@
   };
 
   // ============================================
-  // 列表运费列展示开关（沿用原系统设置）
+  // 系统配置（运单分组）—— 列表运费列、新建自动确认
   // ============================================
   const listShowFreightAmount = ref(false);
+  const autoConfirmOnCreate = ref(false);
 
-  const syncListFreightSetting = () => {
+  /** 开关打开 + 当前待确认运单数为 0 时，隐藏「待确认」状态卡 */
+  const pendingConfirmHidden = computed(
+    () =>
+      autoConfirmOnCreate.value && (stats.value?.totals?.pendingConfirm ?? 0) === 0
+  );
+
+  /** 隐藏后若当前激活的是 pending-confirm，自动切到下一张卡（待调度） */
+  watch(pendingConfirmHidden, (hidden) => {
+    if (hidden && activeKey.value === 'pending-confirm') {
+      activeKey.value = 'pending-dispatch';
+    }
+  });
+
+  const syncWaybillSettings = () => {
     listConfigsByGroup('waybill')
       .then((list) => {
-        const item = list?.find(
+        const showFreight = list?.find(
           (i) => i.configKey === 'waybill.list_show_freight_amount'
         );
-        listShowFreightAmount.value = item?.configValue === 'true';
+        listShowFreightAmount.value = showFreight?.configValue === 'true';
+        const autoConfirm = list?.find(
+          (i) => i.configKey === 'waybill.auto_confirm_on_create'
+        );
+        autoConfirmOnCreate.value = autoConfirm?.configValue === 'true';
       })
       .catch(() => {});
   };
@@ -171,7 +190,7 @@
   // 初始化
   // ============================================
   const initAll = () => {
-    syncListFreightSetting();
+    syncWaybillSettings();
     loadStats();
   };
 

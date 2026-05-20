@@ -91,6 +91,44 @@
         </span>
       </div>
     </div>
+    <div v-if="autoConfirmItem" class="waybill-setting-row">
+      <div class="waybill-setting-label">
+        运单录入自动确认：
+        <ele-tooltip
+          placement="top-start"
+          effect="light"
+          :width="360"
+          :offset="4"
+        >
+          <template #content>
+            <div class="freight-help-tip">
+              <p class="freight-help-tip__title">说明</p>
+              <p class="freight-help-tip__plain">
+                关闭：新建或导入的运单先进入「待确认」，需要运营点击确认后再进入「待调度」。
+              </p>
+              <p class="freight-help-tip__plain">
+                开启：新建或导入的运单跳过待确认，直接进入「待调度」。仅对开关开启后录入的运单生效，已存在的待确认运单仍需手动确认。
+              </p>
+            </div>
+          </template>
+          <el-icon class="field-help-icon" tabindex="-1">
+            <QuestionCircleOutlined />
+          </el-icon>
+        </ele-tooltip>
+      </div>
+      <div class="waybill-setting-body">
+        <el-switch
+          :model-value="autoConfirmItem.configValue === 'true'"
+          @update:model-value="
+            (val: boolean) =>
+              emitChange(autoConfirmItem!, val ? 'true' : 'false')
+          "
+        />
+        <span class="config-default config-default--inline">
+          默认值：关闭（需手动确认）
+        </span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -119,6 +157,10 @@
 
   const listShowFreightItem = computed(() =>
     props.items.find((i) => i.configKey === 'waybill.list_show_freight_amount')
+  );
+
+  const autoConfirmItem = computed(() =>
+    props.items.find((i) => i.configKey === 'waybill.auto_confirm_on_create')
   );
 
   const freightOptions = CONFIG_ENUM_OPTIONS['waybill.freight_calc_mode'] || [];

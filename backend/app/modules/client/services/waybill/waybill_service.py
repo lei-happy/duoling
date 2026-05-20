@@ -596,6 +596,13 @@ class WaybillService:
             elif calc_mode == "auto_required":
                 raise BizException("未匹配到运价，无法创建运单")
 
+        # 仅在创建时读一次开关：开关后续切换不回溯历史运单（保留存量 status=0 的手动确认入口）
+        auto_confirm_raw = await SystemConfigService.get_by_key(
+            db, "waybill.auto_confirm_on_create"
+        )
+        auto_confirm = (auto_confirm_raw or "").strip().lower() == "true"
+        initial_status = 1 if auto_confirm else 0
+
         waybill = Waybill(
             waybill_no=waybill_no,
             customer_id=data.customerId,
@@ -621,7 +628,7 @@ class WaybillService:
             contract_id=contract_id,
             rate_id=rate_id,
             remark=data.remark,
-            status=0,
+            status=initial_status,
             calc_status="pending",
             is_locked=0,
             waybill_version=1,
