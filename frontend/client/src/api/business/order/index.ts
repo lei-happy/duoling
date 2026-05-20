@@ -36,10 +36,7 @@ export async function pageReceiptOrders(params: OrderParam) {
 }
 
 export async function addOrder(data: Order) {
-  const res = await request.post<ApiResult<unknown>>(
-    '/business/order',
-    data
-  );
+  const res = await request.post<ApiResult<unknown>>('/business/order', data);
   if (res.data.code === 0) {
     return res.data.message;
   }
@@ -76,9 +73,7 @@ export async function updateOrderStatus(
 }
 
 export async function removeOrder(id: number) {
-  const res = await request.delete<ApiResult<unknown>>(
-    `/business/order/${id}`
-  );
+  const res = await request.delete<ApiResult<unknown>>(`/business/order/${id}`);
   if (res.data.code === 0) {
     return res.data.message;
   }

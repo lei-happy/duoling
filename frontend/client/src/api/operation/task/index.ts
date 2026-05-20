@@ -17,10 +17,9 @@ import type {
 } from './model';
 
 export async function pageTasks(params: TaskParam) {
-  const res = await request.get<ApiResult<PageResult<Task>>>(
-    '/business/task',
-    { params }
-  );
+  const res = await request.get<ApiResult<PageResult<Task>>>('/business/task', {
+    params
+  });
   if (res.data.code === 0) {
     return res.data.data;
   }
@@ -35,10 +34,7 @@ export async function getTask(id: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
-export async function checkTaskNoAvailable(
-  taskNo: string,
-  excludeId?: number
-) {
+export async function checkTaskNoAvailable(taskNo: string, excludeId?: number) {
   const q = taskNo.trim();
   if (!q) return true;
   const res = await request.get<ApiResult<{ available: boolean }>>(
@@ -56,10 +52,7 @@ export async function addTask(data: TaskCreatePayload) {
 }
 
 export async function updateTask(id: number, data: TaskUpdatePayload) {
-  const res = await request.put<ApiResult<Task>>(
-    `/business/task/${id}`,
-    data
-  );
+  const res = await request.put<ApiResult<Task>>(`/business/task/${id}`, data);
   if (res.data.code === 0) return res.data.data;
   return Promise.reject(new Error(res.data.message));
 }

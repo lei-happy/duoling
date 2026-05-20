@@ -29,11 +29,7 @@
           <el-tag type="warning" size="small">运输中</el-tag>
         </template>
         <template #action="{ row }">
-          <el-link
-            type="success"
-            :underline="false"
-            @click="handleArrive(row)"
-          >
+          <el-link type="success" :underline="false" @click="handleArrive(row)">
             确认到达
           </el-link>
         </template>
@@ -51,10 +47,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import {
-    pageTrackingOrders,
-    updateOrderStatus
-  } from '@/api/business/order';
+  import { pageTrackingOrders, updateOrderStatus } from '@/api/business/order';
   import type { Order } from '@/api/business/order/model';
 
   defineOptions({ name: 'BusinessTracking' });

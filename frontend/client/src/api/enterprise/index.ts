@@ -41,10 +41,9 @@ export async function getEnterpriseInfo(): Promise<EnterpriseInfo> {
 export async function updateSystemName(
   systemName?: string | null
 ): Promise<string> {
-  const res = await request.put<ApiResult<unknown>>(
-    '/enterprise/system-name',
-    { systemName }
-  );
+  const res = await request.put<ApiResult<unknown>>('/enterprise/system-name', {
+    systemName
+  });
   if (res.data.code === 0) {
     return res.data.message ?? '更新成功';
   }

@@ -20,14 +20,13 @@
       <div v-else-if="errorMsg || (info && info.expired)" class="error-state">
         <el-icon size="48" color="#e6a23c"><WarningFilled /></el-icon>
         <h2>邀请已失效</h2>
-        <p>{{ errorMsg || '该邀请已过期或已被处理，请联系邀请方重新发送。' }}</p>
+        <p>{{
+          errorMsg || '该邀请已过期或已被处理，请联系邀请方重新发送。'
+        }}</p>
       </div>
 
       <!-- 已注册（路径 B 不允许） -->
-      <div
-        v-else-if="info && info.userExisted"
-        class="error-state"
-      >
+      <div v-else-if="info && info.userExisted" class="error-state">
         <el-icon size="48" color="#909399"><InfoFilled /></el-icon>
         <h2>该手机号已注册账号</h2>
         <p>
@@ -186,9 +185,7 @@
       { pattern: /^\d{6}$/, message: '请输入 6 位数字', trigger: 'blur' }
     ],
     realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
-    tenantName: [
-      { required: true, message: '请输入企业名称', trigger: 'blur' }
-    ]
+    tenantName: [{ required: true, message: '请输入企业名称', trigger: 'blur' }]
   });
 
   onMounted(async () => {

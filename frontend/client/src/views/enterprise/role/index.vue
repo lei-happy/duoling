@@ -15,9 +15,7 @@
         cache-key="SystemRoleTable"
       >
         <template #toolbar>
-          <btn-items
-            :items="[{ preset: 'add', onClick: () => openEdit() }]"
-          />
+          <btn-items :items="[{ preset: 'add', onClick: () => openEdit() }]" />
         </template>
         <template #action="{ row }">
           <btn-items
@@ -126,11 +124,10 @@
 
   /** 删除单行 */
   const remove = (row: Role) => {
-    ElMessageBox.confirm(
-      `确定要删除“${row.roleName}”吗?`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
+    ElMessageBox.confirm(`确定要删除“${row.roleName}”吗?`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => {
         const loading = EleMessage.loading({
           message: '请求中..',

@@ -17,8 +17,12 @@
         {{ s.title || `会话 ${s.id}` }}
       </div>
       <div class="ai-session-item__meta">
-        <span class="ai-session-item__emp">{{ s.employeeName || s.employeeCode }}</span>
-        <span class="ai-session-item__time">{{ formatRelative(s.lastMessageAt) }}</span>
+        <span class="ai-session-item__emp">{{
+          s.employeeName || s.employeeCode
+        }}</span>
+        <span class="ai-session-item__time">{{
+          formatRelative(s.lastMessageAt)
+        }}</span>
       </div>
       <div class="ai-session-item__actions" @click.stop>
         <el-tooltip content="重命名" placement="top">
@@ -64,17 +68,21 @@
 
   async function onRename(s: AiSession) {
     try {
-      const { value } = await ElMessageBox.prompt('新的会话名称', '重命名会话', {
-        inputValue: s.title || `会话 ${s.id}`,
-        inputValidator: (v) => {
-          const t = (v || '').trim();
-          if (!t) return '会话名称不能为空';
-          if (t.length > 80) return '不能超过 80 个字符';
-          return true;
-        },
-        confirmButtonText: '保存',
-        cancelButtonText: '取消'
-      });
+      const { value } = await ElMessageBox.prompt(
+        '新的会话名称',
+        '重命名会话',
+        {
+          inputValue: s.title || `会话 ${s.id}`,
+          inputValidator: (v) => {
+            const t = (v || '').trim();
+            if (!t) return '会话名称不能为空';
+            if (t.length > 80) return '不能超过 80 个字符';
+            return true;
+          },
+          confirmButtonText: '保存',
+          cancelButtonText: '取消'
+        }
+      );
       const title = (value || '').trim();
       if (!title || title === (s.title || '')) return;
       emit('rename', s.id, title);

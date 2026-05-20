@@ -53,10 +53,18 @@
         </template>
         <template #customerType="{ row }">
           <el-tag v-if="row.customerType === 0" size="small">托运方</el-tag>
-          <el-tag v-else-if="row.customerType === 1" type="success" size="small">
+          <el-tag
+            v-else-if="row.customerType === 1"
+            type="success"
+            size="small"
+          >
             收货方
           </el-tag>
-          <el-tag v-else-if="row.customerType === 2" type="warning" size="small">
+          <el-tag
+            v-else-if="row.customerType === 2"
+            type="warning"
+            size="small"
+          >
             两者兼具
           </el-tag>
         </template>
@@ -163,11 +171,10 @@
   };
 
   const remove = (row: Customer) => {
-    ElMessageBox.confirm(
-      `确定要删除客户"${row.customerName}"吗?`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
+    ElMessageBox.confirm(`确定要删除客户"${row.customerName}"吗?`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => {
         const loading = EleMessage.loading({
           message: '请求中..',

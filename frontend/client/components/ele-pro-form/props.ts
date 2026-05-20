@@ -164,26 +164,25 @@ export type RenderProFormContentProps = Partial<
 /**
  * 渲染表单项组件方法参数
  */
-export interface RenderProFormItemProps
-  extends Pick<
-    RenderProFormContentProps,
-    | 'model'
-    | 'rules'
-    | 'formItems'
-    | 'searchExpand'
-    | 'editable'
-    | 'screenSize'
-    | 'activeItemKey'
-    | 'updateItemValue'
-    | 'updateItemsData'
-    | 'updateActiveItemKey'
-    | 'getProFormRefs'
-    | 'getAndCacheCode'
-    | 'itemTypeData'
-    | 'httpRequest'
-    | 'slots'
-    | 'requiredLang'
-  > {
+export interface RenderProFormItemProps extends Pick<
+  RenderProFormContentProps,
+  | 'model'
+  | 'rules'
+  | 'formItems'
+  | 'searchExpand'
+  | 'editable'
+  | 'screenSize'
+  | 'activeItemKey'
+  | 'updateItemValue'
+  | 'updateItemsData'
+  | 'updateActiveItemKey'
+  | 'getProFormRefs'
+  | 'getAndCacheCode'
+  | 'itemTypeData'
+  | 'httpRequest'
+  | 'slots'
+  | 'requiredLang'
+> {
   /** 循环的 key */
   key?: ProFormItemKey;
   /** 表单项 */

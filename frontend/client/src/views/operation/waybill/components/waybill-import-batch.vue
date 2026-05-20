@@ -36,7 +36,9 @@
             {{ batch.totalCount }}
           </el-descriptions-item>
           <el-descriptions-item label="导入成功">
-            <el-tag type="success" size="small">{{ batch.successCount }}</el-tag>
+            <el-tag type="success" size="small">{{
+              batch.successCount
+            }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="导入失败">
             <el-tag v-if="batch.failCount" type="danger" size="small">
@@ -91,10 +93,7 @@
             </div>
           </template>
           <template #validateStatus="{ row }">
-            <el-tag
-              :type="validateStatusType(row.validateStatus)"
-              size="small"
-            >
+            <el-tag :type="validateStatusType(row.validateStatus)" size="small">
               {{ validateStatusText(row.validateStatus) }}
             </el-tag>
           </template>
@@ -124,9 +123,7 @@
   import { ref, watch, nextTick } from 'vue';
   import { useRouter } from 'vue-router';
   import type { EleProTable } from 'ele-admin-plus';
-  import type {
-    DatasourceFunction
-  } from 'ele-admin-plus/es/ele-pro-table/types';
+  import type { DatasourceFunction } from 'ele-admin-plus/es/ele-pro-table/types';
   import {
     getImportBatch,
     listImportRows,

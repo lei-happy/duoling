@@ -63,8 +63,10 @@ export interface ImageOption<T extends Record<string, any>> {
 /**
  * 图片样式参数
  */
-export interface ImageStyleOption
-  extends Omit<ImageOption<WatermarkFont>, 'callback'> {
+export interface ImageStyleOption extends Omit<
+  ImageOption<WatermarkFont>,
+  'callback'
+> {
   /** 公共样式 */
   commonStyle: StyleValue;
 }

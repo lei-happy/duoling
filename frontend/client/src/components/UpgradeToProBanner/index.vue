@@ -22,7 +22,10 @@
       <el-button type="primary" size="small" @click="goPlans">
         查看升级方案
       </el-button>
-      <el-tooltip content="7 天内不再展示此横幅，到期后自动恢复" placement="bottom">
+      <el-tooltip
+        content="7 天内不再展示此横幅，到期后自动恢复"
+        placement="bottom"
+      >
         <el-button text size="small" @click="dismiss">7 天内不再提醒</el-button>
       </el-tooltip>
     </div>

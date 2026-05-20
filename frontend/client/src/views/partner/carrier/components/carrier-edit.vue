@@ -225,10 +225,7 @@
     getCarrier,
     listSettlements
   } from '@/api/partner/carrier';
-  import type {
-    Carrier,
-    CarrierSettlement
-  } from '@/api/partner/carrier/model';
+  import type { Carrier, CarrierSettlement } from '@/api/partner/carrier/model';
   import CarrierSettlementTable from './carrier-settlement-table.vue';
 
   const props = defineProps<{
@@ -244,9 +241,7 @@
   const isEdit = computed(() => !!props.data?.id);
   /** 公司车队 */
   const isCompanyCarrier = computed(() => form.carrierType === 0);
-  const phoneLocked = computed(
-    () => isEdit.value && !!form.linkedTenantCode
-  );
+  const phoneLocked = computed(() => isEdit.value && !!form.linkedTenantCode);
   const formRef = ref<FormInstance>();
   const loading = ref(false);
   const activeTab = ref('base');
@@ -263,8 +258,7 @@
   };
 
   /** 统一社会信用代码 18 位（数字与大写字母，不含 I/O/Z/S/V） */
-  const USCC_PATTERN =
-    /^[0-9A-HJ-NPQRTUWXY]{2}\d{6}[0-9A-HJ-NPQRTUWXY]{10}$/i;
+  const USCC_PATTERN = /^[0-9A-HJ-NPQRTUWXY]{2}\d{6}[0-9A-HJ-NPQRTUWXY]{10}$/i;
 
   /** 大陆 18 位身份证号 */
   const ID_CARD_18_PATTERN =
@@ -337,11 +331,7 @@
     () => form.carrierType,
     () => {
       void nextTick(() => {
-        formRef.value?.clearValidate([
-          'creditCode',
-          'idCardNo',
-          'legalPerson'
-        ]);
+        formRef.value?.clearValidate(['creditCode', 'idCardNo', 'legalPerson']);
       });
     }
   );
@@ -413,7 +403,10 @@
     }
     if (!isEdit.value) {
       // 新增时，把当前页面的草稿结算账户一次性带过去
-      payload.settlements = settlements.value.map((s) => ({ ...s, id: undefined }));
+      payload.settlements = settlements.value.map((s) => ({
+        ...s,
+        id: undefined
+      }));
     } else {
       delete payload.settlements;
     }
@@ -535,8 +528,10 @@
     scrollbar-gutter: stable;
   }
 
-  .carrier-edit-dialog :deep(.floating-label-wrapper.is-focused .floating-label),
-  .carrier-edit-dialog :deep(.floating-label-wrapper.has-value .floating-label) {
+  .carrier-edit-dialog
+    :deep(.floating-label-wrapper.is-focused .floating-label),
+  .carrier-edit-dialog
+    :deep(.floating-label-wrapper.has-value .floating-label) {
     transform: translateY(-62%);
     padding: 2px 6px;
     z-index: 4;
@@ -544,7 +539,8 @@
     box-shadow: 0 0 0 2px var(--el-bg-color);
   }
 
-  .carrier-edit-dialog :deep(.carrier-tab-pane > .el-row > .el-col > .el-form-item) {
+  .carrier-edit-dialog
+    :deep(.carrier-tab-pane > .el-row > .el-col > .el-form-item) {
     margin-bottom: 14px;
   }
 

@@ -13,7 +13,9 @@
       stripe
       size="small"
       style="width: 100%"
-      :empty-text="canPersist ? '暂无结算账户' : '保存承运商基础信息后再添加结算账户'"
+      :empty-text="
+        canPersist ? '暂无结算账户' : '保存承运商基础信息后再添加结算账户'
+      "
     >
       <el-table-column type="index" label="#" width="50" align="center" />
       <el-table-column prop="accountLabel" label="账户标签" min-width="160" />
@@ -140,7 +142,10 @@
         newList.forEach((r) => (r.isDefault = 0));
       }
       if (editIndex.value >= 0) {
-        newList.splice(editIndex.value, 1, { ...newList[editIndex.value], ...payload });
+        newList.splice(editIndex.value, 1, {
+          ...newList[editIndex.value],
+          ...payload
+        });
       } else {
         newList.push(payload);
       }
@@ -151,7 +156,8 @@
     try {
       let saved: CarrierSettlement | undefined;
       if (payload.id) {
-        saved = (await updateSettlement(props.carrierId!, payload)) ?? undefined;
+        saved =
+          (await updateSettlement(props.carrierId!, payload)) ?? undefined;
       } else {
         saved = (await addSettlement(props.carrierId!, payload)) ?? undefined;
       }

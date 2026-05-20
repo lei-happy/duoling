@@ -58,7 +58,10 @@
           active-text="一并撤销"
           inactive-text="保留"
         />
-        <div class="ele-text-secondary" style="font-size: 12px; margin-top: 4px">
+        <div
+          class="ele-text-secondary"
+          style="font-size: 12px; margin-top: 4px"
+        >
           仅"待审批/已审批/草稿"的费用单会被撤销；已支付费用单不会受影响。
         </div>
       </el-form-item>

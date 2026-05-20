@@ -3,9 +3,7 @@ import type { ApiResult } from '@/api';
 import type { SystemConfig } from './model';
 
 export async function listConfigs() {
-  const res = await request.get<ApiResult<SystemConfig[]>>(
-    '/system/config'
-  );
+  const res = await request.get<ApiResult<SystemConfig[]>>('/system/config');
   if (res.data.code === 0) {
     return res.data.data;
   }

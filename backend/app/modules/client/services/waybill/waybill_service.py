@@ -458,6 +458,36 @@ class WaybillService:
         }
 
     @staticmethod
+    async def workbench_stats(db: AsyncSession) -> dict:
+        """运单工作台 KPI 聚合：按 status 0~6 计数。
+
+        7 个卡片：
+            0 待确认 / 1 待调度 / 2 调度中 / 3 运输中 / 4 已送达 / 5 已完成 / 6 已关闭
+
+        说明：状态机文档将 0 标注为「草稿（不再使用）」，但 ``create_waybill``
+        实际仍以 status=0 落库，需要运营点击「确认」推进到 1。因此 0 在 UI 上
+        仍需作为独立卡片显示，避免新建运单"失踪"。
+        """
+        r = await db.execute(
+            select(Waybill.status, func.count(Waybill.id))
+            .where(Waybill.is_deleted == 0)
+            .group_by(Waybill.status)
+        )
+        status_counts: dict[int, int] = {int(s): int(c) for s, c in r.all()}
+        return {
+            "statusCounts": status_counts,
+            "totals": {
+                "pendingConfirm": status_counts.get(0, 0),
+                "pendingDispatch": status_counts.get(1, 0),
+                "scheduling": status_counts.get(2, 0),
+                "inTransit": status_counts.get(3, 0),
+                "delivered": status_counts.get(4, 0),
+                "completed": status_counts.get(5, 0),
+                "closed": status_counts.get(6, 0),
+            },
+        }
+
+    @staticmethod
     async def waybill_to_out(db: AsyncSession, waybill: Waybill) -> WaybillOut:
         cargoes = await WaybillService._fetch_cargoes_for_waybill(db, waybill.id)
         series_lookup = await WaybillService._series_image_lookup_map(db)

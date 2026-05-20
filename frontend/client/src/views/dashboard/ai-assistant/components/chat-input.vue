@@ -2,7 +2,11 @@
   <div class="ai-input">
     <!-- 已选附件 -->
     <div v-if="attachments.length" class="ai-input__attachments">
-      <div v-for="att in attachments" :key="att.fileId" class="ai-input__attach">
+      <div
+        v-for="att in attachments"
+        :key="att.fileId"
+        class="ai-input__attach"
+      >
         <el-icon><paperclip /></el-icon>
         <span class="ai-input__attach-name">{{ att.name }}</span>
         <el-icon class="ai-input__attach-del" @click="removeAttach(att.fileId)">
@@ -52,11 +56,7 @@
 <script lang="ts" setup>
   import { ref, watch } from 'vue';
   import { ElMessage } from 'element-plus';
-  import {
-    Paperclip,
-    Promotion,
-    Close
-  } from '@element-plus/icons-vue';
+  import { Paperclip, Promotion, Close } from '@element-plus/icons-vue';
   import { uploadAiAttach } from '@/api/ai';
   import type { AiAttachment } from '@/api/ai/model';
 
@@ -66,7 +66,10 @@
   }>();
 
   const emit = defineEmits<{
-    (e: 'send', payload: { content: string; attachments: AiAttachment[] }): void;
+    (
+      e: 'send',
+      payload: { content: string; attachments: AiAttachment[] }
+    ): void;
   }>();
 
   const text = ref('');

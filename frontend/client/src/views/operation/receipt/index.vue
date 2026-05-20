@@ -58,10 +58,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import {
-    pageReceiptOrders,
-    updateOrderStatus
-  } from '@/api/business/order';
+  import { pageReceiptOrders, updateOrderStatus } from '@/api/business/order';
   import type { Order } from '@/api/business/order/model';
 
   defineOptions({ name: 'BusinessReceipt' });
@@ -112,11 +109,10 @@
   };
 
   const handleReceipt = (row: Order) => {
-    ElMessageBox.confirm(
-      `确定订单"${row.orderNo}"已签收吗?`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
+    ElMessageBox.confirm(`确定订单"${row.orderNo}"已签收吗?`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => {
         const loading = EleMessage.loading({
           message: '请求中..',

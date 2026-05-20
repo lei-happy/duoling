@@ -61,9 +61,7 @@ export async function searchRegions(params: RegionParam) {
  * 获取地区详情
  */
 export async function getRegion(id: number) {
-  const res = await request.get<ApiResult<Region>>(
-    `/basic-data/region/${id}`
-  );
+  const res = await request.get<ApiResult<Region>>(`/basic-data/region/${id}`);
   if (res.data.code === 0) {
     return res.data.data;
   }
@@ -81,10 +79,7 @@ export async function addRegion(data: {
   longitude?: number;
   latitude?: number;
 }) {
-  const res = await request.post<ApiResult<Region>>(
-    '/basic-data/region',
-    data
-  );
+  const res = await request.post<ApiResult<Region>>('/basic-data/region', data);
   if (res.data.code === 0) {
     return res.data.message;
   }

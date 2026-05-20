@@ -51,10 +51,7 @@
                   </el-icon>
                 </ele-tooltip>
               </div>
-              <div
-                v-if="data.totalCount > 0"
-                class="eff-calc-head-right"
-              >
+              <div v-if="data.totalCount > 0" class="eff-calc-head-right">
                 <span class="eff-calc-head-meta">
                   计算异常
                   <span
@@ -85,12 +82,9 @@
                   backgroundColor: seg.color
                 }"
                 :title="`${seg.label} ${seg.count} 单（${seg.pct.toFixed(1)}%）`"
-              />
+              ></div>
             </div>
-            <div
-              v-else-if="data.totalCount > 0"
-              class="eff-calc-empty"
-            >
+            <div v-else-if="data.totalCount > 0" class="eff-calc-empty">
               暂无计算状态分布
             </div>
             <div v-else class="eff-calc-empty">本期无运单</div>
@@ -103,7 +97,7 @@
                 <i
                   class="eff-calc-legend-dot"
                   :style="{ backgroundColor: seg.color }"
-                />
+                ></i>
                 <span>{{ seg.label }}</span>
                 <span class="eff-calc-legend-num">{{ seg.count }}</span>
               </span>
@@ -156,7 +150,10 @@
     return dayjs(range[1]).diff(dayjs(range[0]), 'day') + 1;
   }
 
-  function toApiWindow(range: [string, string]): { start: string; end: string } {
+  function toApiWindow(range: [string, string]): {
+    start: string;
+    end: string;
+  } {
     return {
       start: dayjs(range[0]).startOf('day').format(API_DT),
       end: dayjs(range[1]).add(1, 'day').startOf('day').format(API_DT)
@@ -205,7 +202,7 @@
     '#fadc19', // 运输中
     '#722ed1', // 已送达
     '#34c724', // 已完成
-    '#f5319d'  // 已取消
+    '#f5319d' // 已取消
   ];
 
   /** 与堆叠条一致：按 calc_status 着色 */
@@ -252,9 +249,7 @@
   });
 
   const calcBarAriaLabel = computed(() =>
-    calcBarSegments.value
-      .map((s) => `${s.label}${s.count}单`)
-      .join('，')
+    calcBarSegments.value.map((s) => `${s.label}${s.count}单`).join('，')
   );
 
   const renderChart = () => {
@@ -271,9 +266,7 @@
         textStyle: { fontSize: 11 },
         data: items.map((i) => i.label)
       },
-      color: items.map(
-        (i) => STATUS_COLORS[i.status] || '#cccccc'
-      ),
+      color: items.map((i) => STATUS_COLORS[i.status] || '#cccccc'),
       series: [
         {
           type: 'pie',
@@ -306,7 +299,10 @@
       });
       renderChart();
     } catch (e: any) {
-      EleMessage.error({ message: e?.message || '加载运营效率失败', plain: true });
+      EleMessage.error({
+        message: e?.message || '加载运营效率失败',
+        plain: true
+      });
     } finally {
       loading.value = false;
     }

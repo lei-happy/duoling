@@ -10,10 +10,9 @@ import type {
 const BASE = '/capacity/self_capacity/list';
 
 export async function pageCapacities(params: CapacityParam) {
-  const res = await request.get<ApiResult<PageResult<Capacity>>>(
-    BASE,
-    { params }
-  );
+  const res = await request.get<ApiResult<PageResult<Capacity>>>(BASE, {
+    params
+  });
   if (res.data.code === 0) {
     return res.data.data;
   }
@@ -21,10 +20,7 @@ export async function pageCapacities(params: CapacityParam) {
 }
 
 export async function bindCapacity(data: CapacityBindData) {
-  const res = await request.post<ApiResult<Capacity>>(
-    `${BASE}/bind`,
-    data
-  );
+  const res = await request.post<ApiResult<Capacity>>(`${BASE}/bind`, data);
   if (res.data.code === 0) {
     return res.data.message;
   }

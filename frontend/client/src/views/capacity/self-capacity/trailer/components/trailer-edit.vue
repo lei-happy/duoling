@@ -23,7 +23,10 @@
           <div class="trailer-tab-pane">
             <el-row :gutter="16" align="middle">
               <el-col :span="12">
-                <el-form-item prop="plateCategory" class="trailer-plate-category-item">
+                <el-form-item
+                  prop="plateCategory"
+                  class="trailer-plate-category-item"
+                >
                   <el-radio-group
                     v-model="form.plateCategory"
                     size="small"
@@ -216,7 +219,10 @@
   import { EleMessage } from 'ele-admin-plus';
   import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
-  import { addTrailer, updateTrailer } from '@/api/capacity/self-capacity/trailer';
+  import {
+    addTrailer,
+    updateTrailer
+  } from '@/api/capacity/self-capacity/trailer';
   import type { Trailer } from '@/api/capacity/self-capacity/trailer/model';
   import {
     DEFAULT_PLATE_CATEGORY,
@@ -319,8 +325,7 @@
   );
 
   const trailerPlateLabel = computed(() => {
-    const c =
-      (form.plateCategory as PlateCategory) ?? DEFAULT_PLATE_CATEGORY;
+    const c = (form.plateCategory as PlateCategory) ?? DEFAULT_PLATE_CATEGORY;
     if (c === 'NEW_ENERGY') return '请输入挂车号牌（新能源 8 位）';
     return '请输入挂车号牌（如 京A1234挂）';
   });
@@ -483,8 +488,10 @@
     scrollbar-gutter: stable;
   }
 
-  .trailer-edit-dialog :deep(.floating-label-wrapper.is-focused .floating-label),
-  .trailer-edit-dialog :deep(.floating-label-wrapper.has-value .floating-label) {
+  .trailer-edit-dialog
+    :deep(.floating-label-wrapper.is-focused .floating-label),
+  .trailer-edit-dialog
+    :deep(.floating-label-wrapper.has-value .floating-label) {
     transform: translateY(-62%);
     padding: 2px 6px;
     z-index: 4;
@@ -492,11 +499,15 @@
     box-shadow: 0 0 0 2px var(--el-bg-color);
   }
 
-  .trailer-edit-dialog :deep(.trailer-tab-pane > .el-row > .el-col > .el-form-item) {
+  .trailer-edit-dialog
+    :deep(.trailer-tab-pane > .el-row > .el-col > .el-form-item) {
     margin-bottom: 14px;
   }
 
-  .trailer-tab-pane > .el-row .trailer-plate-category-item :deep(.el-form-item__content) {
+  .trailer-tab-pane
+    > .el-row
+    .trailer-plate-category-item
+    :deep(.el-form-item__content) {
     display: flex;
     align-items: center;
     line-height: 1;

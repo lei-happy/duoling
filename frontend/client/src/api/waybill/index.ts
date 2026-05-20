@@ -1,7 +1,7 @@
 import request from '@/utils/request';
 import { download } from '@/utils/common';
 import type { ApiResult, PageResult } from '@/api';
-import type { Waybill, WaybillParam } from './model';
+import type { Waybill, WaybillParam, WaybillWorkbenchStats } from './model';
 
 export async function pageWaybills(params: WaybillParam) {
   const res = await request.get<ApiResult<PageResult<Waybill>>>(
@@ -14,9 +14,10 @@ export async function pageWaybills(params: WaybillParam) {
   return Promise.reject(new Error(res.data.message));
 }
 
-export async function getWaybill(id: number) {
-  const res = await request.get<ApiResult<Waybill>>(
-    `/business/waybill/${id}`
+/** 运单工作台 KPI：按状态聚合（待调度 / 调度中 / 运输中 / 已送达 / 已完成 / 已关闭） */
+export async function getWaybillWorkbenchStats() {
+  const res = await request.get<ApiResult<WaybillWorkbenchStats>>(
+    '/business/waybill/workbench-stats'
   );
   if (res.data.code === 0) {
     return res.data.data;
@@ -24,8 +25,19 @@ export async function getWaybill(id: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
+export async function getWaybill(id: number) {
+  const res = await request.get<ApiResult<Waybill>>(`/business/waybill/${id}`);
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
 /** 运单号是否可用（未被占用）；编辑传 excludeId 排除当前单 */
-export async function checkWaybillNoAvailable(waybillNo: string, excludeId?: number) {
+export async function checkWaybillNoAvailable(
+  waybillNo: string,
+  excludeId?: number
+) {
   const q = waybillNo.trim();
   if (!q) return true;
   const res = await request.get<ApiResult<{ available: boolean }>>(
@@ -39,10 +51,7 @@ export async function checkWaybillNoAvailable(waybillNo: string, excludeId?: num
 }
 
 export async function addWaybill(data: Waybill) {
-  const res = await request.post<ApiResult<unknown>>(
-    '/business/waybill',
-    data
-  );
+  const res = await request.post<ApiResult<unknown>>('/business/waybill', data);
   if (res.data.code === 0) {
     return res.data.message;
   }
@@ -209,13 +218,15 @@ export async function downloadWaybillImportTemplate(): Promise<void> {
 export async function importWaybillExcel(file: File) {
   const fd = new FormData();
   fd.append('file', file);
-  const res = await request.post<ApiResult<{
-    batchId: number;
-    totalCount: number;
-    successCount: number;
-    failCount: number;
-    status: string;
-  }>>('/business/waybill/import', fd, {
+  const res = await request.post<
+    ApiResult<{
+      batchId: number;
+      totalCount: number;
+      successCount: number;
+      failCount: number;
+      status: string;
+    }>
+  >('/business/waybill/import', fd, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
   if (res.data.code === 0) {
@@ -225,12 +236,14 @@ export async function importWaybillExcel(file: File) {
 }
 
 export async function pageImportBatches(page: number, limit = 20) {
-  const res = await request.get<ApiResult<{
-    list: ImportBatchSummary[];
-    total: number;
-    page: number;
-    limit: number;
-  }>>('/business/waybill/import/batches', { params: { page, limit } });
+  const res = await request.get<
+    ApiResult<{
+      list: ImportBatchSummary[];
+      total: number;
+      page: number;
+      limit: number;
+    }>
+  >('/business/waybill/import/batches', { params: { page, limit } });
   if (res.data.code === 0) {
     return res.data.data;
   }
@@ -251,12 +264,14 @@ export async function listImportRows(
   batchId: number,
   params: { validateStatus?: string; page?: number; limit?: number } = {}
 ) {
-  const res = await request.get<ApiResult<{
-    list: ImportRowItem[];
-    total: number;
-    page: number;
-    limit: number;
-  }>>(`/business/waybill/import/batch/${batchId}/rows`, { params });
+  const res = await request.get<
+    ApiResult<{
+      list: ImportRowItem[];
+      total: number;
+      page: number;
+      limit: number;
+    }>
+  >(`/business/waybill/import/batch/${batchId}/rows`, { params });
   if (res.data.code === 0) {
     return res.data.data;
   }

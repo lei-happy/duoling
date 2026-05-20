@@ -44,10 +44,7 @@ export async function addCarrier(data: Carrier) {
 }
 
 export async function updateCarrier(data: Carrier) {
-  const res = await request.put<ApiResult<Carrier>>(
-    `${BASE}/${data.id}`,
-    data
-  );
+  const res = await request.put<ApiResult<Carrier>>(`${BASE}/${data.id}`, data);
   if (res.data.code === 0) return res.data.data;
   return Promise.reject(new Error(res.data.message));
 }
@@ -68,7 +65,10 @@ export async function listSettlements(carrierId: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
-export async function addSettlement(carrierId: number, data: CarrierSettlement) {
+export async function addSettlement(
+  carrierId: number,
+  data: CarrierSettlement
+) {
   const res = await request.post<ApiResult<CarrierSettlement>>(
     `${BASE}/${carrierId}/settlements`,
     data
@@ -111,7 +111,10 @@ export async function toggleSettlementStatus(
   return Promise.reject(new Error(res.data.message));
 }
 
-export async function removeSettlement(carrierId: number, settlementId: number) {
+export async function removeSettlement(
+  carrierId: number,
+  settlementId: number
+) {
   const res = await request.delete<ApiResult<unknown>>(
     `${BASE}/${carrierId}/settlements/${settlementId}`
   );
@@ -145,10 +148,7 @@ export async function inviteCarrier(
   return Promise.reject(new Error(res.data.message));
 }
 
-export async function revokeCarrierInvite(
-  carrierId: number,
-  reason?: string
-) {
+export async function revokeCarrierInvite(carrierId: number, reason?: string) {
   const res = await request.post<ApiResult<unknown>>(
     `${BASE}/${carrierId}/revoke-invite`,
     { reason }

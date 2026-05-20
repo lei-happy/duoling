@@ -1,14 +1,10 @@
 <template>
   <div class="dict-select-hint-wrap">
     <div class="dict-select-hint-wrap__control">
-      <slot />
+      <slot></slot>
     </div>
     <el-tooltip placement="top" :show-after="300" :content="tooltipText">
-      <el-icon
-        class="dict-select-hint-wrap__icon"
-        :size="16"
-        tabindex="-1"
-      >
+      <el-icon class="dict-select-hint-wrap__icon" :size="16" tabindex="-1">
         <QuestionFilled />
       </el-icon>
     </el-tooltip>

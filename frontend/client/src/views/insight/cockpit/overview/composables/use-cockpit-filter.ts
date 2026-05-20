@@ -28,9 +28,8 @@ function currentMonthRange(): { start: string; end: string } {
   };
 }
 
-const COCKPIT_FILTER_KEY: InjectionKey<CockpitFilterContext> = Symbol(
-  'CockpitFilter'
-);
+const COCKPIT_FILTER_KEY: InjectionKey<CockpitFilterContext> =
+  Symbol('CockpitFilter');
 
 /** 在 overview 页面顶层调用，向后代组件提供当月时间窗 */
 export function provideCockpitFilter(): CockpitFilterContext {

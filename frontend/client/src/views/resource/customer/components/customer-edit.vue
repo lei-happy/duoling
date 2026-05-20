@@ -42,10 +42,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="联系人" prop="contactPerson">
-            <el-input
-              v-model="form.contactPerson"
-              placeholder="请输入联系人"
-            />
+            <el-input v-model="form.contactPerson" placeholder="请输入联系人" />
           </el-form-item>
         </el-col>
         <el-col :span="12">

@@ -169,13 +169,15 @@
     let changed = false;
     rows.forEach((r) => {
       if (!r._fromCodes && r.fromCode) {
-        r._fromCodes =
-          findRegionCodePath(regionTree.value, r.fromCode) ?? [r.fromCode];
+        r._fromCodes = findRegionCodePath(regionTree.value, r.fromCode) ?? [
+          r.fromCode
+        ];
         changed = true;
       }
       if (!r._toCodes && r.toCode) {
-        r._toCodes =
-          findRegionCodePath(regionTree.value, r.toCode) ?? [r.toCode];
+        r._toCodes = findRegionCodePath(regionTree.value, r.toCode) ?? [
+          r.toCode
+        ];
         changed = true;
       }
     });

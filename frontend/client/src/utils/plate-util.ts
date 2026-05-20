@@ -12,7 +12,10 @@ function stripSeparators(s: string): string {
 }
 
 /** 省简称 + 发牌机关首字母后打点：`京A12345` → `京A · 12345`；无字母时退化为 `京 · xxx` */
-function provinceThenLetterDot(provinceChar: string, afterProvince: string): string {
+function provinceThenLetterDot(
+  provinceChar: string,
+  afterProvince: string
+): string {
   const tail = afterProvince.trim();
   if (!tail) return `${provinceChar}${PLATE_DOT}`;
   const m = tail.match(/^([A-HJ-NP-Za-hj-np-z])(.*)$/);

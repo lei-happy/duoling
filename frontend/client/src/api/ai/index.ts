@@ -13,9 +13,8 @@ import type {
 } from './model';
 
 export async function listAiEmployees() {
-  const res = await request.get<ApiResult<{ list: AiEmployee[] }>>(
-    '/ai/employee'
-  );
+  const res =
+    await request.get<ApiResult<{ list: AiEmployee[] }>>('/ai/employee');
   if (res.data.code === 0) return res.data.data?.list ?? [];
   return Promise.reject(new Error(res.data.message));
 }
@@ -70,7 +69,10 @@ export async function deleteAiSession(sessionId: number) {
 export async function uploadAiAttach(file: File): Promise<AiAttachment> {
   const fd = new FormData();
   fd.append('file', file);
-  const res = await request.post<ApiResult<AiAttachment>>('/ai/file/upload', fd);
+  const res = await request.post<ApiResult<AiAttachment>>(
+    '/ai/file/upload',
+    fd
+  );
   if (res.data.code === 0 && res.data.data) return res.data.data;
   return Promise.reject(new Error(res.data.message));
 }

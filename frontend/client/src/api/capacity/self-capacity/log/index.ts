@@ -5,10 +5,9 @@ import type { CapacityLog, CapacityLogParam } from './model';
 const BASE = '/capacity/self_capacity/log';
 
 export async function pageCapacityLogs(params: CapacityLogParam) {
-  const res = await request.get<ApiResult<PageResult<CapacityLog>>>(
-    BASE,
-    { params }
-  );
+  const res = await request.get<ApiResult<PageResult<CapacityLog>>>(BASE, {
+    params
+  });
   if (res.data.code === 0) {
     return res.data.data;
   }

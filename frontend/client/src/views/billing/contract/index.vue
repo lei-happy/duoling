@@ -20,7 +20,9 @@
           />
         </template>
         <template #validPeriod="{ row }">
-          <span>{{ formatContractValidPeriod(row.effectiveDate, row.expiryDate) }}</span>
+          <span>{{
+            formatContractValidPeriod(row.effectiveDate, row.expiryDate)
+          }}</span>
         </template>
         <template #status="{ row }">
           <el-tag

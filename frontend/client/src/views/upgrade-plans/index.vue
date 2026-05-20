@@ -28,8 +28,12 @@
           <div class="vcode">{{ v.versionCode }}</div>
           <div class="vprice">{{ formatPrice(v) }}</div>
           <div class="vmeta">
-            <div>最大用户：<b>{{ v.maxUsers ?? '—' }}</b></div>
-            <div>最大车辆：<b>{{ v.maxVehicles ?? '—' }}</b></div>
+            <div
+              >最大用户：<b>{{ v.maxUsers ?? '—' }}</b></div
+            >
+            <div
+              >最大车辆：<b>{{ v.maxVehicles ?? '—' }}</b></div
+            >
           </div>
           <div class="vdesc" v-if="v.description">{{ v.description }}</div>
           <el-button
@@ -66,10 +70,7 @@
                   {{ MODULE_LABEL[m] || m }}
                 </td>
               </tr>
-              <tr
-                v-for="f in featuresByModule(m)"
-                :key="f.featureCode"
-              >
+              <tr v-for="f in featuresByModule(m)" :key="f.featureCode">
                 <td class="col-feat">
                   <div class="fname">{{ f.featureName }}</div>
                   <div class="fdesc" v-if="f.description">

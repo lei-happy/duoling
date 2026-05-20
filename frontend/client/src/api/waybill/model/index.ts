@@ -57,6 +57,20 @@ export interface Waybill {
   allocatedQuantity?: number | null;
 }
 
+/** 运单工作台 KPI：与后端 WaybillService.workbench_stats 输出对齐 */
+export interface WaybillWorkbenchStats {
+  statusCounts: Record<number, number>;
+  totals: {
+    pendingConfirm: number;
+    pendingDispatch: number;
+    scheduling: number;
+    inTransit: number;
+    delivered: number;
+    completed: number;
+    closed: number;
+  };
+}
+
 export interface WaybillParam extends PageParam {
   /** 关键词：仅模糊匹配运单号（客户请用 customerId） */
   keyword?: string;

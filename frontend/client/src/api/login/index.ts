@@ -1,7 +1,12 @@
 import axios from 'axios';
 import request from '@/utils/request';
 import type { ApiResult } from '@/api';
-import type { LoginParam, LoginResult, CaptchaResult, TenantOption } from './model';
+import type {
+  LoginParam,
+  LoginResult,
+  CaptchaResult,
+  TenantOption
+} from './model';
 
 /**
  * 客户端登录（手机号 + 密码）
@@ -56,11 +61,14 @@ export async function resetPasswordBySms(
   code: string,
   newPassword: string
 ) {
-  const res = await axios.post<ApiResult<void>>('/api/open/sms/reset-password', {
-    phone,
-    code,
-    newPassword
-  });
+  const res = await axios.post<ApiResult<void>>(
+    '/api/open/sms/reset-password',
+    {
+      phone,
+      code,
+      newPassword
+    }
+  );
   if (res.data.code === 0) {
     return res.data;
   }
@@ -85,7 +93,8 @@ export async function changePassword(data: {
  * 获取当前用户关联的所有有效租户列表
  */
 export async function getUserTenants() {
-  const res = await request.get<ApiResult<TenantOption[]>>('/auth/user-tenants');
+  const res =
+    await request.get<ApiResult<TenantOption[]>>('/auth/user-tenants');
   if (res.data.code === 0) {
     return res.data.data ?? [];
   }
@@ -96,9 +105,12 @@ export async function getUserTenants() {
  * 切换到目标租户
  */
 export async function switchTenant(tenantCode: string) {
-  const res = await request.post<ApiResult<LoginResult>>('/auth/switch-tenant', {
-    tenant_code: tenantCode
-  });
+  const res = await request.post<ApiResult<LoginResult>>(
+    '/auth/switch-tenant',
+    {
+      tenant_code: tenantCode
+    }
+  );
   if (res.data.code === 0) {
     return res.data.data;
   }

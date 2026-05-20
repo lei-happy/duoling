@@ -178,11 +178,7 @@
     <template #footer>
       <div class="waybill-edit-dialog__footer">
         <el-button @click="updateVisible(false)">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="saveLoading"
-          @click="submit"
-        >
+        <el-button type="primary" :loading="saveLoading" @click="submit">
           {{ submitLabel }}
         </el-button>
       </div>

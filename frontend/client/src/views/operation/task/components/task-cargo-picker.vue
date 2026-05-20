@@ -25,7 +25,7 @@
           <el-radio-button value="route">按线路</el-radio-button>
           <el-radio-button value="customer">按客户</el-radio-button>
         </el-radio-group>
-        <div class="cargo-picker__flex-spacer" />
+        <div class="cargo-picker__flex-spacer"></div>
         <el-button :icon="Refresh" size="small" @click="loadCandidates">
           刷新
         </el-button>
@@ -90,7 +90,7 @@
             <span class="cargo-group__meta">
               {{ group.totalCount }} 条 · {{ group.totalQuantity }} 台
             </span>
-            <div class="cargo-picker__flex-spacer" />
+            <div class="cargo-picker__flex-spacer"></div>
             <el-button
               type="primary"
               link
@@ -103,15 +103,16 @@
             </el-button>
           </div>
 
-          <div v-show="!collapsedGroups.has(group.key)" class="cargo-group__body">
-            <template
-              v-for="sub in group.subgroups"
-              :key="sub.key"
-            >
+          <div
+            v-show="!collapsedGroups.has(group.key)"
+            class="cargo-group__body"
+          >
+            <template v-for="sub in group.subgroups" :key="sub.key">
               <div
                 v-if="
                   groupMode === 'customer' &&
-                  (group.subgroups.length > 1 || (sub.title && sub.title.trim()))
+                  (group.subgroups.length > 1 ||
+                    (sub.title && sub.title.trim()))
                 "
                 class="cargo-subheader"
               >
@@ -147,10 +148,10 @@
                       <span
                         class="cargo-row__wb"
                         :title="mw.lines[0]?.waybillNo"
-                      >{{
-                        mw.lines[0]?.waybillNo ||
-                          `#${mw.lines[0]?.waybillId}`
-                      }}</span>
+                        >{{
+                          mw.lines[0]?.waybillNo || `#${mw.lines[0]?.waybillId}`
+                        }}</span
+                      >
                       <span class="cargo-row__customer">{{
                         mw.lines[0]?.customerName || '—'
                       }}</span>
@@ -295,7 +296,7 @@
         <el-tag size="small" type="primary" effect="dark">
           {{ modelValue.length }} 条 / {{ totalQuantity }} 台
         </el-tag>
-        <div class="cargo-picker__flex-spacer" />
+        <div class="cargo-picker__flex-spacer"></div>
         <el-button
           type="danger"
           link
@@ -392,14 +393,8 @@
                 <span class="picked-row__chip picked-row__chip--model">
                   {{ p.vehicleBrand || '—' }} / {{ p.vehicleModel || '—' }}
                 </span>
-                <div
-                  v-if="routeOfPicked(p)"
-                  class="picked-row__route-row"
-                >
-                  <span
-                    class="picked-row__route"
-                    :title="routeOfPicked(p)"
-                  >
+                <div v-if="routeOfPicked(p)" class="picked-row__route-row">
+                  <span class="picked-row__route" :title="routeOfPicked(p)">
                     {{ routeOfPicked(p) }}
                   </span>
                   <el-tooltip
@@ -448,10 +443,7 @@
               />
             </div>
           </div>
-          <div
-            v-show="pickedExpandOpen(p.waybillCargoId)"
-            class="picked-units"
-          >
+          <div v-show="pickedExpandOpen(p.waybillCargoId)" class="picked-units">
             <div
               v-for="n in p.quantity"
               :key="`${p.waybillCargoId}_u_${n}`"
@@ -588,10 +580,7 @@
   });
 
   const candidatesTotalQty = computed(() =>
-    filteredCandidates.value.reduce(
-      (s, c) => s + (c.remainingQuantity || 0),
-      0
-    )
+    filteredCandidates.value.reduce((s, c) => s + (c.remainingQuantity || 0), 0)
   );
 
   function routeKeyOf(c: CandidateCargo): string {
@@ -777,11 +766,7 @@
   }
 
   function removeCargoLine(row: CandidateCargo): void {
-    const list = upsertPickedQuantity(
-      [...(props.modelValue || [])],
-      row,
-      0
-    );
+    const list = upsertPickedQuantity([...(props.modelValue || [])], row, 0);
     emit('update:modelValue', list);
     delete pickIncrementDraft[row.cargoId];
   }
@@ -798,12 +783,10 @@
     const list = filteredCandidates.value;
     if (!list.length) return [];
 
-    const primary =
-      groupMode.value === 'route' ? routeKeyOf : customerKeyOf;
+    const primary = groupMode.value === 'route' ? routeKeyOf : customerKeyOf;
     const primaryTitle =
       groupMode.value === 'route' ? routeTitleOf : customerTitleOf;
-    const secondary =
-      groupMode.value === 'route' ? customerKeyOf : routeKeyOf;
+    const secondary = groupMode.value === 'route' ? customerKeyOf : routeKeyOf;
     const secondaryTitle =
       groupMode.value === 'route' ? customerTitleOf : routeTitleOf;
 

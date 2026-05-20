@@ -65,14 +65,16 @@
     actionTimeEnd: defaultLogTimeRange[1]
   });
 
-  const onSearch = (payload: Pick<
+  const onSearch = (
+    payload: Pick<
       CapacityLogParam,
       | 'keyword'
       | 'action'
       | 'operatorName'
       | 'actionTimeStart'
       | 'actionTimeEnd'
-    >) => {
+    >
+  ) => {
     where.keyword = payload.keyword ?? '';
     where.action = payload.action;
     where.operatorName = payload.operatorName ?? '';

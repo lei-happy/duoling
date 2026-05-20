@@ -85,6 +85,16 @@ async def page_waybills(
     return success(data=data)
 
 
+@router.get("/workbench-stats")
+async def get_waybill_workbench_stats(
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    """运单工作台 KPI 聚合：返回各状态计数（1~6）+ totals 别名。"""
+    stats = await WaybillService.workbench_stats(db)
+    return success(data=stats)
+
+
 @router.get("/check-waybill-no")
 async def check_waybill_no(
     waybillNo: str = Query(..., min_length=1, max_length=50),

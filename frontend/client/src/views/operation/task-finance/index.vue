@@ -72,11 +72,7 @@
             <el-form-item>
               <el-text type="info" size="small">
                 常用审批/支付作业请前往
-                <el-link
-                  type="primary"
-                  :underline="false"
-                  @click="goWorkbench"
-                >
+                <el-link type="primary" :underline="false" @click="goWorkbench">
                   「费用工作台」
                 </el-link>
               </el-text>
@@ -304,7 +300,9 @@
   // ============================================
   // 行内语义化动作
   // ============================================
-  const getPrimaryAction = (row: TaskFinanceDocListItem): FinanceActionConfig | null => {
+  const getPrimaryAction = (
+    row: TaskFinanceDocListItem
+  ): FinanceActionConfig | null => {
     return getPrimaryFinanceAction(row.status);
   };
 

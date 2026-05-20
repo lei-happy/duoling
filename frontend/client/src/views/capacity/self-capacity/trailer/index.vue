@@ -86,8 +86,14 @@
   import TrailerSearch from './components/trailer-search.vue';
   import DictData from '@/components/DictData/index.vue';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
-  import { pageTrailers, removeTrailer } from '@/api/capacity/self-capacity/trailer';
-  import type { Trailer, TrailerParam } from '@/api/capacity/self-capacity/trailer/model';
+  import {
+    pageTrailers,
+    removeTrailer
+  } from '@/api/capacity/self-capacity/trailer';
+  import type {
+    Trailer,
+    TrailerParam
+  } from '@/api/capacity/self-capacity/trailer/model';
   import { DICT_CODE_TRAILER_TYPE } from '@/constants/dict-codes';
   import { formatDateTime } from '@/utils/date-util';
 
@@ -177,11 +183,7 @@
     }
   ]);
 
-  const datasource: DatasourceFunction = async ({
-    page,
-    limit,
-    pages
-  }) => {
+  const datasource: DatasourceFunction = async ({ page, limit, pages }) => {
     const p = page ?? (Number(pages?.page) || 1);
     const l = limit ?? (Number(pages?.limit) || 10);
     const res = await pageTrailers({

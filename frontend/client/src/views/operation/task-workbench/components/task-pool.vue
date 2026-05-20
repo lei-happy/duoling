@@ -423,10 +423,8 @@
 
     if (statusArr.length === 1) {
       const s0 = statusArr[0]!;
-      const overdue =
-        wantServerAlert.value && (s0 === -1 || s0 === 0);
-      const normalF =
-        wantServerNormal.value && (s0 === -1 || s0 === 0);
+      const overdue = wantServerAlert.value && (s0 === -1 || s0 === 0);
+      const normalF = wantServerNormal.value && (s0 === -1 || s0 === 0);
       return pageTasks({
         ...pages,
         keyword: kw,

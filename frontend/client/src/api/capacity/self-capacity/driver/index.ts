@@ -31,10 +31,7 @@ export async function addDriver(data: Partial<Driver>) {
 }
 
 export async function updateDriver(data: Partial<Driver>) {
-  const res = await request.put<ApiResult<unknown>>(
-    `${BASE}/${data.id}`,
-    data
-  );
+  const res = await request.put<ApiResult<unknown>>(`${BASE}/${data.id}`, data);
   if (res.data.code === 0) {
     return res.data.message;
   }
@@ -50,10 +47,9 @@ export async function removeDriver(id: number) {
 }
 
 export async function updateDriverStatus(id: number, status: number) {
-  const res = await request.put<ApiResult<unknown>>(
-    `${BASE}/${id}/status`,
-    { status }
-  );
+  const res = await request.put<ApiResult<unknown>>(`${BASE}/${id}/status`, {
+    status
+  });
   if (res.data.code === 0) {
     return res.data.message;
   }

@@ -79,14 +79,20 @@ export const useUserStore = defineStore('user', {
         });
         const userMenuResult: UserMenuResult = formatUserMenu(userMenu);
         // 从服务端恢复主题配置（服务端优先于本地缓存）
-        if (userInfo.themeConfig && Object.keys(userInfo.themeConfig).length > 0) {
+        if (
+          userInfo.themeConfig &&
+          Object.keys(userInfo.themeConfig).length > 0
+        ) {
           const themeStore = useThemeStore();
           const serverConfig = userInfo.themeConfig;
           // 将服务端配置写入 localStorage 缓存
           cacheSetting(serverConfig);
           // 同步到 themeStore 状态（排除 skinConfig，它有特殊处理逻辑）
           Object.keys(serverConfig).forEach((key) => {
-            if (key !== 'skinConfig' && typeof serverConfig[key] !== 'undefined') {
+            if (
+              key !== 'skinConfig' &&
+              typeof serverConfig[key] !== 'undefined'
+            ) {
               (themeStore as any)[key] = serverConfig[key];
             }
           });
@@ -119,8 +125,7 @@ export const useUserStore = defineStore('user', {
       if (data == null) {
         this.info = null;
       } else {
-        const avatar =
-          resolveUploadUrl(data?.avatar) || defaultAvatarUrl;
+        const avatar = resolveUploadUrl(data?.avatar) || defaultAvatarUrl;
         this.info = { ...data, avatar };
       }
     },

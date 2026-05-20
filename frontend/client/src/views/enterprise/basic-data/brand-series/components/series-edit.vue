@@ -52,15 +52,20 @@
             :before-upload="beforeSeriesImageUpload"
           >
             <template v-if="form.seriesImage">
-              <img class="series-img-preview" :src="seriesImagePreviewSrc" alt="" />
+              <img
+                class="series-img-preview"
+                :src="seriesImagePreviewSrc"
+                alt=""
+              />
             </template>
             <el-icon v-else class="series-img-uploader-icon">
               <PlusOutlined />
             </el-icon>
           </el-upload>
           <div class="series-img-hint">
-            规格：<strong>480×320 像素</strong>，<strong>透明背景</strong>；请使用 PNG / WebP /
-            GIF，最大 5MB。存站点相对路径。
+            规格：<strong>480×320 像素</strong
+            >，<strong>透明背景</strong>；请使用 PNG / WebP / GIF，最大
+            5MB。存站点相对路径。
           </div>
           <el-button
             v-if="form.seriesImage"
@@ -73,7 +78,9 @@
         </div>
       </el-form-item>
 
-      <el-divider content-position="left">尺寸与质量（与库表一致，选填）</el-divider>
+      <el-divider content-position="left"
+        >尺寸与质量（与库表一致，选填）</el-divider
+      >
 
       <el-row :gutter="16">
         <el-col :span="12">
@@ -425,12 +432,17 @@
     width: 240px;
     height: 160px;
     object-fit: contain;
-    background: linear-gradient(45deg, #e8e8e8 25%, transparent 25%),
+    background:
+      linear-gradient(45deg, #e8e8e8 25%, transparent 25%),
       linear-gradient(-45deg, #e8e8e8 25%, transparent 25%),
       linear-gradient(45deg, transparent 75%, #e8e8e8 75%),
       linear-gradient(-45deg, transparent 75%, #e8e8e8 75%);
     background-size: 12px 12px;
-    background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+    background-position:
+      0 0,
+      0 6px,
+      6px -6px,
+      -6px 0;
     background-color: #fff;
   }
   .series-img-uploader-icon {

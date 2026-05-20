@@ -23,9 +23,8 @@ export async function getUserInfo(toRoute: any): Promise<User> {
  * 用于检测运营后台修改授权后是否需要重新拉取菜单
  */
 export async function getMenuVersion(): Promise<number> {
-  const res = await request.get<ApiResult<{ menuVersion: number }>>(
-    '/auth/menu-version'
-  );
+  const res =
+    await request.get<ApiResult<{ menuVersion: number }>>('/auth/menu-version');
   if (res.data.code === 0 && res.data.data) {
     return res.data.data.menuVersion ?? 0;
   }

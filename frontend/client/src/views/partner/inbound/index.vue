@@ -6,11 +6,7 @@
 <template>
   <ele-page>
     <ele-card>
-      <el-form
-        :inline="true"
-        :model="where"
-        @submit.prevent="reload(1)"
-      >
+      <el-form :inline="true" :model="where" @submit.prevent="reload(1)">
         <el-form-item>
           <el-input
             v-model.trim="where.keyword"
@@ -75,9 +71,14 @@
           <span v-else class="placeholder">—</span>
         </template>
         <template #sourceLocation="{ row }">
-          <span v-if="row.sourceProvince || row.sourceCity || row.sourceAddress">
-            {{ row.sourceProvince || '' }}{{ row.sourceCity ? ' / ' + row.sourceCity : '' }}
-            <div v-if="row.sourceAddress" class="sub">{{ row.sourceAddress }}</div>
+          <span
+            v-if="row.sourceProvince || row.sourceCity || row.sourceAddress"
+          >
+            {{ row.sourceProvince || ''
+            }}{{ row.sourceCity ? ' / ' + row.sourceCity : '' }}
+            <div v-if="row.sourceAddress" class="sub">{{
+              row.sourceAddress
+            }}</div>
           </span>
           <span v-else class="placeholder">—</span>
         </template>
@@ -142,8 +143,7 @@
       label: '合作起始',
       width: 130,
       align: 'center',
-      formatter: (row) =>
-        row.cooperationStart ? row.cooperationStart : '—'
+      formatter: (row) => (row.cooperationStart ? row.cooperationStart : '—')
     },
     {
       prop: 'linkStatus',

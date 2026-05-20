@@ -189,7 +189,9 @@
                 <el-upload
                   class="driver-doc-gallery__upload"
                   :show-file-list="false"
-                  :http-request="(opt: any) => handlePhotoUpload(opt, doc.field)"
+                  :http-request="
+                    (opt: any) => handlePhotoUpload(opt, doc.field)
+                  "
                   accept="image/*"
                 >
                   <div class="driver-doc-gallery__frame">
@@ -269,47 +271,47 @@
               </span>
             </div>
             <div class="driver-table-wrap">
-            <el-table
-              :data="routes"
-              border
-              stripe
-              size="default"
-              class="driver-nested-table driver-data-table"
-            >
-              <el-table-column label="出发地" min-width="160">
-                <template #default="{ row, $index }">
-                  <RegionsSelect
-                    v-model="row.originValue"
-                    type="provinceCity"
-                    placeholder="选择出发地"
-                    size="small"
-                    @change="onRouteRegionChange(row, 'origin', $index)"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column label="目的地" min-width="160">
-                <template #default="{ row, $index }">
-                  <RegionsSelect
-                    v-model="row.destValue"
-                    type="provinceCity"
-                    placeholder="选择目的地"
-                    size="small"
-                    @change="onRouteRegionChange(row, 'dest', $index)"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="70" align="center">
-                <template #default="{ $index }">
-                  <el-link
-                    type="danger"
-                    :underline="false"
-                    @click="removeRoute($index)"
-                  >
-                    删除
-                  </el-link>
-                </template>
-              </el-table-column>
-            </el-table>
+              <el-table
+                :data="routes"
+                border
+                stripe
+                size="default"
+                class="driver-nested-table driver-data-table"
+              >
+                <el-table-column label="出发地" min-width="160">
+                  <template #default="{ row, $index }">
+                    <RegionsSelect
+                      v-model="row.originValue"
+                      type="provinceCity"
+                      placeholder="选择出发地"
+                      size="small"
+                      @change="onRouteRegionChange(row, 'origin', $index)"
+                    />
+                  </template>
+                </el-table-column>
+                <el-table-column label="目的地" min-width="160">
+                  <template #default="{ row, $index }">
+                    <RegionsSelect
+                      v-model="row.destValue"
+                      type="provinceCity"
+                      placeholder="选择目的地"
+                      size="small"
+                      @change="onRouteRegionChange(row, 'dest', $index)"
+                    />
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="70" align="center">
+                  <template #default="{ $index }">
+                    <el-link
+                      type="danger"
+                      :underline="false"
+                      @click="removeRoute($index)"
+                    >
+                      删除
+                    </el-link>
+                  </template>
+                </el-table-column>
+              </el-table>
             </div>
           </div>
         </el-tab-pane>
@@ -330,52 +332,77 @@
               </span>
             </div>
             <div class="driver-table-wrap">
-            <el-table
-              :data="accounts"
-              border
-              stripe
-              size="default"
-              class="driver-nested-table driver-data-table"
-            >
-              <el-table-column prop="accountType" label="账户类型" width="100" align="center">
-                <template #default="{ row }">
-                  <span v-if="row.accountType === 1">银行卡</span>
-                  <span v-else-if="row.accountType === 2">油气款</span>
-                  <span v-else-if="row.accountType === 3">积分</span>
-                </template>
-              </el-table-column>
-              <el-table-column prop="accountName" label="账户名称" min-width="120" />
-              <el-table-column prop="accountNo" label="账户号" min-width="160" />
-              <el-table-column prop="balance" label="余额" width="100" align="right" />
-              <el-table-column prop="status" label="状态" width="90" align="center">
-                <template #default="{ row }">
-                  <el-switch
-                    :model-value="row.status === 1"
-                    size="small"
-                    @change="(checked: boolean) => toggleAccountStatus(row, checked)"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="120" align="center">
-                <template #default="{ row }">
-                  <el-link
-                    type="primary"
-                    :underline="false"
-                    @click="editAccount(row)"
-                  >
-                    编辑
-                  </el-link>
-                  <el-divider direction="vertical" />
-                  <el-link
-                    type="danger"
-                    :underline="false"
-                    @click="deleteAccount(row)"
-                  >
-                    删除
-                  </el-link>
-                </template>
-              </el-table-column>
-            </el-table>
+              <el-table
+                :data="accounts"
+                border
+                stripe
+                size="default"
+                class="driver-nested-table driver-data-table"
+              >
+                <el-table-column
+                  prop="accountType"
+                  label="账户类型"
+                  width="100"
+                  align="center"
+                >
+                  <template #default="{ row }">
+                    <span v-if="row.accountType === 1">银行卡</span>
+                    <span v-else-if="row.accountType === 2">油气款</span>
+                    <span v-else-if="row.accountType === 3">积分</span>
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  prop="accountName"
+                  label="账户名称"
+                  min-width="120"
+                />
+                <el-table-column
+                  prop="accountNo"
+                  label="账户号"
+                  min-width="160"
+                />
+                <el-table-column
+                  prop="balance"
+                  label="余额"
+                  width="100"
+                  align="right"
+                />
+                <el-table-column
+                  prop="status"
+                  label="状态"
+                  width="90"
+                  align="center"
+                >
+                  <template #default="{ row }">
+                    <el-switch
+                      :model-value="row.status === 1"
+                      size="small"
+                      @change="
+                        (checked: boolean) => toggleAccountStatus(row, checked)
+                      "
+                    />
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="120" align="center">
+                  <template #default="{ row }">
+                    <el-link
+                      type="primary"
+                      :underline="false"
+                      @click="editAccount(row)"
+                    >
+                      编辑
+                    </el-link>
+                    <el-divider direction="vertical" />
+                    <el-link
+                      type="danger"
+                      :underline="false"
+                      @click="deleteAccount(row)"
+                    >
+                      删除
+                    </el-link>
+                  </template>
+                </el-table-column>
+              </el-table>
             </div>
           </div>
         </el-tab-pane>
@@ -582,9 +609,7 @@
     accountName: [
       { required: true, message: '请输入账户名称', trigger: 'blur' }
     ],
-    accountNo: [
-      { required: true, message: '请输入账户号', trigger: 'blur' }
-    ]
+    accountNo: [{ required: true, message: '请输入账户号', trigger: 'blur' }]
   });
 
   const handlePhotoUpload = async (options: any, field: string) => {
@@ -704,7 +729,11 @@
     routes.value.splice(index, 1);
   };
 
-  const onRouteRegionChange = (row: RouteRow, type: 'origin' | 'dest', _index: number) => {
+  const onRouteRegionChange = (
+    row: RouteRow,
+    type: 'origin' | 'dest',
+    _index: number
+  ) => {
     const val = type === 'origin' ? row.originValue : row.destValue;
     if (val && val.length) {
       const code = val.join(',');
@@ -729,9 +758,7 @@
 
   const saveRoutes = async () => {
     if (!props.data?.id) return;
-    const validRoutes = routes.value.filter(
-      (r) => r.originCode && r.destCode
-    );
+    const validRoutes = routes.value.filter((r) => r.originCode && r.destCode);
     try {
       await saveDriverRoutes(props.data.id, validRoutes);
     } catch {
@@ -901,7 +928,8 @@
     box-shadow: 0 0 0 2px var(--el-bg-color);
   }
 
-  .driver-edit-dialog :deep(.driver-tab-pane > .el-row > .el-col > .el-form-item) {
+  .driver-edit-dialog
+    :deep(.driver-tab-pane > .el-row > .el-col > .el-form-item) {
     margin-bottom: 14px;
   }
 
@@ -981,7 +1009,13 @@
     background-color: var(--el-fill-color-lighter) !important;
   }
 
-  .driver-data-table :deep(.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
+  .driver-data-table
+    :deep(
+      .el-table--striped
+        .el-table__body
+        tr.el-table__row--striped
+        td.el-table__cell
+    ) {
     background: var(--el-fill-color-blank);
   }
 

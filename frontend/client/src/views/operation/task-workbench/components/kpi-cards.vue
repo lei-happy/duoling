@@ -8,7 +8,10 @@
       v-for="card in cards"
       :key="card.key"
       class="kpi-card"
-      :class="[`kpi-card--${card.key}`, { 'is-selected': isStageSelected(card.key) }]"
+      :class="[
+        `kpi-card--${card.key}`,
+        { 'is-selected': isStageSelected(card.key) }
+      ]"
     >
       <div class="kpi-card__body">
         <button
@@ -18,7 +21,7 @@
           @click="emitSelect(card, 'all')"
         >
           <div class="kpi-card__head">
-            <span class="kpi-card__accent-bar" aria-hidden="true" />
+            <span class="kpi-card__accent-bar" aria-hidden="true"></span>
             <span class="kpi-card__title">{{ card.label }}</span>
           </div>
           <div class="kpi-card__metric">

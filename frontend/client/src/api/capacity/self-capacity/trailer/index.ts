@@ -31,10 +31,7 @@ export async function addTrailer(data: Trailer) {
 }
 
 export async function updateTrailer(data: Trailer) {
-  const res = await request.put<ApiResult<unknown>>(
-    `${BASE}/${data.id}`,
-    data
-  );
+  const res = await request.put<ApiResult<unknown>>(`${BASE}/${data.id}`, data);
   if (res.data.code === 0) {
     return res.data.message;
   }

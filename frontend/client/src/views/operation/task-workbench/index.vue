@@ -63,10 +63,7 @@
     updateTaskStatus
   } from '@/api/operation/task';
   import type { Task, TaskWorkbenchStats } from '@/api/operation/task/model';
-  import type {
-    TaskActionConfig,
-    TaskActionKey
-  } from '../task/task-actions';
+  import type { TaskActionConfig, TaskActionKey } from '../task/task-actions';
 
   type WorkbenchListSubset = 'all' | 'normal' | 'alert';
 

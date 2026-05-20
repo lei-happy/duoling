@@ -8,64 +8,72 @@
         @submit.prevent=""
       >
         <div class="capacity-log-search-toolbar">
-        <div class="capacity-log-search-item capacity-log-search-item--keyword">
-          <floating-label
-            label="请输入驾驶员姓名/车牌号/手机号"
-            type="input"
-            v-model.trim="form.keyword"
-            clearable
-          />
-        </div>
-        <div class="capacity-log-search-item capacity-log-search-item--action">
-          <floating-label
-            v-model="form.action"
-            label="请选择操作类型"
-            type="select"
-            clearable
+          <div
+            class="capacity-log-search-item capacity-log-search-item--keyword"
           >
-            <el-option label="上车" :value="1" />
-            <el-option label="下车" :value="2" />
-          </floating-label>
-        </div>
-        <div class="capacity-log-search-item capacity-log-search-item--operator">
-          <floating-label
-            label="请输入操作人"
-            type="input"
-            v-model.trim="form.operatorName"
-            clearable
-          />
-        </div>
-        <div class="capacity-log-search-item capacity-log-search-item--datetime">
-          <div class="log-search-datetime-wrap">
             <floating-label
-              label="操作时间"
-              type="date"
-              date-type="datetimerange"
-              v-model="actionTimeRange"
-              range-separator="-"
-              :value-format="DATE_TIME_FORMAT"
-              :format="DATE_TIME_FORMAT"
-              start-placeholder="开始时间"
-              end-placeholder="结束时间"
-              :unlink-panels="true"
+              label="请输入驾驶员姓名/车牌号/手机号"
+              type="input"
+              v-model.trim="form.keyword"
               clearable
             />
           </div>
-        </div>
-        <div class="capacity-log-search-item capacity-log-search-actions">
-          <el-form-item
-            label-width="0px"
-            class="capacity-log-search-actions-inner"
+          <div
+            class="capacity-log-search-item capacity-log-search-item--action"
           >
-            <btn-items
-              :wrap="false"
-              :items="[
-                { preset: 'search', onClick: () => search() },
-                { preset: 'reset', onClick: () => reset() }
-              ]"
+            <floating-label
+              v-model="form.action"
+              label="请选择操作类型"
+              type="select"
+              clearable
+            >
+              <el-option label="上车" :value="1" />
+              <el-option label="下车" :value="2" />
+            </floating-label>
+          </div>
+          <div
+            class="capacity-log-search-item capacity-log-search-item--operator"
+          >
+            <floating-label
+              label="请输入操作人"
+              type="input"
+              v-model.trim="form.operatorName"
+              clearable
             />
-          </el-form-item>
-        </div>
+          </div>
+          <div
+            class="capacity-log-search-item capacity-log-search-item--datetime"
+          >
+            <div class="log-search-datetime-wrap">
+              <floating-label
+                label="操作时间"
+                type="date"
+                date-type="datetimerange"
+                v-model="actionTimeRange"
+                range-separator="-"
+                :value-format="DATE_TIME_FORMAT"
+                :format="DATE_TIME_FORMAT"
+                start-placeholder="开始时间"
+                end-placeholder="结束时间"
+                :unlink-panels="true"
+                clearable
+              />
+            </div>
+          </div>
+          <div class="capacity-log-search-item capacity-log-search-actions">
+            <el-form-item
+              label-width="0px"
+              class="capacity-log-search-actions-inner"
+            >
+              <btn-items
+                :wrap="false"
+                :items="[
+                  { preset: 'search', onClick: () => search() },
+                  { preset: 'reset', onClick: () => reset() }
+                ]"
+              />
+            </el-form-item>
+          </div>
         </div>
       </el-form>
     </ele-card>
@@ -123,7 +131,8 @@
   /**
    * 主题 search-form 卡片为 padding: 20px 20px 4px（下边极窄），此处单独拉齐上下内边距
    */
-  .capacity-log-search-wrapper :deep(.ele-card.is-search-form > .ele-card-body) {
+  .capacity-log-search-wrapper
+    :deep(.ele-card.is-search-form > .ele-card-body) {
     padding: 16px 20px;
   }
 

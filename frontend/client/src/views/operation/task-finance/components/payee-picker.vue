@@ -126,9 +126,18 @@
 <script lang="ts" setup>
   import { reactive, ref, watch } from 'vue';
   import { selectCarriers, listSettlements } from '@/api/partner/carrier';
-  import { pageDrivers, listDriverAccounts } from '@/api/capacity/self-capacity/driver';
-  import type { CarrierSelectItem, CarrierSettlement } from '@/api/partner/carrier/model';
-  import type { Driver, DriverAccount } from '@/api/capacity/self-capacity/driver/model';
+  import {
+    pageDrivers,
+    listDriverAccounts
+  } from '@/api/capacity/self-capacity/driver';
+  import type {
+    CarrierSelectItem,
+    CarrierSettlement
+  } from '@/api/partner/carrier/model';
+  import type {
+    Driver,
+    DriverAccount
+  } from '@/api/capacity/self-capacity/driver/model';
   import { PAYEE_TYPE_OPTIONS } from '../status-config';
 
   export interface PayeeFormData {
@@ -149,7 +158,9 @@
     (e: 'update:modelValue', v: PayeeFormData): void;
   }>();
 
-  const local = reactive<PayeeFormData>({ ...(props.modelValue || { payeeType: 1 }) });
+  const local = reactive<PayeeFormData>({
+    ...(props.modelValue || { payeeType: 1 })
+  });
 
   watch(
     () => props.modelValue,
@@ -215,8 +226,9 @@
     if (id) {
       try {
         settlements.value = await listSettlements(id);
-        const def = settlements.value.find((s) => s.isDefault === 1)
-          || settlements.value[0];
+        const def =
+          settlements.value.find((s) => s.isDefault === 1) ||
+          settlements.value[0];
         if (def?.id) {
           local.payeeAccountId = def.id;
           local.payeeAccountType = 2;
@@ -238,7 +250,8 @@
     driverAccounts.value = [];
     settlements.value = [];
     if (local.payeeType === 1 && drivers.value.length === 0) searchDrivers('');
-    if (local.payeeType === 2 && carriers.value.length === 0) searchCarriers('');
+    if (local.payeeType === 2 && carriers.value.length === 0)
+      searchCarriers('');
   };
 
   const maskBank = (no?: string) => {

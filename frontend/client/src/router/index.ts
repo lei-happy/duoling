@@ -57,7 +57,10 @@ router.beforeEach(async (to) => {
     if (getToken()) {
       removeToken();
       removeRefreshToken();
-      const query = to.path === LAYOUT_PATH ? {} : { from: encodeURIComponent(to.fullPath) };
+      const query =
+        to.path === LAYOUT_PATH
+          ? {}
+          : { from: encodeURIComponent(to.fullPath) };
       return { path: LOGIN_PATH, query };
     }
     return;

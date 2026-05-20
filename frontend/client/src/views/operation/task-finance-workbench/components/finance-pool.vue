@@ -94,7 +94,11 @@
       </template>
 
       <template #action="{ row }">
-        <el-link type="primary" :underline="false" @click="emit('openDetail', row)">
+        <el-link
+          type="primary"
+          :underline="false"
+          @click="emit('openDetail', row)"
+        >
           详情
         </el-link>
         <template v-if="primaryAction">
@@ -143,7 +147,11 @@
   }>();
 
   const emit = defineEmits<{
-    (e: 'action', row: TaskFinanceDocListItem, action: FinanceActionConfig): void;
+    (
+      e: 'action',
+      row: TaskFinanceDocListItem,
+      action: FinanceActionConfig
+    ): void;
     (
       e: 'batchAction',
       rows: TaskFinanceDocListItem[],
@@ -220,7 +228,10 @@
     nextTick(() => tableRef.value?.reload?.({ page: 1 }));
   };
 
-  watch(() => props.reloadToken, () => doReload());
+  watch(
+    () => props.reloadToken,
+    () => doReload()
+  );
   watch(
     () => [props.status, props.primaryActionKey] as const,
     () => doReload()

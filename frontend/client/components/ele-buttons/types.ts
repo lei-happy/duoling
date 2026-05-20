@@ -55,8 +55,7 @@ export interface ButtonItemPermission {
  * 下拉菜单项
  */
 export interface ButtonDropdownItem
-  extends Omit<DropdownItem, 'children'>,
-    ButtonItemPermission {
+  extends Omit<DropdownItem, 'children'>, ButtonItemPermission {
   /** 预设类型 */
   preset?: ButtonItemPreset;
   /** 子级 */
@@ -66,8 +65,9 @@ export interface ButtonDropdownItem
 /**
  * 按钮类型项
  */
-export interface ButtonItemBase<T extends ButtonItemType>
-  extends ButtonItemPermission {
+export interface ButtonItemBase<
+  T extends ButtonItemType
+> extends ButtonItemPermission {
   /** 文本 */
   title?: string;
   /** 图标 */

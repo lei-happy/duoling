@@ -8,10 +8,16 @@
     <div class="ai-bubble__body">
       <!-- 附件展示（仅用户消息） -->
       <div
-        v-if="turn.role === 'user' && turn.attachments && turn.attachments.length"
+        v-if="
+          turn.role === 'user' && turn.attachments && turn.attachments.length
+        "
         class="ai-bubble__attachments"
       >
-        <div v-for="att in turn.attachments" :key="att.fileId" class="ai-bubble__attach">
+        <div
+          v-for="att in turn.attachments"
+          :key="att.fileId"
+          class="ai-bubble__attach"
+        >
           <el-icon><paperclip /></el-icon>
           <span class="ai-bubble__attach-name">{{ att.name }}</span>
           <span v-if="att.size" class="ai-bubble__attach-size">
@@ -23,11 +29,18 @@
       <!-- 文本内容 -->
       <div v-if="turn.content" class="ai-bubble__content">
         {{ turn.content
-        }}<span v-if="turn.pending && turn.role === 'assistant'" class="ai-cursor">▍</span>
+        }}<span
+          v-if="turn.pending && turn.role === 'assistant'"
+          class="ai-cursor"
+          >▍</span
+        >
       </div>
 
       <!-- 工具调用时间线 -->
-      <div v-if="turn.toolCalls && turn.toolCalls.length" class="ai-bubble__tools">
+      <div
+        v-if="turn.toolCalls && turn.toolCalls.length"
+        class="ai-bubble__tools"
+      >
         <tool-call-item
           v-for="tc in turn.toolCalls"
           :key="tc.toolCallId"
@@ -42,11 +55,7 @@
 </template>
 
 <script lang="ts" setup>
-  import {
-    User,
-    ChatLineSquare,
-    Paperclip
-  } from '@element-plus/icons-vue';
+  import { User, ChatLineSquare, Paperclip } from '@element-plus/icons-vue';
   import type { ChatTurn, ToolCallEntry } from '@/api/ai/model';
   import ToolCallItem from './tool-call-item.vue';
 

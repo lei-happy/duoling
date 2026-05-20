@@ -40,8 +40,8 @@
             </el-icon>
           </el-upload>
           <div class="logo-hint">
-            规格：<strong>56×56 像素</strong>，<strong>透明背景</strong>；请使用 PNG / WebP /
-            GIF，最大 5MB。将保存为站点相对路径。
+            规格：<strong>56×56 像素</strong>，<strong>透明背景</strong>；请使用
+            PNG / WebP / GIF，最大 5MB。将保存为站点相对路径。
           </div>
           <el-button
             v-if="form.brandLogo"
@@ -90,7 +90,10 @@
   import type { FormInstance, FormRules } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
   import { useFormData } from '@/utils/use-form-data';
-  import { addVehicleBrand, updateVehicleBrand } from '@/api/basic-data/vehicle-brand';
+  import {
+    addVehicleBrand,
+    updateVehicleBrand
+  } from '@/api/basic-data/vehicle-brand';
   import type { VehicleBrand } from '@/api/basic-data/vehicle-brand/model';
   import { uploadFile } from '@/api/system/file';
   import { PlusOutlined } from '@/components/icons';
@@ -286,12 +289,17 @@
     height: 56px;
     object-fit: contain;
     display: block;
-    background: linear-gradient(45deg, #e8e8e8 25%, transparent 25%),
+    background:
+      linear-gradient(45deg, #e8e8e8 25%, transparent 25%),
       linear-gradient(-45deg, #e8e8e8 25%, transparent 25%),
       linear-gradient(45deg, transparent 75%, #e8e8e8 75%),
       linear-gradient(-45deg, transparent 75%, #e8e8e8 75%);
     background-size: 8px 8px;
-    background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+    background-position:
+      0 0,
+      0 4px,
+      4px -4px,
+      -4px 0;
     background-color: #fff;
   }
   .brand-logo-uploader-icon {

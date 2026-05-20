@@ -24,10 +24,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="货物名称" prop="cargoName">
-            <el-input
-              v-model="form.cargoName"
-              placeholder="请输入货物名称"
-            />
+            <el-input v-model="form.cargoName" placeholder="请输入货物名称" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -37,26 +34,17 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="目的地" prop="destination">
-            <el-input
-              v-model="form.destination"
-              placeholder="请输入目的地"
-            />
+            <el-input v-model="form.destination" placeholder="请输入目的地" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="车牌号">
-            <el-input
-              v-model="form.plateNumber"
-              placeholder="请输入车牌号"
-            />
+            <el-input v-model="form.plateNumber" placeholder="请输入车牌号" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="司机姓名">
-            <el-input
-              v-model="form.driverName"
-              placeholder="请输入司机姓名"
-            />
+            <el-input v-model="form.driverName" placeholder="请输入司机姓名" />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -161,15 +149,9 @@
     customerName: [
       { required: true, message: '请输入客户名称', trigger: 'blur' }
     ],
-    cargoName: [
-      { required: true, message: '请输入货物名称', trigger: 'blur' }
-    ],
-    origin: [
-      { required: true, message: '请输入出发地', trigger: 'blur' }
-    ],
-    destination: [
-      { required: true, message: '请输入目的地', trigger: 'blur' }
-    ]
+    cargoName: [{ required: true, message: '请输入货物名称', trigger: 'blur' }],
+    origin: [{ required: true, message: '请输入出发地', trigger: 'blur' }],
+    destination: [{ required: true, message: '请输入目的地', trigger: 'blur' }]
   });
 
   watch(

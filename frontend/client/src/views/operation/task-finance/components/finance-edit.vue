@@ -323,8 +323,10 @@
   const onOpen = () => {
     setTimeout(() => {
       payeeRef.value?.init({
-        driverId: payee.payeeType === 1 ? payee.payeeId ?? undefined : undefined,
-        carrierId: payee.payeeType === 2 ? payee.payeeId ?? undefined : undefined
+        driverId:
+          payee.payeeType === 1 ? (payee.payeeId ?? undefined) : undefined,
+        carrierId:
+          payee.payeeType === 2 ? (payee.payeeId ?? undefined) : undefined
       });
     }, 0);
   };

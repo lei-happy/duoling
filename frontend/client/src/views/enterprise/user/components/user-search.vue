@@ -2,52 +2,52 @@
 <template>
   <el-form label-width="0" @keyup.enter="search" @submit.prevent="">
     <el-row :gutter="16">
-        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+      <el-col :lg="6" :md="8" :sm="12" :xs="24">
+        <floating-label
+          label="请输入手机号"
+          type="input"
+          v-model.trim="form.phone"
+          clearable
+        />
+      </el-col>
+      <el-col :lg="6" :md="8" :sm="12" :xs="24">
+        <floating-label
+          label="请输入用户名"
+          type="input"
+          v-model.trim="form.nickname"
+          clearable
+        />
+      </el-col>
+      <el-col :lg="6" :md="8" :sm="12" :xs="24">
+        <dict-select-hint-wrap dict-name="性别">
           <floating-label
-            label="请输入手机号"
-            type="input"
-            v-model.trim="form.phone"
+            v-model="form.sex"
+            label="请选择性别"
+            type="select"
             clearable
-          />
-        </el-col>
-        <el-col :lg="6" :md="8" :sm="12" :xs="24">
-          <floating-label
-            label="请输入用户名"
-            type="input"
-            v-model.trim="form.nickname"
-            clearable
-          />
-        </el-col>
-        <el-col :lg="6" :md="8" :sm="12" :xs="24">
-          <dict-select-hint-wrap dict-name="性别">
-            <floating-label
-              v-model="form.sex"
-              label="请选择性别"
-              type="select"
-              clearable
-            >
-              <el-option
-                v-for="item in sexDict"
-                :key="item.dictDataCode"
-                :label="item.dictDataName"
-                :value="item.dictDataCode"
-              />
-            </floating-label>
-          </dict-select-hint-wrap>
-        </el-col>
-        <el-col :lg="6" :md="8" :sm="12" :xs="24">
-          <el-form-item label-width="0px">
-            <btn-items
-              :wrap="false"
-              :items="[
-                { preset: 'search', onClick: () => search() },
-                { preset: 'reset', onClick: () => reset() }
-              ]"
+          >
+            <el-option
+              v-for="item in sexDict"
+              :key="item.dictDataCode"
+              :label="item.dictDataName"
+              :value="item.dictDataCode"
             />
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
+          </floating-label>
+        </dict-select-hint-wrap>
+      </el-col>
+      <el-col :lg="6" :md="8" :sm="12" :xs="24">
+        <el-form-item label-width="0px">
+          <btn-items
+            :wrap="false"
+            :items="[
+              { preset: 'search', onClick: () => search() },
+              { preset: 'reset', onClick: () => reset() }
+            ]"
+          />
+        </el-form-item>
+      </el-col>
+    </el-row>
+  </el-form>
 </template>
 
 <script lang="ts" setup>

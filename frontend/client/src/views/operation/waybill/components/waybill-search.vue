@@ -1,3 +1,8 @@
+<!--
+  @deprecated 自 2026-05 运单工作台改版后弃用，已由 `waybill-pool-filter.vue`
+  按 pool 配置驱动地接替；本文件暂不删除，便于回滚或局部场景复用，
+  下一迭代如确认无外部依赖再行清理。
+-->
 <!-- 运单列表搜索 -->
 <template>
   <ele-card search-form class="waybill-search-card">
@@ -65,7 +70,10 @@
           />
         </el-col>
       </el-row>
-      <el-row :gutter="10" class="waybill-search-bar__row waybill-search-bar__row--second">
+      <el-row
+        :gutter="10"
+        class="waybill-search-bar__row waybill-search-bar__row--second"
+      >
         <el-col :lg="5" :md="8" :sm="12" :xs="24">
           <floating-label
             v-model="form.createdAtRange"
@@ -87,7 +95,13 @@
             clearable
           />
         </el-col>
-        <el-col :lg="8" :md="12" :sm="12" :xs="24" class="waybill-search-bar__col-actions">
+        <el-col
+          :lg="8"
+          :md="12"
+          :sm="12"
+          :xs="24"
+          class="waybill-search-bar__col-actions"
+        >
           <el-form-item label-width="0px">
             <btn-items
               :wrap="false"

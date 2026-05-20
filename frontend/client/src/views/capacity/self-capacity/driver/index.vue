@@ -155,7 +155,10 @@
     removeDriver,
     updateDriverStatus
   } from '@/api/capacity/self-capacity/driver';
-  import type { Driver, DriverParam } from '@/api/capacity/self-capacity/driver/model';
+  import type {
+    Driver,
+    DriverParam
+  } from '@/api/capacity/self-capacity/driver/model';
   import { formatDateTime } from '@/utils/date-util';
   import { DICT_CODE_SELF_CAPACITY_DRIVER_TYPE } from '@/constants/dict-codes';
 
@@ -192,7 +195,7 @@
   );
 
   const hrStatusLabel = (s: number | undefined) =>
-    s == null ? '' : HR_STATUS_LABEL[s] ?? String(s);
+    s == null ? '' : (HR_STATUS_LABEL[s] ?? String(s));
 
   const hrTargetOptions = computed(() => {
     const s = hrStatusNormalized.value;

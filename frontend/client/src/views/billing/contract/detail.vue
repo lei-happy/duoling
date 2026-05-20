@@ -67,12 +67,20 @@
           <template #toolbar>
             <btn-items
               :items="[
-                { preset: 'add', title: '新增运价', onClick: () => openRateEdit() }
+                {
+                  preset: 'add',
+                  title: '新增运价',
+                  onClick: () => openRateEdit()
+                }
               ]"
             />
           </template>
           <template #billingMode="{ row }">
-            <el-tag v-if="row.billingMode === 1" size="small" :disable-transitions="true">
+            <el-tag
+              v-if="row.billingMode === 1"
+              size="small"
+              :disable-transitions="true"
+            >
               单公里
             </el-tag>
             <el-tag
@@ -83,7 +91,12 @@
             >
               整单价
             </el-tag>
-            <el-tag v-else type="success" size="small" :disable-transitions="true">
+            <el-tag
+              v-else
+              type="success"
+              size="small"
+              :disable-transitions="true"
+            >
               台单价
             </el-tag>
           </template>
@@ -97,9 +110,7 @@
                     ? '元/单'
                     : '元/台'
               }}</span>
-              <template
-                v-if="row.billingMode === 1 && row.distanceKm != null"
-              >
+              <template v-if="row.billingMode === 1 && row.distanceKm != null">
                 <span class="cd-price-sep"> </span>
                 <span class="cd-distance-inline">{{ row.distanceKm }} km</span>
               </template>
@@ -117,7 +128,12 @@
             >
               预估
             </el-tag>
-            <el-tag v-else type="success" size="small" :disable-transitions="true">
+            <el-tag
+              v-else
+              type="success"
+              size="small"
+              :disable-transitions="true"
+            >
               明确
             </el-tag>
           </template>
@@ -153,7 +169,7 @@
 
     <template v-else>
       <ele-card v-loading="pageLoading" class="cd-skeleton-card">
-        <div style="min-height: 200px" />
+        <div style="min-height: 200px"></div>
       </ele-card>
     </template>
 
@@ -245,7 +261,10 @@
       { type: 'warning' }
     )
       .then(async () => {
-        const loading = EleMessage.loading({ message: '请求中..', plain: true });
+        const loading = EleMessage.loading({
+          message: '请求中..',
+          plain: true
+        });
         try {
           const data = await recalculateAffectedByRate(row.id!);
           loading.close();
@@ -375,8 +394,7 @@
       label: '双向',
       width: 64,
       align: 'center',
-      formatter: (row: FreightRate) =>
-        row.isBidirectional === 1 ? '是' : '否'
+      formatter: (row: FreightRate) => (row.isBidirectional === 1 ? '是' : '否')
     },
     {
       prop: 'minAmount',

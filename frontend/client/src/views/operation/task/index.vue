@@ -22,11 +22,7 @@
           />
           <el-text type="info" size="small" style="margin-left: 12px">
             常用作业请前往
-            <el-link
-              type="primary"
-              :underline="false"
-              @click="goWorkbench"
-            >
+            <el-link type="primary" :underline="false" @click="goWorkbench">
               「调度工作台」
             </el-link>
             按状态批量处理

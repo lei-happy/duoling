@@ -20,8 +20,8 @@
           <div
             class="ai-orb__icon"
             :style="{ '--ai-orb-icon-url': aiOrbIconUrl }"
-          />
-          <div class="ai-orb__halo" />
+          ></div>
+          <div class="ai-orb__halo"></div>
         </div>
       </div>
     </template>
@@ -30,7 +30,9 @@
       <div class="ai-entry-popover__header">
         <div class="ai-entry-popover__title">AI 数字员工</div>
         <div class="ai-entry-popover__sub">
-          {{ employees.length ? '选择一位数字员工开始对话' : '暂无可用数字员工' }}
+          {{
+            employees.length ? '选择一位数字员工开始对话' : '暂无可用数字员工'
+          }}
         </div>
       </div>
       <div v-if="loading" class="ai-entry-popover__loading">
@@ -100,7 +102,11 @@
   function normalizeAvatar(p?: string): string | undefined {
     const s = (p || '').trim();
     if (!s) return undefined;
-    if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('data:')) {
+    if (
+      s.startsWith('http://') ||
+      s.startsWith('https://') ||
+      s.startsWith('data:')
+    ) {
       return s;
     }
     return s.startsWith('/') ? s : `/${s}`;
@@ -171,7 +177,9 @@
     box-shadow:
       0 0 0 1px rgba(255, 255, 255, 0.18) inset,
       0 2px 8px rgba(120, 90, 255, 0.35);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
     overflow: hidden;
   }
 

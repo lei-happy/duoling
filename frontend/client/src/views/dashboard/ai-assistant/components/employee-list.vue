@@ -38,7 +38,11 @@
   function normalizeAvatar(p?: string): string | undefined {
     const s = (p || '').trim();
     if (!s) return undefined;
-    if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('data:')) {
+    if (
+      s.startsWith('http://') ||
+      s.startsWith('https://') ||
+      s.startsWith('data:')
+    ) {
       return s;
     }
     return s.startsWith('/') ? s : `/${s}`;

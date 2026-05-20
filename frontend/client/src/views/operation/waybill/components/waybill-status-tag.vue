@@ -37,9 +37,7 @@
     6: { label: '已关闭', type: 'danger' }
   };
 
-  const label = computed(
-    () => STATUS_LABEL[props.status ?? 0]?.label || '--'
-  );
+  const label = computed(() => STATUS_LABEL[props.status ?? 0]?.label || '--');
   const tagType = computed(
     () => STATUS_LABEL[props.status ?? 0]?.type || 'info'
   );

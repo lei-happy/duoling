@@ -23,42 +23,43 @@ export interface FinanceActionConfig {
   confirm?: boolean;
 }
 
-export const FIN_ACTION_CONFIGS: Record<FinanceActionKey, FinanceActionConfig> = {
-  submit: {
-    key: 'submit',
-    label: '提交审批',
-    buttonType: 'warning',
-    permission: 'operation:task-finance:submit',
-    confirm: true
-  },
-  approve: {
-    key: 'approve',
-    label: '审批通过',
-    buttonType: 'primary',
-    permission: 'operation:task-finance:approve',
-    confirm: true
-  },
-  pay: {
-    key: 'pay',
-    label: '标记已支付',
-    buttonType: 'success',
-    permission: 'operation:task-finance:pay',
-    dialog: 'pay'
-  },
-  cancel: {
-    key: 'cancel',
-    label: '撤销',
-    buttonType: 'danger',
-    permission: 'operation:task-finance:cancel',
-    confirm: true
-  },
-  edit: {
-    key: 'edit',
-    label: '编辑',
-    buttonType: 'primary',
-    permission: 'operation:task-finance:add'
-  }
-};
+export const FIN_ACTION_CONFIGS: Record<FinanceActionKey, FinanceActionConfig> =
+  {
+    submit: {
+      key: 'submit',
+      label: '提交审批',
+      buttonType: 'warning',
+      permission: 'operation:task-finance:submit',
+      confirm: true
+    },
+    approve: {
+      key: 'approve',
+      label: '审批通过',
+      buttonType: 'primary',
+      permission: 'operation:task-finance:approve',
+      confirm: true
+    },
+    pay: {
+      key: 'pay',
+      label: '标记已支付',
+      buttonType: 'success',
+      permission: 'operation:task-finance:pay',
+      dialog: 'pay'
+    },
+    cancel: {
+      key: 'cancel',
+      label: '撤销',
+      buttonType: 'danger',
+      permission: 'operation:task-finance:cancel',
+      confirm: true
+    },
+    edit: {
+      key: 'edit',
+      label: '编辑',
+      buttonType: 'primary',
+      permission: 'operation:task-finance:add'
+    }
+  };
 
 const PRIMARY_BY_STATUS: Record<number, FinanceActionKey | null> = {
   0: 'submit',

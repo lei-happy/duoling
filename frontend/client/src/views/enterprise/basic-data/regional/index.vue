@@ -184,14 +184,16 @@
       label: '经度',
       width: 110,
       align: 'center',
-      formatter: (row: Region) => row.longitude != null ? String(row.longitude) : '—'
+      formatter: (row: Region) =>
+        row.longitude != null ? String(row.longitude) : '—'
     },
     {
       prop: 'latitude',
       label: '纬度',
       width: 110,
       align: 'center',
-      formatter: (row: Region) => row.latitude != null ? String(row.latitude) : '—'
+      formatter: (row: Region) =>
+        row.latitude != null ? String(row.latitude) : '—'
     },
     {
       columnKey: 'source',
@@ -325,11 +327,10 @@
 
   /** 删除 */
   const remove = (row: Region) => {
-    ElMessageBox.confirm(
-      `确定要删除"${row.name}"吗?`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
+    ElMessageBox.confirm(`确定要删除"${row.name}"吗?`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => {
         const loading = EleMessage.loading({
           message: '请求中..',
@@ -352,9 +353,9 @@
   queryNavTree();
 </script>
 <style scoped>
-.ele-card-body {
-  :deep(.ele-card-body) {
-    padding: 8px 0 8px 0 !important;
+  .ele-card-body {
+    :deep(.ele-card-body) {
+      padding: 8px 0 8px 0 !important;
+    }
   }
-}
 </style>

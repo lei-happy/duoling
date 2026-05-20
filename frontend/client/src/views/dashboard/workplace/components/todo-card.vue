@@ -1,6 +1,9 @@
 <!-- 我的待办 -->
 <template>
-  <ele-card :body-style="{ padding: '6px 0', height: '400px' }" class="todo-card">
+  <ele-card
+    :body-style="{ padding: '6px 0', height: '400px' }"
+    class="todo-card"
+  >
     <template #header>
       <div class="card-header">
         <span>{{ title }}</span>
@@ -19,20 +22,32 @@
       <div class="todo-card-extra-inner" @mousedown.stop>
         <div class="todo-tabs">
           <!-- 状态筛选 -->
-          <el-radio-group id="todo-status-filter" v-model="activeStatus" size="small" @change="handleStatusChange" class="status-radio-group">
-            <el-radio-button 
-              v-for="item in statusOptions" 
+          <el-radio-group
+            id="todo-status-filter"
+            v-model="activeStatus"
+            size="small"
+            @change="handleStatusChange"
+            class="status-radio-group"
+          >
+            <el-radio-button
+              v-for="item in statusOptions"
               :key="item.value"
               :id="`todo-filter-status-${item.value}`"
               :value="item.value"
               class="status-button"
             >
               {{ item.label }}
-              <span class="status-count">({{ getStatusCount(item.value) }})</span>
+              <span class="status-count"
+                >({{ getStatusCount(item.value) }})</span
+              >
             </el-radio-button>
           </el-radio-group>
         </div>
-        <more-icon :hide-edit="true" :hide-remove="true" @command="handleCommand" />
+        <more-icon
+          :hide-edit="true"
+          :hide-remove="true"
+          @command="handleCommand"
+        />
       </div>
     </template>
 
@@ -44,34 +59,48 @@
         <el-empty description="暂无待办任务" />
       </div>
       <div v-else class="task-list">
-        <div 
-          v-for="task in tasks" 
-          :key="task.id" 
+        <div
+          v-for="task in tasks"
+          :key="task.id"
           class="task-item"
-          :class="{ 'completed': task.status === 2, 'in-progress': task.status === 1 }"
+          :class="{
+            completed: task.status === 2,
+            'in-progress': task.status === 1
+          }"
           @click="editTask(task)"
         >
           <!-- 复选框 -->
           <div class="task-checkbox" @click.stop>
-            <el-checkbox 
-              :model-value="task.status === 2" 
+            <el-checkbox
+              :model-value="task.status === 2"
               @change="(val) => handleTaskToggle(task, val)"
               :disabled="task.status === 3"
-              style="margin-top: -12px;"
+              style="margin-top: -12px"
             />
           </div>
-          
+
           <!-- 任务内容 -->
           <div class="task-content">
             <!-- 任务标题行 -->
             <div class="task-title-row">
-              <div class="task-title" :class="{ 'completed-title': task.status === 2 }">
+              <div
+                class="task-title"
+                :class="{ 'completed-title': task.status === 2 }"
+              >
                 {{ task.title }}
               </div>
               <!-- 更多操作菜单 - 右上角 -->
               <div class="task-more-action" @click.stop>
-                <el-dropdown trigger="click" @command="(cmd) => handleTaskAction(task, cmd)">
-                  <el-button link size="small" :icon="More" class="action-btn" />
+                <el-dropdown
+                  trigger="click"
+                  @command="(cmd) => handleTaskAction(task, cmd)"
+                >
+                  <el-button
+                    link
+                    size="small"
+                    :icon="More"
+                    class="action-btn"
+                  />
                   <template #dropdown>
                     <el-dropdown-menu>
                       <el-dropdown-item command="delete" class="delete-option">
@@ -83,74 +112,89 @@
                 </el-dropdown>
               </div>
             </div>
-            
+
             <!-- 任务描述 -->
             <div class="task-description" v-if="task.description">
               {{ task.description }}
             </div>
-            
+
             <!-- 元信息行 -->
             <div class="task-meta-row">
               <div class="task-meta">
                 <!-- 优先级 - 放在最前面 -->
-                <span 
+                <span
                   v-if="task.priority > 0"
-                  :class="['priority-indicator', getPriorityClass(task.priority)]"
+                  :class="[
+                    'priority-indicator',
+                    getPriorityClass(task.priority)
+                  ]"
                 >
                   {{ getPriorityText(task.priority) }}
                 </span>
-                
+
                 <!-- 创建人 -->
                 <span class="meta-item creator-info" v-if="task.creator_name">
                   <el-icon class="meta-icon"><EditPen /></el-icon>
                   <span class="meta-text">{{ task.creator_name }}</span>
                 </span>
-                
+
                 <!-- 主责任人 -->
                 <span class="meta-item assignee-info" v-if="task.assignee_name">
                   <el-icon class="meta-icon"><Avatar /></el-icon>
                   <span class="meta-text">指派：{{ task.assignee_name }}</span>
                 </span>
-                
+
                 <!-- 已完成任务显示创建时间和完成时间 -->
-                <span class="meta-item" v-if="task.status === 2 && task.create_time">
+                <span
+                  class="meta-item"
+                  v-if="task.status === 2 && task.create_time"
+                >
                   <el-icon class="meta-icon"><Clock /></el-icon>
                   <span class="meta-text create-time">
                     创建时间：{{ formatCompletedTime(task.create_time) }}
                   </span>
                 </span>
-                
-                <span class="meta-item" v-if="task.status === 2 && task.completed_time">
+
+                <span
+                  class="meta-item"
+                  v-if="task.status === 2 && task.completed_time"
+                >
                   <el-icon class="meta-icon"><Clock /></el-icon>
                   <span class="meta-text completed-time">
                     完成时间：{{ formatCompletedTime(task.completed_time) }}
                   </span>
                 </span>
-                
+
                 <!-- 非已完成任务显示截止时间 -->
-                <span class="meta-item" v-if="task.status !== 2 && task.due_time">
+                <span
+                  class="meta-item"
+                  v-if="task.status !== 2 && task.due_time"
+                >
                   <el-icon class="meta-icon"><Clock /></el-icon>
-                  <span class="meta-text" :class="{ 'overdue': isOverdue(task.due_time) }">
+                  <span
+                    class="meta-text"
+                    :class="{ overdue: isOverdue(task.due_time) }"
+                  >
                     截至：{{ formatTime(task.due_time) }}
                   </span>
                 </span>
               </div>
-              
+
               <!-- 快速操作按钮 - 与元信息同行右侧 -->
               <div class="task-quick-actions" @click.stop>
-                <el-button 
+                <el-button
                   v-if="task.status === 0"
                   link
-                  size="small" 
+                  size="small"
                   @click="updateTaskStatus(task, 1)"
                   class="quick-action-btn start-btn"
                 >
                   开始处理
                 </el-button>
-                <el-button 
+                <el-button
                   v-if="task.status === 1"
                   link
-                  size="small" 
+                  size="small"
                   @click="updateTaskStatus(task, 2)"
                   class="quick-action-btn complete-btn"
                 >
@@ -160,14 +204,18 @@
             </div>
           </div>
         </div>
-        
+
         <!-- 加载更多指示器 -->
-        <div v-if="hasMore && !loading" ref="loadMoreTrigger" class="load-more-trigger">
+        <div
+          v-if="hasMore && !loading"
+          ref="loadMoreTrigger"
+          class="load-more-trigger"
+        >
           <div v-if="loadingMore" class="loading-more">
             <el-skeleton :rows="2" animated />
           </div>
         </div>
-        
+
         <!-- 没有更多数据提示 -->
         <div v-if="!hasMore && tasks.length > 0" class="no-more-data">
           <span>已加载全部待办任务</span>
@@ -182,33 +230,42 @@
       width="800px"
       :close-on-click-modal="false"
     >
-      <el-form :model="createForm" :rules="createRules" ref="createFormRef" label-width="90px">
+      <el-form
+        :model="createForm"
+        :rules="createRules"
+        ref="createFormRef"
+        label-width="90px"
+      >
         <el-form-item label="任务标题" prop="title" required>
-          <el-input 
+          <el-input
             id="create-task-title"
-            v-model="createForm.title" 
-            placeholder="请输入任务标题（必填）" 
+            v-model="createForm.title"
+            placeholder="请输入任务标题（必填）"
             maxlength="255"
             show-word-limit
           />
         </el-form-item>
-        
+
         <el-form-item label="任务描述">
-          <el-input 
+          <el-input
             id="create-task-description"
-            v-model="createForm.description" 
-            type="textarea" 
+            v-model="createForm.description"
+            type="textarea"
             placeholder="请输入任务描述（可选）"
             :rows="3"
             :autosize="{ minRows: 3, maxRows: 6 }"
             resize="vertical"
           />
         </el-form-item>
-        
+
         <el-form-item label="优先级">
-          <el-radio-group id="create-task-priority" v-model="createForm.priority" class="priority-radio-group">
-            <el-radio 
-              v-for="item in priorityOptions" 
+          <el-radio-group
+            id="create-task-priority"
+            v-model="createForm.priority"
+            class="priority-radio-group"
+          >
+            <el-radio
+              v-for="item in priorityOptions"
               :key="item.value"
               :id="`create-priority-${item.value}`"
               :value="item.value"
@@ -218,7 +275,7 @@
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        
+
         <el-form-item label="截止时间">
           <el-date-picker
             id="create-task-due-time"
@@ -234,7 +291,7 @@
             style="width: 100%"
           />
         </el-form-item>
-        
+
         <!-- @用户功能 -->
         <el-form-item label="指派给">
           <el-select
@@ -259,13 +316,14 @@
             />
           </el-select>
         </el-form-item>
-        
       </el-form>
-      
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="closeCreateDialog">取消</el-button>
-          <el-button type="primary" @click="createTask" :loading="createLoading">创建</el-button>
+          <el-button type="primary" @click="createTask" :loading="createLoading"
+            >创建</el-button
+          >
         </span>
       </template>
     </el-dialog>
@@ -277,33 +335,42 @@
       width="800px"
       :close-on-click-modal="false"
     >
-      <el-form :model="editForm" :rules="createRules" ref="editFormRef" label-width="90px">
+      <el-form
+        :model="editForm"
+        :rules="createRules"
+        ref="editFormRef"
+        label-width="90px"
+      >
         <el-form-item label="任务标题" prop="title" required>
-          <el-input 
+          <el-input
             id="edit-task-title"
-            v-model="editForm.title" 
-            placeholder="请输入任务标题（必填）" 
+            v-model="editForm.title"
+            placeholder="请输入任务标题（必填）"
             maxlength="255"
             show-word-limit
           />
         </el-form-item>
-        
+
         <el-form-item label="任务描述">
-          <el-input 
+          <el-input
             id="edit-task-description"
-            v-model="editForm.description" 
-            type="textarea" 
+            v-model="editForm.description"
+            type="textarea"
             placeholder="请输入任务描述（可选）"
             :rows="3"
             :autosize="{ minRows: 3, maxRows: 6 }"
             resize="vertical"
           />
         </el-form-item>
-        
+
         <el-form-item label="优先级">
-          <el-radio-group id="edit-task-priority" v-model="editForm.priority" class="priority-radio-group">
-            <el-radio 
-              v-for="item in priorityOptions" 
+          <el-radio-group
+            id="edit-task-priority"
+            v-model="editForm.priority"
+            class="priority-radio-group"
+          >
+            <el-radio
+              v-for="item in priorityOptions"
               :key="item.value"
               :id="`edit-priority-${item.value}`"
               :value="item.value"
@@ -313,7 +380,7 @@
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        
+
         <el-form-item label="截止时间">
           <el-date-picker
             id="edit-task-due-time"
@@ -329,11 +396,15 @@
             style="width: 100%"
           />
         </el-form-item>
-        
+
         <el-form-item label="状态">
-          <el-radio-group id="edit-task-status" v-model="editForm.status" class="status-radio-group">
-            <el-radio 
-              v-for="item in editStatusOptions" 
+          <el-radio-group
+            id="edit-task-status"
+            v-model="editForm.status"
+            class="status-radio-group"
+          >
+            <el-radio
+              v-for="item in editStatusOptions"
               :key="item.value"
               :id="`edit-status-${item.value}`"
               :value="item.value"
@@ -343,7 +414,7 @@
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        
+
         <!-- 编辑时的@用户功能 -->
         <el-form-item label="指派给">
           <el-select
@@ -367,13 +438,14 @@
             />
           </el-select>
         </el-form-item>
-        
       </el-form>
-      
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="showEditForm = false">取消</el-button>
-          <el-button type="primary" @click="saveEditTask" :loading="editLoading">保存</el-button>
+          <el-button type="primary" @click="saveEditTask" :loading="editLoading"
+            >保存</el-button
+          >
         </span>
       </template>
     </el-dialog>
@@ -392,7 +464,7 @@
   } from '@element-plus/icons-vue';
   import MoreIcon from './more-icon.vue';
   import type { Command } from '../model';
-  
+
   import {
     getTodoTaskList,
     createTodoTask,
@@ -402,16 +474,16 @@
     getUsersForAssignment,
     getTodoTaskStats
   } from '@/api/home/workbench/todo';
-  
+
   import type { TodoTask } from '@/api/home/workbench/todo/types';
 
-  defineOptions({ name: 'todo-card' });
+  defineOptions({ name: 'TodoCard' });
 
   // Props
   interface Props {
     title?: string;
   }
-  
+
   withDefaults(defineProps<Props>(), {
     title: '我的待办'
   });
@@ -446,13 +518,13 @@
   const activeStatus = ref(0); // 默认显示待处理任务
   const tasks = ref<TodoTask[]>([]);
   const stats = ref({ total: 0, pending: 0, in_progress: 0, completed: 0 });
-  
+
   // 分页相关状态
   const currentPage = ref(1);
   const pageSize = ref(50);
   const hasMore = ref(true);
   const loadingMore = ref(false);
-  
+
   // 创建表单
   const showCreateForm = ref(false);
   const createLoading = ref(false);
@@ -460,12 +532,12 @@
   const createForm = reactive({
     title: '',
     description: '',
-    priority: 1,  // 默认中等优先级
+    priority: 1, // 默认中等优先级
     due_time: '',
-    status: 0,    // 默认待处理状态
+    status: 0, // 默认待处理状态
     assignee_id: undefined as number | undefined
   });
-  
+
   // 编辑表单
   const showEditForm = ref(false);
   const editLoading = ref(false);
@@ -483,7 +555,7 @@
   // 用户选择
   const userOptions = ref<any[]>([]);
   const searchLoading = ref(false);
-  
+
   // 滚动加载相关
   const loadMoreTrigger = ref<HTMLElement>();
   const observer = ref<IntersectionObserver | null>(null);
@@ -497,13 +569,12 @@
     ]
   };
 
-
   // 获取所有状态的统计信息
   const fetchStats = async () => {
     try {
       const res = await getTodoTaskStats();
       const statsData = (res.data as any)?.data;
-      
+
       if (statsData) {
         stats.value = {
           total: statsData.total,
@@ -534,24 +605,24 @@
       } else {
         loadingMore.value = true;
       }
-      
-      const res = await getTodoTaskList({ 
-        my_tasks: true, 
+
+      const res = await getTodoTaskList({
+        my_tasks: true,
         page: currentPage.value,
         page_size: pageSize.value,
         status: activeStatus.value
       });
-      
+
       const responseData = (res.data as any)?.data;
       const newTasks = responseData?.items || [];
       const totalPages = responseData?.pages || 1;
-      
+
       if (reset) {
         tasks.value = newTasks;
       } else {
         tasks.value.push(...newTasks);
       }
-      
+
       // 检查是否还有更多数据
       hasMore.value = currentPage.value < totalPages;
     } catch (error) {
@@ -562,7 +633,6 @@
     }
   };
 
-
   // 获取所有用户列表（参考station-comment的实现）
   const fetchAllUsers = async () => {
     try {
@@ -572,14 +642,14 @@
       console.error('获取用户列表失败:', error);
     }
   };
-  
+
   const searchUsers = async (query: string) => {
     // 如果查询为空或只有@符号，显示所有用户
     if (!query || query === '@') {
       await fetchAllUsers();
       return;
     }
-    
+
     try {
       searchLoading.value = true;
       const res = await getUsersForAssignment(query);
@@ -599,13 +669,13 @@
     // 同时更新统计信息
     await fetchStats();
   };
-  
+
   // 加载更多任务
   const loadMoreTasks = async () => {
     if (!hasMore.value || loadingMore.value) {
       return;
     }
-    
+
     currentPage.value += 1;
     await fetchTasks(false);
   };
@@ -639,18 +709,18 @@
           task.completed_time = undefined;
         }
       }
-      
+
       // 更新统计信息
       await fetchStats();
-      
+
       // 如果任务的新状态与当前选中的状态不匹配，从显示列表中移除
       if (task.status !== activeStatus.value) {
-        const index = tasks.value.findIndex(t => t.id === task.id);
+        const index = tasks.value.findIndex((t) => t.id === task.id);
         if (index !== -1) {
           tasks.value.splice(index, 1);
         }
       }
-      
+
       ElMessage.success(`任务状态已更新为${getStatusText(status)}`);
     } catch (error) {
       ElMessage.error('更新任务状态失败');
@@ -664,40 +734,41 @@
 
   const createTask = async () => {
     if (!createFormRef.value) return;
-    
+
     try {
       await createFormRef.value.validate();
       createLoading.value = true;
-      
+
       // 构建符合后端schema要求的数据
       const taskData = {
         title: createForm.title,
         description: createForm.description || undefined,
         priority: createForm.priority,
         status: createForm.status,
-        due_time: createForm.due_time || undefined,  // 空字符串转换为undefined
-        assignee_id: createForm.assignee_id as number | null | undefined  // 允许null
+        due_time: createForm.due_time || undefined, // 空字符串转换为undefined
+        assignee_id: createForm.assignee_id as number | null | undefined // 允许null
       };
-      
+
       // 移除值为undefined的字段
-      Object.keys(taskData).forEach(key => {
+      Object.keys(taskData).forEach((key) => {
         if (taskData[key] === undefined) {
           delete taskData[key];
         }
       });
-      
+
       await createTodoTask(taskData);
       ElMessage.success('任务创建成功');
-      
+
       // 重置表单
       resetCreateForm();
       showCreateForm.value = false;
-      
+
       // 刷新列表和统计信息
       await fetchTasks();
       await fetchStats();
     } catch (error) {
-      if (error !== false) { // 表单验证失败时返回false
+      if (error !== false) {
+        // 表单验证失败时返回false
         console.error('创建任务失败:', error);
         ElMessage.error('创建任务失败');
       }
@@ -714,9 +785,9 @@
       priority: task.priority,
       due_time: task.due_time || '',
       status: task.status,
-      assignee_id: task.assignee_id  // 保持原值，不转换null为undefined
+      assignee_id: task.assignee_id // 保持原值，不转换null为undefined
     });
-    
+
     showEditForm.value = true;
   };
 
@@ -726,54 +797,55 @@
     try {
       await editFormRef.value.validate();
       editLoading.value = true;
-      
+
       const { id, ...updateData } = editForm;
-      
+
       // 构建符合后端schema要求的数据
       const taskUpdateData = {
         title: updateData.title,
         description: updateData.description || undefined,
         priority: updateData.priority,
         status: updateData.status,
-        due_time: updateData.due_time || undefined,  // 空字符串转换为undefined
-        assignee_id: updateData.assignee_id as number | null | undefined  // 允许null来清空指派人
+        due_time: updateData.due_time || undefined, // 空字符串转换为undefined
+        assignee_id: updateData.assignee_id as number | null | undefined // 允许null来清空指派人
       };
-      
+
       // 移除值为undefined的字段（但保留null值用于清空指派人）
       // 特别注意：null值需要保留以清空assignee_id
-      Object.keys(taskUpdateData).forEach(key => {
+      Object.keys(taskUpdateData).forEach((key) => {
         const value = taskUpdateData[key];
         if (value === undefined) {
           delete taskUpdateData[key];
         }
         // 保留null值不删除，让后端知道要清空此字段
       });
-      
+
       const res = await updateTodoTask(id as number, taskUpdateData);
       const updatedTaskData = (res.data as any)?.data;
-      
+
       ElMessage.success('任务更新成功');
       showEditForm.value = false;
-      
+
       // 更新统计信息
       await fetchStats();
-      
+
       // 如果任务状态发生了变化，需要处理显示列表
       if (updatedTaskData && updatedTaskData.status !== activeStatus.value) {
         // 如果任务的新状态与当前选中的状态不匹配，从显示列表中移除
-        const index = tasks.value.findIndex(t => t.id === id);
+        const index = tasks.value.findIndex((t) => t.id === id);
         if (index !== -1) {
           tasks.value.splice(index, 1);
         }
       } else if (updatedTaskData) {
         // 如果状态匹配，更新任务数据
-        const index = tasks.value.findIndex(t => t.id === id);
+        const index = tasks.value.findIndex((t) => t.id === id);
         if (index !== -1) {
           Object.assign(tasks.value[index], updatedTaskData);
         }
       }
     } catch (error) {
-      if (error !== false) { // 表单验证失败时返回false
+      if (error !== false) {
+        // 表单验证失败时返回false
         console.error('更新任务失败:', error);
         ElMessage.error('更新任务失败');
       }
@@ -797,10 +869,10 @@
         cancelButtonText: '取消',
         type: 'warning'
       });
-      
+
       await deleteTodoTask(task.id);
       ElMessage.success('任务删除成功');
-      
+
       // 刷新列表和统计信息
       await fetchTasks();
       await fetchStats();
@@ -823,9 +895,9 @@
     Object.assign(createForm, {
       title: '',
       description: '',
-      priority: 1,  // 默认中等优先级
+      priority: 1, // 默认中等优先级
       due_time: '',
-      status: 0,    // 默认待处理状态
+      status: 0, // 默认待处理状态
       assignee_id: undefined as number | undefined
     });
     userOptions.value = [];
@@ -868,15 +940,15 @@
     if (!time) return '';
     const date = new Date(time);
     const now = new Date();
-    
+
     // 格式化为 MM-DD HH:mm
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    
+
     const formattedTime = `${month}-${day} ${hours}:${minutes}`;
-    
+
     // 判断是否过期，用于样式标识
     const isExpired = date.getTime() < now.getTime();
     return isExpired ? `${formattedTime} (已过期)` : formattedTime;
@@ -885,13 +957,13 @@
   const formatCompletedTime = (time: string) => {
     if (!time) return '';
     const date = new Date(time);
-    
+
     // 格式化为 MM-DD HH:mm，完成时间不显示过期状态
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    
+
     return `${month}-${day} ${hours}:${minutes}`;
   };
 
@@ -899,7 +971,7 @@
   const getDisabledHours = () => {
     const now = new Date();
     const today = new Date().toDateString();
-    
+
     // 检查当前选择的日期是否是今天（通过表单值判断）
     const selectedDateStr = createForm.due_time || editForm.due_time || '';
     if (selectedDateStr) {
@@ -913,7 +985,7 @@
         return hours;
       }
     }
-    
+
     return [];
   };
 
@@ -921,12 +993,15 @@
   const getDisabledMinutes = (selectedHour: number) => {
     const now = new Date();
     const today = new Date().toDateString();
-    
+
     // 检查当前选择的日期是否是今天
     const selectedDateStr = createForm.due_time || editForm.due_time || '';
     if (selectedDateStr) {
       const selectedDate = new Date(selectedDateStr);
-      if (selectedDate.toDateString() === today && selectedHour === now.getHours()) {
+      if (
+        selectedDate.toDateString() === today &&
+        selectedHour === now.getHours()
+      ) {
         // 如果选择的是今天且是当前小时，禁用当前分钟及之前的分钟
         const minutes: number[] = [];
         for (let i = 0; i <= now.getMinutes(); i++) {
@@ -935,7 +1010,7 @@
         return minutes;
       }
     }
-    
+
     return [];
   };
 
@@ -967,7 +1042,7 @@
   // 初始化滚动加载监听器
   const initInfiniteScroll = () => {
     if (!loadMoreTrigger.value || observer.value) return;
-    
+
     observer.value = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
@@ -981,10 +1056,10 @@
         threshold: 0.1
       }
     );
-    
+
     observer.value.observe(loadMoreTrigger.value);
   };
-  
+
   // 清理观察器
   const cleanupObserver = () => {
     if (observer.value) {
@@ -996,406 +1071,398 @@
   // 生命周期
   onMounted(async () => {
     // 同时获取任务列表和统计信息
-    await Promise.all([
-      fetchTasks(),
-      fetchStats(),
-      fetchAllUsers()
-    ]);
-    
+    await Promise.all([fetchTasks(), fetchStats(), fetchAllUsers()]);
+
     // 使用 nextTick 确保DOM已渲染
     await nextTick();
     initInfiniteScroll();
   });
-  
+
   onUnmounted(() => {
     cleanupObserver();
   });
 </script>
 
 <style lang="scss" scoped>
-// ============ 卡片基础样式 ============
-.todo-card {
-  // 表头内控件压到与 ele-card 标题行高（24px）一致，与其它工作台卡片视觉等高
-  :deep(.ele-card-header) {
+  // ============ 卡片基础样式 ============
+  .todo-card {
+    // 表头内控件压到与 ele-card 标题行高（24px）一致，与其它工作台卡片视觉等高
+    :deep(.ele-card-header) {
+      align-items: center;
+    }
+
+    :deep(.status-radio-group) {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      vertical-align: middle;
+    }
+
+    :deep(.status-radio-group .el-radio-button__inner) {
+      padding: 0 10px;
+      height: 24px;
+      line-height: 24px;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+
+    // 与筛选条同高，保留主色实心按钮形态
+    :deep(.card-header .create-btn.el-button) {
+      height: 24px;
+      min-height: 24px;
+      padding: 0 10px;
+      font-size: 12px;
+      line-height: 1;
+      box-sizing: border-box;
+    }
+  }
+
+  // ============ 卡片头部（保持一致风格） ============
+  .card-header {
+    display: flex;
     align-items: center;
   }
 
-  :deep(.status-radio-group) {
-    display: inline-flex;
-    flex-wrap: nowrap;
-    vertical-align: middle;
+  // ============ 头部操作区 ============
+  .create-btn {
+    margin-left: 12px;
   }
 
-  :deep(.status-radio-group .el-radio-button__inner) {
-    padding: 0 10px;
-    height: 24px;
-    line-height: 24px;
-    font-size: 12px;
-    box-sizing: border-box;
-  }
-
-  // 与筛选条同高，保留主色实心按钮形态
-  :deep(.card-header .create-btn.el-button) {
-    height: 24px;
-    min-height: 24px;
-    padding: 0 10px;
-    font-size: 12px;
-    line-height: 1;
-    box-sizing: border-box;
-  }
-}
-
-// ============ 卡片头部（保持一致风格） ============
-.card-header {
-  display: flex;
-  align-items: center;
-}
-
-// ============ 头部操作区 ============
-.create-btn {
-  margin-left: 12px;
-}
-
-.todo-card-extra-inner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.todo-tabs {
-  display: inline-block;
-  pointer-events: all;
-  z-index: 10;
-}
-
-.status-radio-group {
-  pointer-events: all !important;
-}
-
-.status-button {
-  pointer-events: all !important;
-}
-
-.status-count {
-  font-size: 11px;
-  margin-left: 2px;
-  opacity: 0.8;
-}
-
-
-// ============ 加载和空状态 ============
-.task-loading,
-.task-empty {
-  padding: 20px;
-}
-
-// ============ 滚动加载相关 ============
-.load-more-trigger {
-  padding: 10px 0;
-  min-height: 1px; // 确保元素可见以便 Intersection Observer 检测
-}
-
-.loading-more {
-  padding: 10px 0;
-}
-
-.no-more-data {
-  text-align: center;
-  padding: 15px 0;
-  color: var(--el-text-color-placeholder);
-  font-size: 13px;
-  
-  span {
-    position: relative;
-    background-color: var(--el-bg-color);
-    padding: 0 15px;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      left: -50px;
-      top: 50%;
-      width: 50px;
-      height: 1px;
-      background-color: var(--el-border-color-lighter);
-    }
-    
-    &::after {
-      content: '';
-      position: absolute;
-      right: -50px;
-      top: 50%;
-      width: 50px;
-      height: 1px;
-      background-color: var(--el-border-color-lighter);
-    }
-  }
-}
-
-// ============ 任务列表 ============
-.task-list {
-  .task-item {
+  .todo-card-extra-inner {
     display: flex;
-    align-items: flex-start;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--el-border-color-lighter);
-    cursor: pointer;
-    transition: background-color 0.2s;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
 
-    &:hover {
-      background-color: var(--el-fill-color-lighter);
-      border-radius: 8px;
-      margin: 0 -12px;
-      padding-left: 12px;
-      padding-right: 12px;
-    }
+  .todo-tabs {
+    display: inline-block;
+    pointer-events: all;
+    z-index: 10;
+  }
 
-    &:last-child {
-      border-bottom: none;
-    }
+  .status-radio-group {
+    pointer-events: all !important;
+  }
 
-    &.completed {
-      .task-title {
-        text-decoration: line-through;
-        color: var(--el-text-color-secondary);
+  .status-button {
+    pointer-events: all !important;
+  }
+
+  .status-count {
+    font-size: 11px;
+    margin-left: 2px;
+    opacity: 0.8;
+  }
+
+  // ============ 加载和空状态 ============
+  .task-loading,
+  .task-empty {
+    padding: 20px;
+  }
+
+  // ============ 滚动加载相关 ============
+  .load-more-trigger {
+    padding: 10px 0;
+    min-height: 1px; // 确保元素可见以便 Intersection Observer 检测
+  }
+
+  .loading-more {
+    padding: 10px 0;
+  }
+
+  .no-more-data {
+    text-align: center;
+    padding: 15px 0;
+    color: var(--el-text-color-placeholder);
+    font-size: 13px;
+
+    span {
+      position: relative;
+      background-color: var(--el-bg-color);
+      padding: 0 15px;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: -50px;
+        top: 50%;
+        width: 50px;
+        height: 1px;
+        background-color: var(--el-border-color-lighter);
       }
-      
-      .task-description {
-        opacity: 0.6;
-        text-decoration: line-through;
+
+      &::after {
+        content: '';
+        position: absolute;
+        right: -50px;
+        top: 50%;
+        width: 50px;
+        height: 1px;
+        background-color: var(--el-border-color-lighter);
       }
     }
   }
-}
 
-// 复选框
-.task-checkbox {
-  margin-right: 12px;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
+  // ============ 任务列表 ============
+  .task-list {
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--el-border-color-lighter);
+      cursor: pointer;
+      transition: background-color 0.2s;
 
-// 任务内容
-.task-content {
-  flex: 1;
-  min-width: 0;
-}
+      &:hover {
+        background-color: var(--el-fill-color-lighter);
+        border-radius: 8px;
+        margin: 0 -12px;
+        padding-left: 12px;
+        padding-right: 12px;
+      }
 
-// 任务标题行 - 标题和更多按钮并排
-.task-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
+      &:last-child {
+        border-bottom: none;
+      }
 
-// 任务标题
-.task-title {
-  flex: 1;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  line-height: 1.3;
-  letter-spacing: 0.02em;
-  margin-right: 8px;
-  margin-top: -3px;
-  
-  &.completed-title {
-    color: var(--el-text-color-secondary);
-    font-weight: 500;
-  }
-}
+      &.completed {
+        .task-title {
+          text-decoration: line-through;
+          color: var(--el-text-color-secondary);
+        }
 
-// 更多操作按钮 - 右上角
-.task-more-action {
-  flex-shrink: 0;
-}
-
-// 任务描述
-.task-description {
-  font-size: 13px;
-  color: var(--el-text-color-regular);
-  margin-bottom: 8px;
-  line-height: 1.4;
-  font-weight: 400;
-  opacity: 0.9;
-}
-
-// 元信息行 - 元信息和快速操作按钮并排
-.task-meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-// 元信息
-.task-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  flex: 1;
-  min-width: 0;
-}
-
-// 快速操作按钮区域 - 与元信息同行右侧
-.task-quick-actions {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.meta-icon {
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
-}
-
-.meta-text {
-  &.overdue {
-    color: var(--el-color-danger);
-    font-weight: 500;
-    margin-top: 2px;
-  }
-  
-  &.completed-time {
-    color: var(--el-color-success);
-    font-weight: 500;
-    margin-top: 2px;
-  }
-  
-  &.create-time {
-    color: var(--el-color-info);
-    font-weight: 500;
-    margin-top: 2px;
-  }
-}
-
-// 创建人和主责任人样式区分
-.creator-info {
-  .meta-icon {
-    color: var(--el-color-info);
-  }
-  .meta-text {
-    color: var(--el-color-info-dark-2);
-    margin-top: 2px;
-  }
-}
-
-.assignee-info {
-  .meta-icon {
-    color: var(--el-color-primary);
-  }
-  .meta-text {
-    color: var(--el-color-primary-dark-2);
-    font-weight: 500;
-    margin-top: 2px;
-  }
-}
-
-// 优先级指示器
-.priority-indicator {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 12px;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  margin-right: 0px;
-  flex-shrink: 0;
-  
-  &.low {
-    background-color: var(--el-color-info-light-8);
-    color: var(--el-color-info);
-  }
-  
-  &.medium {
-    background-color: var(--el-color-warning-light-8);
-    color: var(--el-color-warning-dark-2);
-  }
-  
-  &.high {
-    background-color: var(--el-color-danger-light-8);
-    color: var(--el-color-danger);
-  }
-}
-
-
-// 快速操作按钮样式 - 更紧凑的设计
-.quick-action-btn {
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-  min-width: 60px;
-  white-space: nowrap;
-  
-  &.start-btn {
-    color: var(--el-color-primary);
-    background-color: var(--el-color-primary-light-9);
-    border: 1px solid var(--el-color-primary-light-7);
-    
-    &:hover {
-      background-color: var(--el-color-primary-light-8);
-      border-color: var(--el-color-primary-light-5);
+        .task-description {
+          opacity: 0.6;
+          text-decoration: line-through;
+        }
+      }
     }
   }
-  
-  &.complete-btn {
-    color: var(--el-color-success);
-    background-color: var(--el-color-success-light-9);
-    border: 1px solid var(--el-color-success-light-7);
-    
-    &:hover {
-      background-color: var(--el-color-success-light-8);
-      border-color: var(--el-color-success-light-5);
-    }
-  }
-}
 
-// 更多操作按钮样式
-.action-btn {
-  color: var(--el-text-color-placeholder);
-  transition: color 0.2s;
-  opacity: 0.8;
-  
-  &:hover {
+  // 复选框
+  .task-checkbox {
+    margin-right: 12px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  // 任务内容
+  .task-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  // 任务标题行 - 标题和更多按钮并排
+  .task-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  // 任务标题
+  .task-title {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 600;
     color: var(--el-text-color-primary);
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+    margin-right: 8px;
+    margin-top: -3px;
+
+    &.completed-title {
+      color: var(--el-text-color-secondary);
+      font-weight: 500;
+    }
+  }
+
+  // 更多操作按钮 - 右上角
+  .task-more-action {
+    flex-shrink: 0;
+  }
+
+  // 任务描述
+  .task-description {
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+    margin-bottom: 8px;
+    line-height: 1.4;
+    font-weight: 400;
+    opacity: 0.9;
+  }
+
+  // 元信息行 - 元信息和快速操作按钮并排
+  .task-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  // 元信息
+  .task-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1;
+    min-width: 0;
+  }
+
+  // 快速操作按钮区域 - 与元信息同行右侧
+  .task-quick-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .meta-icon {
+    font-size: 12px;
+    color: var(--el-text-color-placeholder);
+  }
+
+  .meta-text {
+    &.overdue {
+      color: var(--el-color-danger);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    &.completed-time {
+      color: var(--el-color-success);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    &.create-time {
+      color: var(--el-color-info);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+  }
+
+  // 创建人和主责任人样式区分
+  .creator-info {
+    .meta-icon {
+      color: var(--el-color-info);
+    }
+    .meta-text {
+      color: var(--el-color-info-dark-2);
+      margin-top: 2px;
+    }
+  }
+
+  .assignee-info {
+    .meta-icon {
+      color: var(--el-color-primary);
+    }
+    .meta-text {
+      color: var(--el-color-primary-dark-2);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+  }
+
+  // 优先级指示器
+  .priority-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 0px;
+    flex-shrink: 0;
+
+    &.low {
+      background-color: var(--el-color-info-light-8);
+      color: var(--el-color-info);
+    }
+
+    &.medium {
+      background-color: var(--el-color-warning-light-8);
+      color: var(--el-color-warning-dark-2);
+    }
+
+    &.high {
+      background-color: var(--el-color-danger-light-8);
+      color: var(--el-color-danger);
+    }
+  }
+
+  // 快速操作按钮样式 - 更紧凑的设计
+  .quick-action-btn {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    min-width: 60px;
+    white-space: nowrap;
+
+    &.start-btn {
+      color: var(--el-color-primary);
+      background-color: var(--el-color-primary-light-9);
+      border: 1px solid var(--el-color-primary-light-7);
+
+      &:hover {
+        background-color: var(--el-color-primary-light-8);
+        border-color: var(--el-color-primary-light-5);
+      }
+    }
+
+    &.complete-btn {
+      color: var(--el-color-success);
+      background-color: var(--el-color-success-light-9);
+      border: 1px solid var(--el-color-success-light-7);
+
+      &:hover {
+        background-color: var(--el-color-success-light-8);
+        border-color: var(--el-color-success-light-5);
+      }
+    }
+  }
+
+  // 更多操作按钮样式
+  .action-btn {
+    color: var(--el-text-color-placeholder);
+    transition: color 0.2s;
+    opacity: 0.8;
+
+    &:hover {
+      color: var(--el-text-color-primary);
+      opacity: 1;
+    }
+  }
+
+  // 任务项悬停时更多操作按钮更明显
+  .task-item:hover .action-btn {
     opacity: 1;
   }
-}
 
-// 任务项悬停时更多操作按钮更明显
-.task-item:hover .action-btn {
-  opacity: 1;
-}
+  .delete-option {
+    color: var(--el-color-danger);
+  }
 
-.delete-option {
-  color: var(--el-color-danger);
-}
+  // ============ 对话框样式 ============
+  :deep(.el-dialog__header) {
+    padding: 16px 20px 12px;
+  }
 
-// ============ 对话框样式 ============
-:deep(.el-dialog__header) {
-  padding: 16px 20px 12px;
-}
+  :deep(.el-dialog__body) {
+    padding: 12px 20px 20px;
+  }
 
-:deep(.el-dialog__body) {
-  padding: 12px 20px 20px;
-}
-
-:deep(.el-form-item__label) {
-  font-weight: 500;
-}
+  :deep(.el-form-item__label) {
+    font-weight: 500;
+  }
 </style>
-
-

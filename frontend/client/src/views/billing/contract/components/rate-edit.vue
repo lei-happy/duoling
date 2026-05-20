@@ -163,7 +163,10 @@
               </el-form-item>
             </div>
             <div class="rate-attr-line__period">
-              <el-form-item prop="rateValidPeriod" class="rate-form-item--period">
+              <el-form-item
+                prop="rateValidPeriod"
+                class="rate-form-item--period"
+              >
                 <floating-label
                   v-model="form.rateValidPeriod"
                   label="有效期范围"
@@ -333,9 +336,7 @@
   /** 仅在点击「保存」时校验：不写 blur/change，避免填写过程中提前报错 */
   const rules = computed<FormRules>(() => {
     const base: FormRules = {
-      originCode: [
-        { required: true, message: '请选择出发地', trigger: [] }
-      ],
+      originCode: [{ required: true, message: '请选择出发地', trigger: [] }],
       destinationCode: [
         { required: true, message: '请选择目的地', trigger: [] }
       ],

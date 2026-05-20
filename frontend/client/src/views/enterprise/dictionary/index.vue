@@ -274,11 +274,10 @@
     if (row.dictDataId == null) {
       return;
     }
-    ElMessageBox.confirm(
-      `确定要删除"${row.dictDataName}"吗?`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
+    ElMessageBox.confirm(`确定要删除"${row.dictDataName}"吗?`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => {
         const loading = EleMessage.loading({
           message: '请求中..',
@@ -311,9 +310,9 @@
   query();
 </script>
 <style scoped>
-.ele-card-body {
-  :deep(.ele-card-body) {
-    padding: 8px 0 8px 0 !important;
+  .ele-card-body {
+    :deep(.ele-card-body) {
+      padding: 8px 0 8px 0 !important;
+    }
   }
-}
 </style>

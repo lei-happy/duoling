@@ -42,7 +42,10 @@
         </el-col>
         <el-col :md="10" :sm="11" :xs="24" class="customer-rank-col">
           <div class="customer-rank-meta">
-            <ele-text type="placeholder" class="customer-rank-sub rank-meta-row">
+            <ele-text
+              type="placeholder"
+              class="customer-rank-sub rank-meta-row"
+            >
               <span>{{ rankMetaLead }}</span>
               <span class="rank-meta-sep"> · </span>
               <el-tag
@@ -58,7 +61,11 @@
               <span v-else>全部类型</span>
             </ele-text>
           </div>
-          <el-scrollbar class="rank-list" height="100%" :view-style="rankListViewStyle">
+          <el-scrollbar
+            class="rank-list"
+            height="100%"
+            :view-style="rankListViewStyle"
+          >
             <div
               v-for="(item, index) in customerRank"
               :key="`${item.customerId ?? 'x'}-${index}`"
@@ -109,7 +116,10 @@
   import { TooltipComponent, LegendComponent } from 'echarts/components';
   import VChart from 'vue-echarts';
   import { useEcharts } from '@/utils/use-echarts';
-  import { getCustomerRank, getCustomerTypeDist } from '@/api/dashboard/cockpit';
+  import {
+    getCustomerRank,
+    getCustomerTypeDist
+  } from '@/api/dashboard/cockpit';
   import type {
     CustomerRankItem,
     CustomerTypeDistItem
@@ -168,7 +178,10 @@
     return dayjs(range[1]).diff(dayjs(range[0]), 'day') + 1;
   }
 
-  function toApiWindow(range: [string, string]): { start: string; end: string } {
+  function toApiWindow(range: [string, string]): {
+    start: string;
+    end: string;
+  } {
     return {
       start: dayjs(range[0]).startOf('day').format(API_DT),
       end: dayjs(range[1]).add(1, 'day').startOf('day').format(API_DT)
@@ -261,8 +274,7 @@
             formatter: '{b}: {d}%'
           },
           data: items.map((i) => {
-            const on =
-              sel === null ? false : sel === i.customerType;
+            const on = sel === null ? false : sel === i.customerType;
             return {
               name: i.label,
               value: Math.round(i.revenue),
@@ -336,9 +348,7 @@
     if (params.componentType !== 'series' || params.seriesType !== 'pie') {
       return;
     }
-    const data = params.data as
-      | { customerType?: number }
-      | undefined;
+    const data = params.data as { customerType?: number } | undefined;
     if (data?.customerType === undefined) return;
     const t = data.customerType;
     if (selectedCustomerType.value === t) {

@@ -86,7 +86,9 @@
             <span class="task-settings__preview-badge">预览</span>
           </div>
           <div class="task-settings__preview-body">
-            <code class="task-settings__preview-value">{{ taskNoPreview }}</code>
+            <code class="task-settings__preview-value">{{
+              taskNoPreview
+            }}</code>
           </div>
         </div>
       </div>
@@ -151,7 +153,9 @@
                 />
               </el-select>
             </div>
-            <div class="task-settings__slot-row task-settings__slot-row--joiner">
+            <div
+              class="task-settings__slot-row task-settings__slot-row--joiner"
+            >
               <span class="task-settings__slot-label">连接符</span>
               <el-input
                 v-model="nameJoiner"

@@ -14,9 +14,7 @@ export async function pageCustomers(params: CustomerParam) {
 }
 
 export async function getCustomer(id: number) {
-  const res = await request.get<ApiResult<Customer>>(
-    `/partner/customer/${id}`
-  );
+  const res = await request.get<ApiResult<Customer>>(`/partner/customer/${id}`);
   if (res.data.code === 0) {
     return res.data.data;
   }
@@ -34,10 +32,7 @@ export async function selectCustomers() {
 }
 
 export async function addCustomer(data: Customer) {
-  const res = await request.post<ApiResult<unknown>>(
-    '/partner/customer',
-    data
-  );
+  const res = await request.post<ApiResult<unknown>>('/partner/customer', data);
   if (res.data.code === 0) {
     return res.data.message;
   }

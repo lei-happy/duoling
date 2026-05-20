@@ -29,19 +29,45 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="ruleVersionBefore" label="变更前版本" width="100" align="center" />
-      <el-table-column prop="ruleVersionAfter" label="变更后版本" width="100" align="center" />
-      <el-table-column prop="changeType" label="变更类型" width="100" align="center">
+      <el-table-column
+        prop="ruleVersionBefore"
+        label="变更前版本"
+        width="100"
+        align="center"
+      />
+      <el-table-column
+        prop="ruleVersionAfter"
+        label="变更后版本"
+        width="100"
+        align="center"
+      />
+      <el-table-column
+        prop="changeType"
+        label="变更类型"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
           <el-tag
-            :type="row.changeType === 'delete' ? 'danger' : row.changeType === 'create' ? 'success' : 'warning'"
+            :type="
+              row.changeType === 'delete'
+                ? 'danger'
+                : row.changeType === 'create'
+                  ? 'success'
+                  : 'warning'
+            "
             size="small"
           >
             {{ changeTypeText(row.changeType) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="operatorId" label="操作人ID" width="100" align="center" />
+      <el-table-column
+        prop="operatorId"
+        label="操作人ID"
+        width="100"
+        align="center"
+      />
       <el-table-column
         prop="affectedWaybillCount"
         label="影响运单数"
@@ -49,7 +75,12 @@
         align="center"
       />
       <el-table-column prop="remark" label="备注" min-width="180" />
-      <el-table-column prop="createdAt" label="变更时间" width="170" align="center" />
+      <el-table-column
+        prop="createdAt"
+        label="变更时间"
+        width="170"
+        align="center"
+      />
     </el-table>
     <template #footer>
       <el-button @click="updateVisible(false)">关闭</el-button>

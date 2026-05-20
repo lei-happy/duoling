@@ -139,17 +139,24 @@
 
   const rules = reactive<FormRules>({
     name: [
-      { required: true, message: '请输入地区名称', type: 'string', trigger: 'blur' }
+      {
+        required: true,
+        message: '请输入地区名称',
+        type: 'string',
+        trigger: 'blur'
+      }
     ],
     longitude: [
       {
-        validator: (_r: any, v: any, cb: any) => validateCoord(_r, v, cb, -180, 180, '经度'),
+        validator: (_r: any, v: any, cb: any) =>
+          validateCoord(_r, v, cb, -180, 180, '经度'),
         trigger: 'blur'
       }
     ],
     latitude: [
       {
-        validator: (_r: any, v: any, cb: any) => validateCoord(_r, v, cb, -90, 90, '纬度'),
+        validator: (_r: any, v: any, cb: any) =>
+          validateCoord(_r, v, cb, -90, 90, '纬度'),
         trigger: 'blur'
       }
     ]

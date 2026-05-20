@@ -2,11 +2,21 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { ElMessageBox } from 'element-plus';
 import { EleMessage } from 'ele-admin-plus';
-import { getToken, setToken, removeToken, setRefreshToken, removeRefreshToken } from '@/utils/token-util';
+import {
+  getToken,
+  setToken,
+  removeToken,
+  setRefreshToken,
+  removeRefreshToken
+} from '@/utils/token-util';
 import { goLogin } from '@/utils/common';
 import { usePageTab } from '@/utils/use-page-tab';
 import { useUserStore } from '@/store/modules/user';
-import { login as loginApi, smsLogin as smsLoginApi, logout as logoutApi } from '@/api/login';
+import {
+  login as loginApi,
+  smsLogin as smsLoginApi,
+  logout as logoutApi
+} from '@/api/login';
 import type { LoginParam, LoginResult, TenantOption } from '@/api/login/model';
 import { HOME_PATH, LAYOUT_PATH } from '@/config/setting';
 
@@ -56,7 +66,7 @@ export function useLogin() {
     const fromPath = [from].flat()[0];
     const target = fromPath
       ? decodeURIComponent(fromPath)
-      : (HOME_PATH || LAYOUT_PATH);
+      : HOME_PATH || LAYOUT_PATH;
     window.location.replace(target);
   };
 

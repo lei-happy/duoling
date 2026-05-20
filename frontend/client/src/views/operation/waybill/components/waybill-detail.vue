@@ -121,11 +121,21 @@
         <!-- 货物明细 -->
         <el-divider content-position="left">货物明细</el-divider>
         <el-table :data="waybill.cargoes || []" size="small" border>
-          <el-table-column label="序号" type="index" width="60" align="center" />
+          <el-table-column
+            label="序号"
+            type="index"
+            width="60"
+            align="center"
+          />
           <el-table-column prop="vehicleBrand" label="品牌" min-width="100" />
           <el-table-column prop="vehicleModel" label="车型" min-width="120" />
           <el-table-column prop="vin" label="VIN" min-width="160" />
-          <el-table-column prop="quantity" label="台数" width="80" align="center" />
+          <el-table-column
+            prop="quantity"
+            label="台数"
+            width="80"
+            align="center"
+          />
         </el-table>
       </template>
     </div>

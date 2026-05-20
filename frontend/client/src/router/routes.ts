@@ -103,24 +103,24 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
   ];
   // 路由铺平处理
   eachTree(
-    menuToRoutes(menus, getComponent, [
-      ...routes,
-      ...STATIC_LAYOUT_MENU_PATHS
-    ]),
+    menuToRoutes(menus, getComponent, [...routes, ...STATIC_LAYOUT_MENU_PATHS]),
     (route) => {
-    const temp: RouteRecordRaw = Object.assign({}, route, { children: void 0 });
-    if (!temp.component && !temp.redirect) {
-      // 后端菜单已勾选但前端工程暂未实现对应页面时，统一回退到「功能开发中」占位页，
-      // 避免给用户呈现刺眼的 404；真正未注册的非法路径仍由 routes 兜底的 404 处理。
-      temp.component = () =>
-        import('@/views/exception/placeholder/index.vue');
+      const temp: RouteRecordRaw = Object.assign({}, route, {
+        children: void 0
+      });
+      if (!temp.component && !temp.redirect) {
+        // 后端菜单已勾选但前端工程暂未实现对应页面时，统一回退到「功能开发中」占位页，
+        // 避免给用户呈现刺眼的 404；真正未注册的非法路径仍由 routes 兜底的 404 处理。
+        temp.component = () =>
+          import('@/views/exception/placeholder/index.vue');
+      }
+      if (temp.meta?.layout === false) {
+        layoutRoutes.push(temp); // 不需要外层布局的路由
+      } else {
+        childRoutes.push(temp); // 需要外层布局的路由
+      }
     }
-    if (temp.meta?.layout === false) {
-      layoutRoutes.push(temp); // 不需要外层布局的路由
-    } else {
-      childRoutes.push(temp); // 需要外层布局的路由
-    }
-  });
+  );
   return layoutRoutes;
 }
 

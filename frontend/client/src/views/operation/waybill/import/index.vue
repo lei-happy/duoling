@@ -5,9 +5,10 @@
         <div class="import-page-title">
           <span class="title-text">运单批量导入</span>
           <span class="title-tip">
-            请先下载模板按列填写；支持 .xlsx / .xls。客户名称须与客户档案一致；出发地/目的地按行政区逐级用
-            / 填写，无需编码。同一行多车须用 + 对齐「商品车品牌 / 车型 / VIN码」三列；旧模板仍支持「数量」列（将按台数拆行并生成占位
-            VIN）。
+            请先下载模板按列填写；支持 .xlsx /
+            .xls。客户名称须与客户档案一致；出发地/目的地按行政区逐级用 /
+            填写，无需编码。同一行多车须用 + 对齐「商品车品牌 / 车型 /
+            VIN码」三列；旧模板仍支持「数量」列（将按台数拆行并生成占位 VIN）。
           </span>
         </div>
       </div>
@@ -24,7 +25,7 @@
         cache-key="WaybillImportBatchesTable"
       >
         <template #toolbar>
-          <div class="import-toolbar-btns">            
+          <div class="import-toolbar-btns">
             <el-upload
               :show-file-list="false"
               accept=".xlsx,.xls"
@@ -82,9 +83,7 @@
   import type { UploadRequestOptions } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
-  import type {
-    DatasourceFunction
-  } from 'ele-admin-plus/es/ele-pro-table/types';
+  import type { DatasourceFunction } from 'ele-admin-plus/es/ele-pro-table/types';
   import {
     importWaybillExcel,
     pageImportBatches,

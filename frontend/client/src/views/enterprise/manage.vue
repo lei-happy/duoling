@@ -4,11 +4,7 @@
       <!-- 系统名称设置 -->
       <el-col :span="24">
         <ele-card header="系统名称设置">
-          <el-form
-            label-width="120px"
-            style="max-width: 560px"
-            @submit.prevent
-          >
+          <el-form label-width="120px" style="max-width: 560px" @submit.prevent>
             <el-form-item label="企业名称">
               <span>{{ enterpriseInfo?.tenantName }}</span>
             </el-form-item>
@@ -37,7 +33,11 @@
                 </template>
                 <template v-else>
                   <span style="flex: 1">
-                    {{ enterpriseInfo?.systemName || enterpriseInfo?.tenantName || '-' }}
+                    {{
+                      enterpriseInfo?.systemName ||
+                      enterpriseInfo?.tenantName ||
+                      '-'
+                    }}
                   </span>
                   <el-button
                     v-if="isAdmin"
@@ -114,10 +114,7 @@
   import { ref, computed, onMounted } from 'vue';
   import { ElMessage } from 'element-plus';
   import { useUserStore } from '@/store/modules/user';
-  import {
-    getEnterpriseInfo,
-    updateSystemName
-  } from '@/api/enterprise';
+  import { getEnterpriseInfo, updateSystemName } from '@/api/enterprise';
   import type { EnterpriseInfo } from '@/api/enterprise';
 
   defineOptions({ name: 'EnterpriseManage' });

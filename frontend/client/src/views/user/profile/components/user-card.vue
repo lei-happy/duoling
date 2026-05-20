@@ -132,10 +132,18 @@
       const file = base64ToFile(compressed, 'avatar.jpg');
       if (file.size > MAX_AVATAR_SIZE) {
         loading.close();
-        EleMessage.error({ message: '图片过大，请选择较小的图片', plain: true });
+        EleMessage.error({
+          message: '图片过大，请选择较小的图片',
+          plain: true
+        });
         return;
       }
-      const uploadRes = await uploadFile(file, undefined, 'avatar.jpg', 'avatar');
+      const uploadRes = await uploadFile(
+        file,
+        undefined,
+        'avatar.jpg',
+        'avatar'
+      );
       const avatarUrl = uploadRes.url;
 
       const userInfo = await updateUserInfo({ avatar: avatarUrl });

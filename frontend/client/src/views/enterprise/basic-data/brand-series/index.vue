@@ -63,7 +63,10 @@
               </div>
               <span class="brand-side-item__id">#{{ b.brandId }}</span>
             </div>
-            <div v-if="!brandOptions.length && !sideLoading" class="brand-side-empty">
+            <div
+              v-if="!brandOptions.length && !sideLoading"
+              class="brand-side-empty"
+            >
               暂无品牌数据
             </div>
           </div>
@@ -131,7 +134,9 @@
                   preview-teleported
                 />
               </div>
-              <span v-else class="series-thumb-cell series-thumb-cell--empty">—</span>
+              <span v-else class="series-thumb-cell series-thumb-cell--empty"
+                >—</span
+              >
             </template>
             <template #action="{ row }">
               <btn-items
@@ -553,12 +558,14 @@
     height: auto;
   }
 
-  .brand-series-page :deep(.ele-pro-table .el-table .el-table__body .el-table__cell) {
+  .brand-series-page
+    :deep(.ele-pro-table .el-table .el-table__body .el-table__cell) {
     padding-top: 4px;
     padding-bottom: 4px;
     vertical-align: middle;
   }
-  .brand-series-page :deep(.ele-pro-table .el-table .el-table__body .el-table__cell .cell) {
+  .brand-series-page
+    :deep(.ele-pro-table .el-table .el-table__body .el-table__cell .cell) {
     line-height: 1.35;
   }
 </style>

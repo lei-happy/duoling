@@ -52,7 +52,9 @@
                   <CityOutlined />
                 </el-icon>
                 <span>{{ node.label }}</span>
-                <span class="user-org-tree-count"> ({{ data.userCount ?? 0 }})</span>
+                <span class="user-org-tree-count">
+                  ({{ data.userCount ?? 0 }})</span
+                >
               </span>
             </template>
           </el-tree>
@@ -137,13 +139,6 @@
     </ele-card>
   </ele-page>
 </template>
-<style scoped>
-.ele-card-body {
-  :deep(.ele-card-body) {
-    padding: 8px 0 8px 0 !important;
-  }
-}
-</style>
 <script lang="ts" setup>
   import { ref, watch, onActivated } from 'vue';
   import { useRouter } from 'vue-router';
@@ -218,7 +213,9 @@
 
   /** 查询树数据；preserveSelection 为 true 时在刷新人数后尽量保持当前选中部门 */
   const query = (preserveSelection?: boolean) => {
-    const prevId = preserveSelection ? current.value?.organizationId : undefined;
+    const prevId = preserveSelection
+      ? current.value?.organizationId
+      : undefined;
     loading.value = true;
     listOrganizations()
       .then((list) => {
@@ -374,11 +371,10 @@
     if (row.userId == null) {
       return;
     }
-    ElMessageBox.confirm(
-      `确定要删除“${row.nickname}”吗?`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
+    ElMessageBox.confirm(`确定要删除“${row.nickname}”吗?`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => {
         const loading = EleMessage.loading({
           message: '请求中..',
@@ -441,3 +437,10 @@
     query();
   });
 </script>
+<style scoped>
+  .ele-card-body {
+    :deep(.ele-card-body) {
+      padding: 8px 0 8px 0 !important;
+    }
+  }
+</style>

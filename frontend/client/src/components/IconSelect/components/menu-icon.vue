@@ -7,10 +7,7 @@
       :class="componentClass"
       v-bind="componentProps || {}"
     >
-      <span
-        class="custom-svg-icon"
-        :style="[customSvgStyle, iconStyle]"
-      />
+      <span class="custom-svg-icon" :style="[customSvgStyle, iconStyle]"></span>
     </ElIcon>
     <!-- 清新主题 PNG 图标 -->
     <img

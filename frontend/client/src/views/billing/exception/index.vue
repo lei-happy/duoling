@@ -226,7 +226,13 @@
     { prop: 'exceptionMessage', label: '异常描述', minWidth: 280 },
     { prop: 'waybillId', label: '运单ID', width: 100 },
     { prop: 'batchId', label: '批次ID', width: 100 },
-    { prop: 'status', label: '状态', width: 90, align: 'center', slot: 'status' },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 90,
+      align: 'center',
+      slot: 'status'
+    },
     {
       prop: 'createdAt',
       label: '创建时间',
@@ -270,8 +276,7 @@
     });
     Object.keys(params).forEach((k) => {
       const v = (params as Record<string, unknown>)[k];
-      if (v == null || v === '')
-        delete (params as Record<string, unknown>)[k];
+      if (v == null || v === '') delete (params as Record<string, unknown>)[k];
     });
     const res = await pageExceptions(params);
     const raw = res as {

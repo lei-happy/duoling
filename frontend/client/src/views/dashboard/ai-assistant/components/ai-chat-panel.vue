@@ -32,7 +32,12 @@
             <el-icon><chat-line-square /></el-icon>
           </el-avatar>
           <span>{{ currentEmployee?.name || '请选择数字员工' }}</span>
-          <el-tag v-if="currentEmployee" size="small" effect="plain" style="margin-left: 8px">
+          <el-tag
+            v-if="currentEmployee"
+            size="small"
+            effect="plain"
+            style="margin-left: 8px"
+          >
             {{ empTypeText(currentEmployee.employeeType) }}
           </el-tag>
         </div>
@@ -78,14 +83,18 @@
         <div v-if="streaming" class="ai-streaming-tip">
           <el-icon class="is-loading"><loading /></el-icon>
           数字员工正在思考…
-          <el-button text size="small" type="danger" @click="handleAbort">中止</el-button>
+          <el-button text size="small" type="danger" @click="handleAbort"
+            >中止</el-button
+          >
         </div>
       </div>
 
       <chat-input
         :disabled="streaming || !currentEmployee"
         :placeholder="
-          !currentEmployee ? '请先在左侧选择数字员工' : '描述你的需求…（支持上传 Excel/CSV）'
+          !currentEmployee
+            ? '请先在左侧选择数字员工'
+            : '描述你的需求…（支持上传 Excel/CSV）'
         "
         @send="handleSend"
       />
@@ -106,7 +115,8 @@
               size="small"
               type="warning"
               effect="light"
-            >高风险</el-tag>
+              >高风险</el-tag
+            >
           </div>
           <div v-if="t.description" class="ai-tool-item__desc">
             {{ t.description }}
@@ -132,11 +142,7 @@
   import { computed, nextTick, onMounted, reactive, ref } from 'vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { useModal } from 'ele-admin-plus';
-  import {
-    ChatLineSquare,
-    Close,
-    Loading
-  } from '@element-plus/icons-vue';
+  import { ChatLineSquare, Close, Loading } from '@element-plus/icons-vue';
   import {
     deleteAiSession,
     listAiEmployees,
@@ -145,10 +151,7 @@
     pageAiSessions,
     renameAiSession
   } from '@/api/ai';
-  import {
-    postChatConfirm,
-    postChatStream
-  } from '@/api/ai/chat-stream';
+  import { postChatConfirm, postChatStream } from '@/api/ai/chat-stream';
   import type {
     AiAttachment,
     AiEmployee,
@@ -264,7 +267,11 @@
   const employeeAvatarSrc = computed(() => {
     const p = (currentEmployee.value?.avatar || '').trim();
     if (!p) return '';
-    if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('data:')) {
+    if (
+      p.startsWith('http://') ||
+      p.startsWith('https://') ||
+      p.startsWith('data:')
+    ) {
       return p;
     }
     return p.startsWith('/') ? p : `/${p}`;
@@ -347,7 +354,9 @@
 
   async function handleDeleteSession(id: number) {
     try {
-      await ElMessageBox.confirm('确定删除该会话？', '提示', { type: 'warning' });
+      await ElMessageBox.confirm('确定删除该会话？', '提示', {
+        type: 'warning'
+      });
     } catch {
       return;
     }
@@ -427,7 +436,10 @@
     handleSend({ content: q, attachments: [] });
   }
 
-  async function handleSend(payload: { content: string; attachments: AiAttachment[] }) {
+  async function handleSend(payload: {
+    content: string;
+    attachments: AiAttachment[];
+  }) {
     if (!currentEmployeeCode.value) {
       ElMessage.warning('请先选择数字员工');
       return;
@@ -512,7 +524,8 @@
           (x) => x.toolCallId === evt.data.tool_call_id
         );
         if (entry) {
-          entry.status = (evt.data.status || 'success') as ToolCallEntry['status'];
+          entry.status = (evt.data.status ||
+            'success') as ToolCallEntry['status'];
           entry.summary = evt.data.summary;
           entry.error = evt.data.error;
           entry.latencyMs = evt.data.latency_ms;
@@ -672,7 +685,10 @@
       justify-content: center;
       cursor: pointer;
       z-index: 5;
-      transition: background-color 0.15s, color 0.15s, transform 0.15s;
+      transition:
+        background-color 0.15s,
+        color 0.15s,
+        transform 0.15s;
 
       &:hover {
         background: var(--el-fill-color-darker);

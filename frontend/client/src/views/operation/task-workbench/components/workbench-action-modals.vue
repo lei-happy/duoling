@@ -98,10 +98,9 @@
   });
   // 当 actionDialog='revert' 时，调用方需同步设置具体的 revert 动作 key
   // 用于通用撤销弹窗 (action-revert.vue) 决定 from→to 文案与 revertTo 参数
-  const revertActionKey = defineModel<TaskActionKey | null>(
-    'revertActionKey',
-    { default: null }
-  );
+  const revertActionKey = defineModel<TaskActionKey | null>('revertActionKey', {
+    default: null
+  });
 
   const emit = defineEmits<{
     (e: 'done'): void;

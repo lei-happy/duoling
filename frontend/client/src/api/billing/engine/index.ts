@@ -68,13 +68,12 @@ export async function ignoreException(id: number, remark?: string) {
 }
 
 export async function batchRecalcExceptions(exceptionIds: number[]) {
-  const res = await request.post<ApiResult<{
-    recalcCount: number;
-    waybillCount: number;
-  }>>(
-    '/billing/freight-calc/exceptions/batch-recalc',
-    { exceptionIds }
-  );
+  const res = await request.post<
+    ApiResult<{
+      recalcCount: number;
+      waybillCount: number;
+    }>
+  >('/billing/freight-calc/exceptions/batch-recalc', { exceptionIds });
   if (res.data.code === 0) return res.data.data;
   return Promise.reject(new Error(res.data.message));
 }

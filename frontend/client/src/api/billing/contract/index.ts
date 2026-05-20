@@ -30,10 +30,7 @@ export async function getContract(id: number) {
 }
 
 export async function addContract(data: FreightContract) {
-  const res = await request.post<ApiResult<unknown>>(
-    '/billing/contract',
-    data
-  );
+  const res = await request.post<ApiResult<unknown>>('/billing/contract', data);
   if (res.data.code === 0) {
     return res.data.message;
   }
@@ -124,9 +121,7 @@ export async function updateRate(id: number, data: FreightRate) {
 }
 
 export async function removeRate(id: number) {
-  const res = await request.delete<ApiResult<unknown>>(
-    `/billing/rate/${id}`
-  );
+  const res = await request.delete<ApiResult<unknown>>(`/billing/rate/${id}`);
   if (res.data.code === 0) {
     return res.data.message;
   }
@@ -157,12 +152,12 @@ export async function listRateVersionHistory(rateId: number) {
 
 /** 触发该运价规则的受影响运单批量重算 */
 export async function recalculateAffectedByRate(rateId: number) {
-  const res = await request.post<ApiResult<{
-    affectedWaybillCount: number;
-    enqueuedTaskCount: number;
-  }>>(
-    `/billing/rate/${rateId}/recalculate-affected`
-  );
+  const res = await request.post<
+    ApiResult<{
+      affectedWaybillCount: number;
+      enqueuedTaskCount: number;
+    }>
+  >(`/billing/rate/${rateId}/recalculate-affected`);
   if (res.data.code === 0) {
     return res.data.data;
   }
@@ -202,14 +197,13 @@ export interface RateConflictItem {
 
 /** 规则保存前冲突预校验 */
 export async function checkRateConflict(payload: CheckConflictPayload) {
-  const res = await request.post<ApiResult<{
-    conflicts: RateConflictItem[];
-    hasError: boolean;
-    count: number;
-  }>>(
-    '/billing/rate/check-conflict',
-    payload
-  );
+  const res = await request.post<
+    ApiResult<{
+      conflicts: RateConflictItem[];
+      hasError: boolean;
+      count: number;
+    }>
+  >('/billing/rate/check-conflict', payload);
   if (res.data.code === 0) {
     return res.data.data;
   }

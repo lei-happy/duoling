@@ -12,7 +12,8 @@ import type { EleTooltipProps } from '../ele-app/plus';
  * 菜单数据
  */
 export interface MenuItem
-  extends Omit<ElMenuItemProps, 'style' | 'class'>,
+  extends
+    Omit<ElMenuItemProps, 'style' | 'class'>,
     Omit<ElSubMenuProps, 'index' | 'style' | 'class'>,
     ElMenuItemGroupProps {
   /** 唯一标识 */

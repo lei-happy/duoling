@@ -474,9 +474,7 @@
           width: 50,
           align: 'center',
           formatter: (row) =>
-            selections.value.some((d) => d.pieceId === row.pieceId)
-              ? '☑'
-              : '☐',
+            selections.value.some((d) => d.pieceId === row.pieceId) ? '☑' : '☐',
           label:
             isPrintCheckAll.value === 'indeterminate'
               ? '☐'

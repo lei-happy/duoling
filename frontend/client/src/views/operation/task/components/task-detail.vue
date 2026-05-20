@@ -15,14 +15,19 @@
             <div class="task-detail__no">
               {{ task.taskNo }}
               <el-tag
-                :type="(TASK_STATUS_MAP[task.status || 0]?.type as any) || 'info'"
+                :type="
+                  (TASK_STATUS_MAP[task.status || 0]?.type as any) || 'info'
+                "
                 style="margin-left: 8px"
                 size="small"
               >
                 {{ TASK_STATUS_MAP[task.status || 0]?.label }}
               </el-tag>
               <el-tag
-                :type="(CARRIER_TYPE_MAP[task.carrierType || 1]?.type as any) || 'info'"
+                :type="
+                  (CARRIER_TYPE_MAP[task.carrierType || 1]?.type as any) ||
+                  'info'
+                "
                 style="margin-left: 4px"
                 size="small"
                 effect="plain"
@@ -68,10 +73,7 @@
             >
               {{ act.label }}
             </el-button>
-            <el-dropdown
-              v-if="reverseActions.length"
-              trigger="click"
-            >
+            <el-dropdown v-if="reverseActions.length" trigger="click">
               <el-button size="small" plain type="info">
                 更多操作<el-icon style="margin-left: 2px"
                   ><ArrowDown
@@ -172,10 +174,24 @@
         <el-tabs v-model="activeTab" type="border-card">
           <el-tab-pane name="segments" :label="`分段进度 (${segments.length})`">
             <el-table :data="segments" border size="small">
-              <el-table-column label="段" prop="segmentNo" width="60" align="center" />
-              <el-table-column label="起点" prop="fromLocation" min-width="180" />
+              <el-table-column
+                label="段"
+                prop="segmentNo"
+                width="60"
+                align="center"
+              />
+              <el-table-column
+                label="起点"
+                prop="fromLocation"
+                min-width="180"
+              />
               <el-table-column label="终点" prop="toLocation" min-width="180" />
-              <el-table-column label="公里数" prop="mileage" width="100" align="right" />
+              <el-table-column
+                label="公里数"
+                prop="mileage"
+                width="100"
+                align="right"
+              />
               <el-table-column label="计划装车" min-width="160">
                 <template #default="{ row }">
                   {{ formatDateTime(row.plannedLoadTime) || '--' }}
@@ -203,15 +219,34 @@
 
           <el-tab-pane name="cargoes" :label="`挂接货物 (${items.length})`">
             <el-table :data="items" border size="small">
-              <el-table-column label="运单号" prop="waybillNo" min-width="140" />
-              <el-table-column label="客户" prop="customerName" min-width="120" />
+              <el-table-column
+                label="运单号"
+                prop="waybillNo"
+                min-width="140"
+              />
+              <el-table-column
+                label="客户"
+                prop="customerName"
+                min-width="120"
+              />
               <el-table-column label="品牌/车型" min-width="160">
                 <template #default="{ row }">
-                  {{ row.vehicleBrand || '--' }} / {{ row.vehicleModel || '--' }}
+                  {{ row.vehicleBrand || '--' }} /
+                  {{ row.vehicleModel || '--' }}
                 </template>
               </el-table-column>
-              <el-table-column label="台数" prop="quantity" width="80" align="center" />
-              <el-table-column label="归属段" prop="segmentId" width="80" align="center">
+              <el-table-column
+                label="台数"
+                prop="quantity"
+                width="80"
+                align="center"
+              />
+              <el-table-column
+                label="归属段"
+                prop="segmentId"
+                width="80"
+                align="center"
+              >
                 <template #default="{ row }">
                   {{ row.segmentId ?? '--' }}
                 </template>
@@ -231,7 +266,10 @@
               <el-table-column label="单据号" prop="docNo" min-width="160" />
               <el-table-column label="类型" width="90" align="center">
                 <template #default="{ row }">
-                  <el-tag size="small" :type="DOC_TYPE_LABEL[row.docType]?.type as any">
+                  <el-tag
+                    size="small"
+                    :type="DOC_TYPE_LABEL[row.docType]?.type as any"
+                  >
                     {{ DOC_TYPE_LABEL[row.docType]?.label }}
                   </el-tag>
                   <el-tag
@@ -245,16 +283,33 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="收款人" prop="payeeName" min-width="140" />
-              <el-table-column label="计划金额" prop="plannedAmount" width="120" align="right" />
-              <el-table-column label="实际金额" prop="actualAmount" width="120" align="right">
+              <el-table-column
+                label="收款人"
+                prop="payeeName"
+                min-width="140"
+              />
+              <el-table-column
+                label="计划金额"
+                prop="plannedAmount"
+                width="120"
+                align="right"
+              />
+              <el-table-column
+                label="实际金额"
+                prop="actualAmount"
+                width="120"
+                align="right"
+              >
                 <template #default="{ row }">
                   {{ formatAmount(row.actualAmount) }}
                 </template>
               </el-table-column>
               <el-table-column label="状态" width="100" align="center">
                 <template #default="{ row }">
-                  <el-tag size="small" :type="FIN_STATUS_LABEL[row.status]?.type as any">
+                  <el-tag
+                    size="small"
+                    :type="FIN_STATUS_LABEL[row.status]?.type as any"
+                  >
                     {{ FIN_STATUS_LABEL[row.status]?.label }}
                   </el-tag>
                 </template>
@@ -266,7 +321,11 @@
               </el-table-column>
               <el-table-column label="操作" width="120" align="center">
                 <template #default="{ row }">
-                  <el-link type="primary" :underline="false" @click="openFinanceEdit(row)">
+                  <el-link
+                    type="primary"
+                    :underline="false"
+                    @click="openFinanceEdit(row)"
+                  >
                     详情/编辑
                   </el-link>
                 </template>
@@ -466,11 +525,15 @@
   // ============================================
   // 语义化动作
   // ============================================
-  const primaryAction = computed(() => getPrimaryTaskAction(task.value?.status));
+  const primaryAction = computed(() =>
+    getPrimaryTaskAction(task.value?.status)
+  );
   const secondaryActions = computed(() =>
     getSecondaryTaskActions(task.value?.status)
   );
-  const reverseActions = computed(() => getReverseTaskActions(task.value?.status));
+  const reverseActions = computed(() =>
+    getReverseTaskActions(task.value?.status)
+  );
 
   const actionVisible = reactive({
     'assign-carrier': false,

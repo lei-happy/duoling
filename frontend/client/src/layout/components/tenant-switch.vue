@@ -7,11 +7,22 @@
     }"
     @command="handleSwitch"
   >
-    <div style="display: flex; align-items: center; height: 100%; cursor: pointer">
+    <div
+      style="display: flex; align-items: center; height: 100%; cursor: pointer"
+    >
       <el-icon :size="16" style="margin-right: 4px">
         <OfficeBuilding />
       </el-icon>
-      <span class="hidden-sm-and-down" style="line-height: 1.5; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+      <span
+        class="hidden-sm-and-down"
+        style="
+          line-height: 1.5;
+          max-width: 120px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        "
+      >
         {{ currentTenantName }}
       </span>
       <el-icon :size="12" style="margin: 0 -4px 0 2px">
@@ -25,7 +36,11 @@
   import { computed } from 'vue';
   import { OfficeBuilding, ArrowDown } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
-  import { setToken, setRefreshToken, isRememberToken } from '@/utils/token-util';
+  import {
+    setToken,
+    setRefreshToken,
+    isRememberToken
+  } from '@/utils/token-util';
   import { useUserStore } from '@/store/modules/user';
   import { switchTenant } from '@/api/login';
   import type { TenantOption } from '@/api/login/model';

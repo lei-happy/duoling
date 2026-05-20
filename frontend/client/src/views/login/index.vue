@@ -12,11 +12,13 @@
             <span
               :class="['login-tab', { active: loginMode === 'password' }]"
               @click="loginMode = 'password'"
-            >密码登录</span>
+              >密码登录</span
+            >
             <span
               :class="['login-tab', { active: loginMode === 'sms' }]"
               @click="loginMode = 'sms'"
-            >验证码登录</span>
+              >验证码登录</span
+            >
           </div>
 
           <transition name="slide-fade" mode="out-in">
@@ -25,99 +27,108 @@
               v-if="loginMode === 'password'"
               key="password"
               ref="formRef"
-            size="large"
-            :model="form"
-            :rules="rules"
-            @keyup.enter="submit"
-            @submit.prevent=""
-          >
-            <el-form-item prop="phone">
-              <el-input
-                clearable
-                v-model="form.phone"
-                placeholder="请输入手机号"
-                :prefix-icon="MobileOutlined"
-              />
-            </el-form-item>
-            <el-form-item prop="password">
-              <el-input
-                show-password
-                v-model="form.password"
-                :placeholder="t('login.password')"
-                :prefix-icon="LockOutlined"
-              />
-            </el-form-item>
-            <el-form-item>
-              <div style="display: flex; justify-content: space-between; width: 100%">
-                <el-checkbox v-model="form.remember">
-                  {{ t('login.remember') }}
-                </el-checkbox>
-                <a class="forgot-pwd-link" @click.prevent="showForgotPwdDialog = true">
-                  忘记密码？
-                </a>
-              </div>
-            </el-form-item>
-            <el-form-item>
-              <el-button
-                size="large"
-                type="primary"
-                :loading="loading"
-                style="width: 100%"
-                @click="submit"
-              >
-                {{ t('login.login') }}
-              </el-button>
-            </el-form-item>
-          </el-form>
-
-          <!-- 验证码登录表单 -->
-          <el-form
-            v-else
-            key="sms"
-            ref="smsFormRef"
-            size="large"
-            :model="smsForm"
-            :rules="smsRules"
-            @keyup.enter="submitSms"
-            @submit.prevent=""
-          >
-            <el-form-item prop="phone">
-              <el-input
-                clearable
-                v-model="smsForm.phone"
-                placeholder="请输入手机号"
-                :prefix-icon="MobileOutlined"
-              />
-            </el-form-item>
-            <el-form-item prop="code">
-              <div style="display: flex; gap: 10px; width: 100%">
+              size="large"
+              :model="form"
+              :rules="rules"
+              @keyup.enter="submit"
+              @submit.prevent=""
+            >
+              <el-form-item prop="phone">
                 <el-input
-                  v-model="smsForm.code"
-                  placeholder="请输入验证码"
-                  :prefix-icon="MessageOutlined"
-                  style="flex: 1"
+                  clearable
+                  v-model="form.phone"
+                  placeholder="请输入手机号"
+                  :prefix-icon="MobileOutlined"
                 />
+              </el-form-item>
+              <el-form-item prop="password">
+                <el-input
+                  show-password
+                  v-model="form.password"
+                  :placeholder="t('login.password')"
+                  :prefix-icon="LockOutlined"
+                />
+              </el-form-item>
+              <el-form-item>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    width: 100%;
+                  "
+                >
+                  <el-checkbox v-model="form.remember">
+                    {{ t('login.remember') }}
+                  </el-checkbox>
+                  <a
+                    class="forgot-pwd-link"
+                    @click.prevent="showForgotPwdDialog = true"
+                  >
+                    忘记密码？
+                  </a>
+                </div>
+              </el-form-item>
+              <el-form-item>
                 <el-button
                   size="large"
-                  :disabled="smsCooldown > 0"
-                  @click="handleSendCode(1)"
+                  type="primary"
+                  :loading="loading"
+                  style="width: 100%"
+                  @click="submit"
                 >
-                  {{ smsCooldown > 0 ? `${smsCooldown}s` : '获取验证码' }}
+                  {{ t('login.login') }}
                 </el-button>
-              </div>
-            </el-form-item>
-            <el-form-item>
-              <el-button
-                size="large"
-                type="primary"
-                :loading="loading"
-                style="width: 100%"
-                @click="submitSms"
-              >
-                {{ t('login.login') }}
-              </el-button>
-            </el-form-item>
-          </el-form>
+              </el-form-item>
+            </el-form>
+
+            <!-- 验证码登录表单 -->
+            <el-form
+              v-else
+              key="sms"
+              ref="smsFormRef"
+              size="large"
+              :model="smsForm"
+              :rules="smsRules"
+              @keyup.enter="submitSms"
+              @submit.prevent=""
+            >
+              <el-form-item prop="phone">
+                <el-input
+                  clearable
+                  v-model="smsForm.phone"
+                  placeholder="请输入手机号"
+                  :prefix-icon="MobileOutlined"
+                />
+              </el-form-item>
+              <el-form-item prop="code">
+                <div style="display: flex; gap: 10px; width: 100%">
+                  <el-input
+                    v-model="smsForm.code"
+                    placeholder="请输入验证码"
+                    :prefix-icon="MessageOutlined"
+                    style="flex: 1"
+                  />
+                  <el-button
+                    size="large"
+                    :disabled="smsCooldown > 0"
+                    @click="handleSendCode(1)"
+                  >
+                    {{ smsCooldown > 0 ? `${smsCooldown}s` : '获取验证码' }}
+                  </el-button>
+                </div>
+              </el-form-item>
+              <el-form-item>
+                <el-button
+                  size="large"
+                  type="primary"
+                  :loading="loading"
+                  style="width: 100%"
+                  @click="submitSms"
+                >
+                  {{ t('login.login') }}
+                </el-button>
+              </el-form-item>
+            </el-form>
           </transition>
         </div>
       </ele-card>
@@ -172,7 +183,11 @@
         </el-form-item>
         <el-form-item label="验证码" prop="code">
           <div style="display: flex; gap: 10px; width: 100%">
-            <el-input v-model="forgotForm.code" placeholder="请输入验证码" style="flex: 1" />
+            <el-input
+              v-model="forgotForm.code"
+              placeholder="请输入验证码"
+              style="flex: 1"
+            />
             <el-button
               :disabled="forgotCooldown > 0"
               @click="handleSendForgotCode"
@@ -182,15 +197,27 @@
           </div>
         </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
-          <el-input show-password v-model="forgotForm.newPassword" placeholder="请输入新密码（至少6位）" />
+          <el-input
+            show-password
+            v-model="forgotForm.newPassword"
+            placeholder="请输入新密码（至少6位）"
+          />
         </el-form-item>
         <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input show-password v-model="forgotForm.confirmPassword" placeholder="请再次输入新密码" />
+          <el-input
+            show-password
+            v-model="forgotForm.confirmPassword"
+            placeholder="请再次输入新密码"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showForgotPwdDialog = false">取消</el-button>
-        <el-button type="primary" :loading="forgotLoading" @click="submitForgotPwd">
+        <el-button
+          type="primary"
+          :loading="forgotLoading"
+          @click="submitForgotPwd"
+        >
           确认重置
         </el-button>
       </template>
@@ -254,12 +281,14 @@
   import type { FormInstance, FormRules } from 'element-plus';
   import { OfficeBuilding, ArrowRight } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
-  import { MobileOutlined, LockOutlined, MessageOutlined } from '@/components/icons';
+  import {
+    MobileOutlined,
+    LockOutlined,
+    MessageOutlined
+  } from '@/components/icons';
   import PageFooter from '@/layout/components/page-footer.vue';
   import { useLogin } from '@/utils/use-login';
-  import {
-    sendSmsCode, changePassword, resetPasswordBySms
-  } from '@/api/login';
+  import { sendSmsCode, changePassword, resetPasswordBySms } from '@/api/login';
   import type { TenantOption } from '@/api/login/model';
   import { useI18n } from 'vue-i18n';
   const PROJECT_NAME = import.meta.env.VITE_APP_NAME;
@@ -277,11 +306,25 @@
   const form = reactive({ phone: '', password: '', remember: true });
   const rules = computed<FormRules>(() => ({
     phone: [
-      { required: true, message: '请输入手机号', type: 'string', trigger: 'blur' },
-      { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+      {
+        required: true,
+        message: '请输入手机号',
+        type: 'string',
+        trigger: 'blur'
+      },
+      {
+        pattern: /^1[3-9]\d{9}$/,
+        message: '请输入正确的手机号',
+        trigger: 'blur'
+      }
     ],
     password: [
-      { required: true, message: t('login.password'), type: 'string', trigger: 'blur' }
+      {
+        required: true,
+        message: t('login.password'),
+        type: 'string',
+        trigger: 'blur'
+      }
     ]
   }));
 
@@ -314,11 +357,25 @@
   const smsForm = reactive({ phone: '', code: '' });
   const smsRules = computed<FormRules>(() => ({
     phone: [
-      { required: true, message: '请输入手机号', type: 'string', trigger: 'blur' },
-      { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+      {
+        required: true,
+        message: '请输入手机号',
+        type: 'string',
+        trigger: 'blur'
+      },
+      {
+        pattern: /^1[3-9]\d{9}$/,
+        message: '请输入正确的手机号',
+        trigger: 'blur'
+      }
     ],
     code: [
-      { required: true, message: '请输入验证码', type: 'string', trigger: 'blur' },
+      {
+        required: true,
+        message: '请输入验证码',
+        type: 'string',
+        trigger: 'blur'
+      },
       { pattern: /^\d{6}$/, message: '验证码为6位数字', trigger: 'blur' }
     ]
   }));
@@ -384,9 +441,7 @@
     try {
       let result;
       if (pendingLoginMode.value === 'sms') {
-        result = await smsLogin(
-          smsForm.phone, smsForm.code, tenantCode, true
-        );
+        result = await smsLogin(smsForm.phone, smsForm.code, tenantCode, true);
       } else {
         result = await login({
           phone: form.phone,
@@ -413,7 +468,9 @@
   const pwdFormRef = ref<FormInstance | null>(null);
 
   const pwdForm = reactive({
-    oldPassword: '', newPassword: '', confirmPassword: ''
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
 
   const pwdRules = computed<FormRules>(() => ({
@@ -469,13 +526,20 @@
   const forgotCooldown = ref(0);
 
   const forgotForm = reactive({
-    phone: '', code: '', newPassword: '', confirmPassword: ''
+    phone: '',
+    code: '',
+    newPassword: '',
+    confirmPassword: ''
   });
 
   const forgotRules = computed<FormRules>(() => ({
     phone: [
       { required: true, message: '请输入手机号', trigger: 'blur' },
-      { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+      {
+        pattern: /^1[3-9]\d{9}$/,
+        message: '请输入正确的手机号',
+        trigger: 'blur'
+      }
     ],
     code: [
       { required: true, message: '请输入验证码', trigger: 'blur' },
@@ -519,11 +583,18 @@
     forgotFormRef.value?.validate?.((valid) => {
       if (!valid) return;
       forgotLoading.value = true;
-      resetPasswordBySms(forgotForm.phone, forgotForm.code, forgotForm.newPassword)
+      resetPasswordBySms(
+        forgotForm.phone,
+        forgotForm.code,
+        forgotForm.newPassword
+      )
         .then(() => {
           forgotLoading.value = false;
           showForgotPwdDialog.value = false;
-          EleMessage.success({ message: '密码重置成功，请使用新密码登录', plain: true });
+          EleMessage.success({
+            message: '密码重置成功，请使用新密码登录',
+            plain: true
+          });
         })
         .catch((e: Error) => {
           forgotLoading.value = false;
@@ -680,7 +751,7 @@
     transform: translateX(20px);
     opacity: 0;
   }
-  
+
   .slide-fade-leave-to {
     transform: translateX(-20px);
     opacity: 0;

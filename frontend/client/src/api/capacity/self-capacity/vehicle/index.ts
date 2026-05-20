@@ -31,10 +31,7 @@ export async function addVehicle(data: Vehicle) {
 }
 
 export async function updateVehicle(data: Vehicle) {
-  const res = await request.put<ApiResult<unknown>>(
-    `${BASE}/${data.id}`,
-    data
-  );
+  const res = await request.put<ApiResult<unknown>>(`${BASE}/${data.id}`, data);
   if (res.data.code === 0) {
     return res.data.message;
   }

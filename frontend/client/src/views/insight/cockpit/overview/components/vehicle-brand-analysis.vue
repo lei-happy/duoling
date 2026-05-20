@@ -88,7 +88,10 @@
     return dayjs(range[1]).diff(dayjs(range[0]), 'day') + 1;
   }
 
-  function toApiWindow(range: [string, string]): { start: string; end: string } {
+  function toApiWindow(range: [string, string]): {
+    start: string;
+    end: string;
+  } {
     return {
       start: dayjs(range[0]).startOf('day').format(API_DT),
       end: dayjs(range[1]).add(1, 'day').startOf('day').format(API_DT)
@@ -235,7 +238,10 @@
       Object.assign(rankOption, buildRankOption(data));
       Object.assign(cloudOption, buildCloudOption(data));
     } catch (e: any) {
-      EleMessage.error({ message: e?.message || '加载品牌排行失败', plain: true });
+      EleMessage.error({
+        message: e?.message || '加载品牌排行失败',
+        plain: true
+      });
     } finally {
       loading.value = false;
     }

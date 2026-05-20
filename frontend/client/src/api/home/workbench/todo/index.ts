@@ -61,7 +61,10 @@ export async function createTodoTask(data: Record<string, unknown>) {
   return assertOk(res);
 }
 
-export async function updateTodoTask(id: number, data: Record<string, unknown>) {
+export async function updateTodoTask(
+  id: number,
+  data: Record<string, unknown>
+) {
   const res = await request.put<ApiResult<TodoTask>>(
     `/workbench/todo/${id}`,
     data
@@ -70,9 +73,7 @@ export async function updateTodoTask(id: number, data: Record<string, unknown>) 
 }
 
 export async function deleteTodoTask(id: number) {
-  const res = await request.delete<ApiResult<unknown>>(
-    `/workbench/todo/${id}`
-  );
+  const res = await request.delete<ApiResult<unknown>>(`/workbench/todo/${id}`);
   return assertOk(res);
 }
 

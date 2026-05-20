@@ -17,7 +17,9 @@
     <div v-if="data" class="invite-block">
       <p class="line">
         承运商：<b>{{ data.carrierName }}</b>
-        <span class="phone">联系电话：<b>{{ data.contactPhone }}</b></span>
+        <span class="phone"
+          >联系电话：<b>{{ data.contactPhone }}</b></span
+        >
       </p>
 
       <!-- 注册状态检查 -->
@@ -25,7 +27,9 @@
         <template v-if="checked && phoneCheck">
           <!-- A. 已注册且为 lite 租户：可走 fast-path 直连 -->
           <el-alert
-            v-if="phoneCheck.registered && phoneCheck.canFastLink && !fastLinked"
+            v-if="
+              phoneCheck.registered && phoneCheck.canFastLink && !fastLinked
+            "
             type="info"
             :closable="false"
             show-icon
@@ -53,9 +57,7 @@
             :closable="false"
             show-icon
           >
-            <template #title>
-              已直接建立互联
-            </template>
+            <template #title> 已直接建立互联 </template>
             <div class="alert-body">
               <p>
                 您与
@@ -95,15 +97,8 @@
           </el-alert>
 
           <!-- C. 未注册：可正常生成邀请链接 -->
-          <el-alert
-            v-else
-            type="success"
-            :closable="false"
-            show-icon
-          >
-            <template #title>
-              该手机号<b>尚未在平台开户</b>
-            </template>
+          <el-alert v-else type="success" :closable="false" show-icon>
+            <template #title> 该手机号<b>尚未在平台开户</b> </template>
             <div class="alert-body">
               <p>
                 生成邀请链接后，您可以通过微信等渠道转发给对方。
@@ -226,7 +221,10 @@
     try {
       phoneCheck.value = await checkInvitePhone(phone);
     } catch (e: any) {
-      EleMessage.error({ message: e.message || '查询注册状态失败', plain: true });
+      EleMessage.error({
+        message: e.message || '查询注册状态失败',
+        plain: true
+      });
       phoneCheck.value = { phone, registered: false };
     } finally {
       checking.value = false;

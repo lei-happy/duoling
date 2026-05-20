@@ -55,15 +55,18 @@
               type="placeholder"
               class="trend-rank-sub"
             >
-              {{ selectedDate }}{{
-                metric === 'revenue' ? ' · 按运费' : ' · 按商品车台数'
-              }}
+              {{ selectedDate
+              }}{{ metric === 'revenue' ? ' · 按运费' : ' · 按商品车台数' }}
             </ele-text>
             <ele-text v-else type="placeholder" class="trend-rank-sub">
               选择柱图日期查看排行
             </ele-text>
           </div>
-          <el-scrollbar class="rank-list" height="100%" :view-style="rankListViewStyle">
+          <el-scrollbar
+            class="rank-list"
+            height="100%"
+            :view-style="rankListViewStyle"
+          >
             <div
               v-for="(item, index) in customerRank"
               :key="`${item.customerId ?? 'x'}-${index}`"
@@ -190,7 +193,10 @@
     return dayjs(range[1]).diff(dayjs(range[0]), 'day') + 1;
   }
 
-  function toApiWindow(range: [string, string]): { start: string; end: string } {
+  function toApiWindow(range: [string, string]): {
+    start: string;
+    end: string;
+  } {
     return {
       start: dayjs(range[0]).startOf('day').format(API_DT),
       end: dayjs(range[1]).add(1, 'day').startOf('day').format(API_DT)
@@ -294,7 +300,9 @@
             name: '运费 (元)',
             axisLabel: {
               formatter: (val: number) =>
-                Math.abs(val) >= 10000 ? `${(val / 10000).toFixed(1)}万` : `${val}`
+                Math.abs(val) >= 10000
+                  ? `${(val / 10000).toFixed(1)}万`
+                  : `${val}`
             }
           },
           { type: 'value', name: '运单数', alignTicks: true }
@@ -381,10 +389,7 @@
       selectedDate.value = null;
       return;
     }
-    if (
-      !selectedDate.value ||
-      !dates.includes(selectedDate.value)
-    ) {
+    if (!selectedDate.value || !dates.includes(selectedDate.value)) {
       selectedDate.value = dates[dates.length - 1] ?? null;
     }
   }
@@ -407,8 +412,7 @@
       return;
     }
     const win = dayWindow(selectedDate.value);
-    const sort_by =
-      metric.value === 'revenue' ? 'revenue' : 'vehicle_quantity';
+    const sort_by = metric.value === 'revenue' ? 'revenue' : 'vehicle_quantity';
     const rank = await getCustomerRank({
       start: win.start,
       end: win.end,
@@ -425,7 +429,10 @@
       await loadCustomerRankForSelection();
     } catch (e: unknown) {
       const err = e as { message?: string };
-      EleMessage.error({ message: err?.message || '加载趋势数据失败', plain: true });
+      EleMessage.error({
+        message: err?.message || '加载趋势数据失败',
+        plain: true
+      });
     } finally {
       loading.value = false;
     }
@@ -435,7 +442,10 @@
     renderChart();
     loadCustomerRankForSelection().catch((e: unknown) => {
       const err = e as { message?: string };
-      EleMessage.error({ message: err?.message || '加载排行失败', plain: true });
+      EleMessage.error({
+        message: err?.message || '加载排行失败',
+        plain: true
+      });
     });
   });
 
@@ -469,8 +479,7 @@
     if (params.componentType !== 'series' || params.seriesType !== 'bar') {
       return;
     }
-    const idx =
-      typeof params.dataIndex === 'number' ? params.dataIndex : -1;
+    const idx = typeof params.dataIndex === 'number' ? params.dataIndex : -1;
     const date = trendData.value[idx]?.date;
     if (!date) return;
     selectedDate.value = date;
@@ -479,7 +488,10 @@
     loadCustomerRankForSelection()
       .catch((e: unknown) => {
         const err = e as { message?: string };
-        EleMessage.error({ message: err?.message || '加载排行失败', plain: true });
+        EleMessage.error({
+          message: err?.message || '加载排行失败',
+          plain: true
+        });
       })
       .finally(() => {
         loading.value = false;

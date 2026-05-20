@@ -70,7 +70,10 @@
   const [vehicleTypeDict] = useDictData([DICT_CODE_VEHICLE_TYPE]);
 
   const emit = defineEmits<{
-    (e: 'search', where: Pick<VehicleParam, 'keyword' | 'status' | 'vehicleType'>): void;
+    (
+      e: 'search',
+      where: Pick<VehicleParam, 'keyword' | 'status' | 'vehicleType'>
+    ): void;
   }>();
 
   const [form, resetFields] = useFormData<{

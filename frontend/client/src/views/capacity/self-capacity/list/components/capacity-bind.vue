@@ -63,7 +63,9 @@
                 >
                   <span class="capacity-bind-tt-cell">{{ row.name }}</span>
                 </el-tooltip>
-                <span v-else class="capacity-bind-tt-plain">{{ row.name }}</span>
+                <span v-else class="capacity-bind-tt-plain">{{
+                  row.name
+                }}</span>
               </template>
             </el-table-column>
             <el-table-column label="手机号" min-width="130">
@@ -76,7 +78,9 @@
                 >
                   <span class="capacity-bind-tt-cell">{{ row.phone }}</span>
                 </el-tooltip>
-                <span v-else class="capacity-bind-tt-plain">{{ row.phone }}</span>
+                <span v-else class="capacity-bind-tt-plain">{{
+                  row.phone
+                }}</span>
               </template>
             </el-table-column>
             <el-table-column label="运力" width="72" align="center">
@@ -95,7 +99,9 @@
               </template>
             </el-table-column>
           </el-table>
-          <div v-if="loadingDriversMore" class="capacity-bind-more-hint">加载更多中…</div>
+          <div v-if="loadingDriversMore" class="capacity-bind-more-hint"
+            >加载更多中…</div
+          >
           <transition name="el-fade-in-linear">
             <div
               v-show="showDriverAllLoaded"
@@ -201,7 +207,9 @@
               </template>
             </el-table-column>
           </el-table>
-          <div v-if="loadingVehiclesMore" class="capacity-bind-more-hint">加载更多中…</div>
+          <div v-if="loadingVehiclesMore" class="capacity-bind-more-hint"
+            >加载更多中…</div
+          >
           <transition name="el-fade-in-linear">
             <div
               v-show="showVehicleAllLoaded"
@@ -235,10 +243,14 @@
     <div class="capacity-bind-preview-card">
       <div class="capacity-bind-preview-main">
         <template v-if="!selectedDriver && !selectedVehicle">
-          <span class="capacity-bind-preview-empty">请在上表选择驾驶员与车辆</span>
+          <span class="capacity-bind-preview-empty"
+            >请在上表选择驾驶员与车辆</span
+          >
         </template>
         <template v-else-if="selectedDriver && selectedVehicle">
-          <span class="capacity-bind-preview-name">{{ selectedDriver.name }}</span>
+          <span class="capacity-bind-preview-name">{{
+            selectedDriver.name
+          }}</span>
           <span class="capacity-bind-preview-dot" aria-hidden="true">·</span>
           <plate-number-tag
             class="capacity-bind-preview-plate"
@@ -257,7 +269,9 @@
           </span>
         </template>
         <template v-else-if="selectedDriver">
-          <span class="capacity-bind-preview-name">{{ selectedDriver.name }}</span>
+          <span class="capacity-bind-preview-name">{{
+            selectedDriver.name
+          }}</span>
           <span class="capacity-bind-preview-hint">请选择右侧车辆</span>
         </template>
         <template v-else>
@@ -309,7 +323,14 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, shallowRef, computed, watch, nextTick, onBeforeUnmount } from 'vue';
+  import {
+    ref,
+    shallowRef,
+    computed,
+    watch,
+    nextTick,
+    onBeforeUnmount
+  } from 'vue';
   import { watchDebounced } from '@vueuse/core';
   import { EleMessage } from 'ele-admin-plus';
   import { QuestionFilled } from '@element-plus/icons-vue';
@@ -318,7 +339,10 @@
   import { pageVehicles } from '@/api/capacity/self-capacity/vehicle';
   import type { Driver } from '@/api/capacity/self-capacity/driver/model';
   import type { Vehicle } from '@/api/capacity/self-capacity/vehicle/model';
-  import { bindCapacity, pageCapacities } from '@/api/capacity/self-capacity/list';
+  import {
+    bindCapacity,
+    pageCapacities
+  } from '@/api/capacity/self-capacity/list';
   import type { Capacity } from '@/api/capacity/self-capacity/list/model';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
 
@@ -358,7 +382,9 @@
   const remark = ref('');
 
   const driverToBoundPlate = ref<Record<number, string>>({});
-  const vehicleToBoundDriver = ref<Record<number, { name: string; phone: string }>>({});
+  const vehicleToBoundDriver = ref<
+    Record<number, { name: string; phone: string }>
+  >({});
 
   const selectedDriver = shallowRef<Driver | undefined>();
   const selectedVehicle = shallowRef<Vehicle | undefined>();
@@ -521,7 +547,9 @@
       !!vehicleBoundDriver.value
   );
 
-  function listTotal(res: { total?: number; count?: number } | undefined | null): number {
+  function listTotal(
+    res: { total?: number; count?: number } | undefined | null
+  ): number {
     if (!res) return 0;
     return Number(res.count ?? res.total ?? 0);
   }
@@ -797,7 +825,9 @@
       void nextTick(() => {
         const prev = selectedDriver.value;
         driverTableRef.value?.setCurrentRow(
-          prev?.id != null ? displayedDrivers.value.find((d) => d.id === prev.id) : undefined
+          prev?.id != null
+            ? displayedDrivers.value.find((d) => d.id === prev.id)
+            : undefined
         );
       });
       return;
@@ -810,7 +840,9 @@
       void nextTick(() => {
         const prev = selectedVehicle.value;
         vehicleTableRef.value?.setCurrentRow(
-          prev?.id != null ? displayedVehicles.value.find((v) => v.id === prev.id) : undefined
+          prev?.id != null
+            ? displayedVehicles.value.find((v) => v.id === prev.id)
+            : undefined
         );
       });
       return;
@@ -927,14 +959,19 @@
 
   .capacity-bind-table-card
     :deep(
-      .el-table__body tr.current-row:not(.capacity-bind-row-disabled) > td.el-table__cell
+      .el-table__body
+        tr.current-row:not(.capacity-bind-row-disabled)
+        > td.el-table__cell
     ) {
     background-color: var(--el-color-primary-light-9) !important;
   }
 
   .capacity-bind-table-card
     :deep(
-      .el-table__body tr.current-row:not(.capacity-bind-row-disabled) > td.el-table__cell .cell
+      .el-table__body
+        tr.current-row:not(.capacity-bind-row-disabled)
+        > td.el-table__cell
+        .cell
     ) {
     color: var(--el-color-primary-dark-2);
     font-weight: 600;
@@ -942,7 +979,10 @@
 
   .capacity-bind-table-card
     :deep(
-      .el-table__body tr.current-row:not(.capacity-bind-row-disabled) > td.el-table__cell .el-tag
+      .el-table__body
+        tr.current-row:not(.capacity-bind-row-disabled)
+        > td.el-table__cell
+        .el-tag
     ) {
     font-weight: 500;
   }
@@ -969,7 +1009,8 @@
     cursor: not-allowed;
   }
 
-  .capacity-bind-table-card :deep(tr.capacity-bind-row-disabled > td.el-table__cell) {
+  .capacity-bind-table-card
+    :deep(tr.capacity-bind-row-disabled > td.el-table__cell) {
     background-color: var(--el-fill-color-light) !important;
     color: var(--el-text-color-disabled);
   }
@@ -978,11 +1019,13 @@
     opacity: 0.9;
   }
 
-  .capacity-bind-table-card :deep(tr.capacity-bind-row-disabled.current-row > td.el-table__cell) {
+  .capacity-bind-table-card
+    :deep(tr.capacity-bind-row-disabled.current-row > td.el-table__cell) {
     background-color: var(--el-fill-color-light) !important;
   }
 
-  .capacity-bind-table-card :deep(tr.capacity-bind-row-disabled.current-row > td.el-table__cell .cell) {
+  .capacity-bind-table-card
+    :deep(tr.capacity-bind-row-disabled.current-row > td.el-table__cell .cell) {
     color: var(--el-text-color-disabled);
     font-weight: 400;
   }

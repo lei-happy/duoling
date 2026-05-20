@@ -23,9 +23,7 @@ import { useUserStore } from '@/store/modules/user';
 
 const DEFAULT_POLL_INTERVAL = 60_000;
 
-export function useMenuVersionWatcher(
-  options: { intervalMs?: number } = {}
-) {
+export function useMenuVersionWatcher(options: { intervalMs?: number } = {}) {
   const userStore = useUserStore();
   const intervalMs = options.intervalMs ?? DEFAULT_POLL_INTERVAL;
 

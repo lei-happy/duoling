@@ -195,7 +195,7 @@
     DeleteOutlined,
     SearchOutlined,
     FolderOutlined,
-    FileOutlined,
+    FileOutlined
   } from '@/components/icons';
   import { useMobile } from '@/utils/use-mobile';
   import UserSearch from '@/views/enterprise/user/components/user-search.vue';

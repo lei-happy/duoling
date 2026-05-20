@@ -153,7 +153,10 @@
           plain: true
         });
       } else {
-        EleMessage.success({ message: `${cfg.value.label} 已完成`, plain: true });
+        EleMessage.success({
+          message: `${cfg.value.label} 已完成`,
+          plain: true
+        });
       }
       emit('done');
       emit('update:visible', false);

@@ -1,7 +1,13 @@
 <!-- 经营驾驶舱 - 核心 KPI 卡片（当日值 + 近 30 日趋势 + 日同比 / 周同比） -->
 <template>
   <el-row :gutter="16">
-    <el-col :md="6" :sm="12" :xs="24" v-for="(item, idx) in kpiItems" :key="item.key">
+    <el-col
+      :md="6"
+      :sm="12"
+      :xs="24"
+      v-for="(item, idx) in kpiItems"
+      :key="item.key"
+    >
       <ele-card class="kpi-card" v-loading="loading">
         <ele-text type="placeholder" class="kpi-header">
           <div class="kpi-header-text">{{ item.title }}</div>
@@ -39,7 +45,10 @@
             >
               <div>{{ trendCompareLine('日同比', item.dayOverDayRate) }}</div>
               <ele-text
-                v-if="item.dayOverDayRate !== null && item.dayOverDayRate !== undefined"
+                v-if="
+                  item.dayOverDayRate !== null &&
+                  item.dayOverDayRate !== undefined
+                "
                 :type="item.dayOverDayRate >= 0 ? 'danger' : 'success'"
                 :icon="
                   item.dayOverDayRate >= 0 ? CaretUpFilled : CaretDownFilled
@@ -63,7 +72,10 @@
             >
               <div>{{ trendCompareLine('周同比', item.weekOverWeekRate) }}</div>
               <ele-text
-                v-if="item.weekOverWeekRate !== null && item.weekOverWeekRate !== undefined"
+                v-if="
+                  item.weekOverWeekRate !== null &&
+                  item.weekOverWeekRate !== undefined
+                "
                 :type="item.weekOverWeekRate >= 0 ? 'danger' : 'success'"
                 :icon="
                   item.weekOverWeekRate >= 0 ? CaretUpFilled : CaretDownFilled
@@ -98,7 +110,11 @@
 
   use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent]);
 
-  type KpiKey = 'revenue' | 'waybillCount' | 'vehicleQuantity' | 'customerCount';
+  type KpiKey =
+    | 'revenue'
+    | 'waybillCount'
+    | 'vehicleQuantity'
+    | 'customerCount';
 
   interface KpiItem {
     key: KpiKey;
@@ -157,7 +173,11 @@
     const axisTooltipFormatter = (params: unknown) => {
       const p = Array.isArray(params) ? params[0] : params;
       if (!p || typeof p !== 'object') return '';
-      const px = p as { axisValue?: string; value?: number; dataIndex?: number };
+      const px = p as {
+        axisValue?: string;
+        value?: number;
+        dataIndex?: number;
+      };
       const date = px.axisValue ?? points[px.dataIndex ?? 0]?.date ?? '';
       const val = typeof px.value === 'number' ? px.value : 0;
       return `${dot(color)}${date}: ${formatTipVal(val)}`;

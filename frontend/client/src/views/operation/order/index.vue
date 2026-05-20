@@ -81,11 +81,7 @@
         </template>
       </ele-pro-table>
     </ele-card>
-    <order-edit
-      v-model:visible="editVisible"
-      :data="editData"
-      @done="reload"
-    />
+    <order-edit v-model:visible="editVisible" :data="editData" @done="reload" />
   </ele-page>
 </template>
 
@@ -164,11 +160,10 @@
   };
 
   const remove = (row: Order) => {
-    ElMessageBox.confirm(
-      `确定要删除订单"${row.orderNo}"吗?`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
+    ElMessageBox.confirm(`确定要删除订单"${row.orderNo}"吗?`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => {
         const loading = EleMessage.loading({
           message: '请求中..',

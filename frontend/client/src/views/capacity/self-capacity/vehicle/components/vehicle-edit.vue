@@ -23,7 +23,10 @@
           <div class="vehicle-tab-pane">
             <el-row :gutter="10" class="vehicle-basic-first-row" align="middle">
               <el-col :span="8">
-                <el-form-item prop="plateCategory" class="vehicle-plate-category-item">
+                <el-form-item
+                  prop="plateCategory"
+                  class="vehicle-plate-category-item"
+                >
                   <el-radio-group
                     v-model="form.plateCategory"
                     size="small"
@@ -255,7 +258,10 @@
     updateVehicle,
     listAvailableTrailers
   } from '@/api/capacity/self-capacity/vehicle';
-  import type { Vehicle, TrailerOption } from '@/api/capacity/self-capacity/vehicle/model';
+  import type {
+    Vehicle,
+    TrailerOption
+  } from '@/api/capacity/self-capacity/vehicle/model';
   import {
     DEFAULT_PLATE_CATEGORY,
     PLATE_CATEGORY_OPTIONS,
@@ -300,7 +306,9 @@
         return;
       }
       const n = Number(t);
-      form.loadCapacity = Number.isFinite(n) ? Math.round(n * 100) / 100 : void 0;
+      form.loadCapacity = Number.isFinite(n)
+        ? Math.round(n * 100) / 100
+        : void 0;
     }
   });
 
@@ -313,7 +321,9 @@
         return;
       }
       const n = Number(t);
-      form.volumeCapacity = Number.isFinite(n) ? Math.round(n * 100) / 100 : void 0;
+      form.volumeCapacity = Number.isFinite(n)
+        ? Math.round(n * 100) / 100
+        : void 0;
     }
   });
 
@@ -324,8 +334,7 @@
   );
 
   const plateNumberLabel = computed(() => {
-    const c =
-      (form.plateCategory as PlateCategory) ?? DEFAULT_PLATE_CATEGORY;
+    const c = (form.plateCategory as PlateCategory) ?? DEFAULT_PLATE_CATEGORY;
     if (c === 'NEW_ENERGY') return '请输入车牌号（新能源 8 位）';
     return '请输入车牌号（7 位）';
   });
@@ -334,9 +343,7 @@
     plateCategory: [
       { required: true, message: '请选择车牌类型', trigger: 'change' }
     ],
-    plateNumber: [
-      { required: true, message: '请输入车牌号', trigger: 'blur' }
-    ]
+    plateNumber: [{ required: true, message: '请输入车牌号', trigger: 'blur' }]
   });
 
   watch(
@@ -499,8 +506,10 @@
     scrollbar-gutter: stable;
   }
 
-  .vehicle-edit-dialog :deep(.floating-label-wrapper.is-focused .floating-label),
-  .vehicle-edit-dialog :deep(.floating-label-wrapper.has-value .floating-label) {
+  .vehicle-edit-dialog
+    :deep(.floating-label-wrapper.is-focused .floating-label),
+  .vehicle-edit-dialog
+    :deep(.floating-label-wrapper.has-value .floating-label) {
     transform: translateY(-62%);
     padding: 2px 6px;
     z-index: 4;
@@ -508,11 +517,14 @@
     box-shadow: 0 0 0 2px var(--el-bg-color);
   }
 
-  .vehicle-edit-dialog :deep(.vehicle-tab-pane > .el-row > .el-col > .el-form-item) {
+  .vehicle-edit-dialog
+    :deep(.vehicle-tab-pane > .el-row > .el-col > .el-form-item) {
     margin-bottom: 14px;
   }
 
-  .vehicle-basic-first-row .vehicle-plate-category-item :deep(.el-form-item__content) {
+  .vehicle-basic-first-row
+    .vehicle-plate-category-item
+    :deep(.el-form-item__content) {
     display: flex;
     align-items: center;
     line-height: 1;

@@ -67,8 +67,7 @@
 
   const defaultSubTitle = computed(
     () =>
-      `「${props.title}」功能正在规划/开发中，` +
-      '上线后将自动启用，敬请期待。'
+      `「${props.title}」功能正在规划/开发中，` + '上线后将自动启用，敬请期待。'
   );
 
   const goBack = () => {

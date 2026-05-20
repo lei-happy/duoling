@@ -86,7 +86,13 @@ export interface ToolCallEntry {
   toolCallId: string;
   toolCode: string;
   toolName?: string;
-  status: 'calling' | 'success' | 'failed' | 'denied' | 'cancelled' | 'pending_confirm';
+  status:
+    | 'calling'
+    | 'success'
+    | 'failed'
+    | 'denied'
+    | 'cancelled'
+    | 'pending_confirm';
   riskLevel?: string;
   params?: any;
   summary?: string;

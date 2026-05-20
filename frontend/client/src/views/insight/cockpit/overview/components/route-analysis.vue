@@ -114,7 +114,10 @@
       Object.assign(originOption, buildOption(origin, '#5b8ff9'));
       Object.assign(destOption, buildOption(dest, '#5ad8a6'));
     } catch (e: any) {
-      EleMessage.error({ message: e?.message || '加载起讫点数据失败', plain: true });
+      EleMessage.error({
+        message: e?.message || '加载起讫点数据失败',
+        plain: true
+      });
     } finally {
       loading.value = false;
     }

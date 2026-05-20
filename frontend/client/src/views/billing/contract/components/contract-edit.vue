@@ -248,8 +248,10 @@
 </style>
 
 <style scoped lang="scss">
-  .contract-edit-dialog :deep(.floating-label-wrapper.is-focused .floating-label),
-  .contract-edit-dialog :deep(.floating-label-wrapper.has-value .floating-label) {
+  .contract-edit-dialog
+    :deep(.floating-label-wrapper.is-focused .floating-label),
+  .contract-edit-dialog
+    :deep(.floating-label-wrapper.has-value .floating-label) {
     color: var(--el-color-primary);
   }
 </style>
