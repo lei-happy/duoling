@@ -3,11 +3,10 @@
   ====================================
 
   - 根据 `pool.filterFields` 数组只渲染对应控件，组件化关键所在
-  - 布局策略：**单 el-row 自然换行**
-      所有字段 + 操作按钮放在同一个 `el-row`，依靠 `el-col` 的 `lg/md/sm/xs`
-      响应式宽度，由浏览器决定是否换行。
-      → 少字段 pool（如 `closed`、`scheduling`）能在 1 行内完整放下；
-      → 多字段 pool（如 `pending-confirm`）超过 24 列后自然落到第 2 行。
+  - 布局策略：
+      - **紧凑单行**：全部筛选项 + 操作按钮能放进 24 栅格时（如已关闭 pool），
+        各字段固定 lg=6，与四列主筛时单列宽度一致；
+      - **双行**：主筛 4 列铺满第 1 行，创建时间 / 品牌车型 / 操作按钮在第 2 行。
   - 切换 pool 时由父组件通过 :key 触发重新挂载，无需手动 reset
 
   字段映射（来自 waybill-pool-registry）：
@@ -26,13 +25,14 @@
       @keyup.enter="emitSearch"
       @submit.prevent=""
     >
-      <el-row :gutter="10" class="wb-filter__row">
+      <!-- 紧凑单行：筛选项较少时一次放下（如已关闭） -->
+      <el-row v-if="useCompactRow" :gutter="10" class="wb-filter__row">
         <el-col
           v-if="has('keyword')"
-          :lg="5"
-          :md="8"
-          :sm="12"
-          :xs="24"
+          :lg="fieldCol.lg"
+          :md="fieldCol.md"
+          :sm="fieldCol.sm"
+          :xs="fieldCol.xs"
         >
           <floating-label
             label="运单编号"
@@ -43,10 +43,10 @@
         </el-col>
         <el-col
           v-if="has('customer')"
-          :lg="5"
-          :md="8"
-          :sm="12"
-          :xs="24"
+          :lg="fieldCol.lg"
+          :md="fieldCol.md"
+          :sm="fieldCol.sm"
+          :xs="fieldCol.xs"
         >
           <floating-label
             v-model="form.customerId"
@@ -65,10 +65,10 @@
         </el-col>
         <el-col
           v-if="has('origin')"
-          :lg="5"
-          :md="8"
-          :sm="12"
-          :xs="24"
+          :lg="fieldCol.lg"
+          :md="fieldCol.md"
+          :sm="fieldCol.sm"
+          :xs="fieldCol.xs"
         >
           <floating-label
             label="出发地"
@@ -79,10 +79,10 @@
         </el-col>
         <el-col
           v-if="has('destination')"
-          :lg="5"
-          :md="8"
-          :sm="12"
-          :xs="24"
+          :lg="fieldCol.lg"
+          :md="fieldCol.md"
+          :sm="fieldCol.sm"
+          :xs="fieldCol.xs"
         >
           <floating-label
             label="目的地"
@@ -93,10 +93,10 @@
         </el-col>
         <el-col
           v-if="has('vehicle')"
-          :lg="4"
-          :md="6"
-          :sm="12"
-          :xs="24"
+          :lg="fieldCol.lg"
+          :md="fieldCol.md"
+          :sm="fieldCol.sm"
+          :xs="fieldCol.xs"
         >
           <floating-label
             label="品牌/车型"
@@ -107,10 +107,10 @@
         </el-col>
         <el-col
           v-if="has('createdRange')"
-          :lg="5"
-          :md="8"
-          :sm="12"
-          :xs="24"
+          :lg="fieldCol.lg"
+          :md="fieldCol.md"
+          :sm="fieldCol.sm"
+          :xs="fieldCol.xs"
         >
           <floating-label
             v-model="form.createdAtRange"
@@ -124,15 +124,11 @@
             end-placeholder="结束"
           />
         </el-col>
-        <!--
-          操作列恒展示；lg=4 比字段窄，目的是把 closed/scheduling 这类
-          字段少的 pool 顶进 1 行（如 closed: 5+5+5+4=19 ≤ 24）。
-        -->
         <el-col
-          :lg="4"
-          :md="6"
-          :sm="12"
-          :xs="24"
+          :lg="actionsCol.lg"
+          :md="actionsCol.md"
+          :sm="actionsCol.sm"
+          :xs="actionsCol.xs"
           class="wb-filter__col-actions"
         >
           <el-form-item label-width="0px">
@@ -146,6 +142,130 @@
           </el-form-item>
         </el-col>
       </el-row>
+      <template v-else>
+      <el-row v-if="hasPrimaryRow" :gutter="10" class="wb-filter__row">
+        <el-col
+          v-if="has('keyword')"
+          :lg="primaryColSpan.lg"
+          :md="primaryColSpan.md"
+          :sm="primaryColSpan.sm"
+          :xs="primaryColSpan.xs"
+        >
+          <floating-label
+            label="请输入运单编号"
+            type="input"
+            v-model.trim="form.keyword"
+            clearable
+          />
+        </el-col>
+        <el-col
+          v-if="has('customer')"
+          :lg="primaryColSpan.lg"
+          :md="primaryColSpan.md"
+          :sm="primaryColSpan.sm"
+          :xs="primaryColSpan.xs"
+        >
+          <floating-label
+            v-model="form.customerId"
+            label="请选择客户"
+            type="select"
+            filterable
+            clearable
+          >
+            <el-option
+              v-for="item in customerOptions"
+              :key="item.id"
+              :label="item.customerName"
+              :value="item.id"
+            />
+          </floating-label>
+        </el-col>
+        <el-col
+          v-if="has('origin')"
+          :lg="primaryColSpan.lg"
+          :md="primaryColSpan.md"
+          :sm="primaryColSpan.sm"
+          :xs="primaryColSpan.xs"
+        >
+          <floating-label
+            label="请输入出发地"
+            type="input"
+            v-model.trim="form.originKeyword"
+            clearable
+          />
+        </el-col>
+        <el-col
+          v-if="has('destination')"
+          :lg="primaryColSpan.lg"
+          :md="primaryColSpan.md"
+          :sm="primaryColSpan.sm"
+          :xs="primaryColSpan.xs"
+        >
+          <floating-label
+            label="请输入目的地"
+            type="input"
+            v-model.trim="form.destinationKeyword"
+            clearable
+          />
+        </el-col>
+      </el-row>
+      <el-row
+        :gutter="10"
+        class="wb-filter__row"
+        :class="{ 'wb-filter__row--second': hasPrimaryRow }"
+      >
+        <el-col
+          v-if="has('vehicle')"
+          :lg="fieldCol.lg"
+          :md="fieldCol.md"
+          :sm="fieldCol.sm"
+          :xs="fieldCol.xs"
+        >
+          <floating-label
+            label="请输入品牌/车型"
+            type="input"
+            v-model.trim="form.vehicleKeyword"
+            clearable
+          />
+        </el-col>
+        <el-col
+          v-if="has('createdRange')"
+          :lg="fieldCol.lg"
+          :md="fieldCol.md"
+          :sm="fieldCol.sm"
+          :xs="fieldCol.xs"
+        >
+          <floating-label
+            v-model="form.createdAtRange"
+            label="请选择运单创建时间"
+            type="date"
+            date-type="daterange"
+            value-format="YYYY-MM-DD"
+            format="YYYY-MM-DD"
+            unlink-panels
+            start-placeholder="开始"
+            end-placeholder="结束"
+          />
+        </el-col>
+        <el-col
+          :lg="actionsCol.lg"
+          :md="actionsCol.md"
+          :sm="actionsCol.sm"
+          :xs="actionsCol.xs"
+          class="wb-filter__col-actions"
+        >
+          <el-form-item label-width="0px">
+            <btn-items
+              :wrap="false"
+              :items="[
+                { preset: 'search', onClick: () => emitSearch() },
+                { preset: 'reset', onClick: () => onReset() }
+              ]"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      </template>
     </el-form>
   </ele-card>
 </template>
@@ -196,6 +316,36 @@
   const [form, resetFields] = useFormData<FilterForm>(buildInitial());
 
   const has = (field: WaybillFilterField) => props.fields.includes(field);
+
+  /** 与其他 pool 四列主筛时单列宽度一致 */
+  const fieldCol = { lg: 6, md: 6, sm: 12, xs: 24 };
+  const actionsCol = { lg: 4, md: 6, sm: 12, xs: 24 };
+
+  /** 全部筛选项 + 操作列能放进一行时使用紧凑布局（如已关闭：6+6+6+4=22） */
+  const useCompactRow = computed(
+    () => props.fields.length * fieldCol.lg + actionsCol.lg <= 24
+  );
+
+  /** 第一行主筛选项：运单编号 / 客户 / 出发地 / 目的地 */
+  const PRIMARY_FIELDS: WaybillFilterField[] = [
+    'keyword',
+    'customer',
+    'origin',
+    'destination'
+  ];
+
+  const primaryFieldCount = computed(
+    () => PRIMARY_FIELDS.filter((field) => has(field)).length
+  );
+
+  const hasPrimaryRow = computed(() => primaryFieldCount.value > 0);
+
+  /** lg/md 下均分 24 栅格，使第一行铺满整行 */
+  const primaryColSpan = computed(() => {
+    const n = primaryFieldCount.value;
+    const span = n > 0 ? Math.floor(24 / n) : 24;
+    return { lg: span, md: span, sm: 12, xs: 24 };
+  });
 
   const customerOptions = ref<CustomerSelectItem[]>([]);
   /** 仅 pool 需要时才请求客户下拉 */
@@ -257,6 +407,11 @@
 <style scoped>
   .wb-filter__row {
     row-gap: 12px;
+  }
+
+  .wb-filter__row--second {
+    margin-top: 12px;
+    padding-top: 2px;
   }
 
   .wb-filter__col-actions :deep(.el-form-item) {
