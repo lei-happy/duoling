@@ -310,3 +310,9 @@ export interface BatchActionResult {
   failed: number;
   failures: Array<{ id: number; error: string }>;
 }
+
+/** 待分配：批量确认承运分配 */
+export interface TaskBatchCarrierAssignmentPayload {
+  ids: number[];
+  carrier: TaskCarrierInfo;
+}

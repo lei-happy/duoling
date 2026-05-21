@@ -778,6 +778,33 @@ class TaskService:
         return task
 
     @staticmethod
+    async def batch_complete_carrier_assignment(
+        db: AsyncSession,
+        ids: List[int],
+        data: TaskCarrierAssignmentInfo,
+    ) -> dict:
+        """批量待分配 → 待派车：逐条复用 complete_carrier_assignment。"""
+        if int(data.carrierType) == 3:
+            raise BizException("社会运力不支持批量分配，请逐单操作")
+        if not ids:
+            return {"success": 0, "failed": 0, "failures": []}
+        success = 0
+        failures: List[dict] = []
+        for task_id in ids:
+            try:
+                await TaskService.complete_carrier_assignment(
+                    db, int(task_id), data,
+                )
+                success += 1
+            except Exception as e:  # noqa: BLE001
+                failures.append({"id": int(task_id), "error": str(e)})
+        return {
+            "success": success,
+            "failed": len(failures),
+            "failures": failures,
+        }
+
+    @staticmethod
     async def assign_carrier(
         db: AsyncSession,
         task_id: int,

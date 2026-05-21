@@ -17,122 +17,24 @@
 -->
 <template>
   <div class="task-pool">
-    <el-alert
-      v-if="listSubset !== 'all'"
-      :type="subsetBanner.type"
-      :closable="false"
-      class="task-pool__alert-banner"
-      show-icon
-      :title="subsetBanner.title"
+    <task-pool-filter
+      class="task-pool__filter"
+      :key="`filter-${tabKey}`"
+      :preset="pool.toolbarPreset ?? 'default'"
+      :pool-key="tabKey"
+      @search="onFilterSearch"
     />
-    <div
-      class="task-pool__toolbar"
-      :class="{
-        'task-pool__toolbar--dispatch':
-          pool.toolbarPreset === 'pending-dispatch'
-      }"
-    >
-      <template v-if="pool.toolbarPreset === 'pending-dispatch'">
-        <el-input
-          v-model="keyword"
-          class="task-pool__toolbar-keyword"
-          placeholder="任务单号 / 运单号 / 任务名称"
-          clearable
-          @keyup.enter="doReload"
-          @clear="doReload"
-        />
-        <el-input
-          v-model="routeOriginKw"
-          placeholder="出发地"
-          clearable
-          class="task-pool__toolbar-field"
-          @keyup.enter="doReload"
-        />
-        <el-input
-          v-model="routeDestKw"
-          placeholder="目的地"
-          clearable
-          class="task-pool__toolbar-field"
-          @keyup.enter="doReload"
-        />
-        <el-select
-          v-model="carrierTypeFilter"
-          placeholder="承运方式"
-          clearable
-          class="task-pool__toolbar-field"
-          @change="doReload"
-        >
-          <el-option
-            v-for="o in CARRIER_TYPE_OPTIONS"
-            :key="o.value"
-            :value="o.value"
-            :label="o.label"
-          />
-        </el-select>
-        <el-select
-          v-if="carrierTypeFilter === 2 || pool.key === 'pending-load'"
-          v-model="carrierIdFilter"
-          remote
-          filterable
-          clearable
-          :remote-method="searchCarriers"
-          placeholder="搜索承运商"
-          class="task-pool__toolbar-field"
-          @change="doReload"
-        >
-          <el-option
-            v-for="c in carrierOptions"
-            :key="c.id"
-            :value="c.id"
-            :label="c.name"
-          />
-        </el-select>
-        <el-date-picker
-          v-model="createdRange"
-          type="daterange"
-          range-separator="至"
-          start-placeholder="制单起"
-          end-placeholder="制单止"
-          value-format="YYYY-MM-DD"
-          unlink-panels
-          class="task-pool__toolbar-dates"
-        />
-        <el-button type="primary" :icon="Search" @click="doReload">
-          查询
-        </el-button>
-        <el-button :icon="RefreshLeft" @click="resetDispatchFilters">
-          重置
-        </el-button>
-      </template>
-      <template v-else>
-        <el-input
-          v-model="keyword"
-          placeholder="任务单号 / 司机 / 车牌 / 承运商"
-          clearable
-          style="width: 260px"
-          @change="doReload"
-        />
-      </template>
-      <el-button
-        v-if="primaryAction && allowBatchPrimary && selections.length > 0"
-        :type="primaryAction.buttonType"
-        :icon="Operation"
-        v-permission="primaryAction.permission"
-        @click="onBatch"
-      >
-        批量{{ primaryAction.label }} ({{ selections.length }})
-      </el-button>
-      <el-button
-        v-if="pool.toolbarPreset !== 'pending-dispatch'"
-        :icon="Refresh"
-        plain
-        @click="doReload"
-      >
-        刷新
-      </el-button>
-    </div>
 
-    <ele-pro-table
+    <ele-card :body-style="{ paddingTop: '8px' }">
+      <el-alert
+        v-if="listSubset !== 'all'"
+        :type="subsetBanner.type"
+        :closable="false"
+        class="task-pool__alert-banner"
+        show-icon
+        :title="subsetBanner.title"
+      />
+      <ele-pro-table
       ref="tableRef"
       row-key="id"
       :columns="columns"
@@ -144,6 +46,30 @@
       :cache-key="`OperationTaskPool-${tabKey}-${listSubset}`"
       @done="onTableDone"
     >
+      <template #toolbar>
+        <el-button
+          v-if="showBatchToolbar"
+          type="primary"
+          plain
+          class="ele-btn-icon"
+          :icon="Operation"
+          :disabled="selections.length === 0"
+          v-permission="primaryAction!.permission"
+          @click="onBatch"
+        >
+          批量{{ primaryAction!.label }} ({{ selections.length }})
+        </el-button>
+        <el-button
+          v-if="showToolbarRefresh"
+          :icon="Refresh"
+          plain
+          class="ele-btn-icon"
+          @click="doReload"
+        >
+          刷新
+        </el-button>
+      </template>
+
       <template #waybillCount="{ row }">
         {{ row.waybillCount ?? 0 }}
       </template>
@@ -314,6 +240,7 @@
         </div>
       </template>
     </ele-pro-table>
+    </ele-card>
 
     <waybill-cargoes-detail
       v-model:visible="cargoDetailVisible"
@@ -323,36 +250,25 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, nextTick, onMounted, ref, watch } from 'vue';
+  import { computed, nextTick, ref, watch } from 'vue';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
     DatasourceFunction,
     DoneParams
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import {
-    Operation,
-    Refresh,
-    RefreshLeft,
-    Right,
-    Search
-  } from '@element-plus/icons-vue';
+  import { Operation, Refresh, Right } from '@element-plus/icons-vue';
   import { pageTasks, listTaskWaybillItems } from '@/api/operation/task';
   import type { Task, TaskParam } from '@/api/operation/task/model';
   import type { Waybill } from '@/api/waybill/model';
   import { formatDateTime } from '@/utils/date-util';
   import { EleMessage } from 'ele-admin-plus';
-  import {
-    CARRIER_TYPE_MAP,
-    CARRIER_TYPE_OPTIONS,
-    TASK_STATUS_MAP
-  } from '../../task/status-config';
-  import { selectCarriers } from '@/api/partner/carrier';
-  import type { CarrierSelectItem } from '@/api/partner/carrier/model';
+  import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from '../../task/status-config';
   import {
     TASK_ACTION_CONFIGS,
     shouldShowPlanRoute
   } from '../../task/task-actions';
   import type { TaskActionConfig } from '../../task/task-actions';
+  import TaskPoolFilter from './task-pool-filter.vue';
   import WaybillCargoesDetail from '../../waybill/components/waybill-cargoes-detail.vue';
   import { buildWaybillShapeForTaskCargoDetail } from '../task-cargo-detail-adapter';
   import {
@@ -384,28 +300,7 @@
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const selections = ref<Task[]>([]);
-  const keyword = ref('');
-  const routeOriginKw = ref('');
-  const routeDestKw = ref('');
-  const createdRange = ref<[string, string] | null>(null);
-  const carrierTypeFilter = ref<number | undefined>(undefined);
-  const carrierIdFilter = ref<number | undefined>(undefined);
-  const carrierOptions = ref<
-    Array<{ id: number; name: string; shortName?: string }>
-  >([]);
-
-  const searchCarriers = async (kw: string) => {
-    try {
-      const res: CarrierSelectItem[] = await selectCarriers(kw);
-      carrierOptions.value = (res || []).map((c) => ({
-        id: c.id,
-        name: c.shortName ? `${c.shortName} · ${c.carrierName}` : c.carrierName,
-        shortName: c.shortName
-      }));
-    } catch {
-      carrierOptions.value = [];
-    }
-  };
+  const filterWhere = ref<Partial<TaskParam>>({});
 
   const cargoDetailVisible = ref(false);
   const cargoDetailWaybill = ref<Waybill | null>(null);
@@ -482,27 +377,29 @@
 
   const planRouteAction = TASK_ACTION_CONFIGS['plan-route'];
 
-  const listExtraParams = (): Partial<TaskParam> => {
-    if (pool.value.toolbarPreset !== 'pending-dispatch') return {};
-    const r = createdRange.value;
-    return {
-      originKeyword: routeOriginKw.value?.trim() || undefined,
-      destinationKeyword: routeDestKw.value?.trim() || undefined,
-      createdAtStart: r?.[0] || undefined,
-      createdAtEnd: r?.[1] || undefined,
-      carrierType: carrierTypeFilter.value || undefined,
-      carrierId: carrierIdFilter.value || undefined
-    };
+  /** 筛选区已有搜索/重置，且表格工具栏自带刷新，无需额外「刷新」按钮 */
+  const TOOLBAR_REFRESH_HIDDEN_POOL_KEYS = ['on-way', 'pending-sign'] as const;
+
+  const showToolbarRefresh = computed(
+    () =>
+      pool.value.toolbarPreset !== 'pending-dispatch' &&
+      !TOOLBAR_REFRESH_HIDDEN_POOL_KEYS.includes(
+        pool.value.key as (typeof TOOLBAR_REFRESH_HIDDEN_POOL_KEYS)[number]
+      )
+  );
+
+  const showBatchToolbar = computed(
+    () => Boolean(primaryAction.value && allowBatchPrimary.value)
+  );
+
+  const onFilterSearch = (where: Partial<TaskParam>) => {
+    filterWhere.value = where;
+    doReload();
   };
 
-  const resetDispatchFilters = () => {
-    keyword.value = '';
-    routeOriginKw.value = '';
-    routeDestKw.value = '';
-    createdRange.value = null;
-    carrierTypeFilter.value = undefined;
-    carrierIdFilter.value = undefined;
-    doReload();
+  const filterParamsWithoutKeyword = (): Omit<Partial<TaskParam>, 'keyword'> => {
+    const { keyword: _k, ...rest } = filterWhere.value;
+    return rest;
   };
 
   /** 状态 Tag 后缀进度文本：已装/已卸 X/Y */
@@ -528,8 +425,8 @@
   const datasource: DatasourceFunction = ({ pages }) => {
     const st = pool.value.status;
     const statusArr = Array.isArray(st) ? st : [st];
-    const extra = listExtraParams();
-    const kw = keyword.value || undefined;
+    const kw = filterWhere.value.keyword;
+    const restExtra = filterParamsWithoutKeyword();
 
     if (statusArr.length === 1) {
       const s0 = statusArr[0]!;
@@ -541,7 +438,7 @@
         status: s0,
         ...(overdue ? { onlyOverdue: true } : {}),
         ...(normalF ? { onlyNormal: true } : {}),
-        ...extra
+        ...restExtra
       }).then((res) => ({
         list: res?.list ?? [],
         count: res?.count ?? 0
@@ -553,7 +450,7 @@
         ...pages,
         keyword: kw,
         inTransitOverdue: true,
-        ...extra
+        ...restExtra
       }).then((res) => ({
         list: res?.list ?? [],
         count: res?.count ?? 0
@@ -565,7 +462,7 @@
         ...pages,
         keyword: kw,
         inTransitOnlyNormal: true,
-        ...extra
+        ...restExtra
       }).then((res) => ({
         list: res?.list ?? [],
         count: res?.count ?? 0
@@ -579,7 +476,7 @@
           limit: 100,
           keyword: kw,
           status: s,
-          ...extra
+          ...restExtra
         })
       )
     ).then((results) => {
@@ -633,23 +530,8 @@
     () => props.tabKey,
     (next, prev) => {
       if (prev !== undefined && next !== prev) {
-        keyword.value = '';
-        routeOriginKw.value = '';
-        routeDestKw.value = '';
-        createdRange.value = null;
-        carrierTypeFilter.value = undefined;
-        carrierIdFilter.value = undefined;
+        filterWhere.value = {};
         selections.value = [];
-      }
-      doReload();
-    }
-  );
-
-  watch(
-    () => carrierTypeFilter.value,
-    (v) => {
-      if (v !== 2) {
-        carrierIdFilter.value = undefined;
       }
     }
   );
@@ -658,10 +540,6 @@
     () => props.reloadToken,
     () => doReload()
   );
-
-  onMounted(() => {
-    nextTick(() => doReload());
-  });
 
   const onBatch = () => {
     if (!primaryAction.value || selections.value.length === 0) return;
@@ -709,29 +587,8 @@
       margin-bottom: 10px;
     }
 
-    &__toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 8px;
-
-      &--dispatch {
-        row-gap: 10px;
-      }
-    }
-
-    &__toolbar-keyword {
-      width: min(240px, 100%);
-      min-width: 180px;
-    }
-
-    &__toolbar-field {
-      width: 140px;
-    }
-
-    &__toolbar-dates {
-      width: 260px;
+    &__filter {
+      margin-bottom: 10px;
     }
   }
 

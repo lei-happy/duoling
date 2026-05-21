@@ -209,6 +209,18 @@ class TaskBatchStatusRequest(BaseModel):
     remark: Optional[str] = None
 
 
+class TaskBatchCarrierAssignmentRequest(BaseModel):
+    """待分配：批量确认承运方式（仅自有车 / 承运商）。"""
+    ids: List[int] = Field(min_length=1)
+    carrier: TaskCarrierAssignmentInfo
+
+    @model_validator(mode="after")
+    def _batch_carrier_type(self):
+        if int(self.carrier.carrierType) == 3:
+            raise ValueError("社会运力不支持批量分配，请逐单操作")
+        return self
+
+
 class TaskListItemOut(BaseModel):
     """列表行（不含 segments / items 详情）"""
     id: int

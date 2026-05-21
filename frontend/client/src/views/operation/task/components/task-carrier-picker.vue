@@ -7,7 +7,7 @@
       class="carrier-picker__radio"
     >
       <el-radio-button
-        v-for="o in CARRIER_TYPE_OPTIONS"
+        v-for="o in carrierTypeOptions"
         :key="o.value"
         :value="o.value"
       >
@@ -161,7 +161,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { reactive, ref, watch } from 'vue';
+  import { computed, reactive, ref, watch } from 'vue';
   import type { TaskCarrierInfo } from '@/api/operation/task/model';
   import { pageCapacities } from '@/api/capacity/self-capacity/list';
   import type { Capacity } from '@/api/capacity/self-capacity/list/model';
@@ -179,6 +179,8 @@
       simpleMode?: boolean;
       /** 锁定承运方式：派车环节使用，禁止重新选择 carrierType。 */
       lockType?: boolean;
+      /** 可选承运方式（默认全部）；批量分配时传 [1, 2] 排除社会运力。 */
+      allowedCarrierTypes?: number[];
     }>(),
     {
       simpleMode: false,
@@ -188,6 +190,21 @@
   const emit = defineEmits<{
     (e: 'update:modelValue', value: TaskCarrierInfo): void;
   }>();
+
+  const carrierTypeOptions = computed(() => {
+    const allowed = props.allowedCarrierTypes;
+    if (!allowed?.length) return CARRIER_TYPE_OPTIONS;
+    return CARRIER_TYPE_OPTIONS.filter((o) => allowed.includes(o.value));
+  });
+
+  const ensureAllowedCarrierType = () => {
+    const allowed = props.allowedCarrierTypes;
+    if (!allowed?.length) return;
+    if (!allowed.includes(local.carrierType)) {
+      local.carrierType = allowed[0]!;
+      onTypeChange();
+    }
+  };
 
   const local = reactive<TaskCarrierInfo>({
     carrierType: 1,
@@ -209,6 +226,12 @@
       if (!v) return;
       Object.assign(local, v);
     },
+    { deep: true }
+  );
+
+  watch(
+    () => props.allowedCarrierTypes,
+    () => ensureAllowedCarrierType(),
     { deep: true }
   );
 
@@ -275,6 +298,7 @@
 
   /** 触发一次初始搜索（弹窗打开时调用） */
   const init = () => {
+    ensureAllowedCarrierType();
     if (local.carrierType === 1 && capacities.value.length === 0) {
       searchCapacities('');
     }

@@ -1,14 +1,19 @@
 <!--
   调度工作台 KPI：五阶段卡片（待分配 / 待派车 / 待装车 / 在途中 / 待签收）
 
+  - 置于页面背景之上（由 index.vue 外层挂载），与下方筛选/列表白卡片区隔
   - 主区点击 = 本阶段全部任务
   - 标题同行右侧「常 / 警」药丸 = 正常 / 预警快速筛选
+  - 栅格固定 5 列、永远单行（对齐运单工作台卡片布局）
 
   阶段「待结算」已下线：财务结算与 task.status 解耦，结算单走财务工作台。
   详见《02.运单与任务单状态机联动设计.md》。
 -->
 <template>
-  <div class="kpi-cards">
+  <div
+    class="kpi-cards"
+    :style="{ '--kpi-cards-count': cards.length }"
+  >
     <div
       v-for="card in cards"
       :key="card.key"
@@ -213,21 +218,8 @@
 <style lang="scss" scoped>
   .kpi-cards {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 14px;
-    margin-bottom: 16px;
-  }
-
-  @media (max-width: 1400px) {
-    .kpi-cards {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 720px) {
-    .kpi-cards {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+    grid-template-columns: repeat(var(--kpi-cards-count, 5), minmax(0, 1fr));
+    gap: 10px;
   }
 
   .kpi-card {

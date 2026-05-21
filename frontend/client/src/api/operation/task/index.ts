@@ -6,6 +6,7 @@ import type {
   RouteDistanceLookup,
   Task,
   TaskBatchStatusPayload,
+  TaskBatchCarrierAssignmentPayload,
   TaskCarrierInfo,
   TaskCreatePayload,
   TaskFinanceSummaryItem,
@@ -106,6 +107,18 @@ export async function completeCarrierAssignment(
 ) {
   const res = await request.post<ApiResult<Task>>(
     `/business/task/${id}/complete-carrier-assignment`,
+    data
+  );
+  if (res.data.code === 0) return res.data.data;
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 待分配 → 待派车：批量确认承运方式（仅自有车 / 承运商） */
+export async function batchCompleteCarrierAssignment(
+  data: TaskBatchCarrierAssignmentPayload
+) {
+  const res = await request.post<ApiResult<BatchActionResult>>(
+    '/business/task/batch-complete-carrier-assignment',
     data
   );
   if (res.data.code === 0) return res.data.data;

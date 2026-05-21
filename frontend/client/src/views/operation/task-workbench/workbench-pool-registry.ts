@@ -75,11 +75,12 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     label: '待分配',
     status: -1,
     primaryActionKey: 'assign-carrier',
-    allowBatchPrimary: false,
+    allowBatchPrimary: true,
     quantityOpenCargoDetail: true,
     toolbarPreset: 'pending-dispatch',
     actionColumnWidth: 200,
     columns: [
+      'selection',
       'taskNo',
       'route',
       'waybillCount',

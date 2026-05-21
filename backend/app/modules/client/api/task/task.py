@@ -27,6 +27,7 @@ from app.modules.client.schemas.task.task import (
     TaskAssignCarrierRequest,
     TaskCarrierAssignmentInfo,
     TaskBatchStatusRequest,
+    TaskBatchCarrierAssignmentRequest,
     TaskCancelRequest,
     TaskCreate,
     TaskForceCancelRequest,
@@ -375,6 +376,25 @@ async def complete_carrier_assignment(
     _require_tenant(current_user)
     task = await TaskService.complete_carrier_assignment(db, task_id, data)
     return success(data=await _task_detail_dump(db, task))
+
+
+@router.post("/batch-complete-carrier-assignment")
+@operation_log(
+    module="运输任务单",
+    action="批量确认承运分配",
+    description="待分配任务批量确认承运方后进入待派车",
+)
+async def batch_complete_carrier_assignment(
+    request: Request,
+    data: TaskBatchCarrierAssignmentRequest,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    result = await TaskService.batch_complete_carrier_assignment(
+        db, data.ids, data.carrier,
+    )
+    return success(data=result)
 
 
 @router.post("/{task_id}/cancel")

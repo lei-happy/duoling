@@ -7,7 +7,7 @@
 <template>
   <action-assign-carrier
     :visible="actionDialog === 'assign-carrier'"
-    :task="singleTask"
+    :tasks="targets"
     @update:visible="(v) => onDialogVisible('assign-carrier', v)"
     @done="emit('done')"
   />

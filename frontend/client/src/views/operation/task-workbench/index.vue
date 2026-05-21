@@ -1,32 +1,33 @@
 <!--
   调度工作台 - 按状态聚合的"待我处理"驾驶舱
 
-  布局：
-    - 顶部 KPI 卡片区（点击切换列表筛选状态）
-    - 下方标准列表：状态池表格 + 行内主按钮（语义化）+ 批量主按钮
+  布局（对齐运单工作台）：
+    1. 顶部 5 张阶段卡（待分配 / 待派车 / 待装车 / 在途中 / 待签收）
+       置于「页面背景」之上，与下方白色卡片区隔
+    2. 中部 筛选栏（task-pool-filter）
+    3. 下部 列表 + 行内主按钮 + 批量主按钮
 -->
 <template>
   <ele-page>
-    <ele-card :body-style="{ paddingTop: '12px' }">
-      <kpi-cards
-        :stats="stats"
-        :loading="statsLoading"
-        :active-card-key="activeKpiCardKey"
-        @select-card="onSelectCard"
-      />
+    <kpi-cards
+      class="workbench-page__cards"
+      :stats="stats"
+      :loading="statsLoading"
+      :active-card-key="activeKpiCardKey"
+      @select-card="onSelectCard"
+    />
 
-      <task-pool
-        v-if="currentTab"
-        :key="`${activeTab}-${listSubset}`"
-        :tab-key="activeTab"
-        :list-subset="listSubset"
-        :reload-token="reloadToken"
-        @action="onRowAction"
-        @batch-action="onBatchAction"
-        @open-detail="onOpenDetail"
-        @sync-stats="loadStats"
-      />
-    </ele-card>
+    <task-pool
+      v-if="currentTab"
+      :key="`${activeTab}-${listSubset}`"
+      :tab-key="activeTab"
+      :list-subset="listSubset"
+      :reload-token="reloadToken"
+      @action="onRowAction"
+      @batch-action="onBatchAction"
+      @open-detail="onOpenDetail"
+      @sync-stats="loadStats"
+    />
 
     <!-- 任务单详情抽屉 -->
     <task-detail
@@ -158,13 +159,6 @@
   };
 
   const onBatchAction = async (rows: Task[], act: TaskActionConfig) => {
-    if (act.key === 'assign-carrier') {
-      EleMessage.warning({
-        message: '分配承运需确认承运方式，请逐单操作',
-        plain: true
-      });
-      return;
-    }
     if (act.key === 'dispatch') {
       EleMessage.warning({
         message: '派车涉及承运方选择，请逐单操作',
@@ -312,3 +306,9 @@
     refreshWorkbench();
   });
 </script>
+
+<style scoped>
+  .workbench-page__cards {
+    margin-bottom: 12px;
+  }
+</style>
