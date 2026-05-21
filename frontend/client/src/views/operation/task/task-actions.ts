@@ -14,14 +14,12 @@ export type TaskActionKey =
   | 'confirm-load' // 确认装车 (1 → 2)
   | 'depart' // 标记出发 (2 → 3)
   | 'confirm-arrive' // 确认到达 (3 → 4)
-  | 'confirm-sign' // 确认签收 (4 → 5)
-  | 'create-settlement' // 生成最终结算单（不直接改 task.status，结算单已支付后由后端推进到 6）
-  | 'close' // 关闭任务 (5/6 → 7)
+  | 'confirm-sign' // 确认签收：item 级签收，全部签收后聚合驱动 task 4→5
+  | 'close' // 关闭任务 (5 → 7)
   // —— 逆向通道（参考 02.运单与任务单状态机联动设计.md §4.5）
   | 'revert-load' // 撤销装车 (2 → 1)
   | 'revert-depart' // 撤回出发 (3 → 2)
   | 'revert-arrive' // 撤回到达 (4 → 3)
-  | 'revert-sign' // 撤销签收 (5 → 4)
   | 'force-cancel'; // 强制取消（2/3/4 → 9，线下取消）
 
 export interface TaskActionConfig {
@@ -99,13 +97,6 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     permission: 'operation:task:confirm-sign',
     dialog: 'confirm-sign'
   },
-  'create-settlement': {
-    key: 'create-settlement',
-    label: '生成结算单',
-    buttonType: 'success',
-    permission: 'operation:task-finance:add',
-    openSettlement: true
-  },
   close: {
     key: 'close',
     label: '关闭任务',
@@ -141,15 +132,6 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     revertFrom: 4,
     revertTo: 3
   },
-  'revert-sign': {
-    key: 'revert-sign',
-    label: '撤销签收',
-    buttonType: 'warning',
-    permission: 'operation:task:revert-sign',
-    dialog: 'revert',
-    revertFrom: 5,
-    revertTo: 4
-  },
   'force-cancel': {
     key: 'force-cancel',
     label: '强制取消',
@@ -161,10 +143,9 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
 
 /**
  * 根据 status 取下一步主动作。
- * - 5 (已签收)：默认主动作是「生成结算单」（财务关心）；
- *   关闭任务作为兜底动作放到下拉/列表的次要位置（caller 自己处理）。
- * - 6 (已结算)：主动作是「关闭任务」。
  * - -1,0,1,2,3,4：分别对应分配承运 / 派车 / 装车 / 出发 / 到达 / 签收。
+ * - 4→5 已签收：由 item 全签收聚合触发，"确认签收"在 status=4 阶段操作。
+ * - 5 (已签收)：主动作是「关闭任务」；结算单走财务工作台，不在主动作中暴露。
  * - 7,9：无主动作。
  */
 const PRIMARY_BY_STATUS: Record<number, TaskActionKey | null> = {
@@ -174,8 +155,7 @@ const PRIMARY_BY_STATUS: Record<number, TaskActionKey | null> = {
   2: 'depart',
   3: 'confirm-arrive',
   4: 'confirm-sign',
-  5: 'create-settlement',
-  6: 'close',
+  5: 'close',
   7: null,
   9: null
 };
@@ -189,14 +169,13 @@ export const getPrimaryTaskAction = (
 };
 
 /**
- * 部分状态除主动作外，还有次要动作（如 5 已签收 既能生成结算单也能直接关闭）。
- * 返回不含主动作的次要动作列表。
+ * 部分状态除主动作外，还有次要动作。
+ * 当前任务侧无额外次要动作；财务相关入口（生成结算单等）一律由财务工作台触发。
  */
 export const getSecondaryTaskActions = (
   status: number | null | undefined
 ): TaskActionConfig[] => {
   if (status === null || status === undefined) return [];
-  if (status === 5) return [TASK_ACTION_CONFIGS.close];
   return [];
 };
 
@@ -204,17 +183,17 @@ export const getSecondaryTaskActions = (
  * 当前状态可用的逆向动作（撤销/强制取消）。
  *
  * 与 §4.5 反向跳转矩阵一致：
- * - 1 → 撤销装车（1→0 在主动作里走"撤回派车"，此处不重复）
- * - 2 → 撤销装车
+ * - 2 → 撤销装车；强制取消
  * - 3 → 撤回出发；强制取消
  * - 4 → 撤回到达；强制取消
- * - 5 → 撤销签收（撤销结算单走财务侧）
+ *
+ * 说明：5 已签收 由 item 全签收聚合驱动，回退路径走 item 级"撤销签收"
+ * （修改对应 item.status 3→2），不在任务级 revert 列表里暴露。
  */
 const REVERSE_BY_STATUS: Record<number, TaskActionKey[]> = {
   2: ['revert-load', 'force-cancel'],
   3: ['revert-depart', 'force-cancel'],
-  4: ['revert-arrive', 'force-cancel'],
-  5: ['revert-sign']
+  4: ['revert-arrive', 'force-cancel']
 };
 
 export const getReverseTaskActions = (

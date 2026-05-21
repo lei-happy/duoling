@@ -2,7 +2,7 @@
   运单工作台 KPI 卡片
   ====================
 
-  - 7 张状态卡：待确认 / 待调度 / 调度中 / 运输中 / 已送达 / 已完成 / 已关闭
+  - 7 张状态卡：待确认 / 待调度 / 调度中 / 运输中 / 待签收 / 已签收 / 已关闭
   - 仅展示主数字 + 标题（"简单统计"），不做"常 / 警"分桶
   - 点击卡片 emit `selectCard` 切换列表
 
@@ -72,14 +72,14 @@
     closed: 'closed'
   };
 
-  /** 副标题文案（业务语义提示） */
+  /** 副标题文案（业务语义提示，对客户的票据流转角度） */
   const SUB_TEXT: Record<string, string> = {
     'pending-confirm': '新建待运营确认',
     'pending-dispatch': '待挂接到任务单',
     scheduling: '部分挂接进行中',
     'in-transit': '部分或全部在途',
-    delivered: '全部货物已到达',
-    completed: '全部签收',
+    delivered: '全部到达待签收',
+    completed: '客户全部签收',
     closed: '终态'
   };
 

@@ -6,7 +6,11 @@
  *
  * 状态空间参考 backend WaybillStateMachine + 实际落库行为：
  *   0 待确认（新建即落 0，需要运营点击「确认」推进到 1，UI 上独立出卡）
- *   1 待调度 / 2 调度中 / 3 运输中 / 4 已送达 / 5 已完成 / 6 已关闭
+ *   1 待调度 / 2 调度中 / 3 运输中 / 4 待签收 / 5 已签收 / 6 已关闭
+ *
+ * 4 待签收 / 5 已签收 文案为 2026-05 调整后，与 task.status 解耦后强调"客户视角的票据流转"：
+ *   - 4 待签收 = 全量货物已到达，等客户签收
+ *   - 5 已签收 = 全量货物已签收，运单对客户层面已闭环
  */
 
 import type { Columns } from 'ele-admin-plus/es/ele-pro-table/types';
@@ -221,7 +225,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
   },
   {
     key: 'delivered',
-    label: '已送达',
+    label: '待签收',
     status: 4,
     filterFields: [
       'keyword',
@@ -249,7 +253,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
   },
   {
     key: 'completed',
-    label: '已完成',
+    label: '已签收',
     status: 5,
     filterFields: [
       'keyword',

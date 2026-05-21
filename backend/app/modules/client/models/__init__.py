@@ -61,8 +61,10 @@ from app.modules.client.models.waybill.waybill_import import (
 )
 from app.modules.client.models.task import (
     Task,
-    TaskSegment,
+    TaskDispatchOrder,
     TaskWaybillItem,
+    TaskLoadingRecord,
+    TaskLoadingRecordItem,
     TaskFinanceDoc,
     TaskFinanceItem,
 )
@@ -118,8 +120,10 @@ __all__ = [
     "WaybillImportBatch",
     "WaybillImportRow",
     "Task",
-    "TaskSegment",
+    "TaskDispatchOrder",
     "TaskWaybillItem",
+    "TaskLoadingRecord",
+    "TaskLoadingRecordItem",
     "TaskFinanceDoc",
     "TaskFinanceItem",
     "Capacity",

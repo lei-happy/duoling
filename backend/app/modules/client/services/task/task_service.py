@@ -22,7 +22,7 @@ from app.modules.client.models.capacity.self_capacity.capacity import Capacity
 from app.modules.client.models.partner.carrier import Carrier
 from app.modules.client.models.route import Route
 from app.modules.client.models.task.task import Task
-from app.modules.client.models.task.task_segment import TaskSegment
+from app.modules.client.models.task.task_dispatch_order import TaskDispatchOrder
 from app.modules.client.models.task.task_waybill_item import TaskWaybillItem
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.schemas.task.task import (
@@ -34,7 +34,9 @@ from app.modules.client.schemas.task.task import (
     TaskStatusUpdate,
     TaskUpdate,
 )
-from app.modules.client.schemas.task.task_segment import TaskSegmentIn
+from app.modules.client.schemas.task.task_dispatch_order import (
+    TaskDispatchOrderIn,
+)
 from app.modules.client.services.state_machine.task_state_machine import (
     TASK_STATUS_LABELS,
     TaskStateMachine,
@@ -202,26 +204,27 @@ class TaskService:
         return await TaskService._resolve_carrier_snapshot(db, info)
 
     # ------------------------------------------------------------------
-    # 分段
+    # 调令（原"分段"）
     # ------------------------------------------------------------------
     @staticmethod
-    async def _replace_segments(
+    async def _replace_dispatch_orders(
         db: AsyncSession,
         task: Task,
-        segments_in: List[TaskSegmentIn],
-    ) -> List[TaskSegment]:
+        orders_in: List[TaskDispatchOrderIn],
+    ) -> List[TaskDispatchOrder]:
         # 软删现有
-        old = await TaskService.list_segments(db, task.id)
+        old = await TaskService.list_dispatch_orders(db, task.id)
         for s in old:
             s.is_deleted = 1
         await db.flush()
 
-        ordered = sorted(segments_in, key=lambda x: x.segmentNo)
-        rows: List[TaskSegment] = []
+        ordered = sorted(orders_in, key=lambda x: x.orderNo)
+        rows: List[TaskDispatchOrder] = []
         for s in ordered:
-            row = TaskSegment(
+            row = TaskDispatchOrder(
                 task_id=task.id,
-                segment_no=s.segmentNo,
+                order_no=s.orderNo,
+                dispatch_type=int(s.dispatchType or 1),
                 from_location=s.fromLocation,
                 from_code=s.fromCode,
                 from_region_id=s.fromRegionId,
@@ -238,11 +241,13 @@ class TaskService:
             rows.append(row)
         await db.flush()
 
-        # 主表线路冗余 + 段数
+        # 主表线路冗余 + 调令数
         task.segment_count = len(rows)
         if rows:
-            head = rows[0]
-            tail = rows[-1]
+            # 取首条"重驶"调令的起点 + 末条"重驶"调令的终点；若无重驶则用第一/最后
+            heavy = [r for r in rows if int(r.dispatch_type or 1) == 1]
+            head = heavy[0] if heavy else rows[0]
+            tail = heavy[-1] if heavy else rows[-1]
             task.origin = head.from_location
             task.origin_code = head.from_code
             task.origin_region_id = head.from_region_id
@@ -255,6 +260,9 @@ class TaskService:
                 task.planned_arrive_time = tail.planned_arrive_time
         await db.flush()
         return rows
+
+    # 兼容旧调用方
+    _replace_segments = _replace_dispatch_orders
 
     @staticmethod
     async def _fill_route_from_waybills(
@@ -328,7 +336,7 @@ class TaskService:
                 f"任务单当前状态「{_STATUS_LABELS.get(task.status, task.status)}」"
                 f"不允许调整路线（仅待分配/待派车/已派车/已装车可规划）"
             )
-        await TaskService._replace_segments(db, task, data.segments)
+        await TaskService._replace_dispatch_orders(db, task, data.segments)
         await db.refresh(task)
         return task
 
@@ -373,36 +381,40 @@ class TaskService:
         }
 
     @staticmethod
-    async def list_segments(
+    async def list_dispatch_orders(
         db: AsyncSession, task_id: int
-    ) -> List[TaskSegment]:
+    ) -> List[TaskDispatchOrder]:
         r = await db.execute(
-            select(TaskSegment).where(
-                TaskSegment.task_id == task_id,
-                TaskSegment.is_deleted == 0,
-            ).order_by(TaskSegment.segment_no.asc())
+            select(TaskDispatchOrder).where(
+                TaskDispatchOrder.task_id == task_id,
+                TaskDispatchOrder.is_deleted == 0,
+            ).order_by(TaskDispatchOrder.order_no.asc())
         )
         return list(r.scalars().all())
 
+    # 兼容旧调用方（API 路径仍可能使用 list_segments）
+    list_segments = list_dispatch_orders
+
     @staticmethod
-    async def update_segment_status(
+    async def update_dispatch_order_status(
         db: AsyncSession,
-        seg_id: int,
+        order_id: int,
         status: int,
         actual_load_time: Optional[datetime] = None,
         actual_arrive_time: Optional[datetime] = None,
         remark: Optional[str] = None,
-    ) -> TaskSegment:
+    ) -> TaskDispatchOrder:
         if status not in (0, 1, 2, 3, 4):
-            raise BizException(f"非法段状态 {status}")
+            raise BizException(f"非法调令状态 {status}")
         r = await db.execute(
-            select(TaskSegment).where(
-                TaskSegment.id == seg_id, TaskSegment.is_deleted == 0,
+            select(TaskDispatchOrder).where(
+                TaskDispatchOrder.id == order_id,
+                TaskDispatchOrder.is_deleted == 0,
             )
         )
         seg = r.scalar_one_or_none()
         if not seg:
-            raise BizException("分段不存在")
+            raise BizException("调令不存在")
         seg.status = status
         if actual_load_time is not None:
             seg.actual_load_time = actual_load_time
@@ -412,6 +424,8 @@ class TaskService:
             seg.remark = remark
         await db.flush()
         return seg
+
+    update_segment_status = update_dispatch_order_status
 
     # ------------------------------------------------------------------
     # CRUD
@@ -491,8 +505,8 @@ class TaskService:
             assert last_err is not None
             raise BizException("任务单号生成冲突，请重试") from last_err
 
-        # 4. 分段（允许为空：表示"配载草稿"，由 _fill_route_from_waybills 兜底起终）
-        await TaskService._replace_segments(db, task, data.segments)
+        # 4. 调令（允许为空：表示"配载草稿"，由 _fill_route_from_waybills 兜底起终）
+        await TaskService._replace_dispatch_orders(db, task, data.segments)
 
         # 5. 货物挂接
         await TaskWaybillItemService.add_items(db, task, data.waybillItems)
@@ -542,10 +556,10 @@ class TaskService:
 
         if data.segments is not None:
             if data.segments:
-                nos = [s.segmentNo for s in data.segments]
+                nos = [s.orderNo for s in data.segments]
                 if sorted(nos) != list(range(1, len(nos) + 1)):
-                    raise BizException("段序号必须从 1 开始连续")
-            await TaskService._replace_segments(db, task, data.segments)
+                    raise BizException("调令序号必须从 1 开始连续")
+            await TaskService._replace_dispatch_orders(db, task, data.segments)
 
         if data.waybillItems is not None:
             if len(data.waybillItems) < 1:
@@ -567,8 +581,8 @@ class TaskService:
         if int(task.status) not in (-1, 0, 9):
             raise BizException("仅「待分配/待派车/已取消」状态的任务单允许删除")
 
-        # 软删段
-        for s in await TaskService.list_segments(db, task_id):
+        # 软删调令
+        for s in await TaskService.list_dispatch_orders(db, task_id):
             s.is_deleted = 1
 
         # 释放并软删挂接
@@ -655,34 +669,42 @@ class TaskService:
         task_id: int,
         data: TaskStatusUpdate,
     ) -> Task:
+        """状态推进的人工入口。
+
+        合法路径仅有：0→1（派车）/ 1→0（撤回派车）/ 2→3（出发）/ 5→7（关闭）/ ?→9（取消）。
+        1→2（已装车）与 3→4（已到达）已下沉为聚合态：
+        - 调度员通过 ``POST /loading-records`` 添加装/卸车事件，
+          由 ``TaskWaybillItemService._aggregate_load_status_from_items`` 自动写入。
+        - 调用 ``update_status(task, status=2)`` / ``update_status(task, status=4)``
+          会被 ``TaskStateMachine.assert_transition`` 直接拒绝。
+        """
         task = await TaskService.get_or_404(db, task_id)
         old = int(task.status)
         new = int(data.status)
         TaskStateMachine.assert_transition(old, new)
 
         task.status = new
-        if data.actualLoadTime is not None and new in (2, 3):
+        if data.actualLoadTime is not None and new == 3:
+            # 出发动作携带的"实际装车时间"用于补录历史装车数据兜底；
+            # 正常流程已由装车记录写入。
             task.actual_load_time = data.actualLoadTime
-        if data.actualArriveTime is not None and new in (4, 5):
-            task.actual_arrive_time = data.actualArriveTime
         if data.remark:
             existing = (task.remark or "").rstrip()
             task.remark = (existing + "\n" if existing else "") + data.remark
         await db.flush()
 
         # 正向推进：Task → Item 同步 → 聚合 Waybill
+        # - 4→5（已签收）由 item 全签收聚合自动写入，不在此处理
+        # - 1→2 / 3→4 已经被 assert_transition 拦截，不会到这里
         if new == 9:
             # 走 cancel 路径不应进到这里；保底兜底
             await TaskWaybillItemService.release_all_items_of_task(db, task)
         else:
-            signed_at_value = None
-            if new == 5:
-                signed_at_value = data.signedAt or datetime.now()
             await TaskWaybillItemService.propagate_to_items(
                 db, task,
-                loaded_at=data.actualLoadTime if new in (2, 3) else None,
-                unloaded_at=data.actualArriveTime if new in (4, 5) else None,
-                signed_at=signed_at_value,
+                loaded_at=data.actualLoadTime if new == 3 else None,
+                unloaded_at=None,
+                signed_at=None,
             )
             await WaybillStatusAggregator.aggregate_by_task(
                 db, task.id, allow_downgrade=False,
@@ -789,6 +811,8 @@ class TaskService:
         page_size: int = 20,
         keyword: Optional[str] = None,
         carrier_type: Optional[int] = None,
+        carrier_id: Optional[int] = None,
+        capacity_id: Optional[int] = None,
         status: Optional[int] = None,
         customer_id: Optional[int] = None,
         origin_keyword: Optional[str] = None,
@@ -828,6 +852,12 @@ class TaskService:
         if carrier_type is not None:
             base = base.where(Task.carrier_type == carrier_type)
             cnt = cnt.where(Task.carrier_type == carrier_type)
+        if carrier_id is not None:
+            base = base.where(Task.carrier_id == carrier_id)
+            cnt = cnt.where(Task.carrier_id == carrier_id)
+        if capacity_id is not None:
+            base = base.where(Task.capacity_id == capacity_id)
+            cnt = cnt.where(Task.capacity_id == capacity_id)
         now = datetime.now()
         if in_transit_overdue:
             od = (
@@ -922,6 +952,49 @@ class TaskService:
         """返回 True = 可用（未被占用）"""
         return not (await TaskService.task_no_exists(db, task_no, exclude_id))
 
+    @staticmethod
+    async def aggregate_loaded_unloaded(
+        db: AsyncSession,
+        task_ids: List[int],
+    ) -> dict[int, tuple[int, int]]:
+        """聚合给定任务的 已装/已卸 台数，返回 {task_id: (loaded, unloaded)}。
+
+        - loaded   = SUM(item.quantity) WHERE item.status >= 1（已装/已卸/已签收）
+        - unloaded = SUM(item.quantity) WHERE item.status >= 2（已卸/已签收）
+
+        供 TaskListItemOut 列表行 / 状态 Tag 进度 (X/Y) 文案使用。
+        """
+        if not task_ids:
+            return {}
+        ids = list({int(i) for i in task_ids if i})
+        r = await db.execute(
+            select(
+                TaskWaybillItem.task_id,
+                TaskWaybillItem.status,
+                func.coalesce(func.sum(TaskWaybillItem.quantity), 0),
+            )
+            .where(
+                TaskWaybillItem.task_id.in_(ids),
+                TaskWaybillItem.is_deleted == 0,
+                TaskWaybillItem.status != 9,
+            )
+            .group_by(TaskWaybillItem.task_id, TaskWaybillItem.status)
+        )
+        loaded: dict[int, int] = {}
+        unloaded: dict[int, int] = {}
+        for tid, st, qty in r.all():
+            tid_i = int(tid)
+            st_i = int(st)
+            qty_i = int(qty or 0)
+            if st_i >= 1:
+                loaded[tid_i] = loaded.get(tid_i, 0) + qty_i
+            if st_i >= 2:
+                unloaded[tid_i] = unloaded.get(tid_i, 0) + qty_i
+        return {
+            tid: (loaded.get(tid, 0), unloaded.get(tid, 0))
+            for tid in ids
+        }
+
     # ------------------------------------------------------------------
     # 工作台聚合 + 批量操作
     # ------------------------------------------------------------------
@@ -982,8 +1055,6 @@ class TaskService:
                 "arrived": status_counts.get(4, 0),
                 "pendingSign": status_counts.get(4, 0),
                 "signed": status_counts.get(5, 0),
-                "pendingSettle": status_counts.get(5, 0),
-                "settled": status_counts.get(6, 0),
                 "closed": status_counts.get(7, 0),
                 "cancelled": status_counts.get(9, 0),
             },
@@ -993,7 +1064,6 @@ class TaskService:
                 "overdueArrive": overdue_arrive,
                 "pendingLoadAlert": 0,
                 "pendingSignAlert": 0,
-                "pendingSettleAlert": 0,
             },
         }
 

@@ -28,7 +28,11 @@
     />
 
     <el-form :model="form" label-width="100px" v-loading="submitting">
-      <task-carrier-picker ref="pickerRef" v-model="form.carrier" />
+      <task-carrier-picker
+        ref="pickerRef"
+        v-model="form.carrier"
+        :simple-mode="true"
+      />
     </el-form>
 
     <template #footer>

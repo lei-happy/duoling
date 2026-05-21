@@ -5971,10 +5971,19 @@
       "foreign_keys": []
     },
     {
-      "name": "biz_task_segment",
-      "comment": "任务单运输分段表",
+      "name": "biz_task_dispatch_order",
+      "comment": "任务单调令表（运输任务的最小调度单位）",
       "table_tier": "business",
       "columns": [
+        {
+          "name": "accepted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调令接收时间（司机端确认）"
+        },
         {
           "name": "actual_arrive_time",
           "type": "DATETIME",
@@ -5994,6 +6003,15 @@
           "comment": "实际装车时间"
         },
         {
+          "name": "completed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调令完成时间"
+        },
+        {
           "name": "created_at",
           "type": "DATETIME",
           "nullable": false,
@@ -6001,6 +6019,15 @@
           "autoincrement": null,
           "server_default": "now()",
           "comment": "创建时间"
+        },
+        {
+          "name": "dispatch_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "调令类型 1-重驶 2-空驶 3-年检 4-应急 5-其他"
         },
         {
           "name": "from_code",
@@ -6054,7 +6081,16 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "段公里数"
+          "comment": "调令公里数"
+        },
+        {
+          "name": "order_no",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调令序号 1,2,3..."
         },
         {
           "name": "planned_arrive_time",
@@ -6084,13 +6120,13 @@
           "comment": "备注"
         },
         {
-          "name": "segment_no",
-          "type": "SMALLINT",
-          "nullable": false,
+          "name": "started_at",
+          "type": "DATETIME",
+          "nullable": true,
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "段序号 1,2,3..."
+          "comment": "调令开始时间（司机点击出发）"
         },
         {
           "name": "status",
@@ -6099,7 +6135,7 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": "0",
-          "comment": "段状态 0-待装车 1-装车中 2-在途 3-已到达 4-已卸车"
+          "comment": "调令状态 0-待装车 1-装车中 2-在途 3-已到达 4-已卸车"
         },
         {
           "name": "task_id",
@@ -6152,18 +6188,302 @@
       ],
       "unique_constraints": [
         {
-          "name": "uk_task_segment",
+          "name": "uk_task_dispatch_order",
           "columns": [
             "task_id",
-            "segment_no"
+            "order_no"
           ]
         }
       ],
       "indexes": [
         {
-          "name": "idx_segment_task_id",
+          "name": "idx_dispatch_order_dispatch_type",
+          "columns": [
+            "dispatch_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_dispatch_order_task_id",
           "columns": [
             "task_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_task_loading_record",
+      "comment": "任务单装卸事件记录表（多批次装/卸车主表）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dispatch_order_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_task_dispatch_order.id（多调令任务必填）"
+        },
+        {
+          "name": "event_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "事件类型 1-装车 2-卸车"
+        },
+        {
+          "name": "happened_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际装/卸时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "location",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "装/卸地点名称"
+        },
+        {
+          "name": "location_code",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "地点行政区编码"
+        },
+        {
+          "name": "location_region_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "地点行政区 ID"
+        },
+        {
+          "name": "operator_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人 user_id"
+        },
+        {
+          "name": "operator_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人姓名（冗余）"
+        },
+        {
+          "name": "photo_urls",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "照片 URL 数组（OSS 路径，最多 9 张）"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "本次装/卸总台数（冗余 = SUM(record_item.quantity)）"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "task_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_task.id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_loading_record_dispatch_order_id",
+          "columns": [
+            "dispatch_order_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_loading_record_event_type",
+          "columns": [
+            "event_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_loading_record_happened_at",
+          "columns": [
+            "happened_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_loading_record_task_id",
+          "columns": [
+            "task_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_task_loading_record_item",
+      "comment": "装卸记录与挂接货物的桥接表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "item_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_task_waybill_item.id"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "本次该 item 装/卸的台数（>0，允许 < item.quantity 远期支持 item 内拆批）"
+        },
+        {
+          "name": "record_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_task_loading_record.id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_loading_record_item_item_id",
+          "columns": [
+            "item_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_loading_record_item_record_id",
+          "columns": [
+            "record_id"
           ],
           "unique": false
         }
@@ -6212,6 +6532,15 @@
           "comment": "收车门店（冗余）"
         },
         {
+          "name": "dispatch_order_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "可选指定走某条调令（NULL=跟随主任务首条重驶调令）"
+        },
+        {
           "name": "id",
           "type": "BIGINT",
           "nullable": false,
@@ -6255,15 +6584,6 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "备注"
-        },
-        {
-          "name": "segment_id",
-          "type": "BIGINT",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "可选指定走某段（NULL=跟随主任务）"
         },
         {
           "name": "signed_at",

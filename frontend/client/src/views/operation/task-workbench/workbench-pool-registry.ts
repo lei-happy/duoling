@@ -13,6 +13,10 @@ export type WorkbenchColumnId =
   | 'selection'
   | 'taskNo'
   | 'carrierType'
+  /** 承运商 / 司机姓名（按 carrierType 分支展示） */
+  | 'carrierName'
+  /** 承运车辆 = 车牌（自有车 / 社会运力 / 承运商代填） */
+  | 'plateNumber'
   | 'route'
   | 'carrierResource'
   | 'waybillCount'
@@ -51,6 +55,8 @@ const COL: Record<WorkbenchColumnId, string> = {
   selection: '',
   taskNo: '任务单号',
   carrierType: '承运方式',
+  carrierName: '承运商 / 司机',
+  plateNumber: '承运车辆',
   route: '运输线路',
   carrierResource: '司机 / 车牌 / 承运商',
   waybillCount: '运单数',
@@ -98,6 +104,8 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     actionColumnWidth: 200,
     columns: [
       'taskNo',
+      'carrierType',
+      'carrierName',
       'route',
       'waybillCount',
       'totalQuantity',
@@ -106,6 +114,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'action'
     ],
     columnLabels: {
+      carrierName: '承运方',
       plannedLoadTime: '计划装车（派车截止参考）'
     },
     defaultSort: { prop: 'createdAt', order: 'descending' }
@@ -115,20 +124,23 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     label: '待装车',
     status: 1,
     primaryActionKey: 'confirm-load',
+    allowBatchPrimary: false,
     actionColumnWidth: 240,
+    toolbarPreset: 'pending-dispatch',
     columns: [
-      'selection',
       'taskNo',
       'carrierType',
+      'carrierName',
+      'plateNumber',
       'route',
-      'carrierResource',
       'totalQuantity',
       'plannedLoadTime',
       'status',
       'action'
     ],
     columnLabels: {
-      carrierResource: '承运车辆 / 承运商',
+      carrierName: '承运商',
+      plateNumber: '承运车辆',
       plannedLoadTime: '计划装车'
     },
     defaultSort: { prop: 'plannedLoadTime', order: 'ascending' }
@@ -138,9 +150,9 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     label: '在途中',
     status: [2, 3],
     primaryActionKey: 'confirm-arrive',
+    allowBatchPrimary: false,
     actionColumnWidth: 280,
     columns: [
-      'selection',
       'taskNo',
       'carrierType',
       'route',
@@ -180,29 +192,6 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       actualLoadTime: '实际装车'
     },
     defaultSort: { prop: 'plannedArriveTime', order: 'ascending' }
-  },
-  {
-    key: 'pending-settle',
-    label: '待结算',
-    status: 5,
-    primaryActionKey: 'create-settlement',
-    allowBatchPrimary: false,
-    actionColumnWidth: 220,
-    columns: [
-      'selection',
-      'taskNo',
-      'carrierType',
-      'route',
-      'carrierResource',
-      'totalQuantity',
-      'status',
-      'action'
-    ],
-    columnLabels: {
-      carrierResource: '承运车辆 / 承运商',
-      status: '任务状态'
-    },
-    defaultSort: { prop: 'taskNo', order: 'descending' }
   }
 ];
 
@@ -229,6 +218,23 @@ export function buildWorkbenchTableColumns(pool: WorkbenchPool): Columns {
           width: 96,
           align: 'center',
           slot: 'carrierType'
+        });
+        break;
+      case 'carrierName':
+        cols.push({
+          columnKey: 'carrierName',
+          label: L.carrierName,
+          minWidth: 160,
+          slot: 'carrierName'
+        });
+        break;
+      case 'plateNumber':
+        cols.push({
+          prop: 'plateNumber',
+          label: L.plateNumber,
+          width: 130,
+          align: 'center',
+          slot: 'plateNumber'
         });
         break;
       case 'route':

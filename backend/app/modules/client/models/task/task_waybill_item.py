@@ -62,8 +62,9 @@ class TaskWaybillItem(TenantModelBase):
     quantity: Mapped[int] = mapped_column(
         Integer, nullable=False, comment="本任务分到的台数（>0）"
     )
-    segment_id: Mapped[Optional[int]] = mapped_column(
-        BigInteger, nullable=True, comment="可选指定走某段（NULL=跟随主任务）"
+    dispatch_order_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True,
+        comment="可选指定走某条调令（NULL=跟随主任务首条重驶调令）",
     )
 
     status: Mapped[int] = mapped_column(

@@ -5,12 +5,17 @@ from typing import List, Mapping, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-from app.modules.client.schemas.task.task_segment import (
-    TaskSegmentIn, TaskSegmentOut,
+from app.modules.client.schemas.task.task_dispatch_order import (
+    TaskDispatchOrderIn, TaskDispatchOrderOut,
 )
 from app.modules.client.schemas.task.task_waybill_item import (
     TaskWaybillItemIn, TaskWaybillItemOut,
 )
+
+
+# 兼容旧引用（前端仍可能用 segments/segmentNo 字段名提交）
+TaskSegmentIn = TaskDispatchOrderIn
+TaskSegmentOut = TaskDispatchOrderOut
 
 
 class TaskCarrierInfo(BaseModel):
@@ -98,8 +103,8 @@ class TaskCreate(BaseModel):
     # 承运方（可选，未填则保存为「待分配」）
     carrier: Optional[TaskCarrierInfo] = None
 
-    # 分段路线（可选，零段允许，仅校验非空时段号连续）
-    segments: List[TaskSegmentIn] = Field(default_factory=list)
+    # 调令路线（可选，零段允许，仅校验非空时段号连续；前端字段名仍为 segments）
+    segments: List[TaskDispatchOrderIn] = Field(default_factory=list)
     # 至少 1 条挂接
     waybillItems: List[TaskWaybillItemIn] = Field(
         default_factory=list, min_length=1
@@ -109,11 +114,11 @@ class TaskCreate(BaseModel):
     def _check_segments(self):
         if not self.segments:
             return self
-        nos = [s.segmentNo for s in self.segments]
+        nos = [s.orderNo for s in self.segments]
         if len(set(nos)) != len(nos):
-            raise ValueError("段序号不允许重复")
+            raise ValueError("调令序号不允许重复")
         if sorted(nos) != list(range(1, len(nos) + 1)):
-            raise ValueError("段序号必须从 1 开始连续")
+            raise ValueError("调令序号必须从 1 开始连续")
         return self
 
 
@@ -127,7 +132,7 @@ class TaskUpdate(BaseModel):
     costRemark: Optional[str] = None
     remark: Optional[str] = None
     carrier: Optional[TaskCarrierInfo] = None
-    segments: Optional[List[TaskSegmentIn]] = None
+    segments: Optional[List[TaskDispatchOrderIn]] = None
     waybillItems: Optional[List[TaskWaybillItemIn]] = None
 
 
@@ -143,28 +148,37 @@ class TaskStatusUpdate(BaseModel):
 
 
 class TaskAssignCarrierRequest(BaseModel):
-    """派车（设置承运方）"""
+    """派车（设置承运方）。
+
+    待派车阶段的"指派具体运力"动作。当承运方为承运商（carrierType=2）时，
+    本期 lite 端尚未上线，前端面板提供 ``isProxy=true`` 的"调度员代填"兜底，
+    后端不做区分（同样是写入承运方快照 + 状态 0→1），仅作审计标识。
+    """
     carrier: TaskCarrierInfo
+    isProxy: bool = Field(
+        default=False,
+        description="标识是否为调度员代承运商代填运力（兜底，本期 lite 未上线时使用）",
+    )
     carrierCostType: Optional[int] = None
     carrierCostAmount: Optional[float] = None
     costRemark: Optional[str] = None
 
 
 class TaskPlanRouteRequest(BaseModel):
-    """规划路线（替换分段）
+    """规划路线（替换调令）
 
-    仅用于已存在的任务单补齐 / 重做路线规划；不影响承运方与商品车挂接。
-    至少 1 段；段号必须从 1 开始连续。
+    仅用于已存在的任务单补齐 / 重做调令规划；不影响承运方与商品车挂接。
+    至少 1 条调令；调令序号必须从 1 开始连续。
     """
-    segments: List[TaskSegmentIn] = Field(min_length=1)
+    segments: List[TaskDispatchOrderIn] = Field(min_length=1)
 
     @model_validator(mode="after")
     def _check_segments(self):
-        nos = [s.segmentNo for s in self.segments]
+        nos = [s.orderNo for s in self.segments]
         if len(set(nos)) != len(nos):
-            raise ValueError("段序号不允许重复")
+            raise ValueError("调令序号不允许重复")
         if sorted(nos) != list(range(1, len(nos) + 1)):
-            raise ValueError("段序号必须从 1 开始连续")
+            raise ValueError("调令序号必须从 1 开始连续")
         return self
 
 
@@ -211,6 +225,8 @@ class TaskListItemOut(BaseModel):
     destination: Optional[str] = None
     segmentCount: int
     totalQuantity: int
+    loadedQuantity: int = Field(default=0, description="已装车台数（聚合 item.status>=1）")
+    unloadedQuantity: int = Field(default=0, description="已卸车台数（聚合 item.status>=2）")
     waybillCount: int
     plannedLoadTime: Optional[datetime] = None
     plannedArriveTime: Optional[datetime] = None
@@ -228,7 +244,13 @@ class TaskListItemOut(BaseModel):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_model(cls, m) -> "TaskListItemOut":
+    def from_model(
+        cls,
+        m,
+        *,
+        loaded_quantity: int = 0,
+        unloaded_quantity: int = 0,
+    ) -> "TaskListItemOut":
         return cls(
             id=m.id,
             taskNo=m.task_no,
@@ -244,6 +266,8 @@ class TaskListItemOut(BaseModel):
             destination=m.destination,
             segmentCount=m.segment_count,
             totalQuantity=m.total_quantity,
+            loadedQuantity=int(loaded_quantity or 0),
+            unloadedQuantity=int(unloaded_quantity or 0),
             waybillCount=m.waybill_count,
             plannedLoadTime=m.planned_load_time,
             plannedArriveTime=m.planned_arrive_time,
@@ -307,7 +331,7 @@ class TaskOut(BaseModel):
     createdAt: datetime
     updatedAt: datetime
 
-    segments: List[TaskSegmentOut] = Field(default_factory=list)
+    segments: List[TaskDispatchOrderOut] = Field(default_factory=list)
     waybillItems: List[TaskWaybillItemOut] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
@@ -366,7 +390,7 @@ class TaskOut(BaseModel):
             remark=m.remark,
             createdAt=m.created_at,
             updatedAt=m.updated_at,
-            segments=[TaskSegmentOut.from_model(s) for s in (segments or [])],
+            segments=[TaskDispatchOrderOut.from_model(s) for s in (segments or [])],
             waybillItems=[
                 TaskWaybillItemOut.from_model(w, series_lookup=series_lookup)
                 for w in (waybill_items or [])

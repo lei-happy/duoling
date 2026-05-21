@@ -119,7 +119,6 @@
           <el-step title="在途" />
           <el-step title="已到达" />
           <el-step title="已签收" />
-          <el-step title="已结算" />
         </el-steps>
 
         <!-- 基础信息 -->
@@ -169,17 +168,34 @@
           </el-descriptions-item>
         </el-descriptions>
 
-        <!-- Tab: 分段进度 / 挂接货物 / 费用单 -->
+        <!-- Tab: 调令 / 装卸记录 / 挂接货物 / 费用单 -->
         <el-divider />
         <el-tabs v-model="activeTab" type="border-card">
-          <el-tab-pane name="segments" :label="`分段进度 (${segments.length})`">
+          <el-tab-pane name="segments" :label="`调令 (${segments.length})`">
             <el-table :data="segments" border size="small">
               <el-table-column
                 label="段"
-                prop="segmentNo"
+                prop="orderNo"
                 width="60"
                 align="center"
-              />
+              >
+                <template #default="{ row }">
+                  {{ row.orderNo ?? row.segmentNo ?? '--' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="类型" width="80" align="center">
+                <template #default="{ row }">
+                  <el-tag
+                    size="small"
+                    :type="
+                      (DISPATCH_TYPE_LABEL[row.dispatchType ?? 1]
+                        ?.type as any) || 'info'
+                    "
+                  >
+                    {{ DISPATCH_TYPE_LABEL[row.dispatchType ?? 1]?.label || '--' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
               <el-table-column
                 label="起点"
                 prop="fromLocation"
@@ -207,6 +223,18 @@
                   {{ formatDateTime(row.actualArriveTime) || '--' }}
                 </template>
               </el-table-column>
+              <el-table-column label="接收/出发/完成" min-width="200">
+                <template #default="{ row }">
+                  <div class="dispatch-time-cell">
+                    <span class="ele-text-secondary">接</span>
+                    {{ formatDateTime(row.acceptedAt) || '--' }}
+                    <span class="ele-text-secondary">·发</span>
+                    {{ formatDateTime(row.startedAt) || '--' }}
+                    <span class="ele-text-secondary">·完</span>
+                    {{ formatDateTime(row.completedAt) || '--' }}
+                  </div>
+                </template>
+              </el-table-column>
               <el-table-column label="状态" width="100" align="center">
                 <template #default="{ row }">
                   <el-tag size="small">
@@ -215,6 +243,82 @@
                 </template>
               </el-table-column>
             </el-table>
+          </el-tab-pane>
+
+          <el-tab-pane
+            name="loading-records"
+            :label="`装卸记录 (${loadingRecords.length})`"
+          >
+            <el-empty
+              v-if="!loadingRecords.length"
+              description="暂无装卸记录"
+              :image-size="80"
+            />
+            <el-timeline v-else class="loading-records-timeline">
+              <el-timeline-item
+                v-for="rec in loadingRecords"
+                :key="rec.id"
+                :type="rec.eventType === 1 ? 'warning' : 'success'"
+                :timestamp="formatDateTime(rec.happenedAt) || '--'"
+                placement="top"
+              >
+                <div class="loading-rec-card">
+                  <div class="loading-rec-card__head">
+                    <el-tag
+                      size="small"
+                      :type="rec.eventType === 1 ? 'warning' : 'success'"
+                    >
+                      {{ rec.eventType === 1 ? '装车' : '卸车' }}
+                    </el-tag>
+                    <span class="loading-rec-card__loc">
+                      {{ rec.location || '--' }}
+                    </span>
+                    <span class="ele-text-secondary loading-rec-card__qty">
+                      {{ rec.quantity || 0 }} 台 ·
+                      {{ rec.operatorName || '--' }}
+                    </span>
+                    <el-tag
+                      v-if="rec.dispatchOrderId"
+                      type="info"
+                      effect="plain"
+                      size="small"
+                    >
+                      调令 #{{ orderNoOf(rec.dispatchOrderId) }}
+                    </el-tag>
+                  </div>
+                  <div
+                    v-if="rec.items && rec.items.length"
+                    class="loading-rec-card__items"
+                  >
+                    <span
+                      v-for="it in rec.items"
+                      :key="it.id"
+                      class="ele-text-secondary"
+                    >
+                      {{ it.waybillNo || '--' }} · {{ it.vehicleBrand || '--' }}
+                      {{ it.vehicleModel || '' }} ({{ it.quantity }} 台)
+                    </span>
+                  </div>
+                  <div
+                    v-if="rec.photoUrls && rec.photoUrls.length"
+                    class="loading-rec-card__photos"
+                  >
+                    <el-image
+                      v-for="(url, idx) in rec.photoUrls"
+                      :key="url"
+                      :src="url"
+                      fit="cover"
+                      class="loading-rec-card__photo"
+                      :preview-src-list="rec.photoUrls"
+                      :initial-index="idx"
+                    />
+                  </div>
+                  <div v-if="rec.remark" class="loading-rec-card__remark">
+                    备注：{{ rec.remark }}
+                  </div>
+                </div>
+              </el-timeline-item>
+            </el-timeline>
           </el-tab-pane>
 
           <el-tab-pane name="cargoes" :label="`挂接货物 (${items.length})`">
@@ -242,13 +346,16 @@
                 align="center"
               />
               <el-table-column
-                label="归属段"
-                prop="segmentId"
-                width="80"
+                label="归属调令"
+                prop="dispatchOrderId"
+                width="100"
                 align="center"
               >
                 <template #default="{ row }">
-                  {{ row.segmentId ?? '--' }}
+                  <span v-if="row.dispatchOrderId">
+                    第 {{ orderNoOf(row.dispatchOrderId) }} 段
+                  </span>
+                  <span v-else>--</span>
                 </template>
               </el-table-column>
               <el-table-column label="状态" width="100" align="center">
@@ -405,11 +512,13 @@
     listTaskWaybillItems,
     updateTaskStatus
   } from '@/api/operation/task';
+  import { listLoadingRecords } from '@/api/operation/task/loading-record';
   import type {
     Task,
     TaskSegment,
     TaskWaybillItem,
-    TaskFinanceSummaryItem
+    TaskFinanceSummaryItem,
+    TaskLoadingRecord
   } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
   import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from '../status-config';
@@ -441,6 +550,7 @@
   const task = ref<Task | null>(null);
   const segments = ref<TaskSegment[]>([]);
   const items = ref<TaskWaybillItem[]>([]);
+  const loadingRecords = ref<TaskLoadingRecord[]>([]);
   const financeDocs = ref<TaskFinanceSummaryItem[]>([]);
   const activeTab = ref('segments');
 
@@ -456,6 +566,19 @@
     1: '已装车',
     2: '已卸车',
     3: '已签收'
+  };
+  const DISPATCH_TYPE_LABEL: Record<number, { label: string; type: string }> = {
+    1: { label: '重驶', type: 'success' },
+    2: { label: '空驶', type: 'info' },
+    3: { label: '年检', type: 'warning' },
+    4: { label: '应急', type: 'danger' },
+    5: { label: '其他', type: 'info' }
+  };
+
+  const orderNoOf = (orderId?: number | null): string | number => {
+    if (!orderId) return '--';
+    const seg = segments.value.find((s) => s.id === orderId);
+    return seg?.orderNo ?? seg?.segmentNo ?? '--';
   };
   const DOC_TYPE_LABEL: Record<number, { label: string; type: string }> = {
     1: { label: '预付单', type: 'primary' },
@@ -487,16 +610,18 @@
   const load = async (id: number) => {
     loading.value = true;
     try {
-      const [t, segs, its, fins] = await Promise.all([
+      const [t, segs, its, fins, recs] = await Promise.all([
         getTask(id),
         listTaskSegments(id),
         listTaskWaybillItems(id),
-        listTaskFinanceSummary(id)
+        listTaskFinanceSummary(id),
+        listLoadingRecords(id).catch(() => [] as TaskLoadingRecord[])
       ]);
       task.value = t;
       segments.value = segs;
       items.value = its;
       financeDocs.value = fins;
+      loadingRecords.value = recs;
     } catch (e: unknown) {
       const msg = (e as { message?: string }).message || '加载失败';
       EleMessage.error({ message: msg, plain: true });
@@ -508,6 +633,8 @@
   const statusStep = computed(() => {
     const s = task.value?.status ?? 0;
     if (s === 9) return 0;
+    // 7 步：待分配 / 待派车 / 已派车 / 已装车 / 在途 / 已到达 / 已签收
+    // 7 已关闭：超过已签收，整条时间轴标 finish
     const map: Record<number, number> = {
       [-1]: 0,
       0: 1,
@@ -516,8 +643,7 @@
       3: 4,
       4: 5,
       5: 6,
-      6: 7,
-      7: 8
+      7: 7
     };
     return map[s] ?? 0;
   });
@@ -690,6 +816,65 @@
     }
     &__steps {
       margin: 8px 0 16px;
+    }
+  }
+
+  .dispatch-time-cell {
+    line-height: 1.6;
+    font-size: 12px;
+  }
+
+  .loading-records-timeline {
+    padding: 8px 0;
+  }
+
+  .loading-rec-card {
+    background: var(--el-fill-color-light);
+    padding: 8px 12px;
+    border-radius: 4px;
+
+    &__head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    &__loc {
+      font-weight: 500;
+    }
+
+    &__qty {
+      flex: 1;
+    }
+
+    &__items {
+      margin-top: 6px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+
+    &__photos {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    &__photo {
+      width: 64px;
+      height: 64px;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--el-border-color);
+    }
+
+    &__remark {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--el-text-color-regular);
     }
   }
 </style>

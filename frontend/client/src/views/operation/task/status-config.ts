@@ -1,4 +1,9 @@
-/** 任务单状态配置（与后端 task.status 保持一致） */
+/**
+ * 任务单状态配置（与后端 task.status 保持一致）
+ *
+ * 注：6 已结算 已下线（财务结算与 task.status 解耦）；
+ * 5 已签收 由 item 全签收聚合驱动，不接受人工 4→5 推进。
+ */
 export const TASK_STATUS_OPTIONS = [
   { value: -1, label: '待分配', type: 'warning' },
   { value: 0, label: '待派车', type: 'info' },
@@ -7,7 +12,6 @@ export const TASK_STATUS_OPTIONS = [
   { value: 3, label: '在途', type: 'warning' },
   { value: 4, label: '已到达', type: 'success' },
   { value: 5, label: '已签收', type: 'success' },
-  { value: 6, label: '已结算', type: 'success' },
   { value: 7, label: '已关闭', type: 'info' },
   { value: 9, label: '已取消', type: 'danger' }
 ] as const;

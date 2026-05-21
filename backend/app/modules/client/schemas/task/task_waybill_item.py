@@ -1,24 +1,42 @@
 """任务单-运单货物挂接 Schemas"""
 
 from datetime import datetime
-from typing import Mapping, Optional
+from typing import Any, Mapping, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.modules.client.schemas.waybill.waybill import waybill_brand_model_key
+
+
+class _LegacySegmentIdAlias:
+    """共享的 ``segmentId`` → ``dispatchOrderId`` 兼容映射逻辑"""
+
+    @staticmethod
+    def remap(data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        if "dispatchOrderId" not in data and "segmentId" in data:
+            data = {**data, "dispatchOrderId": data["segmentId"]}
+        return data
 
 
 class TaskWaybillItemIn(BaseModel):
     """挂接入参（创建/批量替换）
 
     waybillId / waybillCargoId / quantity 三者必填；
-    segmentId 可选指定走某段（默认 NULL 跟随主任务）。
+    dispatchOrderId 可选指定走某条调令（默认 NULL 跟随主任务首条重驶调令）。
+    兼容旧字段 ``segmentId``：传入时自动映射到 ``dispatchOrderId``。
     """
     waybillId: int = Field(ge=1)
     waybillCargoId: int = Field(ge=1)
     quantity: int = Field(ge=1)
-    segmentId: Optional[int] = None
+    dispatchOrderId: Optional[int] = None
     remark: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _alias_segment_id(cls, data: Any) -> Any:
+        return _LegacySegmentIdAlias.remap(data)
 
 
 class TaskWaybillItemStatusUpdate(BaseModel):
@@ -26,8 +44,13 @@ class TaskWaybillItemStatusUpdate(BaseModel):
     loadedAt: Optional[datetime] = None
     unloadedAt: Optional[datetime] = None
     signedAt: Optional[datetime] = None
-    segmentId: Optional[int] = None
+    dispatchOrderId: Optional[int] = None
     remark: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _alias_segment_id(cls, data: Any) -> Any:
+        return _LegacySegmentIdAlias.remap(data)
 
 
 class TaskWaybillItemOut(BaseModel):
@@ -46,6 +69,8 @@ class TaskWaybillItemOut(BaseModel):
         description="车系图（列表/明细由品牌+车型匹配 biz_vehicle_series，与运单侧一致）",
     )
     quantity: int
+    dispatchOrderId: Optional[int] = None
+    # 兼容旧前端：与 dispatchOrderId 等价
     segmentId: Optional[int] = None
     status: int
     loadedAt: Optional[datetime] = None
@@ -81,7 +106,8 @@ class TaskWaybillItemOut(BaseModel):
             dealerName=m.dealer_name,
             seriesImage=series_image,
             quantity=m.quantity,
-            segmentId=m.segment_id,
+            dispatchOrderId=m.dispatch_order_id,
+            segmentId=m.dispatch_order_id,
             status=m.status,
             loadedAt=m.loaded_at,
             unloadedAt=m.unloaded_at,

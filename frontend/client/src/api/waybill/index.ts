@@ -14,7 +14,7 @@ export async function pageWaybills(params: WaybillParam) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 运单工作台 KPI：按状态聚合（待调度 / 调度中 / 运输中 / 已送达 / 已完成 / 已关闭） */
+/** 运单工作台 KPI：按状态聚合（待调度 / 调度中 / 运输中 / 待签收 / 已签收 / 已关闭） */
 export async function getWaybillWorkbenchStats() {
   const res = await request.get<ApiResult<WaybillWorkbenchStats>>(
     '/business/waybill/workbench-stats'

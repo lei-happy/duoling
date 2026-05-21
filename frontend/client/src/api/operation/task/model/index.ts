@@ -1,10 +1,13 @@
 import type { PageParam } from '@/api';
 
-/** 任务单运输分段 */
-export interface TaskSegment {
+/** 任务单调令（原"分段"重命名扩展） */
+export interface TaskDispatchOrder {
   id?: number;
   taskId?: number;
-  segmentNo: number;
+  /** 调令序号 1..N */
+  orderNo: number;
+  /** 调令类型 1-重驶 2-空驶 3-年检 4-应急 5-其他 */
+  dispatchType?: number;
   fromLocation?: string;
   fromCode?: string;
   fromRegionId?: number | null;
@@ -16,9 +19,65 @@ export interface TaskSegment {
   plannedArriveTime?: string;
   actualLoadTime?: string;
   actualArriveTime?: string;
+  acceptedAt?: string;
+  startedAt?: string;
+  completedAt?: string;
   status?: number;
   remark?: string;
   createdAt?: string;
+}
+
+/**
+ * 兼容旧引用：前端历史代码以 segmentNo 字段为主键提交分段；本期保留同名类型，
+ * 仅作为 ``TaskDispatchOrder`` 的字段超集别名（同步保留 ``segmentNo`` 字段以
+ * 避免大面积修改）。新代码请直接使用 ``TaskDispatchOrder``。
+ */
+export interface TaskSegment extends TaskDispatchOrder {
+  /** @deprecated 历史字段，现为 orderNo 的别名 */
+  segmentNo: number;
+}
+
+/** 装卸事件记录 */
+export interface TaskLoadingRecordItem {
+  id: number;
+  recordId: number;
+  itemId: number;
+  quantity: number;
+  waybillId?: number;
+  waybillNo?: string;
+  vehicleBrand?: string;
+  vehicleModel?: string;
+}
+
+export interface TaskLoadingRecord {
+  id: number;
+  taskId: number;
+  dispatchOrderId?: number | null;
+  /** 1-装车 2-卸车 */
+  eventType: number;
+  happenedAt: string;
+  location?: string;
+  locationCode?: string;
+  locationRegionId?: number | null;
+  quantity: number;
+  photoUrls: string[];
+  operatorId?: number | null;
+  operatorName?: string;
+  remark?: string;
+  createdAt: string;
+  items: TaskLoadingRecordItem[];
+}
+
+export interface TaskLoadingRecordPayload {
+  eventType: number;
+  dispatchOrderId?: number | null;
+  happenedAt: string;
+  location?: string;
+  locationCode?: string;
+  locationRegionId?: number | null;
+  items: Array<{ itemId: number; quantity: number }>;
+  photoUrls?: string[];
+  remark?: string;
 }
 
 /** 任务单货物挂接项（M:N 按台数） */
@@ -36,6 +95,9 @@ export interface TaskWaybillItem {
   /** 车系图（挂接时带入，仅展示；提交 payload 不含此字段） */
   seriesImage?: string | null;
   quantity: number;
+  /** 关联调令 ID（原 segmentId 重命名） */
+  dispatchOrderId?: number | null;
+  /** @deprecated 历史字段，与 dispatchOrderId 等价 */
   segmentId?: number | null;
   status?: number;
   loadedAt?: string;
@@ -115,6 +177,10 @@ export interface Task {
   destinationRegionId?: number | null;
   segmentCount?: number;
   totalQuantity?: number;
+  /** 已装车台数（聚合 item.status>=1） */
+  loadedQuantity?: number;
+  /** 已卸车台数（聚合 item.status>=2） */
+  unloadedQuantity?: number;
   waybillCount?: number;
   plannedLoadTime?: string;
   plannedArriveTime?: string;
@@ -153,6 +219,8 @@ export interface TaskCreatePayload {
     waybillId: number;
     waybillCargoId: number;
     quantity: number;
+    dispatchOrderId?: number | null;
+    /** @deprecated 历史字段，与 dispatchOrderId 等价 */
     segmentId?: number | null;
     remark?: string;
   }>;
@@ -163,6 +231,10 @@ export type TaskUpdatePayload = Partial<TaskCreatePayload>;
 export interface TaskParam extends PageParam {
   keyword?: string;
   carrierType?: number;
+  /** 承运商 ID（用于待派车池筛选） */
+  carrierId?: number;
+  /** 自有运力 ID（待装车池/在途池筛选具体车辆） */
+  capacityId?: number;
   status?: number;
   customerId?: number;
   originKeyword?: string;
@@ -194,7 +266,11 @@ export interface TaskFinanceSummaryItem {
   actualPayTime?: string;
 }
 
-/** 调度工作台 KPI 聚合 */
+/** 调度工作台 KPI 聚合
+ *
+ * 注：原 `pendingSettle / settled / pendingSettleAlert` 字段已在后端下线
+ * （财务结算与 task.status 解耦），前端类型不再保留对应字段。
+ */
 export interface TaskWorkbenchStats {
   statusCounts: Record<number, number>;
   totals: {
@@ -206,8 +282,6 @@ export interface TaskWorkbenchStats {
     arrived: number;
     pendingSign: number;
     signed: number;
-    pendingSettle: number;
-    settled: number;
     closed: number;
     cancelled: number;
   };
@@ -215,10 +289,9 @@ export interface TaskWorkbenchStats {
     overdueAssignment: number;
     overdueDispatch: number;
     overdueArrive: number;
-    /** 待装车 / 待签收 / 待结算 预警数（占位，规则接入后由后端统计） */
+    /** 待装车 / 待签收 预警数（占位，规则接入后由后端统计） */
     pendingLoadAlert?: number;
     pendingSignAlert?: number;
-    pendingSettleAlert?: number;
   };
 }
 

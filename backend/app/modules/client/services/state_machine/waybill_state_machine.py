@@ -1,16 +1,21 @@
 """运单状态机
 
-Waybill.status 状态空间（重新语义化后）：
-    0 草稿（不再使用，保留兼容）
-    1 待调度（可挂接，可编辑/删除）
-    2 调度中（部分或全部货物已挂接到任务单，但未全部装车）
-    3 运输中（任意货物进入装车/在途）
-    4 已送达（聚合门槛：全量货物到达）
-    5 已完成（聚合门槛：全量货物签收）
+Waybill.status 状态空间（客户视角的"票据流转"）：
+    0 待确认（新建运单后，等运营/客户点击「确认」推进到 1）
+    1 待调度（已确认，等待挂入任务单）
+    2 调度中（部分或全部 cargo 行已挂入未取消的任务单）
+    3 运输中（至少一行 item 已装车）
+    4 待签收（聚合门槛：全量货物已到达）
+    5 已签收（聚合门槛：全量货物已签收，对客户即"流程闭环"）
     6 已关闭（终态，可在任意非草稿状态进入）
 
-Waybill 状态由聚合器 `WaybillStatusAggregator` 推导，不应由用户直接传值；
-仍保留 `update_status` API 用于运营兜底（例如手动关闭），但需经状态机校验。
+Waybill 状态由聚合器 ``WaybillStatusAggregator`` 推导，不应由用户直接传值；
+仍保留 ``update_status`` API 用于运营兜底（例如手动确认、手动关闭），但需经状态机校验。
+
+文案设计原因（2026-05 调整）：
+- 4 由"已送达"改"待签收"：强调签收是运单维度的客户动作，与任务单的"已到达"区分；
+- 5 由"已完成"改"已签收"：保持与 item.status=3 一致，避免歧义。
+- 数值不变；前端、后端文案统一。
 """
 
 from typing import Set
@@ -18,35 +23,51 @@ from typing import Set
 from app.common.exceptions import BizException
 
 
-WAYBILL_DRAFT = 0
-WAYBILL_PENDING = 1
-WAYBILL_SCHEDULING = 2
-WAYBILL_IN_TRANSIT = 3
-WAYBILL_DELIVERED = 4
-WAYBILL_COMPLETED = 5
-WAYBILL_CLOSED = 6
+# —— 状态值常量（新命名 + 旧别名）
+WAYBILL_PENDING_CONFIRM = 0  # 待确认（运单新建后初始态）
+WAYBILL_PENDING = 1          # 待调度
+WAYBILL_SCHEDULING = 2       # 调度中
+WAYBILL_IN_TRANSIT = 3       # 运输中
+WAYBILL_PENDING_SIGN = 4     # 待签收
+WAYBILL_SIGNED = 5           # 已签收
+WAYBILL_CLOSED = 6           # 已关闭
+
+# 旧别名（兼容历史 import；如 waybill_status_aggregator）
+WAYBILL_DRAFT = WAYBILL_PENDING_CONFIRM
+WAYBILL_DELIVERED = WAYBILL_PENDING_SIGN
+WAYBILL_COMPLETED = WAYBILL_SIGNED
 
 
 WAYBILL_STATUS_LABELS: dict[int, str] = {
-    0: "草稿",
+    0: "待确认",
     1: "待调度",
     2: "调度中",
     3: "运输中",
-    4: "已送达",
-    5: "已完成",
+    4: "待签收",
+    5: "已签收",
     6: "已关闭",
 }
 
 
 # 正向 + 反向合一的合法跳转（聚合器内部会按需正/反向推进）
+#
+# 设计要点：
+# 聚合器是 waybill 状态的**唯一权威来源**，多个 task 装/卸车场景下需要
+# 跨步跳转（例如 1 待调度的运单被一次性拉到 3 运输中：等价于
+# "1→2→3 一步合并执行"）。如果将 valid_trans 限制为单步邻接，
+# 历史数据回填或并发场景将导致 ``assert_transition`` 抛错并使整个
+# 装/卸车事务回滚。
+#
+# 因此正向方向（"待调度/调度中"两个低位态）允许直接跨步跳到任意活跃态；
+# 高位态之间仍保持严格相邻（避免数据异常时静默放过）。
 WAYBILL_VALID_TRANS: dict[int, Set[int]] = {
     0: {1, 6},
-    1: {2, 6},
-    2: {1, 3, 6},        # 调度中可回退到待调度（全部任务取消挂接）
-    3: {2, 4, 6},        # 运输中可回退到调度中（所有任务回退到挂接但未装车）
-    4: {3, 5, 6},        # 已送达可回退到运输中（撤销到达）
-    5: {4, 6},           # 已完成可回退到已送达（撤销签收）
-    6: set(),            # 已关闭终态
+    1: {2, 3, 4, 5, 6},   # 待调度允许由聚合器跨步推进至任意活跃态
+    2: {1, 3, 4, 5, 6},   # 调度中同上（含回退到待调度）
+    3: {2, 4, 5, 6},      # 运输中可回退到调度中 / 跨步至已签收（全量装车后立即签收）
+    4: {3, 5, 6},         # 待签收可回退到运输中（撤销到达）
+    5: {4, 6},            # 已签收可回退到待签收（撤销签收）
+    6: set(),             # 已关闭终态
 }
 
 
@@ -55,7 +76,7 @@ WAYBILL_VALID_TRANS: dict[int, Set[int]] = {
 WAYBILL_STATES_BLOCKING_DELETE: Set[int] = {2, 3, 4, 5}
 
 
-# 禁止新挂接的运单态（>=4 已送达起，不再允许新任务挂接）
+# 禁止新挂接的运单态（>=4 待签收起，不再允许新任务挂接）
 WAYBILL_STATES_BLOCKING_NEW_ITEM: Set[int] = {4, 5, 6}
 
 

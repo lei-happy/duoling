@@ -6,7 +6,10 @@
 2. 状态机：草稿 → 待审批 → 已审批 → 已支付，及 → 已撤销
 3. 收款人 / 收款账户校验
 4. 主表冗余聚合（prepaid / supplement / settled / finance_doc_count）
-5. 结算单 is_final + 已支付 时把 task.status 推进到 6
+
+注：财务单据与 ``task.status`` 已彻底解耦。
+- 任务 5 已签收 = item 全签收聚合驱动；
+- "已结算" 不再是任务状态机的一部分，财务侧只维护 ``task.settled_amount`` 等冗余金额。
 """
 
 from datetime import datetime, date as ddate, time as dtime
@@ -463,16 +466,11 @@ class TaskFinanceService:
         await TaskFinanceService._change_status(db, doc, 3, current_user_id)
         await db.flush()
 
-        # 主表冗余 + 结算联动
+        # 主表冗余刷新；财务支付与 task.status 已彻底解耦，
+        # 不再驱动 task.status 5→6（"已结算"枚举已从状态机中移除）。
         from app.modules.client.services.task.task_service import TaskService
         task = await TaskService.get_or_404(db, doc.task_id)
         await TaskFinanceService._refresh_task_finance_aggregates(db, task)
-
-        if doc.doc_type == 3 and int(doc.is_final or 0) == 1:
-            # 最终结算单已支付 → 推进任务单到 6 已结算（仅当已签收）
-            if int(task.status) == 5:
-                task.status = 6
-                await db.flush()
 
         await db.refresh(doc)
         return doc
@@ -484,11 +482,6 @@ class TaskFinanceService:
         data: TaskFinanceDocCancelRequest,
     ) -> TaskFinanceDoc:
         doc = await TaskFinanceService.get_or_404(db, doc_id)
-        was_final_paid = (
-            doc.doc_type == 3
-            and int(doc.is_final or 0) == 1
-            and int(doc.status) == 3
-        )
         await TaskFinanceService._change_status(db, doc, 4)
         if data.reason:
             existing = (doc.remark or "").rstrip()
@@ -498,25 +491,10 @@ class TaskFinanceService:
             )
         await db.flush()
 
+        # 仅刷新冗余金额；财务侧已与 task.status 解耦，撤销结算单不再触发 6→5 回退。
         from app.modules.client.services.task.task_service import TaskService
         task = await TaskService.get_or_404(db, doc.task_id)
         await TaskFinanceService._refresh_task_finance_aggregates(db, task)
-
-        # 反向联动：已支付的最终结算单被撤销 → task 6 回退到 5
-        if was_final_paid and int(task.status) == 6:
-            from app.modules.client.services.state_machine.task_state_machine import (
-                TaskStateMachine,
-            )
-            TaskStateMachine.assert_revert(6, 5)
-            task.status = 5
-            actor = "system"
-            existing = (task.remark or "").rstrip()
-            task.remark = (
-                (existing + "\n" if existing else "")
-                + f"[结算撤销] 由最终结算单 {doc.doc_no} 撤销触发，"
-                f"by {actor}：{(data.reason or '').strip() or '未填写原因'}"
-            )
-            await db.flush()
 
         await db.refresh(doc)
         return doc

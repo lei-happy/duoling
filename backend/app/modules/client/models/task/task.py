@@ -156,7 +156,7 @@ class Task(TenantModelBase):
     status: Mapped[int] = mapped_column(
         SmallInteger, default=0, server_default="0",
         comment="状态 0-待派车 1-已派车 2-已装车 3-在途 4-已到达 "
-                "5-已签收 6-已结算 7-已关闭 9-已取消",
+                "5-已签收(聚合态) 7-已关闭 9-已取消",
     )
     dispatcher_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="调度员 user_id"

@@ -29,6 +29,13 @@ from app.modules.client.services.state_machine.item_state_machine import (
     ITEM_UNFINISHED_THRESHOLD,
     ItemStateMachine,
 )
+from app.modules.client.services.state_machine.task_state_machine import (
+    TASK_ARRIVED,
+    TASK_DISPATCHED,
+    TASK_LOADED,
+    TASK_ON_WAY,
+    TASK_SIGNED,
+)
 from app.modules.client.services.waybill.waybill_service import WaybillService
 from app.modules.client.services.waybill.waybill_status_aggregator import (
     WaybillStatusAggregator,
@@ -200,7 +207,7 @@ class TaskWaybillItemService:
             vehicle_model=cargo.vehicle_model,
             dealer_name=wb.dealer_name,
             quantity=int(in_data.quantity),
-            segment_id=in_data.segmentId,
+            dispatch_order_id=in_data.dispatchOrderId,
             status=0,
             remark=in_data.remark,
         )
@@ -314,11 +321,30 @@ class TaskWaybillItemService:
             unloaded_at=data.unloadedAt,
             signed_at=data.signedAt,
         )
-        if data.segmentId is not None:
-            item.segment_id = data.segmentId
+        if data.dispatchOrderId is not None:
+            item.dispatch_order_id = data.dispatchOrderId
         if data.remark is not None:
             item.remark = data.remark
         await db.flush()
+
+        # 聚合上推：
+        # - item 全装车 / 撤销最后一条装车 → task.status 1↔2
+        # - item 全卸车 / 撤销最后一条卸车 → task.status 3↔4
+        # - item 全签收 / 撤销签收 → task.status 4↔5
+        task_res = await db.execute(
+            select(Task).where(
+                Task.id == item.task_id,
+                Task.is_deleted == 0,
+            )
+        )
+        task = task_res.scalar_one_or_none()
+        if task is not None:
+            await TaskWaybillItemService._aggregate_load_status_from_items(
+                db, task,
+            )
+            await TaskWaybillItemService._aggregate_task_status_from_items(
+                db, task,
+            )
 
         # 单条 item 变更后聚合运单状态（含可能的回退）
         await WaybillStatusAggregator.recompute(
@@ -326,6 +352,96 @@ class TaskWaybillItemService:
             allow_downgrade=(new_status < old_status),
         )
         return item
+
+    # ------------------------------------------------------------------
+    # Item → Task 反向聚合
+    # ------------------------------------------------------------------
+    @staticmethod
+    async def _aggregate_load_status_from_items(
+        db: AsyncSession,
+        task: Task,
+    ) -> None:
+        """根据当前任务下 item 的状态分布，自动在 1↔2 / 3↔4 间推进 task.status。
+
+        规则：
+        - task.status == 1 且所有活跃 item.status >= 1 → 1→2（已装车，写 actual_load_time）
+        - task.status == 2 且存在任一活跃 item.status < 1（撤销最后一条装车）→ 2→1
+        - task.status == 3 且所有活跃 item.status >= 2 → 3→4（已到达，写 actual_arrive_time）
+        - task.status == 4 且存在任一活跃 item.status < 2（撤销最后一条卸车）→ 4→3
+
+        本方法直接改写 task.status（不走 ``TaskStateMachine.assert_transition``）；
+        因为 1→2 / 3→4 已下沉为聚合态，状态机不再公开此路径。
+        """
+        cur = int(task.status)
+        if cur not in (
+            TASK_DISPATCHED, TASK_LOADED, TASK_ON_WAY, TASK_ARRIVED,
+        ):
+            return
+        items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+        active = [it for it in items if int(it.status) != 9]
+        if not active:
+            return
+        all_loaded = all(int(it.status) >= 1 for it in active)
+        all_unloaded = all(int(it.status) >= 2 for it in active)
+
+        changed = False
+        if cur == TASK_DISPATCHED and all_loaded:
+            task.status = TASK_LOADED
+            loaded_times = [it.loaded_at for it in active if it.loaded_at is not None]
+            if loaded_times:
+                task.actual_load_time = max(loaded_times)
+            changed = True
+        elif cur == TASK_LOADED and not all_loaded:
+            # 撤销最后一条装车（item 1→0），任务回退到已派车
+            task.status = TASK_DISPATCHED
+            task.actual_load_time = None
+            changed = True
+        elif cur == TASK_ON_WAY and all_unloaded:
+            task.status = TASK_ARRIVED
+            unloaded_times = [
+                it.unloaded_at for it in active if it.unloaded_at is not None
+            ]
+            if unloaded_times:
+                task.actual_arrive_time = max(unloaded_times)
+            changed = True
+        elif cur == TASK_ARRIVED and not all_unloaded:
+            # 撤销最后一条卸车（item 2→1），任务回退到在途
+            task.status = TASK_ON_WAY
+            task.actual_arrive_time = None
+            changed = True
+
+        if changed:
+            await db.flush()
+
+    @staticmethod
+    async def _aggregate_task_status_from_items(
+        db: AsyncSession,
+        task: Task,
+    ) -> None:
+        """根据当前任务下 item 的状态分布，自动调整 task.status 在 4↔5 间切换。
+
+        规则：
+        - task.status == 4 且所有活跃 item.status == 3 → 自动 4→5（写 task.signed_at）
+        - task.status == 5 且存在任一活跃 item.status < 3（撤销签收）→ 自动 5→4
+
+        其他状态不在此聚合范围；6 已结算/7 已关闭 不再由此触发。
+        """
+        cur = int(task.status)
+        if cur not in (TASK_ARRIVED, TASK_SIGNED):
+            return
+        items = await TaskWaybillItemService.list_items_of_task(db, task.id)
+        # 只看活跃 item（已取消的 9 不参与聚合）
+        active = [int(it.status) for it in items if int(it.status) != 9]
+        if not active:
+            return
+        all_signed = all(s == 3 for s in active)
+
+        if cur == TASK_ARRIVED and all_signed:
+            task.status = TASK_SIGNED
+            await db.flush()
+        elif cur == TASK_SIGNED and not all_signed:
+            task.status = TASK_ARRIVED
+            await db.flush()
 
     # ------------------------------------------------------------------
     # Task → Item 同步（正向 / 反向）

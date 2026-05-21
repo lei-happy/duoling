@@ -85,6 +85,7 @@ export async function assignCarrier(
   id: number,
   data: {
     carrier: TaskCarrierInfo;
+    isProxy?: boolean;
     carrierCostType?: number | null;
     carrierCostAmount?: number | null;
     costRemark?: string;
@@ -216,7 +217,7 @@ export async function addTaskWaybillItems(
     waybillId: number;
     waybillCargoId: number;
     quantity: number;
-    segmentId?: number | null;
+    dispatchOrderId?: number | null;
     remark?: string;
   }>
 ) {
@@ -235,7 +236,7 @@ export async function updateTaskWaybillItem(
     loadedAt?: string;
     unloadedAt?: string;
     signedAt?: string;
-    segmentId?: number | null;
+    dispatchOrderId?: number | null;
     remark?: string;
   }
 ) {

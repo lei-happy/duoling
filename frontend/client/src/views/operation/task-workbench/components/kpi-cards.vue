@@ -1,6 +1,11 @@
 <!--
-  调度工作台 KPI：六阶段卡片；主区点击=本阶段全部任务；
-  底部「常 / 警」药丸=正常/预警快速筛选（参考 SABC 样式）。
+  调度工作台 KPI：五阶段卡片（待分配 / 待派车 / 待装车 / 在途中 / 待签收）
+
+  - 主区点击 = 本阶段全部任务
+  - 标题同行右侧「常 / 警」药丸 = 正常 / 预警快速筛选
+
+  阶段「待结算」已下线：财务结算与 task.status 解耦，结算单走财务工作台。
+  详见《02.运单与任务单状态机联动设计.md》。
 -->
 <template>
   <div class="kpi-cards">
@@ -14,55 +19,54 @@
       ]"
     >
       <div class="kpi-card__body">
+        <div class="kpi-card__head">
+          <span class="kpi-card__accent-bar" aria-hidden="true"></span>
+          <span class="kpi-card__title">{{ card.label }}</span>
+          <div class="kpi-card__pills" @click.stop>
+            <el-tooltip
+              content="未触发计划类「预警」规则的任务（本阶段内）"
+              placement="top"
+              :show-after="350"
+            >
+              <button
+                type="button"
+                class="kpi-pill kpi-pill--normal"
+                :class="{ 'is-active': isPillActive(card.key, 'normal') }"
+                @click="emitSelect(card, 'normal')"
+              >
+                <span class="kpi-pill__letter">常</span>
+                <span class="kpi-pill__num">{{ card.normal }}</span>
+              </button>
+            </el-tooltip>
+            <el-tooltip
+              :content="card.alertHint"
+              placement="top"
+              :show-after="350"
+            >
+              <button
+                type="button"
+                class="kpi-pill kpi-pill--alert"
+                :class="{ 'is-active': isPillActive(card.key, 'alert') }"
+                @click="emitSelect(card, 'alert')"
+              >
+                <span class="kpi-pill__letter">警</span>
+                <span class="kpi-pill__num">{{ card.alert }}</span>
+              </button>
+            </el-tooltip>
+          </div>
+        </div>
         <button
           type="button"
           class="kpi-card__main"
           :class="{ 'is-active': isMainAllActive(card.key) }"
           @click="emitSelect(card, 'all')"
         >
-          <div class="kpi-card__head">
-            <span class="kpi-card__accent-bar" aria-hidden="true"></span>
-            <span class="kpi-card__title">{{ card.label }}</span>
-          </div>
           <div class="kpi-card__metric">
             <span class="kpi-card__value">{{ card.total }}</span>
             <span class="kpi-card__unit">单</span>
           </div>
-          <div class="kpi-card__sub">本阶段任务合计</div>
+          <div class="kpi-card__sub">{{ card.sub }}</div>
         </button>
-
-        <div class="kpi-card__pills" @click.stop>
-          <el-tooltip
-            content="未触发计划类「预警」规则的任务（本阶段内）"
-            placement="top"
-            :show-after="350"
-          >
-            <button
-              type="button"
-              class="kpi-pill kpi-pill--normal"
-              :class="{ 'is-active': isPillActive(card.key, 'normal') }"
-              @click="emitSelect(card, 'normal')"
-            >
-              <span class="kpi-pill__letter">常</span>
-              <span class="kpi-pill__num">{{ card.normal }}</span>
-            </button>
-          </el-tooltip>
-          <el-tooltip
-            :content="card.alertHint"
-            placement="top"
-            :show-after="350"
-          >
-            <button
-              type="button"
-              class="kpi-pill kpi-pill--alert"
-              :class="{ 'is-active': isPillActive(card.key, 'alert') }"
-              @click="emitSelect(card, 'alert')"
-            >
-              <span class="kpi-pill__letter">警</span>
-              <span class="kpi-pill__num">{{ card.alert }}</span>
-            </button>
-          </el-tooltip>
-        </div>
       </div>
     </div>
   </div>
@@ -100,6 +104,7 @@
     normal: number;
     alert: number;
     alertHint: string;
+    sub: string;
   }
 
   const activeKey = computed(() => props.activeCardKey ?? '');
@@ -117,8 +122,6 @@
     const al = a?.pendingLoadAlert ?? 0;
     const ps = t?.pendingSign ?? 0;
     const as = a?.pendingSignAlert ?? 0;
-    const pst = t?.pendingSettle ?? 0;
-    const ast = a?.pendingSettleAlert ?? 0;
 
     const mk = (
       key: string,
@@ -126,7 +129,8 @@
       status: number | number[],
       total: number,
       alert: number,
-      alertHint: string
+      alertHint: string,
+      sub: string
     ): KpiCard => ({
       key,
       label,
@@ -134,7 +138,8 @@
       total,
       alert,
       normal: Math.max(0, total - alert),
-      alertHint
+      alertHint,
+      sub
     });
 
     return [
@@ -144,7 +149,8 @@
         -1,
         pa,
         aa,
-        '当前：计划装车时间已过，任务仍处于待分配。后续可扩展更多预警规则。'
+        '当前：计划装车时间已过，任务仍处于待分配。后续可扩展更多预警规则。',
+        '本阶段任务合计'
       ),
       mk(
         'pending-dispatch',
@@ -152,7 +158,8 @@
         0,
         pd,
         ad,
-        '当前：计划装车时间已过仍未派车。后续可扩展更多预警规则。'
+        '当前：计划装车时间已过仍未派车。后续可扩展更多预警规则。',
+        '本阶段任务合计'
       ),
       mk(
         'pending-load',
@@ -160,7 +167,8 @@
         1,
         pl,
         al,
-        '待装车环节预警规则开发中；接入后将在此汇总需关注的任务。'
+        '待装车环节预警规则开发中；接入后将在此汇总需关注的任务。',
+        '本阶段任务合计'
       ),
       mk(
         'on-way',
@@ -168,7 +176,8 @@
         [2, 3],
         onWay,
         aTransit,
-        '当前：计划到货时间已过，任务仍处于在途/已装车。后续可扩展更多预警规则。'
+        '当前：计划到货时间已过，任务仍处于在途/已装车。后续可扩展更多预警规则。',
+        '本阶段任务合计'
       ),
       mk(
         'pending-sign',
@@ -176,15 +185,8 @@
         4,
         ps,
         as,
-        '待签收环节预警规则开发中；接入后将在此汇总需关注的任务。'
-      ),
-      mk(
-        'pending-settle',
-        '待结算',
-        5,
-        pst,
-        ast,
-        '待结算环节预警规则开发中；接入后将在此汇总需关注的任务。'
+        '已到达目的地、等待逐运单签收。签收完成后任务自动进入「已签收」。',
+        '已到达待签收'
       )
     ];
   });
@@ -211,7 +213,7 @@
 <style lang="scss" scoped>
   .kpi-cards {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 14px;
     margin-bottom: 16px;
   }
@@ -245,7 +247,7 @@
     --kpi-soft-bg: var(--el-color-primary-light-9);
     --kpi-soft-ring: var(--el-color-primary-light-7);
 
-    /* 六阶段各一套色系：琥珀 / 蓝 / 靛 / 橙 / 绿 / 紫 */
+    /* 五阶段配色：琥珀 / 蓝 / 靛 / 橙 / 绿 */
     &--pending-assign {
       --kpi-accent: var(--el-color-warning);
       --kpi-soft-bg: var(--el-color-warning-light-9);
@@ -271,11 +273,6 @@
       --kpi-soft-bg: var(--el-color-success-light-9);
       --kpi-soft-ring: var(--el-color-success-light-7);
     }
-    &--pending-settle {
-      --kpi-accent: #9333ea;
-      --kpi-soft-bg: rgba(147, 51, 234, 0.1);
-      --kpi-soft-ring: rgba(147, 51, 234, 0.32);
-    }
 
     &.is-selected {
       background: var(--kpi-soft-bg);
@@ -287,24 +284,6 @@
       display: flex;
       flex-direction: column;
       padding: 12px 12px 12px;
-    }
-
-    &__main {
-      display: block;
-      width: 100%;
-      margin: 0;
-      padding: 0px 0 8px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      text-align: left;
-      border-radius: 8px;
-
-      &:hover,
-      &.is-active {
-        background: transparent;
-        box-shadow: none;
-      }
     }
 
     &__head {
@@ -330,6 +309,30 @@
       font-weight: 600;
       color: var(--el-text-color-primary);
       letter-spacing: 0.02em;
+    }
+
+    &__pills {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    &__main {
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+
+      &:hover,
+      &.is-active {
+        background: transparent;
+        box-shadow: none;
+      }
     }
 
     &__metric {
@@ -368,24 +371,17 @@
     }
   }
 
-  .kpi-card__pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding-top: 2px;
-  }
-
   .kpi-pill {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
+    gap: 4px;
+    padding: 2px 8px;
     border-radius: 999px;
     border: 1px solid transparent;
     background: var(--el-fill-color);
     cursor: pointer;
-    font-size: 12px;
-    line-height: 1.2;
+    font-size: 11px;
+    line-height: 1.4;
     transition:
       background 0.15s ease,
       box-shadow 0.15s ease,
@@ -396,8 +392,8 @@
     }
 
     &__letter {
-      font-weight: 800;
-      font-size: 13px;
+      font-weight: 700;
+      font-size: 11px;
       min-width: 1em;
       text-align: center;
     }

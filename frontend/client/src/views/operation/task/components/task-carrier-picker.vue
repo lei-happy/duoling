@@ -2,6 +2,7 @@
   <div class="carrier-picker">
     <el-radio-group
       v-model="local.carrierType"
+      :disabled="lockType"
       @change="onTypeChange"
       class="carrier-picker__radio"
     >
@@ -16,47 +17,56 @@
 
     <!-- A. 自有车 -->
     <template v-if="local.carrierType === 1">
-      <el-form-item label="选择运力">
-        <el-select
-          v-model="local.capacityId"
-          remote
-          filterable
-          clearable
-          :remote-method="searchCapacities"
-          placeholder="搜索司机/车牌"
-          style="width: 100%"
-          @change="onCapacityChange"
-        >
-          <el-option
-            v-for="c in capacities"
-            :key="c.id"
-            :value="c.id!"
-            :label="`${c.driverName} / ${c.plateNumber}`"
+      <el-alert
+        v-if="simpleMode"
+        type="info"
+        :closable="false"
+        style="margin-bottom: 12px"
+        title="自有车任务进入「待派车」后，由调度员在派车环节选择具体运力（司机/车牌），此处无需指定。"
+      />
+      <template v-else>
+        <el-form-item label="选择运力">
+          <el-select
+            v-model="local.capacityId"
+            remote
+            filterable
+            clearable
+            :remote-method="searchCapacities"
+            placeholder="搜索司机/车牌"
+            style="width: 100%"
+            @change="onCapacityChange"
           >
-            <span>{{ c.driverName }}</span>
-            <span class="ele-text-secondary" style="margin-left: 8px">
-              {{ c.plateNumber }} · {{ c.driverPhone }}
-            </span>
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="主驾姓名">
-            <el-input v-model="local.mainDriverName" placeholder="可手动覆盖" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="主驾电话">
-            <el-input v-model="local.mainDriverPhone" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="车牌号">
-            <el-input v-model="local.plateNumber" />
-          </el-form-item>
-        </el-col>
-      </el-row>
+            <el-option
+              v-for="c in capacities"
+              :key="c.id"
+              :value="c.id!"
+              :label="`${c.driverName} / ${c.plateNumber}`"
+            >
+              <span>{{ c.driverName }}</span>
+              <span class="ele-text-secondary" style="margin-left: 8px">
+                {{ c.plateNumber }} · {{ c.driverPhone }}
+              </span>
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-row :gutter="12">
+          <el-col :span="8">
+            <el-form-item label="主驾姓名">
+              <el-input v-model="local.mainDriverName" placeholder="可手动覆盖" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="主驾电话">
+              <el-input v-model="local.mainDriverPhone" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="车牌号">
+              <el-input v-model="local.plateNumber" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </template>
     </template>
 
     <!-- B. 承运商 -->
@@ -159,9 +169,22 @@
   import type { CarrierSelectItem } from '@/api/partner/carrier/model';
   import { CARRIER_TYPE_OPTIONS } from '../status-config';
 
-  const props = defineProps<{
-    modelValue?: TaskCarrierInfo;
-  }>();
+  const props = withDefaults(
+    defineProps<{
+      modelValue?: TaskCarrierInfo;
+      /**
+       * 简化模式：用于「待分配」阶段确认承运方式 —— 自有车任务无需选择具体运力，
+       * 仅给出提示文案；切换 carrier_type 仍可正常使用。
+       */
+      simpleMode?: boolean;
+      /** 锁定承运方式：派车环节使用，禁止重新选择 carrierType。 */
+      lockType?: boolean;
+    }>(),
+    {
+      simpleMode: false,
+      lockType: false
+    }
+  );
   const emit = defineEmits<{
     (e: 'update:modelValue', value: TaskCarrierInfo): void;
   }>();

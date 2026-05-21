@@ -10,16 +10,22 @@ from app.modules.client.schemas.task.task import (
     TaskListItemOut,
     TaskOut,
 )
-from app.modules.client.schemas.task.task_segment import (
-    TaskSegmentIn,
-    TaskSegmentStatusUpdate,
-    TaskSegmentOut,
+from app.modules.client.schemas.task.task_dispatch_order import (
+    TaskDispatchOrderIn,
+    TaskDispatchOrderStatusUpdate,
+    TaskDispatchOrderOut,
 )
 from app.modules.client.schemas.task.task_waybill_item import (
     TaskWaybillItemIn,
     TaskWaybillItemStatusUpdate,
     TaskWaybillItemOut,
     CandidateCargoOut,
+)
+from app.modules.client.schemas.task.task_loading_record import (
+    TaskLoadingRecordCreate,
+    TaskLoadingRecordItemIn,
+    TaskLoadingRecordItemOut,
+    TaskLoadingRecordOut,
 )
 from app.modules.client.schemas.task.task_finance_doc import (
     TaskFinanceDocCreate,
@@ -44,15 +50,20 @@ __all__ = [
     "TaskCancelRequest",
     "TaskListItemOut",
     "TaskOut",
-    # segment
-    "TaskSegmentIn",
-    "TaskSegmentStatusUpdate",
-    "TaskSegmentOut",
+    # dispatch order（原 segment）
+    "TaskDispatchOrderIn",
+    "TaskDispatchOrderStatusUpdate",
+    "TaskDispatchOrderOut",
     # waybill item
     "TaskWaybillItemIn",
     "TaskWaybillItemStatusUpdate",
     "TaskWaybillItemOut",
     "CandidateCargoOut",
+    # loading record
+    "TaskLoadingRecordCreate",
+    "TaskLoadingRecordItemIn",
+    "TaskLoadingRecordItemOut",
+    "TaskLoadingRecordOut",
     # finance doc
     "TaskFinanceDocCreate",
     "TaskFinanceDocUpdate",

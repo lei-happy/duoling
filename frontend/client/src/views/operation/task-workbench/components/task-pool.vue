@@ -55,6 +55,38 @@
           class="task-pool__toolbar-field"
           @keyup.enter="doReload"
         />
+        <el-select
+          v-model="carrierTypeFilter"
+          placeholder="承运方式"
+          clearable
+          class="task-pool__toolbar-field"
+          @change="doReload"
+        >
+          <el-option
+            v-for="o in CARRIER_TYPE_OPTIONS"
+            :key="o.value"
+            :value="o.value"
+            :label="o.label"
+          />
+        </el-select>
+        <el-select
+          v-if="carrierTypeFilter === 2 || pool.key === 'pending-load'"
+          v-model="carrierIdFilter"
+          remote
+          filterable
+          clearable
+          :remote-method="searchCarriers"
+          placeholder="搜索承运商"
+          class="task-pool__toolbar-field"
+          @change="doReload"
+        >
+          <el-option
+            v-for="c in carrierOptions"
+            :key="c.id"
+            :value="c.id"
+            :label="c.name"
+          />
+        </el-select>
         <el-date-picker
           v-model="createdRange"
           type="daterange"
@@ -172,6 +204,36 @@
         </div>
       </template>
 
+      <template #carrierName="{ row }">
+        <div class="cell-ellipsis">
+          <template v-if="row.carrierType === 2">
+            {{ row.carrierShortName || row.carrierName || '--' }}
+          </template>
+          <template v-else-if="row.carrierType === 1">
+            <span class="ele-text-secondary">自有 ·</span>
+            {{ row.mainDriverName || '待派车' }}
+          </template>
+          <template v-else-if="row.carrierType === 3">
+            <span class="ele-text-secondary">社会 ·</span>
+            {{ row.mainDriverName || '--' }}
+          </template>
+          <template v-else>--</template>
+        </div>
+      </template>
+
+      <template #plateNumber="{ row }">
+        <span>
+          {{ row.plateNumber || '--' }}
+          <span
+            v-if="row.trailerPlateNumber"
+            class="ele-text-secondary"
+            style="margin-left: 4px"
+          >
+            / {{ row.trailerPlateNumber }}
+          </span>
+        </span>
+      </template>
+
       <template #status="{ row }">
         <div class="status-cell">
           <el-tag
@@ -180,6 +242,12 @@
           >
             {{ TASK_STATUS_MAP[row.status]?.label || '--' }}
           </el-tag>
+          <span
+            v-if="loadProgressText(row)"
+            class="ele-text-secondary status-cell__progress"
+          >
+            {{ loadProgressText(row) }}
+          </span>
           <el-tag
             v-if="isOverdue(row)"
             type="warning"
@@ -273,7 +341,13 @@
   import type { Waybill } from '@/api/waybill/model';
   import { formatDateTime } from '@/utils/date-util';
   import { EleMessage } from 'ele-admin-plus';
-  import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from '../../task/status-config';
+  import {
+    CARRIER_TYPE_MAP,
+    CARRIER_TYPE_OPTIONS,
+    TASK_STATUS_MAP
+  } from '../../task/status-config';
+  import { selectCarriers } from '@/api/partner/carrier';
+  import type { CarrierSelectItem } from '@/api/partner/carrier/model';
   import {
     TASK_ACTION_CONFIGS,
     shouldShowPlanRoute
@@ -314,6 +388,24 @@
   const routeOriginKw = ref('');
   const routeDestKw = ref('');
   const createdRange = ref<[string, string] | null>(null);
+  const carrierTypeFilter = ref<number | undefined>(undefined);
+  const carrierIdFilter = ref<number | undefined>(undefined);
+  const carrierOptions = ref<
+    Array<{ id: number; name: string; shortName?: string }>
+  >([]);
+
+  const searchCarriers = async (kw: string) => {
+    try {
+      const res: CarrierSelectItem[] = await selectCarriers(kw);
+      carrierOptions.value = (res || []).map((c) => ({
+        id: c.id,
+        name: c.shortName ? `${c.shortName} · ${c.carrierName}` : c.carrierName,
+        shortName: c.shortName
+      }));
+    } catch {
+      carrierOptions.value = [];
+    }
+  };
 
   const cargoDetailVisible = ref(false);
   const cargoDetailWaybill = ref<Waybill | null>(null);
@@ -397,7 +489,9 @@
       originKeyword: routeOriginKw.value?.trim() || undefined,
       destinationKeyword: routeDestKw.value?.trim() || undefined,
       createdAtStart: r?.[0] || undefined,
-      createdAtEnd: r?.[1] || undefined
+      createdAtEnd: r?.[1] || undefined,
+      carrierType: carrierTypeFilter.value || undefined,
+      carrierId: carrierIdFilter.value || undefined
     };
   };
 
@@ -406,7 +500,23 @@
     routeOriginKw.value = '';
     routeDestKw.value = '';
     createdRange.value = null;
+    carrierTypeFilter.value = undefined;
+    carrierIdFilter.value = undefined;
     doReload();
+  };
+
+  /** 状态 Tag 后缀进度文本：已装/已卸 X/Y */
+  const loadProgressText = (row: Task): string => {
+    const total = row.totalQuantity ?? 0;
+    if (!total) return '';
+    if (row.status === 1) {
+      const loaded = row.loadedQuantity ?? 0;
+      if (loaded > 0) return `已装 ${loaded}/${total}`;
+    } else if (row.status === 3) {
+      const unloaded = row.unloadedQuantity ?? 0;
+      if (unloaded > 0) return `已卸 ${unloaded}/${total}`;
+    }
+    return '';
   };
 
   /** 行内是否展示"规划路线"次按钮（避免与主按钮重复或对终态任务展示） */
@@ -527,9 +637,20 @@
         routeOriginKw.value = '';
         routeDestKw.value = '';
         createdRange.value = null;
+        carrierTypeFilter.value = undefined;
+        carrierIdFilter.value = undefined;
         selections.value = [];
       }
       doReload();
+    }
+  );
+
+  watch(
+    () => carrierTypeFilter.value,
+    (v) => {
+      if (v !== 2) {
+        carrierIdFilter.value = undefined;
+      }
     }
   );
 
@@ -663,6 +784,11 @@
     align-items: center;
     flex-wrap: nowrap;
     white-space: nowrap;
+
+    &__progress {
+      margin-left: 4px;
+      font-size: 12px;
+    }
 
     &__overdue {
       margin-left: 4px;

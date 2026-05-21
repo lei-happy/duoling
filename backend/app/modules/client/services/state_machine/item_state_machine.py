@@ -2,13 +2,13 @@
 
 Item.status 状态空间：
     0 待装车（默认，挂接后即此态）
-    1 已装车
-    2 在途/已到达（合并语义，由 Task 段状态/任务态决定）
+    1 已装车（由装车记录 ``TaskLoadingRecord(event_type=1)`` 驱动写入）
+    2 已卸车（由卸车记录 ``TaskLoadingRecord(event_type=2)`` 驱动写入）
     3 已签收
     9 已取消（挂接被取消、任务被取消则同步设为此态）
 
-Item 状态由 Task 状态变更同步推导，service 层只调用 `derive_from_task`
-来得到目标态，再用 `assert_transition` 做合法性校验。
+Item 状态主要由"装卸记录 / 签收事件"驱动，``derive_from_task`` 仅在
+非装卸跳转（如出发 / 取消 / 关闭）时为兜底用途。
 """
 
 from typing import Optional, Set
@@ -18,15 +18,18 @@ from app.common.exceptions import BizException
 
 ITEM_PENDING = 0
 ITEM_LOADED = 1
-ITEM_IN_TRANSIT = 2
+ITEM_UNLOADED = 2
 ITEM_SIGNED = 3
 ITEM_CANCELLED = 9
+
+# 兼容历史命名（早期把 status=2 标注为「在途/到达」，现已重定义为「已卸车」）
+ITEM_IN_TRANSIT = ITEM_UNLOADED
 
 
 ITEM_STATUS_LABELS: dict[int, str] = {
     0: "待装车",
     1: "已装车",
-    2: "在途/到达",
+    2: "已卸车",
     3: "已签收",
     9: "已取消",
 }
@@ -35,24 +38,28 @@ ITEM_STATUS_LABELS: dict[int, str] = {
 # 正向 / 反向合一的合法跳转
 ITEM_VALID_TRANS: dict[int, Set[int]] = {
     0: {1, 9},
-    1: {0, 2, 9},      # 1→0 撤销装车
-    2: {1, 3, 9},      # 2→1 撤回出发/到达
+    1: {0, 2, 9},      # 1→0 撤销装车（撤回最后一条装车记录）
+    2: {1, 3, 9},      # 2→1 撤销卸车（撤回最后一条卸车记录）
     3: {2, 9},         # 3→2 撤销签收
     9: set(),
 }
 
 
 # Task.status → Item 目标状态 的"等价表"
-# 用于 Task 推动 Item 正向/反向同步
+# 用法：装卸事件不走此表（由 LoadingRecord 直接驱动 item 状态）；
+# 此表仅在非装卸跳转中作为 propagate 的兜底（出发 / 关闭 / 取消等场景）。
+# 注意：
+#   - task=2 / 4 / 5 由 item 聚合驱动写入，propagate 时 derive 出来的目标
+#     与现状一致，目标 ≤ 当前 → propagate 跳过，不会越权写 item；
+#   - task=3 在途时 item 仍保持「已装车=1」，避免错误跨步推 item 至 2 已卸车。
 _TASK_TO_ITEM: dict[int, int] = {
     -1: 0,
     0: 0,
     1: 0,
     2: 1,
-    3: 2,
+    3: 1,
     4: 2,
     5: 3,
-    6: 3,
     7: 3,
     9: 9,
 }

@@ -37,9 +37,13 @@ from app.modules.client.schemas.task.task import (
     TaskStatusUpdate,
     TaskUpdate,
 )
-from app.modules.client.schemas.task.task_segment import (
-    TaskSegmentOut,
-    TaskSegmentStatusUpdate,
+from app.modules.client.schemas.task.task_dispatch_order import (
+    TaskDispatchOrderOut,
+    TaskDispatchOrderStatusUpdate,
+)
+from app.modules.client.schemas.task.task_loading_record import (
+    TaskLoadingRecordCreate,
+    TaskLoadingRecordOut,
 )
 from app.modules.client.schemas.task.task_waybill_item import (
     TaskWaybillItemIn,
@@ -51,6 +55,9 @@ from app.modules.client.services.company_activity_service import (
 )
 from app.modules.client.services.task.task_finance_service import (
     TaskFinanceService,
+)
+from app.modules.client.services.task.task_loading_record_service import (
+    TaskLoadingRecordService,
 )
 from app.modules.client.services.task.task_service import TaskService
 from app.modules.client.services.task.task_waybill_item_service import (
@@ -68,11 +75,11 @@ async def _task_detail_dump(
     segments=None,
     waybill_items=None,
 ):
-    """聚合 segments + waybillItems，并为挂接行补齐车系图（与运单列表一致）。"""
+    """聚合 dispatch orders + waybillItems，并为挂接行补齐车系图（与运单列表一致）。"""
     segs = (
         segments
         if segments is not None
-        else await TaskService.list_segments(db, task.id)
+        else await TaskService.list_dispatch_orders(db, task.id)
     )
     items = (
         waybill_items
@@ -88,7 +95,7 @@ async def _task_detail_dump(
 _TASK_STATUS_LABELS = {
     -1: "待分配",
     0: "待派车", 1: "已派车", 2: "已装车", 3: "在途",
-    4: "已到达", 5: "已签收", 6: "已结算", 7: "已关闭", 9: "已取消",
+    4: "已到达", 5: "已签收", 7: "已关闭", 9: "已取消",
 }
 
 
@@ -107,6 +114,8 @@ async def page_tasks(
     page_size: int = Query(20, alias="limit", ge=1, le=100),
     keyword: Optional[str] = None,
     carrierType: Optional[int] = None,
+    carrierId: Optional[int] = None,
+    capacityId: Optional[int] = None,
     status: Optional[int] = None,
     customerId: Optional[int] = None,
     originKeyword: Optional[str] = None,
@@ -132,7 +141,11 @@ async def page_tasks(
     items, total = await TaskService.page_tasks(
         db,
         page=page, page_size=page_size,
-        keyword=keyword, carrier_type=carrierType, status=status,
+        keyword=keyword,
+        carrier_type=carrierType,
+        carrier_id=carrierId,
+        capacity_id=capacityId,
+        status=status,
         customer_id=customerId,
         origin_keyword=originKeyword,
         destination_keyword=destinationKeyword,
@@ -143,7 +156,17 @@ async def page_tasks(
         only_normal=onlyNormal,
         in_transit_only_normal=inTransitOnlyNormal,
     )
-    rows = [TaskListItemOut.from_model(t).model_dump() for t in items]
+    qty_map = await TaskService.aggregate_loaded_unloaded(
+        db, [t.id for t in items],
+    )
+    rows = []
+    for t in items:
+        loaded, unloaded = qty_map.get(int(t.id), (0, 0))
+        rows.append(
+            TaskListItemOut.from_model(
+                t, loaded_quantity=loaded, unloaded_quantity=unloaded,
+            ).model_dump()
+        )
     return success(data={
         "list": rows,
         "count": total,
@@ -495,36 +518,95 @@ async def remove_waybill_item(
 
 
 # ============================================================
-# 分段子接口
+# 调令子接口（原"分段"）
 # ============================================================
 
-@router.get("/{task_id}/segments")
-async def list_segments(
+@router.get("/{task_id}/dispatch-orders")
+@router.get("/{task_id}/segments")  # 兼容旧路径
+async def list_dispatch_orders(
     task_id: int,
     db: AsyncSession = Depends(get_tenant_db),
     _: TokenData = Depends(get_current_user),
 ):
-    segs = await TaskService.list_segments(db, task_id)
-    return success(data=[TaskSegmentOut.from_model(s).model_dump() for s in segs])
+    segs = await TaskService.list_dispatch_orders(db, task_id)
+    return success(
+        data=[TaskDispatchOrderOut.from_model(s).model_dump() for s in segs]
+    )
 
 
-@router.put("/segments/{seg_id}/status")
-@operation_log(module="运输任务单", action="段状态变更", description="变更分段状态")
-async def update_segment_status(
+@router.put("/dispatch-orders/{order_id}/status")
+@router.put("/segments/{order_id}/status")  # 兼容旧路径
+@operation_log(module="运输任务单", action="调令状态变更", description="变更调令状态")
+async def update_dispatch_order_status(
     request: Request,
-    seg_id: int,
-    data: TaskSegmentStatusUpdate,
+    order_id: int,
+    data: TaskDispatchOrderStatusUpdate,
     db: AsyncSession = Depends(get_tenant_db),
     current_user: TokenData = Depends(get_current_user),
 ):
     _require_tenant(current_user)
-    seg = await TaskService.update_segment_status(
-        db, seg_id, data.status,
+    seg = await TaskService.update_dispatch_order_status(
+        db, order_id, data.status,
         actual_load_time=data.actualLoadTime,
         actual_arrive_time=data.actualArriveTime,
         remark=data.remark,
     )
-    return success(data=TaskSegmentOut.from_model(seg).model_dump())
+    return success(data=TaskDispatchOrderOut.from_model(seg).model_dump())
+
+
+# ============================================================
+# 装卸记录（多批次装/卸车）
+# ============================================================
+
+@router.get("/{task_id}/loading-records")
+async def list_loading_records(
+    task_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """列出某任务的全部装卸事件（含每条记录的 items 与照片）。"""
+    rows = await TaskLoadingRecordService.list_records(db, task_id)
+    return success(data=[r.model_dump() for r in rows])
+
+
+@router.post("/{task_id}/loading-records")
+@operation_log(
+    module="运输任务单", action="装卸事件",
+    description="创建装/卸车记录，同事务推进 item / task / waybill 状态",
+)
+async def create_loading_record(
+    request: Request,
+    task_id: int,
+    data: TaskLoadingRecordCreate,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    op_name = await CompanyActivityService.actor_display_name(
+        db, current_user.user_id
+    )
+    rec = await TaskLoadingRecordService.create_record(
+        db, task_id, data,
+        operator_id=current_user.user_id,
+        operator_name=op_name,
+    )
+    return success(data=rec.model_dump())
+
+
+@router.delete("/loading-records/{record_id}")
+@operation_log(
+    module="运输任务单", action="撤销装卸事件",
+    description="撤销一条装/卸车记录，回退 item 与 task 状态",
+)
+async def revoke_loading_record(
+    request: Request,
+    record_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    await TaskLoadingRecordService.revoke_record(db, record_id)
+    return success()
 
 
 # ============================================================

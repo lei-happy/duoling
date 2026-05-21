@@ -23,7 +23,7 @@
       :closable="false"
       show-icon
       title="强制取消是不可逆的高危操作"
-      description="将释放所有运单挂接，已签收/已结算的任务请勿使用此入口。"
+      description="将释放所有运单挂接，已签收 / 已关闭 的任务请勿使用此入口。"
       style="margin-bottom: 12px"
     />
     <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
