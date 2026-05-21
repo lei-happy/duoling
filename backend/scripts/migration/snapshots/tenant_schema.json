@@ -5405,7 +5405,7 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": "0",
-          "comment": "状态 0-待派车 1-已派车 2-已装车 3-在途 4-已到达 5-已签收 6-已结算 7-已关闭 9-已取消"
+          "comment": "状态 0-待派车 1-已派车 2-已装车 3-在途 4-已到达 5-已签收(聚合态) 7-已关闭 9-已取消"
         },
         {
           "name": "supplement_amount",
@@ -5515,6 +5515,249 @@
           "name": "idx_task_status",
           "columns": [
             "status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_task_dispatch_order",
+      "comment": "任务单调令表（运输任务的最小调度单位）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "accepted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调令接收时间（司机端确认）"
+        },
+        {
+          "name": "actual_arrive_time",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际到达时间"
+        },
+        {
+          "name": "actual_load_time",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际装车时间"
+        },
+        {
+          "name": "completed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调令完成时间"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dispatch_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "调令类型 1-重驶 2-空驶 3-年检 4-应急 5-其他"
+        },
+        {
+          "name": "from_code",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "起点编码"
+        },
+        {
+          "name": "from_location",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "起点名称"
+        },
+        {
+          "name": "from_region_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "起点行政区 ID"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "mileage",
+          "type": "NUMERIC(8, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调令公里数"
+        },
+        {
+          "name": "order_no",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调令序号 1,2,3..."
+        },
+        {
+          "name": "planned_arrive_time",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划到达时间"
+        },
+        {
+          "name": "planned_load_time",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划装车时间"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "started_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调令开始时间（司机点击出发）"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "调令状态 0-待装车 1-装车中 2-在途 3-已到达 4-已卸车"
+        },
+        {
+          "name": "task_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_task.id"
+        },
+        {
+          "name": "to_code",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "终点编码"
+        },
+        {
+          "name": "to_location",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "终点名称"
+        },
+        {
+          "name": "to_region_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "终点行政区 ID"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_task_dispatch_order",
+          "columns": [
+            "task_id",
+            "order_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_dispatch_order_dispatch_type",
+          "columns": [
+            "dispatch_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_dispatch_order_task_id",
+          "columns": [
+            "task_id"
           ],
           "unique": false
         }
@@ -5964,249 +6207,6 @@
           "name": "idx_tfi_doc_id",
           "columns": [
             "finance_doc_id"
-          ],
-          "unique": false
-        }
-      ],
-      "foreign_keys": []
-    },
-    {
-      "name": "biz_task_dispatch_order",
-      "comment": "任务单调令表（运输任务的最小调度单位）",
-      "table_tier": "business",
-      "columns": [
-        {
-          "name": "accepted_at",
-          "type": "DATETIME",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "调令接收时间（司机端确认）"
-        },
-        {
-          "name": "actual_arrive_time",
-          "type": "DATETIME",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "实际到达时间"
-        },
-        {
-          "name": "actual_load_time",
-          "type": "DATETIME",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "实际装车时间"
-        },
-        {
-          "name": "completed_at",
-          "type": "DATETIME",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "调令完成时间"
-        },
-        {
-          "name": "created_at",
-          "type": "DATETIME",
-          "nullable": false,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": "now()",
-          "comment": "创建时间"
-        },
-        {
-          "name": "dispatch_type",
-          "type": "SMALLINT",
-          "nullable": false,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": "1",
-          "comment": "调令类型 1-重驶 2-空驶 3-年检 4-应急 5-其他"
-        },
-        {
-          "name": "from_code",
-          "type": "VARCHAR(20)",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "起点编码"
-        },
-        {
-          "name": "from_location",
-          "type": "VARCHAR(255)",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "起点名称"
-        },
-        {
-          "name": "from_region_id",
-          "type": "BIGINT",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "起点行政区 ID"
-        },
-        {
-          "name": "id",
-          "type": "BIGINT",
-          "nullable": false,
-          "primary_key": true,
-          "autoincrement": true,
-          "server_default": null,
-          "comment": "主键ID"
-        },
-        {
-          "name": "is_deleted",
-          "type": "SMALLINT",
-          "nullable": false,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": "0",
-          "comment": "是否删除 0-否 1-是"
-        },
-        {
-          "name": "mileage",
-          "type": "NUMERIC(8, 2)",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "调令公里数"
-        },
-        {
-          "name": "order_no",
-          "type": "SMALLINT",
-          "nullable": false,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "调令序号 1,2,3..."
-        },
-        {
-          "name": "planned_arrive_time",
-          "type": "DATETIME",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "计划到达时间"
-        },
-        {
-          "name": "planned_load_time",
-          "type": "DATETIME",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "计划装车时间"
-        },
-        {
-          "name": "remark",
-          "type": "VARCHAR(255)",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "备注"
-        },
-        {
-          "name": "started_at",
-          "type": "DATETIME",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "调令开始时间（司机点击出发）"
-        },
-        {
-          "name": "status",
-          "type": "SMALLINT",
-          "nullable": false,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": "0",
-          "comment": "调令状态 0-待装车 1-装车中 2-在途 3-已到达 4-已卸车"
-        },
-        {
-          "name": "task_id",
-          "type": "BIGINT",
-          "nullable": false,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "关联 biz_task.id"
-        },
-        {
-          "name": "to_code",
-          "type": "VARCHAR(20)",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "终点编码"
-        },
-        {
-          "name": "to_location",
-          "type": "VARCHAR(255)",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "终点名称"
-        },
-        {
-          "name": "to_region_id",
-          "type": "BIGINT",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "终点行政区 ID"
-        },
-        {
-          "name": "updated_at",
-          "type": "DATETIME",
-          "nullable": false,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": "now()",
-          "comment": "更新时间"
-        }
-      ],
-      "primary_key": [
-        "id"
-      ],
-      "unique_constraints": [
-        {
-          "name": "uk_task_dispatch_order",
-          "columns": [
-            "task_id",
-            "order_no"
-          ]
-        }
-      ],
-      "indexes": [
-        {
-          "name": "idx_dispatch_order_dispatch_type",
-          "columns": [
-            "dispatch_type"
-          ],
-          "unique": false
-        },
-        {
-          "name": "idx_dispatch_order_task_id",
-          "columns": [
-            "task_id"
           ],
           "unique": false
         }

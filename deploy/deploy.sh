@@ -586,7 +586,7 @@ run_drift_check() {
             ;;
         1)
             log_error "检测到 schema drift：ORM 与 snapshot 不一致"
-            log_error "应在合并前由开发者执行 `python -m scripts.migration.autogen ...` 生成迁移文件 + 刷新 snapshot"
+            log_error "应在合并前由开发者执行 'python -m scripts.migration.autogen ...' 生成迁移文件 + 刷新 snapshot"
             log_warn "如需应急绕过（自担风险），重新执行：bash deploy.sh update --skip-drift-check"
             return 1
             ;;
