@@ -237,6 +237,39 @@
     }
   }
 
+  /* 垂直菜单层级 typography */
+  &.el-menu--vertical {
+    > .el-menu-item,
+    > .el-sub-menu > .el-sub-menu__title {
+      font-size: eleVar('menu', 'level1-font-size');
+      font-weight: eleVar('menu', 'level1-font-weight');
+      color: eleVar('menu', 'level1-color');
+
+      > span,
+      .ele-menu-title {
+        font-size: inherit;
+        font-weight: inherit;
+        color: inherit;
+      }
+    }
+
+    .el-sub-menu > .el-menu {
+      .el-menu-item,
+      .el-sub-menu > .el-sub-menu__title {
+        font-size: eleVar('menu', 'child-font-size');
+        font-weight: eleVar('menu', 'child-font-weight');
+        color: eleVar('menu', 'child-color');
+
+        > span,
+        .ele-menu-title {
+          font-size: inherit;
+          font-weight: inherit;
+          color: inherit;
+        }
+      }
+    }
+  }
+
   &.el-menu--vertical:not(.el-menu--popup-container),
   &.el-menu--vertical .el-menu,
   & > .el-menu--popup,
@@ -677,6 +710,11 @@
     /* 垂直菜单 */
     &.el-menu--vertical .el-sub-menu > .el-menu {
       background: eleVar('menu-dark', 'child-bg');
+
+      .el-menu-item,
+      .el-sub-menu > .el-sub-menu__title {
+        color: eleVar('menu-dark', 'child-color');
+      }
     }
 
     &.el-menu--vertical .el-menu-item::after {

@@ -217,12 +217,12 @@
   },
   {
     "parent_id": 164,
-    "menu_name": "今日工作台",
+    "menu_name": "工作台",
     "menu_code": "dashboard:workplace",
     "menu_type": 0,
     "path": "/dashboard/workplace",
     "component": "/dashboard/workplace/index",
-    "icon": "workspace",
+    "icon": "",
     "sort_order": 0,
     "visible": 1,
     "status": 1,
@@ -230,7 +230,7 @@
     "feature_code": "base_dashboard",
     "id": 165,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-02 21:00:43",
+    "updated_at": "2026-05-23 11:46:08",
     "is_deleted": 0
   },
   {
@@ -240,7 +240,7 @@
     "menu_type": 0,
     "path": "/enterprise/organization",
     "component": "/enterprise/organization/index",
-    "icon": "zzjg",
+    "icon": "",
     "sort_order": 0,
     "visible": 1,
     "status": 1,
@@ -248,7 +248,7 @@
     "feature_code": "base_organization",
     "id": 167,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-06 15:22:12",
+    "updated_at": "2026-05-23 11:54:24",
     "is_deleted": 0
   },
   {
@@ -258,7 +258,7 @@
     "menu_type": 0,
     "path": "/enterprise/user",
     "component": "/enterprise/user/index",
-    "icon": "yonghuguanli",
+    "icon": "",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -266,7 +266,7 @@
     "feature_code": "base_user",
     "id": 168,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-06 15:22:23",
+    "updated_at": "2026-05-23 11:54:18",
     "is_deleted": 0
   },
   {
@@ -276,7 +276,7 @@
     "menu_type": 0,
     "path": "/enterprise/role",
     "component": "/enterprise/role/index",
-    "icon": "role",
+    "icon": "",
     "sort_order": 20,
     "visible": 1,
     "status": 1,
@@ -284,7 +284,7 @@
     "feature_code": "base_role",
     "id": 173,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-06 15:22:54",
+    "updated_at": "2026-05-23 11:54:08",
     "is_deleted": 0
   },
   {
@@ -294,7 +294,7 @@
     "menu_type": 0,
     "path": "/enterprise/approval-config",
     "component": "/enterprise/approval-config/index",
-    "icon": "liucheng",
+    "icon": "",
     "sort_order": 25,
     "visible": 1,
     "status": 1,
@@ -302,7 +302,7 @@
     "feature_code": "approval_config",
     "id": 319,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-04-19 13:53:31",
+    "updated_at": "2026-05-23 11:54:13",
     "is_deleted": 0
   },
   {
@@ -312,7 +312,7 @@
     "menu_type": 0,
     "path": "/enterprise/basic-data",
     "component": null,
-    "icon": "jichushuju",
+    "icon": "",
     "sort_order": 30,
     "visible": 1,
     "status": 1,
@@ -320,7 +320,7 @@
     "feature_code": "basic_data",
     "id": 320,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-15 19:46:34",
+    "updated_at": "2026-05-23 11:53:52",
     "is_deleted": 0
   },
   {
@@ -330,7 +330,7 @@
     "menu_type": 0,
     "path": "/enterprise/dictionary",
     "component": "/enterprise/dictionary/index",
-    "icon": "dataa",
+    "icon": "",
     "sort_order": 40,
     "visible": 1,
     "status": 1,
@@ -338,7 +338,7 @@
     "feature_code": "base_dict",
     "id": 174,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-06 15:23:50",
+    "updated_at": "2026-05-23 11:53:47",
     "is_deleted": 0
   },
   {
@@ -348,7 +348,7 @@
     "menu_type": 0,
     "path": "/enterprise/config",
     "component": "/enterprise/config/index",
-    "icon": "galileoset",
+    "icon": "",
     "sort_order": 50,
     "visible": 1,
     "status": 1,
@@ -356,7 +356,7 @@
     "feature_code": "base_config",
     "id": 254,
     "created_at": "2026-04-11 20:30:50",
-    "updated_at": "2026-04-12 19:12:35",
+    "updated_at": "2026-05-23 11:53:42",
     "is_deleted": 0
   },
   {
@@ -366,7 +366,7 @@
     "menu_type": 0,
     "path": "/enterprise/operation-log",
     "component": "/enterprise/operation-log/index",
-    "icon": "czrz",
+    "icon": "",
     "sort_order": 60,
     "visible": 1,
     "status": 1,
@@ -374,7 +374,7 @@
     "feature_code": "base_log",
     "id": 175,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-12 13:08:36",
+    "updated_at": "2026-05-23 11:53:38",
     "is_deleted": 0
   },
   {
@@ -384,7 +384,7 @@
     "menu_type": 0,
     "path": "/enterprise/login-log",
     "component": "/enterprise/login-log/index",
-    "icon": "dlrz",
+    "icon": "",
     "sort_order": 70,
     "visible": 1,
     "status": 1,
@@ -392,7 +392,7 @@
     "feature_code": "base_log",
     "id": 176,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-12 13:08:46",
+    "updated_at": "2026-05-23 11:53:34",
     "is_deleted": 0
   },
   {
@@ -469,12 +469,12 @@
   },
   {
     "parent_id": 191,
-    "menu_name": "运单管理",
+    "menu_name": "运单中心",
     "menu_code": "business:waybill",
     "menu_type": 0,
     "path": "/operation/waybill",
     "component": "/operation/waybill/index",
-    "icon": "yundanguanli",
+    "icon": "",
     "sort_order": 0,
     "visible": 1,
     "status": 1,
@@ -482,25 +482,25 @@
     "feature_code": "biz_waybill",
     "id": 243,
     "created_at": "2026-04-11 20:23:42",
-    "updated_at": "2026-04-12 13:24:05",
+    "updated_at": "2026-05-23 11:46:43",
     "is_deleted": 0
   },
   {
     "parent_id": 191,
-    "menu_name": "在途监控",
-    "menu_code": "business:tracking",
+    "menu_name": "创建任务单",
+    "menu_code": "operation:task",
     "menu_type": 0,
-    "path": "/operation/tracking",
-    "component": "/operation/tracking/index",
-    "icon": "EnvironmentOutlined",
-    "sort_order": 20,
+    "path": "/operation/task",
+    "component": "/operation/task/index",
+    "icon": "",
+    "sort_order": 10,
     "visible": 1,
     "status": 1,
     "app_type": "client",
-    "feature_code": "biz_tracking",
-    "id": 194,
-    "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-01 22:40:18",
+    "feature_code": "biz_task",
+    "id": 400,
+    "created_at": "2026-05-16 17:42:00",
+    "updated_at": "2026-05-23 12:14:25",
     "is_deleted": 0
   },
   {
@@ -510,7 +510,7 @@
     "menu_type": 0,
     "path": "/operation/task-workbench",
     "component": "/operation/task-workbench/index",
-    "icon": "yunyingzhongxin",
+    "icon": "",
     "sort_order": 22,
     "visible": 1,
     "status": 1,
@@ -518,25 +518,25 @@
     "feature_code": "biz_task",
     "id": 402,
     "created_at": "2026-05-16 21:18:02",
-    "updated_at": "2026-05-16 21:18:02",
+    "updated_at": "2026-05-23 11:47:08",
     "is_deleted": 0
   },
   {
     "parent_id": 191,
-    "menu_name": "任务单台账",
-    "menu_code": "operation:task",
+    "menu_name": "在途监控",
+    "menu_code": "business:tracking",
     "menu_type": 0,
-    "path": "/operation/task",
-    "component": "/operation/task/index",
-    "icon": "yundanguanli",
-    "sort_order": 25,
+    "path": "/operation/tracking",
+    "component": "/operation/tracking/index",
+    "icon": "",
+    "sort_order": 24,
     "visible": 1,
     "status": 1,
     "app_type": "client",
-    "feature_code": "biz_task",
-    "id": 400,
-    "created_at": "2026-05-16 17:42:00",
-    "updated_at": "2026-05-16 17:42:00",
+    "feature_code": "biz_tracking",
+    "id": 194,
+    "created_at": "2026-04-01 22:40:18",
+    "updated_at": "2026-05-23 11:47:53",
     "is_deleted": 0
   },
   {
@@ -546,7 +546,7 @@
     "menu_type": 0,
     "path": "/operation/task-finance-workbench",
     "component": "/operation/task-finance-workbench/index",
-    "icon": "caiwuguanli",
+    "icon": "",
     "sort_order": 27,
     "visible": 1,
     "status": 1,
@@ -554,7 +554,7 @@
     "feature_code": "biz_task_finance",
     "id": 403,
     "created_at": "2026-05-16 21:18:02",
-    "updated_at": "2026-05-16 21:18:02",
+    "updated_at": "2026-05-23 11:47:27",
     "is_deleted": 0
   },
   {
@@ -564,7 +564,7 @@
     "menu_type": 0,
     "path": "/operation/task-finance",
     "component": "/operation/task-finance/index",
-    "icon": "caiwuguanli",
+    "icon": "",
     "sort_order": 28,
     "visible": 1,
     "status": 1,
@@ -572,7 +572,7 @@
     "feature_code": "biz_task_finance",
     "id": 401,
     "created_at": "2026-05-16 17:42:00",
-    "updated_at": "2026-05-16 17:42:00",
+    "updated_at": "2026-05-23 11:47:33",
     "is_deleted": 0
   },
   {
@@ -582,7 +582,7 @@
     "menu_type": 0,
     "path": "/operation/receipt",
     "component": "/operation/receipt/index",
-    "icon": "AuditOutlined",
+    "icon": "",
     "sort_order": 30,
     "visible": 1,
     "status": 1,
@@ -590,7 +590,7 @@
     "feature_code": "biz_receipt",
     "id": 195,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-01 22:40:18",
+    "updated_at": "2026-05-23 11:48:07",
     "is_deleted": 0
   },
   {
@@ -600,7 +600,7 @@
     "menu_type": 0,
     "path": "/finance/receivable",
     "component": "/finance/receivable/index",
-    "icon": "MoneyCollectOutlined",
+    "icon": "",
     "sort_order": 0,
     "visible": 1,
     "status": 1,
@@ -608,7 +608,7 @@
     "feature_code": "finance_receivable",
     "id": 197,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-01 22:40:18",
+    "updated_at": "2026-05-23 11:52:18",
     "is_deleted": 0
   },
   {
@@ -618,7 +618,7 @@
     "menu_type": 0,
     "path": "/finance/payable",
     "component": "/finance/payable/index",
-    "icon": "PayCircleOutlined",
+    "icon": "",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -626,7 +626,7 @@
     "feature_code": "finance_payable",
     "id": 198,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-01 22:40:18",
+    "updated_at": "2026-05-23 11:52:22",
     "is_deleted": 0
   },
   {
@@ -636,7 +636,7 @@
     "menu_type": 0,
     "path": "/finance/reconciliation",
     "component": "/finance/reconciliation/index",
-    "icon": "ReconciliationOutlined",
+    "icon": "",
     "sort_order": 20,
     "visible": 1,
     "status": 1,
@@ -644,7 +644,7 @@
     "feature_code": "finance_reconciliation",
     "id": 199,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-04-01 22:40:18",
+    "updated_at": "2026-05-23 11:52:26",
     "is_deleted": 0
   },
   {
@@ -654,7 +654,7 @@
     "menu_type": 0,
     "path": "/finance/invoice",
     "component": "/finance/invoice/index",
-    "icon": "fapiao",
+    "icon": "",
     "sort_order": 30,
     "visible": 1,
     "status": 1,
@@ -662,7 +662,7 @@
     "feature_code": "finance_invoice",
     "id": 313,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-09 21:33:24",
+    "updated_at": "2026-05-23 11:52:30",
     "is_deleted": 0
   },
   {
@@ -672,7 +672,7 @@
     "menu_type": 0,
     "path": "/finance/profit",
     "component": "/finance/profit/index",
-    "icon": "lirun",
+    "icon": "",
     "sort_order": 40,
     "visible": 1,
     "status": 1,
@@ -680,7 +680,7 @@
     "feature_code": "finance_profit",
     "id": 314,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-09 21:33:24",
+    "updated_at": "2026-05-23 11:52:34",
     "is_deleted": 0
   },
   {
@@ -762,7 +762,7 @@
     "menu_type": 0,
     "path": "/insight/cockpit",
     "component": null,
-    "icon": "yybi",
+    "icon": "",
     "sort_order": 1,
     "visible": 1,
     "status": 1,
@@ -770,7 +770,7 @@
     "feature_code": "bi_cockpit",
     "id": 364,
     "created_at": "2026-05-14 22:35:57",
-    "updated_at": "2026-05-16 16:20:14",
+    "updated_at": "2026-05-23 11:52:47",
     "is_deleted": 0
   },
   {
@@ -780,7 +780,7 @@
     "menu_type": 0,
     "path": "/insight/overview",
     "component": "/insight/overview/index",
-    "icon": "yybi",
+    "icon": "",
     "sort_order": 100,
     "visible": 1,
     "status": 1,
@@ -788,7 +788,7 @@
     "feature_code": "bi_overview",
     "id": 201,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-05-16 16:20:21",
+    "updated_at": "2026-05-23 11:52:57",
     "is_deleted": 0
   },
   {
@@ -798,7 +798,7 @@
     "menu_type": 0,
     "path": "/insight/report",
     "component": "/insight/report/index",
-    "icon": "xmmbgl",
+    "icon": "",
     "sort_order": 200,
     "visible": 1,
     "status": 1,
@@ -806,7 +806,7 @@
     "feature_code": "bi_report",
     "id": 202,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-05-16 16:20:32",
+    "updated_at": "2026-05-23 11:53:03",
     "is_deleted": 0
   },
   {
@@ -816,7 +816,7 @@
     "menu_type": 0,
     "path": "/insight/prediction",
     "component": "/insight/prediction/index",
-    "icon": "yuce",
+    "icon": "",
     "sort_order": 300,
     "visible": 1,
     "status": 1,
@@ -824,7 +824,7 @@
     "feature_code": "bi_prediction",
     "id": 315,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-16 16:20:38",
+    "updated_at": "2026-05-23 11:53:07",
     "is_deleted": 0
   },
   {
@@ -978,7 +978,7 @@
     "menu_type": 0,
     "path": "/partner/customer",
     "component": "/partner/customer/index",
-    "icon": "kehuguanli",
+    "icon": "",
     "sort_order": 0,
     "visible": 1,
     "status": 1,
@@ -986,7 +986,7 @@
     "feature_code": "partner_customer",
     "id": 238,
     "created_at": "2026-04-11 20:23:42",
-    "updated_at": "2026-04-11 22:39:35",
+    "updated_at": "2026-05-23 11:48:45",
     "is_deleted": 0
   },
   {
@@ -996,7 +996,7 @@
     "menu_type": 0,
     "path": "/partner/carrier",
     "component": "/partner/carrier/index",
-    "icon": "chengyunshangguanli",
+    "icon": "",
     "sort_order": 15,
     "visible": 1,
     "status": 1,
@@ -1004,7 +1004,7 @@
     "feature_code": "partner_carrier",
     "id": 330,
     "created_at": "2026-05-08 23:05:46",
-    "updated_at": "2026-05-10 22:51:05",
+    "updated_at": "2026-05-23 11:48:50",
     "is_deleted": 0
   },
   {
@@ -1014,7 +1014,7 @@
     "menu_type": 0,
     "path": "/partner/supplier",
     "component": "/partner/supplier/index",
-    "icon": "gongyingshang",
+    "icon": "",
     "sort_order": 20,
     "visible": 0,
     "status": 1,
@@ -1022,7 +1022,7 @@
     "feature_code": "partner_supplier",
     "id": 307,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-04-19 13:53:31",
+    "updated_at": "2026-05-23 11:48:55",
     "is_deleted": 0
   },
   {
@@ -1032,7 +1032,7 @@
     "menu_type": 0,
     "path": "/partner/inbound",
     "component": "/partner/inbound/index",
-    "icon": "huliankehu",
+    "icon": "",
     "sort_order": 25,
     "visible": 1,
     "status": 1,
@@ -1040,7 +1040,7 @@
     "feature_code": "partner_inbound",
     "id": 337,
     "created_at": "2026-05-08 23:05:46",
-    "updated_at": "2026-05-10 22:54:56",
+    "updated_at": "2026-05-23 11:49:00",
     "is_deleted": 0
   },
   {
@@ -1050,7 +1050,7 @@
     "menu_type": 0,
     "path": "/partner/dealer",
     "component": "/partner/dealer/index",
-    "icon": "jingxiaoshang",
+    "icon": "",
     "sort_order": 50,
     "visible": 1,
     "status": 1,
@@ -1058,7 +1058,7 @@
     "feature_code": "basic_data_dealer",
     "id": 232,
     "created_at": "2026-04-09 21:46:18",
-    "updated_at": "2026-05-10 22:51:53",
+    "updated_at": "2026-05-23 11:49:06",
     "is_deleted": 0
   },
   {
@@ -1212,7 +1212,7 @@
     "menu_type": 0,
     "path": "/billing/contract",
     "component": "/billing/contract/index",
-    "icon": "yunjiaguanli",
+    "icon": "",
     "sort_order": 0,
     "visible": 1,
     "status": 1,
@@ -1220,7 +1220,7 @@
     "feature_code": "billing_contract",
     "id": 249,
     "created_at": "2026-04-11 20:23:42",
-    "updated_at": "2026-04-11 22:39:48",
+    "updated_at": "2026-05-23 11:51:25",
     "is_deleted": 0
   },
   {
@@ -1230,7 +1230,7 @@
     "menu_type": 0,
     "path": "/billing/route",
     "component": "/billing/route/index",
-    "icon": "luxianguanli",
+    "icon": "",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -1238,7 +1238,7 @@
     "feature_code": "billing_route",
     "id": 190,
     "created_at": "2026-04-01 22:40:18",
-    "updated_at": "2026-05-06 22:32:26",
+    "updated_at": "2026-05-23 11:51:30",
     "is_deleted": 0
   },
   {
@@ -1248,7 +1248,7 @@
     "menu_type": 0,
     "path": "/billing/cost-rule",
     "component": "/billing/cost-rule/index",
-    "icon": "chengbenguize",
+    "icon": "",
     "sort_order": 20,
     "visible": 1,
     "status": 1,
@@ -1256,7 +1256,7 @@
     "feature_code": "billing_cost_rule",
     "id": 308,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-09 21:33:24",
+    "updated_at": "2026-05-23 11:51:36",
     "is_deleted": 0
   },
   {
@@ -1266,7 +1266,7 @@
     "menu_type": 0,
     "path": "/billing/fee-template",
     "component": "/billing/fee-template/index",
-    "icon": "feiyongmoban",
+    "icon": "",
     "sort_order": 30,
     "visible": 1,
     "status": 1,
@@ -1274,7 +1274,7 @@
     "feature_code": "billing_fee_template",
     "id": 309,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-09 21:33:24",
+    "updated_at": "2026-05-23 11:51:40",
     "is_deleted": 0
   },
   {
@@ -1356,7 +1356,7 @@
     "menu_type": 0,
     "path": "/capacity/self-capacity",
     "component": "",
-    "icon": "ziyou",
+    "icon": "",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -1364,7 +1364,7 @@
     "feature_code": "capacity_self",
     "id": 338,
     "created_at": "2026-05-10 11:51:52",
-    "updated_at": "2026-05-10 14:07:23",
+    "updated_at": "2026-05-23 11:48:17",
     "is_deleted": 0
   },
   {
@@ -1374,7 +1374,7 @@
     "menu_type": 0,
     "path": "/capacity/carrier-capacity",
     "component": "",
-    "icon": "chengyunshangyunli",
+    "icon": "",
     "sort_order": 30,
     "visible": 1,
     "status": 1,
@@ -1382,7 +1382,7 @@
     "feature_code": "capacity_carrier",
     "id": 303,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-10 22:51:15",
+    "updated_at": "2026-05-23 11:48:22",
     "is_deleted": 0
   },
   {
@@ -1392,7 +1392,7 @@
     "menu_type": 0,
     "path": "/capacity/social-capacity",
     "component": "",
-    "icon": "ziyou",
+    "icon": "",
     "sort_order": 40,
     "visible": 1,
     "status": 1,
@@ -1400,7 +1400,7 @@
     "feature_code": "capacity_social",
     "id": 304,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-10 14:11:29",
+    "updated_at": "2026-05-23 11:48:28",
     "is_deleted": 0
   },
   {
@@ -1410,7 +1410,7 @@
     "menu_type": 0,
     "path": "/capacity/maintenance",
     "component": "/capacity/maintenance/index",
-    "icon": "weibao",
+    "icon": "",
     "sort_order": 70,
     "visible": 0,
     "status": 1,
@@ -1418,7 +1418,7 @@
     "feature_code": "fleet_maintenance",
     "id": 305,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-10 14:12:11",
+    "updated_at": "2026-05-23 11:48:33",
     "is_deleted": 0
   },
   {
@@ -1428,7 +1428,7 @@
     "menu_type": 0,
     "path": "/capacity/compliance",
     "component": "/capacity/compliance/index",
-    "icon": "zhengjian",
+    "icon": "",
     "sort_order": 80,
     "visible": 0,
     "status": 1,
@@ -1436,7 +1436,7 @@
     "feature_code": "fleet_compliance",
     "id": 306,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-10 14:12:15",
+    "updated_at": "2026-05-23 11:48:37",
     "is_deleted": 0
   },
   {
@@ -1446,7 +1446,7 @@
     "menu_type": 0,
     "path": "/approval/pending",
     "component": "/approval/pending/index",
-    "icon": "daiban",
+    "icon": "",
     "sort_order": 0,
     "visible": 1,
     "status": 1,
@@ -1454,7 +1454,7 @@
     "feature_code": "approval_manage",
     "id": 310,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-04-19 13:53:31",
+    "updated_at": "2026-05-23 11:52:01",
     "is_deleted": 0
   },
   {
@@ -1464,7 +1464,7 @@
     "menu_type": 0,
     "path": "/approval/initiated",
     "component": "/approval/initiated/index",
-    "icon": "shenqing",
+    "icon": "",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -1472,7 +1472,7 @@
     "feature_code": "approval_manage",
     "id": 311,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-04-19 13:53:31",
+    "updated_at": "2026-05-23 11:52:05",
     "is_deleted": 0
   },
   {
@@ -1482,7 +1482,7 @@
     "menu_type": 0,
     "path": "/approval/history",
     "component": "/approval/history/index",
-    "icon": "lishi",
+    "icon": "",
     "sort_order": 20,
     "visible": 1,
     "status": 1,
@@ -1490,7 +1490,7 @@
     "feature_code": "approval_manage",
     "id": 312,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-04-19 13:53:31",
+    "updated_at": "2026-05-23 11:52:10",
     "is_deleted": 0
   },
   {
@@ -1500,7 +1500,7 @@
     "menu_type": 0,
     "path": "/ecosystem/cargo-hall",
     "component": "/ecosystem/cargo-hall/index",
-    "icon": "huoyuan",
+    "icon": "",
     "sort_order": 0,
     "visible": 1,
     "status": 1,
@@ -1508,7 +1508,7 @@
     "feature_code": "ecosystem_cargo_hall",
     "id": 316,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-09 21:33:24",
+    "updated_at": "2026-05-23 11:53:15",
     "is_deleted": 0
   },
   {
@@ -1518,7 +1518,7 @@
     "menu_type": 0,
     "path": "/ecosystem/capacity-hall",
     "component": "/ecosystem/capacity-hall/index",
-    "icon": "yunlidating",
+    "icon": "",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -1526,7 +1526,7 @@
     "feature_code": "ecosystem_capacity_hall",
     "id": 317,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-09 21:33:24",
+    "updated_at": "2026-05-23 11:53:18",
     "is_deleted": 0
   },
   {
@@ -1536,7 +1536,7 @@
     "menu_type": 0,
     "path": "/ecosystem/service-hall",
     "component": "/ecosystem/service-hall/index",
-    "icon": "fuwu",
+    "icon": "",
     "sort_order": 20,
     "visible": 1,
     "status": 1,
@@ -1544,7 +1544,7 @@
     "feature_code": "ecosystem_service_hall",
     "id": 318,
     "created_at": "2026-04-19 13:53:31",
-    "updated_at": "2026-05-09 21:33:24",
+    "updated_at": "2026-05-23 11:53:22",
     "is_deleted": 0
   },
   {
@@ -1626,7 +1626,7 @@
     "menu_type": 0,
     "path": "/enterprise/basic-data/regional",
     "component": "/enterprise/basic-data/regional/index",
-    "icon": "xingzhengquhua",
+    "icon": "",
     "sort_order": 0,
     "visible": 1,
     "status": 1,
@@ -1634,7 +1634,7 @@
     "feature_code": "basic_data_region",
     "id": 210,
     "created_at": "2026-04-05 19:27:33",
-    "updated_at": "2026-04-06 14:27:01",
+    "updated_at": "2026-05-23 11:53:57",
     "is_deleted": 0
   },
   {
@@ -1644,7 +1644,7 @@
     "menu_type": 0,
     "path": "/enterprise/basic-data/brand-series",
     "component": "/enterprise/basic-data/brand-series/index",
-    "icon": "pinpaichexing",
+    "icon": "",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -1652,7 +1652,7 @@
     "feature_code": "basic_data_vehicle_brand_series",
     "id": 224,
     "created_at": "2026-04-06 19:17:31",
-    "updated_at": "2026-04-06 19:18:41",
+    "updated_at": "2026-05-23 11:54:01",
     "is_deleted": 0
   },
   {
@@ -2148,7 +2148,7 @@
     "menu_type": 0,
     "path": "/insight/cockpit/overview",
     "component": "/insight/cockpit/overview/index",
-    "icon": "yybi",
+    "icon": "",
     "sort_order": 0,
     "visible": 1,
     "status": 1,
@@ -2156,7 +2156,7 @@
     "feature_code": "bi_cockpit_overview",
     "id": 365,
     "created_at": "2026-05-14 22:35:57",
-    "updated_at": "2026-05-15 21:43:41",
+    "updated_at": "2026-05-23 11:52:52",
     "is_deleted": 0
   },
   {
