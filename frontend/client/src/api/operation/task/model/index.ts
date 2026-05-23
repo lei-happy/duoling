@@ -131,11 +131,21 @@ export interface CandidateCargo {
   cargoId: number;
   vehicleBrand?: string;
   vehicleModel?: string;
+  /** 车架号 */
+  vin?: string | null;
   /** 车系图（与基础数据车系匹配） */
   seriesImage?: string | null;
   quantity: number;
   allocatedQuantity: number;
   remainingQuantity: number;
+}
+
+/** 候选挂接列表（含全量统计） */
+export interface CandidateCargoListResult {
+  items: CandidateCargo[];
+  lineCount: number;
+  quantityTotal: number;
+  truncated: boolean;
 }
 
 /** 承运方信息（三类合一） */

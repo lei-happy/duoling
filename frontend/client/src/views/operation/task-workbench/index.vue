@@ -49,6 +49,7 @@
 
 <script lang="ts" setup>
   import { computed, onActivated, onMounted, ref, watch } from 'vue';
+  import { useRoute } from 'vue-router';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import KpiCards from './components/kpi-cards.vue';
@@ -70,9 +71,19 @@
 
   defineOptions({ name: 'OperationTaskWorkbench' });
 
-  const activeTab = ref<string>(WORKBENCH_POOLS[0]!.key);
+  const route = useRoute();
+
+  const resolveInitialTab = (): string => {
+    const tab = route.query.tab;
+    if (typeof tab === 'string' && getWorkbenchPool(tab)) {
+      return tab;
+    }
+    return WORKBENCH_POOLS[0]!.key;
+  };
+
+  const activeTab = ref<string>(resolveInitialTab());
   /** 与 KPI 卡片 key 一致（pending-assign、on-way 等） */
-  const selectedPoolKey = ref<string>(WORKBENCH_POOLS[0]!.key);
+  const selectedPoolKey = ref<string>(resolveInitialTab());
   /** KPI：全部 / 正常(常) / 预警(警) */
   const listSubset = ref<WorkbenchListSubset>('all');
   const reloadToken = ref(0);

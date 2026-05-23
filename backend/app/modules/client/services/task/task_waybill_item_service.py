@@ -9,7 +9,7 @@
 """
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +20,7 @@ from app.modules.client.models.task.task_waybill_item import TaskWaybillItem
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
 from app.modules.client.schemas.task.task_waybill_item import (
+    CandidateCargoListOut,
     CandidateCargoOut,
     TaskWaybillItemIn,
     TaskWaybillItemStatusUpdate,
@@ -51,6 +52,70 @@ class TaskWaybillItemService:
     # 候选查询
     # ------------------------------------------------------------------
     @staticmethod
+    def _candidate_waybill_conditions(
+        keyword: Optional[str] = None,
+        customer_id: Optional[int] = None,
+        origin_keyword: Optional[str] = None,
+        destination_keyword: Optional[str] = None,
+    ):
+        conds = [
+            Waybill.is_deleted == 0,
+            Waybill.status.in_([1, 2, 3]),
+        ]
+        if keyword:
+            kw = f"%{keyword.strip()}%"
+            conds.append(or_(
+                Waybill.waybill_no.like(kw),
+                Waybill.customer_name.like(kw),
+            ))
+        if customer_id is not None:
+            conds.append(Waybill.customer_id == customer_id)
+        if origin_keyword:
+            conds.append(Waybill.origin.like(f"%{origin_keyword.strip()}%"))
+        if destination_keyword:
+            conds.append(
+                Waybill.destination.like(f"%{destination_keyword.strip()}%")
+            )
+        return conds
+
+    @staticmethod
+    def _candidate_remaining_expr():
+        return WaybillCargo.quantity - func.coalesce(
+            WaybillCargo.allocated_quantity, 0
+        )
+
+    @staticmethod
+    async def count_candidate_cargoes(
+        db: AsyncSession,
+        keyword: Optional[str] = None,
+        customer_id: Optional[int] = None,
+        origin_keyword: Optional[str] = None,
+        destination_keyword: Optional[str] = None,
+    ) -> Tuple[int, int]:
+        """统计符合条件的 cargo 行数与剩余可配总台数（不受 list limit 影响）。"""
+        remaining = TaskWaybillItemService._candidate_remaining_expr()
+        q = (
+            select(
+                func.count(WaybillCargo.id),
+                func.coalesce(func.sum(remaining), 0),
+            )
+            .select_from(WaybillCargo)
+            .join(Waybill, Waybill.id == WaybillCargo.waybill_id)
+            .where(
+                WaybillCargo.is_deleted == 0,
+                remaining > 0,
+                *TaskWaybillItemService._candidate_waybill_conditions(
+                    keyword=keyword,
+                    customer_id=customer_id,
+                    origin_keyword=origin_keyword,
+                    destination_keyword=destination_keyword,
+                ),
+            )
+        )
+        row = (await db.execute(q)).one()
+        return int(row[0] or 0), int(row[1] or 0)
+
+    @staticmethod
     async def list_candidate_cargoes(
         db: AsyncSession,
         keyword: Optional[str] = None,
@@ -58,7 +123,7 @@ class TaskWaybillItemService:
         origin_keyword: Optional[str] = None,
         destination_keyword: Optional[str] = None,
         limit: int = 200,
-    ) -> List[CandidateCargoOut]:
+    ) -> CandidateCargoListOut:
         """挂接器左栏：返回剩余台数 > 0 的运单 cargo 行候选。
 
         新语义（参考《02.运单与任务单状态机联动设计.md》§4.2）：
@@ -68,29 +133,31 @@ class TaskWaybillItemService:
         - 3 运输中：仍允许新挂接尾段，只要剩余台数 > 0；
         - 4+ 已送达/已完成/已关闭：不允许新挂接。
         """
-        wb_q = select(Waybill).where(
-            Waybill.is_deleted == 0,
-            Waybill.status.in_([1, 2, 3]),
+        line_count, quantity_total = await TaskWaybillItemService.count_candidate_cargoes(
+            db,
+            keyword=keyword,
+            customer_id=customer_id,
+            origin_keyword=origin_keyword,
+            destination_keyword=destination_keyword,
         )
-        if keyword:
-            kw = f"%{keyword.strip()}%"
-            wb_q = wb_q.where(or_(
-                Waybill.waybill_no.like(kw),
-                Waybill.customer_name.like(kw),
-            ))
-        if customer_id is not None:
-            wb_q = wb_q.where(Waybill.customer_id == customer_id)
-        if origin_keyword:
-            wb_q = wb_q.where(Waybill.origin.like(f"%{origin_keyword.strip()}%"))
-        if destination_keyword:
-            wb_q = wb_q.where(
-                Waybill.destination.like(f"%{destination_keyword.strip()}%")
-            )
 
+        wb_q = select(Waybill).where(
+            *TaskWaybillItemService._candidate_waybill_conditions(
+                keyword=keyword,
+                customer_id=customer_id,
+                origin_keyword=origin_keyword,
+                destination_keyword=destination_keyword,
+            )
+        )
         wb_q = wb_q.order_by(Waybill.created_at.desc()).limit(limit * 2)
         wbs = list((await db.execute(wb_q)).scalars().all())
         if not wbs:
-            return []
+            return CandidateCargoListOut(
+                items=[],
+                lineCount=line_count,
+                quantityTotal=quantity_total,
+                truncated=False,
+            )
         wb_ids = [w.id for w in wbs]
         wb_map = {w.id: w for w in wbs}
 
@@ -125,6 +192,7 @@ class TaskWaybillItemService:
                 cargoId=c.id,
                 vehicleBrand=c.vehicle_brand,
                 vehicleModel=c.vehicle_model,
+                vin=c.vin,
                 seriesImage=series_image,
                 quantity=int(c.quantity),
                 allocatedQuantity=int(c.allocated_quantity or 0),
@@ -132,7 +200,12 @@ class TaskWaybillItemService:
             ))
             if len(out) >= limit:
                 break
-        return out
+        return CandidateCargoListOut(
+            items=out,
+            lineCount=line_count,
+            quantityTotal=quantity_total,
+            truncated=len(out) < line_count,
+        )
 
     # ------------------------------------------------------------------
     # 挂接核心：cargo 行原子加减

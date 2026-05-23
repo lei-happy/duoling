@@ -15,13 +15,12 @@
         cache-key="OperationTaskTable"
       >
         <template #toolbar>
-          <btn-items
-            :items="[
-              { preset: 'add', title: '新增任务单', onClick: () => openEdit() }
-            ]"
-          />
-          <el-text type="info" size="small" style="margin-left: 12px">
-            常用作业请前往
+          <el-text type="info" size="small">
+            新建配载请前往
+            <el-link type="primary" :underline="false" @click="goTaskCreate">
+              「配载建单」
+            </el-link>
+            ；常用作业请前往
             <el-link type="primary" :underline="false" @click="goWorkbench">
               「调度工作台」
             </el-link>
@@ -401,6 +400,10 @@
 
   const goWorkbench = () => {
     router.push('/operation/task-workbench');
+  };
+
+  const goTaskCreate = () => {
+    router.push('/operation/task-create');
   };
 
   // ============================================

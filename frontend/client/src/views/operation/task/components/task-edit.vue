@@ -1,12 +1,11 @@
 <template>
   <el-dialog
-    :title="isEdit ? '编辑任务单' : '新增任务单'"
+    title="编辑任务单"
     :model-value="visible"
-    :width="isEdit ? '880px' : '1280px'"
+    width="880px"
     draggable
     align-center
     class="waybill-edit-dialog"
-    :class="{ 'is-create-mode': !isEdit }"
     :close-on-click-modal="false"
     :body-style="dialogBodyStyle"
     append-to-body
@@ -14,7 +13,6 @@
     @update:model-value="updateVisible"
   >
     <el-form
-      v-if="isEdit"
       ref="formRef"
       :model="form"
       label-width="110px"
@@ -143,38 +141,6 @@
       </el-tabs>
     </el-form>
 
-    <!-- ============================================================
-         新建分支：单步表单 —— 仅挑商品车（+ 折叠备注）
-         ============================================================ -->
-    <el-form
-      v-else
-      ref="formRef"
-      :model="form"
-      class="waybill-edit-form"
-      label-width="0"
-      v-loading="submitting"
-      @submit.prevent=""
-    >
-      <div class="waybill-tab-pane">
-        <task-cargo-picker
-          v-model="form.waybillItems"
-          :segments="form.segments"
-        />
-        <el-collapse v-model="createCollapse" style="margin-top: 12px">
-          <el-collapse-item title="备注（选填）" name="remark">
-            <el-input
-              v-model="form.remark"
-              type="textarea"
-              :rows="3"
-              maxlength="500"
-              show-word-limit
-              placeholder="调度说明、客户特殊要求等（选填）"
-            />
-          </el-collapse-item>
-        </el-collapse>
-      </div>
-    </el-form>
-
     <template #footer>
       <div class="waybill-edit-dialog__footer">
         <el-button @click="updateVisible(false)">取消</el-button>
@@ -195,7 +161,6 @@
   import TaskCargoPicker from './task-cargo-picker.vue';
   import TaskCarrierPicker from './task-carrier-picker.vue';
   import {
-    addTask,
     assignCarrier,
     completeCarrierAssignment,
     getTask,
@@ -209,6 +174,10 @@
     TaskSegment,
     TaskWaybillItem
   } from '@/api/operation/task/model';
+  import {
+    buildWaybillItemsPayload,
+    validateCargoTab as validateCargoItems
+  } from '../task-create-utils';
 
   type TabName = 'cargo' | 'carrier' | 'segments' | 'remark';
 
@@ -222,9 +191,7 @@
   const carrierRef = ref<{ init: () => void } | null>(null);
   const submitting = ref(false);
   const saveLoading = ref(false);
-  const createCollapse = ref<string[]>([]);
 
-  const isEdit = computed(() => Boolean(props.data?.id));
   const activeTab = ref<TabName>('cargo');
 
   const dialogBodyStyle = {
@@ -304,7 +271,6 @@
 
   /** 编辑场景下 submit 按钮 label 跟随当前 Tab 语义 */
   const submitLabel = computed(() => {
-    if (!isEdit.value) return '保存为待分配';
     switch (activeTab.value) {
       case 'cargo':
         return '保存商品车';
@@ -324,7 +290,6 @@
     async (v) => {
       if (!v) return;
       activeTab.value = 'cargo';
-      createCollapse.value = [];
       Object.assign(form, defaultForm());
       if (props.data?.id) {
         await loadDetail(props.data.id);
@@ -416,20 +381,7 @@
   }
 
   function validateCargoTab(): boolean {
-    if (form.waybillItems.length < 1) {
-      EleMessage.warning({ message: '请至少选择一条商品车挂接', plain: true });
-      return false;
-    }
-    for (const it of form.waybillItems) {
-      if (!it.quantity || it.quantity <= 0) {
-        EleMessage.warning({
-          message: '所有挂接商品车台数必须大于 0',
-          plain: true
-        });
-        return false;
-      }
-    }
-    return true;
+    return validateCargoItems(form.waybillItems);
   }
 
   function validateCarrierAssignmentTab(): boolean {
@@ -508,14 +460,8 @@
       remark: s.remark
     }));
 
-  const buildWaybillItemsPayload = () =>
-    form.waybillItems.map((w) => ({
-      waybillId: w.waybillId,
-      waybillCargoId: w.waybillCargoId,
-      quantity: w.quantity,
-      segmentId: w.segmentId ?? undefined,
-      remark: w.remark
-    }));
+  const buildWaybillItemsPayloadForForm = () =>
+    buildWaybillItemsPayload(form.waybillItems);
 
   const cleanCarrier = (c?: TaskCarrierInfo): TaskCarrierInfo | undefined => {
     if (!c) return undefined;
@@ -542,38 +488,7 @@
   // ============================================================
   const submit = async () => {
     if (saveLoading.value) return;
-    if (isEdit.value) {
-      await submitEditByTab();
-    } else {
-      await submitCreate();
-    }
-  };
-
-  /** 新建：仅必填商品车，作为「待分配」配载草稿落库 */
-  const submitCreate = async () => {
-    if (!validateCargoTab()) return;
-    saveLoading.value = true;
-    try {
-      await addTask({
-        source: form.source || 1,
-        remark: form.remark,
-        waybillItems: buildWaybillItemsPayload(),
-        segments: [],
-        carrier: undefined
-      } as TaskCreatePayload);
-      EleMessage.success({
-        message:
-          '已创建配载草稿（待分配），请在调度工作台「待分配」池点「分配承运」',
-        plain: true
-      });
-      emit('done');
-      emit('update:visible', false);
-    } catch (e: unknown) {
-      const msg = (e as { message?: string }).message || '保存失败';
-      EleMessage.error({ message: msg, plain: true });
-    } finally {
-      saveLoading.value = false;
-    }
+    await submitEditByTab();
   };
 
   /** 编辑：按当前 Tab 走对应 API，最小化变更面 */
@@ -585,7 +500,9 @@
       switch (activeTab.value) {
         case 'cargo':
           if (!validateCargoTab()) return;
-          await updateTask(id, { waybillItems: buildWaybillItemsPayload() });
+          await updateTask(id, {
+            waybillItems: buildWaybillItemsPayloadForForm()
+          });
           EleMessage.success({ message: '商品车已保存', plain: true });
           break;
         case 'carrier':
@@ -645,15 +562,6 @@
   .task-edit-meta-bar__item b {
     font-weight: 600;
     color: var(--el-text-color-primary);
-  }
-
-  .task-create-tip {
-    margin-bottom: 14px;
-  }
-
-  .task-create-tip :deep(.el-alert__title) {
-    line-height: 1.5;
-    font-size: 13px;
   }
 
   .waybill-edit-dialog__footer {
@@ -794,13 +702,6 @@
     overflow-x: hidden;
     padding: 14px 6px 12px 4px;
     scrollbar-gutter: stable;
-  }
-
-  /* 新建模式：picker 自身已固定高 + 内部滚动，外层只需轻包裹 */
-  .waybill-edit-dialog.is-create-mode .waybill-tab-pane {
-    max-height: none;
-    overflow: visible;
-    padding: 6px 2px 2px;
   }
 
   .waybill-edit-dialog

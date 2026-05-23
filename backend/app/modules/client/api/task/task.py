@@ -253,7 +253,7 @@ async def list_candidate_waybills(
         destination_keyword=destinationKeyword,
         limit=limit,
     )
-    return success(data=[r.model_dump() for r in rows])
+    return success(data=rows.model_dump())
 
 
 @router.get("/{task_id}")

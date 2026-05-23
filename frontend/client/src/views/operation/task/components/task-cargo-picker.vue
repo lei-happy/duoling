@@ -9,13 +9,21 @@
   业务偏好：相同起终点(线路) > 同品牌车型 > 台数充裕
 -->
 <template>
-  <div class="cargo-picker">
+  <div
+    class="cargo-picker"
+    :class="{ 'cargo-picker--page': layout === 'page' }"
+  >
     <!-- ========================== 左侧：待选 ========================== -->
     <div class="cargo-picker__left">
       <div class="cargo-picker__panel-header">
         <span class="cargo-picker__panel-title">待选运单</span>
-        <el-tag size="small" type="info" effect="plain">
-          {{ filteredCandidates.length }} 条 / {{ candidatesTotalQty }} 台
+        <el-tag
+          size="small"
+          type="info"
+          effect="plain"
+          :title="candidateStatsTitle"
+        >
+          {{ displayLineCount }} 条 / {{ displayQuantityTotal }} 台
         </el-tag>
         <el-radio-group
           v-model="groupMode"
@@ -228,6 +236,13 @@
                       <div class="cargo-subline__model">
                         {{ line.vehicleBrand || '—' }} /
                         {{ line.vehicleModel || '—' }}
+                      </div>
+                      <div
+                        v-if="line.vin"
+                        class="cargo-subline__vin"
+                        :title="line.vin"
+                      >
+                        VIN {{ line.vin }}
                       </div>
                       <div class="cargo-subline__ep">
                         {{ endPointLabel(line) }}
@@ -523,15 +538,25 @@
     addableQuantity: number;
   }
 
-  const props = defineProps<{
-    modelValue: PickedItem[];
-    segments: TaskSegment[];
-  }>();
+  const props = withDefaults(
+    defineProps<{
+      modelValue: PickedItem[];
+      segments: TaskSegment[];
+      /** dialog：弹框内固定高度；page：独立页全视口高度 */
+      layout?: 'dialog' | 'page';
+    }>(),
+    { layout: 'dialog' }
+  );
   const emit = defineEmits<{
     (e: 'update:modelValue', value: PickedItem[]): void;
   }>();
 
   const candidates = ref<CandidateCargo[]>([]);
+  const candidateStats = reactive({
+    lineCount: 0,
+    quantityTotal: 0,
+    truncated: false
+  });
   const loading = ref(false);
   const groupMode = ref<GroupMode>('route');
   const collapsedGroups = ref<Set<string>>(new Set());
@@ -556,12 +581,16 @@
   const loadCandidates = async () => {
     loading.value = true;
     try {
-      candidates.value = await listCandidateWaybills({
+      const res = await listCandidateWaybills({
         keyword: filter.keyword || undefined,
         originKeyword: filter.originKeyword || undefined,
         destinationKeyword: filter.destinationKeyword || undefined,
         limit: 300
       });
+      candidates.value = res.items || [];
+      candidateStats.lineCount = res.lineCount ?? 0;
+      candidateStats.quantityTotal = res.quantityTotal ?? 0;
+      candidateStats.truncated = Boolean(res.truncated);
     } catch (e: unknown) {
       const msg = (e as { message?: string }).message || '加载候选失败';
       EleMessage.error({ message: msg, plain: true });
@@ -582,6 +611,27 @@
   const candidatesTotalQty = computed(() =>
     filteredCandidates.value.reduce((s, c) => s + (c.remainingQuantity || 0), 0)
   );
+
+  /** 头部统计：服务端全量；品牌/车型为前端本地筛选时用当前列表 */
+  const displayLineCount = computed(() => {
+    if (filter.modelKeyword.trim()) return filteredCandidates.value.length;
+    return candidateStats.lineCount;
+  });
+
+  const displayQuantityTotal = computed(() => {
+    if (filter.modelKeyword.trim()) return candidatesTotalQty.value;
+    return candidateStats.quantityTotal;
+  });
+
+  const candidateStatsTitle = computed(() => {
+    if (filter.modelKeyword.trim()) {
+      return '当前为品牌/车型本地筛选后的统计';
+    }
+    if (candidateStats.truncated) {
+      return `共 ${candidateStats.lineCount} 条待配明细；列表仅加载前 ${candidates.value.length} 条`;
+    }
+    return '';
+  });
 
   function routeKeyOf(c: CandidateCargo): string {
     return `${c.origin || '未填'}__${c.destination || '未填'}`;
@@ -1068,6 +1118,12 @@
     max-height: calc(100vh - 280px);
   }
 
+  .cargo-picker.cargo-picker--page {
+    height: calc(100vh - 320px);
+    min-height: 520px;
+    max-height: none;
+  }
+
   .cargo-picker__flex-spacer {
     flex: 1;
   }
@@ -1335,6 +1391,17 @@
     font-size: 13px;
     font-weight: 500;
     color: var(--el-text-color-primary);
+  }
+
+  .cargo-subline__vin {
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      'Liberation Mono', 'Courier New', monospace;
+    color: var(--el-text-color-secondary);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .cargo-subline__ep {
@@ -1719,6 +1786,9 @@
       grid-template-columns: 1fr;
       height: auto;
       max-height: none;
+    }
+    .cargo-picker.cargo-picker--page {
+      min-height: 0;
     }
     .cargo-picker__scroll {
       max-height: 320px;

@@ -1,7 +1,7 @@
 """任务单-运单货物挂接 Schemas"""
 
 from datetime import datetime
-from typing import Any, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -131,6 +131,7 @@ class CandidateCargoOut(BaseModel):
     cargoId: int
     vehicleBrand: Optional[str] = None
     vehicleModel: Optional[str] = None
+    vin: Optional[str] = Field(default=None, description="车架号(VIN)")
     seriesImage: Optional[str] = Field(
         default=None,
         description="车系图（与基础数据品牌+车系匹配，供前端展示）",
@@ -138,3 +139,11 @@ class CandidateCargoOut(BaseModel):
     quantity: int = Field(description="cargo 行原始台数")
     allocatedQuantity: int = Field(description="已分配台数")
     remainingQuantity: int = Field(description="剩余可分配台数 = quantity - allocated")
+
+
+class CandidateCargoListOut(BaseModel):
+    """挂接器左栏：候选列表 + 全量统计（统计不受 limit 截断）"""
+    items: List[CandidateCargoOut]
+    lineCount: int = Field(description="符合条件的 cargo 明细行总数")
+    quantityTotal: int = Field(description="剩余可配总台数")
+    truncated: bool = Field(description="items 是否因 limit 被截断")

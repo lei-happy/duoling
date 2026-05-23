@@ -208,11 +208,20 @@ export async function listCandidateWaybills(params: {
   destinationKeyword?: string;
   limit?: number;
 }) {
-  const res = await request.get<ApiResult<CandidateCargo[]>>(
+  const res = await request.get<ApiResult<CandidateCargoListResult>>(
     '/business/task/candidate-waybills',
     { params }
   );
-  if (res.data.code === 0) return res.data.data || [];
+  if (res.data.code === 0) {
+    return (
+      res.data.data || {
+        items: [],
+        lineCount: 0,
+        quantityTotal: 0,
+        truncated: false
+      }
+    );
+  }
   return Promise.reject(new Error(res.data.message));
 }
 

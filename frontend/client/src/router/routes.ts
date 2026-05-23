@@ -17,7 +17,8 @@ const STATIC_LAYOUT_MENU_PATHS = [
   { path: '/enterprise/manage' },
   { path: '/user/profile' },
   { path: '/user/message' },
-  { path: '/operation/waybill/import' }
+  { path: '/operation/waybill/import' },
+  { path: '/operation/task-create' }
 ] as const;
 
 /**
@@ -91,6 +92,12 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       path: '/operation/waybill/import',
       component: () => import('@/views/operation/waybill/import/index.vue'),
       meta: { title: '运单批量导入' }
+    },
+    // 配载建单（菜单同步前可本地访问；与后端菜单 path 一致）
+    {
+      path: '/operation/task-create',
+      component: () => import('@/views/operation/task-create/index.vue'),
+      meta: { title: '配载建单' }
     }
   ];
   const layoutRoutes: RouteRecordRaw[] = [
