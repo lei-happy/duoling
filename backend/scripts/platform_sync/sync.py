@@ -148,16 +148,47 @@ def _run_seed(script_relpath: str, args: List[str]) -> int:
     return proc.returncode
 
 
+def _prefix_client_menu_fix() -> bool:
+    """
+    在执行 client menu seed 之前自动跑一次 fix_client_menu_v2，
+    清理"已软删的非 client 记录占用 client 快照 ID"这类冲突。
+
+    设计原因：
+      - client 菜单 ID 在产品迭代中会持续增长（v2.0 新增了 260+、运营调度 430+ 等）；
+      - 部分新 ID 在生产 DB 上已被历史 platform/console 菜单占用、且已软删；
+      - 这类冲突如果不清理，seed_client_menus.py 会以 INSERT 主键冲突中止；
+      - 该脚本已升级为"基于 client_menu.json 快照自动扫描"，幂等可重复执行；
+      - 在 seed 之前自动跑一次，使部署流程具备自愈能力。
+
+    任何修复失败只打 WARN，不直接拒绝后续 seed（保留人工兜底的可见性）。
+    """
+    print("\n[FIX] 预清理 client 菜单 ID 冲突 (fix_client_menu_v2 --auto-scan)")
+    try:
+        from scripts.fix.fix_client_menu_v2 import run_fix  # 延迟导入
+    except Exception as e:  # pragma: no cover
+        print(f"  [WARN] 无法导入 fix_client_menu_v2: {e!r}，跳过预清理")
+        return True
+    try:
+        run_fix(dry_run=False, soft_delete_orphans=False, auto_scan=True)
+    except Exception as e:  # pragma: no cover
+        print(f"  [WARN] fix_client_menu_v2 执行失败: {e!r}，将继续后续 seed")
+        return True
+    return True
+
+
 def _apply(snapshot_dir: Path) -> bool:
     """
-    顺序执行 4 个 seed 脚本；任何一个失败立刻终止。
+    顺序执行 seed 脚本；任何一个失败立刻终止。
 
     顺序设计原因：
+      0. fix_client_menu_v2：先清理已知/扫描出的 client ID 冲突（幂等，无冲突即 noop）
       1. product_versions：先建版本（lite/standard/pro），后续 version_feature 需要这些版本
       2. product_features：写 feature + version_feature 关联（依赖版本已存在）
       3. client_menus：客户端菜单（依赖 feature_code 已存在）
       4. platform_menus：Console 后台菜单（独立，最后跑）
     """
+    _prefix_client_menu_fix()
+
     steps = [
         ("scripts/seed/seed_product_versions.py", []),
         ("scripts/seed/seed_product_features.py", []),
