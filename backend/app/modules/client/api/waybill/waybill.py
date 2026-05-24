@@ -87,11 +87,27 @@ async def page_waybills(
 
 @router.get("/workbench-stats")
 async def get_waybill_workbench_stats(
+    keyword: Optional[str] = None,
+    customerId: Optional[int] = None,
+    originKeyword: Optional[str] = None,
+    destinationKeyword: Optional[str] = None,
+    vehicleKeyword: Optional[str] = None,
+    createdAtStart: Optional[date] = Query(None, description="创建日期起（含当日 0 点）"),
+    createdAtEnd: Optional[date] = Query(None, description="创建日期止（含当日结束）"),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """运单工作台 KPI 聚合：返回各状态计数（1~6）+ totals 别名。"""
-    stats = await WaybillService.workbench_stats(db)
+    """运单工作台 KPI 聚合：各状态计数 + totals 别名（支持与列表相同的筛选条件）。"""
+    stats = await WaybillService.workbench_stats(
+        db,
+        keyword=keyword,
+        customer_id=customerId,
+        origin_keyword=originKeyword,
+        destination_keyword=destinationKeyword,
+        vehicle_keyword=vehicleKeyword,
+        created_at_start=createdAtStart,
+        created_at_end=createdAtEnd,
+    )
     return success(data=stats)
 
 

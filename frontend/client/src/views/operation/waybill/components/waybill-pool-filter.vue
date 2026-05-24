@@ -1,13 +1,12 @@
 <!--
-  运单工作台 - 按 pool 配置渲染的筛选栏
+  运单工作台 - 统一筛选栏（页面级，切换阶段卡时不重建）
   ====================================
 
-  - 根据 `pool.filterFields` 数组只渲染对应控件，组件化关键所在
+  - 字段由 `UNIFIED_WAYBILL_FILTER_FIELDS` 驱动（各状态池筛选项的并集）
   - 布局策略：
       - **紧凑单行**：全部筛选项 + 操作按钮能放进 24 栅格时（如已关闭 pool），
         各字段固定 lg=6，与四列主筛时单列宽度一致；
       - **双行**：主筛 4 列铺满第 1 行，创建时间 / 品牌车型 / 操作按钮在第 2 行。
-  - 切换 pool 时由父组件通过 :key 触发重新挂载，无需手动 reset
 
   字段映射（来自 waybill-pool-registry）：
     keyword       → 运单编号
@@ -281,12 +280,13 @@
   import type { WaybillFilterField } from '../waybill-pool-registry';
 
   const props = defineProps<{
-    /** 该 pool 启用的筛选字段（其他字段不渲染、不参与 buildWhere） */
+    /** 启用的筛选字段（页面级统一传入 UNIFIED_WAYBILL_FILTER_FIELDS） */
     fields: WaybillFilterField[];
   }>();
 
   const emit = defineEmits<{
     (e: 'search', where: WaybillParam): void;
+    (e: 'reset', where: WaybillParam): void;
   }>();
 
   type FilterForm = {
@@ -299,8 +299,7 @@
   };
 
   /**
-   * 仅在该 pool 启用 createdRange 字段时，默认填充最近 3 天，
-   * 与原 waybill-search 行为一致；其他池不预填，避免误过滤。
+   * 统一筛选栏默认填充最近 3 天创建时间，与原待调度/待签收等池行为一致。
    */
   const buildInitial = (): FilterForm => ({
     keyword: '',
@@ -395,7 +394,7 @@
     if (has('createdRange')) {
       form.createdAtRange = [...getLast3DaysDateRange()] as [string, string];
     }
-    emitSearch();
+    emit('reset', buildWhere());
   };
 
   onMounted(async () => {

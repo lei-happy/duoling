@@ -14,10 +14,11 @@ export async function pageWaybills(params: WaybillParam) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 运单工作台 KPI：按状态聚合（待调度 / 调度中 / 运输中 / 待签收 / 已签收 / 已关闭） */
-export async function getWaybillWorkbenchStats() {
+/** 运单工作台 KPI：按状态聚合（可选与列表相同的筛选条件） */
+export async function getWaybillWorkbenchStats(params?: WaybillParam) {
   const res = await request.get<ApiResult<WaybillWorkbenchStats>>(
-    '/business/waybill/workbench-stats'
+    '/business/waybill/workbench-stats',
+    { params }
   );
   if (res.data.code === 0) {
     return res.data.data;

@@ -1,19 +1,24 @@
 <template>
   <div class="carrier-picker">
-    <el-radio-group
-      v-model="local.carrierType"
-      :disabled="lockType"
-      @change="onTypeChange"
-      class="carrier-picker__radio"
+    <div
+      class="carrier-picker__types"
+      :class="{ 'carrier-picker__types--two': carrierTypeOptions.length === 2 }"
     >
-      <el-radio-button
+      <button
         v-for="o in carrierTypeOptions"
         :key="o.value"
-        :value="o.value"
+        type="button"
+        class="carrier-picker__type-card"
+        :class="{ 'is-active': local.carrierType === o.value }"
+        :disabled="lockType"
+        @click="selectCarrierType(o.value)"
       >
-        {{ o.label }}
-      </el-radio-button>
-    </el-radio-group>
+        <span class="carrier-picker__type-name">{{ o.label }}</span>
+        <span class="carrier-picker__type-desc">{{
+          CARRIER_TYPE_INTRO[o.value] || ''
+        }}</span>
+      </button>
+    </div>
 
     <!-- A. 自有车 -->
     <template v-if="local.carrierType === 1">
@@ -21,7 +26,7 @@
         v-if="simpleMode"
         type="info"
         :closable="false"
-        style="margin-bottom: 12px"
+        class="carrier-picker__hint"
         title="自有车任务进入「待派车」后，由调度员在派车环节选择具体运力（司机/车牌），此处无需指定。"
       />
       <template v-else>
@@ -71,7 +76,7 @@
 
     <!-- B. 承运商 -->
     <template v-if="local.carrierType === 2">
-      <el-form-item label="选择承运商">
+      <el-form-item label="选择承运商" :required="simpleMode">
         <el-select
           v-model="local.carrierId"
           remote
@@ -99,30 +104,39 @@
           </el-option>
         </el-select>
       </el-form-item>
-      <el-row :gutter="12">
-        <el-col :span="12">
-          <el-form-item label="承运商简称">
-            <el-input v-model="local.carrierShortName" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="实际车牌（可选）">
-            <el-input v-model="local.plateNumber" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="12">
-        <el-col :span="12">
-          <el-form-item label="实际驾驶员（可选）">
-            <el-input v-model="local.mainDriverName" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="驾驶员电话（可选）">
-            <el-input v-model="local.mainDriverPhone" />
-          </el-form-item>
-        </el-col>
-      </el-row>
+      <el-alert
+        v-if="simpleMode"
+        type="info"
+        :closable="false"
+        class="carrier-picker__hint"
+        title="选定承运商后进入「待派车」，具体运力可在派车环节再绑定。"
+      />
+      <template v-else>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="承运商简称">
+              <el-input v-model="local.carrierShortName" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="实际车牌（可选）">
+              <el-input v-model="local.plateNumber" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="实际驾驶员（可选）">
+              <el-input v-model="local.mainDriverName" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="驾驶员电话（可选）">
+              <el-input v-model="local.mainDriverPhone" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </template>
     </template>
 
     <!-- C. 社会运力 -->
@@ -167,14 +181,14 @@
   import type { Capacity } from '@/api/capacity/self-capacity/list/model';
   import { selectCarriers } from '@/api/partner/carrier';
   import type { CarrierSelectItem } from '@/api/partner/carrier/model';
-  import { CARRIER_TYPE_OPTIONS } from '../status-config';
+  import { CARRIER_TYPE_INTRO, CARRIER_TYPE_OPTIONS } from '../status-config';
 
   const props = withDefaults(
     defineProps<{
       modelValue?: TaskCarrierInfo;
       /**
        * 简化模式：用于「待分配」阶段确认承运方式 —— 自有车任务无需选择具体运力，
-       * 仅给出提示文案；切换 carrier_type 仍可正常使用。
+       * 承运商仅需选定承运商；切换 carrier_type 仍可正常使用。
        */
       simpleMode?: boolean;
       /** 锁定承运方式：派车环节使用，禁止重新选择 carrierType。 */
@@ -266,7 +280,6 @@
   };
 
   const onTypeChange = () => {
-    // 切换类型时清理快照（避免脏数据残留）
     local.capacityId = undefined;
     local.carrierId = undefined;
     local.mainDriverName = '';
@@ -276,6 +289,15 @@
     local.trailerPlateNumber = '';
     local.carrierName = '';
     local.carrierShortName = '';
+  };
+
+  const selectCarrierType = (value: number) => {
+    if (props.lockType || local.carrierType === value) return;
+    local.carrierType = value;
+    onTypeChange();
+    if (value === 2 && carriers.value.length === 0) {
+      searchCarriers('');
+    }
   };
 
   const onCapacityChange = (id: number) => {
@@ -311,8 +333,66 @@
 
 <style lang="scss" scoped>
   .carrier-picker {
-    &__radio {
-      margin-bottom: 12px;
+    &__types {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+
+      &--two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    &__type-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      min-height: 88px;
+      padding: 12px 14px;
+      border: 1px solid var(--el-border-color);
+      border-radius: 8px;
+      background: var(--el-fill-color-blank);
+      text-align: left;
+      cursor: pointer;
+      transition:
+        border-color 0.2s,
+        background-color 0.2s,
+        box-shadow 0.2s;
+
+      &:hover:not(:disabled) {
+        border-color: var(--el-color-primary-light-5);
+        background: var(--el-color-primary-light-9);
+      }
+
+      &.is-active {
+        border-color: var(--el-color-primary);
+        background: var(--el-color-primary-light-9);
+        box-shadow: inset 0 0 0 1px var(--el-color-primary);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.72;
+      }
+    }
+
+    &__type-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--el-text-color-primary);
+      line-height: 1.3;
+    }
+
+    &__type-desc {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--el-text-color-secondary);
+    }
+
+    &__hint {
+      margin-bottom: 0;
     }
   }
 </style>

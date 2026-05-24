@@ -41,6 +41,13 @@ export const CARRIER_TYPE_MAP: Record<number, { label: string; type: string }> =
     {} as Record<number, { label: string; type: string }>
   );
 
+/** 承运方式简要说明（分配承运弹窗方块按钮文案） */
+export const CARRIER_TYPE_INTRO: Record<number, string> = {
+  1: '公司自有运力，待派车环节再选司机与车牌',
+  2: '委托合作承运商，本步仅需选定承运商',
+  3: '临时外调司机/车辆，需填写司机与车牌'
+};
+
 /** 段状态 */
 export const SEGMENT_STATUS_OPTIONS = [
   { value: 0, label: '待装车', type: 'info' },

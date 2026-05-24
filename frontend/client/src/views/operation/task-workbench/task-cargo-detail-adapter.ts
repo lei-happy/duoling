@@ -1,6 +1,25 @@
 import type { Waybill, WaybillCargoLine } from '@/api/waybill/model';
 import type { Task, TaskWaybillItem } from '@/api/operation/task/model';
 
+/** 按台数汇总主品牌/车型，用于分配承运弹窗突出展示 */
+export function summarizeTaskBrandModels(items: TaskWaybillItem[]): string {
+  if (!items?.length) return '--';
+  const map = new Map<string, number>();
+  for (const it of items) {
+    const brand = (it.vehicleBrand || '').trim();
+    const model = (it.vehicleModel || '').trim();
+    const key = [brand, model].filter(Boolean).join(' / ') || '—';
+    map.set(key, (map.get(key) || 0) + (it.quantity || 0));
+  }
+  const sorted = [...map.entries()].sort((a, b) => b[1] - a[1]);
+  if (sorted.length === 1) {
+    const [key, qty] = sorted[0]!;
+    return qty > 1 ? `${key} × ${qty}` : key;
+  }
+  const [top, qty] = sorted[0]!;
+  return `${top} × ${qty} 等 ${sorted.length} 种`;
+}
+
 /**
  * 将任务单 + 挂接明细组装为「商品车明细」弹窗所需的 Waybill 形态（与运单列表复用 waybill-cargoes-detail）。
  */

@@ -190,11 +190,31 @@ async def check_task_no(
 
 @router.get("/workbench-stats")
 async def get_workbench_stats(
+    keyword: Optional[str] = None,
+    carrierType: Optional[int] = None,
+    carrierId: Optional[int] = None,
+    capacityId: Optional[int] = None,
+    customerId: Optional[int] = None,
+    originKeyword: Optional[str] = None,
+    destinationKeyword: Optional[str] = None,
+    createdAtStart: Optional[date] = None,
+    createdAtEnd: Optional[date] = None,
     db: AsyncSession = Depends(get_tenant_db),
     _: TokenData = Depends(get_current_user),
 ):
-    """调度工作台 KPI 聚合：各状态计数 + 异常计数（逾期未派车 / 在途逾期）"""
-    stats = await TaskService.workbench_stats(db)
+    """调度工作台 KPI 聚合：各状态计数 + 异常计数（支持与列表相同的筛选条件）。"""
+    stats = await TaskService.workbench_stats(
+        db,
+        keyword=keyword,
+        carrier_type=carrierType,
+        carrier_id=carrierId,
+        capacity_id=capacityId,
+        customer_id=customerId,
+        origin_keyword=originKeyword,
+        destination_keyword=destinationKeyword,
+        created_at_start=createdAtStart,
+        created_at_end=createdAtEnd,
+    )
     return success(data=stats)
 
 

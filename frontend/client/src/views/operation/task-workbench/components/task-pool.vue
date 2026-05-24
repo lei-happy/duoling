@@ -3,6 +3,7 @@
 
   Props:
     - tabKey: 状态池 key（与 workbench-pool-registry 中配置一致，决定列、排序、status 筛选）
+    - searchWhere: 父级统一筛选条件（切换阶段卡时保留）
     - reloadToken: caller 通过修改这个值触发列表重新加载
 
   Emits:
@@ -17,14 +18,6 @@
 -->
 <template>
   <div class="task-pool">
-    <task-pool-filter
-      class="task-pool__filter"
-      :key="`filter-${tabKey}`"
-      :preset="pool.toolbarPreset ?? 'default'"
-      :pool-key="tabKey"
-      @search="onFilterSearch"
-    />
-
     <ele-card :body-style="{ paddingTop: '8px' }">
       <el-alert
         v-if="listSubset !== 'all'"
@@ -273,13 +266,13 @@
     getTaskRowActions
   } from '../../task/task-actions';
   import type { TaskActionConfig } from '../../task/task-actions';
-  import TaskPoolFilter from './task-pool-filter.vue';
   import WaybillCargoesDetail from '../../waybill/components/waybill-cargoes-detail.vue';
   import { buildWaybillShapeForTaskCargoDetail } from '../task-cargo-detail-adapter';
   import {
     WORKBENCH_POOLS,
     buildWorkbenchTableColumns,
-    getWorkbenchPool
+    getWorkbenchPool,
+    resolveWorkbenchPoolKey
   } from '../workbench-pool-registry';
 
   type WorkbenchListSubset = 'all' | 'normal' | 'alert';
@@ -287,6 +280,8 @@
   const props = defineProps<{
     /** 状态池 key（列、排序、筛选用 status 均来自注册表） */
     tabKey: string;
+    /** 父级统一筛选条件（切换阶段卡时不丢失） */
+    searchWhere?: Partial<TaskParam>;
     /** 通过修改此值触发外部强制刷新 */
     reloadToken?: number;
     /**
@@ -301,11 +296,11 @@
     (e: 'batchAction', rows: Task[], action: TaskActionConfig): void;
     (e: 'openDetail', row: Task): void;
     (e: 'syncStats'): void;
+    (e: 'autoSwitchPool', poolKey: string): void;
   }>();
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const selections = ref<Task[]>([]);
-  const filterWhere = ref<Partial<TaskParam>>({});
 
   const cargoDetailVisible = ref(false);
   const cargoDetailWaybill = ref<Waybill | null>(null);
@@ -412,14 +407,25 @@
     () => Boolean(primaryAction.value && allowBatchPrimary.value)
   );
 
-  const onFilterSearch = (where: Partial<TaskParam>) => {
-    filterWhere.value = where;
-    doReload();
+  const filterParamsWithoutKeyword = (): Omit<Partial<TaskParam>, 'keyword'> => {
+    const { keyword: _k, ...rest } = props.searchWhere ?? {};
+    return rest;
   };
 
-  const filterParamsWithoutKeyword = (): Omit<Partial<TaskParam>, 'keyword'> => {
-    const { keyword: _k, ...rest } = filterWhere.value;
-    return rest;
+  const fetchPage = (
+    params: Partial<TaskParam>
+  ): Promise<{ list: Task[]; count: number }> =>
+    pageTasks(params as TaskParam).then((res) => ({
+      list: res?.list ?? [],
+      count: res?.count ?? 0
+    }));
+
+  const maybeAutoSwitchPool = (list: Task[], keyword?: string) => {
+    if (!keyword?.trim() || list.length === 0) return;
+    const targetPool = resolveWorkbenchPoolKey(list[0]!.status);
+    if (targetPool && targetPool !== props.tabKey) {
+      emit('autoSwitchPool', targetPool);
+    }
   };
 
   /** 状态 Tag 后缀进度文本：已装/已卸 X/Y */
@@ -437,58 +443,54 @@
   };
 
   const datasource: DatasourceFunction = ({ pages }) => {
+    const search = props.searchWhere ?? {};
+    const keyword = search.keyword?.trim();
+    // 任务单号/运单号搜索：仅按 keyword 查，不受阶段/日期等限制
+    if (keyword) {
+      return fetchPage({ ...pages, keyword }).then((res) => {
+        maybeAutoSwitchPool(res.list, keyword);
+        return res;
+      });
+    }
+
     const st = pool.value.status;
     const statusArr = Array.isArray(st) ? st : [st];
-    const kw = filterWhere.value.keyword;
     const restExtra = filterParamsWithoutKeyword();
 
     if (statusArr.length === 1) {
       const s0 = statusArr[0]!;
       const overdue = wantServerAlert.value && (s0 === -1 || s0 === 0);
       const normalF = wantServerNormal.value && (s0 === -1 || s0 === 0);
-      return pageTasks({
+      return fetchPage({
         ...pages,
-        keyword: kw,
         status: s0,
         ...(overdue ? { onlyOverdue: true } : {}),
         ...(normalF ? { onlyNormal: true } : {}),
         ...restExtra
-      }).then((res) => ({
-        list: res?.list ?? [],
-        count: res?.count ?? 0
-      }));
+      });
     }
 
     if (wantServerAlert.value && pool.value.key === 'on-way') {
-      return pageTasks({
+      return fetchPage({
         ...pages,
-        keyword: kw,
         inTransitOverdue: true,
         ...restExtra
-      }).then((res) => ({
-        list: res?.list ?? [],
-        count: res?.count ?? 0
-      }));
+      });
     }
 
     if (wantServerNormal.value && pool.value.key === 'on-way') {
-      return pageTasks({
+      return fetchPage({
         ...pages,
-        keyword: kw,
         inTransitOnlyNormal: true,
         ...restExtra
-      }).then((res) => ({
-        list: res?.list ?? [],
-        count: res?.count ?? 0
-      }));
+      });
     }
 
     return Promise.all(
       statusArr.map((s) =>
-        pageTasks({
+        fetchPage({
           page: 1,
           limit: 100,
-          keyword: kw,
           status: s,
           ...restExtra
         })
@@ -497,8 +499,8 @@
       const merged: Task[] = [];
       let count = 0;
       results.forEach((res) => {
-        merged.push(...(res?.list ?? []));
-        count += res?.count ?? 0;
+        merged.push(...res.list);
+        count += res.count;
       });
       const { prop, order } = pool.value.defaultSort;
       const dir = order === 'ascending' ? 1 : -1;
@@ -542,12 +544,19 @@
 
   watch(
     () => props.tabKey,
-    (next, prev) => {
-      if (prev !== undefined && next !== prev) {
-        filterWhere.value = {};
-        selections.value = [];
-      }
+    () => {
+      selections.value = [];
+      doReload();
     }
+  );
+
+  watch(
+    () => props.searchWhere,
+    () => {
+      selections.value = [];
+      doReload();
+    },
+    { deep: true }
   );
 
   watch(
@@ -598,10 +607,6 @@
 <style lang="scss" scoped>
   .task-pool {
     &__alert-banner {
-      margin-bottom: 10px;
-    }
-
-    &__filter {
       margin-bottom: 10px;
     }
   }

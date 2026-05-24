@@ -458,22 +458,83 @@ class WaybillService:
         }
 
     @staticmethod
-    async def workbench_stats(db: AsyncSession) -> dict:
-        """运单工作台 KPI 聚合：按 status 0~6 计数。
+    def _apply_waybill_list_filters(
+        stmt,
+        *,
+        keyword: Optional[str] = None,
+        customer_id: Optional[int] = None,
+        created_at_start: Optional[date] = None,
+        created_at_end: Optional[date] = None,
+    ):
+        """列表 / 工作台 KPI 共用的 SQL 层筛选（不含 origin/destination/vehicle 拼音匹配）。"""
+        if keyword:
+            stmt = stmt.where(Waybill.waybill_no.contains(keyword))
+        if customer_id is not None:
+            stmt = stmt.where(Waybill.customer_id == customer_id)
+        if created_at_start is not None:
+            start_dt = datetime.combine(created_at_start, time.min)
+            stmt = stmt.where(Waybill.created_at >= start_dt)
+        if created_at_end is not None:
+            end_dt = datetime.combine(created_at_end, time.max)
+            stmt = stmt.where(Waybill.created_at <= end_dt)
+        return stmt
+
+    @staticmethod
+    async def workbench_stats(
+        db: AsyncSession,
+        keyword: Optional[str] = None,
+        customer_id: Optional[int] = None,
+        origin_keyword: Optional[str] = None,
+        destination_keyword: Optional[str] = None,
+        vehicle_keyword: Optional[str] = None,
+        created_at_start: Optional[date] = None,
+        created_at_end: Optional[date] = None,
+    ) -> dict:
+        """运单工作台 KPI 聚合：按 status 0~6 计数（可选叠加与列表相同的筛选条件）。
 
         7 个卡片：
             0 待确认 / 1 待调度 / 2 调度中 / 3 运输中 / 4 已送达 / 5 已完成 / 6 已关闭
-
-        说明：状态机文档将 0 标注为「草稿（不再使用）」，但 ``create_waybill``
-        实际仍以 status=0 落库，需要运营点击「确认」推进到 1。因此 0 在 UI 上
-        仍需作为独立卡片显示，避免新建运单"失踪"。
         """
-        r = await db.execute(
-            select(Waybill.status, func.count(Waybill.id))
-            .where(Waybill.is_deleted == 0)
-            .group_by(Waybill.status)
+        use_pinyin_filters = any(
+            [
+                (origin_keyword or "").strip(),
+                (destination_keyword or "").strip(),
+                (vehicle_keyword or "").strip(),
+            ]
         )
-        status_counts: dict[int, int] = {int(s): int(c) for s, c in r.all()}
+
+        base = select(Waybill).where(Waybill.is_deleted == 0)
+        base = WaybillService._apply_waybill_list_filters(
+            base,
+            keyword=keyword,
+            customer_id=customer_id,
+            created_at_start=created_at_start,
+            created_at_end=created_at_end,
+        )
+
+        if use_pinyin_filters:
+            result = await db.execute(base)
+            rows = list(result.scalars().all())
+            filtered = [
+                w
+                for w in rows
+                if WaybillService._match_waybill_region_filters(
+                    w, origin_keyword, destination_keyword, vehicle_keyword
+                )
+            ]
+            status_counts: dict[int, int] = {}
+            for w in filtered:
+                s = int(w.status or 0)
+                status_counts[s] = status_counts.get(s, 0) + 1
+        else:
+            subq = base.subquery()
+            r = await db.execute(
+                select(subq.c.status, func.count())
+                .select_from(subq)
+                .group_by(subq.c.status)
+            )
+            status_counts = {int(s): int(c) for s, c in r.all()}
+
         return {
             "statusCounts": status_counts,
             "totals": {

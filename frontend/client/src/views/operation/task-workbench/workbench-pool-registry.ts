@@ -30,6 +30,19 @@ export type WorkbenchColumnId =
 
 export type WorkbenchToolbarPreset = 'default' | 'pending-dispatch';
 
+/** 任务 status → 工作台 pool key（用于按单号跨状态搜索后自动切换阶段卡） */
+export const TASK_STATUS_TO_POOL_KEY: Record<number, string> = {
+  [-1]: 'pending-assign',
+  0: 'pending-dispatch',
+  1: 'pending-load',
+  2: 'on-way',
+  3: 'on-way',
+  4: 'pending-sign'
+};
+
+export const resolveWorkbenchPoolKey = (status?: number): string | undefined =>
+  status == null ? undefined : TASK_STATUS_TO_POOL_KEY[status];
+
 export interface WorkbenchPool {
   /** 与 KPI 卡片、路由缓存 key 一致 */
   key: string;

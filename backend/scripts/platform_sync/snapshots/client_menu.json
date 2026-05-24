@@ -1788,7 +1788,7 @@
     "menu_type": 0,
     "path": "/capacity/self-capacity/list",
     "component": "/capacity/self-capacity/list/index",
-    "icon": "yunliliebiao",
+    "icon": "",
     "sort_order": 10,
     "visible": 1,
     "status": 1,
@@ -1796,7 +1796,7 @@
     "feature_code": "capacity_self_list",
     "id": 339,
     "created_at": "2026-05-10 11:52:52",
-    "updated_at": "2026-05-10 14:10:53",
+    "updated_at": "2026-05-24 19:32:54",
     "is_deleted": 0
   },
   {
@@ -1806,7 +1806,7 @@
     "menu_type": 0,
     "path": "/capacity/self-capacity/driver",
     "component": "/capacity/self-capacity/driver/index",
-    "icon": "jiashiyuanguanli",
+    "icon": "",
     "sort_order": 20,
     "visible": 1,
     "status": 1,
@@ -1814,7 +1814,7 @@
     "feature_code": "capacity_self_driver",
     "id": 342,
     "created_at": "2026-05-10 11:59:26",
-    "updated_at": "2026-05-10 14:02:19",
+    "updated_at": "2026-05-24 19:32:59",
     "is_deleted": 0
   },
   {
@@ -1824,7 +1824,7 @@
     "menu_type": 0,
     "path": "/capacity/self-capacity/vehicle",
     "component": "/capacity/self-capacity/vehicle/index",
-    "icon": "cheliang",
+    "icon": "",
     "sort_order": 30,
     "visible": 1,
     "status": 1,
@@ -1832,7 +1832,7 @@
     "feature_code": "capacity_self_vehicle",
     "id": 340,
     "created_at": "2026-05-10 11:57:46",
-    "updated_at": "2026-05-10 14:01:00",
+    "updated_at": "2026-05-24 19:33:03",
     "is_deleted": 0
   },
   {
@@ -1842,7 +1842,7 @@
     "menu_type": 0,
     "path": "/capacity/self-capacity/trailer",
     "component": "/capacity/self-capacity/trailer/index",
-    "icon": "guache",
+    "icon": "",
     "sort_order": 40,
     "visible": 1,
     "status": 1,
@@ -1850,7 +1850,7 @@
     "feature_code": "capacity_self_trailer",
     "id": 341,
     "created_at": "2026-05-10 11:58:38",
-    "updated_at": "2026-05-10 14:02:01",
+    "updated_at": "2026-05-24 19:33:08",
     "is_deleted": 0
   },
   {
@@ -1860,7 +1860,7 @@
     "menu_type": 0,
     "path": "/capacity/self-capacity/log",
     "component": "/capacity/self-capacity/log/index",
-    "icon": "logs",
+    "icon": "",
     "sort_order": 60,
     "visible": 1,
     "status": 1,
@@ -1868,7 +1868,7 @@
     "feature_code": "capacity_self_log",
     "id": 345,
     "created_at": "2026-05-10 12:14:11",
-    "updated_at": "2026-05-10 14:02:55",
+    "updated_at": "2026-05-24 19:33:13",
     "is_deleted": 0
   },
   {

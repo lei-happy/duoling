@@ -24,6 +24,27 @@ export type WaybillFilterField =
   | 'vehicle'
   | 'createdRange';
 
+/** 工作台统一筛选项（各状态池字段的并集，避免切换阶段时筛选栏重建/丢失条件） */
+export const UNIFIED_WAYBILL_FILTER_FIELDS: WaybillFilterField[] = [
+  'keyword',
+  'customer',
+  'origin',
+  'destination',
+  'vehicle',
+  'createdRange'
+];
+
+/** 运单 status → 工作台 pool key（用于按运单号跨状态搜索后自动切换阶段卡） */
+export const WAYBILL_STATUS_TO_POOL_KEY: Record<number, string> = {
+  0: 'pending-confirm',
+  1: 'pending-dispatch',
+  2: 'scheduling',
+  3: 'in-transit',
+  4: 'delivered',
+  5: 'completed',
+  6: 'closed'
+};
+
 /** 与 waybill-pool 模板中 #slot 一一对应 */
 export type WaybillColumnId =
   | 'selection'

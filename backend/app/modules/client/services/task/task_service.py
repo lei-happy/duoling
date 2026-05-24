@@ -1026,50 +1026,142 @@ class TaskService:
     # 工作台聚合 + 批量操作
     # ------------------------------------------------------------------
     @staticmethod
-    async def workbench_stats(db: AsyncSession) -> dict:
-        """返回各状态计数 + 关键异常计数（用于调度工作台 KPI）"""
-        # 各状态计数
+    def _apply_task_workbench_filters(
+        stmt,
+        *,
+        keyword: Optional[str] = None,
+        carrier_type: Optional[int] = None,
+        carrier_id: Optional[int] = None,
+        capacity_id: Optional[int] = None,
+        customer_id: Optional[int] = None,
+        origin_keyword: Optional[str] = None,
+        destination_keyword: Optional[str] = None,
+        created_at_start: Optional[ddate] = None,
+        created_at_end: Optional[ddate] = None,
+    ):
+        """工作台 KPI / 列表共用的筛选（不含 status 与 常/警 子集）。"""
+        if keyword:
+            kw = f"%{keyword.strip()}%"
+            waybill_no_hit = exists(
+                select(1)
+                .select_from(TaskWaybillItem)
+                .where(
+                    TaskWaybillItem.task_id == Task.id,
+                    TaskWaybillItem.is_deleted == 0,
+                    TaskWaybillItem.waybill_no.isnot(None),
+                    TaskWaybillItem.waybill_no.like(kw),
+                )
+            )
+            cond = or_(
+                Task.task_no.like(kw),
+                Task.task_name.like(kw),
+                Task.main_driver_name.like(kw),
+                Task.plate_number.like(kw),
+                Task.carrier_name.like(kw),
+                waybill_no_hit,
+            )
+            stmt = stmt.where(cond)
+        if carrier_type is not None:
+            stmt = stmt.where(Task.carrier_type == carrier_type)
+        if carrier_id is not None:
+            stmt = stmt.where(Task.carrier_id == carrier_id)
+        if capacity_id is not None:
+            stmt = stmt.where(Task.capacity_id == capacity_id)
+        if origin_keyword:
+            kw = f"%{origin_keyword.strip()}%"
+            stmt = stmt.where(Task.origin.like(kw))
+        if destination_keyword:
+            kw = f"%{destination_keyword.strip()}%"
+            stmt = stmt.where(Task.destination.like(kw))
+        if created_at_start is not None:
+            start_dt = datetime.combine(created_at_start, dtime.min)
+            stmt = stmt.where(Task.created_at >= start_dt)
+        if created_at_end is not None:
+            end_dt = datetime.combine(created_at_end, dtime.max)
+            stmt = stmt.where(Task.created_at <= end_dt)
+        if customer_id is not None:
+            sub = select(TaskWaybillItem.task_id).where(
+                TaskWaybillItem.is_deleted == 0,
+                TaskWaybillItem.customer_id == customer_id,
+            )
+            stmt = stmt.where(Task.id.in_(sub))
+        return stmt
+
+    @staticmethod
+    async def workbench_stats(
+        db: AsyncSession,
+        keyword: Optional[str] = None,
+        carrier_type: Optional[int] = None,
+        carrier_id: Optional[int] = None,
+        capacity_id: Optional[int] = None,
+        customer_id: Optional[int] = None,
+        origin_keyword: Optional[str] = None,
+        destination_keyword: Optional[str] = None,
+        created_at_start: Optional[ddate] = None,
+        created_at_end: Optional[ddate] = None,
+    ) -> dict:
+        """返回各状态计数 + 关键异常计数（用于调度工作台 KPI，支持与列表相同的筛选）。"""
+        base = select(Task).where(Task.is_deleted == 0)
+        base = TaskService._apply_task_workbench_filters(
+            base,
+            keyword=keyword,
+            carrier_type=carrier_type,
+            carrier_id=carrier_id,
+            capacity_id=capacity_id,
+            customer_id=customer_id,
+            origin_keyword=origin_keyword,
+            destination_keyword=destination_keyword,
+            created_at_start=created_at_start,
+            created_at_end=created_at_end,
+        )
+
+        subq = base.subquery()
         r = await db.execute(
-            select(Task.status, func.count(Task.id))
-            .where(Task.is_deleted == 0)
-            .group_by(Task.status)
+            select(subq.c.status, func.count())
+            .select_from(subq)
+            .group_by(subq.c.status)
         )
         status_counts: dict[int, int] = {int(s): int(c) for s, c in r.all()}
 
         now = datetime.now()
 
-        # 异常：计划装车时间已过但仍处于待分配
-        r_overdue_assign = await db.execute(
-            select(func.count(Task.id)).where(
-                Task.is_deleted == 0,
+        async def _alert_count(extra) -> int:
+            stmt = select(func.count(Task.id)).where(Task.is_deleted == 0, *extra)
+            stmt = TaskService._apply_task_workbench_filters(
+                stmt,
+                keyword=keyword,
+                carrier_type=carrier_type,
+                carrier_id=carrier_id,
+                capacity_id=capacity_id,
+                customer_id=customer_id,
+                origin_keyword=origin_keyword,
+                destination_keyword=destination_keyword,
+                created_at_start=created_at_start,
+                created_at_end=created_at_end,
+            )
+            return int((await db.execute(stmt)).scalar() or 0)
+
+        overdue_assignment = await _alert_count(
+            (
                 Task.status == -1,
                 Task.planned_load_time.isnot(None),
                 Task.planned_load_time < now,
             )
         )
-        overdue_assignment = int(r_overdue_assign.scalar() or 0)
-
-        # 异常：计划装车时间已过但 status<1（待派车逾期，不含待分配）
-        r_overdue_dispatch = await db.execute(
-            select(func.count(Task.id)).where(
-                Task.is_deleted == 0,
+        overdue_dispatch = await _alert_count(
+            (
                 Task.status == 0,
                 Task.planned_load_time.isnot(None),
                 Task.planned_load_time < now,
             )
         )
-        overdue_dispatch = int(r_overdue_dispatch.scalar() or 0)
-
-        # 异常：计划到达时间已过但 status<4（在途逾期未到达）
-        r_overdue_arrive = await db.execute(
-            select(func.count(Task.id)).where(
-                Task.is_deleted == 0,
+        overdue_arrive = await _alert_count(
+            (
                 Task.status.in_([2, 3]),
                 Task.planned_arrive_time.isnot(None),
                 Task.planned_arrive_time < now,
             )
         )
-        overdue_arrive = int(r_overdue_arrive.scalar() or 0)
 
         return {
             "statusCounts": status_counts,

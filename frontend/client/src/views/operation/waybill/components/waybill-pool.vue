@@ -4,6 +4,7 @@
 
   Props:
     - poolKey: 状态池 key（与 waybill-pool-registry 对齐，决定列、排序、status 筛选）
+    - searchWhere: 父级统一筛选条件（切换阶段卡时保留）
     - reloadToken: 父组件通过修改此值触发强制刷新
     - listShowFreightAmount: 是否展示「运费金额」列（由 index.vue 读 system_config 传入）
 
@@ -22,12 +23,6 @@
 -->
 <template>
   <div class="waybill-pool">
-    <waybill-pool-filter
-      :key="`filter-${poolKey}`"
-      :fields="pool.filterFields"
-      @search="onSearch"
-    />
-
     <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
@@ -253,7 +248,6 @@
     ButtonDropdownItem,
     ButtonItem
   } from 'ele-admin-plus/es/ele-buttons/types';
-  import WaybillPoolFilter from './waybill-pool-filter.vue';
   import WaybillStatusTag from './waybill-status-tag.vue';
   import {
     pageWaybills,
@@ -268,6 +262,7 @@
   import { DeleteOutlined } from '@/components/icons';
   import {
     WAYBILL_POOLS,
+    WAYBILL_STATUS_TO_POOL_KEY,
     buildWaybillTableColumns,
     getWaybillPool
   } from '../waybill-pool-registry';
@@ -282,6 +277,8 @@
 
   const props = defineProps<{
     poolKey: string;
+    /** 父级统一筛选条件（切换阶段卡时不丢失） */
+    searchWhere?: WaybillParam;
     reloadToken?: number;
     /** 来自 system_config waybill.list_show_freight_amount，控制是否展示运费列 */
     listShowFreightAmount?: boolean;
@@ -289,6 +286,7 @@
 
   const emit = defineEmits<{
     (e: 'syncStats'): void;
+    (e: 'autoSwitchPool', poolKey: string): void;
     (e: 'openEdit', row?: Waybill): void;
     (e: 'openDetail', row: Waybill): void;
     (e: 'openCargoDetail', row: Waybill): void;
@@ -298,7 +296,6 @@
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const selections = ref<Waybill[]>([]);
-  const currentWhere = ref<WaybillParam>({});
 
   const pool = computed<WaybillPool>(
     () => getWaybillPool(props.poolKey) ?? WAYBILL_POOLS[0]!
@@ -313,17 +310,36 @@
     );
   });
 
-  const datasource: DatasourceFunction = ({ pages, where }) => {
-    const merged: WaybillParam = {
-      ...(where as WaybillParam | undefined),
-      ...currentWhere.value,
+  const buildQuery = (pages?: Record<string, unknown>): WaybillParam => {
+    const search = props.searchWhere ?? {};
+    const keyword = search.keyword?.trim();
+    // 运单号唯一：有 keyword 时仅按单号查，不受阶段/日期等其它条件限制
+    if (keyword) {
+      return { keyword, ...(pages as WaybillParam | undefined) };
+    }
+    return {
+      ...search,
       status: pool.value.status,
-      ...pages
+      ...(pages as WaybillParam | undefined)
     };
-    return pageWaybills(merged).then((res) => ({
-      list: res?.list ?? [],
-      count: res?.count ?? 0
-    }));
+  };
+
+  const datasource: DatasourceFunction = ({ pages }) => {
+    const merged = buildQuery(pages);
+    return pageWaybills(merged).then((res) => {
+      const list = res?.list ?? [];
+      const keyword = merged.keyword?.trim();
+      if (keyword && list.length > 0) {
+        const targetPool = WAYBILL_STATUS_TO_POOL_KEY[list[0]!.status ?? -1];
+        if (targetPool && targetPool !== props.poolKey) {
+          emit('autoSwitchPool', targetPool);
+        }
+      }
+      return {
+        list,
+        count: res?.count ?? 0
+      };
+    });
   };
 
   /** 与下拉、弹层关闭错开一帧再拉表，避免操作列状态不同步 */
@@ -334,23 +350,14 @@
     });
   };
 
-  const doReload = (where?: WaybillParam, page?: number) => {
+  const doReload = (page?: number) => {
     const t = tableRef.value;
     if (!t) return;
-    if (where !== undefined) currentWhere.value = where;
-    const opt: { where?: WaybillParam; page?: number } = {};
-    if (where !== undefined) opt.where = where;
-    if (page !== undefined) opt.page = page;
-    if (where === undefined && page === undefined) {
-      nextTick(() => t.reload?.());
+    if (page !== undefined) {
+      t.reload?.({ page });
       return;
     }
-    t.reload?.(opt);
-  };
-
-  const onSearch = (where: WaybillParam) => {
-    selections.value = [];
-    doReload(where, 1);
+    nextTick(() => t.reload?.());
   };
 
   const onTableDone = () => {
@@ -361,8 +368,17 @@
     () => props.poolKey,
     () => {
       selections.value = [];
-      currentWhere.value = {};
+      doReload(1);
     }
+  );
+
+  watch(
+    () => props.searchWhere,
+    () => {
+      selections.value = [];
+      doReload(1);
+    },
+    { deep: true }
   );
 
   watch(

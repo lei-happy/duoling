@@ -323,9 +323,10 @@ export async function listTaskFinanceSummary(taskId: number) {
 // 调度工作台聚合 & 批量操作
 // ============================
 
-export async function getTaskWorkbenchStats() {
+export async function getTaskWorkbenchStats(params?: TaskParam) {
   const res = await request.get<ApiResult<TaskWorkbenchStats>>(
-    '/business/task/workbench-stats'
+    '/business/task/workbench-stats',
+    { params }
   );
   if (res.data.code === 0) return res.data.data;
   return Promise.reject(new Error(res.data.message));

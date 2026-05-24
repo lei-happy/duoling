@@ -2,13 +2,19 @@
   调度工作台 - 按状态聚合的"待我处理"驾驶舱
 
   布局（对齐运单工作台）：
-    1. 顶部 5 张阶段卡（待分配 / 待派车 / 待装车 / 在途中 / 待签收）
-       置于「页面背景」之上，与下方白色卡片区隔
-    2. 中部 筛选栏（task-pool-filter）
+    1. 顶部 统一筛选栏（任务单号/运单号/线路/承运方式等，切换阶段时不重建）
+    2. 中部 5 张阶段卡（待分配 / 待派车 / 待装车 / 在途中 / 待签收）
+       输入任务单号搜索时跨状态匹配并自动切到对应阶段
     3. 下部 列表 + 行内主按钮 + 批量主按钮
 -->
 <template>
   <ele-page>
+    <task-pool-filter
+      class="workbench-page__filter"
+      @search="onSearch"
+      @reset="onFilterReset"
+    />
+
     <kpi-cards
       class="workbench-page__cards"
       :stats="stats"
@@ -19,14 +25,15 @@
 
     <task-pool
       v-if="currentTab"
-      :key="`${activeTab}-${listSubset}`"
       :tab-key="activeTab"
       :list-subset="listSubset"
+      :search-where="searchWhere"
       :reload-token="reloadToken"
       @action="onRowAction"
       @batch-action="onBatchAction"
       @open-detail="onOpenDetail"
       @sync-stats="loadStats"
+      @auto-switch-pool="onAutoSwitchPool"
     />
 
     <!-- 任务单详情抽屉 -->
@@ -54,6 +61,7 @@
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import KpiCards from './components/kpi-cards.vue';
+  import TaskPoolFilter from './components/task-pool-filter.vue';
   import TaskPool from './components/task-pool.vue';
   import WorkbenchActionModals from './components/workbench-action-modals.vue';
   import TaskDetail from '../task/components/task-detail.vue';
@@ -66,7 +74,7 @@
     removeTask,
     updateTaskStatus
   } from '@/api/operation/task';
-  import type { Task, TaskWorkbenchStats } from '@/api/operation/task/model';
+  import type { Task, TaskParam, TaskWorkbenchStats } from '@/api/operation/task/model';
   import type { TaskActionConfig, TaskActionKey } from '../task/task-actions';
 
   type WorkbenchListSubset = 'all' | 'normal' | 'alert';
@@ -89,6 +97,45 @@
   /** KPI：全部 / 正常(常) / 预警(警) */
   const listSubset = ref<WorkbenchListSubset>('all');
   const reloadToken = ref(0);
+  /** 统一筛选条件（切换阶段卡时保留） */
+  const searchWhere = ref<Partial<TaskParam>>({});
+
+  const onSearch = (where: Partial<TaskParam>) => {
+    searchWhere.value = where;
+  };
+
+  /** 与列表查询对齐：有 keyword 时仅传 keyword，否则传全部筛选（不含 status/子集） */
+  const buildStatsParams = (): Partial<TaskParam> => {
+    const search = searchWhere.value;
+    const keyword = search.keyword?.trim();
+    if (keyword) return { keyword };
+    const {
+      status: _s,
+      onlyOverdue: _o,
+      onlyNormal: _n,
+      inTransitOverdue: _io,
+      inTransitOnlyNormal: _in,
+      ...rest
+    } = { ...search };
+    return rest;
+  };
+
+  /** 筛选重置：恢复默认阶段卡 + 全部子集 + 默认筛选条件 */
+  const onFilterReset = (where: Partial<TaskParam>) => {
+    searchWhere.value = where;
+    const defaultKey = WORKBENCH_POOLS[0]!.key;
+    activeTab.value = defaultKey;
+    selectedPoolKey.value = defaultKey;
+    listSubset.value = 'all';
+  };
+
+  /** 按任务单号跨状态命中后，自动切换到任务所在阶段 */
+  const onAutoSwitchPool = (poolKey: string) => {
+    if (poolKey === activeTab.value && listSubset.value === 'all') return;
+    selectedPoolKey.value = poolKey;
+    activeTab.value = poolKey;
+    listSubset.value = 'all';
+  };
 
   const activeKpiCardKey = computed(() =>
     listSubset.value === 'all'
@@ -109,7 +156,8 @@
   const loadStats = async () => {
     statsLoading.value = true;
     try {
-      stats.value = (await getTaskWorkbenchStats()) ?? null;
+      stats.value =
+        (await getTaskWorkbenchStats(buildStatsParams())) ?? null;
     } catch (e: unknown) {
       const msg = (e as { message?: string }).message;
       if (msg) EleMessage.error({ message: msg, plain: true });
@@ -117,6 +165,8 @@
       statsLoading.value = false;
     }
   };
+
+  watch(searchWhere, () => loadStats(), { deep: true });
 
   const onSelectCard = (payload: {
     cardKey: string;
@@ -367,6 +417,10 @@
 </script>
 
 <style scoped>
+  .workbench-page__filter {
+    margin-bottom: 12px;
+  }
+
   .workbench-page__cards {
     margin-bottom: 12px;
   }
