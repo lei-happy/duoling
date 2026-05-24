@@ -1119,8 +1119,9 @@
   }
 
   .cargo-picker.cargo-picker--page {
-    height: calc(100vh - 320px);
-    min-height: 520px;
+    flex: 1 1 0;
+    min-height: 360px;
+    height: auto;
     max-height: none;
   }
 
