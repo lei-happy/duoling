@@ -55,6 +55,18 @@
     @update:visible="(v) => onDialogVisible('force-cancel', v)"
     @done="emit('done')"
   />
+  <action-cancel-task
+    :visible="actionDialog === 'cancel-task'"
+    :tasks="targets"
+    @update:visible="(v) => onDialogVisible('cancel-task', v)"
+    @done="emit('done')"
+  />
+
+  <task-edit
+    v-model:visible="editVisible"
+    :data="singleTask"
+    @done="emit('done')"
+  />
 
   <finance-edit
     v-if="singleTask"
@@ -77,6 +89,8 @@
   import ActionConfirmSign from './action-confirm-sign.vue';
   import ActionRevert from './action-revert.vue';
   import ActionForceCancel from './action-force-cancel.vue';
+  import ActionCancelTask from './action-cancel-task.vue';
+  import TaskEdit from '../../task/components/task-edit.vue';
   import FinanceEdit from '../../task-finance/components/finance-edit.vue';
   import type { Task } from '@/api/operation/task/model';
   import type {
@@ -96,6 +110,8 @@
   const financeVisible = defineModel<boolean>('financeVisible', {
     default: false
   });
+  // 任务单编辑抽屉（沿用 task/components/task-edit.vue），编辑 status -1/0/1 任务
+  const editVisible = defineModel<boolean>('editVisible', { default: false });
   // 当 actionDialog='revert' 时，调用方需同步设置具体的 revert 动作 key
   // 用于通用撤销弹窗 (action-revert.vue) 决定 from→to 文案与 revertTo 参数
   const revertActionKey = defineModel<TaskActionKey | null>('revertActionKey', {

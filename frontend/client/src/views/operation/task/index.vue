@@ -85,61 +85,18 @@
           <el-link type="primary" :underline="false" @click="openDetail(row)">
             详情
           </el-link>
-          <template v-if="canEdit(row)">
-            <el-divider direction="vertical" />
-            <el-link type="primary" :underline="false" @click="openEdit(row)">
-              编辑
-            </el-link>
-          </template>
-          <template v-if="getPrimaryAction(row)">
+          <template v-if="getRowPrimary(row)">
             <el-divider direction="vertical" />
             <el-link
-              :type="getPrimaryAction(row)!.buttonType as any"
+              :type="getRowPrimary(row)!.buttonType as any"
               :underline="false"
-              v-permission="getPrimaryAction(row)!.permission"
-              @click="triggerAction(row, getPrimaryAction(row)!)"
+              v-permission="getRowPrimary(row)!.permission"
+              @click="triggerAction(row, getRowPrimary(row)!)"
             >
-              {{ getPrimaryAction(row)!.label }}
+              {{ getRowPrimary(row)!.label }}
             </el-link>
           </template>
-          <template v-if="canPlanRoute(row)">
-            <el-divider direction="vertical" />
-            <el-link
-              type="primary"
-              :underline="false"
-              v-permission="'operation:task:plan-route'"
-              @click="triggerAction(row, planRouteAction)"
-            >
-              规划路线<span
-                v-if="(row.segmentCount ?? 0) === 0"
-                style="margin-left: 2px"
-                >·未规划</span
-              >
-            </el-link>
-          </template>
-          <template v-if="canCancel(row)">
-            <el-divider direction="vertical" />
-            <el-link
-              type="warning"
-              :underline="false"
-              v-permission="'operation:task:cancel'"
-              @click="cancelRow(row)"
-            >
-              取消
-            </el-link>
-          </template>
-          <template v-if="canDelete(row)">
-            <el-divider direction="vertical" />
-            <el-link
-              type="danger"
-              :underline="false"
-              v-permission="'operation:task:delete'"
-              @click="remove(row)"
-            >
-              删除
-            </el-link>
-          </template>
-          <template v-if="getReverseActions(row).length">
+          <template v-if="getRowMore(row).length">
             <el-divider direction="vertical" />
             <el-dropdown trigger="click">
               <el-link type="info" :underline="false">
@@ -148,12 +105,12 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item
-                    v-for="act in getReverseActions(row)"
+                    v-for="act in getRowMore(row)"
                     :key="act.key"
                     v-permission="act.permission"
                     @click="triggerAction(row, act)"
                   >
-                    {{ act.label }}
+                    {{ buildMoreLabel(row, act) }}
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -213,6 +170,11 @@
       :tasks="actionTask ? [actionTask] : []"
       @done="reload"
     />
+    <action-cancel-task
+      v-model:visible="actionVisible['cancel-task']"
+      :tasks="actionTask ? [actionTask] : []"
+      @done="reload"
+    />
 
     <!-- 生成结算单 → 直接打开费用单创建 -->
     <finance-edit
@@ -249,23 +211,18 @@
   import ActionConfirmSign from '../task-workbench/components/action-confirm-sign.vue';
   import ActionRevert from '../task-workbench/components/action-revert.vue';
   import ActionForceCancel from '../task-workbench/components/action-force-cancel.vue';
+  import ActionCancelTask from '../task-workbench/components/action-cancel-task.vue';
   import FinanceEdit from '../task-finance/components/finance-edit.vue';
   import {
     getTask,
     pageTasks,
     removeTask,
-    cancelTask,
     updateTaskStatus
   } from '@/api/operation/task';
   import type { Task, TaskParam } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
   import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from './status-config';
-  import {
-    TASK_ACTION_CONFIGS,
-    getPrimaryTaskAction,
-    getReverseTaskActions,
-    shouldShowPlanRoute
-  } from './task-actions';
+  import { getTaskRowActions } from './task-actions';
   import type { TaskActionConfig, TaskActionKey } from './task-actions';
 
   defineOptions({ name: 'OperationTask' });
@@ -349,7 +306,7 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 340,
+      width: 200,
       align: 'center',
       fixed: 'right',
       slot: 'action'
@@ -381,13 +338,6 @@
     t.reload?.(opt);
   };
 
-  const canEdit = (row: Task) =>
-    row.status !== undefined && [-1, 0, 1].includes(row.status);
-  const canCancel = (row: Task) =>
-    row.status !== undefined && [-1, 0, 1, 2].includes(row.status);
-  const canDelete = (row: Task) =>
-    row.status !== undefined && [-1, 0, 9].includes(row.status);
-
   const openEdit = (row?: Task) => {
     editData.value = row ? { ...row } : null;
     editVisible.value = true;
@@ -418,21 +368,27 @@
     'confirm-arrive': false,
     'confirm-sign': false,
     revert: false,
-    'force-cancel': false
+    'force-cancel': false,
+    'cancel-task': false
   });
   const financeEditVisible = ref(false);
   const revertActionKey = ref<TaskActionKey | null>(null);
 
-  const planRouteAction = TASK_ACTION_CONFIGS['plan-route'];
+  /** 行内主按钮（详情 + 主按钮 + 更多 的"主按钮"） */
+  const getRowPrimary = (row: Task): TaskActionConfig | null =>
+    getTaskRowActions(row).primary;
 
-  const getPrimaryAction = (row: Task): TaskActionConfig | null => {
-    return getPrimaryTaskAction(row.status);
+  /** 行内「更多」下拉项 */
+  const getRowMore = (row: Task): TaskActionConfig[] =>
+    getTaskRowActions(row).more;
+
+  /** 规划路线追加「·未规划」尾巴；其它直接用 label */
+  const buildMoreLabel = (row: Task, act: TaskActionConfig): string => {
+    if (act.key === 'plan-route' && (row.segmentCount ?? 0) === 0) {
+      return `${act.label}·未规划`;
+    }
+    return act.label;
   };
-
-  const getReverseActions = (row: Task): TaskActionConfig[] =>
-    getReverseTaskActions(row.status);
-
-  const canPlanRoute = (row: Task): boolean => shouldShowPlanRoute(row);
 
   /** 派车成功后：若自有车且尚未规划路线，引导继续规划 */
   const onDispatchDone = async () => {
@@ -473,6 +429,14 @@
 
   const triggerAction = async (row: Task, act: TaskActionConfig) => {
     actionTask.value = row;
+    if (act.key === 'edit') {
+      openEdit(row);
+      return;
+    }
+    if (act.key === 'delete') {
+      await runDeleteAction(row);
+      return;
+    }
     if (act.dialog === 'revert') {
       revertActionKey.value = act.key;
       actionVisible.revert = true;
@@ -518,38 +482,13 @@
     }
   };
 
-  const cancelRow = async (row: Task) => {
-    if (!row.id) return;
-    try {
-      const { value: reason } = await ElMessageBox.prompt(
-        '请输入取消原因（可选）',
-        '取消任务单',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '不取消',
-          inputPlaceholder: '取消原因'
-        }
-      );
-      await cancelTask(row.id, reason || undefined);
-      EleMessage.success({ message: '已取消任务单', plain: true });
-      reload();
-    } catch (err: unknown) {
-      const e = err as { message?: string } | string | undefined;
-      if (e === 'cancel') return;
-      const msg = (typeof e === 'object' && e?.message) || '取消失败';
-      if (msg !== 'cancel') {
-        EleMessage.error({ message: msg, plain: true });
-      }
-    }
-  };
-
-  const remove = async (row: Task) => {
+  const runDeleteAction = async (row: Task) => {
     if (!row.id) return;
     try {
       await ElMessageBox.confirm(
         `确定要删除任务单「${row.taskNo}」吗？`,
         '提示',
-        { type: 'warning' }
+        { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' }
       );
       await removeTask(row.id);
       EleMessage.success({ message: '删除成功', plain: true });

@@ -211,31 +211,36 @@
           >
             详情
           </el-link>
-          <template v-if="primaryAction">
+          <template v-if="getRowPrimary(row)">
             <el-divider direction="vertical" />
             <el-link
-              :type="primaryAction.buttonType as any"
+              :type="getRowPrimary(row)!.buttonType as any"
               :underline="false"
-              v-permission="primaryAction.permission"
-              @click="emit('action', row, primaryAction)"
+              v-permission="getRowPrimary(row)!.permission"
+              @click="emit('action', row, getRowPrimary(row)!)"
             >
-              {{ primaryAction.label }}
+              {{ getRowPrimary(row)!.label }}
             </el-link>
           </template>
-          <template v-if="canPlanRoute(row)">
+          <template v-if="getRowMore(row).length">
             <el-divider direction="vertical" />
-            <el-link
-              type="primary"
-              :underline="false"
-              v-permission="planRouteAction.permission"
-              @click="emit('action', row, planRouteAction)"
-            >
-              规划路线<span
-                v-if="(row.segmentCount ?? 0) === 0"
-                style="margin-left: 2px"
-                >·未规划</span
-              >
-            </el-link>
+            <el-dropdown trigger="click">
+              <el-link type="info" :underline="false">
+                更多<el-icon style="margin-left: 2px"><ArrowDown /></el-icon>
+              </el-link>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item
+                    v-for="act in getRowMore(row)"
+                    :key="act.key"
+                    v-permission="act.permission"
+                    @click="emit('action', row, act)"
+                  >
+                    {{ buildMoreLabel(row, act) }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
         </div>
       </template>
@@ -256,7 +261,7 @@
     DatasourceFunction,
     DoneParams
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import { Operation, Refresh, Right } from '@element-plus/icons-vue';
+  import { ArrowDown, Operation, Refresh, Right } from '@element-plus/icons-vue';
   import { pageTasks, listTaskWaybillItems } from '@/api/operation/task';
   import type { Task, TaskParam } from '@/api/operation/task/model';
   import type { Waybill } from '@/api/waybill/model';
@@ -265,7 +270,7 @@
   import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from '../../task/status-config';
   import {
     TASK_ACTION_CONFIGS,
-    shouldShowPlanRoute
+    getTaskRowActions
   } from '../../task/task-actions';
   import type { TaskActionConfig } from '../../task/task-actions';
   import TaskPoolFilter from './task-pool-filter.vue';
@@ -369,13 +374,28 @@
     () => pool.value.allowBatchPrimary !== false
   );
 
+  /** 池级"主按钮"：用于工具栏批量按钮的文案与权限点；每行的主按钮按 row.status 再算一次 */
   const primaryAction = computed(() =>
     pool.value.primaryActionKey
       ? TASK_ACTION_CONFIGS[pool.value.primaryActionKey]
       : null
   );
 
-  const planRouteAction = TASK_ACTION_CONFIGS['plan-route'];
+  /** 每行的主按钮（与列表所在池可能不一致，例如 on-way 池含 2 与 3） */
+  const getRowPrimary = (row: Task): TaskActionConfig | null =>
+    getTaskRowActions(row).primary;
+
+  /** 每行的「更多」下拉项 */
+  const getRowMore = (row: Task): TaskActionConfig[] =>
+    getTaskRowActions(row).more;
+
+  /** 给规划路线追加「·未规划」尾巴；其它动作直接用 label */
+  const buildMoreLabel = (row: Task, act: TaskActionConfig): string => {
+    if (act.key === 'plan-route' && (row.segmentCount ?? 0) === 0) {
+      return `${act.label}·未规划`;
+    }
+    return act.label;
+  };
 
   /** 筛选区已有搜索/重置，且表格工具栏自带刷新，无需额外「刷新」按钮 */
   const TOOLBAR_REFRESH_HIDDEN_POOL_KEYS = ['on-way', 'pending-sign'] as const;
@@ -414,12 +434,6 @@
       if (unloaded > 0) return `已卸 ${unloaded}/${total}`;
     }
     return '';
-  };
-
-  /** 行内是否展示"规划路线"次按钮（避免与主按钮重复或对终态任务展示） */
-  const canPlanRoute = (row: Task): boolean => {
-    if (pool.value.primaryActionKey === 'plan-route') return false;
-    return shouldShowPlanRoute(row);
   };
 
   const datasource: DatasourceFunction = ({ pages }) => {

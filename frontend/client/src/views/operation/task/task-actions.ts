@@ -17,10 +17,15 @@ export type TaskActionKey =
   | 'confirm-sign' // 确认签收：item 级签收，全部签收后聚合驱动 task 4→5
   | 'close' // 关闭任务 (5 → 7)
   // —— 逆向通道（参考 02.运单与任务单状态机联动设计.md §4.5）
+  | 'revert-dispatch' // 撤回派车 (1 → 0)
   | 'revert-load' // 撤销装车 (2 → 1)
   | 'revert-depart' // 撤回出发 (3 → 2)
   | 'revert-arrive' // 撤回到达 (4 → 3)
-  | 'force-cancel'; // 强制取消（2/3/4 → 9，线下取消）
+  | 'force-cancel' // 强制取消（2/3/4 → 9，线下取消）
+  // —— 常规辅助通道
+  | 'cancel-task' // 常规取消（-1/0/1/2 → 9，释放运单挂接 + 撤销未支付费用单）
+  | 'edit' // 编辑任务单（仅 -1/0/1）
+  | 'delete'; // 删除任务单（仅 -1/0/9）
 
 export interface TaskActionConfig {
   key: TaskActionKey;
@@ -36,7 +41,8 @@ export interface TaskActionConfig {
     | 'confirm-arrive'
     | 'confirm-sign'
     | 'revert'
-    | 'force-cancel';
+    | 'force-cancel'
+    | 'cancel-task';
   /** 是否纯 confirm（不打开弹窗，直接 ElMessageBox.confirm） */
   confirm?: boolean;
   /** 是否需要跳转打开费用单创建（生成结算单） */
@@ -105,6 +111,15 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     confirm: true
   },
   // —— 逆向通道 —— //
+  'revert-dispatch': {
+    key: 'revert-dispatch',
+    label: '撤回派车',
+    buttonType: 'warning',
+    permission: 'operation:task:revert-dispatch',
+    dialog: 'revert',
+    revertFrom: 1,
+    revertTo: 0
+  },
   'revert-load': {
     key: 'revert-load',
     label: '撤销装车',
@@ -138,6 +153,27 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     buttonType: 'danger',
     permission: 'operation:task:force-cancel',
     dialog: 'force-cancel'
+  },
+  // —— 常规辅助通道 —— //
+  'cancel-task': {
+    key: 'cancel-task',
+    label: '取消任务',
+    buttonType: 'warning',
+    permission: 'operation:task:cancel',
+    dialog: 'cancel-task'
+  },
+  edit: {
+    key: 'edit',
+    label: '编辑',
+    buttonType: 'info',
+    permission: 'operation:task:edit'
+  },
+  delete: {
+    key: 'delete',
+    label: '删除',
+    buttonType: 'danger',
+    permission: 'operation:task:delete',
+    confirm: true
   }
 };
 
@@ -191,6 +227,7 @@ export const getSecondaryTaskActions = (
  * （修改对应 item.status 3→2），不在任务级 revert 列表里暴露。
  */
 const REVERSE_BY_STATUS: Record<number, TaskActionKey[]> = {
+  1: ['revert-dispatch'],
   2: ['revert-load', 'force-cancel'],
   3: ['revert-depart', 'force-cancel'],
   4: ['revert-arrive', 'force-cancel']
@@ -202,6 +239,55 @@ export const getReverseTaskActions = (
   if (status === null || status === undefined) return [];
   const keys = REVERSE_BY_STATUS[status] ?? [];
   return keys.map((k) => TASK_ACTION_CONFIGS[k]);
+};
+
+/**
+ * 行操作聚合：把"详情 + 主按钮 + 更多下拉"所需的全部信息打包给 UI 层。
+ *
+ * UI 规范：操作列只暴露 2 个按钮（详情 + 主按钮），其余动作（编辑、规划路线、
+ * 逆向、取消任务、强制取消、删除）一律收纳到「更多」下拉。
+ *
+ * 「更多」组装顺序按"修改类 → 流程辅助 → 反向 → 取消 → 删除"递进，保持视觉一致。
+ */
+export interface TaskRowActions {
+  primary: TaskActionConfig | null;
+  more: TaskActionConfig[];
+}
+
+export const getTaskRowActions = (
+  row: {
+    status?: number | null;
+    carrierType?: number | null;
+    segmentCount?: number | null;
+  }
+): TaskRowActions => {
+  const primary = getPrimaryTaskAction(row.status ?? null);
+
+  const status = row.status ?? null;
+  if (status === null || status === undefined) {
+    return { primary, more: [] };
+  }
+
+  const more: TaskActionConfig[] = [];
+
+  const canEdit = [-1, 0, 1].includes(status);
+  if (canEdit) more.push(TASK_ACTION_CONFIGS['edit']);
+
+  if (shouldShowPlanRoute(row)) {
+    more.push(TASK_ACTION_CONFIGS['plan-route']);
+  }
+
+  more.push(...getReverseTaskActions(status));
+
+  // 2 已装车起已有「强制取消（force-cancel）」专门通道；为避免与常规「取消任务」
+  // 在同一行同时出现造成调度员歧义，常规取消仅在 -1/0/1 暴露。
+  const canCancel = [-1, 0, 1].includes(status);
+  if (canCancel) more.push(TASK_ACTION_CONFIGS['cancel-task']);
+
+  const canDelete = [-1, 0, 9].includes(status);
+  if (canDelete) more.push(TASK_ACTION_CONFIGS['delete']);
+
+  return { primary, more };
 };
 
 /**

@@ -78,7 +78,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     allowBatchPrimary: true,
     quantityOpenCargoDetail: true,
     toolbarPreset: 'pending-dispatch',
-    actionColumnWidth: 200,
+    actionColumnWidth: 190,
     columns: [
       'selection',
       'taskNo',
@@ -102,7 +102,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     allowBatchPrimary: false,
     quantityOpenCargoDetail: true,
     toolbarPreset: 'pending-dispatch',
-    actionColumnWidth: 200,
+    actionColumnWidth: 180,
     columns: [
       'taskNo',
       'carrierType',
@@ -126,7 +126,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     status: 1,
     primaryActionKey: 'confirm-load',
     allowBatchPrimary: false,
-    actionColumnWidth: 240,
+    actionColumnWidth: 190,
     toolbarPreset: 'pending-dispatch',
     columns: [
       'taskNo',
@@ -152,7 +152,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     status: [2, 3],
     primaryActionKey: 'confirm-arrive',
     allowBatchPrimary: false,
-    actionColumnWidth: 280,
+    actionColumnWidth: 190,
     columns: [
       'taskNo',
       'carrierType',
@@ -175,7 +175,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     label: '待签收',
     status: 4,
     primaryActionKey: 'confirm-sign',
-    actionColumnWidth: 240,
+    actionColumnWidth: 190,
     columns: [
       'selection',
       'taskNo',

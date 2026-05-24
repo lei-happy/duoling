@@ -39,6 +39,7 @@
     <workbench-action-modals
       v-model:action-dialog="openActionDialog"
       v-model:finance-visible="financeEditVisible"
+      v-model:edit-visible="editVisible"
       v-model:revert-action-key="revertActionKey"
       :targets="actionTargets"
       @done="reloadAll"
@@ -62,6 +63,7 @@
     batchUpdateTaskStatus,
     getTask,
     getTaskWorkbenchStats,
+    removeTask,
     updateTaskStatus
   } from '@/api/operation/task';
   import type { Task, TaskWorkbenchStats } from '@/api/operation/task/model';
@@ -136,6 +138,7 @@
     actionTargets.value = [];
     openActionDialog.value = null;
     financeEditVisible.value = false;
+    editVisible.value = false;
   });
 
   // ============================================
@@ -157,6 +160,7 @@
     null
   );
   const financeEditVisible = ref(false);
+  const editVisible = ref(false);
   const revertActionKey = ref<TaskActionKey | null>(null);
 
   /** 单任务派车 / 生成结算单要求单选 */
@@ -196,6 +200,14 @@
   };
 
   const triggerAction = async (act: TaskActionConfig) => {
+    if (act.key === 'edit') {
+      editVisible.value = true;
+      return;
+    }
+    if (act.key === 'delete') {
+      await runDeleteAction();
+      return;
+    }
     if (act.dialog === 'revert') {
       revertActionKey.value = act.key;
       openActionDialog.value = 'revert';
@@ -261,6 +273,42 @@
       const msg = (e as { message?: string }).message || `${act.label}失败`;
       EleMessage.error({ message: msg, plain: true });
     }
+  };
+
+  /** 删除任务单：仅 -1/0/9 状态允许；批量场景循环调用 */
+  const runDeleteAction = async () => {
+    if (actionTargets.value.length === 0) return;
+    const single = actionTargets.value.length === 1;
+    const tip = single
+      ? `确定要删除任务单「${actionTargets.value[0].taskNo}」吗？`
+      : `确认删除选中的 ${actionTargets.value.length} 张任务单？`;
+    try {
+      await ElMessageBox.confirm(tip, '操作确认', {
+        type: 'warning',
+        confirmButtonText: '删除',
+        cancelButtonText: '取消'
+      });
+    } catch {
+      return;
+    }
+    let failCount = 0;
+    for (const t of actionTargets.value) {
+      if (!t.id) continue;
+      try {
+        await removeTask(t.id);
+      } catch {
+        failCount += 1;
+      }
+    }
+    if (failCount > 0) {
+      EleMessage.warning({
+        message: `已删除 ${actionTargets.value.length - failCount} 张，失败 ${failCount} 张`,
+        plain: true
+      });
+    } else {
+      EleMessage.success({ message: '删除成功', plain: true });
+    }
+    await reloadAll();
   };
 
   const reloadAll = async () => {
