@@ -17,6 +17,7 @@ from app.common.exceptions import register_exception_handlers
 # 导入路由
 from app.modules.console.api import router as console_router
 from app.modules.client.api import router as client_router
+from app.modules.driver.api import router as driver_router
 from app.modules.open.api import router as open_router
 
 
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     # ---- 注册路由 ----
     app.include_router(console_router, prefix="/api/console", tags=["管理后台"])
     app.include_router(client_router, prefix="/api/client", tags=["客户端"])
+    app.include_router(driver_router, prefix="/api/driver", tags=["司机端"])
     app.include_router(open_router, prefix="/api/open", tags=["开放接口"])
 
     # ---- 静态资源（上传文件） ----

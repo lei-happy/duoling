@@ -1,0 +1,20 @@
+// Vant 4 主题变量覆盖（CSS 变量方式，全局生效）
+:root {
+  --van-primary-color: #1d4ed8;
+  --van-success-color: #16a34a;
+  --van-danger-color: #dc2626;
+  --van-warning-color: #f59e0b;
+  --van-text-color: #1e293b;
+  --van-text-color-2: #64748b;
+  --van-background: #f4f6fb;
+  --van-background-2: #ffffff;
+  --van-border-color: #e2e8f0;
+  --van-active-color: rgba(29, 78, 216, 0.08);
+  --van-button-primary-background: #1d4ed8;
+  --van-button-primary-border-color: #1d4ed8;
+  --van-tabbar-active-color: #1d4ed8;
+  --van-nav-bar-background: #ffffff;
+  --van-nav-bar-text-color: #1e293b;
+  --van-nav-bar-icon-color: #1e293b;
+  --van-nav-bar-title-text-color: #1e293b;
+}

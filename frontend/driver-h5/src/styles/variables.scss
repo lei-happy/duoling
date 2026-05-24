@@ -1,0 +1,49 @@
+// 驾驶员 H5 - 设计 token（供组件 SCSS 复用 @use 引入）
+
+// 主色
+$brand-primary: #1d4ed8;
+$brand-primary-light: #3b82f6;
+$brand-success: #16a34a;
+$brand-warning: #f59e0b;
+$brand-danger: #dc2626;
+$brand-info: #0ea5e9;
+
+// 文本色
+$text-primary: #1e293b;
+$text-secondary: #64748b;
+$text-muted: #94a3b8;
+$text-inverse: #ffffff;
+
+// 背景
+$bg-page: #f4f6fb;
+$bg-card: #ffffff;
+$bg-mask: rgba(15, 23, 42, 0.5);
+
+// 边框
+$border-color: #e2e8f0;
+$border-radius-sm: 6px;
+$border-radius-md: 10px;
+$border-radius-lg: 14px;
+
+// 间距
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 24px;
+
+// 字号
+$font-size-xs: 12px;
+$font-size-sm: 13px;
+$font-size-md: 14px;
+$font-size-lg: 16px;
+$font-size-xl: 18px;
+$font-size-xxl: 22px;
+
+// 阴影
+$shadow-card: 0 2px 8px rgba(15, 23, 42, 0.06);
+$shadow-elevated: 0 8px 24px rgba(15, 23, 42, 0.12);
+
+// safe-area
+$safe-area-top: env(safe-area-inset-top);
+$safe-area-bottom: env(safe-area-inset-bottom);

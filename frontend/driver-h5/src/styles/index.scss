@@ -1,0 +1,99 @@
+@use './vant-theme.scss';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+  font-size: 14px;
+  color: $text-primary;
+  background: $bg-page;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+input,
+textarea,
+button {
+  font-family: inherit;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+// 通用工具类
+.page {
+  min-height: 100%;
+  padding-top: $safe-area-top;
+  padding-bottom: $safe-area-bottom;
+  background: $bg-page;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-muted {
+  color: $text-muted;
+}
+
+.text-secondary {
+  color: $text-secondary;
+}
+
+.card {
+  background: $bg-card;
+  border-radius: $border-radius-md;
+  box-shadow: $shadow-card;
+  padding: $spacing-lg;
+}
+
+.scroll-container {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}

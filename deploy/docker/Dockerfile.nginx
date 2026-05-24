@@ -26,7 +26,7 @@ RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 
 # ============================================================
-# Stage 2: pnpm workspace 依赖安装（console & client 共用）
+# Stage 2: pnpm workspace 依赖安装（console & client & driver-h5 共用）
 # ============================================================
 FROM node:20-alpine AS pnpm-deps
 
@@ -41,6 +41,7 @@ COPY frontend/.npmrc frontend/pnpm-workspace.yaml frontend/package.json ./
 COPY frontend/packages/ ./packages/
 COPY frontend/console/package.json ./console/package.json
 COPY frontend/client/package.json ./client/package.json
+COPY frontend/driver-h5/package.json ./driver-h5/package.json
 
 RUN pnpm install --frozen-lockfile 2>/dev/null || pnpm install --no-frozen-lockfile --registry=https://registry.npmmirror.com
 
@@ -74,19 +75,37 @@ RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build:app
 
 
 # ============================================================
-# Stage 5: Nginx 生产镜像
+# Stage 5: 构建驾驶员 H5 (driver.zhitu.me)
+# 与 console / client 共用 pnpm-deps；产物 dist 由 pnpm run build 生成
+# （driver-h5 内部使用 `vue-tsc -b && vite build`，比 client 轻）
+# ============================================================
+FROM pnpm-deps AS driver-builder
+
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
+COPY frontend/driver-h5/ ./driver-h5/
+COPY frontend/components/ ./components/
+
+WORKDIR /build/driver-h5
+RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm run build
+
+
+# ============================================================
+# Stage 6: Nginx 生产镜像
 # ============================================================
 FROM nginx:alpine
 
 RUN rm -f /etc/nginx/conf.d/default.conf
 
-COPY --from=website-builder /build/website/dist /usr/share/nginx/website
-COPY --from=console-builder /build/console/dist /usr/share/nginx/console
-COPY --from=client-builder  /build/client/dist  /usr/share/nginx/client
+COPY --from=website-builder /build/website/dist   /usr/share/nginx/website
+COPY --from=console-builder /build/console/dist   /usr/share/nginx/console
+COPY --from=client-builder  /build/client/dist    /usr/share/nginx/client
+COPY --from=driver-builder  /build/driver-h5/dist /usr/share/nginx/driver
 
 COPY deploy/nginx/website.conf /etc/nginx/conf.d/website.conf
 COPY deploy/nginx/console.conf /etc/nginx/conf.d/console.conf
 COPY deploy/nginx/client.conf  /etc/nginx/conf.d/client.conf
+COPY deploy/nginx/driver.conf  /etc/nginx/conf.d/driver.conf
 COPY deploy/nginx/api.conf     /etc/nginx/conf.d/api.conf
 
 RUN mkdir -p /var/www/certbot

@@ -239,7 +239,7 @@ setup_ssl() {
     local SSL_DIR="/opt/zhitu/ssl"
     mkdir -p "$SSL_DIR"
 
-    local ALL_DOMAINS="zhitu.me console.zhitu.me wuliu.zhitu.me api.zhitu.me"
+    local ALL_DOMAINS="zhitu.me console.zhitu.me wuliu.zhitu.me driver.zhitu.me api.zhitu.me"
     local missing=0
 
     for domain in $ALL_DOMAINS; do
@@ -259,9 +259,10 @@ setup_ssl() {
         echo ""
         log_warn "有 $missing 个域名使用临时证书，请上传阿里云购买的证书到 $SSL_DIR/"
         log_info "证书文件命名规则:"
-        echo "  $SSL_DIR/zhitu.me.pem         + zhitu.me.key"
+        echo "  $SSL_DIR/zhitu.me.pem          + zhitu.me.key"
         echo "  $SSL_DIR/console.zhitu.me.pem  + console.zhitu.me.key"
         echo "  $SSL_DIR/wuliu.zhitu.me.pem    + wuliu.zhitu.me.key"
+        echo "  $SSL_DIR/driver.zhitu.me.pem   + driver.zhitu.me.key"
         echo "  $SSL_DIR/api.zhitu.me.pem      + api.zhitu.me.key"
         echo ""
         log_info "上传后执行: docker exec zhitu-nginx nginx -s reload"
@@ -700,10 +701,11 @@ cmd_init() {
     log_info "部署完成！"
     echo "============================================================"
     echo ""
-    echo "  官网:     http://www.zhitu.me"
-    echo "  管理后台: http://console.zhitu.me"
-    echo "  客户端:   http://wuliu.zhitu.me"
-    echo "  API:      http://api.zhitu.me/docs"
+    echo "  官网:       http://www.zhitu.me"
+    echo "  管理后台:   http://console.zhitu.me"
+    echo "  客户端:     http://wuliu.zhitu.me"
+    echo "  驾驶员 H5:  http://driver.zhitu.me"
+    echo "  API:        http://api.zhitu.me/docs"
     echo ""
     echo "  管理员账号: 13800000000"
     echo "  管理员密码: admin123（请尽快修改！）"

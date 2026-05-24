@@ -7,9 +7,11 @@
     "dev:console": "pnpm --filter zhitu-console dev",
     "dev:client": "pnpm --filter zhitu-client dev",
     "dev:website": "pnpm --filter zhitu-website dev",
+    "dev:driver": "pnpm --filter zhitu-driver-h5 dev",
     "build:console": "pnpm --filter zhitu-console build:app",
     "build:client": "pnpm --filter zhitu-client build:app",
     "build:website": "pnpm --filter zhitu-website build",
+    "build:driver": "pnpm --filter zhitu-driver-h5 build",
     "build:all": "pnpm -r build:app",
     "lint": "pnpm -r lint:eslint",
     "clean": "pnpm -r clean:lib"

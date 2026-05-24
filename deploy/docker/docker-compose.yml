@@ -51,7 +51,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_DB=0
       - REDIS_PASSWORD=
-      - CORS_ORIGINS=${CORS_ORIGINS:-["https://www.zhitu.me","https://console.zhitu.me","https://wuliu.zhitu.me"]}
+      - CORS_ORIGINS=${CORS_ORIGINS:-["https://www.zhitu.me","https://console.zhitu.me","https://wuliu.zhitu.me","https://driver.zhitu.me"]}
       - ALIYUN_ACCESS_KEY_ID=${ALIYUN_ACCESS_KEY_ID:-}
       - ALIYUN_ACCESS_KEY_SECRET=${ALIYUN_ACCESS_KEY_SECRET:-}
       - ALIYUN_SMS_SIGN_NAME=${ALIYUN_SMS_SIGN_NAME:-速通互联验证码}

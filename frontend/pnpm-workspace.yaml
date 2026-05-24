@@ -3,4 +3,5 @@ packages:
   - 'client'
   - 'console'
   - 'website'
+  - 'driver-h5'
   - 'template'
