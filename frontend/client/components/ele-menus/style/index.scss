@@ -152,6 +152,15 @@
   &.el-menu--vertical .el-sub-menu > .el-menu {
     background: eleVar('menu', 'child-bg');
     box-sizing: border-box;
+    margin: 2px eleVar('menu', 'item-padding') 6px;
+    padding: 4px 0;
+    border-radius: 8px;
+
+    .el-menu-item,
+    .el-sub-menu > .el-sub-menu__title {
+      height: eleVar('menu', 'child-item-height');
+      line-height: eleVar('menu', 'child-item-height');
+    }
   }
 
   /* 垂直菜单和气泡菜单 */
@@ -267,6 +276,21 @@
           color: inherit;
         }
       }
+
+      .el-menu-item:not(.is-disabled):hover {
+        color: elVar('color-primary');
+        background: eleVar('menu', 'child-hover-bg');
+      }
+
+      .el-menu-item:not(.is-disabled).is-active {
+        color: elVar('menu', 'active-color');
+        background: eleVar('menu', 'child-active-bg');
+      }
+    }
+
+    /* 展开的一级菜单标题略微强调 */
+    > .el-sub-menu.is-opened > .el-sub-menu__title {
+      font-weight: eleVar('menu', 'level1-font-weight');
     }
   }
 
@@ -736,6 +760,19 @@
       }
 
       .el-menu-item:not(.is-disabled).is-active {
+        background: eleVar('menu-dark', 'active-bg');
+      }
+    }
+
+    /* 暗色二级菜单 hover/active 覆盖通用规则 */
+    &.el-menu--vertical .el-sub-menu > .el-menu {
+      .el-menu-item:not(.is-disabled):hover {
+        color: eleVar('menu-dark', 'hover-color');
+        background: eleVar('menu-dark', 'child-hover-bg');
+      }
+
+      .el-menu-item:not(.is-disabled).is-active {
+        color: eleVar('menu-dark', 'active-color');
         background: eleVar('menu-dark', 'active-bg');
       }
     }

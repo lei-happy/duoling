@@ -110,7 +110,8 @@ $ele-modern-dark: map.deep-merge(
     & > .ele-admin-side > .ele-admin-sidebox .ele-menu,
     & > .ele-admin-main > .ele-admin-side > .ele-admin-sidebox .ele-menu {
       #{eleVarName('menu', 'arrow-size')}: 13px;
-      #{eleVarName('menu', 'child-bg')}: transparent;
+      #{eleVarName('menu', 'child-bg')}: rgba(255, 255, 255, 0.04);
+      #{eleVarName('menu', 'child-color')}: rgba(255, 255, 255, 0.82);
       #{eleVarName('menu', 'dark-child-bg')}: transparent;
       #{eleVarName('menu', 'item-radius')}: 12px;
       #{eleVarName('menu', 'item-hover-bg')}: rgba(255, 255, 255, 0.1);

@@ -102,7 +102,8 @@ $ele-simple: map.deep-merge(
       #{eleVarName('header', 'line-color')}: rgba(0, 0, 0, 0.04);
 
       & > .ele-admin-sidebar .ele-menu {
-        #{eleVarName('menu', 'child-bg')}: transparent;
+        #{eleVarName('menu', 'child-bg')}: elVar('fill-color', 'light');
+        #{eleVarName('menu', 'child-color')}: elVar('text-color', 'regular');
         #{eleVarName('menu', 'item-active-bg')}: linear-gradient(
           160deg,
           #{elVar('color-primary', 'light-7')} -8%,
