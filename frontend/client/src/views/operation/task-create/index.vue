@@ -1,14 +1,5 @@
 <template>
   <ele-page class="task-create-page">
-    <ele-card class="task-create-page__header">
-      <div class="task-create-page__title-row">
-        <span class="task-create-page__title">配载建单</span>
-        <span class="task-create-page__tip">
-          从待配运单中挑选商品车组成任务单；建议优先同线路、同车型凑成一板。创建后为「待分配」草稿，请在调度工作台继续分配承运。
-        </span>
-      </div>
-    </ele-card>
-
     <ele-card
       class="task-create-page__main"
       :body-style="{ padding: '12px 12px 8px' }"
@@ -143,29 +134,6 @@
     flex: 1;
     min-height: 0;
     box-sizing: border-box;
-  }
-
-  .task-create-page__header {
-    flex-shrink: 0;
-    margin-bottom: 12px;
-  }
-
-  .task-create-page__title-row {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .task-create-page__title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-  }
-
-  .task-create-page__tip {
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--el-text-color-secondary);
   }
 
   .task-create-page__main {

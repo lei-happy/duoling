@@ -206,6 +206,8 @@ export async function listCandidateWaybills(params: {
   customerId?: number;
   originKeyword?: string;
   destinationKeyword?: string;
+  modelKeyword?: string;
+  offset?: number;
   limit?: number;
 }) {
   const res = await request.get<ApiResult<CandidateCargoListResult>>(
@@ -216,6 +218,7 @@ export async function listCandidateWaybills(params: {
     return (
       res.data.data || {
         items: [],
+        waybillCount: 0,
         lineCount: 0,
         quantityTotal: 0,
         truncated: false

@@ -23,7 +23,7 @@
           effect="plain"
           :title="candidateStatsTitle"
         >
-          {{ displayLineCount }} 条 / {{ displayQuantityTotal }} 台
+          共 {{ candidateStats.waybillCount }} 单 / {{ candidateStats.quantityTotal }} 台
         </el-tag>
         <el-radio-group
           v-model="groupMode"
@@ -33,8 +33,33 @@
           <el-radio-button value="route">按线路</el-radio-button>
           <el-radio-button value="customer">按客户</el-radio-button>
         </el-radio-group>
+        <el-tooltip
+          v-if="showPaginationTip"
+          placement="top"
+          :content="paginationTipText"
+        >
+          <el-icon class="cargo-picker__page-tip-icon" tabindex="-1">
+            <QuestionCircleOutlined />
+          </el-icon>
+        </el-tooltip>
         <div class="cargo-picker__flex-spacer"></div>
-        <el-button :icon="Refresh" size="small" @click="loadCandidates">
+        <el-button
+          v-if="layout === 'page'"
+          link
+          type="primary"
+          size="small"
+          class="cargo-picker__help-btn"
+          @click="helpDialogVisible = true"
+        >
+          <el-icon><InfoFilled /></el-icon>
+          操作说明
+        </el-button>
+        <el-button
+          v-else
+          :icon="Refresh"
+          size="small"
+          @click="loadCandidates"
+        >
           刷新
         </el-button>
       </div>
@@ -46,7 +71,7 @@
           clearable
           size="small"
           style="width: 170px"
-          @change="loadCandidates"
+          @change="resetAndLoadCandidates"
         />
         <el-input
           v-model="filter.originKeyword"
@@ -54,7 +79,7 @@
           clearable
           size="small"
           style="width: 140px"
-          @change="loadCandidates"
+          @change="resetAndLoadCandidates"
         />
         <el-input
           v-model="filter.destinationKeyword"
@@ -62,7 +87,7 @@
           clearable
           size="small"
           style="width: 140px"
-          @change="loadCandidates"
+          @change="resetAndLoadCandidates"
         />
         <el-input
           v-model="filter.modelKeyword"
@@ -70,6 +95,7 @@
           clearable
           size="small"
           style="width: 130px"
+          @change="resetAndLoadCandidates"
         />
       </div>
 
@@ -92,23 +118,26 @@
             >
               <CaretBottom />
             </el-icon>
-            <span class="cargo-group__title" :title="group.title">
-              {{ group.title }}
-            </span>
-            <span class="cargo-group__meta">
-              {{ group.totalCount }} 条 · {{ group.totalQuantity }} 台
-            </span>
-            <div class="cargo-picker__flex-spacer"></div>
-            <el-button
-              type="primary"
-              link
-              size="small"
-              :disabled="group.addableQuantity <= 0"
-              @click.stop="quickFillGroup(group)"
-            >
-              <el-icon style="margin-right: 2px"><Top /></el-icon>
-              一键全加
-            </el-button>
+            <div class="cargo-group__header-main">
+              <span class="cargo-group__title" :title="group.title">
+                {{ group.title }}
+              </span>
+              <div class="cargo-group__header-extra">
+                <span class="cargo-group__meta">
+                  {{ group.totalCount }} 条 · {{ group.totalQuantity }} 台
+                </span>
+                <el-button
+                  type="primary"
+                  link
+                  size="small"
+                  :disabled="group.addableQuantity <= 0"
+                  @click.stop="quickFillGroup(group)"
+                >
+                  <el-icon style="margin-right: 2px"><Top /></el-icon>
+                  一键全加
+                </el-button>
+              </div>
+            </div>
           </div>
 
           <div
@@ -151,30 +180,36 @@
                       <CaretBottom />
                     </el-icon>
                   </el-button>
-                  <div class="cargo-row__main">
-                    <div class="cargo-row__line1">
-                      <span
-                        class="cargo-row__wb"
-                        :title="mw.lines[0]?.waybillNo"
-                        >{{
-                          mw.lines[0]?.waybillNo || `#${mw.lines[0]?.waybillId}`
-                        }}</span
-                      >
-                      <span class="cargo-row__customer">{{
-                        mw.lines[0]?.customerName || '—'
-                      }}</span>
-                    </div>
-                    <div class="cargo-row__line2">
-                      <span class="cargo-row__chip">{{
-                        mergedModelSummary(mw)
-                      }}</span>
-                      <span
-                        class="cargo-row__dest"
-                        :title="mergedEndPointTitle(mw)"
-                      >
-                        {{ mergedEndPointLabel(mw) }}
-                      </span>
-                    </div>
+                  <div class="cargo-row__line1-left">
+                    <span
+                      class="cargo-row__wb"
+                      :title="mw.lines[0]?.waybillNo"
+                      >{{
+                        mw.lines[0]?.waybillNo ||
+                        `#${mw.lines[0]?.waybillId}`
+                      }}</span
+                    >
+                    <span class="cargo-row__customer">{{
+                      mw.lines[0]?.customerName || '—'
+                    }}</span>
+                  </div>
+                  <span
+                    v-if="mw.lines[0]?.waybillCreatedAt"
+                    class="cargo-row__created"
+                    :title="formatDateTime(mw.lines[0]?.waybillCreatedAt)"
+                  >
+                    {{ formatDateTime(mw.lines[0]?.waybillCreatedAt) }}
+                  </span>
+                  <div class="cargo-row__line2">
+                    <span class="cargo-row__chip">{{
+                      mergedModelSummary(mw)
+                    }}</span>
+                    <span
+                      class="cargo-row__dest"
+                      :title="mergedEndPointTitle(mw)"
+                    >
+                      {{ mergedEndPointLabel(mw) }}
+                    </span>
                   </div>
                   <div class="cargo-row__action">
                     <span class="cargo-row__remaining">
@@ -302,6 +337,26 @@
           </div>
         </div>
       </div>
+
+      <div
+        v-if="candidateStats.lineCount > CANDIDATE_PAGE_SIZE"
+        class="cargo-picker__pagination"
+      >
+        <el-pagination
+          v-model:current-page="currentPage"
+          :page-size="CANDIDATE_PAGE_SIZE"
+          :total="candidateStats.lineCount"
+          :disabled="loading"
+          layout="slot, prev, pager, next"
+          small
+          background
+          @current-change="onCandidatePageChange"
+        >
+          <span class="cargo-picker__page-total">
+            共 {{ candidateStats.lineCount }} 行明细
+          </span>
+        </el-pagination>
+      </div>
     </div>
 
     <!-- ========================== 右侧：已选 ========================== -->
@@ -309,7 +364,7 @@
       <div class="cargo-picker__panel-header">
         <span class="cargo-picker__panel-title is-primary">已选商品车</span>
         <el-tag size="small" type="primary" effect="dark">
-          {{ modelValue.length }} 条 / {{ totalQuantity }} 台
+          {{ pickedWaybillCount }} 条 / {{ totalQuantity }} 台
         </el-tag>
         <div class="cargo-picker__flex-spacer"></div>
         <el-button
@@ -323,17 +378,14 @@
         </el-button>
       </div>
 
-      <div class="cargo-picker__summary">
-        <template v-if="modelValue.length">
-          <el-tag
-            v-if="dominantRoute"
-            size="small"
-            type="primary"
-            effect="plain"
-            class="cargo-picker__chip"
-          >
-            主线路：{{ dominantRoute }}
-          </el-tag>
+      <div v-if="modelValue.length" class="cargo-picker__picked-summary">
+        <div v-if="dominantRoute" class="cargo-picker__route-banner">
+          <span class="cargo-picker__route-banner-label">主线路</span>
+          <span class="cargo-picker__route-banner-text" :title="dominantRoute">
+            {{ dominantRoute }}
+          </span>
+        </div>
+        <div class="cargo-picker__summary">
           <el-tag
             v-if="dominantModel"
             size="small"
@@ -351,8 +403,10 @@
           >
             混线 {{ routeBreakdown.length }} 条
           </el-tag>
-        </template>
-        <span v-else class="cargo-picker__summary-hint">
+        </div>
+      </div>
+      <div v-else class="cargo-picker__summary">
+        <span class="cargo-picker__summary-hint">
           建议优先选同线路、同车型的运单凑成一板
         </span>
       </div>
@@ -365,6 +419,11 @@
           v-for="(p, idx) in modelValue"
           :key="`${p.waybillCargoId}_${idx}`"
           class="picked-block"
+          :class="{
+            'picked-block--main-route':
+              dominantRoute && !routeDiffersFromDominant(p),
+            'picked-block--alt-route': routeDiffersFromDominant(p)
+          }"
         >
           <div class="picked-row">
             <el-button
@@ -397,36 +456,55 @@
             </div>
             <div class="picked-row__main">
               <div class="picked-row__line1">
-                <span class="picked-row__wb" :title="p.waybillNo">{{
-                  p.waybillNo || `#${p.waybillCargoId}`
-                }}</span>
-                <span class="picked-row__customer">{{
-                  p.customerName || '—'
-                }}</span>
+                <el-tooltip
+                  :content="pickWaybillLabel(p)"
+                  placement="top"
+                  :show-after="300"
+                >
+                  <span class="picked-row__wb">{{
+                    pickWaybillLabel(p)
+                  }}</span>
+                </el-tooltip>
+                <el-tooltip
+                  :content="p.customerName || '—'"
+                  placement="top"
+                  :show-after="300"
+                  :disabled="!p.customerName"
+                >
+                  <span class="picked-row__customer">{{
+                    p.customerName || '—'
+                  }}</span>
+                </el-tooltip>
               </div>
               <div class="picked-row__line2">
                 <span class="picked-row__chip picked-row__chip--model">
                   {{ p.vehicleBrand || '—' }} / {{ p.vehicleModel || '—' }}
                 </span>
-                <div v-if="routeOfPicked(p)" class="picked-row__route-row">
-                  <span class="picked-row__route" :title="routeOfPicked(p)">
-                    {{ routeOfPicked(p) }}
-                  </span>
+              </div>
+              <div
+                v-if="routeDiffersFromDominant(p) && routeOfPicked(p)"
+                class="picked-row__route-meta"
+              >
+                <el-tooltip
+                  content="与汇总「主线路」不一致"
+                  placement="top"
+                  :show-after="300"
+                >
+                  <el-tag size="small" type="warning" effect="plain">
+                    异主线路
+                  </el-tag>
+                </el-tooltip>
+                <span class="picked-row__route-meta-text">
                   <el-tooltip
-                    v-if="routeDiffersFromDominant(p)"
-                    content="该运单起讫点与汇总「主线路」不一致，混板前请确认。"
+                    :content="routeOfPicked(p)"
                     placement="top"
+                    :show-after="300"
                   >
-                    <el-tag
-                      size="small"
-                      type="warning"
-                      effect="plain"
-                      class="picked-row__route-warn"
-                    >
-                      异主线路
-                    </el-tag>
+                    <span class="picked-row__route-meta-text-inner">{{
+                      routeOfPicked(p)
+                    }}</span>
                   </el-tooltip>
-                </div>
+                </span>
               </div>
             </div>
             <div class="picked-row__rest">
@@ -479,27 +557,133 @@
                   </template>
                 </el-image>
               </div>
-              <span class="picked-unit__model">
-                {{ p.vehicleBrand || '—' }} / {{ p.vehicleModel || '—' }}
-              </span>
+              <div class="picked-unit__main">
+                <span class="picked-unit__model">
+                  {{ p.vehicleBrand || '—' }} / {{ p.vehicleModel || '—' }}
+                </span>
+                <span
+                  v-if="pickedVinOf(p)"
+                  class="picked-unit__vin"
+                  :title="pickedVinRaw(p)"
+                >
+                  VIN {{ formatVinDisplay(pickedVinOf(p)) }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <el-dialog
+    v-model="helpDialogVisible"
+    width="860px"
+    align-center
+    append-to-body
+    destroy-on-close
+    class="cargo-picker-help-dialog"
+  >
+    <template #header>
+      <div class="cargo-picker-help-dialog__header">
+        <div class="cargo-picker-help-dialog__header-text">
+          <div class="cargo-picker-help-dialog__title">配载建单指南</div>
+          <div class="cargo-picker-help-dialog__subtitle">
+            从待选运单挑选商品车，快速组成一张任务单
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <div class="cargo-picker-help-dialog__body">
+      <div class="cargo-picker-help-dialog__steps">
+        <template v-for="(step, index) in helpSteps" :key="step.title">
+          <div class="cargo-picker-help-dialog__step">
+            <div class="cargo-picker-help-dialog__step-head">
+              <span class="cargo-picker-help-dialog__step-no">{{
+                index + 1
+              }}</span>
+              <div class="cargo-picker-help-dialog__step-icon">
+                <el-icon :size="20"><component :is="step.icon" /></el-icon>
+              </div>
+            </div>
+            <div class="cargo-picker-help-dialog__step-title">{{ step.title }}</div>
+            <div class="cargo-picker-help-dialog__step-desc">{{ step.desc }}</div>
+          </div>
+          <div
+            v-if="index < helpSteps.length - 1"
+            class="cargo-picker-help-dialog__step-arrow"
+            aria-hidden="true"
+          >
+            <el-icon :size="16"><ArrowRight /></el-icon>
+          </div>
+        </template>
+      </div>
+
+      <div class="cargo-picker-help-dialog__extras">
+        <div class="cargo-picker-help-dialog__highlight">
+          <div class="cargo-picker-help-dialog__highlight-icon">
+            <el-icon :size="18"><Opportunity /></el-icon>
+          </div>
+          <div>
+            <div class="cargo-picker-help-dialog__highlight-title">配载技巧</div>
+            <div class="cargo-picker-help-dialog__highlight-text">
+              建议优先选择<strong>同线路、同车型</strong>的运单凑成一板，减少混装与后续调度成本。
+            </div>
+          </div>
+        </div>
+
+        <div class="cargo-picker-help-dialog__glossary">
+          <div class="cargo-picker-help-dialog__glossary-head">
+            <el-icon :size="16"><DataLine /></el-icon>
+            <span>统计与分页</span>
+          </div>
+          <div class="cargo-picker-help-dialog__glossary-list">
+            <div class="cargo-picker-help-dialog__glossary-item">
+              <el-tag size="small" type="primary" effect="plain">单</el-tag>
+              <span>待配运单数（去重运单号）</span>
+            </div>
+            <div class="cargo-picker-help-dialog__glossary-item">
+              <el-tag size="small" type="success" effect="plain">台</el-tag>
+              <span>待配商品车总台数</span>
+            </div>
+            <div class="cargo-picker-help-dialog__glossary-item">
+              <el-tag size="small" type="info" effect="plain">行明细</el-tag>
+              <span>按商品车明细分页，多车型商品车时行数多于运单数</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <el-button type="primary" @click="helpDialogVisible = false">
+        开始配载
+      </el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script lang="ts" setup>
-  import { computed, onMounted, reactive, ref } from 'vue';
+  import { computed, markRaw, onMounted, reactive, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
   import {
+    ArrowRight,
     CaretBottom,
     Close,
+    DataLine,
+    DocumentChecked,
+    Filter,
+    InfoFilled,
+    Opportunity,
     Picture,
+    Plus,
     Refresh,
     Top
   } from '@element-plus/icons-vue';
+  import { QuestionCircleOutlined } from '@/components/icons';
+  import { formatDateTime } from '@/utils/date-util';
+  import { formatVinDisplay } from '@/utils/vin-util';
   import { listCandidateWaybills } from '@/api/operation/task';
   import type {
     CandidateCargo,
@@ -510,6 +694,9 @@
   type PickedItem = TaskWaybillItem & {
     /** 候选行剩余台数（用于已选面板里动态计算最大可输入） */
     _availableRemaining?: number;
+    origin?: string;
+    destination?: string;
+    vin?: string | null;
   };
 
   type GroupMode = 'route' | 'customer';
@@ -551,13 +738,37 @@
     (e: 'update:modelValue', value: PickedItem[]): void;
   }>();
 
+  const CANDIDATE_PAGE_SIZE = 50;
+
+  const helpDialogVisible = ref(false);
+
+  const helpSteps = [
+    {
+      icon: markRaw(Filter),
+      title: '筛选待配运单',
+      desc: '按运单号、起终点、品牌车型等条件缩小范围；支持按线路或按客户分组浏览。'
+    },
+    {
+      icon: markRaw(Plus),
+      title: '加入商品车',
+      desc: '点击「整单加入」或展开后按台数追加；已选商品车显示在右侧面板，可随时撤回。'
+    },
+    {
+      icon: markRaw(DocumentChecked),
+      title: '创建任务单',
+      desc: '确认右侧已选台数无误后，点击底部「创建任务单」，请到调度工作台继续分配承运。'
+    }
+  ];
+
   const candidates = ref<CandidateCargo[]>([]);
   const candidateStats = reactive({
+    waybillCount: 0,
     lineCount: 0,
     quantityTotal: 0,
     truncated: false
   });
   const loading = ref(false);
+  const currentPage = ref(1);
   const groupMode = ref<GroupMode>('route');
   const collapsedGroups = ref<Set<string>>(new Set());
   /** 左侧：合并运单行内展开（按 cargo 行追加台数） */
@@ -575,7 +786,7 @@
   });
 
   onMounted(() => {
-    loadCandidates();
+    resetAndLoadCandidates();
   });
 
   const loadCandidates = async () => {
@@ -585,12 +796,16 @@
         keyword: filter.keyword || undefined,
         originKeyword: filter.originKeyword || undefined,
         destinationKeyword: filter.destinationKeyword || undefined,
-        limit: 300
+        modelKeyword: filter.modelKeyword || undefined,
+        offset: (currentPage.value - 1) * CANDIDATE_PAGE_SIZE,
+        limit: CANDIDATE_PAGE_SIZE
       });
       candidates.value = res.items || [];
+      candidateStats.waybillCount = res.waybillCount ?? 0;
       candidateStats.lineCount = res.lineCount ?? 0;
       candidateStats.quantityTotal = res.quantityTotal ?? 0;
       candidateStats.truncated = Boolean(res.truncated);
+      collapsedGroups.value = new Set();
     } catch (e: unknown) {
       const msg = (e as { message?: string }).message || '加载候选失败';
       EleMessage.error({ message: msg, plain: true });
@@ -599,38 +814,30 @@
     }
   };
 
-  const filteredCandidates = computed<CandidateCargo[]>(() => {
-    const kw = filter.modelKeyword.trim().toLowerCase();
-    if (!kw) return candidates.value;
-    return candidates.value.filter((c) => {
-      const s = `${c.vehicleBrand || ''} ${c.vehicleModel || ''}`.toLowerCase();
-      return s.includes(kw);
-    });
-  });
+  const resetAndLoadCandidates = async () => {
+    currentPage.value = 1;
+    await loadCandidates();
+  };
 
-  const candidatesTotalQty = computed(() =>
-    filteredCandidates.value.reduce((s, c) => s + (c.remainingQuantity || 0), 0)
+  const onCandidatePageChange = async (page: number) => {
+    currentPage.value = page;
+    await loadCandidates();
+  };
+
+  const showPaginationTip = computed(
+    () => candidateStats.lineCount > CANDIDATE_PAGE_SIZE
   );
 
-  /** 头部统计：服务端全量；品牌/车型为前端本地筛选时用当前列表 */
-  const displayLineCount = computed(() => {
-    if (filter.modelKeyword.trim()) return filteredCandidates.value.length;
-    return candidateStats.lineCount;
-  });
-
-  const displayQuantityTotal = computed(() => {
-    if (filter.modelKeyword.trim()) return candidatesTotalQty.value;
-    return candidateStats.quantityTotal;
-  });
+  const paginationTipText = computed(
+    () =>
+      `待配明细较多，当前仅展示第 ${currentPage.value} 页（每页 ${CANDIDATE_PAGE_SIZE} 行 cargo 明细）。左上角「单」为待配运单数，底部「行明细」为可翻页浏览的明细行数；同一运单多车型时，行数会多于运单数。请优先用上方筛选缩小范围，或翻页继续浏览。`
+  );
 
   const candidateStatsTitle = computed(() => {
-    if (filter.modelKeyword.trim()) {
-      return '当前为品牌/车型本地筛选后的统计';
+    if (candidateStats.lineCount <= CANDIDATE_PAGE_SIZE) {
+      return `当前筛选条件下共 ${candidateStats.waybillCount} 个待配运单、${candidateStats.lineCount} 行 cargo 明细、${candidateStats.quantityTotal} 台商品车`;
     }
-    if (candidateStats.truncated) {
-      return `共 ${candidateStats.lineCount} 条待配明细；列表仅加载前 ${candidates.value.length} 条`;
-    }
-    return '';
+    return `共 ${candidateStats.waybillCount} 个待配运单、${candidateStats.lineCount} 行 cargo 明细、${candidateStats.quantityTotal} 台商品车；列表按每页 ${CANDIDATE_PAGE_SIZE} 行明细分页`;
   });
 
   function routeKeyOf(c: CandidateCargo): string {
@@ -757,6 +964,9 @@
       vehicleBrand: row.vehicleBrand,
       vehicleModel: row.vehicleModel,
       dealerName: row.dealerName,
+      origin: row.origin,
+      destination: row.destination,
+      vin: row.vin,
       quantity: q,
       _availableRemaining: cap,
       seriesImage: row.seriesImage
@@ -830,7 +1040,7 @@
   }
 
   const groupedCandidates = computed<Group[]>(() => {
-    const list = filteredCandidates.value;
+    const list = candidates.value;
     if (!list.length) return [];
 
     const primary = groupMode.value === 'route' ? routeKeyOf : customerKeyOf;
@@ -1034,6 +1244,13 @@
     (props.modelValue || []).reduce((s, x) => s + (x.quantity || 0), 0)
   );
 
+  const pickedWaybillCount = computed(() => {
+    const ids = new Set(
+      (props.modelValue || []).map((x) => x.waybillId).filter(Boolean)
+    );
+    return ids.size;
+  });
+
   const candidateById = computed(() => {
     const m = new Map<number, CandidateCargo>();
     candidates.value.forEach((c) => m.set(c.cargoId, c));
@@ -1048,11 +1265,18 @@
 
   function routeOfPicked(p: PickedItem): string {
     const c = candidateById.value.get(p.waybillCargoId);
-    if (!c) return '';
-    const o = c.origin || '';
-    const d = c.destination || '';
+    const o = p.origin ?? c?.origin ?? '';
+    const d = p.destination ?? c?.destination ?? '';
     if (!o && !d) return '';
     return `${o || '未填'} → ${d || '未填'}`;
+  }
+
+  function pickedVinOf(p: PickedItem): string {
+    return (p.vin ?? candidateById.value.get(p.waybillCargoId)?.vin ?? '').trim();
+  }
+
+  function pickedVinRaw(p: PickedItem): string {
+    return pickedVinOf(p);
   }
 
   function dominantOf(keyFn: (p: PickedItem) => string): string | null {
@@ -1091,6 +1315,10 @@
     return Array.from(set);
   });
 
+  function pickWaybillLabel(p: PickedItem): string {
+    return p.waybillNo || `#${p.waybillCargoId}`;
+  }
+
   /** 已选行起讫是否与汇总「主线路」（按台数加权最多）不一致 */
   function routeDiffersFromDominant(p: PickedItem): boolean {
     const dr = dominantRoute.value;
@@ -1102,7 +1330,7 @@
     return mine.trim() !== dr.trim();
   }
 
-  defineExpose({ reload: loadCandidates });
+  defineExpose({ reload: resetAndLoadCandidates });
 </script>
 
 <style lang="scss" scoped>
@@ -1172,12 +1400,48 @@
     margin-left: 4px;
   }
 
+  .cargo-picker__page-tip-icon {
+    flex-shrink: 0;
+    margin-left: 2px;
+    font-size: 15px;
+    color: var(--el-text-color-secondary);
+    cursor: help;
+    vertical-align: middle;
+
+    &:hover {
+      color: var(--el-color-primary);
+    }
+  }
+
+  .cargo-picker__help-btn {
+    flex-shrink: 0;
+
+    .el-icon {
+      margin-right: 4px;
+    }
+  }
+
   .cargo-picker__filter {
     display: flex;
     align-items: center;
     gap: 6px;
     flex-wrap: wrap;
     flex-shrink: 0;
+  }
+
+  .cargo-picker__pagination {
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    padding-top: 4px;
+    border-top: 1px solid var(--el-border-color-lighter);
+  }
+
+  .cargo-picker__page-total {
+    margin-right: 8px;
+    font-size: 12px;
+    color: var(--el-text-color-regular);
+    white-space: nowrap;
   }
 
   .cargo-picker__summary {
@@ -1187,6 +1451,48 @@
     flex-wrap: wrap;
     min-height: 22px;
     flex-shrink: 0;
+  }
+
+  .cargo-picker__picked-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .cargo-picker__route-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: linear-gradient(
+      90deg,
+      var(--el-color-primary-light-9),
+      var(--el-bg-color)
+    );
+    border: 1px solid var(--el-color-primary-light-7);
+  }
+
+  .cargo-picker__route-banner-label {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.5;
+    color: #fff;
+    background: var(--el-color-primary);
+  }
+
+  .cargo-picker__route-banner-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--el-color-primary);
+    word-break: break-all;
   }
 
   .cargo-picker__chip {
@@ -1254,6 +1560,7 @@
   }
 
   .cargo-group__caret {
+    flex-shrink: 0;
     font-size: 14px;
     transition: transform 0.2s;
     &.is-collapsed {
@@ -1261,19 +1568,36 @@
     }
   }
 
+  .cargo-group__header-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
   .cargo-group__title {
+    flex: 1;
+    min-width: 0;
     font-weight: 600;
     color: var(--el-text-color-primary);
     font-size: 13px;
-    max-width: 320px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.4;
     white-space: nowrap;
   }
 
+  .cargo-group__header-extra {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
   .cargo-group__meta {
+    flex-shrink: 0;
     color: var(--el-text-color-secondary);
     font-size: 12px;
+    white-space: nowrap;
   }
 
   .cargo-group__body {
@@ -1315,10 +1639,13 @@
   }
 
   .cargo-merge__toggle {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: start;
     flex-shrink: 0;
     width: 28px;
     padding: 0;
-    margin: 0 0 0 -4px;
+    margin: 2px 0 0 -4px;
     color: var(--el-text-color-secondary);
   }
 
@@ -1441,9 +1768,12 @@
   // 行
   // ============================================
   .cargo-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
     align-items: center;
-    gap: 10px;
+    column-gap: 10px;
+    row-gap: 4px;
     padding: 8px 14px;
     min-height: 48px;
     border-top: 1px solid var(--el-fill-color);
@@ -1456,31 +1786,36 @@
     }
   }
 
-  .cargo-row__main {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  .cargo-row__line1 {
+  .cargo-row__line1-left {
+    grid-column: 2;
+    grid-row: 1;
     display: flex;
     align-items: center;
     gap: 8px;
     min-width: 0;
-    flex-wrap: wrap;
+  }
+
+  .cargo-row__created {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    font-variant-numeric: tabular-nums;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    white-space: nowrap;
   }
 
   .cargo-row__line2 {
+    grid-column: 2;
+    grid-row: 2;
     display: flex;
     align-items: center;
     gap: 6px;
     min-width: 0;
-    flex-wrap: wrap;
   }
 
   .cargo-row__wb {
+    flex-shrink: 0;
     font-variant-numeric: tabular-nums;
     font-weight: 700;
     color: var(--el-text-color-primary);
@@ -1488,6 +1823,10 @@
   }
 
   .cargo-row__customer {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--el-text-color-regular);
     font-size: 13px;
   }
@@ -1517,6 +1856,9 @@
   }
 
   .cargo-row__action {
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: end;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1555,6 +1897,60 @@
     background: var(--el-bg-color);
     overflow: hidden;
     flex-shrink: 0;
+
+    &--main-route {
+      background: var(--el-color-primary-light-8);
+      border-color: var(--el-color-primary-light-5);
+      box-shadow: inset 3px 0 0 var(--el-color-primary);
+
+      .picked-row__thumb,
+      .picked-unit__img-wrap {
+        background: transparent;
+        border-color: var(--el-color-primary-light-5);
+      }
+
+      .picked-row__ph,
+      .picked-unit__ph {
+        background: var(--el-color-primary-light-8);
+      }
+
+      .picked-row__chip {
+        color: var(--el-color-primary);
+        background: transparent;
+        border: 1px solid var(--el-color-primary-light-5);
+      }
+
+      .picked-units {
+        border-top-color: var(--el-color-primary-light-5);
+      }
+    }
+
+    &--alt-route {
+      background: var(--el-color-warning-light-8);
+      border-color: var(--el-color-warning-light-3);
+      box-shadow: inset 3px 0 0 var(--el-color-warning);
+
+      .picked-row__thumb,
+      .picked-unit__img-wrap {
+        background: transparent;
+        border-color: var(--el-color-warning-light-3);
+      }
+
+      .picked-row__ph,
+      .picked-unit__ph {
+        background: var(--el-color-warning-light-8);
+      }
+
+      .picked-row__chip {
+        color: #ad6800;
+        background: transparent;
+        border: 1px solid var(--el-color-warning-light-3);
+      }
+
+      .picked-units {
+        border-top-color: var(--el-color-warning-light-3);
+      }
+    }
   }
 
   .picked-row {
@@ -1618,7 +2014,7 @@
 
   .picked-units {
     padding: 4px 10px 10px 46px;
-    background: var(--el-fill-color-blank);
+    background: transparent;
     border-top: 1px dashed var(--el-border-color-extra-light);
     display: flex;
     flex-direction: column;
@@ -1627,10 +2023,26 @@
 
   .picked-unit {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     font-size: 12px;
     color: var(--el-text-color-regular);
+  }
+
+  .picked-unit__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .picked-unit__vin {
+    font-size: 11px;
+    line-height: 1.45;
+    font-variant-numeric: tabular-nums;
+    color: var(--el-text-color-secondary);
+    word-break: break-all;
   }
 
   .picked-unit__idx {
@@ -1676,9 +2088,9 @@
   }
 
   .picked-unit__model {
-    flex: 1;
-    min-width: 0;
     line-height: 1.35;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
   }
 
   .picked-row__main {
@@ -1686,7 +2098,30 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
+  }
+
+  .picked-row__route-meta {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 2px;
+    min-width: 0;
+  }
+
+  .picked-row__route-meta-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .picked-row__route-meta-text-inner {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--el-text-color-secondary);
   }
 
   .picked-row__line1 {
@@ -1743,29 +2178,6 @@
     white-space: nowrap;
   }
 
-  .picked-row__route-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-  }
-
-  .picked-row__route {
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--el-text-color-secondary);
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .picked-row__route-warn {
-    flex-shrink: 0;
-    cursor: default;
-  }
-
   .picked-row__rest {
     display: flex;
     align-items: center;
@@ -1793,6 +2205,242 @@
     }
     .cargo-picker__scroll {
       max-height: 320px;
+    }
+  }
+</style>
+
+<style lang="scss">
+  .cargo-picker-help-dialog {
+    &.el-dialog {
+      margin: auto;
+    }
+
+    .el-dialog__header {
+      padding: 20px 24px 0;
+      margin-right: 0;
+    }
+
+    .el-dialog__body {
+      padding: 16px 24px 8px;
+    }
+
+    .el-dialog__footer {
+      padding: 8px 24px 20px;
+    }
+  }
+
+  .cargo-picker-help-dialog__header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-right: 28px;
+  }
+
+  .cargo-picker-help-dialog__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    color: var(--el-color-primary);
+    background: linear-gradient(
+      135deg,
+      var(--el-color-primary-light-8),
+      var(--el-color-primary-light-9)
+    );
+    box-shadow: inset 0 0 0 1px var(--el-color-primary-light-7);
+    flex-shrink: 0;
+  }
+
+  .cargo-picker-help-dialog__title {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--el-text-color-primary);
+  }
+
+  .cargo-picker-help-dialog__subtitle {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--el-text-color-secondary);
+  }
+
+  .cargo-picker-help-dialog__steps {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .cargo-picker-help-dialog__step {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 14px;
+    border-radius: 10px;
+    background: var(--el-fill-color-light);
+    border: 1px solid var(--el-border-color-lighter);
+  }
+
+  .cargo-picker-help-dialog__step-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    color: var(--el-text-color-placeholder);
+  }
+
+  .cargo-picker-help-dialog__step-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cargo-picker-help-dialog__step-no {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--el-color-primary);
+    flex-shrink: 0;
+  }
+
+  .cargo-picker-help-dialog__step-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    color: var(--el-color-primary);
+    background: var(--el-bg-color);
+    box-shadow: inset 0 0 0 1px var(--el-border-color-lighter);
+    flex-shrink: 0;
+  }
+
+  .cargo-picker-help-dialog__step-title {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--el-text-color-primary);
+  }
+
+  .cargo-picker-help-dialog__step-desc {
+    margin-top: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--el-text-color-regular);
+  }
+
+  .cargo-picker-help-dialog__extras {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .cargo-picker-help-dialog__highlight {
+    display: flex;
+    gap: 12px;
+    margin-top: 0;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #fff7e6, #fffbf0);
+    border: 1px solid #ffe7ba;
+  }
+
+  .cargo-picker-help-dialog__highlight-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: #d48806;
+    background: rgba(255, 255, 255, 0.72);
+    flex-shrink: 0;
+  }
+
+  .cargo-picker-help-dialog__highlight-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ad6800;
+  }
+
+  .cargo-picker-help-dialog__highlight-text {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #8c5a00;
+
+    strong {
+      font-weight: 600;
+    }
+  }
+
+  .cargo-picker-help-dialog__glossary {
+    margin-top: 0;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--el-fill-color-blank);
+    border: 1px dashed var(--el-border-color);
+  }
+
+  .cargo-picker-help-dialog__glossary-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  .cargo-picker-help-dialog__glossary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cargo-picker-help-dialog__glossary-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--el-text-color-regular);
+
+    .el-tag {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .cargo-picker-help-dialog__steps {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cargo-picker-help-dialog__step-arrow {
+      display: none;
+    }
+
+    .cargo-picker-help-dialog__extras {
+      grid-template-columns: 1fr;
     }
   }
 </style>

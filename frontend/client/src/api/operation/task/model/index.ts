@@ -127,6 +127,7 @@ export interface CandidateCargo {
   destination?: string;
   dealerName?: string;
   requiredLoadTime?: string;
+  waybillCreatedAt?: string;
   waybillStatus: number;
   cargoId: number;
   vehicleBrand?: string;
@@ -143,6 +144,9 @@ export interface CandidateCargo {
 /** 候选挂接列表（含全量统计） */
 export interface CandidateCargoListResult {
   items: CandidateCargo[];
+  /** 待配运单数（去重运单，对应 UI「条」） */
+  waybillCount: number;
+  /** cargo 明细行总数（分页用） */
   lineCount: number;
   quantityTotal: number;
   truncated: boolean;

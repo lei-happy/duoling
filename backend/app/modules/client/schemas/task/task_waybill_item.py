@@ -127,6 +127,9 @@ class CandidateCargoOut(BaseModel):
     destination: Optional[str] = None
     dealerName: Optional[str] = None
     requiredLoadTime: Optional[datetime] = None
+    waybillCreatedAt: Optional[datetime] = Field(
+        default=None, description="运单创建时间",
+    )
     waybillStatus: int
     cargoId: int
     vehicleBrand: Optional[str] = None
@@ -144,6 +147,7 @@ class CandidateCargoOut(BaseModel):
 class CandidateCargoListOut(BaseModel):
     """挂接器左栏：候选列表 + 全量统计（统计不受 limit 截断）"""
     items: List[CandidateCargoOut]
-    lineCount: int = Field(description="符合条件的 cargo 明细行总数")
+    waybillCount: int = Field(description="符合条件的待配运单数（去重运单）")
+    lineCount: int = Field(description="符合条件的 cargo 明细行总数（分页用）")
     quantityTotal: int = Field(description="剩余可配总台数")
     truncated: bool = Field(description="items 是否因 limit 被截断")

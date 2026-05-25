@@ -85,35 +85,78 @@ class TaskWaybillItemService:
         )
 
     @staticmethod
+    def _candidate_cargo_model_condition(
+        model_keyword: Optional[str] = None,
+    ):
+        if not model_keyword or not str(model_keyword).strip():
+            return None
+        kw = f"%{str(model_keyword).strip()}%"
+        return or_(
+            WaybillCargo.vehicle_brand.like(kw),
+            WaybillCargo.vehicle_model.like(kw),
+        )
+
+    @staticmethod
+    def _candidate_cargo_where(
+        keyword: Optional[str] = None,
+        customer_id: Optional[int] = None,
+        origin_keyword: Optional[str] = None,
+        destination_keyword: Optional[str] = None,
+        model_keyword: Optional[str] = None,
+    ):
+        remaining = TaskWaybillItemService._candidate_remaining_expr()
+        conds = [
+            WaybillCargo.is_deleted == 0,
+            remaining > 0,
+            *TaskWaybillItemService._candidate_waybill_conditions(
+                keyword=keyword,
+                customer_id=customer_id,
+                origin_keyword=origin_keyword,
+                destination_keyword=destination_keyword,
+            ),
+        ]
+        model_cond = TaskWaybillItemService._candidate_cargo_model_condition(
+            model_keyword
+        )
+        if model_cond is not None:
+            conds.append(model_cond)
+        return remaining, conds
+
+    @staticmethod
     async def count_candidate_cargoes(
         db: AsyncSession,
         keyword: Optional[str] = None,
         customer_id: Optional[int] = None,
         origin_keyword: Optional[str] = None,
         destination_keyword: Optional[str] = None,
-    ) -> Tuple[int, int]:
-        """统计符合条件的 cargo 行数与剩余可配总台数（不受 list limit 影响）。"""
-        remaining = TaskWaybillItemService._candidate_remaining_expr()
+        model_keyword: Optional[str] = None,
+    ) -> Tuple[int, int, int]:
+        """统计待配运单数、cargo 明细行数、剩余可配总台数（不受 list limit 影响）。"""
+        remaining, conds = TaskWaybillItemService._candidate_cargo_where(
+            keyword=keyword,
+            customer_id=customer_id,
+            origin_keyword=origin_keyword,
+            destination_keyword=destination_keyword,
+            model_keyword=model_keyword,
+        )
         q = (
             select(
-                func.count(WaybillCargo.id),
-                func.coalesce(func.sum(remaining), 0),
+                func.count(func.distinct(Waybill.id)).label("waybill_count"),
+                func.count(WaybillCargo.id).label("cargo_line_count"),
+                func.coalesce(func.sum(remaining), 0).label("quantity_total"),
             )
             .select_from(WaybillCargo)
             .join(Waybill, Waybill.id == WaybillCargo.waybill_id)
-            .where(
-                WaybillCargo.is_deleted == 0,
-                remaining > 0,
-                *TaskWaybillItemService._candidate_waybill_conditions(
-                    keyword=keyword,
-                    customer_id=customer_id,
-                    origin_keyword=origin_keyword,
-                    destination_keyword=destination_keyword,
-                ),
-            )
+            .where(*conds)
         )
         row = (await db.execute(q)).one()
-        return int(row[0] or 0), int(row[1] or 0)
+        waybill_count = int(row.waybill_count or 0)
+        cargo_line_count = int(row.cargo_line_count or 0)
+        quantity_total = int(row.quantity_total or 0)
+        # 明细行数 >= 运单数；若异常则纠正字段顺序（兼容部分驱动返回列序不一致）
+        if waybill_count > cargo_line_count:
+            waybill_count, cargo_line_count = cargo_line_count, waybill_count
+        return waybill_count, cargo_line_count, quantity_total
 
     @staticmethod
     async def list_candidate_cargoes(
@@ -122,6 +165,8 @@ class TaskWaybillItemService:
         customer_id: Optional[int] = None,
         origin_keyword: Optional[str] = None,
         destination_keyword: Optional[str] = None,
+        model_keyword: Optional[str] = None,
+        offset: int = 0,
         limit: int = 200,
     ) -> CandidateCargoListOut:
         """挂接器左栏：返回剩余台数 > 0 的运单 cargo 行候选。
@@ -133,50 +178,51 @@ class TaskWaybillItemService:
         - 3 运输中：仍允许新挂接尾段，只要剩余台数 > 0；
         - 4+ 已送达/已完成/已关闭：不允许新挂接。
         """
-        line_count, quantity_total = await TaskWaybillItemService.count_candidate_cargoes(
-            db,
-            keyword=keyword,
-            customer_id=customer_id,
-            origin_keyword=origin_keyword,
-            destination_keyword=destination_keyword,
-        )
-
-        wb_q = select(Waybill).where(
-            *TaskWaybillItemService._candidate_waybill_conditions(
+        waybill_count, line_count, quantity_total = (
+            await TaskWaybillItemService.count_candidate_cargoes(
+                db,
                 keyword=keyword,
                 customer_id=customer_id,
                 origin_keyword=origin_keyword,
                 destination_keyword=destination_keyword,
+                model_keyword=model_keyword,
             )
         )
-        wb_q = wb_q.order_by(Waybill.created_at.desc()).limit(limit * 2)
-        wbs = list((await db.execute(wb_q)).scalars().all())
-        if not wbs:
+
+        _, conds = TaskWaybillItemService._candidate_cargo_where(
+            keyword=keyword,
+            customer_id=customer_id,
+            origin_keyword=origin_keyword,
+            destination_keyword=destination_keyword,
+            model_keyword=model_keyword,
+        )
+        cg_q = (
+            select(WaybillCargo, Waybill)
+            .join(Waybill, Waybill.id == WaybillCargo.waybill_id)
+            .where(*conds)
+            .order_by(
+                Waybill.created_at.desc(),
+                WaybillCargo.waybill_id,
+                WaybillCargo.sort_order,
+            )
+            .offset(max(0, int(offset)))
+            .limit(max(1, int(limit)))
+        )
+        rows = list((await db.execute(cg_q)).all())
+        if not rows:
             return CandidateCargoListOut(
                 items=[],
+                waybillCount=waybill_count,
                 lineCount=line_count,
                 quantityTotal=quantity_total,
-                truncated=False,
+                truncated=int(offset) < line_count,
             )
-        wb_ids = [w.id for w in wbs]
-        wb_map = {w.id: w for w in wbs}
-
-        cg_q = select(WaybillCargo).where(
-            WaybillCargo.is_deleted == 0,
-            WaybillCargo.waybill_id.in_(wb_ids),
-        ).order_by(WaybillCargo.waybill_id, WaybillCargo.sort_order)
-        cargoes = list((await db.execute(cg_q)).scalars().all())
 
         series_lookup = await WaybillService._series_image_lookup_map(db)
 
         out: List[CandidateCargoOut] = []
-        for c in cargoes:
+        for c, w in rows:
             remaining = max(0, int(c.quantity) - int(c.allocated_quantity or 0))
-            if remaining <= 0:
-                continue
-            w = wb_map.get(c.waybill_id)
-            if w is None:
-                continue
             img_key = waybill_brand_model_key(c.vehicle_brand, c.vehicle_model)
             series_image = series_lookup.get(img_key)
             out.append(CandidateCargoOut(
@@ -188,6 +234,7 @@ class TaskWaybillItemService:
                 destination=w.destination,
                 dealerName=w.dealer_name,
                 requiredLoadTime=w.required_load_time,
+                waybillCreatedAt=w.created_at,
                 waybillStatus=w.status,
                 cargoId=c.id,
                 vehicleBrand=c.vehicle_brand,
@@ -198,13 +245,12 @@ class TaskWaybillItemService:
                 allocatedQuantity=int(c.allocated_quantity or 0),
                 remainingQuantity=remaining,
             ))
-            if len(out) >= limit:
-                break
         return CandidateCargoListOut(
             items=out,
+            waybillCount=waybill_count,
             lineCount=line_count,
             quantityTotal=quantity_total,
-            truncated=len(out) < line_count,
+            truncated=(int(offset) + len(out)) < line_count,
         )
 
     # ------------------------------------------------------------------

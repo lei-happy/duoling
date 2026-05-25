@@ -261,7 +261,9 @@ async def list_candidate_waybills(
     customerId: Optional[int] = None,
     originKeyword: Optional[str] = None,
     destinationKeyword: Optional[str] = None,
-    limit: int = Query(200, ge=1, le=500),
+    modelKeyword: Optional[str] = None,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_tenant_db),
     _: TokenData = Depends(get_current_user),
 ):
@@ -271,6 +273,8 @@ async def list_candidate_waybills(
         customer_id=customerId,
         origin_keyword=originKeyword,
         destination_keyword=destinationKeyword,
+        model_keyword=modelKeyword,
+        offset=offset,
         limit=limit,
     )
     return success(data=rows.model_dump())
