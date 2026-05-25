@@ -244,6 +244,52 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui", app_typ
                     ),
                     {"sid": seed_id},
                 ).fetchone()
+                # 复活分支：同 app_type + 已软删 = 历史墓碑记录，直接 UPDATE 复活
+                # 这样"删除→重新引入"同 ID 同 app_type 菜单时不再人工介入。
+                if (
+                    conflict is not None
+                    and conflict.app_type == app_type
+                    and int(conflict.is_deleted) == 1
+                ):
+                    conn.execute(
+                        text(
+                            "UPDATE sys_menu SET "
+                            "parent_id = :parent_id, menu_name = :menu_name, "
+                            "menu_code = :menu_code, menu_type = :menu_type, "
+                            "path = :path, component = :component, icon = :icon, "
+                            "sort_order = :sort_order, visible = :visible, "
+                            "status = 1, feature_code = :feature_code, "
+                            "is_deleted = 0, updated_at = CURRENT_TIMESTAMP "
+                            "WHERE id = :id"
+                        ),
+                        {
+                            "id": seed_id,
+                            "parent_id": parent_id,
+                            "menu_name": menu["menu_name"],
+                            "menu_code": menu_code,
+                            "menu_type": menu["menu_type"],
+                            "path": menu_path,
+                            "component": menu.get("component"),
+                            "icon": menu.get("icon"),
+                            "sort_order": menu.get("sort_order", 0),
+                            "visible": visible,
+                            "feature_code": menu.get("feature_code"),
+                        },
+                    )
+                    menu_id = seed_id
+                    print(
+                        f"  复活菜单({app_type}): {menu['menu_name']} "
+                        f"(id={menu_id}, 原 is_deleted=1)"
+                    )
+                    if children:
+                        upsert_menus(
+                            conn,
+                            children,
+                            parent_id=menu_id,
+                            mode=mode,
+                            app_type=app_type,
+                        )
+                    continue
                 if conflict is not None:
                     fix_hint = (
                         "请先执行: python backend/scripts/fix/fix_client_menu_v2.py"
