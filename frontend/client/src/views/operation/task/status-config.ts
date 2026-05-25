@@ -45,7 +45,7 @@ export const CARRIER_TYPE_MAP: Record<number, { label: string; type: string }> =
 export const CARRIER_TYPE_INTRO: Record<number, string> = {
   1: '公司自有运力，待派车环节再选司机与车牌',
   2: '委托合作承运商，本步仅需选定承运商',
-  3: '临时外调司机/车辆，需填写司机与车牌'
+  3: '从社会运力池选择司机与车辆'
 };
 
 /** 段状态 */

@@ -91,17 +91,8 @@
             v-for="c in carriers"
             :key="c.id"
             :value="c.id!"
-            :label="c.carrierName"
-          >
-            <span>{{ c.carrierName }}</span>
-            <span
-              v-if="c.shortName"
-              class="ele-text-secondary"
-              style="margin-left: 8px"
-            >
-              {{ c.shortName }}
-            </span>
-          </el-option>
+            :label="carrierOptionLabel(c)"
+          />
         </el-select>
       </el-form-item>
       <el-alert
@@ -141,35 +132,52 @@
 
     <!-- C. 社会运力 -->
     <template v-if="local.carrierType === 3">
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="司机姓名" required>
-            <el-input v-model="local.mainDriverName" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="司机电话" required>
-            <el-input v-model="local.mainDriverPhone" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="身份证号">
-            <el-input v-model="local.mainDriverIdCard" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="12">
-        <el-col :span="12">
-          <el-form-item label="车牌号" required>
-            <el-input v-model="local.plateNumber" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="挂车牌号">
-            <el-input v-model="local.trailerPlateNumber" />
-          </el-form-item>
-        </el-col>
-      </el-row>
+      <template v-if="simpleMode">
+        <el-form-item label="选择运力">
+          <el-select
+            v-model="local.socialDriverId"
+            disabled
+            placeholder="将从社会运力池选择（开发中）"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-empty
+          description="社会运力池功能开发中，暂无法选择具体运力"
+          :image-size="72"
+          class="carrier-picker__social-placeholder"
+        />
+      </template>
+      <template v-else>
+        <el-row :gutter="12">
+          <el-col :span="8">
+            <el-form-item label="司机姓名" required>
+              <el-input v-model="local.mainDriverName" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="司机电话" required>
+              <el-input v-model="local.mainDriverPhone" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="身份证号">
+              <el-input v-model="local.mainDriverIdCard" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="车牌号" required>
+              <el-input v-model="local.plateNumber" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="挂车牌号">
+              <el-input v-model="local.trailerPlateNumber" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </template>
     </template>
   </div>
 </template>
@@ -271,6 +279,9 @@
     }
   };
 
+  const carrierOptionLabel = (c: CarrierSelectItem) =>
+    c.shortName ? `${c.carrierName}（${c.shortName}）` : c.carrierName;
+
   const searchCarriers = async (kw: string) => {
     try {
       carriers.value = await selectCarriers(kw);
@@ -282,6 +293,7 @@
   const onTypeChange = () => {
     local.capacityId = undefined;
     local.carrierId = undefined;
+    local.socialDriverId = undefined;
     local.mainDriverName = '';
     local.mainDriverPhone = '';
     local.mainDriverIdCard = '';
@@ -393,6 +405,15 @@
 
     &__hint {
       margin-bottom: 0;
+    }
+
+    &__social-placeholder {
+      padding: 8px 0 0;
+
+      :deep(.el-empty__description) {
+        margin-top: 8px;
+        font-size: 13px;
+      }
     }
   }
 </style>

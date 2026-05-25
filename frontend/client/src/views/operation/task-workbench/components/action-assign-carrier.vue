@@ -1,7 +1,7 @@
 <!--
   待分配 → 待派车：确认承运方式（承运商 / 社会运力 / 自有车可先不定运力）
 
-  - 单条：三种承运方式均可选（社会运力需填写司机信息）
+  - 单条：三种承运方式均可选（社会运力从运力池选择，待开发）
   - 批量：仅支持自有车 / 承运商，统一写入后进入待派车
 -->
 <template>
@@ -60,10 +60,11 @@
     />
 
     <el-alert
+      v-if="isBatch"
       type="warning"
       :closable="false"
       class="assign-carrier-tip"
-      :title="warningTitle"
+      title="批量分配仅支持「自有车」或「承运商」。社会运力对应具体司机，请逐单分配。自有车可在待派车池再绑定运力。"
     />
 
     <el-table
@@ -148,12 +149,6 @@
     isBatch.value ? `批量分配承运（${taskList.value.length} 单）` : '分配承运'
   );
 
-  const warningTitle = computed(() =>
-    isBatch.value
-      ? '批量分配仅支持「自有车」或「承运商」。社会运力对应具体司机，请逐单分配。自有车可在待派车池再绑定运力。'
-      : '本步确认承运方式后，任务进入「待派车」。自有车若暂未选运力，可在待派车池完成派车时再绑定。'
-  );
-
   const submitLabel = computed(() =>
     isBatch.value ? `确认批量分配（${taskList.value.length}）` : '确认分配'
   );
@@ -220,9 +215,9 @@
       return '请选择承运商';
     }
     if (c.carrierType === 3) {
-      if (!c.mainDriverName?.trim()) return '请填写司机姓名';
-      if (!c.mainDriverPhone?.trim()) return '请填写司机电话';
-      if (!c.plateNumber?.trim()) return '请填写车牌号';
+      if (!c.socialDriverId) {
+        return '社会运力池功能开发中，暂不支持分配';
+      }
     }
     return null;
   };
