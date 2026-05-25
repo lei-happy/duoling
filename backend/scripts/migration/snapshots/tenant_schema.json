@@ -4978,6 +4978,1163 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_social_capacity",
+      "comment": "社会运力主表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "approval_remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近一次审核意见 / 驳回理由"
+        },
+        {
+          "name": "approval_status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "审核状态 0-草稿 1-待审核 2-已通过 3-已驳回"
+        },
+        {
+          "name": "approval_time",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近一次审核时间"
+        },
+        {
+          "name": "approval_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近一次审核人 user_id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "driver_id_card",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驾驶员身份证号（冗余）"
+        },
+        {
+          "name": "driver_name",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驾驶员姓名（冗余检索）"
+        },
+        {
+          "name": "driver_phone",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驾驶员手机号（冗余检索 + 唯一性校验）"
+        },
+        {
+          "name": "evaluation_summary",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预留：评级摘要快照"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_dispatched_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预留：最近一次派单时间"
+        },
+        {
+          "name": "last_evaluated_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预留：最近一次考核时间"
+        },
+        {
+          "name": "order_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "预留：累计承运次数"
+        },
+        {
+          "name": "plate_number",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车牌号（冗余检索 + 唯一性校验）"
+        },
+        {
+          "name": "rating_level",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预留：考核等级 1-A 2-B 3-C 4-D"
+        },
+        {
+          "name": "rating_score",
+          "type": "NUMERIC(3, 1)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预留：考核综合评分 0.0~5.0"
+        },
+        {
+          "name": "referrer_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "引荐人 user_id"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "social_code",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "社会运力编号 S{YYYY}{NNNNN}"
+        },
+        {
+          "name": "source",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "来源（数据字典 social_capacity_source）"
+        },
+        {
+          "name": "source_remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "来源备注（引荐人 / 渠道）"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "启用状态 0-未生效 1-正常 2-停用 3-黑名单"
+        },
+        {
+          "name": "status_remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "状态变更原因"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "updated_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近修改人 user_id"
+        },
+        {
+          "name": "vehicle_type_label",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车辆类型快照（用于列表展示）"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_approval_status",
+          "columns": [
+            "approval_status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_driver_phone",
+          "columns": [
+            "driver_phone"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_plate_number",
+          "columns": [
+            "plate_number"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_social_code",
+          "columns": [
+            "social_code"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_social_capacity_account",
+      "comment": "社会运力结算账户表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_label",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账户标签（主账户 / 油卡专用 等）"
+        },
+        {
+          "name": "account_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "户名"
+        },
+        {
+          "name": "account_no",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账号 / 手机号"
+        },
+        {
+          "name": "account_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账户类型 1-银行卡 2-支付宝 3-微信 4-其他"
+        },
+        {
+          "name": "bank_branch",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开户支行（仅银行卡）"
+        },
+        {
+          "name": "bank_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开户行（仅银行卡）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "holder_id_card",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "持卡人身份证号（配偶卡 / 第三方代收场景）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_default",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否默认 0-否 1-是；同社会运力内最多 1 条"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "social_capacity_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_social_capacity.id"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-正常"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_account_social_capacity",
+          "columns": [
+            "social_capacity_id",
+            "is_default",
+            "status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_social_capacity_audit",
+      "comment": "社会运力审核与状态流水表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "action",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作类型 1-提交审核 2-审核通过 3-审核驳回 4-启用 5-停用 6-加入黑名单 7-移出黑名单 8-撤回审核"
+        },
+        {
+          "name": "after_status",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作后状态"
+        },
+        {
+          "name": "approval_flow_inst_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预留：对接审批中心的多级审批实例 ID"
+        },
+        {
+          "name": "attachment",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预留：审核备查附件"
+        },
+        {
+          "name": "before_status",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作前状态（审核类记 approval_status，启停黑记 status）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "operator_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人姓名（冗余）"
+        },
+        {
+          "name": "operator_user_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人 user_id"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审核意见 / 状态变更原因"
+        },
+        {
+          "name": "social_capacity_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_social_capacity.id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_audit_action",
+          "columns": [
+            "action"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_audit_social_capacity",
+          "columns": [
+            "social_capacity_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_social_capacity_driver",
+      "comment": "社会运力司机详情表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "avatar",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "头像 URL"
+        },
+        {
+          "name": "birth_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出生日期"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "emergency_contact",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "紧急联系人"
+        },
+        {
+          "name": "emergency_phone",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "紧急联系电话"
+        },
+        {
+          "name": "gender",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "性别 0-未知 1-男 2-女"
+        },
+        {
+          "name": "home_address",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "居住地址"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "id_card",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "身份证号"
+        },
+        {
+          "name": "id_card_back_photo",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "身份证反面 URL"
+        },
+        {
+          "name": "id_card_front_photo",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "身份证正面 URL"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "license_class",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "准驾车型"
+        },
+        {
+          "name": "license_expire",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驾驶证有效期"
+        },
+        {
+          "name": "license_issue_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驾驶证初次领证日期"
+        },
+        {
+          "name": "license_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驾驶证号"
+        },
+        {
+          "name": "license_photo",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驾驶证照片 URL"
+        },
+        {
+          "name": "license_type",
+          "type": "VARCHAR(10)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驾驶证类型 A1/A2/B1/B2/C1"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "姓名"
+        },
+        {
+          "name": "phone",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "手机号"
+        },
+        {
+          "name": "qualification_expire",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "从业资格证有效期"
+        },
+        {
+          "name": "qualification_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "从业资格证号"
+        },
+        {
+          "name": "qualification_photo",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "从业资格证照片 URL"
+        },
+        {
+          "name": "social_capacity_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_social_capacity.id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "social_capacity_id"
+          ]
+        }
+      ],
+      "indexes": [],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_social_capacity_vehicle",
+      "comment": "社会运力车辆详情表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "axle_count",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "轴数"
+        },
+        {
+          "name": "brand",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "品牌"
+        },
+        {
+          "name": "color",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "颜色"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "engine_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发动机号"
+        },
+        {
+          "name": "has_trailer",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否含挂车 0-否 1-是"
+        },
+        {
+          "name": "height",
+          "type": "NUMERIC(6, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "高度（米）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "inspection_expire",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "年检到期日"
+        },
+        {
+          "name": "insurance_expire",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "保险到期日"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "length",
+          "type": "NUMERIC(6, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "长度（米）"
+        },
+        {
+          "name": "load_capacity",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "核定载重（吨）"
+        },
+        {
+          "name": "model",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "型号"
+        },
+        {
+          "name": "plate_category",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "YELLOW",
+          "comment": "车牌类型 BLUE/YELLOW/NEW_ENERGY"
+        },
+        {
+          "name": "plate_number",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车牌号"
+        },
+        {
+          "name": "registration_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "注册日期"
+        },
+        {
+          "name": "social_capacity_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_social_capacity.id"
+        },
+        {
+          "name": "trailer_load_capacity",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂车核定载重（吨）"
+        },
+        {
+          "name": "trailer_plate",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂车车牌号"
+        },
+        {
+          "name": "trailer_type",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂车类型（数据字典 trailer_type）"
+        },
+        {
+          "name": "transport_license_expire",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "道路运输证有效期"
+        },
+        {
+          "name": "transport_license_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "道路运输证号"
+        },
+        {
+          "name": "transport_license_photo",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "道路运输证照片 URL"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "vehicle_license_back_photo",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "行驶证副页 URL"
+        },
+        {
+          "name": "vehicle_license_photo",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "行驶证主页 URL"
+        },
+        {
+          "name": "vehicle_photo",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车辆外观照 URL"
+        },
+        {
+          "name": "vehicle_type",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车辆类型（数据字典 vehicle_type）"
+        },
+        {
+          "name": "vin",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车架号 VIN"
+        },
+        {
+          "name": "volume_capacity",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "核定容积（立方米）"
+        },
+        {
+          "name": "width",
+          "type": "NUMERIC(6, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "宽度（米）"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "social_capacity_id"
+          ]
+        }
+      ],
+      "indexes": [],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_system_config",
       "comment": "系统配置表",
       "table_tier": "core",

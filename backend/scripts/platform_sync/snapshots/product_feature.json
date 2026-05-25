@@ -447,7 +447,13 @@
     "feature_name": "社会运力池-运力列表",
     "module": "capacity",
     "description": null,
-    "required_tables": null,
+    "required_tables": [
+      "biz_social_capacity",
+      "biz_social_capacity_driver",
+      "biz_social_capacity_vehicle",
+      "biz_social_capacity_account",
+      "biz_social_capacity_audit"
+    ],
     "sort_order": 51,
     "status": 1
   },

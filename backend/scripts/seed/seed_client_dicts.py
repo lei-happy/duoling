@@ -88,6 +88,14 @@ DICT_DEFS = [
         ("按吨公里", "per_ton_km", 20),
         ("其他", "other", 90),
     ]),
+    # ===== 社会运力池 =====
+    ("social_capacity_source", "社会运力来源", 40, [
+        ("引荐", "referral", 0),
+        ("平台撮合", "platform", 10),
+        ("自荐", "self", 20),
+        ("合作车队", "partner_fleet", 30),
+        ("其他", "other", 90),
+    ]),
 ]
 
 

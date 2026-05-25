@@ -37,6 +37,13 @@ from app.modules.client.models.capacity.self_capacity import (
     DriverAccount,
     DriverRoute,
 )
+from app.modules.client.models.capacity.social_capacity import (
+    SocialCapacity,
+    SocialCapacityDriver,
+    SocialCapacityVehicle,
+    SocialCapacityAccount,
+    SocialCapacityAudit,
+)
 from app.modules.client.models.route import Route
 from app.modules.client.models.partner.customer import Customer
 from app.modules.client.models.partner.carrier import Carrier
@@ -128,6 +135,11 @@ __all__ = [
     "TaskFinanceItem",
     "Capacity",
     "CapacityLog",
+    "SocialCapacity",
+    "SocialCapacityDriver",
+    "SocialCapacityVehicle",
+    "SocialCapacityAccount",
+    "SocialCapacityAudit",
     "BizCompanyActivity",
     # AI 数字员工（biz_ai_*）
     "BizAiSession",

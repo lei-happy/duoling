@@ -102,12 +102,12 @@ router.include_router(
 router.include_router(
     social_capacity_list_router,
     prefix="/capacity/social_capacity/list",
-    tags=["客户端-社会运力池-列表(占位)"],
+    tags=["客户端-社会运力池-档案"],
 )
 router.include_router(
     social_capacity_approval_router,
     prefix="/capacity/social_capacity/approval",
-    tags=["客户端-社会运力池-审批(占位)"],
+    tags=["客户端-社会运力池-审批"],
 )
 router.include_router(customer_router, prefix="/resource/customer", tags=["客户端-客户管理"])
 router.include_router(route_router, prefix="/resource/route", tags=["客户端-路线管理"])
