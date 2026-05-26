@@ -161,6 +161,7 @@ class SocialCapacityListItem(BaseModel):
     driverName: str
     driverPhone: str
     plateNumber: str
+    plateCategory: Optional[str] = "YELLOW"
     vehicleTypeLabel: Optional[str] = None
     source: Optional[str] = None
     approvalStatus: int

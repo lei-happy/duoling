@@ -31,7 +31,7 @@ export interface SocialCapacityVehicleInfo {
   vehiclePhoto?: string;
 }
 
-/** 司机信息 */
+/** 驾驶员信息 */
 export interface SocialCapacityDriverInfo {
   name?: string;
   gender?: number;
@@ -86,6 +86,28 @@ export interface SocialCapacityAccountBrief {
 }
 
 /** 审核 / 状态流水 */
+export interface SocialCapacityAuditChange {
+  group?: string;
+  field?: string;
+  label?: string;
+  before?: string;
+  after?: string;
+}
+
+export interface SocialCapacityAuditAttachment {
+  requestType?: 'profile_change' | 'status_change';
+  changeType?: 'initial' | 'modify' | 'unchanged';
+  changes?: SocialCapacityAuditChange[];
+  snapshot?: Record<string, Record<string, unknown>>;
+  statusChange?: {
+    from?: number;
+    to?: number;
+    fromLabel?: string;
+    toLabel?: string;
+    remark?: string;
+  };
+}
+
 export interface SocialCapacityAudit {
   id?: number;
   socialCapacityId?: number;
@@ -95,7 +117,7 @@ export interface SocialCapacityAudit {
   operatorUserId?: number;
   operatorName?: string;
   remark?: string;
-  attachment?: unknown;
+  attachment?: SocialCapacityAuditAttachment | null;
   approvalFlowInstId?: number;
   createdAt?: string;
 }
@@ -107,6 +129,7 @@ export interface SocialCapacityListItem {
   driverName?: string;
   driverPhone?: string;
   plateNumber?: string;
+  plateCategory?: string;
   vehicleTypeLabel?: string;
   source?: string;
   approvalStatus?: number;

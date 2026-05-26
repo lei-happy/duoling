@@ -26,6 +26,12 @@
         :default-sort="{ prop: 'createdAt', order: 'descending' }"
         cache-key="SocialCapacityApprovalTable"
       >
+        <template #plateNumber="{ row }">
+          <plate-number-tag
+            :text="row.plateNumber"
+            :category="row.plateCategory"
+          />
+        </template>
         <template #approvalStatus="{ row }">
           <el-tag size="small" :type="approvalTagType(row.approvalStatus)">
             {{ approvalLabel(row.approvalStatus) }}
@@ -73,6 +79,7 @@
   import ApprovalSearch from './components/approval-search.vue';
   import ApprovalAction from './components/approval-action.vue';
   import SocialCapacityDetail from '../list/components/social-capacity-detail.vue';
+  import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
   import {
     pageApprovals,
     approvalStats
@@ -118,7 +125,12 @@
     { prop: 'socialCode', label: '编号', minWidth: 130 },
     { prop: 'driverName', label: '姓名', minWidth: 90 },
     { prop: 'driverPhone', label: '手机号', minWidth: 120 },
-    { prop: 'plateNumber', label: '车牌号', minWidth: 110 },
+    {
+      prop: 'plateNumber',
+      label: '车牌号',
+      minWidth: 120,
+      slot: 'plateNumber'
+    },
     { prop: 'vehicleTypeLabel', label: '车辆类型', minWidth: 100 },
     { prop: 'source', label: '来源', minWidth: 100 },
     {

@@ -4,15 +4,16 @@
 核心职责：
   - 主表 + 司机详情 + 车辆详情 + 默认结算账户 的联查 / 联写 / 联删
   - 审核状态机：草稿(0) ↔ 待审核(1) ↔ 已通过(2) / 已驳回(3)
-  - 启用状态机：仅在 approval_status=2 时才可调整 status (0→1 / 1↔2 / 1↔3 / 2↔3)
-  - 编辑权限矩阵：1 不可编；2 仅可改账户与备注；0 / 3 全字段可编
+  - 启用状态机：仅在 approval_status=2 时可申请状态变更，经运力审批通过后生效
+  - 编辑权限矩阵：1 不可编；2 可改全部字段，实质变更保存后回草稿并需重新审核；0 / 3 全字段可编
   - 唯一性校验：driver_phone / plate_number 在租户内（非已驳回 / 非草稿）唯一
   - 调度选择器：仅返回 approval_status=2 AND status=1
   - 与 SocialCapacityAuditService / SocialCapacityAccountService 协作
 """
 
-from typing import Optional, List
-from datetime import datetime
+from typing import Optional, List, Any
+from datetime import datetime, date
+from decimal import Decimal
 
 from sqlalchemy import select, func, and_, asc, desc, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,6 +30,9 @@ from app.modules.client.models.capacity.social_capacity.social_capacity_vehicle 
 )
 from app.modules.client.models.capacity.social_capacity.social_capacity_account import (
     SocialCapacityAccount,
+)
+from app.modules.client.models.capacity.social_capacity.social_capacity_audit import (
+    SocialCapacityAudit,
 )
 from app.modules.client.schemas.capacity.social_capacity.social_capacity import (
     SocialCapacityCreate,
@@ -64,6 +68,13 @@ STATUS_INACTIVE = 0
 STATUS_ACTIVE = 1
 STATUS_DISABLED = 2
 STATUS_BLACKLIST = 3
+
+_STATUS_LABELS = {
+    STATUS_INACTIVE: "未生效",
+    STATUS_ACTIVE: "正常",
+    STATUS_DISABLED: "停用",
+    STATUS_BLACKLIST: "黑名单",
+}
 
 
 # ------------------------- 排序 -------------------------
@@ -241,6 +252,330 @@ class SocialCapacityService:
             if schema_f in data:
                 setattr(model, model_f, data[schema_f])
 
+    @staticmethod
+    def _norm_compare_value(value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, Decimal):
+            return float(value)
+        if isinstance(value, (datetime, date)):
+            return value.isoformat()
+        return value
+
+    @staticmethod
+    def _snapshot_model_fields(model: Any, field_map: dict) -> dict:
+        if model is None:
+            return {}
+        return {
+            model_f: SocialCapacityService._norm_compare_value(getattr(model, model_f, None))
+            for model_f in field_map.values()
+        }
+
+    @staticmethod
+    def _approved_substantive_change(
+        capacity_before: dict,
+        vehicle_before: dict,
+        driver_before: dict,
+        capacity: SocialCapacity,
+        vehicle: Optional[SocialCapacityVehicle],
+        driver: Optional[SocialCapacityDriver],
+    ) -> bool:
+        """已通过档案：除备注外任意字段变化均视为需重新审核。"""
+        cap_after = {
+            "source": capacity.source,
+            "source_remark": capacity.source_remark,
+            "referrer_user_id": capacity.referrer_user_id,
+            "remark": capacity.remark,
+            "driver_name": capacity.driver_name,
+            "driver_phone": capacity.driver_phone,
+            "driver_id_card": capacity.driver_id_card,
+            "plate_number": capacity.plate_number,
+            "vehicle_type_label": capacity.vehicle_type_label,
+        }
+        cap_before_norm = {
+            k: SocialCapacityService._norm_compare_value(v)
+            for k, v in capacity_before.items()
+        }
+        cap_after_norm = {
+            k: SocialCapacityService._norm_compare_value(v) for k, v in cap_after.items()
+        }
+
+        cap_without_remark_before = {
+            k: v for k, v in cap_before_norm.items() if k != "remark"
+        }
+        cap_without_remark_after = {
+            k: v for k, v in cap_after_norm.items() if k != "remark"
+        }
+
+        if cap_without_remark_before != cap_without_remark_after:
+            return True
+
+        veh_after = SocialCapacityService._snapshot_model_fields(
+            vehicle, SocialCapacityService._VEHICLE_FIELD_MAP
+        )
+        if vehicle_before != veh_after:
+            return True
+
+        drv_after = SocialCapacityService._snapshot_model_fields(
+            driver, SocialCapacityService._DRIVER_FIELD_MAP
+        )
+        if driver_before != drv_after:
+            return True
+
+        return False
+
+    _AUDIT_GROUP_LABELS = {
+        "basic": "基础信息",
+        "vehicle": "车辆信息",
+        "driver": "驾驶员信息",
+    }
+
+    _AUDIT_BASIC_FIELDS = {
+        "source": "来源",
+        "sourceRemark": "来源备注",
+        "remark": "备注",
+    }
+
+    _AUDIT_FIELD_LABELS = {
+        **_AUDIT_BASIC_FIELDS,
+        "plateNumber": "车牌号",
+        "plateCategory": "车牌类型",
+        "vehicleType": "车辆类型",
+        "brand": "品牌",
+        "model": "型号",
+        "color": "颜色",
+        "vin": "车架号",
+        "engineNo": "发动机号",
+        "loadCapacity": "核定载重(吨)",
+        "volumeCapacity": "核定容积(m³)",
+        "length": "车长(m)",
+        "width": "车宽(m)",
+        "height": "车高(m)",
+        "axleCount": "轴数",
+        "hasTrailer": "含挂车",
+        "trailerPlate": "挂车车牌号",
+        "trailerType": "挂车类型",
+        "trailerLoadCapacity": "挂车载重(吨)",
+        "registrationDate": "注册日期",
+        "inspectionExpire": "年检到期",
+        "insuranceExpire": "保险到期",
+        "transportLicenseNo": "道路运输证号",
+        "transportLicenseExpire": "道路运输证有效期",
+        "vehicleLicensePhoto": "行驶证主页",
+        "vehicleLicenseBackPhoto": "行驶证副页",
+        "transportLicensePhoto": "道路运输证",
+        "vehiclePhoto": "车辆外观照",
+        "name": "姓名",
+        "gender": "性别",
+        "phone": "手机号",
+        "idCard": "身份证号",
+        "birthDate": "出生日期",
+        "avatar": "头像",
+        "licenseType": "驾照类型",
+        "licenseNo": "驾照号码",
+        "licenseIssueDate": "驾照初次领证",
+        "licenseExpire": "驾照有效期",
+        "licenseClass": "准驾车型",
+        "qualificationNo": "从业资格证号",
+        "qualificationExpire": "从业资格证有效期",
+        "licensePhoto": "驾驶证",
+        "qualificationPhoto": "从业资格证",
+        "idCardFrontPhoto": "身份证人像面",
+        "idCardBackPhoto": "身份证国徽面",
+        "emergencyContact": "紧急联系人",
+        "emergencyPhone": "紧急联系电话",
+        "homeAddress": "居住地址",
+    }
+
+    _AUDIT_PHOTO_FIELDS = frozenset(
+        {
+            "vehicleLicensePhoto",
+            "vehicleLicenseBackPhoto",
+            "transportLicensePhoto",
+            "vehiclePhoto",
+            "licensePhoto",
+            "qualificationPhoto",
+            "idCardFrontPhoto",
+            "idCardBackPhoto",
+            "avatar",
+        }
+    )
+
+    @staticmethod
+    async def _load_capacity_entities(
+        db: AsyncSession, social_capacity_id: int
+    ) -> tuple[SocialCapacity, Optional[SocialCapacityVehicle], Optional[SocialCapacityDriver]]:
+        result = await db.execute(
+            select(SocialCapacity).where(
+                SocialCapacity.id == social_capacity_id,
+                SocialCapacity.is_deleted == 0,
+            )
+        )
+        capacity = result.scalar_one_or_none()
+        if not capacity:
+            raise BizException("社会运力不存在")
+
+        veh_result = await db.execute(
+            select(SocialCapacityVehicle).where(
+                SocialCapacityVehicle.social_capacity_id == capacity.id,
+                SocialCapacityVehicle.is_deleted == 0,
+            )
+        )
+        vehicle = veh_result.scalar_one_or_none()
+
+        drv_result = await db.execute(
+            select(SocialCapacityDriver).where(
+                SocialCapacityDriver.social_capacity_id == capacity.id,
+                SocialCapacityDriver.is_deleted == 0,
+            )
+        )
+        driver = drv_result.scalar_one_or_none()
+        return capacity, vehicle, driver
+
+    @staticmethod
+    def _build_audit_snapshot(
+        capacity: SocialCapacity,
+        vehicle: Optional[SocialCapacityVehicle],
+        driver: Optional[SocialCapacityDriver],
+    ) -> dict:
+        basic = {
+            k: SocialCapacityService._norm_compare_value(getattr(capacity, attr, None))
+            for k, attr in (
+                ("source", "source"),
+                ("sourceRemark", "source_remark"),
+                ("remark", "remark"),
+            )
+        }
+        vehicle_dict: dict = {}
+        if vehicle:
+            for schema_f, model_f in SocialCapacityService._VEHICLE_FIELD_MAP.items():
+                vehicle_dict[schema_f] = SocialCapacityService._norm_compare_value(
+                    getattr(vehicle, model_f, None)
+                )
+        driver_dict: dict = {}
+        if driver:
+            for schema_f, model_f in SocialCapacityService._DRIVER_FIELD_MAP.items():
+                driver_dict[schema_f] = SocialCapacityService._norm_compare_value(
+                    getattr(driver, model_f, None)
+                )
+        return {"basic": basic, "vehicle": vehicle_dict, "driver": driver_dict}
+
+    @staticmethod
+    def _format_audit_display_value(field: str, value: Any) -> str:
+        if value is None or value == "":
+            return "—"
+        if field in SocialCapacityService._AUDIT_PHOTO_FIELDS:
+            return "有附件"
+        if field == "plateCategory":
+            return {"BLUE": "蓝牌", "YELLOW": "黄牌", "NEW_ENERGY": "新能源"}.get(
+                str(value), str(value)
+            )
+        if field == "gender":
+            mapping = {0: "未知", 1: "男", 2: "女"}
+            try:
+                return mapping.get(int(value), str(value))
+            except (TypeError, ValueError):
+                return str(value)
+        if field == "hasTrailer":
+            return "是" if value in (1, "1", True) else "否"
+        return str(value)
+
+    @staticmethod
+    def _diff_audit_snapshots(before: dict, after: dict) -> list[dict]:
+        changes: list[dict] = []
+        for group in ("basic", "vehicle", "driver"):
+            b = before.get(group) or {}
+            a = after.get(group) or {}
+            for key in sorted(set(b.keys()) | set(a.keys())):
+                bv = b.get(key)
+                av = a.get(key)
+                if bv == av:
+                    continue
+                label = SocialCapacityService._AUDIT_FIELD_LABELS.get(key, key)
+                before_disp = SocialCapacityService._format_audit_display_value(key, bv)
+                after_disp = SocialCapacityService._format_audit_display_value(key, av)
+                if key in SocialCapacityService._AUDIT_PHOTO_FIELDS:
+                    if bv and av:
+                        before_disp = "有附件"
+                        after_disp = "有附件（已更新）"
+                changes.append(
+                    {
+                        "group": SocialCapacityService._AUDIT_GROUP_LABELS[group],
+                        "field": key,
+                        "label": label,
+                        "before": before_disp,
+                        "after": after_disp,
+                    }
+                )
+        return changes
+
+    @staticmethod
+    async def _find_last_approved_snapshot(
+        db: AsyncSession, social_capacity_id: int
+    ) -> Optional[dict]:
+        result = await db.execute(
+            select(SocialCapacityAudit)
+            .where(
+                SocialCapacityAudit.social_capacity_id == social_capacity_id,
+                SocialCapacityAudit.action == ACTION_APPROVE,
+                SocialCapacityAudit.is_deleted == 0,
+            )
+            .order_by(desc(SocialCapacityAudit.created_at), desc(SocialCapacityAudit.id))
+            .limit(1)
+        )
+        audit = result.scalar_one_or_none()
+        if not audit or not isinstance(audit.attachment, dict):
+            return None
+        snapshot = audit.attachment.get("snapshot")
+        return snapshot if isinstance(snapshot, dict) else None
+
+    @staticmethod
+    async def _build_submit_audit_attachment(
+        db: AsyncSession, social_capacity_id: int
+    ) -> dict:
+        capacity, vehicle, driver = await SocialCapacityService._load_capacity_entities(
+            db, social_capacity_id
+        )
+        current = SocialCapacityService._build_audit_snapshot(capacity, vehicle, driver)
+        baseline = await SocialCapacityService._find_last_approved_snapshot(
+            db, social_capacity_id
+        )
+        if not baseline:
+            return {"requestType": "profile_change", "changeType": "initial", "changes": []}
+        changes = SocialCapacityService._diff_audit_snapshots(baseline, current)
+        change_type = "modify" if changes else "unchanged"
+        return {
+            "requestType": "profile_change",
+            "changeType": change_type,
+            "changes": changes,
+        }
+
+    @staticmethod
+    async def _get_pending_submit_attachment(
+        db: AsyncSession, social_capacity_id: int
+    ) -> Optional[dict]:
+        """取最近一条「提交审核」流水的 attachment（待审核场景下即为当前待办）。"""
+        result = await db.execute(
+            select(SocialCapacityAudit)
+            .where(
+                SocialCapacityAudit.social_capacity_id == social_capacity_id,
+                SocialCapacityAudit.action == ACTION_SUBMIT,
+                SocialCapacityAudit.is_deleted == 0,
+            )
+            .order_by(desc(SocialCapacityAudit.created_at), desc(SocialCapacityAudit.id))
+            .limit(1)
+        )
+        audit = result.scalar_one_or_none()
+        if not audit or not isinstance(audit.attachment, dict):
+            return None
+        return audit.attachment
+
+    @staticmethod
+    def _status_label(status: Optional[int]) -> str:
+        if status is None:
+            return "—"
+        return _STATUS_LABELS.get(status, str(status))
+
     # =====================================================
     # 列表 / 详情
     # =====================================================
@@ -284,16 +619,23 @@ class SocialCapacityService:
         order_clauses = _list_order_clauses(sort, order)
 
         result = await db.execute(
-            select(SocialCapacity)
+            select(SocialCapacity, SocialCapacityVehicle)
+            .outerjoin(
+                SocialCapacityVehicle,
+                and_(
+                    SocialCapacityVehicle.social_capacity_id == SocialCapacity.id,
+                    SocialCapacityVehicle.is_deleted == 0,
+                ),
+            )
             .where(*base_filter)
             .order_by(*order_clauses)
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
-        rows = result.scalars().all()
+        rows = result.all()
 
         items: List[dict] = []
-        for r in rows:
+        for r, veh in rows:
             default_acc = await SocialCapacityService._load_default_account_brief(db, r.id)
             items.append(
                 SocialCapacityListItem(
@@ -302,6 +644,7 @@ class SocialCapacityService:
                     driverName=r.driver_name,
                     driverPhone=r.driver_phone,
                     plateNumber=r.plate_number,
+                    plateCategory=veh.plate_category if veh else "YELLOW",
                     vehicleTypeLabel=r.vehicle_type_label,
                     source=r.source,
                     approvalStatus=r.approval_status,
@@ -560,13 +903,46 @@ class SocialCapacityService:
             raise BizException("待审核状态不可编辑，请先撤回审核")
 
         update = data.model_dump(exclude_unset=True)
-        approved = capacity.approval_status == APPROVAL_APPROVED
+        was_approved = capacity.approval_status == APPROVAL_APPROVED
 
-        # 已通过：仅可改 备注，不允许改基础信息 / 车辆 / 司机
-        if approved:
-            forbidden = {"source", "sourceRemark", "referrerUserId", "vehicle", "driver"}
-            if any(k in update for k in forbidden):
-                raise BizException("已通过的运力档案仅可修改结算账户与备注")
+        vehicle: Optional[SocialCapacityVehicle] = None
+        driver: Optional[SocialCapacityDriver] = None
+        capacity_before: dict = {}
+        vehicle_before: dict = {}
+        driver_before: dict = {}
+
+        if was_approved:
+            capacity_before = {
+                "source": capacity.source,
+                "source_remark": capacity.source_remark,
+                "referrer_user_id": capacity.referrer_user_id,
+                "remark": capacity.remark,
+                "driver_name": capacity.driver_name,
+                "driver_phone": capacity.driver_phone,
+                "driver_id_card": capacity.driver_id_card,
+                "plate_number": capacity.plate_number,
+                "vehicle_type_label": capacity.vehicle_type_label,
+            }
+            veh_result = await db.execute(
+                select(SocialCapacityVehicle).where(
+                    SocialCapacityVehicle.social_capacity_id == capacity.id,
+                    SocialCapacityVehicle.is_deleted == 0,
+                )
+            )
+            vehicle = veh_result.scalar_one_or_none()
+            vehicle_before = SocialCapacityService._snapshot_model_fields(
+                vehicle, SocialCapacityService._VEHICLE_FIELD_MAP
+            )
+            drv_result = await db.execute(
+                select(SocialCapacityDriver).where(
+                    SocialCapacityDriver.social_capacity_id == capacity.id,
+                    SocialCapacityDriver.is_deleted == 0,
+                )
+            )
+            driver = drv_result.scalar_one_or_none()
+            driver_before = SocialCapacityService._snapshot_model_fields(
+                driver, SocialCapacityService._DRIVER_FIELD_MAP
+            )
 
         # 唯一性预检查（如果更新了 phone / plate）
         if data.driver and data.driver.phone:
@@ -589,13 +965,14 @@ class SocialCapacityService:
         capacity.updated_user_id = current_user_id
 
         if data.vehicle:
-            veh_result = await db.execute(
-                select(SocialCapacityVehicle).where(
-                    SocialCapacityVehicle.social_capacity_id == capacity.id,
-                    SocialCapacityVehicle.is_deleted == 0,
+            if vehicle is None:
+                veh_result = await db.execute(
+                    select(SocialCapacityVehicle).where(
+                        SocialCapacityVehicle.social_capacity_id == capacity.id,
+                        SocialCapacityVehicle.is_deleted == 0,
+                    )
                 )
-            )
-            vehicle = veh_result.scalar_one_or_none()
+                vehicle = veh_result.scalar_one_or_none()
             if not vehicle:
                 vehicle = SocialCapacityVehicle(social_capacity_id=capacity.id)
                 db.add(vehicle)
@@ -607,13 +984,14 @@ class SocialCapacityService:
                 capacity.vehicle_type_label = data.vehicle.vehicleType
 
         if data.driver:
-            drv_result = await db.execute(
-                select(SocialCapacityDriver).where(
-                    SocialCapacityDriver.social_capacity_id == capacity.id,
-                    SocialCapacityDriver.is_deleted == 0,
+            if driver is None:
+                drv_result = await db.execute(
+                    select(SocialCapacityDriver).where(
+                        SocialCapacityDriver.social_capacity_id == capacity.id,
+                        SocialCapacityDriver.is_deleted == 0,
+                    )
                 )
-            )
-            driver = drv_result.scalar_one_or_none()
+                driver = drv_result.scalar_one_or_none()
             if not driver:
                 driver = SocialCapacityDriver(
                     social_capacity_id=capacity.id,
@@ -629,6 +1007,11 @@ class SocialCapacityService:
                 capacity.driver_phone = data.driver.phone
             if data.driver.idCard is not None:
                 capacity.driver_id_card = data.driver.idCard
+
+        if was_approved and SocialCapacityService._approved_substantive_change(
+            capacity_before, vehicle_before, driver_before, capacity, vehicle, driver
+        ):
+            capacity.approval_status = APPROVAL_DRAFT
 
         await db.flush()
         return await SocialCapacityService.get_detail(db, capacity.id)
@@ -717,6 +1100,10 @@ class SocialCapacityService:
         capacity.approval_status = APPROVAL_PENDING
         await db.flush()
 
+        submit_attachment = await SocialCapacityService._build_submit_audit_attachment(
+            db, capacity.id
+        )
+
         await SocialCapacityAuditService.write(
             db=db,
             social_capacity_id=capacity.id,
@@ -726,6 +1113,7 @@ class SocialCapacityService:
             operator_user_id=operator_user_id,
             operator_name=operator_name,
             remark=remark,
+            attachment=submit_attachment,
         )
         return await SocialCapacityService.get_detail(db, capacity.id)
 
@@ -749,7 +1137,15 @@ class SocialCapacityService:
         if capacity.approval_status != APPROVAL_PENDING:
             raise BizException("仅待审核状态可撤回")
 
-        capacity.approval_status = APPROVAL_DRAFT
+        pending = await SocialCapacityService._get_pending_submit_attachment(
+            db, capacity.id
+        )
+        is_status_change = (
+            pending is not None and pending.get("requestType") == "status_change"
+        )
+        capacity.approval_status = (
+            APPROVAL_APPROVED if is_status_change else APPROVAL_DRAFT
+        )
         await db.flush()
 
         await SocialCapacityAuditService.write(
@@ -757,10 +1153,65 @@ class SocialCapacityService:
             social_capacity_id=capacity.id,
             action=ACTION_WITHDRAW,
             before_status=APPROVAL_PENDING,
-            after_status=APPROVAL_DRAFT,
+            after_status=capacity.approval_status,
             operator_user_id=operator_user_id,
             operator_name=operator_name,
             remark=remark,
+        )
+        return await SocialCapacityService.get_detail(db, capacity.id)
+
+    @staticmethod
+    async def _approve_status_change(
+        db: AsyncSession,
+        capacity: SocialCapacity,
+        pending: dict,
+        operator_user_id: int,
+        operator_name: Optional[str],
+        remark: Optional[str],
+    ) -> SocialCapacityDetail:
+        sc = pending.get("statusChange") or {}
+        from_st = sc.get("from")
+        to_st = sc.get("to")
+        if from_st is None or to_st is None:
+            raise BizException("状态变更申请数据不完整")
+        if capacity.status != from_st:
+            raise BizException(
+                f"当前启用状态已变为「{SocialCapacityService._status_label(capacity.status)}」，"
+                "请驳回后重新申请"
+            )
+        action = SocialCapacityService._STATUS_ACTION_MAP.get((from_st, to_st))
+        if action is None:
+            raise BizException("不支持的状态切换")
+
+        before = capacity.status
+        capacity.status = to_st
+        capacity.status_remark = sc.get("remark")
+        capacity.approval_status = APPROVAL_APPROVED
+        capacity.approval_user_id = operator_user_id
+        capacity.approval_time = datetime.now()
+        capacity.approval_remark = remark
+        await db.flush()
+
+        await SocialCapacityAuditService.write(
+            db=db,
+            social_capacity_id=capacity.id,
+            action=ACTION_APPROVE,
+            before_status=APPROVAL_PENDING,
+            after_status=APPROVAL_APPROVED,
+            operator_user_id=operator_user_id,
+            operator_name=operator_name,
+            remark=remark,
+            attachment={"requestType": "status_change", "statusChange": sc},
+        )
+        await SocialCapacityAuditService.write(
+            db=db,
+            social_capacity_id=capacity.id,
+            action=action,
+            before_status=before,
+            after_status=to_st,
+            operator_user_id=operator_user_id,
+            operator_name=operator_name,
+            remark=sc.get("remark"),
         )
         return await SocialCapacityService.get_detail(db, capacity.id)
 
@@ -784,6 +1235,19 @@ class SocialCapacityService:
         if capacity.approval_status != APPROVAL_PENDING:
             raise BizException("仅待审核状态可审核通过")
 
+        pending = await SocialCapacityService._get_pending_submit_attachment(
+            db, capacity.id
+        )
+        if pending and pending.get("requestType") == "status_change":
+            return await SocialCapacityService._approve_status_change(
+                db,
+                capacity,
+                pending,
+                operator_user_id,
+                operator_name,
+                remark,
+            )
+
         capacity.approval_status = APPROVAL_APPROVED
         capacity.approval_user_id = operator_user_id
         capacity.approval_time = datetime.now()
@@ -792,6 +1256,13 @@ class SocialCapacityService:
         if capacity.status == STATUS_INACTIVE:
             capacity.status = STATUS_ACTIVE
         await db.flush()
+
+        _, vehicle, driver = await SocialCapacityService._load_capacity_entities(
+            db, capacity.id
+        )
+        approve_snapshot = SocialCapacityService._build_audit_snapshot(
+            capacity, vehicle, driver
+        )
 
         await SocialCapacityAuditService.write(
             db=db,
@@ -802,6 +1273,7 @@ class SocialCapacityService:
             operator_user_id=operator_user_id,
             operator_name=operator_name,
             remark=remark,
+            attachment={"snapshot": approve_snapshot},
         )
         return await SocialCapacityService.get_detail(db, capacity.id)
 
@@ -827,7 +1299,17 @@ class SocialCapacityService:
         if capacity.approval_status != APPROVAL_PENDING:
             raise BizException("仅待审核状态可驳回")
 
-        capacity.approval_status = APPROVAL_REJECTED
+        pending = await SocialCapacityService._get_pending_submit_attachment(
+            db, capacity.id
+        )
+        is_status_change = (
+            pending is not None and pending.get("requestType") == "status_change"
+        )
+
+        if is_status_change:
+            capacity.approval_status = APPROVAL_APPROVED
+        else:
+            capacity.approval_status = APPROVAL_REJECTED
         capacity.approval_user_id = operator_user_id
         capacity.approval_time = datetime.now()
         capacity.approval_remark = remark
@@ -838,15 +1320,16 @@ class SocialCapacityService:
             social_capacity_id=capacity.id,
             action=ACTION_REJECT,
             before_status=APPROVAL_PENDING,
-            after_status=APPROVAL_REJECTED,
+            after_status=capacity.approval_status,
             operator_user_id=operator_user_id,
             operator_name=operator_name,
             remark=remark,
+            attachment=pending if is_status_change else None,
         )
         return await SocialCapacityService.get_detail(db, capacity.id)
 
     # =====================================================
-    # 状态机：启用 / 停用 / 黑名单
+    # 状态机：启用 / 停用 / 黑名单（申请 → 运力审批 → 生效）
     # =====================================================
     _STATUS_ACTION_MAP = {
         # (from_status, to_status) -> action_code
@@ -880,7 +1363,7 @@ class SocialCapacityService:
             raise BizException("社会运力不存在")
 
         if capacity.approval_status != APPROVAL_APPROVED:
-            raise BizException("仅审核通过的社会运力可调整启用状态")
+            raise BizException("仅审核通过的社会运力可申请状态变更")
         if target_status not in (
             STATUS_INACTIVE,
             STATUS_ACTIVE,
@@ -899,20 +1382,31 @@ class SocialCapacityService:
         if action is None:
             raise BizException("不支持的状态切换")
 
-        before = capacity.status
-        capacity.status = target_status
-        capacity.status_remark = remark
+        from_status = capacity.status
+        capacity.approval_status = APPROVAL_PENDING
         await db.flush()
+
+        attachment = {
+            "requestType": "status_change",
+            "statusChange": {
+                "from": from_status,
+                "to": target_status,
+                "fromLabel": SocialCapacityService._status_label(from_status),
+                "toLabel": SocialCapacityService._status_label(target_status),
+                "remark": remark,
+            },
+        }
 
         await SocialCapacityAuditService.write(
             db=db,
             social_capacity_id=capacity.id,
-            action=action,
-            before_status=before,
-            after_status=target_status,
+            action=ACTION_SUBMIT,
+            before_status=APPROVAL_APPROVED,
+            after_status=APPROVAL_PENDING,
             operator_user_id=operator_user_id,
             operator_name=operator_name,
             remark=remark,
+            attachment=attachment,
         )
         return await SocialCapacityService.get_detail(db, capacity.id)
 

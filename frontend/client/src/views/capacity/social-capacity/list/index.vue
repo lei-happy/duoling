@@ -23,6 +23,12 @@
             ]"
           />
         </template>
+        <template #plateNumber="{ row }">
+          <plate-number-tag
+            :text="row.plateNumber"
+            :category="row.plateCategory"
+          />
+        </template>
         <template #defaultAccount="{ row }">
           <span v-if="row.defaultAccount">
             {{ accountTypeLabel(row.defaultAccount.accountType) }} / {{ row.defaultAccount.accountName }}
@@ -80,6 +86,7 @@
   import SocialCapacityEdit from './components/social-capacity-edit.vue';
   import SocialCapacityDetail from './components/social-capacity-detail.vue';
   import SocialCapacityStatus from './components/social-capacity-status.vue';
+  import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
   import {
     pageSocialCapacities,
     removeSocialCapacity,
@@ -158,7 +165,12 @@
     { prop: 'socialCode', label: '编号', minWidth: 130 },
     { prop: 'driverName', label: '姓名', minWidth: 90 },
     { prop: 'driverPhone', label: '手机号', minWidth: 120 },
-    { prop: 'plateNumber', label: '车牌号', minWidth: 110 },
+    {
+      prop: 'plateNumber',
+      label: '车牌号',
+      minWidth: 130,
+      slot: 'plateNumber'
+    },
     { prop: 'vehicleTypeLabel', label: '车辆类型', minWidth: 100 },
     {
       prop: 'defaultAccount',
@@ -198,7 +210,7 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 200,
+      width: 130,
       align: 'center',
       slot: 'action',
       hideInPrint: true,
@@ -310,42 +322,45 @@
   };
 
   const actionItems = (row: SocialCapacityListItem) => {
-    const items: any[] = [
-      { title: '查看', onClick: () => openDetail(row) }
-    ];
+    const dropdownItems: any[] = [];
 
-    // 草稿 / 已驳回 → 编辑 + 提交审核 + 删除
+    const canEdit =
+      row.approvalStatus === 0 ||
+      row.approvalStatus === 3 ||
+      row.approvalStatus === 2;
+    if (canEdit) {
+      dropdownItems.push({
+        preset: 'edit',
+        onClick: () => openEdit(row)
+      });
+    }
+
     if (row.approvalStatus === 0 || row.approvalStatus === 3) {
-      items.push({ title: '编辑', onClick: () => openEdit(row) });
-      items.push({
+      dropdownItems.push({
         title: '提交审核',
         onClick: () => submit(row)
       });
     }
-
-    // 待审核 → 撤回
     if (row.approvalStatus === 1) {
-      items.push({ title: '撤回审核', onClick: () => withdraw(row) });
+      dropdownItems.push({
+        title: '撤回审核',
+        onClick: () => withdraw(row)
+      });
     }
-
-    // 已通过 → 编辑(账户/备注) + 状态变更
     if (row.approvalStatus === 2) {
-      items.push({ title: '编辑', onClick: () => openEdit(row) });
-      items.push({
-        title: '状态变更',
+      dropdownItems.push({
+        title: '状态变更申请',
         onClick: () => openStatus(row)
       });
     }
 
-    // 删除：草稿 / 已驳回 / 待审核 / 已停用 / 黑名单
     const canDelete =
       row.approvalStatus === 0 ||
       row.approvalStatus === 3 ||
       row.approvalStatus === 1 ||
-      (row.approvalStatus === 2 &&
-        (row.status === 2 || row.status === 3));
+      (row.approvalStatus === 2 && (row.status === 2 || row.status === 3));
     if (canDelete) {
-      items.push({
+      dropdownItems.push({
         title: '删除',
         divided: true,
         danger: true,
@@ -354,6 +369,12 @@
       });
     }
 
-    return items;
+    return [
+      { title: '查看', onClick: () => openDetail(row) },
+      {
+        preset: 'more',
+        dropdownItems
+      }
+    ];
   };
 </script>

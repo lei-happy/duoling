@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    title="启用 / 停用 / 黑名单"
+    title="状态变更申请"
     :model-value="visible"
     width="440px"
     append-to-body
@@ -10,6 +10,9 @@
     @open="onOpen"
   >
     <div v-if="row" class="sc-status">
+      <p class="sc-status__tip">
+        状态变更需经运力审批，审批通过后才会生效。
+      </p>
       <p class="sc-status__line">
         当前启用状态：<strong>{{ statusLabel(row.status) }}</strong>
       </p>
@@ -33,7 +36,7 @@
     </div>
     <template #footer>
       <el-button @click="updateVisible(false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="confirm">确认</el-button>
+      <el-button type="primary" :loading="saving" @click="confirm">提交审批</el-button>
     </template>
   </el-dialog>
 </template>
@@ -133,7 +136,7 @@
         status: targetStatus.value,
         remark: remark.value || undefined
       });
-      EleMessage.success({ message: '状态变更成功', plain: true });
+      EleMessage.success({ message: '状态变更已提交审批', plain: true });
       updateVisible(false);
       emit('done');
     } catch (e: any) {
@@ -147,6 +150,15 @@
 <style scoped>
   .sc-status {
     min-height: 160px;
+  }
+  .sc-status__tip {
+    margin: 0 0 12px;
+    padding: 8px 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--el-color-warning-dark-2);
+    background: var(--el-color-warning-light-9);
+    border-radius: 4px;
   }
   .sc-status__line {
     margin: 0 0 6px;

@@ -41,6 +41,7 @@ python scripts/mockdata/mock_tenant_customers.py --help
 | `mock_tenant_drivers.py` | `biz_driver`、`biz_driver_license`、`biz_driver_operation`、`biz_driver_account`、`biz_driver_route` | 自有运力驾驶员及关联资质、运营、账户、常跑线路等（每位司机含多条子表记录）。 |
 | `mock_tenant_vehicles.py` | `biz_vehicle`、`biz_vehicle_ext` | 自有运力车辆及扩展信息；可关联已有挂车 `trailer_id`；车辆类型优先读字典 `vehicle_type`。 |
 | `mock_tenant_trailers.py` | `biz_trailer`、`biz_trailer_ext` | 自有运力挂车及扩展信息；号牌格式与车辆脚本区分（挂车为「…挂」后缀）；挂车类型优先读字典 `trailer_type`。 |
+| `mock_tenant_social_capacities.py` | `biz_social_capacity`、`biz_social_capacity_vehicle`、`biz_social_capacity_driver`、`biz_social_capacity_account` | 社会运力（驾驶员+车辆+证照+结算账户）；号牌规则与车辆/挂车 mock 一致；`--accounts` 控制结算账户条数（默认 1，范围 1~4）；审核/启用状态组合多样化。 |
 
 ## 依赖关系提示（建议顺序）
 
@@ -50,4 +51,4 @@ python scripts/mockdata/mock_tenant_customers.py --help
 - **运价合同**（`mock_tenant_freight_contracts.py`）：需要客户、地区；品牌/车系用于可选填充运价行。
 - **车辆**（`mock_tenant_vehicles.py`）：若需挂车关联，宜先有挂车数据（`mock_tenant_trailers.py`）。
 
-客户、承运商、驾驶员、挂车、车辆等脚本以**单表或固定关联**为主，一般可独立执行；仍建议先在测试环境用 `--dry-run` 验证输出再正式写入。
+客户、承运商、驾驶员、挂车、车辆、社会运力等脚本以**单表或固定关联**为主，一般可独立执行；仍建议先在测试环境用 `--dry-run` 验证输出再正式写入。
