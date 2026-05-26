@@ -72,9 +72,9 @@ async def approval_stats(
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """工作台 Badge 用：当前待审核数量。"""
-    count = await SocialCapacityService.pending_count(db)
-    return success(data={"pendingCount": count})
+    """审批工作台 KPI：待审核 / 已通过 / 已驳回 / 全部数量。"""
+    data = await SocialCapacityService.approval_workbench_stats(db)
+    return success(data=data)
 
 
 @router.get("/{social_capacity_id}")

@@ -5,7 +5,7 @@
 调度选择器等接口。审核动作 (approve/reject) 由 approval.py 提供。
 """
 
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
@@ -35,6 +35,21 @@ from app.modules.client.services.capacity.social_capacity import (
 router = APIRouter()
 
 
+def _parse_approval_status_in(raw: Optional[str]) -> Optional[List[int]]:
+    if not raw or not raw.strip():
+        return None
+    out: List[int] = []
+    for part in raw.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            out.append(int(part))
+        except ValueError:
+            continue
+    return out or None
+
+
 async def _resolve_operator_name(
     db: AsyncSession, current_user: TokenData
 ) -> Optional[str]:
@@ -56,12 +71,36 @@ async def _resolve_operator_name(
 # =============================================================================
 # 列表 / 详情 / 选择器 / 流水
 # =============================================================================
+@router.get("/stats")
+async def social_capacity_list_stats(
+    keyword: Optional[str] = None,
+    approvalStatus: Optional[int] = None,
+    approvalStatusIn: Optional[str] = None,
+    status: Optional[int] = None,
+    source: Optional[str] = None,
+    ratingLevel: Optional[int] = None,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    data = await SocialCapacityService.list_stats(
+        db,
+        keyword=keyword,
+        approval_status=approvalStatus,
+        approval_status_in=_parse_approval_status_in(approvalStatusIn),
+        status=status,
+        source=source,
+        rating_level=ratingLevel,
+    )
+    return success(data=data)
+
+
 @router.get("")
 async def page_social_capacities(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, alias="limit", ge=1, le=200),
     keyword: Optional[str] = None,
     approvalStatus: Optional[int] = None,
+    approvalStatusIn: Optional[str] = None,
     status: Optional[int] = None,
     source: Optional[str] = None,
     ratingLevel: Optional[int] = None,
@@ -76,6 +115,7 @@ async def page_social_capacities(
         page_size=page_size,
         keyword=keyword,
         approval_status=approvalStatus,
+        approval_status_in=_parse_approval_status_in(approvalStatusIn),
         status=status,
         source=source,
         rating_level=ratingLevel,

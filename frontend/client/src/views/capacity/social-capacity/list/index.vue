@@ -1,6 +1,14 @@
 <template>
   <ele-page>
-    <social-capacity-search @search="(where) => reload(where, 1)" />
+    <social-capacity-search @search="onSearch" @reset="onFilterReset" />
+    <social-capacity-stats-cards
+      class="sc-page__cards"
+      :stats="stats"
+      :active-approval-key="activeApprovalKey"
+      :active-status-key="activeStatusKey"
+      @select-approval="onSelectApproval"
+      @select-status="onSelectStatus"
+    />
     <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
@@ -27,6 +35,13 @@
           <plate-number-tag
             :text="row.plateNumber"
             :category="row.plateCategory"
+          />
+        </template>
+        <template #vehicleType="{ row }">
+          <dict-data
+            type="text"
+            :code="dictCodeVehicleType"
+            :model-value="row.vehicleTypeLabel"
           />
         </template>
         <template #defaultAccount="{ row }">
@@ -58,7 +73,7 @@
     <social-capacity-edit
       v-model:visible="editVisible"
       :data="editData"
-      @done="reload"
+      @done="onMutationDone"
     />
     <social-capacity-detail
       v-model:visible="detailVisible"
@@ -67,13 +82,13 @@
     <social-capacity-status
       v-model:visible="statusVisible"
       :row="statusRow"
-      @done="reload"
+      @done="onMutationDone"
     />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue';
+  import { onMounted, ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import { DeleteOutlined } from '@/components/icons';
@@ -83,23 +98,34 @@
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import SocialCapacitySearch from './components/social-capacity-search.vue';
+  import SocialCapacityStatsCards from './components/social-capacity-stats-cards.vue';
+  import type {
+    ApprovalCardKey,
+    StatusCardKey
+  } from './components/social-capacity-stats-cards.vue';
   import SocialCapacityEdit from './components/social-capacity-edit.vue';
   import SocialCapacityDetail from './components/social-capacity-detail.vue';
   import SocialCapacityStatus from './components/social-capacity-status.vue';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
+  import DictData from '@/components/DictData/index.vue';
   import {
     pageSocialCapacities,
     removeSocialCapacity,
+    socialCapacityListStats,
     submitSocialCapacity,
     withdrawSocialCapacity
   } from '@/api/capacity/social-capacity/list';
   import type {
     SocialCapacityListItem,
+    SocialCapacityListStats,
     SocialCapacityParam
   } from '@/api/capacity/social-capacity/list/model';
+  import { DICT_CODE_VEHICLE_TYPE } from '@/constants/dict-codes';
   import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'CapacitySocial' });
+
+  const dictCodeVehicleType = DICT_CODE_VEHICLE_TYPE;
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
 
@@ -111,6 +137,49 @@
 
   const statusVisible = ref(false);
   const statusRow = ref<SocialCapacityListItem | null>(null);
+
+  const searchWhere = ref<SocialCapacityParam>({});
+  const stats = ref<SocialCapacityListStats | null>(null);
+  const activeApprovalKey = ref<ApprovalCardKey | null>(null);
+  const activeStatusKey = ref<StatusCardKey | null>(null);
+
+  const APPROVAL_PENDING_PROCESS = '0,1,3';
+
+  const APPROVAL_KEY_TO_FILTER = (
+    key: ApprovalCardKey
+  ): Pick<SocialCapacityParam, 'approvalStatus' | 'approvalStatusIn'> => {
+    if (key === 'pending_process') {
+      return { approvalStatus: undefined, approvalStatusIn: APPROVAL_PENDING_PROCESS };
+    }
+    if (key === 'draft') {
+      return { approvalStatus: 0, approvalStatusIn: undefined };
+    }
+    if (key === 'pending') {
+      return { approvalStatus: 1, approvalStatusIn: undefined };
+    }
+    if (key === 'rejected') {
+      return { approvalStatus: 3, approvalStatusIn: undefined };
+    }
+    if (key === 'approved') {
+      return { approvalStatus: 2, approvalStatusIn: undefined };
+    }
+    return { approvalStatus: undefined, approvalStatusIn: undefined };
+  };
+
+  const STATUS_KEY_TO_VALUE: Record<StatusCardKey, number> = {
+    inactive: 0,
+    active: 1,
+    disabled: 2,
+    blacklist: 3
+  };
+
+  const clearApprovalFilter = (): Pick<
+    SocialCapacityParam,
+    'approvalStatus' | 'approvalStatusIn'
+  > => ({
+    approvalStatus: undefined,
+    approvalStatusIn: undefined
+  });
 
   const approvalLabel = (s?: number) =>
     s === 0
@@ -171,7 +240,26 @@
       minWidth: 130,
       slot: 'plateNumber'
     },
-    { prop: 'vehicleTypeLabel', label: '车辆类型', minWidth: 100 },
+    {
+      prop: 'approvalStatus',
+      label: '审核状态',
+      width: 100,
+      align: 'center',
+      slot: 'approvalStatus'
+    },
+    {
+      prop: 'status',
+      label: '运力状态',
+      width: 100,
+      align: 'center',
+      slot: 'status'
+    },
+    {
+      prop: 'vehicleTypeLabel',
+      label: '车辆类型',
+      minWidth: 100,
+      slot: 'vehicleType'
+    },
     {
       prop: 'defaultAccount',
       label: '默认结算',
@@ -185,20 +273,7 @@
       align: 'center',
       slot: 'ratingLevel'
     },
-    {
-      prop: 'approvalStatus',
-      label: '审核状态',
-      width: 100,
-      align: 'center',
-      slot: 'approvalStatus'
-    },
-    {
-      prop: 'status',
-      label: '启用状态',
-      width: 100,
-      align: 'center',
-      slot: 'status'
-    },
+
     {
       prop: 'createdAt',
       label: '创建时间',
@@ -219,6 +294,46 @@
     }
   ]);
 
+  const buildStatsParams = (): SocialCapacityParam => ({ ...searchWhere.value });
+
+  const loadStats = async () => {
+    try {
+      stats.value = (await socialCapacityListStats(buildStatsParams())) ?? null;
+    } catch (e: unknown) {
+      const msg = (e as { message?: string }).message;
+      if (msg) EleMessage.error({ message: msg, plain: true });
+    }
+  };
+
+  const syncCardKeysFromWhere = () => {
+    const { approvalStatus, approvalStatusIn } = searchWhere.value;
+    if (approvalStatusIn === APPROVAL_PENDING_PROCESS) {
+      activeApprovalKey.value = 'pending_process';
+    } else if (approvalStatus === 0) {
+      activeApprovalKey.value = 'draft';
+    } else if (approvalStatus === 1) {
+      activeApprovalKey.value = 'pending';
+    } else if (approvalStatus === 3) {
+      activeApprovalKey.value = 'rejected';
+    } else if (approvalStatus === 2) {
+      activeApprovalKey.value = 'approved';
+    } else {
+      activeApprovalKey.value = null;
+    }
+
+    const statusVal = searchWhere.value.status;
+    activeStatusKey.value =
+      statusVal === 0
+        ? 'inactive'
+        : statusVal === 1
+          ? 'active'
+          : statusVal === 2
+            ? 'disabled'
+            : statusVal === 3
+              ? 'blacklist'
+              : null;
+  };
+
   const normalizeSortOrders = (
     orders: Record<string, string | undefined> | undefined
   ) => {
@@ -238,6 +353,7 @@
 
   const datasource: DatasourceFunction = async ({ pages, where, orders }) => {
     const res = await pageSocialCapacities({
+      ...searchWhere.value,
       ...where,
       ...normalizeSortOrders(orders as Record<string, string | undefined>),
       ...pages
@@ -250,8 +366,69 @@
   };
 
   const reload = (where?: SocialCapacityParam, page?: number) => {
-    tableRef.value?.reload?.({ where, page });
+    if (where) {
+      searchWhere.value = {
+        ...where,
+        approvalStatus: searchWhere.value.approvalStatus,
+        approvalStatusIn: searchWhere.value.approvalStatusIn,
+        status: searchWhere.value.status
+      };
+    }
+    tableRef.value?.reload?.({ where: searchWhere.value, page });
+    loadStats();
   };
+
+  const onSearch = (where?: SocialCapacityParam) => {
+    searchWhere.value = {
+      ...(where ?? {}),
+      approvalStatus: searchWhere.value.approvalStatus,
+      approvalStatusIn: searchWhere.value.approvalStatusIn,
+      status: searchWhere.value.status
+    };
+    reload(undefined, 1);
+  };
+
+  const onFilterReset = () => {
+    activeApprovalKey.value = null;
+    activeStatusKey.value = null;
+    searchWhere.value = {
+      keyword: '',
+      source: undefined,
+      approvalStatus: undefined,
+      approvalStatusIn: undefined,
+      status: undefined
+    };
+    reload(undefined, 1);
+  };
+
+  const onSelectApproval = (key: ApprovalCardKey) => {
+    const toggleOff = activeApprovalKey.value === key;
+    activeApprovalKey.value = toggleOff ? null : key;
+    searchWhere.value = {
+      ...searchWhere.value,
+      ...(toggleOff ? clearApprovalFilter() : APPROVAL_KEY_TO_FILTER(key))
+    };
+    reload(undefined, 1);
+  };
+
+  const onSelectStatus = (key: StatusCardKey) => {
+    const toggleOff = activeStatusKey.value === key;
+    activeStatusKey.value = toggleOff ? null : key;
+    searchWhere.value = {
+      ...searchWhere.value,
+      status: toggleOff ? undefined : STATUS_KEY_TO_VALUE[key]
+    };
+    reload(undefined, 1);
+  };
+
+  const onMutationDone = () => {
+    reload();
+  };
+
+  onMounted(() => {
+    syncCardKeysFromWhere();
+    loadStats();
+  });
 
   const openEdit = (row?: SocialCapacityListItem) => {
     editData.value = row ?? null;
@@ -378,3 +555,9 @@
     ];
   };
 </script>
+
+<style scoped>
+  .sc-page__cards {
+    margin-bottom: 12px;
+  }
+</style>

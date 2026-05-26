@@ -21,4 +21,7 @@ export interface SocialCapacityRejectBody {
 
 export interface SocialCapacityApprovalStats {
   pendingCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  totalCount: number;
 }

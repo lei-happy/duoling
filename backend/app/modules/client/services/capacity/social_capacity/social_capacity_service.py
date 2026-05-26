@@ -580,18 +580,14 @@ class SocialCapacityService:
     # 列表 / 详情
     # =====================================================
     @staticmethod
-    async def page(
-        db: AsyncSession,
-        page: int = 1,
-        page_size: int = 20,
+    def _list_filters(
         keyword: Optional[str] = None,
         approval_status: Optional[int] = None,
+        approval_status_in: Optional[List[int]] = None,
         status: Optional[int] = None,
         source: Optional[str] = None,
         rating_level: Optional[int] = None,
-        sort: Optional[str] = None,
-        order: Optional[str] = None,
-    ) -> dict:
+    ) -> list:
         base_filter = [SocialCapacity.is_deleted == 0]
         if keyword:
             base_filter.append(
@@ -602,7 +598,9 @@ class SocialCapacityService:
                     SocialCapacity.plate_number.contains(keyword),
                 )
             )
-        if approval_status is not None:
+        if approval_status_in:
+            base_filter.append(SocialCapacity.approval_status.in_(approval_status_in))
+        elif approval_status is not None:
             base_filter.append(SocialCapacity.approval_status == approval_status)
         if status is not None:
             base_filter.append(SocialCapacity.status == status)
@@ -610,6 +608,110 @@ class SocialCapacityService:
             base_filter.append(SocialCapacity.source == source)
         if rating_level is not None:
             base_filter.append(SocialCapacity.rating_level == rating_level)
+        return base_filter
+
+    @staticmethod
+    async def list_stats(
+        db: AsyncSession,
+        keyword: Optional[str] = None,
+        approval_status: Optional[int] = None,
+        approval_status_in: Optional[List[int]] = None,
+        status: Optional[int] = None,
+        source: Optional[str] = None,
+        rating_level: Optional[int] = None,
+    ) -> dict:
+        """列表 KPI：审核 / 启用状态分组计数（各自维度不计入自身筛选）。"""
+
+        approval_filters = SocialCapacityService._list_filters(
+            keyword=keyword,
+            status=status,
+            source=source,
+            rating_level=rating_level,
+        )
+        status_filters = SocialCapacityService._list_filters(
+            keyword=keyword,
+            approval_status=approval_status,
+            approval_status_in=approval_status_in,
+            source=source,
+            rating_level=rating_level,
+        )
+
+        async def _count(filters: list) -> int:
+            count_q = select(func.count()).select_from(
+                select(SocialCapacity.id).where(*filters).subquery()
+            )
+            return (await db.execute(count_q)).scalar() or 0
+
+        async def _count_by_approval(filters: list) -> dict[int, int]:
+            subq = select(SocialCapacity.id, SocialCapacity.approval_status).where(
+                *filters
+            ).subquery()
+            r = await db.execute(
+                select(subq.c.approval_status, func.count())
+                .select_from(subq)
+                .group_by(subq.c.approval_status)
+            )
+            return {int(s): int(c) for s, c in r.all() if s is not None}
+
+        async def _count_by_status(filters: list) -> dict[int, int]:
+            subq = select(SocialCapacity.id, SocialCapacity.status).where(
+                *filters
+            ).subquery()
+            r = await db.execute(
+                select(subq.c.status, func.count())
+                .select_from(subq)
+                .group_by(subq.c.status)
+            )
+            return {int(s): int(c) for s, c in r.all() if s is not None}
+
+        approval_counts = await _count_by_approval(approval_filters)
+        status_counts = await _count_by_status(status_filters)
+        approval_all = await _count(approval_filters)
+        status_all = await _count(status_filters)
+        draft = approval_counts.get(0, 0)
+        pending = approval_counts.get(1, 0)
+        rejected = approval_counts.get(3, 0)
+
+        return {
+            "approvalTotals": {
+                "all": approval_all,
+                "draft": draft,
+                "pending": pending,
+                "approved": approval_counts.get(2, 0),
+                "rejected": rejected,
+                "pendingProcess": draft + pending + rejected,
+            },
+            "statusTotals": {
+                "all": status_all,
+                "inactive": status_counts.get(0, 0),
+                "active": status_counts.get(1, 0),
+                "disabled": status_counts.get(2, 0),
+                "blacklist": status_counts.get(3, 0),
+            },
+        }
+
+    @staticmethod
+    async def page(
+        db: AsyncSession,
+        page: int = 1,
+        page_size: int = 20,
+        keyword: Optional[str] = None,
+        approval_status: Optional[int] = None,
+        approval_status_in: Optional[List[int]] = None,
+        status: Optional[int] = None,
+        source: Optional[str] = None,
+        rating_level: Optional[int] = None,
+        sort: Optional[str] = None,
+        order: Optional[str] = None,
+    ) -> dict:
+        base_filter = SocialCapacityService._list_filters(
+            keyword=keyword,
+            approval_status=approval_status,
+            approval_status_in=approval_status_in,
+            status=status,
+            source=source,
+            rating_level=rating_level,
+        )
 
         count_q = select(func.count()).select_from(
             select(SocialCapacity.id).where(*base_filter).subquery()
@@ -1459,3 +1561,28 @@ class SocialCapacityService:
             )
         )
         return result.scalar() or 0
+
+    @staticmethod
+    async def approval_workbench_stats(db: AsyncSession) -> dict:
+        """审批工作台 KPI：待审核 / 已通过 / 已驳回 / 全部。"""
+        r = await db.execute(
+            select(SocialCapacity.approval_status, func.count())
+            .where(SocialCapacity.is_deleted == 0)
+            .group_by(SocialCapacity.approval_status)
+        )
+        counts = {int(s): int(c) for s, c in r.all() if s is not None}
+        total = (
+            await db.execute(
+                select(func.count()).select_from(
+                    select(SocialCapacity.id)
+                    .where(SocialCapacity.is_deleted == 0)
+                    .subquery()
+                )
+            )
+        ).scalar() or 0
+        return {
+            "pendingCount": counts.get(APPROVAL_PENDING, 0),
+            "approvedCount": counts.get(APPROVAL_APPROVED, 0),
+            "rejectedCount": counts.get(APPROVAL_REJECTED, 0),
+            "totalCount": total,
+        }

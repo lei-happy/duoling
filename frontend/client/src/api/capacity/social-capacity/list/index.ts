@@ -10,10 +10,22 @@ import type {
   SocialCapacityListItem,
   SocialCapacityParam,
   SocialCapacitySelectItem,
-  SocialCapacityStatusBody
+  SocialCapacityStatusBody,
+  SocialCapacityListStats
 } from './model';
 
 const BASE = '/capacity/social_capacity/list';
+
+export async function socialCapacityListStats(params?: SocialCapacityParam) {
+  const res = await request.get<ApiResult<SocialCapacityListStats>>(
+    `${BASE}/stats`,
+    { params }
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
 
 export async function pageSocialCapacities(params: SocialCapacityParam) {
   const res = await request.get<ApiResult<PageResult<SocialCapacityListItem>>>(

@@ -2,7 +2,7 @@
   <ele-card search-form>
     <el-form label-width="0" @keyup.enter="search" @submit.prevent="">
       <el-row :gutter="8">
-        <el-col :lg="5" :md="8" :sm="12" :xs="24">
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <floating-label
             label="编号/姓名/手机号/车牌号"
             type="input"
@@ -10,33 +10,7 @@
             clearable
           />
         </el-col>
-        <el-col :lg="5" :md="8" :sm="12" :xs="24">
-          <floating-label
-            v-model="form.approvalStatus"
-            label="审核状态"
-            type="select"
-            clearable
-          >
-            <el-option label="草稿" :value="0" />
-            <el-option label="待审核" :value="1" />
-            <el-option label="已通过" :value="2" />
-            <el-option label="已驳回" :value="3" />
-          </floating-label>
-        </el-col>
-        <el-col :lg="5" :md="8" :sm="12" :xs="24">
-          <floating-label
-            v-model="form.status"
-            label="启用状态"
-            type="select"
-            clearable
-          >
-            <el-option label="未生效" :value="0" />
-            <el-option label="正常" :value="1" />
-            <el-option label="停用" :value="2" />
-            <el-option label="黑名单" :value="3" />
-          </floating-label>
-        </el-col>
-        <el-col :lg="5" :md="8" :sm="12" :xs="24">
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <dict-select-hint-wrap dict-name="社会运力来源">
             <floating-label
               v-model="form.source"
@@ -81,14 +55,12 @@
 
   const emit = defineEmits<{
     (e: 'search', where?: SocialCapacityParam): void;
+    (e: 'reset'): void;
   }>();
 
-  const [form, resetFields] = useFormData<SocialCapacityParam>({
+  const [form, resetFields] = useFormData<Pick<SocialCapacityParam, 'keyword' | 'source'>>({
     keyword: '',
-    approvalStatus: void 0,
-    status: void 0,
-    source: void 0,
-    ratingLevel: void 0
+    source: void 0
   });
 
   const search = () => {
@@ -97,6 +69,6 @@
 
   const reset = () => {
     resetFields();
-    search();
+    emit('reset');
   };
 </script>

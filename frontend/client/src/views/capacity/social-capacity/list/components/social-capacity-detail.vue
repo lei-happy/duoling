@@ -30,11 +30,23 @@
         </div>
 
         <el-tabs v-model="activeTab" class="sc-detail-tabs">
+          <el-tab-pane v-if="approvalMode" label="审批详情" name="audit">
+            <div class="sc-detail-tab-pane">
+              <social-capacity-detail-audit-pane :audit-list="auditList" />
+            </div>
+          </el-tab-pane>
+
           <el-tab-pane label="基础信息" name="basic">
             <div class="sc-detail-tab-pane">
               <el-descriptions :column="2" border size="small">
                 <el-descriptions-item label="社会运力编号">{{ detail.socialCode }}</el-descriptions-item>
-                <el-descriptions-item label="来源">{{ detail.source || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="来源">
+                  <dict-data
+                    type="text"
+                    :code="dictCodeSource"
+                    :model-value="detail.source"
+                  />
+                </el-descriptions-item>
                 <el-descriptions-item label="来源备注">{{ detail.sourceRemark || '—' }}</el-descriptions-item>
                 <el-descriptions-item label="评级">
                   {{ detail.ratingLevel ? ratingLabel(detail.ratingLevel) : '未评级' }}
@@ -43,7 +55,7 @@
                   {{ detail.orderCount ?? 0 }} 次
                 </el-descriptions-item>
                 <el-descriptions-item label="创建时间">
-                  {{ detail.createdAt || '—' }}
+                  {{ formatDateTime(detail.createdAt, '—') }}
                 </el-descriptions-item>
                 <el-descriptions-item label="备注" :span="2">
                   {{ detail.remark || '—' }}
@@ -64,7 +76,13 @@
                 <el-descriptions-item label="车牌类型">
                   {{ plateCategoryLabel(detail.vehicle?.plateCategory) }}
                 </el-descriptions-item>
-                <el-descriptions-item label="车辆类型">{{ detail.vehicleTypeLabel || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="车辆类型">
+                  <dict-data
+                    type="text"
+                    :code="dictCodeVehicleType"
+                    :model-value="detail.vehicle?.vehicleType || detail.vehicleTypeLabel"
+                  />
+                </el-descriptions-item>
                 <el-descriptions-item label="颜色">{{ detail.vehicle?.color || '—' }}</el-descriptions-item>
                 <el-descriptions-item label="品牌型号">
                   {{ [detail.vehicle?.brand, detail.vehicle?.model].filter(Boolean).join(' / ') || '—' }}
@@ -81,11 +99,19 @@
                 <el-descriptions-item label="车长">
                   {{ detail.vehicle?.length ? `${detail.vehicle.length} m` : '—' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="注册日期">{{ detail.vehicle?.registrationDate || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="年检到期">{{ detail.vehicle?.inspectionExpire || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="保险到期">{{ detail.vehicle?.insuranceExpire || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="注册日期">
+                  {{ formatDate(detail.vehicle?.registrationDate, '—') }}
+                </el-descriptions-item>
+                <el-descriptions-item label="年检到期">
+                  {{ formatDate(detail.vehicle?.inspectionExpire, '—') }}
+                </el-descriptions-item>
+                <el-descriptions-item label="保险到期">
+                  {{ formatDate(detail.vehicle?.insuranceExpire, '—') }}
+                </el-descriptions-item>
                 <el-descriptions-item label="道路运输证号">{{ detail.vehicle?.transportLicenseNo || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="道路运输证有效期">{{ detail.vehicle?.transportLicenseExpire || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="道路运输证有效期">
+                  {{ formatDate(detail.vehicle?.transportLicenseExpire, '—') }}
+                </el-descriptions-item>
                 <el-descriptions-item
                   v-if="detail.vehicle?.hasTrailer === 1"
                   label="挂车信息"
@@ -129,9 +155,13 @@
                 </el-descriptions-item>
                 <el-descriptions-item label="驾照类型">{{ detail.driver?.licenseType || '—' }}</el-descriptions-item>
                 <el-descriptions-item label="驾照号码">{{ detail.driver?.licenseNo || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="驾照有效期">{{ detail.driver?.licenseExpire || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="驾照有效期">
+                  {{ formatDate(detail.driver?.licenseExpire, '—') }}
+                </el-descriptions-item>
                 <el-descriptions-item label="从业资格证号">{{ detail.driver?.qualificationNo || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="从业资格证有效期">{{ detail.driver?.qualificationExpire || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="从业资格证有效期">
+                  {{ formatDate(detail.driver?.qualificationExpire, '—') }}
+                </el-descriptions-item>
                 <el-descriptions-item label="紧急联系人">{{ detail.driver?.emergencyContact || '—' }}</el-descriptions-item>
                 <el-descriptions-item label="紧急联系电话">{{ detail.driver?.emergencyPhone || '—' }}</el-descriptions-item>
                 <el-descriptions-item label="居住地址" :span="2">{{ detail.driver?.homeAddress || '—' }}</el-descriptions-item>
@@ -195,77 +225,9 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="审核流水" name="audit">
+          <el-tab-pane v-if="!approvalMode" label="审批详情" name="audit">
             <div class="sc-detail-tab-pane">
-              <el-empty
-                v-if="!auditList.length"
-                description="暂无流水"
-                :image-size="80"
-              />
-              <el-timeline v-else>
-                <el-timeline-item
-                  v-for="a in auditList"
-                  :key="a.id"
-                  :type="auditTimelineType(a.action)"
-                  :timestamp="a.createdAt"
-                >
-                  <div class="sc-detail__audit">
-                    <strong>{{ actionLabelForAudit(a) }}</strong>
-                    <span v-if="a.operatorName"> · {{ a.operatorName }}</span>
-                    <div v-if="a.remark" class="sc-detail__audit-remark">{{ a.remark }}</div>
-                    <div
-                      v-if="a.action === 1 && auditRequestType(a) === 'status_change'"
-                      class="sc-detail__audit-changes"
-                    >
-                      <div class="sc-detail__audit-changes-title">申请启用状态变更</div>
-                      <div class="sc-detail__audit-change-row">
-                        <span class="sc-detail__audit-change-label">启用状态</span>
-                        <span class="sc-detail__audit-change-values">
-                          <span class="sc-detail__audit-change-before">
-                            {{ auditStatusChange(a)?.fromLabel ?? '—' }}
-                          </span>
-                          <span class="sc-detail__audit-change-arrow">→</span>
-                          <span class="sc-detail__audit-change-after">
-                            {{ auditStatusChange(a)?.toLabel ?? '—' }}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                    <div
-                      v-else-if="a.action === 1 && auditChangeType(a) === 'initial'"
-                      class="sc-detail__audit-tag sc-detail__audit-tag--info"
-                    >
-                      首次提交审核
-                    </div>
-                    <div
-                      v-else-if="a.action === 1 && auditChangeType(a) === 'unchanged'"
-                      class="sc-detail__audit-tag"
-                    >
-                      本次无字段变更
-                    </div>
-                    <div
-                      v-else-if="auditChanges(a).length"
-                      class="sc-detail__audit-changes"
-                    >
-                      <div class="sc-detail__audit-changes-title">变更项</div>
-                      <div
-                        v-for="c in auditChanges(a)"
-                        :key="`${c.group}-${c.field}`"
-                        class="sc-detail__audit-change-row"
-                      >
-                        <span class="sc-detail__audit-change-label">
-                          {{ c.group }} · {{ c.label }}
-                        </span>
-                        <span class="sc-detail__audit-change-values">
-                          <span class="sc-detail__audit-change-before">{{ c.before }}</span>
-                          <span class="sc-detail__audit-change-arrow">→</span>
-                          <span class="sc-detail__audit-change-after">{{ c.after }}</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </el-timeline-item>
-              </el-timeline>
+              <social-capacity-detail-audit-pane :audit-list="auditList" />
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -284,7 +246,14 @@
   import { ref, watch } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
+  import DictData from '@/components/DictData/index.vue';
+  import SocialCapacityDetailAuditPane from './social-capacity-detail-audit-pane.vue';
   import { resolveUploadUrl } from '@/utils/upload-url';
+  import { formatDate, formatDateTime } from '@/utils/date-util';
+  import {
+    DICT_CODE_VEHICLE_TYPE,
+    DICT_CODE_SOCIAL_CAPACITY_SOURCE
+  } from '@/constants/dict-codes';
   import {
     getSocialCapacity,
     listAuditHistory
@@ -292,7 +261,6 @@
   import type {
     SocialCapacityDetail,
     SocialCapacityAudit,
-    SocialCapacityAuditChange,
     SocialCapacityVehicleInfo,
     SocialCapacityDriverInfo
   } from '@/api/capacity/social-capacity/list/model';
@@ -316,6 +284,8 @@
   const props = defineProps<{
     visible: boolean;
     socialCapacityId?: number;
+    /** 审批中心打开：审批详情 Tab 置首并默认展示 */
+    approvalMode?: boolean;
   }>();
 
   const emit = defineEmits<{
@@ -323,6 +293,9 @@
   }>();
 
   const updateVisible = (v: boolean) => emit('update:visible', v);
+
+  const dictCodeVehicleType = DICT_CODE_VEHICLE_TYPE;
+  const dictCodeSource = DICT_CODE_SOCIAL_CAPACITY_SOURCE;
 
   const dialogBodyStyle = {
     padding: '0 12px 8px'
@@ -356,7 +329,7 @@
   ];
 
   const onOpen = () => {
-    activeTab.value = 'basic';
+    activeTab.value = props.approvalMode ? 'audit' : 'basic';
     if (props.socialCapacityId) reload(props.socialCapacityId);
   };
 
@@ -435,45 +408,6 @@
           : t === 4
             ? '其他'
             : '—';
-
-  const ACTION_LABEL: Record<number, string> = {
-    1: '提交审核',
-    2: '审核通过',
-    3: '审核驳回',
-    4: '启用',
-    5: '停用',
-    6: '加入黑名单',
-    7: '移出黑名单',
-    8: '撤回审核'
-  };
-  const actionLabel = (a?: number) => (a ? ACTION_LABEL[a] ?? '—' : '—');
-
-  const auditRequestType = (a: SocialCapacityAudit) => a.attachment?.requestType;
-
-  const auditStatusChange = (a: SocialCapacityAudit) => a.attachment?.statusChange;
-
-  const actionLabelForAudit = (a: SocialCapacityAudit) => {
-    if (a.action === 1 && auditRequestType(a) === 'status_change') {
-      return '提交状态变更审核';
-    }
-    return actionLabel(a.action);
-  };
-
-  const auditChangeType = (a: SocialCapacityAudit) => a.attachment?.changeType;
-
-  const auditChanges = (a: SocialCapacityAudit): SocialCapacityAuditChange[] =>
-    a.attachment?.changes ?? [];
-
-  const auditTimelineType = (
-    a?: number
-  ): 'primary' | 'success' | 'warning' | 'danger' | 'info' =>
-    a === 2 || a === 4 || a === 7
-      ? 'success'
-      : a === 3 || a === 6
-        ? 'danger'
-        : a === 5 || a === 8
-          ? 'warning'
-          : 'primary';
 
   defineExpose({ reload });
 </script>
@@ -642,94 +576,5 @@
 
   .sc-detail__table {
     width: 100%;
-  }
-
-  .sc-detail__audit {
-    line-height: 1.6;
-  }
-
-  .sc-detail__audit-remark {
-    color: var(--el-text-color-regular);
-    font-size: 12px;
-    margin-top: 4px;
-  }
-
-  .sc-detail__audit-tag {
-    display: inline-block;
-    margin-top: 8px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-    background: var(--el-fill-color-light);
-  }
-
-  .sc-detail__audit-tag--info {
-    color: var(--el-color-primary);
-    background: var(--el-color-primary-light-9);
-  }
-
-  .sc-detail__audit-changes {
-    margin-top: 10px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--el-color-warning-light-7);
-    background: var(--el-color-warning-light-9);
-  }
-
-  .sc-detail__audit-changes-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--el-color-warning-dark-2);
-    margin-bottom: 8px;
-  }
-
-  .sc-detail__audit-change-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 6px 0;
-    border-bottom: 1px dashed var(--el-color-warning-light-5);
-  }
-
-  .sc-detail__audit-change-row:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  .sc-detail__audit-change-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-  }
-
-  .sc-detail__audit-change-values {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    line-height: 1.5;
-  }
-
-  .sc-detail__audit-change-before {
-    color: var(--el-text-color-secondary);
-    text-decoration: line-through;
-    padding: 1px 6px;
-    border-radius: 4px;
-    background: var(--el-fill-color);
-  }
-
-  .sc-detail__audit-change-arrow {
-    color: var(--el-text-color-placeholder);
-    font-weight: 600;
-  }
-
-  .sc-detail__audit-change-after {
-    color: var(--el-color-primary);
-    font-weight: 600;
-    padding: 1px 6px;
-    border-radius: 4px;
-    background: var(--el-color-primary-light-9);
   }
 </style>

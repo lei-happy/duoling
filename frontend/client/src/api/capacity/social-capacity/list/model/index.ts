@@ -176,11 +176,32 @@ export interface SocialCapacityForm {
 export interface SocialCapacityParam extends PageParam {
   keyword?: string;
   approvalStatus?: number;
+  /** 逗号分隔，如 "0,1,3" 表示草稿+待审核+已驳回 */
+  approvalStatusIn?: string;
   status?: number;
   source?: string;
   ratingLevel?: number;
   sort?: string;
   order?: string;
+}
+
+/** 列表 KPI 统计 */
+export interface SocialCapacityListStats {
+  approvalTotals: {
+    all: number;
+    draft: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    pendingProcess: number;
+  };
+  statusTotals: {
+    all: number;
+    inactive: number;
+    active: number;
+    disabled: number;
+    blacklist: number;
+  };
 }
 
 /** 调度选择器输出 */

@@ -1,21 +1,12 @@
 <template>
   <ele-page>
-    <approval-search @search="(where) => onSearch(where)" />
+    <approval-search @search="onSearch" />
+    <approval-stats-cards
+      :stats="stats"
+      :active-key="activeStatus"
+      @select="onSelectCard"
+    />
     <ele-card :body-style="{ paddingTop: '8px' }">
-      <el-tabs v-model="activeStatus" class="approval-tabs" @tab-change="onTabChange">
-        <el-tab-pane name="1">
-          <template #label>
-            <span>
-              待审核
-              <el-badge v-if="pendingCount" :value="pendingCount" class="approval-badge" />
-            </span>
-          </template>
-        </el-tab-pane>
-        <el-tab-pane label="已通过" name="2" />
-        <el-tab-pane label="已驳回" name="3" />
-        <el-tab-pane label="全部" name="all" />
-      </el-tabs>
-
       <ele-pro-table
         ref="tableRef"
         row-key="id"
@@ -32,6 +23,20 @@
             :category="row.plateCategory"
           />
         </template>
+        <template #vehicleType="{ row }">
+          <dict-data
+            type="text"
+            :code="dictCodeVehicleType"
+            :model-value="row.vehicleTypeLabel"
+          />
+        </template>
+        <template #source="{ row }">
+          <dict-data
+            type="text"
+            :code="dictCodeSource"
+            :model-value="row.source"
+          />
+        </template>
         <template #approvalStatus="{ row }">
           <el-tag size="small" :type="approvalTagType(row.approvalStatus)">
             {{ approvalLabel(row.approvalStatus) }}
@@ -46,6 +51,7 @@
     <social-capacity-detail
       v-model:visible="detailVisible"
       :social-capacity-id="detailId"
+      approval-mode
     >
       <template #footer="{ detail }">
         <el-button @click="detailVisible = false">关闭</el-button>
@@ -77,9 +83,12 @@
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import ApprovalSearch from './components/approval-search.vue';
+  import ApprovalStatsCards from './components/approval-stats-cards.vue';
+  import type { ApprovalCardKey } from './components/approval-stats-cards.vue';
   import ApprovalAction from './components/approval-action.vue';
   import SocialCapacityDetail from '../list/components/social-capacity-detail.vue';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
+  import DictData from '@/components/DictData/index.vue';
   import {
     pageApprovals,
     approvalStats
@@ -88,16 +97,23 @@
     SocialCapacityListItem,
     SocialCapacityDetail as SCDetail
   } from '@/api/capacity/social-capacity/list/model';
-  import type { SocialCapacityApprovalParam } from '@/api/capacity/social-capacity/approval/model';
+  import type {
+    SocialCapacityApprovalParam,
+    SocialCapacityApprovalStats
+  } from '@/api/capacity/social-capacity/approval/model';
+  import { DICT_CODE_VEHICLE_TYPE, DICT_CODE_SOCIAL_CAPACITY_SOURCE } from '@/constants/dict-codes';
   import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'CapacitySocialApproval' });
 
+  const dictCodeVehicleType = DICT_CODE_VEHICLE_TYPE;
+  const dictCodeSource = DICT_CODE_SOCIAL_CAPACITY_SOURCE;
+
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
 
-  const activeStatus = ref<'1' | '2' | '3' | 'all'>('1');
+  const activeStatus = ref<ApprovalCardKey>('1');
   const searchWhere = ref<SocialCapacityApprovalParam>({});
-  const pendingCount = ref(0);
+  const stats = ref<SocialCapacityApprovalStats | null>(null);
 
   const detailVisible = ref(false);
   const detailId = ref<number | undefined>(undefined);
@@ -128,11 +144,15 @@
     {
       prop: 'plateNumber',
       label: '车牌号',
-      minWidth: 120,
+      minWidth: 130,
       slot: 'plateNumber'
     },
-    { prop: 'vehicleTypeLabel', label: '车辆类型', minWidth: 100 },
-    { prop: 'source', label: '来源', minWidth: 100 },
+    {
+      prop: 'vehicleTypeLabel',
+      label: '车辆类型',
+      minWidth: 100,
+      slot: 'vehicleType'
+    },
     {
       prop: 'approvalStatus',
       label: '审核状态',
@@ -213,14 +233,17 @@
     reload(1);
   };
 
-  const onTabChange = () => reload(1);
+  const onSelectCard = (key: ApprovalCardKey) => {
+    if (key === activeStatus.value) return;
+    activeStatus.value = key;
+    reload(1);
+  };
 
-  const refreshStats = async () => {
+  const loadStats = async () => {
     try {
-      const stats = await approvalStats();
-      pendingCount.value = stats?.pendingCount ?? 0;
+      stats.value = (await approvalStats()) ?? null;
     } catch {
-      pendingCount.value = 0;
+      stats.value = null;
     }
   };
 
@@ -246,7 +269,7 @@
 
   const onActionDone = () => {
     detailVisible.value = false;
-    refreshStats();
+    loadStats();
     reload();
   };
 
@@ -267,15 +290,6 @@
   };
 
   onMounted(() => {
-    refreshStats();
+    loadStats();
   });
 </script>
-
-<style scoped>
-  .approval-tabs {
-    margin: 0 0 4px;
-  }
-  .approval-badge :deep(.el-badge__content) {
-    transform: scale(0.85);
-  }
-</style>
