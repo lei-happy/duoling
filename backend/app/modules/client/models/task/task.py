@@ -122,6 +122,12 @@ class Task(TenantModelBase):
     actual_load_time: Mapped[Optional[datetime]] = mapped_column(
         DateTime, nullable=True, comment="实际装车时间"
     )
+    assigned_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, comment="承运分配完成时间（-1→0/1）"
+    )
+    dispatched_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, comment="派车完成时间（0→1 或分配直达已派车）"
+    )
     actual_arrive_time: Mapped[Optional[datetime]] = mapped_column(
         DateTime, nullable=True, comment="实际到达时间"
     )

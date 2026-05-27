@@ -242,6 +242,14 @@ export interface TaskCreatePayload {
 
 export type TaskUpdatePayload = Partial<TaskCreatePayload>;
 
+/** 任务列表/工作台时间筛选维度 */
+export type TaskTimeField =
+  | 'createdAt'
+  | 'assignedAt'
+  | 'dispatchedAt'
+  | 'actualLoadTime'
+  | 'signedAt';
+
 export interface TaskParam extends PageParam {
   keyword?: string;
   carrierType?: number;
@@ -255,6 +263,10 @@ export interface TaskParam extends PageParam {
   destinationKeyword?: string;
   createdAtStart?: string;
   createdAtEnd?: string;
+  /** 时间筛选维度（与 timeStart/timeEnd 配合；工作台优先使用） */
+  timeField?: TaskTimeField;
+  timeStart?: string;
+  timeEnd?: string;
   /** 工作台：仅计划装车已逾期（待分配/待派车，配合 status=-1|0） */
   onlyOverdue?: boolean;
   /** 工作台：仅「正常」子集（与 onlyOverdue 互斥；待分配/待派车为计划装车未逾期） */

@@ -7,7 +7,7 @@
   - 三类承运方式分支：
     * 自有车 → 选择具体运力（capacity）+ 自动回填司机/车牌；可手动覆盖
     * 承运商 → 等待承运商通过 lite 端上报运力；提供"调度员代填"兜底面板（isProxy=true）
-    * 社会运力 → 司机姓名/电话/身份证 + 车牌
+    * 社会运力 → 从社会运力池选择 + 自动回填司机/车牌；可手动覆盖
 -->
 <template>
   <el-dialog
@@ -27,13 +27,21 @@
       :title="`任务单 ${task.taskNo} · ${task.origin || '--'} → ${task.destination || '--'} · ${task.totalQuantity || 0} 台`"
     />
 
-    <el-descriptions :column="2" border size="small" style="margin-bottom: 12px">
+    <el-descriptions
+      :column="2"
+      border
+      size="small"
+      style="margin-bottom: 12px"
+    >
       <el-descriptions-item label="承运方式">
         <el-tag :type="carrierTypeTag" disable-transitions>
           {{ carrierTypeLabel }}
         </el-tag>
       </el-descriptions-item>
-      <el-descriptions-item v-if="form.carrier.carrierType === 2" label="承运商">
+      <el-descriptions-item
+        v-if="form.carrier.carrierType === 2"
+        label="承运商"
+      >
         {{ task?.carrierName || '--' }}
       </el-descriptions-item>
     </el-descriptions>
@@ -130,14 +138,41 @@
 
       <!-- 社会运力 -->
       <template v-if="form.carrier.carrierType === 3">
+        <el-form-item label="选择运力" required>
+          <el-select
+            v-model="form.carrier.socialDriverId"
+            remote
+            filterable
+            clearable
+            :remote-method="searchSocialCapacities"
+            placeholder="搜索姓名/手机号/车牌/编号"
+            style="width: 100%"
+            @change="onSocialCapacityChange"
+          >
+            <el-option
+              v-for="c in socialCapacities"
+              :key="c.id"
+              :value="c.id!"
+              :label="`${c.driverName} / ${c.plateNumber}`"
+            >
+              <span>{{ c.driverName }}</span>
+              <span class="ele-text-secondary" style="margin-left: 8px">
+                {{ c.plateNumber }} · {{ c.driverPhone }}
+              </span>
+            </el-option>
+          </el-select>
+        </el-form-item>
         <el-row :gutter="12">
           <el-col :span="8">
-            <el-form-item label="司机姓名" required>
-              <el-input v-model="form.carrier.mainDriverName" />
+            <el-form-item label="司机姓名">
+              <el-input
+                v-model="form.carrier.mainDriverName"
+                placeholder="可手动覆盖"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="司机电话" required>
+            <el-form-item label="司机电话">
               <el-input v-model="form.carrier.mainDriverPhone" />
             </el-form-item>
           </el-col>
@@ -149,7 +184,7 @@
         </el-row>
         <el-row :gutter="12">
           <el-col :span="12">
-            <el-form-item label="车牌号" required>
+            <el-form-item label="车牌号">
               <el-input v-model="form.carrier.plateNumber" />
             </el-form-item>
           </el-col>
@@ -180,6 +215,11 @@
   import { CARRIER_TYPE_OPTIONS } from '../../task/status-config';
   import { pageCapacities } from '@/api/capacity/self-capacity/list';
   import type { Capacity } from '@/api/capacity/self-capacity/list/model';
+  import {
+    getSocialCapacity,
+    listForDispatch
+  } from '@/api/capacity/social-capacity/list';
+  import type { SocialCapacitySelectItem } from '@/api/capacity/social-capacity/list/model';
 
   const props = defineProps<{
     visible: boolean;
@@ -193,6 +233,7 @@
   const formRef = ref<FormInstance | null>(null);
   const submitting = ref(false);
   const capacities = ref<Capacity[]>([]);
+  const socialCapacities = ref<SocialCapacitySelectItem[]>([]);
   const proxyPanelOpen = ref<string[]>([]);
 
   const defaultCarrier = (): TaskCarrierInfo => ({
@@ -240,7 +281,7 @@
     }
   });
 
-  const onOpen = () => {
+  const onOpen = async () => {
     if (props.task) {
       form.carrier = {
         carrierType: props.task.carrierType || 1,
@@ -259,6 +300,14 @@
       proxyPanelOpen.value = [];
       if (form.carrier.carrierType === 1 && capacities.value.length === 0) {
         searchCapacities('');
+      }
+      if (form.carrier.carrierType === 3) {
+        if (socialCapacities.value.length === 0) {
+          await searchSocialCapacities('');
+        }
+        if (form.carrier.socialDriverId) {
+          await ensureSocialOptionInList(form.carrier.socialDriverId);
+        }
       }
     } else {
       form.carrier = defaultCarrier();
@@ -289,6 +338,64 @@
     }
   };
 
+  const searchSocialCapacities = async (kw: string) => {
+    try {
+      socialCapacities.value = (await listForDispatch(kw, 50)) || [];
+    } catch {
+      socialCapacities.value = [];
+    }
+  };
+
+  const ensureSocialOptionInList = async (id: number) => {
+    if (socialCapacities.value.some((x) => x.id === id)) return;
+    try {
+      const detail = await getSocialCapacity(id);
+      if (!detail?.id) return;
+      socialCapacities.value.unshift({
+        id: detail.id,
+        socialCode: detail.socialCode,
+        driverName: detail.driverName,
+        driverPhone: detail.driverPhone,
+        plateNumber: detail.plateNumber,
+        vehicleType: detail.vehicleTypeLabel || detail.vehicle?.vehicleType,
+        loadCapacity: detail.vehicle?.loadCapacity,
+        ratingLevel: detail.ratingLevel,
+        defaultAccount: detail.defaultAccount
+      });
+    } catch {
+      // ignore
+    }
+  };
+
+  const onSocialCapacityChange = async (id: number | undefined) => {
+    if (!id) {
+      form.carrier.mainDriverName = '';
+      form.carrier.mainDriverPhone = '';
+      form.carrier.mainDriverIdCard = '';
+      form.carrier.plateNumber = '';
+      form.carrier.trailerPlateNumber = '';
+      return;
+    }
+    const item = socialCapacities.value.find((x) => x.id === id);
+    if (item) {
+      form.carrier.mainDriverName = item.driverName || '';
+      form.carrier.mainDriverPhone = item.driverPhone || '';
+      form.carrier.plateNumber = item.plateNumber || '';
+    }
+    try {
+      const detail = await getSocialCapacity(id);
+      if (!detail) return;
+      if (detail.driver?.idCard) {
+        form.carrier.mainDriverIdCard = detail.driver.idCard;
+      }
+      if (detail.vehicle?.trailerPlate) {
+        form.carrier.trailerPlateNumber = detail.vehicle.trailerPlate;
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const validate = (): string | null => {
     const c = form.carrier;
     if (c.carrierType === 1) {
@@ -309,6 +416,9 @@
       }
       // 不填运力则提交后等待 lite 上报，无需校验
     } else if (c.carrierType === 3) {
+      if (!c.socialDriverId) {
+        return '请选择社会运力';
+      }
       if (!c.mainDriverName?.trim()) return '请填写司机姓名';
       if (!c.mainDriverPhone?.trim()) return '请填写司机电话';
       if (!c.plateNumber?.trim()) return '请填写车牌号';

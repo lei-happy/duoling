@@ -512,8 +512,10 @@
               id,
               cleanCarrier(form.carrier) as TaskCarrierInfo
             );
+            const nextStage =
+              form.carrier?.carrierType === 3 ? '待装车' : '待派车';
             EleMessage.success({
-              message: '已确认承运分配，任务已进入待派车',
+              message: `已确认承运分配，任务已进入${nextStage}`,
               plain: true
             });
             break;

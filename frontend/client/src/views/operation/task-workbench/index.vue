@@ -11,6 +11,7 @@
   <ele-page>
     <task-pool-filter
       class="workbench-page__filter"
+      :pool-key="activeTab"
       @search="onSearch"
       @reset="onFilterReset"
     />

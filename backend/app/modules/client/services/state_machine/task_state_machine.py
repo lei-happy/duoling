@@ -56,7 +56,7 @@ TASK_STATUS_LABELS: dict[int, str] = {
 #   ``_aggregate_load_status_from_items`` 写入，不接受外部 update_status 推进；
 #   防止跳过装卸记录直接置任务为已装车/已到达
 TASK_VALID_TRANS: dict[int, Set[int]] = {
-    -1: set(),       # 进入待派车走 complete_carrier_assignment；取消走 cancel_task
+    -1: set(),       # 进入待派车/已派车走 complete_carrier_assignment；取消走 cancel_task
     0: {1, 9},       # 待派车 → 已派车 / 已取消
     1: {0, 9},       # 已派车 → 回退待派车（撤回派车）/ 已取消（1→2 走聚合）
     2: {3, 9},       # 已装车 → 在途 / 已取消

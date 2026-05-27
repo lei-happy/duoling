@@ -55,6 +55,15 @@ from app.modules.client.services.waybill.waybill_status_aggregator import (
 )
 
 
+# 列表/工作台时间筛选字段（与 API timeField 一致）
+_TASK_TIME_FIELD_MAP = {
+    "createdAt": "created_at",
+    "assignedAt": "assigned_at",
+    "dispatchedAt": "dispatched_at",
+    "actualLoadTime": "actual_load_time",
+    "signedAt": "signed_at",
+}
+
 # 兼容旧引用（其它模块可能直接 import _STATUS_LABELS）
 _STATUS_LABELS = TASK_STATUS_LABELS
 
@@ -481,6 +490,8 @@ class TaskService:
                 for k, v in snap.items():
                     setattr(task, k, v)
                 task.status = 1  # 已派车
+                TaskService._stamp_assigned(task)
+                TaskService._stamp_dispatched(task)
             else:
                 task.carrier_type = 1  # 默认自有车占位
 
@@ -553,6 +564,7 @@ class TaskService:
                 setattr(task, k, v)
             if int(task.status) == 0:
                 task.status = 1
+                TaskService._stamp_dispatched(task)
 
         if data.segments is not None:
             if data.segments:
@@ -684,6 +696,8 @@ class TaskService:
         TaskStateMachine.assert_transition(old, new)
 
         task.status = new
+        if old == 0 and new == 1:
+            TaskService._stamp_dispatched(task)
         if data.actualLoadTime is not None and new == 3:
             # 出发动作携带的"实际装车时间"用于补录历史装车数据兜底；
             # 正常流程已由装车记录写入。
@@ -757,12 +771,98 @@ class TaskService:
         return task
 
     @staticmethod
+    def _stamp_assigned(task: Task) -> None:
+        task.assigned_at = datetime.now()
+
+    @staticmethod
+    def _stamp_dispatched(task: Task) -> None:
+        task.dispatched_at = datetime.now()
+
+    @staticmethod
+    def _task_signed_at_subquery():
+        """任务维度签收时间：挂接项 signed_at 最大值。"""
+        return (
+            select(
+                TaskWaybillItem.task_id.label("task_id"),
+                func.max(TaskWaybillItem.signed_at).label("max_signed_at"),
+            )
+            .where(
+                TaskWaybillItem.is_deleted == 0,
+                TaskWaybillItem.signed_at.isnot(None),
+            )
+            .group_by(TaskWaybillItem.task_id)
+        ).subquery()
+
+    @staticmethod
+    def _apply_task_time_range(
+        stmt,
+        *,
+        time_field: Optional[str] = None,
+        time_start: Optional[ddate] = None,
+        time_end: Optional[ddate] = None,
+        created_at_start: Optional[ddate] = None,
+        created_at_end: Optional[ddate] = None,
+    ):
+        """按时间维度筛选；兼容旧参数 createdAtStart/End。"""
+        field = (time_field or "").strip() or None
+        start = time_start
+        end = time_end
+        if not field and (created_at_start is not None or created_at_end is not None):
+            field = "createdAt"
+            start = start if start is not None else created_at_start
+            end = end if end is not None else created_at_end
+        if not field or (start is None and end is None):
+            return stmt
+
+        if field == "signedAt":
+            sq = TaskService._task_signed_at_subquery()
+            stmt = stmt.join(sq, Task.id == sq.c.task_id)
+            col = sq.c.max_signed_at
+        else:
+            col_name = _TASK_TIME_FIELD_MAP.get(field)
+            if not col_name:
+                return stmt
+            col = getattr(Task, col_name)
+
+        if start is not None:
+            start_dt = datetime.combine(start, dtime.min)
+            stmt = stmt.where(col >= start_dt)
+        if end is not None:
+            end_dt = datetime.combine(end, dtime.max)
+            stmt = stmt.where(col <= end_dt)
+        return stmt
+
+    @staticmethod
+    def _assignment_target_status(data: TaskCarrierAssignmentInfo) -> int:
+        """分配承运后的目标状态。
+
+        - 社会运力且已选定具体运力（socialDriverId + 人/车快照齐全）→ 1 已派车（工作台待装车池）
+        - 其余（自有车仅定方式、承运商等）→ 0 待派车
+        """
+        if int(data.carrierType) != 3 or not data.socialDriverId:
+            return 0
+        if not (
+            data.mainDriverName
+            and str(data.mainDriverName).strip()
+            and data.mainDriverPhone
+            and str(data.mainDriverPhone).strip()
+            and data.plateNumber
+            and str(data.plateNumber).strip()
+        ):
+            return 0
+        return 1
+
+    @staticmethod
     async def complete_carrier_assignment(
         db: AsyncSession,
         task_id: int,
         data: TaskCarrierAssignmentInfo,
     ) -> Task:
-        """待分配：确认承运方式后进入待派车（status=0）。"""
+        """待分配：确认承运方式。
+
+        社会运力已选具体运力时直接进入已派车（status=1，工作台待装车池）；
+        其余进入待派车（status=0）。
+        """
         task = await TaskService.get_or_404(db, task_id)
         if int(task.status) != -1:
             raise BizException(
@@ -772,7 +872,11 @@ class TaskService:
         snap = await TaskService._resolve_carrier_assignment_snapshot(db, data)
         for k, v in snap.items():
             setattr(task, k, v)
-        task.status = 0
+        TaskService._stamp_assigned(task)
+        target = TaskService._assignment_target_status(data)
+        task.status = target
+        if target == 1:
+            TaskService._stamp_dispatched(task)
         await db.flush()
         await db.refresh(task)
         return task
@@ -824,6 +928,7 @@ class TaskService:
             task.cost_remark = data.costRemark
         if int(task.status) == 0:
             task.status = 1
+            TaskService._stamp_dispatched(task)
         await db.flush()
         await db.refresh(task)
         return task
@@ -846,6 +951,9 @@ class TaskService:
         destination_keyword: Optional[str] = None,
         created_at_start: Optional[ddate] = None,
         created_at_end: Optional[ddate] = None,
+        time_field: Optional[str] = None,
+        time_start: Optional[ddate] = None,
+        time_end: Optional[ddate] = None,
         only_overdue: bool = False,
         in_transit_overdue: bool = False,
         only_normal: bool = False,
@@ -945,14 +1053,22 @@ class TaskService:
             kw = f"%{destination_keyword.strip()}%"
             base = base.where(Task.destination.like(kw))
             cnt = cnt.where(Task.destination.like(kw))
-        if created_at_start is not None:
-            start_dt = datetime.combine(created_at_start, dtime.min)
-            base = base.where(Task.created_at >= start_dt)
-            cnt = cnt.where(Task.created_at >= start_dt)
-        if created_at_end is not None:
-            end_dt = datetime.combine(created_at_end, dtime.max)
-            base = base.where(Task.created_at <= end_dt)
-            cnt = cnt.where(Task.created_at <= end_dt)
+        base = TaskService._apply_task_time_range(
+            base,
+            time_field=time_field,
+            time_start=time_start,
+            time_end=time_end,
+            created_at_start=created_at_start,
+            created_at_end=created_at_end,
+        )
+        cnt = TaskService._apply_task_time_range(
+            cnt,
+            time_field=time_field,
+            time_start=time_start,
+            time_end=time_end,
+            created_at_start=created_at_start,
+            created_at_end=created_at_end,
+        )
         # customer_id 走挂接表，避免再多 join，使用 EXISTS
         if customer_id is not None:
             sub = select(TaskWaybillItem.task_id).where(
@@ -1038,6 +1154,9 @@ class TaskService:
         destination_keyword: Optional[str] = None,
         created_at_start: Optional[ddate] = None,
         created_at_end: Optional[ddate] = None,
+        time_field: Optional[str] = None,
+        time_start: Optional[ddate] = None,
+        time_end: Optional[ddate] = None,
     ):
         """工作台 KPI / 列表共用的筛选（不含 status 与 常/警 子集）。"""
         if keyword:
@@ -1073,19 +1192,20 @@ class TaskService:
         if destination_keyword:
             kw = f"%{destination_keyword.strip()}%"
             stmt = stmt.where(Task.destination.like(kw))
-        if created_at_start is not None:
-            start_dt = datetime.combine(created_at_start, dtime.min)
-            stmt = stmt.where(Task.created_at >= start_dt)
-        if created_at_end is not None:
-            end_dt = datetime.combine(created_at_end, dtime.max)
-            stmt = stmt.where(Task.created_at <= end_dt)
         if customer_id is not None:
             sub = select(TaskWaybillItem.task_id).where(
                 TaskWaybillItem.is_deleted == 0,
                 TaskWaybillItem.customer_id == customer_id,
             )
             stmt = stmt.where(Task.id.in_(sub))
-        return stmt
+        return TaskService._apply_task_time_range(
+            stmt,
+            time_field=time_field,
+            time_start=time_start,
+            time_end=time_end,
+            created_at_start=created_at_start,
+            created_at_end=created_at_end,
+        )
 
     @staticmethod
     async def workbench_stats(
@@ -1099,6 +1219,9 @@ class TaskService:
         destination_keyword: Optional[str] = None,
         created_at_start: Optional[ddate] = None,
         created_at_end: Optional[ddate] = None,
+        time_field: Optional[str] = None,
+        time_start: Optional[ddate] = None,
+        time_end: Optional[ddate] = None,
     ) -> dict:
         """返回各状态计数 + 关键异常计数（用于调度工作台 KPI，支持与列表相同的筛选）。"""
         base = select(Task).where(Task.is_deleted == 0)
@@ -1113,6 +1236,9 @@ class TaskService:
             destination_keyword=destination_keyword,
             created_at_start=created_at_start,
             created_at_end=created_at_end,
+            time_field=time_field,
+            time_start=time_start,
+            time_end=time_end,
         )
 
         subq = base.subquery()
@@ -1138,6 +1264,9 @@ class TaskService:
                 destination_keyword=destination_keyword,
                 created_at_start=created_at_start,
                 created_at_end=created_at_end,
+                time_field=time_field,
+                time_start=time_start,
+                time_end=time_end,
             )
             return int((await db.execute(stmt)).scalar() or 0)
 

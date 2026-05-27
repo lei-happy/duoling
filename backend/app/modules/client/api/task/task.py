@@ -123,6 +123,12 @@ async def page_tasks(
     destinationKeyword: Optional[str] = None,
     createdAtStart: Optional[date] = None,
     createdAtEnd: Optional[date] = None,
+    timeField: Optional[str] = Query(
+        None,
+        description="时间维度：createdAt|assignedAt|dispatchedAt|actualLoadTime|signedAt",
+    ),
+    timeStart: Optional[date] = None,
+    timeEnd: Optional[date] = None,
     onlyOverdue: bool = Query(False, description="仅计划装车/到货已逾期的子集（须配合 status 或 inTransitOverdue）"),
     onlyNormal: bool = Query(
         False,
@@ -152,6 +158,9 @@ async def page_tasks(
         destination_keyword=destinationKeyword,
         created_at_start=createdAtStart,
         created_at_end=createdAtEnd,
+        time_field=timeField,
+        time_start=timeStart,
+        time_end=timeEnd,
         only_overdue=onlyOverdue,
         in_transit_overdue=inTransitOverdue,
         only_normal=onlyNormal,
@@ -199,6 +208,12 @@ async def get_workbench_stats(
     destinationKeyword: Optional[str] = None,
     createdAtStart: Optional[date] = None,
     createdAtEnd: Optional[date] = None,
+    timeField: Optional[str] = Query(
+        None,
+        description="时间维度：createdAt|assignedAt|dispatchedAt|actualLoadTime|signedAt",
+    ),
+    timeStart: Optional[date] = None,
+    timeEnd: Optional[date] = None,
     db: AsyncSession = Depends(get_tenant_db),
     _: TokenData = Depends(get_current_user),
 ):
@@ -214,6 +229,9 @@ async def get_workbench_stats(
         destination_keyword=destinationKeyword,
         created_at_start=createdAtStart,
         created_at_end=createdAtEnd,
+        time_field=timeField,
+        time_start=timeStart,
+        time_end=timeEnd,
     )
     return success(data=stats)
 
@@ -388,7 +406,7 @@ async def assign_carrier(
 @operation_log(
     module="运输任务单",
     action="确认承运分配",
-    description="待分配任务确认承运方后进入待派车",
+    description="待分配任务确认承运方（社会运力直达待装车，其余进入待派车）",
 )
 async def complete_carrier_assignment(
     request: Request,

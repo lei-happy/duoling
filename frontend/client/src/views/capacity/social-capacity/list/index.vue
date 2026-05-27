@@ -88,7 +88,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { onMounted, ref } from 'vue';
+  import { onActivated, onMounted, ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import { DeleteOutlined } from '@/components/icons';
@@ -425,10 +425,14 @@
     reload();
   };
 
-  onMounted(() => {
+  const refreshPage = () => {
     syncCardKeysFromWhere();
     loadStats();
-  });
+    tableRef.value?.reload?.({ where: searchWhere.value });
+  };
+
+  onMounted(refreshPage);
+  onActivated(refreshPage);
 
   const openEdit = (row?: SocialCapacityListItem) => {
     editData.value = row ?? null;

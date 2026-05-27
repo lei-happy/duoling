@@ -51,7 +51,9 @@ class TaskCarrierInfo(BaseModel):
 class TaskCarrierAssignmentInfo(BaseModel):
     """待分配阶段：确定承运方式（及承运商/社会运力身份；自有车可仅选方式）。
 
-    提交后任务进入「待派车」(status=0)，具体运力在派车环节确认。
+    提交后：
+    - 社会运力且已选具体运力 → status=1（已派车，工作台待装车池）
+    - 其余 → status=0（待派车），具体运力在派车环节确认
     """
     carrierType: int = Field(ge=1, le=3,
                              description="1-自有车 2-承运商 3-社会运力")
@@ -72,6 +74,8 @@ class TaskCarrierAssignmentInfo(BaseModel):
             if not (self.carrierId or (self.carrierName and self.carrierName.strip())):
                 raise ValueError("承运商任务必须选择承运商或填写承运商名称")
         elif self.carrierType == 3:
+            if not self.socialDriverId:
+                raise ValueError("社会运力必须选择具体运力")
             if not (
                 self.mainDriverName
                 and self.mainDriverPhone

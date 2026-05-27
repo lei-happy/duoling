@@ -57,7 +57,10 @@
         <el-row :gutter="12">
           <el-col :span="8">
             <el-form-item label="主驾姓名">
-              <el-input v-model="local.mainDriverName" placeholder="可手动覆盖" />
+              <el-input
+                v-model="local.mainDriverName"
+                placeholder="可手动覆盖"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -132,26 +135,82 @@
 
     <!-- C. 社会运力 -->
     <template v-if="local.carrierType === 3">
-      <template v-if="simpleMode">
-        <el-form-item label="选择运力">
-          <el-select
-            v-model="local.socialDriverId"
-            disabled
-            placeholder="将从社会运力池选择（开发中）"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-empty
-          description="社会运力池功能开发中，暂无法选择具体运力"
-          :image-size="72"
-          class="carrier-picker__social-placeholder"
-        />
-      </template>
-      <template v-else>
+      <el-form-item label="选择运力" :required="simpleMode">
+        <el-select
+          v-model="local.socialDriverId"
+          remote
+          filterable
+          clearable
+          :remote-method="searchSocialCapacities"
+          placeholder="搜索姓名/手机号/车牌/编号"
+          style="width: 100%"
+          @change="onSocialCapacityChange"
+        >
+          <el-option
+            v-for="c in socialCapacities"
+            :key="c.id"
+            :value="c.id!"
+            :label="`${c.driverName} / ${c.plateNumber}`"
+          >
+            <span>{{ c.driverName }}</span>
+            <span class="ele-text-secondary" style="margin-left: 8px">
+              {{ c.plateNumber }} · {{ c.driverPhone }}
+            </span>
+            <span
+              v-if="c.socialCode"
+              class="ele-text-secondary"
+              style="margin-left: 8px; font-size: 12px"
+            >
+              {{ c.socialCode }}
+            </span>
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-descriptions
+        v-if="simpleMode && selectedSocialCapacity"
+        :column="2"
+        border
+        size="small"
+        class="carrier-picker__social-summary"
+      >
+        <el-descriptions-item label="编号">
+          {{ selectedSocialCapacity.socialCode || '--' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="司机">
+          {{ selectedSocialCapacity.driverName || '--' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="电话">
+          {{ selectedSocialCapacity.driverPhone || '--' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="车牌">
+          {{ selectedSocialCapacity.plateNumber || '--' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="车辆类型">
+          {{ selectedSocialCapacity.vehicleType || '--' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="核定载重">
+          {{
+            selectedSocialCapacity.loadCapacity != null
+              ? `${selectedSocialCapacity.loadCapacity} 吨`
+              : '--'
+          }}
+        </el-descriptions-item>
+      </el-descriptions>
+      <el-alert
+        v-if="simpleMode"
+        type="info"
+        :closable="false"
+        class="carrier-picker__hint"
+        title="选定社会运力后任务直接进入「待装车」，无需再派车。"
+      />
+      <template v-if="!simpleMode">
         <el-row :gutter="12">
           <el-col :span="8">
             <el-form-item label="司机姓名" required>
-              <el-input v-model="local.mainDriverName" />
+              <el-input
+                v-model="local.mainDriverName"
+                placeholder="可手动覆盖"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -189,6 +248,11 @@
   import type { Capacity } from '@/api/capacity/self-capacity/list/model';
   import { selectCarriers } from '@/api/partner/carrier';
   import type { CarrierSelectItem } from '@/api/partner/carrier/model';
+  import {
+    getSocialCapacity,
+    listForDispatch
+  } from '@/api/capacity/social-capacity/list';
+  import type { SocialCapacitySelectItem } from '@/api/capacity/social-capacity/list/model';
   import { CARRIER_TYPE_INTRO, CARRIER_TYPE_OPTIONS } from '../status-config';
 
   const props = withDefaults(
@@ -265,6 +329,14 @@
 
   const capacities = ref<Capacity[]>([]);
   const carriers = ref<CarrierSelectItem[]>([]);
+  const socialCapacities = ref<SocialCapacitySelectItem[]>([]);
+
+  const selectedSocialCapacity = computed(() => {
+    if (!local.socialDriverId) return null;
+    return (
+      socialCapacities.value.find((x) => x.id === local.socialDriverId) || null
+    );
+  });
 
   const searchCapacities = async (kw: string) => {
     try {
@@ -290,6 +362,72 @@
     }
   };
 
+  const searchSocialCapacities = async (kw: string) => {
+    try {
+      socialCapacities.value = (await listForDispatch(kw, 50)) || [];
+    } catch {
+      socialCapacities.value = [];
+    }
+  };
+
+  const fillSocialCapacityFromItem = (item: SocialCapacitySelectItem) => {
+    local.mainDriverName = item.driverName || '';
+    local.mainDriverPhone = item.driverPhone || '';
+    local.plateNumber = item.plateNumber || '';
+  };
+
+  const ensureSocialOptionInList = async (id: number) => {
+    if (socialCapacities.value.some((x) => x.id === id)) return;
+    try {
+      const detail = await getSocialCapacity(id);
+      if (!detail?.id) return;
+      socialCapacities.value.unshift({
+        id: detail.id,
+        socialCode: detail.socialCode,
+        driverName: detail.driverName,
+        driverPhone: detail.driverPhone,
+        plateNumber: detail.plateNumber,
+        vehicleType: detail.vehicleTypeLabel || detail.vehicle?.vehicleType,
+        loadCapacity: detail.vehicle?.loadCapacity,
+        ratingLevel: detail.ratingLevel,
+        defaultAccount: detail.defaultAccount
+      });
+    } catch {
+      // ignore
+    }
+  };
+
+  const enrichSocialCapacityDetail = async (id: number) => {
+    try {
+      const detail = await getSocialCapacity(id);
+      if (!detail) return;
+      if (detail.driver?.idCard) {
+        local.mainDriverIdCard = detail.driver.idCard;
+      }
+      if (detail.vehicle?.trailerPlate) {
+        local.trailerPlateNumber = detail.vehicle.trailerPlate;
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const onSocialCapacityChange = async (id: number | undefined) => {
+    if (!id) {
+      local.mainDriverName = '';
+      local.mainDriverPhone = '';
+      local.mainDriverIdCard = '';
+      local.plateNumber = '';
+      local.trailerPlateNumber = '';
+      return;
+    }
+    const item = socialCapacities.value.find((x) => x.id === id);
+    if (item) {
+      fillSocialCapacityFromItem(item);
+    }
+    await enrichSocialCapacityDetail(id);
+  };
+
   const onTypeChange = () => {
     local.capacityId = undefined;
     local.carrierId = undefined;
@@ -309,6 +447,9 @@
     onTypeChange();
     if (value === 2 && carriers.value.length === 0) {
       searchCarriers('');
+    }
+    if (value === 3 && socialCapacities.value.length === 0) {
+      searchSocialCapacities('');
     }
   };
 
@@ -331,13 +472,21 @@
   };
 
   /** 触发一次初始搜索（弹窗打开时调用） */
-  const init = () => {
+  const init = async () => {
     ensureAllowedCarrierType();
     if (local.carrierType === 1 && capacities.value.length === 0) {
       searchCapacities('');
     }
     if (local.carrierType === 2 && carriers.value.length === 0) {
       searchCarriers('');
+    }
+    if (local.carrierType === 3) {
+      if (socialCapacities.value.length === 0) {
+        await searchSocialCapacities('');
+      }
+      if (local.socialDriverId) {
+        await ensureSocialOptionInList(local.socialDriverId);
+      }
     }
   };
   defineExpose({ init });
@@ -407,13 +556,8 @@
       margin-bottom: 0;
     }
 
-    &__social-placeholder {
-      padding: 8px 0 0;
-
-      :deep(.el-empty__description) {
-        margin-top: 8px;
-        font-size: 13px;
-      }
+    &__social-summary {
+      margin-top: 4px;
     }
   }
 </style>

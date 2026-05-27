@@ -1,7 +1,7 @@
 <!--
   待分配 → 待派车：确认承运方式（承运商 / 社会运力 / 自有车可先不定运力）
 
-  - 单条：三种承运方式均可选（社会运力从运力池选择，待开发）
+  - 单条：三种承运方式均可选（社会运力从运力池选择）
   - 批量：仅支持自有车 / 承运商，统一写入后进入待派车
 -->
 <template>
@@ -81,7 +81,12 @@
           {{ row.origin || '--' }} → {{ row.destination || '--' }}
         </template>
       </el-table-column>
-      <el-table-column prop="totalQuantity" label="台数" width="72" align="center" />
+      <el-table-column
+        prop="totalQuantity"
+        label="台数"
+        width="72"
+        align="center"
+      />
     </el-table>
 
     <div class="assign-carrier-section-title">选择承运方</div>
@@ -91,7 +96,9 @@
         ref="pickerRef"
         v-model="form.carrier"
         :simple-mode="true"
-        :allowed-carrier-types="isBatch ? BATCH_ALLOWED_CARRIER_TYPES : undefined"
+        :allowed-carrier-types="
+          isBatch ? BATCH_ALLOWED_CARRIER_TYPES : undefined
+        "
       />
     </el-form>
 
@@ -216,7 +223,14 @@
     }
     if (c.carrierType === 3) {
       if (!c.socialDriverId) {
-        return '社会运力池功能开发中，暂不支持分配';
+        return '请选择社会运力';
+      }
+      if (
+        !c.mainDriverName?.trim() ||
+        !c.mainDriverPhone?.trim() ||
+        !c.plateNumber?.trim()
+      ) {
+        return '所选社会运力信息不完整，请重新选择';
       }
     }
     return null;
@@ -285,8 +299,10 @@
         return;
       }
       await completeCarrierAssignment(task.id, form.carrier);
+      const nextStage =
+        form.carrier.carrierType === 3 ? '待装车' : '待派车';
       EleMessage.success({
-        message: '已确认承运分配，任务已进入待派车',
+        message: `已确认承运分配，任务已进入${nextStage}`,
         plain: true
       });
       emit('done');

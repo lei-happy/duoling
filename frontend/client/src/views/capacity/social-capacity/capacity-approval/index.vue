@@ -76,7 +76,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, onMounted } from 'vue';
+  import { onActivated, onMounted, ref } from 'vue';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
     DatasourceFunction,
@@ -289,7 +289,11 @@
     return items;
   };
 
-  onMounted(() => {
+  const refreshPage = () => {
     loadStats();
-  });
+    tableRef.value?.reload?.();
+  };
+
+  onMounted(refreshPage);
+  onActivated(refreshPage);
 </script>

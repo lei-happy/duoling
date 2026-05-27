@@ -1,8 +1,7 @@
 <!--
   调度工作台 - 统一筛选栏（页面级，切换阶段卡时不重建）
-  ==========================
 
-  字段并集：任务单号/运单号/任务名称、出发地、目的地、承运方式、承运商、制单时间
+  字段并集：任务单号/运单号/任务名称、出发地、目的地、承运方式、承运商、时间维度+区间
 -->
 <template>
   <ele-card search-form class="wb-filter-card">
@@ -79,14 +78,34 @@
           </floating-label>
         </el-col>
         <el-col
-          :lg="fieldCol.lg"
-          :md="fieldCol.md"
-          :sm="fieldCol.sm"
-          :xs="fieldCol.xs"
+          :lg="timeFieldCol.lg"
+          :md="timeFieldCol.md"
+          :sm="timeFieldCol.sm"
+          :xs="timeFieldCol.xs"
         >
           <floating-label
-            v-model="form.createdAtRange"
-            label="请选择制单时间"
+            v-model="form.timeField"
+            label="时间类型"
+            type="select"
+            :clearable="false"
+          >
+            <el-option
+              v-for="o in TASK_TIME_FIELD_OPTIONS"
+              :key="o.value"
+              :value="o.value"
+              :label="o.label"
+            />
+          </floating-label>
+        </el-col>
+        <el-col
+          :lg="timeRangeCol.lg"
+          :md="timeRangeCol.md"
+          :sm="timeRangeCol.sm"
+          :xs="timeRangeCol.xs"
+        >
+          <floating-label
+            v-model="form.timeRange"
+            :label="timeRangeLabel"
             type="date"
             date-type="daterange"
             value-format="YYYY-MM-DD"
@@ -125,8 +144,21 @@
   import { getLast3DaysDateRange } from '@/utils/date-util';
   import { selectCarriers } from '@/api/partner/carrier';
   import type { CarrierSelectItem } from '@/api/partner/carrier/model';
-  import type { TaskParam } from '@/api/operation/task/model';
+  import type { TaskParam, TaskTimeField } from '@/api/operation/task/model';
   import { CARRIER_TYPE_OPTIONS } from '../../task/status-config';
+  import {
+    TASK_TIME_FIELD_OPTIONS,
+    resolveDefaultTimeField,
+    timeFieldLabel
+  } from '../workbench-time-filter';
+
+  const props = withDefaults(
+    defineProps<{
+      /** 当前阶段卡 key，用于重置时恢复默认时间维度 */
+      poolKey?: string;
+    }>(),
+    { poolKey: 'pending-assign' }
+  );
 
   const emit = defineEmits<{
     (e: 'search', where: Partial<TaskParam>): void;
@@ -139,8 +171,11 @@
     destinationKeyword: string;
     carrierType: number | undefined;
     carrierId: number | undefined;
-    createdAtRange: [string, string] | null;
+    timeField: TaskTimeField;
+    timeRange: [string, string] | null;
   };
+
+  const defaultTimeField = () => resolveDefaultTimeField(props.poolKey);
 
   const buildInitial = (): FilterForm => ({
     keyword: '',
@@ -148,15 +183,32 @@
     destinationKeyword: '',
     carrierType: void 0,
     carrierId: void 0,
-    createdAtRange: [...getLast3DaysDateRange()] as [string, string]
+    timeField: defaultTimeField(),
+    timeRange: [...getLast3DaysDateRange()] as [string, string]
   });
 
   const [form, resetFields] = useFormData<FilterForm>(buildInitial());
 
-  const fieldCol = { lg: 6, md: 6, sm: 12, xs: 24 };
-  const actionsCol = { lg: 4, md: 6, sm: 12, xs: 24 };
-
   const showCarrierFilter = computed(() => form.carrierType === 2);
+
+  const timeRangeLabel = computed(() => `请选择${timeFieldLabel(form.timeField)}`);
+
+  const fieldCol = { lg: 6, md: 6, sm: 12, xs: 24 };
+  const timeFieldCol = computed(() =>
+    showCarrierFilter.value
+      ? { lg: 4, md: 6, sm: 12, xs: 24 }
+      : { lg: 5, md: 6, sm: 12, xs: 24 }
+  );
+  const timeRangeCol = computed(() =>
+    showCarrierFilter.value
+      ? { lg: 8, md: 12, sm: 12, xs: 24 }
+      : { lg: 9, md: 12, sm: 12, xs: 24 }
+  );
+  const actionsCol = computed(() =>
+    showCarrierFilter.value
+      ? { lg: 6, md: 24, sm: 12, xs: 24 }
+      : { lg: 10, md: 12, sm: 12, xs: 24 }
+  );
 
   const carrierOptions = ref<Array<{ id: number; name: string }>>([]);
 
@@ -194,10 +246,11 @@
     if (showCarrierFilter.value && form.carrierId != null) {
       payload.carrierId = form.carrierId;
     }
-    const range = form.createdAtRange;
+    const range = form.timeRange;
     if (Array.isArray(range) && range.length === 2 && range[0] && range[1]) {
-      payload.createdAtStart = range[0];
-      payload.createdAtEnd = range[1];
+      payload.timeField = form.timeField;
+      payload.timeStart = range[0];
+      payload.timeEnd = range[1];
     }
     return payload;
   };
@@ -206,7 +259,8 @@
 
   const onReset = () => {
     resetFields();
-    form.createdAtRange = [...getLast3DaysDateRange()] as [string, string];
+    form.timeField = defaultTimeField();
+    form.timeRange = [...getLast3DaysDateRange()] as [string, string];
     emit('reset', buildWhere());
   };
 
