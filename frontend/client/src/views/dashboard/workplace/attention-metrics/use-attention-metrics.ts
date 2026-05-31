@@ -160,19 +160,6 @@ export function useAttentionMetrics() {
     ATTENTION_METRICS_REGISTRY.filter(isMetricAccessible)
   );
 
-  const summaryText = computed(() => {
-    if (loading.value) {
-      return '正在加载今日需关注事项…';
-    }
-    const urgentParts = items.value
-      .filter((item) => item.value != null && item.value > 0)
-      .map((item) => `${item.value} ${item.label}`);
-    if (!urgentParts.length) {
-      return '今日暂无待处理的业务事项，继续保持。';
-    }
-    return `今日需关注：${urgentParts.join('、')}`;
-  });
-
   const load = async () => {
     const registry = accessibleRegistry.value;
     if (!registry.length) {
@@ -225,7 +212,6 @@ export function useAttentionMetrics() {
   return {
     loading,
     items,
-    summaryText,
     reload: load
   };
 }

@@ -8,8 +8,8 @@
           <ele-text size="xl" type="heading" style="font-weight: normal">
             {{ greetingText }}
           </ele-text>
-          <ele-text type="placeholder" class="profile-summary">
-            {{ summaryText }}
+          <ele-text type="placeholder" :icon="PartlyCloudy">
+            今日多云转阴, 18℃ ~ 22℃, 出门记得穿外套哦~
           </ele-text>
         </div>
       </div>
@@ -52,7 +52,7 @@
 <script lang="ts" setup>
   import { computed, ref, watch } from 'vue';
   import { useRouter } from 'vue-router';
-  import { DocumentChecked, Promotion, Select } from '@element-plus/icons-vue';
+  import { DocumentChecked, Promotion, Select, PartlyCloudy } from '@element-plus/icons-vue';
   import { useUserStore } from '@/store/modules/user';
   import { getProfileGreetingText } from '../utils/profile-greeting';
   import {
@@ -62,7 +62,7 @@
 
   const router = useRouter();
   const userStore = useUserStore();
-  const { loading, items, summaryText } = useAttentionMetrics();
+  const { loading, items, reload } = useAttentionMetrics();
 
   const iconMap: Record<string, object> = {
     DocumentChecked,
@@ -100,6 +100,8 @@
   const goMetric = (item: AttentionMetricItem) => {
     router.push(item.route);
   };
+
+  defineExpose({ reloadMetrics: reload });
 </script>
 
 <style lang="scss" scoped>
@@ -122,12 +124,6 @@
         flex: 1;
         padding-left: 12px;
         box-sizing: border-box;
-      }
-
-      .profile-summary {
-        display: block;
-        margin-top: 6px;
-        line-height: 1.5;
       }
     }
   }

@@ -1,6 +1,6 @@
 <template>
   <ele-page class="workplace-page">
-    <profile-card />
+    <profile-card ref="profileCardRef" />
     <quick-action-bar ref="quickActionBarRef" />
     <el-row :gutter="16" ref="wrapRef">
       <el-col
@@ -79,7 +79,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+  import { ref, computed, onMounted, onBeforeUnmount, onActivated } from 'vue';
   import SortableJs from 'sortablejs';
   import type { ElRow } from 'element-plus';
   import { ElMessageBox } from 'element-plus';
@@ -166,6 +166,9 @@
     null
   );
 
+  /** 顶部用户信息 + 今日需关注 */
+  const profileCardRef = ref<InstanceType<typeof ProfileCard> | null>(null);
+
   /** 容器 */
   const wrapRef = ref<InstanceType<typeof ElRow> | null>(null);
 
@@ -245,6 +248,11 @@
       setData: () => {},
       forceFallback: true
     });
+  });
+
+  /** 从其他页签返回时刷新今日需关注指标 */
+  onActivated(() => {
+    profileCardRef.value?.reloadMetrics?.();
   });
 
   onBeforeUnmount(() => {
