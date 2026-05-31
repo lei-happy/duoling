@@ -74,13 +74,21 @@
   /** 当前登录用户信息 */
   const loginUser = computed(() => userStore.info ?? {});
 
-  /** 按上海时段随机问候（用户信息就绪或变化时刷新一条） */
-  const greetingText = ref(getProfileGreetingText(userStore.info));
+  /** 按上海时段随机问候（仅用户身份变化时刷新，避免快捷操作等偏好保存触发重随机） */
+  const greetingText = ref('');
   watch(
-    () => userStore.info,
-    (info) => {
-      greetingText.value = getProfileGreetingText(info);
-    }
+    () =>
+      [
+        userStore.info?.userId,
+        userStore.info?.nickname,
+        userStore.info?.phone
+      ] as const,
+    () => {
+      if (userStore.info?.userId) {
+        greetingText.value = getProfileGreetingText(userStore.info);
+      }
+    },
+    { immediate: true }
   );
 </script>
 

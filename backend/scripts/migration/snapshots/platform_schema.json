@@ -23,7 +23,7 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "员工编码（全局唯一）"
-        },        
+        },
         {
           "name": "created_at",
           "type": "DATETIME",
@@ -4233,6 +4233,15 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "用户类型 0-平台管理员（其余值仅做默认标记，实际角色由 sys_user_tenant 决定）"
+        },
+        {
+          "name": "workplace_config",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "工作台个性化配置（JSON格式）"
         }
       ],
       "primary_key": [

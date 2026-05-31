@@ -70,7 +70,7 @@
 <script lang="ts" setup>
   import { computed, onActivated, onMounted, ref, watch } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
-  import { useRouter } from 'vue-router';
+  import { useRoute, useRouter } from 'vue-router';
   import WaybillStatsCards from './components/waybill-stats-cards.vue';
   import WaybillPoolFilter from './components/waybill-pool-filter.vue';
   import WaybillPool from './components/waybill-pool.vue';
@@ -86,6 +86,7 @@
   defineOptions({ name: 'Waybill' });
 
   const router = useRouter();
+  const route = useRoute();
 
   /** 默认进入注册表第一项（当前为「待确认」=新单流入口） */
   const activeKey = ref<string>(WAYBILL_POOLS[0]!.key);
@@ -234,7 +235,18 @@
     loadStats();
   };
 
-  onMounted(initAll);
+  const openCreateFromQuery = () => {
+    if (route.query.action !== 'create') {
+      return;
+    }
+    openEdit();
+    router.replace({ path: route.path, query: {} });
+  };
+
+  onMounted(() => {
+    initAll();
+    openCreateFromQuery();
+  });
   onActivated(initAll);
 </script>
 

@@ -118,6 +118,9 @@ class UserInfoOut(BaseModel):
     sex: Optional[str] = Field(default=None, description="性别")
     status: Optional[int] = Field(default=None, description="状态")
     themeConfig: Optional[dict] = Field(default=None, description="用户主题配置")
+    workplaceConfig: Optional[dict] = Field(
+        default=None, description="工作台个性化配置（快捷操作等）"
+    )
     tenantName: Optional[str] = Field(default=None, description="企业名称")
     systemName: Optional[str] = Field(default=None, description="系统自定义名称（客户端左上角显示）")
     userType: Optional[int] = Field(default=None, description="用户类型 1-管理员 2-用户 3-驾驶员")
@@ -151,3 +154,10 @@ class UpdateProfileRequest(BaseModel):
 class UpdateThemeConfigRequest(BaseModel):
     """更新主题配置请求"""
     themeConfig: Optional[dict] = Field(default=None, description="用户主题配置（JSON格式）")
+
+
+class UpdateWorkplaceConfigRequest(BaseModel):
+    """更新工作台个性化配置请求"""
+    workplaceConfig: Optional[dict] = Field(
+        default=None, description="工作台个性化配置（JSON格式）"
+    )

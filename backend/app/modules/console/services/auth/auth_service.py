@@ -28,7 +28,8 @@ from app.modules.console.schemas.auth.auth import (
     TenantOption, MultiTenantResponse,
     ChangePasswordRequest, RefreshTokenRequest, RefreshTokenResponse,
     UserInfoOut, UserRoleOut, UserMenuOut,
-    UpdateProfileRequest, UpdateThemeConfigRequest, SwitchTenantRequest,
+    UpdateProfileRequest, UpdateThemeConfigRequest, UpdateWorkplaceConfigRequest,
+    SwitchTenantRequest,
 )
 
 
@@ -676,6 +677,7 @@ class AuthService:
             sex=gender_map.get(user.gender),
             status=user.status,
             themeConfig=user.theme_config,
+            workplaceConfig=user.workplace_config,
             tenantName=tenant_name,
             systemName=system_name,
             userType=user_type,
@@ -904,6 +906,51 @@ class AuthService:
             raise AuthException("用户不存在")
 
         user.theme_config = request.themeConfig
+        await db.commit()
+
+    # ============================================================
+    # 工作台个性化配置（/auth/user-workplace-config 使用）
+    # ============================================================
+
+    _WORKPLACE_QUICK_ACTIONS_MAX = 12
+
+    @staticmethod
+    def _validate_workplace_config(config: Optional[dict]) -> None:
+        """校验工作台配置结构（仅存用户偏好，不做权限校验）"""
+        if config is None:
+            return
+        if not isinstance(config, dict):
+            raise AuthException("工作台配置格式无效")
+        version = config.get("version")
+        if version is not None and not isinstance(version, int):
+            raise AuthException("工作台配置 version 必须为整数")
+        quick_actions = config.get("quickActions")
+        if quick_actions is None:
+            return
+        if not isinstance(quick_actions, list):
+            raise AuthException("quickActions 必须为数组")
+        if len(quick_actions) > AuthService._WORKPLACE_QUICK_ACTIONS_MAX:
+            raise AuthException(
+                f"快捷操作最多 {AuthService._WORKPLACE_QUICK_ACTIONS_MAX} 项"
+            )
+        for item in quick_actions:
+            if not isinstance(item, str) or not item.strip():
+                raise AuthException("quickActions 元素必须为非空字符串")
+
+    @staticmethod
+    async def update_workplace_config(
+        db: AsyncSession, user_id: int, request: UpdateWorkplaceConfigRequest
+    ) -> None:
+        """更新用户工作台个性化配置"""
+        AuthService._validate_workplace_config(request.workplaceConfig)
+        result = await db.execute(
+            select(User).where(User.id == user_id, User.is_deleted == 0)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise AuthException("用户不存在")
+
+        user.workplace_config = request.workplaceConfig
         await db.commit()
 
     # ============================================================

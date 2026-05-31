@@ -50,3 +50,6 @@ class User(PlatformModelBase):
     theme_config: Mapped[Optional[dict]] = mapped_column(
         JSON, nullable=True, comment="用户主题配置（JSON格式）"
     )
+    workplace_config: Mapped[Optional[dict]] = mapped_column(
+        JSON, nullable=True, comment="工作台个性化配置（JSON格式）"
+    )

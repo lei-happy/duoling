@@ -1,7 +1,7 @@
 <template>
   <ele-page class="workplace-page">
     <profile-card />
-    <link-card ref="linkCardRef" />
+    <quick-action-bar ref="quickActionBarRef" />
     <el-row :gutter="16" ref="wrapRef">
       <el-col
         v-for="(item, index) in data"
@@ -86,7 +86,7 @@
   import { EleMessage } from 'ele-admin-plus';
   import { PlusCircleOutlined, UndoOutlined } from '@/components/icons';
   import ProfileCard from './components/profile-card.vue';
-  import LinkCard from './components/link-card.vue';
+  import QuickActionBar from './components/quick-action-bar.vue';
   import type { Command } from './model';
   import ActivitiesCard from './components/activities-card.vue';
   import TodoCard from './components/todo-card.vue';
@@ -161,8 +161,10 @@
   /** 弹窗是否打开 */
   const visible = ref(false);
 
-  /** 快捷方式卡片 */
-  const linkCardRef = ref<InstanceType<typeof LinkCard> | null>(null);
+  /** 快捷操作区 */
+  const quickActionBarRef = ref<InstanceType<typeof QuickActionBar> | null>(
+    null
+  );
 
   /** 容器 */
   const wrapRef = ref<InstanceType<typeof ElRow> | null>(null);
@@ -184,7 +186,7 @@
   const reset = () => {
     data.value = [...DEFAULT];
     cacheData();
-    linkCardRef.value?.reset?.();
+    quickActionBarRef.value?.reset?.();
     EleMessage.success({ message: '已重置', plain: true });
   };
 

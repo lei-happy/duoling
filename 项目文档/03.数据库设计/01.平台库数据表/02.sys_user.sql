@@ -16,6 +16,7 @@ CREATE TABLE `sys_user` (
   `remark` text COLLATE utf8mb4_unicode_ci COMMENT '备注',
   `force_change_pwd` smallint NOT NULL DEFAULT '0' COMMENT '是否强制修改密码 0-否 1-是',
   `theme_config` json DEFAULT NULL COMMENT '用户主题配置（JSON格式）',
+  `workplace_config` json DEFAULT NULL COMMENT '工作台个性化配置（JSON格式）',
   `created_at` datetime NOT NULL DEFAULT (now()) COMMENT '创建时间',
   `updated_at` datetime NOT NULL DEFAULT (now()) COMMENT '更新时间',
   `is_deleted` smallint NOT NULL DEFAULT '0' COMMENT '是否删除 0-否 1-是',

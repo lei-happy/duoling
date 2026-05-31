@@ -21,6 +21,7 @@ from app.modules.console.schemas.auth.auth import (
     RefreshTokenRequest,
     UpdateProfileRequest,
     UpdateThemeConfigRequest,
+    UpdateWorkplaceConfigRequest,
     SwitchTenantRequest,
 )
 from app.modules.console.services.auth.auth_service import AuthService
@@ -197,4 +198,15 @@ async def update_user_theme(
 ):
     """保存当前登录用户的主题配置"""
     await AuthService.update_theme_config(db, current_user.user_id, request)
+    return success(message="保存成功")
+
+
+@router.put("/user-workplace-config")
+async def update_user_workplace_config(
+    request: UpdateWorkplaceConfigRequest,
+    current_user: TokenData = Depends(get_current_user),
+    db: AsyncSession = Depends(get_platform_db),
+):
+    """保存当前登录用户的工作台个性化配置"""
+    await AuthService.update_workplace_config(db, current_user.user_id, request)
     return success(message="保存成功")
