@@ -82,6 +82,8 @@
           :md="timeFieldCol.md"
           :sm="timeFieldCol.sm"
           :xs="timeFieldCol.xs"
+          :lg-offset="showCarrierFilter ? 0 : 6"
+          :md-offset="showCarrierFilter ? 0 : 6"
         >
           <floating-label
             v-model="form.timeField"
@@ -193,22 +195,11 @@
 
   const timeRangeLabel = computed(() => `请选择${timeFieldLabel(form.timeField)}`);
 
+  /** 第二行与第一行四列对齐：承运商(6) | 时间类型(4)+时间范围(8)=出发地+目的地(12) | 操作(6) */
   const fieldCol = { lg: 6, md: 6, sm: 12, xs: 24 };
-  const timeFieldCol = computed(() =>
-    showCarrierFilter.value
-      ? { lg: 4, md: 6, sm: 12, xs: 24 }
-      : { lg: 5, md: 6, sm: 12, xs: 24 }
-  );
-  const timeRangeCol = computed(() =>
-    showCarrierFilter.value
-      ? { lg: 8, md: 12, sm: 12, xs: 24 }
-      : { lg: 9, md: 12, sm: 12, xs: 24 }
-  );
-  const actionsCol = computed(() =>
-    showCarrierFilter.value
-      ? { lg: 6, md: 24, sm: 12, xs: 24 }
-      : { lg: 10, md: 12, sm: 12, xs: 24 }
-  );
+  const timeFieldCol = { lg: 4, md: 6, sm: 12, xs: 24 };
+  const timeRangeCol = { lg: 8, md: 12, sm: 12, xs: 24 };
+  const actionsCol = { lg: 6, md: 24, sm: 12, xs: 24 };
 
   const carrierOptions = ref<Array<{ id: number; name: string }>>([]);
 

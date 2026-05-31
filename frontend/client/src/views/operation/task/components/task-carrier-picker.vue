@@ -13,23 +13,68 @@
         :disabled="lockType"
         @click="selectCarrierType(o.value)"
       >
-        <span class="carrier-picker__type-name">{{ o.label }}</span>
+        <span class="carrier-picker__type-head">
+          <span class="carrier-picker__type-name">{{ o.label }}</span>
+          <el-tooltip
+            v-if="simpleMode && CARRIER_TYPE_DETAIL_HINT[o.value]"
+            placement="top"
+            :show-after="200"
+            :width="320"
+          >
+            <template #content>
+              <div class="carrier-picker__hint-tip">{{
+                CARRIER_TYPE_DETAIL_HINT[o.value]
+              }}</div>
+            </template>
+            <span
+              class="carrier-picker__type-hint"
+              role="img"
+              aria-label="说明"
+              @click.stop
+            >
+              <el-icon :size="14"><QuestionFilled /></el-icon>
+            </span>
+          </el-tooltip>
+        </span>
         <span class="carrier-picker__type-desc">{{
           CARRIER_TYPE_INTRO[o.value] || ''
         }}</span>
       </button>
     </div>
 
+    <div
+      v-if="simpleMode && showSimpleFixedBody"
+      class="carrier-picker__simple-body"
+    >
+      <el-form-item
+        label="选择承运商"
+        required
+        class="carrier-picker__simple-carrier-field"
+        :class="{ 'is-inactive': local.carrierType !== 2 }"
+      >
+        <el-select
+          v-model="local.carrierId"
+          remote
+          filterable
+          clearable
+          :remote-method="searchCarriers"
+          placeholder="搜索承运商名称"
+          style="width: 100%"
+          @change="onCarrierChange"
+        >
+          <el-option
+            v-for="c in carriers"
+            :key="c.id"
+            :value="c.id!"
+            :label="carrierOptionLabel(c)"
+          />
+        </el-select>
+      </el-form-item>
+    </div>
+
     <!-- A. 自有车 -->
     <template v-if="local.carrierType === 1">
-      <el-alert
-        v-if="simpleMode"
-        type="info"
-        :closable="false"
-        class="carrier-picker__hint"
-        title="自有车任务进入「待派车」后，由调度员在派车环节选择具体运力（司机/车牌），此处无需指定。"
-      />
-      <template v-else>
+      <template v-if="!simpleMode">
         <el-form-item label="选择运力">
           <el-select
             v-model="local.capacityId"
@@ -79,33 +124,26 @@
 
     <!-- B. 承运商 -->
     <template v-if="local.carrierType === 2">
-      <el-form-item label="选择承运商" :required="simpleMode">
-        <el-select
-          v-model="local.carrierId"
-          remote
-          filterable
-          clearable
-          :remote-method="searchCarriers"
-          placeholder="搜索承运商名称"
-          style="width: 100%"
-          @change="onCarrierChange"
-        >
-          <el-option
-            v-for="c in carriers"
-            :key="c.id"
-            :value="c.id!"
-            :label="carrierOptionLabel(c)"
-          />
-        </el-select>
-      </el-form-item>
-      <el-alert
-        v-if="simpleMode"
-        type="info"
-        :closable="false"
-        class="carrier-picker__hint"
-        title="选定承运商后进入「待派车」，具体运力可在派车环节再绑定。"
-      />
-      <template v-else>
+      <template v-if="!simpleMode">
+        <el-form-item label="选择承运商">
+          <el-select
+            v-model="local.carrierId"
+            remote
+            filterable
+            clearable
+            :remote-method="searchCarriers"
+            placeholder="搜索承运商名称"
+            style="width: 100%"
+            @change="onCarrierChange"
+          >
+            <el-option
+              v-for="c in carriers"
+              :key="c.id"
+              :value="c.id!"
+              :label="carrierOptionLabel(c)"
+            />
+          </el-select>
+        </el-form-item>
         <el-row :gutter="12">
           <el-col :span="12">
             <el-form-item label="承运商简称">
@@ -131,6 +169,29 @@
           </el-col>
         </el-row>
       </template>
+      <el-form-item
+        v-else-if="!showSimpleFixedBody"
+        label="选择承运商"
+        required
+      >
+        <el-select
+          v-model="local.carrierId"
+          remote
+          filterable
+          clearable
+          :remote-method="searchCarriers"
+          placeholder="搜索承运商名称"
+          style="width: 100%"
+          @change="onCarrierChange"
+        >
+          <el-option
+            v-for="c in carriers"
+            :key="c.id"
+            :value="c.id!"
+            :label="carrierOptionLabel(c)"
+          />
+        </el-select>
+      </el-form-item>
     </template>
 
     <!-- C. 社会运力 -->
@@ -196,13 +257,6 @@
           }}
         </el-descriptions-item>
       </el-descriptions>
-      <el-alert
-        v-if="simpleMode"
-        type="info"
-        :closable="false"
-        class="carrier-picker__hint"
-        title="选定社会运力后任务直接进入「待装车」，无需再派车。"
-      />
       <template v-if="!simpleMode">
         <el-row :gutter="12">
           <el-col :span="8">
@@ -243,6 +297,7 @@
 
 <script lang="ts" setup>
   import { computed, reactive, ref, watch } from 'vue';
+  import { QuestionFilled } from '@element-plus/icons-vue';
   import type { TaskCarrierInfo } from '@/api/operation/task/model';
   import { pageCapacities } from '@/api/capacity/self-capacity/list';
   import type { Capacity } from '@/api/capacity/self-capacity/list/model';
@@ -253,7 +308,7 @@
     listForDispatch
   } from '@/api/capacity/social-capacity/list';
   import type { SocialCapacitySelectItem } from '@/api/capacity/social-capacity/list/model';
-  import { CARRIER_TYPE_INTRO, CARRIER_TYPE_OPTIONS } from '../status-config';
+  import { CARRIER_TYPE_DETAIL_HINT, CARRIER_TYPE_INTRO, CARRIER_TYPE_OPTIONS } from '../status-config';
 
   const props = withDefaults(
     defineProps<{
@@ -281,6 +336,17 @@
     const allowed = props.allowedCarrierTypes;
     if (!allowed?.length) return CARRIER_TYPE_OPTIONS;
     return CARRIER_TYPE_OPTIONS.filter((o) => allowed.includes(o.value));
+  });
+
+  /** 批量分配：自有车/承运商切换时保留固定占位，避免弹窗高度抖动 */
+  const showSimpleFixedBody = computed(() => {
+    if (!props.simpleMode) return false;
+    const allowed = props.allowedCarrierTypes;
+    return (
+      allowed?.length === 2 &&
+      allowed.includes(1) &&
+      allowed.includes(2)
+    );
   });
 
   const ensureAllowedCarrierType = () => {
@@ -498,19 +564,34 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
 
       &--two {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
+    &__simple-body {
+      min-height: 56px;
+      margin-bottom: 0;
+
+      :deep(.el-form-item) {
+        margin-bottom: 0;
+      }
+    }
+
+    &__simple-carrier-field.is-inactive {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
     &__type-card {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 6px;
-      min-height: 88px;
+      justify-content: center;
+      gap: 4px;
+      min-height: 72px;
       padding: 12px 14px;
       border: 1px solid var(--el-border-color);
       border-radius: 8px;
@@ -539,6 +620,29 @@
       }
     }
 
+    &__type-head {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+    }
+
+    &__type-hint {
+      display: inline-flex;
+      flex-shrink: 0;
+      color: var(--el-text-color-secondary);
+      cursor: help;
+
+      &:hover {
+        color: var(--el-color-primary);
+      }
+    }
+
+    &__hint-tip {
+      max-width: 300px;
+      line-height: 1.55;
+    }
+
     &__type-name {
       font-size: 15px;
       font-weight: 600;
@@ -550,10 +654,6 @@
       font-size: 12px;
       line-height: 1.5;
       color: var(--el-text-color-secondary);
-    }
-
-    &__hint {
-      margin-bottom: 0;
     }
 
     &__social-summary {

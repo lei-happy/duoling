@@ -7,13 +7,38 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="dialogTitle"
+    :title="isBatch ? undefined : dialogTitle"
     :width="isBatch ? '860px' : '720px'"
     destroy-on-close
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
+    <template v-if="isBatch" #header>
+      <div class="assign-carrier-dialog-header">
+        <span class="assign-carrier-dialog-header__title">{{
+          dialogTitle
+        }}</span>
+        <el-tooltip
+          placement="bottom-start"
+          :show-after="200"
+          :width="360"
+        >
+          <template #content>
+            <div class="assign-carrier-dialog-header__tip">
+              批量分配仅支持「自有车」或「承运商」。社会运力对应具体司机，请逐单分配。自有车可在待派车池再绑定运力。
+            </div>
+          </template>
+          <el-icon
+            class="assign-carrier-dialog-header__info"
+            :size="16"
+            tabindex="-1"
+          >
+            <InfoFilled />
+          </el-icon>
+        </el-tooltip>
+      </div>
+    </template>
     <div
       v-if="!isBatch && primaryTask"
       class="assign-carrier-task"
@@ -51,21 +76,23 @@
       </div>
     </div>
 
-    <el-alert
-      v-else-if="isBatch"
-      type="info"
-      :closable="false"
-      class="assign-carrier-tip"
-      :title="`已选 ${taskList.length} 张任务单，将统一确认承运方式并进入「待派车」`"
-    />
-
-    <el-alert
-      v-if="isBatch"
-      type="warning"
-      :closable="false"
-      class="assign-carrier-tip"
-      title="批量分配仅支持「自有车」或「承运商」。社会运力对应具体司机，请逐单分配。自有车可在待派车池再绑定运力。"
-    />
+    <div v-if="isBatch" class="assign-carrier-batch-summary">
+      <div class="assign-carrier-batch-summary__item">
+        <span class="assign-carrier-batch-summary__label">任务单</span>
+        <span class="assign-carrier-batch-summary__value">{{
+          taskList.length
+        }}</span>
+        <span class="assign-carrier-batch-summary__unit">张</span>
+      </div>
+      <div class="assign-carrier-batch-summary__divider" />
+      <div class="assign-carrier-batch-summary__item">
+        <span class="assign-carrier-batch-summary__label">商品车台数</span>
+        <span class="assign-carrier-batch-summary__value">{{
+          batchTotalQuantity
+        }}</span>
+        <span class="assign-carrier-batch-summary__unit">台</span>
+      </div>
+    </div>
 
     <el-table
       v-if="isBatch"
@@ -113,7 +140,7 @@
 
 <script lang="ts" setup>
   import { computed, reactive, ref, nextTick } from 'vue';
-  import { Right } from '@element-plus/icons-vue';
+  import { InfoFilled, Right } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import TaskCarrierPicker from '../../task/components/task-carrier-picker.vue';
   import {
@@ -151,6 +178,10 @@
 
   const isBatch = computed(() => taskList.value.length > 1);
   const primaryTask = computed(() => taskList.value[0] ?? null);
+
+  const batchTotalQuantity = computed(() =>
+    taskList.value.reduce((sum, t) => sum + (t.totalQuantity || 0), 0)
+  );
 
   const dialogTitle = computed(() =>
     isBatch.value ? `批量分配承运（${taskList.value.length} 单）` : '分配承运'
@@ -390,8 +421,75 @@
     word-break: break-all;
   }
 
-  .assign-carrier-tip {
+  .assign-carrier-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 32px;
+  }
+
+  .assign-carrier-dialog-header__title {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--el-text-color-primary);
+  }
+
+  .assign-carrier-dialog-header__info {
+    flex-shrink: 0;
+    color: var(--el-color-warning);
+    cursor: help;
+  }
+
+  .assign-carrier-dialog-header__tip {
+    max-width: 340px;
+    line-height: 1.55;
+  }
+
+  .assign-carrier-batch-summary {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
     margin-bottom: 12px;
+    padding: 14px 18px;
+    border-radius: 8px;
+    background: linear-gradient(
+      135deg,
+      var(--el-color-primary-light-9) 0%,
+      var(--el-fill-color-blank) 100%
+    );
+    border: 1px solid var(--el-color-primary-light-7);
+  }
+
+  .assign-carrier-batch-summary__item {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .assign-carrier-batch-summary__label {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .assign-carrier-batch-summary__value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--el-color-primary);
+  }
+
+  .assign-carrier-batch-summary__unit {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--el-color-primary);
+  }
+
+  .assign-carrier-batch-summary__divider {
+    width: 1px;
+    height: 28px;
+    align-self: center;
+    background: var(--el-border-color);
   }
 
   .assign-carrier-batch-table {

@@ -48,6 +48,13 @@ export const CARRIER_TYPE_INTRO: Record<number, string> = {
   3: '从社会运力池选择司机与车辆，选定后直接进入待装车'
 };
 
+/** 承运方式详细说明（分配承运弹窗按钮 hover 提示） */
+export const CARRIER_TYPE_DETAIL_HINT: Record<number, string> = {
+  1: '自有车任务进入「待派车」后，由调度员在派车环节选择具体运力（司机/车牌），此处无需指定。',
+  2: '选定承运商后进入「待派车」，具体运力可在派车环节再绑定。',
+  3: '选定社会运力后任务直接进入「待装车」，无需再派车。'
+};
+
 /** 段状态 */
 export const SEGMENT_STATUS_OPTIONS = [
   { value: 0, label: '待装车', type: 'info' },
