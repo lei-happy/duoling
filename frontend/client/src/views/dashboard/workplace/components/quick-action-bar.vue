@@ -1,41 +1,14 @@
 <!-- 快捷操作 -->
 <template>
-  <ele-card
-    header="快捷操作"
-    shadow="never"
-    :body-style="{ padding: '16px 16px 12px' }"
-    class="quick-action-card-wrap"
-  >
-    <template #extra>
-      <ele-dropdown
-        :items="menuItems"
-        :icon-props="{ size: 15 }"
-        placement="bottom-end"
-        class="quick-action-more"
-        :popper-options="{
-          strategy: 'fixed',
-          modifiers: [{ name: 'offset', options: { offset: [12, 12] } }]
-        }"
-        @command="handleMenuCommand"
-      >
-        <el-icon style="outline: none">
-          <MoreOutlined style="transform: scale(1.1)" />
-        </el-icon>
-      </ele-dropdown>
-    </template>
-    <el-empty
-      v-if="!displayedItems.length"
-      description="暂无快捷操作，可通过右上角菜单添加"
-      :image-size="64"
-      class="quick-action-empty"
-    />
-    <el-row v-else :gutter="12" ref="wrapRef" class="quick-action-row">
+  <ele-card shadow="never" :body-style="{ padding: '12px 16px 8px' }">
+    <el-row :gutter="12" ref="wrapRef" class="quick-action-row">
       <el-col
         v-for="item in displayedItems"
         :key="item.key"
         :md="3"
         :sm="6"
         :xs="12"
+        class="quick-action-sortable"
       >
         <component
           :is="item.type === 'external' ? 'a' : 'router-link'"
@@ -52,6 +25,22 @@
           </div>
           <div class="quick-action-item__title">{{ item.title }}</div>
         </component>
+      </el-col>
+      <el-col :md="3" :sm="6" :xs="12">
+        <div
+          class="quick-action-item quick-action-manage"
+          role="button"
+          tabindex="0"
+          @click="openPicker"
+          @keydown.enter="openPicker"
+        >
+          <div class="quick-action-item__icon">
+            <el-icon class="quick-action-item__icon-inner">
+              <EditOutlined />
+            </el-icon>
+          </div>
+          <div class="quick-action-item__title">管理</div>
+        </div>
       </el-col>
     </el-row>
     <quick-action-picker
@@ -80,7 +69,6 @@
     CopyOutlined,
     TagOutlined,
     MailOutlined,
-    MoreOutlined,
     EditOutlined
   } from '@/components/icons';
   import QuickActionPicker from './quick-action-picker.vue';
@@ -98,7 +86,6 @@
       CopyOutlined,
       TagOutlined,
       MailOutlined,
-      MoreOutlined,
       EditOutlined,
       QuickActionPicker
     }
@@ -116,14 +103,6 @@
     reset,
     openPicker
   } = useQuickActions();
-
-  const menuItems = [
-    {
-      title: '管理快捷操作',
-      command: 'manage',
-      icon: EditOutlined
-    }
-  ];
 
   const selectedConfigs = computed(() =>
     displayedItems.value.map(({ to: _to, ...config }) => config)
@@ -144,6 +123,7 @@
       animation: 300,
       delay: 150,
       delayOnTouchOnly: true,
+      draggable: '.quick-action-sortable',
       onUpdate: ({ oldIndex, newIndex }) => {
         if (typeof oldIndex === 'number' && typeof newIndex === 'number') {
           reorder(oldIndex, newIndex);
@@ -151,12 +131,6 @@
       },
       setData: () => {}
     });
-  };
-
-  const handleMenuCommand = (command: string) => {
-    if (command === 'manage') {
-      openPicker();
-    }
   };
 
   const getLinkProps = (item: QuickActionItem) => {
@@ -207,38 +181,6 @@
 </script>
 
 <style lang="scss" scoped>
-  .quick-action-card-wrap {
-    :deep(.ele-card-header) {
-      padding: 14px 16px;
-    }
-  }
-
-  .quick-action-more {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--el-text-color-placeholder);
-    font-size: 14px;
-    border-radius: 6px;
-    margin: 0 -10px 0 0;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    & > .el-icon {
-      width: 26px;
-      height: 26px;
-    }
-
-    &:hover {
-      color: var(--el-text-color-regular);
-      background: var(--el-fill-color-light);
-    }
-  }
-
-  .quick-action-empty {
-    padding: 8px 0 4px;
-  }
-
   .quick-action-row {
     margin-bottom: -4px;
   }
@@ -312,6 +254,30 @@
 
     &:active {
       transform: translateY(0);
+    }
+  }
+
+  .quick-action-manage {
+    cursor: pointer;
+    --action-accent: var(--el-text-color-placeholder);
+
+    .quick-action-item__icon {
+      --action-accent: var(--el-text-color-secondary);
+      background: var(--el-fill-color-light);
+    }
+
+    .quick-action-item__icon-inner {
+      color: var(--el-text-color-secondary);
+    }
+
+    &:hover {
+      .quick-action-item__icon {
+        background: var(--el-fill-color);
+      }
+
+      .quick-action-item__icon-inner {
+        color: var(--el-text-color-regular);
+      }
     }
   }
 

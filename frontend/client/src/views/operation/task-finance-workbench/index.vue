@@ -56,6 +56,7 @@
 
 <script lang="ts" setup>
   import { computed, onMounted, ref } from 'vue';
+  import { useRoute } from 'vue-router';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import KpiCards from './components/kpi-cards.vue';
@@ -81,6 +82,8 @@
   } from '../task-finance/task-finance-actions';
 
   defineOptions({ name: 'OperationTaskFinanceWorkbench' });
+
+  const route = useRoute();
 
   interface TabConfig {
     key: string;
@@ -128,7 +131,15 @@
     }
   ];
 
-  const activeTab = ref<string>(TABS[1].key); // 默认进入"待审批"
+  const resolveInitialTab = (): string => {
+    const tab = route.query.tab;
+    if (typeof tab === 'string' && TABS.some((item) => item.key === tab)) {
+      return tab;
+    }
+    return TABS[1].key;
+  };
+
+  const activeTab = ref<string>(resolveInitialTab()); // 默认进入"待审批"
   const reloadToken = ref(0);
 
   const tabLabel = (tab: TabConfig) => {

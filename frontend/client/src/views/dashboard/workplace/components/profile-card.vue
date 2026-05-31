@@ -1,4 +1,4 @@
-<!-- 用户信息 -->
+<!-- 用户信息 + 今日需关注 -->
 <template>
   <ele-card :body-style="{ padding: '20px' }">
     <div class="profile-wrapper">
@@ -8,51 +8,42 @@
           <ele-text size="xl" type="heading" style="font-weight: normal">
             {{ greetingText }}
           </ele-text>
-          <ele-text type="placeholder" :icon="PartlyCloudy">
-            今日多云转阴, 18℃ ~ 22℃, 出门记得穿外套哦~
+          <ele-text type="placeholder" class="profile-summary">
+            {{ summaryText }}
           </ele-text>
         </div>
       </div>
-      <div class="profile-count">
-        <div class="profile-count-item">
+      <div v-if="items.length" class="profile-count">
+        <button
+          v-for="item in items"
+          :key="item.key"
+          type="button"
+          class="profile-count-item"
+          :class="{ 'is-urgent': item.urgent }"
+          @click="goMetric(item)"
+        >
           <div class="profile-count-header">
-            <el-tag size="large" :disable-transitions="true">
+            <el-tag
+              size="large"
+              :type="item.tagType"
+              :disable-transitions="true"
+            >
               <el-icon>
-                <Briefcase />
+                <component :is="iconMap[item.icon]" />
               </el-icon>
             </el-tag>
-            <span class="profile-count-name">项目数</span>
+            <span class="profile-count-name">{{ item.label }}</span>
           </div>
-          <ele-text size="xl" type="heading" style="font-weight: normal">
-            3
+          <ele-text
+            size="xl"
+            type="heading"
+            class="profile-count-value"
+            style="font-weight: normal"
+          >
+            <template v-if="loading">—</template>
+            <template v-else>{{ formatCount(item.value) }}</template>
           </ele-text>
-        </div>
-        <div class="profile-count-item">
-          <div class="profile-count-header">
-            <el-tag size="large" type="warning" :disable-transitions="true">
-              <el-icon>
-                <Checked />
-              </el-icon>
-            </el-tag>
-            <span class="profile-count-name">待办项</span>
-          </div>
-          <ele-text size="xl" type="heading" style="font-weight: normal">
-            6 / 24
-          </ele-text>
-        </div>
-        <div class="profile-count-item">
-          <div class="profile-count-header">
-            <el-tag size="large" type="success" :disable-transitions="true">
-              <el-icon>
-                <BellFilled />
-              </el-icon>
-            </el-tag>
-            <span class="profile-count-name">消息</span>
-          </div>
-          <ele-text size="xl" type="heading" style="font-weight: normal">
-            1,689
-          </ele-text>
-        </div>
+        </button>
       </div>
     </div>
   </ele-card>
@@ -60,16 +51,24 @@
 
 <script lang="ts" setup>
   import { computed, ref, watch } from 'vue';
-  import {
-    PartlyCloudy,
-    Briefcase,
-    Checked,
-    BellFilled
-  } from '@element-plus/icons-vue';
+  import { useRouter } from 'vue-router';
+  import { DocumentChecked, Promotion, Select } from '@element-plus/icons-vue';
   import { useUserStore } from '@/store/modules/user';
   import { getProfileGreetingText } from '../utils/profile-greeting';
+  import {
+    useAttentionMetrics,
+    type AttentionMetricItem
+  } from '../attention-metrics/use-attention-metrics';
 
+  const router = useRouter();
   const userStore = useUserStore();
+  const { loading, items, summaryText } = useAttentionMetrics();
+
+  const iconMap: Record<string, object> = {
+    DocumentChecked,
+    Promotion,
+    Select
+  };
 
   /** 当前登录用户信息 */
   const loginUser = computed(() => userStore.info ?? {});
@@ -90,6 +89,17 @@
     },
     { immediate: true }
   );
+
+  const formatCount = (value: number | null) => {
+    if (value == null) {
+      return '—';
+    }
+    return value.toLocaleString('zh-CN');
+  };
+
+  const goMetric = (item: AttentionMetricItem) => {
+    router.push(item.route);
+  };
 </script>
 
 <style lang="scss" scoped>
@@ -114,8 +124,10 @@
         box-sizing: border-box;
       }
 
-      h4 {
-        margin-bottom: 6px;
+      .profile-summary {
+        display: block;
+        margin-top: 6px;
+        line-height: 1.5;
       }
     }
   }
@@ -128,6 +140,17 @@
     .profile-count-item {
       display: inline-block;
       margin: 0 4px 0 24px;
+      padding: 0;
+      border: none;
+      background: none;
+      cursor: pointer;
+      text-align: right;
+      color: inherit;
+      transition: opacity 0.15s ease;
+
+      &:hover {
+        opacity: 0.82;
+      }
 
       .el-tag {
         width: 26px;
@@ -144,7 +167,16 @@
       .profile-count-header {
         display: flex;
         align-items: center;
+        justify-content: flex-end;
         margin-bottom: 4px;
+      }
+
+      .profile-count-value {
+        transition: color 0.15s ease;
+      }
+
+      &.is-urgent .profile-count-value {
+        color: var(--el-color-warning);
       }
     }
   }
@@ -161,6 +193,16 @@
 
       .profile-count {
         margin-top: 14px;
+        text-align: left;
+
+        .profile-count-item {
+          margin: 0 16px 0 0;
+          text-align: left;
+
+          .profile-count-header {
+            justify-content: flex-start;
+          }
+        }
       }
     }
   }

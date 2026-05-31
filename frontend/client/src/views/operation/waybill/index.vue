@@ -88,8 +88,19 @@
   const router = useRouter();
   const route = useRoute();
 
+  const resolveInitialPoolKey = (): string => {
+    const pool = route.query.pool;
+    if (
+      typeof pool === 'string' &&
+      WAYBILL_POOLS.some((item) => item.key === pool)
+    ) {
+      return pool;
+    }
+    return WAYBILL_POOLS[0]!.key;
+  };
+
   /** 默认进入注册表第一项（当前为「待确认」=新单流入口） */
-  const activeKey = ref<string>(WAYBILL_POOLS[0]!.key);
+  const activeKey = ref<string>(resolveInitialPoolKey());
   const reloadToken = ref(0);
   /** 统一筛选条件（切换阶段卡时保留，不因 pool 切换而丢失） */
   const searchWhere = ref<WaybillParam>({});
