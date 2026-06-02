@@ -3,7 +3,9 @@ Console 端地区数据 Schemas
 操作平台库 sys_regions，字段名对齐前端 TypeScript 模型
 """
 
-from typing import Optional
+from decimal import Decimal
+from typing import Optional, Union
+
 from pydantic import BaseModel
 
 
@@ -35,6 +37,8 @@ class RegionOut(BaseModel):
     level: int
     sortOrder: int
     status: int
+    longitude: Optional[Union[float, Decimal]] = None
+    latitude: Optional[Union[float, Decimal]] = None
     createTime: Optional[str] = None
     hasChildren: bool = False
 
@@ -50,6 +54,8 @@ class RegionOut(BaseModel):
             level=m.level,
             sortOrder=m.sort_order,
             status=m.status,
+            longitude=float(m.longitude) if m.longitude is not None else None,
+            latitude=float(m.latitude) if m.latitude is not None else None,
             createTime=(
                 m.created_at.strftime("%Y-%m-%d %H:%M:%S")
                 if m.created_at else None

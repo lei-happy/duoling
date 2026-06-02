@@ -532,6 +532,8 @@ class TenantService:
                 "level": ["level", "region_level", "deep", "depth", "type"],
                 "sort_order": ["sort_order", "sort", "order_num"],
                 "status": ["status"],
+                "longitude": ["longitude", "lng"],
+                "latitude": ["latitude", "lat"],
             }
 
             mapping = {}

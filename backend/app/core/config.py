@@ -71,6 +71,12 @@ class Settings(BaseSettings):
     # 末尾不要带斜杠。
     FRONTEND_BASE_URL: str = "http://localhost:5174"
 
+    # ---- 高德地图 Web 服务 ----
+    AMAP_WEB_SERVICE_KEY: str = ""
+    AMAP_SYNC_MAX_CONCURRENT: int = 2
+    AMAP_SYNC_REQUEST_DELAY_MS: int = 350
+    AMAP_DISTRICT_API_URL: str = "https://restapi.amap.com/v3/config/district"
+
     # ---- 日志 ----
     LOG_LEVEL: str = "DEBUG"
     LOG_DIR: str = "logs"

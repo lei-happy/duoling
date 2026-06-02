@@ -1393,6 +1393,100 @@
       "foreign_keys": []
     },
     {
+      "name": "region_sync_job",
+      "comment": "行政区域高德同步任务",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "create_time",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": null
+        },
+        {
+          "name": "error_message",
+          "type": "VARCHAR(2000)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": null
+        },
+        {
+          "name": "job_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "任务ID"
+        },
+        {
+          "name": "last_update_time",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": null
+        },
+        {
+          "name": "log_text",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": null
+        },
+        {
+          "name": "payload_json",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": null
+        },
+        {
+          "name": "progress_pct",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "进度0-100"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "pending",
+          "comment": "状态"
+        },
+        {
+          "name": "total_count",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": null
+        }
+      ],
+      "primary_key": [
+        "job_id"
+      ],
+      "unique_constraints": [],
+      "indexes": [],
+      "foreign_keys": []
+    },
+    {
       "name": "sys_capacity",
       "comment": "平台运力表（汇总各租户运力数据）",
       "table_tier": null,
@@ -3102,6 +3196,15 @@
           "comment": "城乡分类"
         },
         {
+          "name": "citycode",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "高德 citycode"
+        },
+        {
           "name": "code",
           "type": "BIGINT",
           "nullable": false,
@@ -3129,13 +3232,31 @@
           "comment": "是否删除 0-否 1-是"
         },
         {
+          "name": "latitude",
+          "type": "NUMERIC(10, 6)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "纬度（北纬为正）"
+        },
+        {
           "name": "level",
           "type": "SMALLINT",
           "nullable": false,
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "层级 1省 2市 3区县 4镇 5村"
+          "comment": "层级 1省 2市 3区县 4街道"
+        },
+        {
+          "name": "longitude",
+          "type": "NUMERIC(10, 6)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "经度（东经为正）"
         },
         {
           "name": "name",

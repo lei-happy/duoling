@@ -176,6 +176,8 @@ def _sync_regions(conn, tenant_code, settings):
         "level": ["level", "region_level", "deep", "depth", "type"],
         "sort_order": ["sort_order", "sort", "order_num"],
         "status": ["status"],
+        "longitude": ["longitude", "lng"],
+        "latitude": ["latitude", "lat"],
     }
 
     mapping = {}
@@ -206,9 +208,15 @@ def _sync_regions(conn, tenant_code, settings):
     target_cols.append("is_deleted")
     source_exprs.append("0")
 
-    where_clause = ""
+    target_cols.append("source")
+    source_exprs.append("0")
+
+    where_parts = []
     if "is_deleted" in source_cols:
-        where_clause = " WHERE `is_deleted` = 0"
+        where_parts.append("`is_deleted` = 0")
+    if "level" in source_cols:
+        where_parts.append("`level` <= 3")
+    where_clause = (" WHERE " + " AND ".join(where_parts)) if where_parts else ""
 
     sql = (
         f"INSERT INTO biz_region ({', '.join(target_cols)}) "

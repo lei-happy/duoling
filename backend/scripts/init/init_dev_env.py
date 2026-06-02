@@ -393,12 +393,58 @@ def step7_seed_tenant_data():
                     ), {"db": platform_db})
                     if result.scalar():
                         with tenant_engine.begin() as tconn:
-                            tconn.execute(text(
-                                f"INSERT INTO biz_region (code, name, parent_code, level, sort_order, status, is_deleted) "
-                                f"SELECT CAST(code AS CHAR), name, CAST(parent_code AS CHAR), level, "
-                                f"COALESCE(sort_order, 0), COALESCE(status, 1), 0 "
-                                f"FROM `{platform_db}`.sys_regions WHERE is_deleted = 0"
-                            ))
+                            cols_result = pconn.execute(text(
+                                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS "
+                                "WHERE TABLE_SCHEMA = :db AND TABLE_NAME = 'sys_regions' "
+                                "ORDER BY ORDINAL_POSITION"
+                            ), {"db": platform_db})
+                            source_cols = [row[0] for row in cols_result]
+                            col_candidates = {
+                                "code": ["code", "region_code", "area_code"],
+                                "name": ["name", "region_name", "area_name"],
+                                "parent_code": ["parent_code", "parent_id", "pid", "pcode"],
+                                "level": ["level", "region_level", "deep", "depth", "type"],
+                                "sort_order": ["sort_order", "sort", "order_num"],
+                                "status": ["status"],
+                                "longitude": ["longitude", "lng"],
+                                "latitude": ["latitude", "lat"],
+                            }
+                            mapping = {}
+                            for target, candidates in col_candidates.items():
+                                for c in candidates:
+                                    if c in source_cols:
+                                        mapping[target] = c
+                                        break
+                            if "code" in mapping and "name" in mapping:
+                                target_cols = list(mapping.keys())
+                                source_exprs = []
+                                for t in target_cols:
+                                    src_col = mapping[t]
+                                    if t in ("code", "parent_code"):
+                                        source_exprs.append(f"CAST(`{src_col}` AS CHAR)")
+                                    else:
+                                        source_exprs.append(f"`{src_col}`")
+                                for col, default in [
+                                    ("parent_code", "NULL"),
+                                    ("level", "1"),
+                                    ("sort_order", "0"),
+                                    ("status", "1"),
+                                ]:
+                                    if col not in mapping:
+                                        target_cols.append(col)
+                                        source_exprs.append(default)
+                                target_cols.extend(["is_deleted", "source"])
+                                source_exprs.extend(["0", "0"])
+                                where_parts = ["`is_deleted` = 0"]
+                                if "level" in source_cols:
+                                    where_parts.append("`level` <= 3")
+                                where_clause = " WHERE " + " AND ".join(where_parts)
+                                insert_sql = (
+                                    f"INSERT INTO biz_region ({', '.join(target_cols)}) "
+                                    f"SELECT {', '.join(source_exprs)} "
+                                    f"FROM `{platform_db}`.sys_regions{where_clause}"
+                                )
+                                tconn.execute(text(insert_sql))
                         print("[OK] 地区数据已从平台同步")
                     else:
                         print("[SKIP] 平台库无 sys_regions 表，跳过地区同步")

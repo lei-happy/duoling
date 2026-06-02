@@ -29,7 +29,7 @@ from app.modules.console.api.basicdata import (
 )
 from app.modules.console.api.workbench.todo import router as workbench_todo_router
 from app.modules.console.api.file import router as file_router
-from app.modules.console.api.ops import autohome_sync_router, dealer_sync_router
+from app.modules.console.api.ops import autohome_sync_router, dealer_sync_router, region_sync_router
 from app.modules.console.api.system.open_register_policy import (
     router as open_register_policy_router,
 )
@@ -75,6 +75,11 @@ router.include_router(
     dealer_sync_router,
     prefix="/ops/dealer-sync",
     tags=["管理后台-经销商同步"],
+)
+router.include_router(
+    region_sync_router,
+    prefix="/ops/region-sync",
+    tags=["管理后台-行政区域同步"],
 )
 router.include_router(
     open_register_policy_router,

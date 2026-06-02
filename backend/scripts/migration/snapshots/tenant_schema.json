@@ -6277,15 +6277,6 @@
           "comment": "承运分配完成时间（-1→0/1）"
         },
         {
-          "name": "dispatched_at",
-          "type": "DATETIME",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "派车完成时间（0→1 或分配直达已派车）"
-        },
-        {
           "name": "capacity_id",
           "type": "BIGINT",
           "nullable": true,
@@ -6392,6 +6383,15 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "终点行政区 ID"
+        },
+        {
+          "name": "dispatched_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "派车完成时间（0→1 或分配直达已派车）"
         },
         {
           "name": "dispatcher_id",
