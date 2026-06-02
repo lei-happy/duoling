@@ -184,6 +184,7 @@ backend/scripts/platform_sync/
 | `export` 报 "feature_code xxx 未定义" | 菜单挂的 feature_code 没在「产品功能清单」里。在 dev console 补完再 export |
 | `sync` 提示有差异、应用后仍不一致 | 通常是有人在 prod 直接改了 console。把改动回流到 dev：在 dev 也改一遍 → export → push → 重新 sync |
 | `sync` 报 "未找到 envs/.env.prod" | 在生产服务器 `backend/scripts/platform_sync/envs/` 下创建该文件，或挂载到容器内 |
+| `sync` apply 后仍提示 platform_menu 新增 1 条（如 `data_sync:region`） | 多为 `sys_menu.id` 被 client 菜单占用。先跑 `python -m scripts.fix.fix_platform_menu_id_conflicts`，再 `seed_client_menus.py --app-type platform --force-all`，或重新 `sync --yes`（新版本 seed 会自动 fallback 自增 ID） |
 | 登录失败 `[code=403] 无权登录管理后台` | 配置的账号 `user_type != 0`。必须是平台超管账号 |
 | 想跳过 sync 的 y/N 确认（CI 用） | `python -m scripts.platform_sync sync --yes`，或设置 `PLATFORM_SYNC_YES=1` |
 

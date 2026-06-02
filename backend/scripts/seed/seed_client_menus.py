@@ -37,6 +37,7 @@ import os
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Optional
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -124,6 +125,68 @@ def load_client_menus_from_json(json_path: Path, app_type: str = "client") -> li
         return item
 
     return [build(r) for r in roots]
+
+
+def _count_active_children(conn, menu_id: int) -> int:
+    result = conn.execute(
+        text(
+            "SELECT COUNT(*) FROM sys_menu "
+            "WHERE parent_id = :pid AND is_deleted = 0"
+        ),
+        {"pid": menu_id},
+    )
+    return int(result.scalar() or 0)
+
+
+def _insert_menu_row(
+    conn,
+    *,
+    menu: dict,
+    menu_code,
+    menu_path,
+    parent_id: int,
+    visible,
+    app_type: str,
+    menu_id: Optional[int] = None,
+) -> int:
+    params = {
+        "parent_id": parent_id,
+        "menu_name": menu["menu_name"],
+        "menu_code": menu_code,
+        "menu_type": menu["menu_type"],
+        "path": menu_path,
+        "component": menu.get("component"),
+        "icon": menu.get("icon"),
+        "sort_order": menu.get("sort_order", 0),
+        "visible": visible,
+        "feature_code": menu.get("feature_code"),
+        "app_type": app_type,
+    }
+    if menu_id is not None:
+        conn.execute(
+            text(
+                "INSERT INTO sys_menu "
+                "(id, parent_id, menu_name, menu_code, menu_type, path, component, "
+                "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
+                "VALUES (:id, :parent_id, :menu_name, :menu_code, :menu_type, :path, "
+                ":component, :icon, :sort_order, :visible, 1, :app_type, :feature_code, 0)"
+            ),
+            {"id": menu_id, **params},
+        )
+        return menu_id
+
+    conn.execute(
+        text(
+            "INSERT INTO sys_menu "
+            "(parent_id, menu_name, menu_code, menu_type, path, component, "
+            "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
+            "VALUES (:parent_id, :menu_name, :menu_code, :menu_type, :path, "
+            ":component, :icon, :sort_order, :visible, 1, :app_type, :feature_code, 0)"
+        ),
+        params,
+    )
+    result = conn.execute(text("SELECT LAST_INSERT_ID()"))
+    return int(result.scalar())
 
 
 def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui", app_type: str = "client"):
@@ -291,10 +354,42 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui", app_typ
                         )
                     continue
                 if conflict is not None:
+                    # 跨 app_type 的软删墓碑：无活跃子节点时物理删除，释放快照 ID
+                    if (
+                        conflict.app_type != app_type
+                        and int(conflict.is_deleted) == 1
+                        and _count_active_children(conn, int(conflict.id)) == 0
+                    ):
+                        conn.execute(
+                            text("DELETE FROM sys_menu WHERE id = :id"),
+                            {"id": seed_id},
+                        )
+                        print(
+                            f"  清理冲突墓碑: id={seed_id} ({conflict.menu_name}, "
+                            f"app_type={conflict.app_type})"
+                        )
+                        conflict = None
+
+                if conflict is not None and conflict.app_type != app_type:
+                    print(
+                        f"  [WARN] seed id={seed_id} ('{menu['menu_name']}') 被 "
+                        f"{conflict.app_type} 菜单占用(id={conflict.id}, "
+                        f"is_deleted={conflict.is_deleted})，改用自增 ID 插入"
+                    )
+                    menu_id = _insert_menu_row(
+                        conn,
+                        menu=menu,
+                        menu_code=menu_code,
+                        menu_path=menu_path,
+                        parent_id=parent_id,
+                        visible=visible,
+                        app_type=app_type,
+                    )
+                elif conflict is not None:
                     fix_hint = (
                         "请先执行: python backend/scripts/fix/fix_client_menu_v2.py"
                         if app_type == "client"
-                        else "请人工排查并清理 sys_menu 表中该 ID 的占用记录后重跑"
+                        else "请先执行: python -m scripts.fix.fix_platform_menu_id_conflicts"
                     )
                     raise RuntimeError(
                         f"\n[ERROR] seed id={seed_id} ('{menu['menu_name']}', app_type={app_type}) 已被现有记录占用："
@@ -302,55 +397,27 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui", app_typ
                         f"app_type={conflict.app_type} is_deleted={conflict.is_deleted}"
                         f"\n        {fix_hint}"
                     )
-                conn.execute(
-                    text(
-                        "INSERT INTO sys_menu "
-                        "(id, parent_id, menu_name, menu_code, menu_type, path, component, "
-                        "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
-                        "VALUES (:id, :parent_id, :menu_name, :menu_code, :menu_type, :path, "
-                        ":component, :icon, :sort_order, :visible, 1, :app_type, :feature_code, 0)"
-                    ),
-                    {
-                        "id": seed_id,
-                        "parent_id": parent_id,
-                        "menu_name": menu["menu_name"],
-                        "menu_code": menu_code,
-                        "menu_type": menu["menu_type"],
-                        "path": menu_path,
-                        "component": menu.get("component"),
-                        "icon": menu.get("icon"),
-                        "sort_order": menu.get("sort_order", 0),
-                        "visible": visible,
-                        "feature_code": menu.get("feature_code"),
-                        "app_type": app_type,
-                    },
-                )
-                menu_id = seed_id
+                else:
+                    menu_id = _insert_menu_row(
+                        conn,
+                        menu=menu,
+                        menu_code=menu_code,
+                        menu_path=menu_path,
+                        parent_id=parent_id,
+                        visible=visible,
+                        app_type=app_type,
+                        menu_id=seed_id,
+                    )
             else:
-                conn.execute(
-                    text(
-                        "INSERT INTO sys_menu "
-                        "(parent_id, menu_name, menu_code, menu_type, path, component, "
-                        "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
-                        "VALUES (:parent_id, :menu_name, :menu_code, :menu_type, :path, "
-                        ":component, :icon, :sort_order, :visible, 1, :app_type, :feature_code, 0)"
-                    ),
-                    {
-                        "parent_id": parent_id,
-                        "menu_name": menu["menu_name"],
-                        "menu_code": menu_code,
-                        "menu_type": menu["menu_type"],
-                        "path": menu_path,
-                        "component": menu.get("component"),
-                        "icon": menu.get("icon"),
-                        "sort_order": menu.get("sort_order", 0),
-                        "visible": visible,
-                        "feature_code": menu.get("feature_code"),
-                        "app_type": app_type,
-                    },
+                menu_id = _insert_menu_row(
+                    conn,
+                    menu=menu,
+                    menu_code=menu_code,
+                    menu_path=menu_path,
+                    parent_id=parent_id,
+                    visible=visible,
+                    app_type=app_type,
                 )
-                result = conn.execute(text("SELECT LAST_INSERT_ID()"))
-                menu_id = result.scalar()
             print(
                 f"  新增菜单({app_type}): {menu['menu_name']} (id={menu_id}, feature_code={menu.get('feature_code')})"
             )

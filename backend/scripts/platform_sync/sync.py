@@ -176,6 +176,21 @@ def _prefix_client_menu_fix() -> bool:
     return True
 
 
+def _prefix_platform_menu_fix() -> bool:
+    """platform 菜单 seed 前清理跨 app_type 的 ID 冲突（幂等）。"""
+    print("\n[FIX] 预清理 platform 菜单 ID 冲突 (fix_platform_menu_id_conflicts)")
+    try:
+        from scripts.fix.fix_platform_menu_id_conflicts import run_fix
+    except Exception as e:  # pragma: no cover
+        print(f"  [WARN] 无法导入 fix_platform_menu_id_conflicts: {e!r}，跳过预清理")
+        return True
+    try:
+        run_fix(dry_run=False)
+    except Exception as e:  # pragma: no cover
+        print(f"  [WARN] fix_platform_menu_id_conflicts 执行失败: {e!r}，将继续后续 seed")
+    return True
+
+
 def _apply(snapshot_dir: Path) -> bool:
     """
     顺序执行 seed 脚本；任何一个失败立刻终止。
@@ -193,7 +208,6 @@ def _apply(snapshot_dir: Path) -> bool:
         ("scripts/seed/seed_product_versions.py", []),
         ("scripts/seed/seed_product_features.py", []),
         ("scripts/seed/seed_client_menus.py", ["--app-type", "client", "--force-all"]),
-        ("scripts/seed/seed_client_menus.py", ["--app-type", "platform", "--force-all"]),
     ]
     for script, args in steps:
         rc = _run_seed(script, args)
@@ -206,6 +220,22 @@ def _apply(snapshot_dir: Path) -> bool:
                 file=sys.stderr,
             )
             return False
+
+    _prefix_platform_menu_fix()
+
+    rc = _run_seed(
+        "scripts/seed/seed_client_menus.py",
+        ["--app-type", "platform", "--force-all"],
+    )
+    if rc != 0:
+        label = "scripts/seed/seed_client_menus.py --app-type platform --force-all"
+        print(
+            f"[ERROR] {label} 退出码 {rc}，已中止。\n"
+            f"  目标库可能处于半同步状态：前面已成功的 seed 已 commit；\n"
+            f"  请检查日志后排查具体失败原因，修好之后重跑 sync 即可（幂等）。",
+            file=sys.stderr,
+        )
+        return False
     return True
 
 
