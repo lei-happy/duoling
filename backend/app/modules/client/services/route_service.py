@@ -3,14 +3,28 @@
 """
 
 from datetime import date, datetime, time
+from decimal import Decimal
 from typing import Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.amap.driving_route_client import (
+    AmapDrivingRouteClient,
+    meters_to_km,
+    seconds_to_hours,
+)
 from app.common.exceptions import BizException
+from app.common.route_polyline import encode_route_polyline
+from app.modules.client.models.region.biz_region import BizRegion
 from app.modules.client.models.route import Route
-from app.modules.client.schemas.route import RouteCreate, RouteOut, RouteUpdate
+from app.modules.client.schemas.route import (
+    RouteCreate,
+    RouteDrivingMetricsOut,
+    RouteOut,
+    RouteRegionPointOut,
+    RouteUpdate,
+)
 from app.modules.client.services.billing.standardize_service import (
     RegionResolution,
     StandardizeService,
@@ -160,6 +174,7 @@ class RouteService:
             destination_code=res_d.region_code,
             distance=data.distance,
             estimated_hours=data.estimatedHours,
+            route_polyline=encode_route_polyline(data.routePolyline),
             remark=data.remark,
         )
         db.add(route)
@@ -220,9 +235,88 @@ class RouteService:
             if schema_field in dump:
                 setattr(route, model_field, dump[schema_field])
 
+        region_changed = any(
+            k in dump for k in ("originRegionId", "destinationRegionId")
+        )
+        if dump.get("clearRoutePolyline"):
+            route.route_polyline = None
+        elif "routePolyline" in dump:
+            route.route_polyline = encode_route_polyline(dump.get("routePolyline"))
+        elif region_changed:
+            route.route_polyline = None
+
         await db.flush()
         await db.refresh(route)
         return route
+
+    @staticmethod
+    async def _load_region_coords(
+        db: AsyncSession, region_id: int, *, label: str
+    ) -> tuple[BizRegion, float, float]:
+        result = await db.execute(
+            select(BizRegion).where(
+                BizRegion.id == region_id,
+                BizRegion.is_deleted == 0,
+            )
+        )
+        region = result.scalar_one_or_none()
+        if not region:
+            raise BizException(f"{label}无效或已删除")
+        if region.longitude is None or region.latitude is None:
+            raise BizException(
+                f"{label}「{region.name}」暂无经纬度，请联系管理员同步行政区或手动填写里程"
+            )
+        return region, float(region.longitude), float(region.latitude)
+
+    @staticmethod
+    async def get_driving_metrics(
+        db: AsyncSession,
+        origin_region_id: int,
+        destination_region_id: int,
+    ) -> RouteDrivingMetricsOut:
+        if origin_region_id == destination_region_id:
+            raise BizException("出发地与目的地不能相同")
+
+        origin_region, o_lng, o_lat = await RouteService._load_region_coords(
+            db, origin_region_id, label="出发地"
+        )
+        dest_region, d_lng, d_lat = await RouteService._load_region_coords(
+            db, destination_region_id, label="目的地"
+        )
+
+        res_o = await StandardizeService.resolve_region(
+            db, region_id=origin_region_id
+        )
+        res_d = await StandardizeService.resolve_region(
+            db, region_id=destination_region_id
+        )
+        origin_name = _format_region_path(res_o) or origin_region.name
+        dest_name = _format_region_path(res_d) or dest_region.name
+
+        driving = await AmapDrivingRouteClient().plan_driving_route(
+            Decimal(str(o_lng)),
+            Decimal(str(o_lat)),
+            Decimal(str(d_lng)),
+            Decimal(str(d_lat)),
+        )
+
+        return RouteDrivingMetricsOut(
+            distanceKm=meters_to_km(driving.distance_meters),
+            estimatedHours=seconds_to_hours(driving.duration_seconds),
+            origin=RouteRegionPointOut(
+                regionId=origin_region_id,
+                name=origin_name,
+                longitude=o_lng,
+                latitude=o_lat,
+            ),
+            destination=RouteRegionPointOut(
+                regionId=destination_region_id,
+                name=dest_name,
+                longitude=d_lng,
+                latitude=d_lat,
+            ),
+            polylinePath=driving.polyline_path,
+        )
 
     @staticmethod
     async def delete_route(db: AsyncSession, route_id: int) -> None:

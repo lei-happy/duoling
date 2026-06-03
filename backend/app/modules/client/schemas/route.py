@@ -3,9 +3,29 @@
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
+
+
+class RouteRegionPointOut(BaseModel):
+    regionId: int
+    name: str
+    longitude: float
+    latitude: float
+
+
+class RouteDrivingMetricsOut(BaseModel):
+    distanceKm: float
+    estimatedHours: float
+    origin: RouteRegionPointOut
+    destination: RouteRegionPointOut
+    polylinePath: List[List[float]] = Field(
+        default_factory=list,
+        description="路线折线 [[lng, lat], ...]",
+    )
+    strategy: int = 34
+    source: str = "amap_v5_driving"
 
 
 class RouteCreate(BaseModel):
@@ -16,6 +36,9 @@ class RouteCreate(BaseModel):
     destinationRegionId: int = Field(..., description="目的地 biz_region.id")
     distance: Optional[float] = None
     estimatedHours: Optional[float] = None
+    routePolyline: Optional[List[List[float]]] = Field(
+        None, description="驾车路线折线 [[lng, lat], ...]"
+    )
     remark: Optional[str] = None
 
 
@@ -25,6 +48,12 @@ class RouteUpdate(BaseModel):
     destinationRegionId: Optional[int] = None
     distance: Optional[float] = None
     estimatedHours: Optional[float] = None
+    routePolyline: Optional[List[List[float]]] = Field(
+        None, description="驾车路线折线；起终点变更后应传新折线"
+    )
+    clearRoutePolyline: Optional[bool] = Field(
+        None, description="为 true 时清空已存折线"
+    )
     status: Optional[int] = None
     remark: Optional[str] = None
 
@@ -42,6 +71,7 @@ class RouteOut(BaseModel):
     distance: Optional[float] = None
     estimatedHours: Optional[float] = None
     waypoints: Optional[str] = None
+    polylinePath: List[List[float]] = Field(default_factory=list)
     status: int
     remark: Optional[str] = None
     createdAt: datetime
@@ -50,6 +80,8 @@ class RouteOut(BaseModel):
 
     @classmethod
     def from_model(cls, m) -> "RouteOut":
+        from app.common.route_polyline import decode_route_polyline
+
         return cls(
             id=m.id,
             routeName=m.route_name,
@@ -65,6 +97,7 @@ class RouteOut(BaseModel):
             if m.estimated_hours is not None
             else None,
             waypoints=m.waypoints,
+            polylinePath=decode_route_polyline(getattr(m, "route_polyline", None)),
             status=m.status,
             remark=m.remark,
             createdAt=m.created_at,

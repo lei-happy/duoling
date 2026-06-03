@@ -57,6 +57,9 @@ class Route(TenantModelBase):
     waypoints: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="途经点（JSON数组）"
     )
+    route_polyline: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True, comment="驾车路线折线 JSON：[[lng,lat],...]，供地图预览"
+    )
     status: Mapped[int] = mapped_column(
         SmallInteger, default=1, comment="状态 0-停用 1-正常"
     )

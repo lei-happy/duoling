@@ -1,6 +1,6 @@
 import request from '@/utils/request';
 import type { ApiResult, PageResult } from '@/api';
-import type { Route, RouteParam } from './model';
+import type { Route, RouteDrivingMetrics, RouteParam } from './model';
 
 export async function pageRoutes(params: RouteParam) {
   const res = await request.get<ApiResult<PageResult<Route>>>(
@@ -38,6 +38,22 @@ export async function updateRoute(data: Route) {
   );
   if (res.data.code === 0) {
     return res.data.message;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function getRouteDrivingMetrics(
+  originRegionId: number,
+  destinationRegionId: number
+) {
+  const res = await request.get<ApiResult<RouteDrivingMetrics>>(
+    '/resource/route/driving-metrics',
+    {
+      params: { originRegionId, destinationRegionId }
+    }
+  );
+  if (res.data.code === 0 && res.data.data) {
+    return res.data.data;
   }
   return Promise.reject(new Error(res.data.message));
 }

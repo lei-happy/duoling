@@ -8,6 +8,7 @@ CREATE TABLE `biz_route` (
   `distance` decimal(10,2) DEFAULT NULL COMMENT '距离（公里）',
   `estimated_hours` decimal(5,1) DEFAULT NULL COMMENT '预计耗时（小时）',
   `waypoints` text COLLATE utf8mb4_unicode_ci COMMENT '途经点（JSON数组）',
+  `route_polyline` text COLLATE utf8mb4_unicode_ci COMMENT '驾车路线折线 JSON：[[lng,lat],...]，供地图预览',
   `status` smallint NOT NULL COMMENT '状态 0-停用 1-正常',
   `remark` text COLLATE utf8mb4_unicode_ci COMMENT '备注',
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',

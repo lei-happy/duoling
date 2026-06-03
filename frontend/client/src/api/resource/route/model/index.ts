@@ -13,9 +13,32 @@ export interface Route {
   distance?: number;
   estimatedHours?: number;
   waypoints?: string;
+  /** 已保存的路线折线 [[lng, lat], ...] */
+  polylinePath?: number[][];
+  routePolyline?: number[][];
+  clearRoutePolyline?: boolean;
   status?: number;
   remark?: string;
   createdAt?: string;
+}
+
+export interface RouteRegionPoint {
+  regionId: number;
+  name: string;
+  longitude: number;
+  latitude: number;
+}
+
+export interface RouteDrivingMetrics {
+  distanceKm: number;
+  estimatedHours: number;
+  origin: RouteRegionPoint;
+  destination: RouteRegionPoint;
+  /** 路线折线 [[lng, lat], ...] */
+  polylinePath?: number[][];
+  /** 驾车算路策略，默认 34 高速优先 */
+  strategy?: number;
+  source?: string;
 }
 
 export interface RouteParam extends PageParam {

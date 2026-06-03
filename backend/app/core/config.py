@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     AMAP_SYNC_MAX_CONCURRENT: int = 2
     AMAP_SYNC_REQUEST_DELAY_MS: int = 350
     AMAP_DISTRICT_API_URL: str = "https://restapi.amap.com/v3/config/district"
+    AMAP_DISTANCE_API_URL: str = "https://restapi.amap.com/v3/distance"
+    AMAP_DRIVING_ROUTE_API_URL: str = "https://restapi.amap.com/v5/direction/driving"
 
     # ---- 日志 ----
     LOG_LEVEL: str = "DEBUG"

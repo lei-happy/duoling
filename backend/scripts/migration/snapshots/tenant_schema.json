@@ -4951,6 +4951,15 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "途经点（JSON数组）"
+        },
+        {
+          "name": "route_polyline",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驾车路线折线 JSON：[[lng,lat],...]，供地图预览"
         }
       ],
       "primary_key": [

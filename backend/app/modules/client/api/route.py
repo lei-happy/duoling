@@ -13,7 +13,9 @@ from app.core.dependencies import get_tenant_db, get_current_user
 from app.common.response import success
 from app.common.operation_log import operation_log
 from app.modules.client.schemas.route import (
-    RouteCreate, RouteUpdate, RouteOut,
+    RouteCreate,
+    RouteUpdate,
+    RouteOut,
 )
 from app.modules.client.services.route_service import RouteService
 
@@ -52,6 +54,21 @@ async def list_routes(
 ):
     items = await RouteService.list_routes(db)
     return success(data=[RouteOut.from_model(r).model_dump() for r in items])
+
+
+@router.get("/driving-metrics")
+async def get_route_driving_metrics(
+    originRegionId: int = Query(..., ge=1),
+    destinationRegionId: int = Query(..., ge=1),
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    data = await RouteService.get_driving_metrics(
+        db,
+        origin_region_id=originRegionId,
+        destination_region_id=destinationRegionId,
+    )
+    return success(data=data.model_dump())
 
 
 @router.post("")
