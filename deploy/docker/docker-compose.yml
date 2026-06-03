@@ -56,6 +56,8 @@ services:
       - ALIYUN_ACCESS_KEY_SECRET=${ALIYUN_ACCESS_KEY_SECRET:-}
       - ALIYUN_SMS_SIGN_NAME=${ALIYUN_SMS_SIGN_NAME:-速通互联验证码}
       - ALIYUN_SMS_ENABLED=${ALIYUN_SMS_ENABLED:-true}
+      # 高德 Web 服务 Key（测距、驾车路径等；与前端 VITE_MAP_KEY 不是同一套）
+      - AMAP_WEB_SERVICE_KEY=${AMAP_WEB_SERVICE_KEY:-}
       - LOG_LEVEL=INFO
       - LOG_DIR=logs
       - DOC_ROOT=/app/docs
