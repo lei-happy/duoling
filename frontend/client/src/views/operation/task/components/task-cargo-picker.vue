@@ -212,7 +212,10 @@
                     </span>
                   </div>
                   <div class="cargo-row__action">
-                    <span class="cargo-row__remaining">
+                    <span
+                      v-if="mergedRemainingTotal(mw) > 0"
+                      class="cargo-row__remaining"
+                    >
                       剩
                       <span class="cargo-row__remaining-num">{{
                         mergedRemainingTotal(mw)
@@ -1035,8 +1038,9 @@
     return m.lines.some((c) => pickedQty(c) > 0);
   }
 
+  /** 运单合并行：扣除右侧已选后，仍可再配入的台数 */
   function mergedRemainingTotal(m: MergedWaybillRow): number {
-    return mergedLinesRemaining(m);
+    return m.lines.reduce((s, c) => s + maxIncrementForLine(c), 0);
   }
 
   const groupedCandidates = computed<Group[]>(() => {
