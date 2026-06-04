@@ -49,7 +49,7 @@
             <el-col :span="24">
               <el-form-item prop="originCode">
                 <floating-label
-                  label="请选择出发地"
+                  label="请输入或选择出发地"
                   type="cascader"
                   v-model="originCodes"
                   :cascader-options="regionTree"
@@ -62,7 +62,7 @@
             <el-col :span="24">
               <el-form-item prop="destinationCode">
                 <floating-label
-                  label="请选择目的地"
+                  label="请输入或选择目的地"
                   type="cascader"
                   v-model="destCodes"
                   :cascader-options="regionTree"
@@ -75,7 +75,7 @@
             <el-col :span="24">
               <el-form-item prop="distance">
                 <floating-label
-                  label="里程(km)"
+                  label="请输入里程(公里)"
                   type="input-number"
                   v-model="form.distance"
                   :input-number-min="0"
@@ -87,7 +87,7 @@
             <el-col :span="24">
               <el-form-item prop="estimatedHours">
                 <floating-label
-                  label="预计时长(h)"
+                  label="请输入预计时长(小时)"
                   type="input-number"
                   v-model="form.estimatedHours"
                   :input-number-min="0"
@@ -331,8 +331,28 @@
       !metricsError.value
   );
 
-  const amapSuggestNote =
-    '里程与路线轨迹基于驾车导航、高速优先策略统计，仅供参考，采纳后可写入标准值。';
+  const amapSuggestNote = computed(() => {
+    if (
+      drivingMetrics.value ||
+      metricsLoading.value ||
+      metricsError.value
+    ) {
+      return (
+        '里程与路线轨迹来自高德驾车导航（高速优先）。预计时长按普通重卡估算' +
+        '（私家车导航用时 × 1.30），已考虑货车限速与法规强制休息，仅供参考；' +
+        '采纳后可写入上方标准值。'
+      );
+    }
+    if (showSavedMetricsHint.value) {
+      return (
+        '以下为线路已保存的标准值；修改起终点或点击「重新获取高德建议」' +
+        '可更新里程、路线轨迹及重卡校正后的预计时长。'
+      );
+    }
+    return (
+      '选择起终点后将自动获取里程、路线轨迹，以及按重卡规则校正后的预计时长建议。'
+    );
+  });
 
   const suggestTitle = computed(() => {
     if (drivingMetrics.value) return '高德建议';

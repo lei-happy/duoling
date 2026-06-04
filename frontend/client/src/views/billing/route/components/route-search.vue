@@ -5,7 +5,7 @@
       <el-row :gutter="8">
         <el-col :lg="5" :md="8" :sm="12" :xs="24">
           <floating-label
-            label="起点"
+            label="请输入线路起点"
             type="input"
             v-model.trim="form.originKeyword"
             clearable
@@ -13,7 +13,7 @@
         </el-col>
         <el-col :lg="5" :md="8" :sm="12" :xs="24">
           <floating-label
-            label="终点"
+            label="请输入线路终点"
             type="input"
             v-model.trim="form.destinationKeyword"
             clearable
@@ -22,7 +22,7 @@
         <el-col :lg="4" :md="8" :sm="12" :xs="24">
           <floating-label
             v-model="form.status"
-            label="状态"
+            label="请选择线路状态"
             type="select"
             clearable
           >
@@ -33,7 +33,7 @@
         <el-col :lg="6" :md="12" :sm="24" :xs="24">
           <floating-label
             v-model="form.createdAtRange"
-            label="创建时间"
+            label="请选择创建时间"
             type="date"
             date-type="daterange"
             value-format="YYYY-MM-DD"

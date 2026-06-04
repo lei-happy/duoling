@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.amap.driving_route_client import (
     AmapDrivingRouteClient,
     meters_to_km,
-    seconds_to_hours,
+    truck_estimated_hours_from_drive_seconds,
 )
 from app.common.exceptions import BizException
 from app.common.route_polyline import encode_route_polyline
@@ -302,7 +302,9 @@ class RouteService:
 
         return RouteDrivingMetricsOut(
             distanceKm=meters_to_km(driving.distance_meters),
-            estimatedHours=seconds_to_hours(driving.duration_seconds),
+            estimatedHours=truck_estimated_hours_from_drive_seconds(
+                driving.duration_seconds
+            ),
             origin=RouteRegionPointOut(
                 regionId=origin_region_id,
                 name=origin_name,

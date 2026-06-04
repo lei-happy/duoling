@@ -114,8 +114,10 @@
 
   defineOptions({ name: 'FloatingLabel' });
 
-  /** 需要自动去除的前缀列表 */
-  const LABEL_PREFIXES = ['请输入', '请选择', '请填写', '请选择或输入'];
+  /** 需要自动去除的前缀列表（匹配时按长度降序，避免短前缀误匹配） */
+  const LABEL_PREFIXES = ['请输入', '请选择', '请填写', '请选择或输入', '请输入或选择'].sort(
+    (a, b) => b.length - a.length
+  );
 
   const props = withDefaults(
     defineProps<{

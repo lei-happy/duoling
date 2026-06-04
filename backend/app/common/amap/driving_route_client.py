@@ -180,3 +180,16 @@ def meters_to_km(distance_m: int, *, precision: int = 1) -> float:
 
 def seconds_to_hours(duration_s: int, *, precision: int = 1) -> float:
     return round(duration_s / 3600.0, precision)
+
+
+# 高德驾车为私家车导航；普通重卡预计用时 ≈ 私家车用时 × 该系数（限速更低 + 强制休息）
+TRUCK_HEAVY_DURATION_FACTOR = 1.3
+
+
+def truck_estimated_hours_from_drive_seconds(
+    duration_s: int,
+    *,
+    factor: float = TRUCK_HEAVY_DURATION_FACTOR,
+    precision: int = 1,
+) -> float:
+    return round(duration_s / 3600.0 * factor, precision)
