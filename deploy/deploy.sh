@@ -32,8 +32,12 @@
 #   工具   = backend/scripts/migration/runner.py
 #   流程   = update 时在平台元数据同步之后自动跑：
 #            ① Phase 1: 按 feature.required_tables 给已开通租户补建缺失业务表
+#               （审批中心 approval_manage → 7 张 biz_approval_* 表）
 #            ② Phase 2: 按 versions/ 下迁移文件顺序执行未应用的 ALTER 等不可逆变更
+#               （如 20260610_001~003 审批/组织扩展加列）
+#            ③ 随后 seed_approval_flows.py 下发默认审批模板（草稿，幂等）
 #   事实源 = backend/scripts/migration/versions/*.py，执行记录写入每个租户库的 biz_migration_log
+#   开发环境一键脚本 = backend/scripts/dev/dev_migrate.py（本地 dev 用，prod 走本 deploy 流程）
 #
 # 平台库 schema 自动迁移（v3 新增 / 解决 1054 Unknown column 类事故）:
 #   工具   = backend/migrations/ + backend/scripts/migration/platform_migrate.py
@@ -469,6 +473,28 @@ sync_tenant_dicts() {
     log_info "租户字典数据已同步"
 }
 
+# 审批中心默认流程模板（草稿态，幂等；依赖 biz_approval_flow 表已存在）
+# 必须在 sync_tenant_business_schema 之后：表由 runner Phase1 按 approval_manage.required_tables 创建
+sync_approval_flow_seed() {
+    if [ "${SKIP_APPROVAL_FLOW_SEED:-0}" = "1" ]; then
+        log_warn "已设置 --skip-approval-flow-seed，跳过审批中心默认流程模板下发"
+        return 0
+    fi
+
+    log_info "下发审批中心默认流程模板（草稿，幂等）..."
+    cd "$DEPLOY_DIR"
+    set +e
+    docker compose exec -T backend python scripts/seed/seed_approval_flows.py
+    local rc=$?
+    set -e
+    if [ "$rc" -eq 0 ]; then
+        log_info "[OK] 审批中心默认流程模板已同步（草稿态，需在「审批流程配置」发布后生效）"
+        return 0
+    fi
+    log_warn "审批中心默认流程模板下发返回 $rc（可能租户尚未开通 approval_manage，可忽略）"
+    return 0
+}
+
 # ============================================================
 # 租户业务库 schema 自动迁移
 #
@@ -599,16 +625,46 @@ run_drift_check() {
 }
 
 # 老接口保留，封装为顺序调用（向后兼容旧调用点）
-# 顺序：平台库 schema（alembic）→ 平台元数据 → 租户业务库 schema → 租户字典
+# 顺序：平台库 schema（alembic）→ 平台元数据 → 租户业务库 schema → 审批种子 → 租户字典
 #   0) 平台库表结构必须先升到最新（否则后面写 sys_product_feature 等会失败）
 #   1) 平台再把 feature / version_feature / required_tables 写好
+#      （审批中心：approval_manage 含 7 张 biz_approval_* 表的 required_tables）
 #   2) 租户库再据此补表 + 跑 versioned migration
-#   3) 字典最后灌（依赖 biz_dict 表已存在，core 表本来就有，所以顺序其实无强约束）
+#      （含 20260610_001~003：approval_instance_id / leader_user_id / supervisor_user_id）
+#   3) 审批中心默认流程模板（草稿，seed_approval_flows.py，幂等）
+#   4) 字典最后灌（依赖 biz_dict 表已存在，core 表本来就有，所以顺序其实无强约束）
+#
+# 注意：平台元数据自检失败（如 platform_menu ID 冲突）不应阻断租户 schema 迁移——
+# product_feature / client_menu 往往在 platform_menu 之前已成功写入。
 sync_platform_data() {
-    sync_platform_schema
+    sync_platform_schema || return $?
+
+    set +e
     sync_platform_metadata
+    local meta_rc=$?
+
     sync_tenant_business_schema
+    local tenant_rc=$?
+
+    sync_approval_flow_seed
     sync_tenant_dicts
+    set -e
+
+    if [ "$meta_rc" -ne 0 ]; then
+        log_warn "平台元数据同步未完全成功 (exit=$meta_rc)"
+        log_warn "常见原因：platform_menu ID 被 client 占用（如 data_sync:region）"
+        log_warn "修复：docker compose exec backend python -m scripts.fix.fix_platform_menu_id_conflicts"
+        log_warn "      bash deploy.sh db-sync --auto"
+    fi
+    if [ "$tenant_rc" -ne 0 ]; then
+        log_warn "租户业务库迁移有失败项 (exit=$tenant_rc)，请 bash deploy.sh db-migrate 单独排查"
+    fi
+
+    # 租户表结构比菜单自检差异更关键；metadata 失败时仍让 update 走完服务重启
+    if [ "$tenant_rc" -ne 0 ]; then
+        return $tenant_rc
+    fi
+    return 0
 }
 
 # ============================================================
