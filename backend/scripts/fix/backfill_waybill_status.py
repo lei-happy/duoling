@@ -166,7 +166,7 @@ async def _backfill_tenant(
 async def _list_all_tenants() -> List[str]:
     """从平台库枚举所有未删除的租户。"""
     from app.modules.console.models.tenant.tenant import Tenant
-    db_manager._get_or_create_platform_engine()
+    await db_manager.init_platform_db()
     factory = db_manager._platform_session_factory
     async with factory() as db:
         r = await db.execute(
@@ -194,19 +194,24 @@ async def main_async() -> None:
     if args.statuses:
         statuses = [int(s) for s in args.statuses.split(",") if s.strip()]
 
-    if args.all:
-        codes = await _list_all_tenants()
-        for code in codes:
+    try:
+        if args.all:
+            codes = await _list_all_tenants()
+            for code in codes:
+                await _backfill_tenant(
+                    code, dry_run=args.dry_run, limit=args.limit, statuses=statuses,
+                )
+        else:
             await _backfill_tenant(
-                code, dry_run=args.dry_run, limit=args.limit, statuses=statuses,
+                args.tenant_code,
+                dry_run=args.dry_run,
+                limit=args.limit,
+                statuses=statuses,
             )
-    else:
-        await _backfill_tenant(
-            args.tenant_code,
-            dry_run=args.dry_run,
-            limit=args.limit,
-            statuses=statuses,
-        )
+    finally:
+        # 脚本退出前释放连接池，避免 Windows 下 asyncio 事件循环关闭后
+        # aiomysql Connection.__del__ 触发 RuntimeError: Event loop is closed
+        await db_manager.close_all()
 
 
 if __name__ == "__main__":

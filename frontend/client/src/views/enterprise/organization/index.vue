@@ -93,6 +93,13 @@
       slot: 'organizationType'
     },
     {
+      prop: 'leader',
+      label: '部门负责人',
+      minWidth: 110,
+      align: 'center',
+      formatter: (row) => row.leader || '—'
+    },
+    {
       prop: 'sortNumber',
       label: '排序号',
       minWidth: 100,

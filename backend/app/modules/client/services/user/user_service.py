@@ -122,7 +122,12 @@ class BizUserService:
         for u in users:
             roles = await BizUserService._get_user_roles(db, u.id)
             dept_name = await BizUserService._get_dept_name(db, u.department_id)
-            items.append(BizUserOut.from_model(u, roles=roles, dept_name=dept_name))
+            supervisor_name = await BizUserService._get_user_name(db, u.supervisor_user_id)
+            items.append(
+                BizUserOut.from_model(
+                    u, roles=roles, dept_name=dept_name, supervisor_name=supervisor_name
+                )
+            )
 
         return {
             "list": [item.model_dump() for item in items],
@@ -162,7 +167,12 @@ class BizUserService:
         for u in users:
             roles = await BizUserService._get_user_roles(db, u.id)
             dept_name = await BizUserService._get_dept_name(db, u.department_id)
-            items.append(BizUserOut.from_model(u, roles=roles, dept_name=dept_name).model_dump())
+            supervisor_name = await BizUserService._get_user_name(db, u.supervisor_user_id)
+            items.append(
+                BizUserOut.from_model(
+                    u, roles=roles, dept_name=dept_name, supervisor_name=supervisor_name
+                ).model_dump()
+            )
         return items
 
     @staticmethod
@@ -180,7 +190,10 @@ class BizUserService:
 
         roles = await BizUserService._get_user_roles(db, user.id)
         dept_name = await BizUserService._get_dept_name(db, user.department_id)
-        return BizUserOut.from_model(user, roles=roles, dept_name=dept_name).model_dump()
+        supervisor_name = await BizUserService._get_user_name(db, user.supervisor_user_id)
+        return BizUserOut.from_model(
+            user, roles=roles, dept_name=dept_name, supervisor_name=supervisor_name
+        ).model_dump()
 
     @staticmethod
     async def _get_dept_and_children_ids(db: AsyncSession, dept_id: int) -> List[int]:
@@ -216,6 +229,60 @@ class BizUserService:
         return result.scalar()
 
     @staticmethod
+    async def _get_user_name(db: AsyncSession, user_id: Optional[int]) -> Optional[str]:
+        """获取用户展示名（昵称优先，回退真实姓名/手机号），用于直属上级回显。"""
+        if not user_id:
+            return None
+        result = await db.execute(
+            select(BizUser).where(
+                BizUser.id == user_id,
+                BizUser.is_deleted == 0,
+            )
+        )
+        u = result.scalar_one_or_none()
+        if not u:
+            return None
+        return u.nickname or u.real_name or u.phone
+
+    @staticmethod
+    async def _validate_supervisor(
+        db: AsyncSession, user_id: Optional[int], supervisor_user_id: Optional[int]
+    ) -> None:
+        """校验直属上级：上级须存在、不能选自己、不能形成汇报环。"""
+        if not supervisor_user_id:
+            return
+        if user_id is not None and supervisor_user_id == user_id:
+            raise BizException("直属上级不能是本人")
+
+        result = await db.execute(
+            select(BizUser.id).where(
+                BizUser.id == supervisor_user_id,
+                BizUser.is_deleted == 0,
+            )
+        )
+        if result.scalar() is None:
+            raise BizException("所选直属上级不存在")
+
+        # 沿汇报线向上回溯，若能走回当前用户则会成环
+        if user_id is None:
+            return
+        visited = set()
+        cursor: Optional[int] = supervisor_user_id
+        while cursor is not None:
+            if cursor == user_id:
+                raise BizException("直属上级设置会形成循环汇报关系")
+            if cursor in visited:
+                break
+            visited.add(cursor)
+            row = await db.execute(
+                select(BizUser.supervisor_user_id).where(
+                    BizUser.id == cursor,
+                    BizUser.is_deleted == 0,
+                )
+            )
+            cursor = row.scalar()
+
+    @staticmethod
     async def _get_user_roles(db: AsyncSession, user_id: int) -> list:
         result = await db.execute(
             select(BizRole)
@@ -244,6 +311,9 @@ class BizUserService:
 
         gender = SEX_TO_GENDER.get(data.sex, 0) if data.sex else 0
 
+        # 新建时尚无 user_id，仅校验上级存在性（无法成环）
+        await BizUserService._validate_supervisor(db, None, data.supervisorUserId)
+
         raw_password = data.password or secrets.token_urlsafe(16)
         user = BizUser(
             phone=data.phone,
@@ -255,6 +325,7 @@ class BizUserService:
             birthday=_parse_birthday_optional(data.birthday),
             user_type=data.userType,
             department_id=data.organizationId,
+            supervisor_user_id=data.supervisorUserId,
             status=data.status,
             remark=data.introduction,
         )
@@ -306,6 +377,9 @@ class BizUserService:
             user.gender = SEX_TO_GENDER.get(data.sex, 0)
         if data.organizationId is not None:
             user.department_id = data.organizationId
+        if "supervisorUserId" in data.model_fields_set:
+            await BizUserService._validate_supervisor(db, user_id, data.supervisorUserId)
+            user.supervisor_user_id = data.supervisorUserId
         if data.userType is not None:
             user.user_type = data.userType
         if data.status is not None:

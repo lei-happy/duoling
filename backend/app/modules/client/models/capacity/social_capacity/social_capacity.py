@@ -86,6 +86,12 @@ class SocialCapacity(TenantModelBase):
         String(500), nullable=True, comment="最近一次审核意见 / 驳回理由"
     )
 
+    approval_instance_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        nullable=True,
+        comment="审批中心实例 id（接入审批引擎后写回；为空表示走旧单级审核）",
+    )
+
     status: Mapped[int] = mapped_column(
         SmallInteger,
         default=0,

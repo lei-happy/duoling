@@ -16,6 +16,12 @@ export interface Organization {
   organizationCode?: string;
   /** 机构类型(字典) */
   organizationType?: string;
+  /** 部门负责人姓名（冗余展示） */
+  leader?: string;
+  /** 部门负责人 user_id（审批中心动态审批人依赖） */
+  leaderUserId?: number;
+  /** 联系电话 */
+  phone?: string;
   /** 排序号 */
   sortNumber?: number;
   /** 备注 */

@@ -36,6 +36,12 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"运费计算 Worker 启动失败（不影响其他服务）：{e!r}")
 
+    # 审批中心：注册各业务模块的审批回调（biz_type -> callback）
+    try:
+        _register_approval_callbacks()
+    except Exception as e:
+        logger.warning(f"审批中心回调注册失败（不影响其他服务）：{e!r}")
+
     logger.info("智途(ZhiTu)后端服务启动完成")
 
     yield
@@ -83,6 +89,15 @@ async def _warn_on_stale_feature_codes() -> None:
         )
     if not orphan and not unbound:
         logger.info("[菜单一致性] 自检通过：feature_code 与产品功能清单完全对齐")
+
+
+def _register_approval_callbacks() -> None:
+    """注册审批中心业务回调。新增场景在此追加一行 register()。"""
+    from app.modules.client.services.capacity.social_capacity.approval_callback import (
+        register as register_social_capacity,
+    )
+
+    register_social_capacity()
 
 
 async def _bootstrap_ai_module() -> None:

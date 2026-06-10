@@ -18,6 +18,7 @@ class BizUserCreate(BaseModel):
     email: Optional[str] = None
     sex: Optional[str] = None
     organizationId: Optional[int] = None
+    supervisorUserId: Optional[int] = None
     userType: int = 2
     roleIds: Optional[List[int]] = None
     status: int = 0
@@ -36,6 +37,7 @@ class BizUserUpdate(BaseModel):
     avatar: Optional[str] = None
     sex: Optional[str] = None
     organizationId: Optional[int] = None
+    supervisorUserId: Optional[int] = None
     userType: Optional[int] = None
     roleIds: Optional[List[int]] = None
     status: Optional[int] = None
@@ -53,6 +55,8 @@ class BizUserOut(BaseModel):
     sexName: Optional[str] = None
     organizationId: Optional[int] = None
     organizationName: Optional[str] = None
+    supervisorUserId: Optional[int] = None
+    supervisorName: Optional[str] = None
     userType: int
     status: int
     introduction: Optional[str] = None
@@ -63,7 +67,13 @@ class BizUserOut(BaseModel):
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_model(cls, m, roles=None, dept_name: Optional[str] = None) -> "BizUserOut":
+    def from_model(
+        cls,
+        m,
+        roles=None,
+        dept_name: Optional[str] = None,
+        supervisor_name: Optional[str] = None,
+    ) -> "BizUserOut":
         gender_map = {0: None, 1: "男", 2: "女"}
         sex_val = gender_map.get(m.gender)
         return cls(
@@ -76,6 +86,8 @@ class BizUserOut(BaseModel):
             sexName=sex_val,
             organizationId=m.department_id,
             organizationName=dept_name,
+            supervisorUserId=m.supervisor_user_id,
+            supervisorName=supervisor_name,
             userType=m.user_type,
             status=m.status,
             introduction=m.remark,

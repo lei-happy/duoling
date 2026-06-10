@@ -54,6 +54,7 @@ from app.modules.client.api.task import (
     task_finance_router,
 )
 from app.modules.client.api.insight.cockpit import router as insight_cockpit_router
+from app.modules.client.api.approval import router as approval_router
 from app.modules.ai.api.client import router as ai_client_router
 
 router = APIRouter()
@@ -183,4 +184,5 @@ router.include_router(
     prefix="/insight/cockpit",
     tags=["客户端-数据洞察-经营驾驶舱"],
 )
+router.include_router(approval_router, prefix="/approval", tags=["客户端-审批中心"])
 router.include_router(ai_client_router, prefix="/ai", tags=["客户端-AI数字员工"])

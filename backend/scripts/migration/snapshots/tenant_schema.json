@@ -665,6 +665,1163 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_approval_cc",
+      "comment": "审批抄送表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "instance_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属实例ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_read",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否已读 0-否 1-是"
+        },
+        {
+          "name": "node_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "触发抄送的节点序号"
+        },
+        {
+          "name": "read_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "已读时间"
+        },
+        {
+          "name": "source",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "来源 1-节点配置 2-审批人手动抄送"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "user_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被抄送人 user_id"
+        },
+        {
+          "name": "user_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被抄送人姓名（冗余）"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "ix_biz_approval_cc_instance_id",
+          "columns": [
+            "instance_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_biz_approval_cc_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_approval_flow",
+      "comment": "审批流程模板表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "allow_withdraw",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否允许发起人撤回 0-否 1-是"
+        },
+        {
+          "name": "biz_type",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "业务场景码，如 social_capacity_audit"
+        },
+        {
+          "name": "condition",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "流程级生效条件（JSON DSL），空=默认"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人"
+        },
+        {
+          "name": "flow_code",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "模板编码（租户内唯一）"
+        },
+        {
+          "name": "flow_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "模板名称"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_default",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否兜底默认模板 0-否 1-是"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "priority",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "100",
+          "comment": "同 biz_type 下匹配优先级（数值小优先）"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-草稿 1-已发布 2-已停用"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "updated_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "更新人"
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "发布版本号"
+        },
+        {
+          "name": "withdraw_scope",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "撤回范围 0-仅首节点未审批前 1-审批中任意时刻"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_approval_flow_node",
+      "comment": "审批流程节点表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "allow_addsign",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否允许加签 0-否 1-是"
+        },
+        {
+          "name": "allow_transfer",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否允许转审 0-否 1-是"
+        },
+        {
+          "name": "approver_config",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人配置（user_ids/role_ids/dept_ids/level 等）"
+        },
+        {
+          "name": "approver_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "审批人类型 1-指定成员 2-指定角色 3-指定部门 4-部门负责人 5-逐级上级 6-发起人自选 7-发起人本人"
+        },
+        {
+          "name": "condition",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "节点级条件（命中才执行），空=总是执行"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "empty_strategy",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "审批人为空策略 1-自动通过 2-转交管理员 3-报错阻断"
+        },
+        {
+          "name": "flow_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属模板ID"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "node_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "节点名称"
+        },
+        {
+          "name": "node_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "节点序号（从1递增）"
+        },
+        {
+          "name": "node_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "节点类型 1-审批节点 2-抄送节点"
+        },
+        {
+          "name": "sign_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "签署方式 1-或签ANY 2-会签ALL 3-依次会签SEQUENTIAL"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "ix_biz_approval_flow_node_flow_id",
+          "columns": [
+            "flow_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_approval_instance",
+      "comment": "审批实例表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "biz_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "业务单据主键"
+        },
+        {
+          "name": "biz_no",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "业务单据展示号（冗余）"
+        },
+        {
+          "name": "biz_type",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "业务场景码"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "current_node_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "当前推进到的节点序号"
+        },
+        {
+          "name": "finished_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "终态时间"
+        },
+        {
+          "name": "flow_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "命中的模板ID"
+        },
+        {
+          "name": "flow_version",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "命中模板的发布版本（冻结）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "initiator_dept_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发起人提交时所属部门（冻结）"
+        },
+        {
+          "name": "initiator_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发起人 user_id"
+        },
+        {
+          "name": "initiator_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发起人姓名（冗余）"
+        },
+        {
+          "name": "instance_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批单号 SP{yyyyMMdd}{NNN}"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "result_comment",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "终态结论（如拒绝原因摘要）"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-审批中 1-已通过 2-已拒绝 3-已撤回"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交时间"
+        },
+        {
+          "name": "summary",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "展示摘要快照（差异化渲染用）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "variables",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交时业务变量（条件/解析用）"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "ix_biz_approval_instance_biz_type",
+          "columns": [
+            "biz_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_biz_approval_instance_initiator_id",
+          "columns": [
+            "initiator_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_approval_instance_node",
+      "comment": "审批实例节点快照表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "allow_addsign",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否允许加签"
+        },
+        {
+          "name": "allow_transfer",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否允许转审"
+        },
+        {
+          "name": "approver_config",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人配置（冻结）"
+        },
+        {
+          "name": "approver_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "审批人类型（冻结）"
+        },
+        {
+          "name": "condition",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "节点条件（冻结）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "empty_strategy",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "空审批人策略（冻结）"
+        },
+        {
+          "name": "finished_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "结束时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "instance_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属实例ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "node_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "节点名称"
+        },
+        {
+          "name": "node_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "节点序号"
+        },
+        {
+          "name": "node_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "节点类型 1-审批 2-抄送"
+        },
+        {
+          "name": "resolved_approver_ids",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "解析后的审批人 user_id 数组（含加签）"
+        },
+        {
+          "name": "sign_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "签署方式（冻结）"
+        },
+        {
+          "name": "started_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开始时间"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-未开始 1-进行中 2-已通过 3-已拒绝 4-已跳过"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "ix_biz_approval_instance_node_instance_id",
+          "columns": [
+            "instance_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_approval_record",
+      "comment": "审批记录（动作流水）表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "action",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "动作 1-提交 2-同意 3-拒绝 4-撤回 5-转审 6-前加签 7-后加签 8-抄送 9-自动通过 10-跳过"
+        },
+        {
+          "name": "attachments",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "附件"
+        },
+        {
+          "name": "comment",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "意见"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "instance_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属实例ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "node_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "发生节点序号（提交=0）"
+        },
+        {
+          "name": "operator_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人 user_id"
+        },
+        {
+          "name": "operator_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人姓名（冗余）"
+        },
+        {
+          "name": "target_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "动作目标（转审给谁/加签给谁）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "ix_biz_approval_record_instance_id",
+          "columns": [
+            "instance_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_approval_task",
+      "comment": "审批任务（待办）表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "acted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理时间"
+        },
+        {
+          "name": "approver_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "approver_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人姓名（冗余）"
+        },
+        {
+          "name": "assign_source",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "来源 1-正常解析 2-转审 3-前加签 4-后加签"
+        },
+        {
+          "name": "attachments",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "附件（url 数组）"
+        },
+        {
+          "name": "comment",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批意见"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "due_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预留：超时时间（SLA）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "instance_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属实例ID"
+        },
+        {
+          "name": "instance_node_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属实例节点ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "node_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "节点序号（冗余）"
+        },
+        {
+          "name": "sign_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "依次会签顺序（或/会签为0）"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-待处理 1-已同意 2-已拒绝 3-已转审失效 4-已跳过"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "ix_biz_approval_task_approver_id",
+          "columns": [
+            "approver_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_biz_approval_task_instance_id",
+          "columns": [
+            "instance_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_biz_approval_task_instance_node_id",
+          "columns": [
+            "instance_node_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_capacity",
       "comment": "运力表（司机-车辆绑定关系）",
       "table_tier": "business",
@@ -2193,7 +3350,16 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "部门负责人"
+          "comment": "部门负责人姓名（冗余展示，解析用 leader_user_id）"
+        },
+        {
+          "name": "leader_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "部门负责人 biz_user.id（审批中心动态审批人「部门负责人」依赖）"
         },
         {
           "name": "parent_id",
@@ -4926,6 +6092,15 @@
           "comment": "路线名称"
         },
         {
+          "name": "route_polyline",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驾车路线折线 JSON：[[lng,lat],...]，供地图预览"
+        },
+        {
           "name": "status",
           "type": "SMALLINT",
           "nullable": false,
@@ -4951,15 +6126,6 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "途经点（JSON数组）"
-        },
-        {
-          "name": "route_polyline",
-          "type": "TEXT",
-          "nullable": true,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "驾车路线折线 JSON：[[lng,lat],...]，供地图预览"
         }
       ],
       "primary_key": [
@@ -4991,6 +6157,15 @@
       "comment": "社会运力主表",
       "table_tier": "business",
       "columns": [
+        {
+          "name": "approval_instance_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批中心实例 id（接入审批引擎后写回；为空表示走旧单级审核）"
+        },
         {
           "name": "approval_remark",
           "type": "VARCHAR(500)",
@@ -8264,6 +9439,15 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "状态 0-正常 1-停用"
+        },
+        {
+          "name": "supervisor_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "直属上级 biz_user.id（汇报线，审批中心动态审批人「逐级上级」依赖）"
         },
         {
           "name": "updated_at",

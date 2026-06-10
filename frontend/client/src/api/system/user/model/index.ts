@@ -30,6 +30,10 @@ export interface User {
   sexName?: string;
   /** 机构名称 */
   organizationName?: string;
+  /** 直属上级用户id（汇报线，审批中心逐级上级依赖） */
+  supervisorUserId?: number;
+  /** 直属上级姓名（列表回显） */
+  supervisorName?: string;
   /** 角色列表 */
   roles?: Role[];
   /** 权限列表 */

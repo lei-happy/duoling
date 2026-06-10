@@ -45,6 +45,11 @@ class BizUser(TenantModelBase):
     department_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="所属部门ID"
     )
+    supervisor_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        nullable=True,
+        comment="直属上级 biz_user.id（汇报线，审批中心动态审批人「逐级上级」依赖）",
+    )
     status: Mapped[int] = mapped_column(
         SmallInteger, default=0, comment="状态 0-正常 1-停用"
     )

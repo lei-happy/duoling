@@ -27,7 +27,12 @@ class BizDepartment(TenantModelBase):
         String(50), nullable=True, comment="部门类型（字典 org_type）"
     )
     leader: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True, comment="部门负责人"
+        String(50), nullable=True, comment="部门负责人姓名（冗余展示，解析用 leader_user_id）"
+    )
+    leader_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger,
+        nullable=True,
+        comment="部门负责人 biz_user.id（审批中心动态审批人「部门负责人」依赖）",
     )
     phone: Mapped[Optional[str]] = mapped_column(
         String(20), nullable=True, comment="联系电话"

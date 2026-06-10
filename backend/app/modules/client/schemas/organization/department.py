@@ -16,6 +16,7 @@ class DepartmentCreate(BaseModel):
     organizationCode: Optional[str] = None
     organizationType: Optional[str] = None
     leader: Optional[str] = None
+    leaderUserId: Optional[int] = None
     phone: Optional[str] = None
     sortNumber: int = 0
     comments: Optional[str] = None
@@ -30,6 +31,7 @@ class DepartmentUpdate(BaseModel):
     organizationCode: Optional[str] = None
     organizationType: Optional[str] = None
     leader: Optional[str] = None
+    leaderUserId: Optional[int] = None
     phone: Optional[str] = None
     sortNumber: Optional[int] = None
     status: Optional[int] = None
@@ -44,6 +46,7 @@ class DepartmentOut(BaseModel):
     organizationCode: Optional[str] = None
     organizationType: Optional[str] = None
     leader: Optional[str] = None
+    leaderUserId: Optional[int] = None
     phone: Optional[str] = None
     sortNumber: int
     status: int
@@ -62,6 +65,7 @@ class DepartmentOut(BaseModel):
             organizationCode=m.dept_code,
             organizationType=m.dept_type,
             leader=m.leader,
+            leaderUserId=m.leader_user_id,
             phone=m.phone,
             sortNumber=m.sort_order,
             status=m.status,

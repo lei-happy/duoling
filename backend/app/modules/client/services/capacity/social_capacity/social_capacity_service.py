@@ -1217,7 +1217,79 @@ class SocialCapacityService:
             remark=remark,
             attachment=submit_attachment,
         )
+
+        # 接入审批中心：若已配置 social_capacity_audit 可发布流程，则发起审批引擎实例；
+        # 否则保持旧单级审核（审批工作台直审），保证平滑过渡。
+        await SocialCapacityService._try_start_approval(
+            db, capacity, operator_user_id=operator_user_id
+        )
         return await SocialCapacityService.get_detail(db, capacity.id)
+
+    @staticmethod
+    async def _try_start_approval(
+        db: AsyncSession,
+        capacity: SocialCapacity,
+        operator_user_id: int,
+    ) -> None:
+        """profile_change 提交后，尝试发起审批中心实例（无可用流程则 no-op）。"""
+        from app.modules.client.services.approval.flow_service import (
+            ApprovalFlowService,
+        )
+        from app.modules.client.services.approval.engine import ApprovalEngine
+        from app.modules.client.services.capacity.social_capacity.approval_callback import (
+            BIZ_TYPE_SOCIAL_CAPACITY_AUDIT,
+            SocialCapacityApprovalCallback,
+        )
+        from app.modules.client.models.user.biz_user import BizUser
+
+        variables = {"requestType": "profile_change"}
+        flow = await ApprovalFlowService.match_flow(
+            db, BIZ_TYPE_SOCIAL_CAPACITY_AUDIT, variables
+        )
+        if not flow:
+            return
+
+        dept_id = (
+            await db.execute(
+                select(BizUser.department_id).where(
+                    BizUser.id == operator_user_id,
+                    BizUser.is_deleted == 0,
+                )
+            )
+        ).scalar_one_or_none()
+
+        summary = await SocialCapacityApprovalCallback().build_summary(db, capacity.id)
+        instance = await ApprovalEngine.start(
+            db,
+            biz_type=BIZ_TYPE_SOCIAL_CAPACITY_AUDIT,
+            biz_id=capacity.id,
+            biz_no=capacity.social_code,
+            variables=variables,
+            summary=summary,
+            initiator_id=operator_user_id,
+            initiator_dept_id=dept_id,
+        )
+        capacity.approval_instance_id = instance.id
+        await db.flush()
+
+    @staticmethod
+    async def _has_running_approval_instance(
+        db: AsyncSession, capacity: SocialCapacity
+    ) -> bool:
+        """该档案是否有审批中心进行中的实例（用于拦截旧直审入口）。"""
+        if not capacity.approval_instance_id:
+            return False
+        from app.modules.client.models.approval.instance import ApprovalInstance
+
+        status = (
+            await db.execute(
+                select(ApprovalInstance.status).where(
+                    ApprovalInstance.id == capacity.approval_instance_id,
+                    ApprovalInstance.is_deleted == 0,
+                )
+            )
+        ).scalar_one_or_none()
+        return status == 0  # INSTANCE_RUNNING
 
     @staticmethod
     async def withdraw(
@@ -1238,6 +1310,18 @@ class SocialCapacityService:
             raise BizException("社会运力不存在")
         if capacity.approval_status != APPROVAL_PENDING:
             raise BizException("仅待审核状态可撤回")
+
+        # 已接入审批中心：撤回交由引擎处理，on_cancelled 回调负责回写业务状态。
+        if await SocialCapacityService._has_running_approval_instance(db, capacity):
+            from app.modules.client.services.approval.engine import ApprovalEngine
+
+            await ApprovalEngine.withdraw(
+                db,
+                instance_id=capacity.approval_instance_id,
+                operator_id=operator_user_id,
+                reason=remark,
+            )
+            return await SocialCapacityService.get_detail(db, capacity.id)
 
         pending = await SocialCapacityService._get_pending_submit_attachment(
             db, capacity.id
@@ -1336,6 +1420,8 @@ class SocialCapacityService:
             raise BizException("社会运力不存在")
         if capacity.approval_status != APPROVAL_PENDING:
             raise BizException("仅待审核状态可审核通过")
+        if await SocialCapacityService._has_running_approval_instance(db, capacity):
+            raise BizException("该档案已接入审批中心，请在「审批中心 - 我的待办」中处理")
 
         pending = await SocialCapacityService._get_pending_submit_attachment(
             db, capacity.id
@@ -1400,6 +1486,8 @@ class SocialCapacityService:
             raise BizException("社会运力不存在")
         if capacity.approval_status != APPROVAL_PENDING:
             raise BizException("仅待审核状态可驳回")
+        if await SocialCapacityService._has_running_approval_instance(db, capacity):
+            raise BizException("该档案已接入审批中心，请在「审批中心 - 我的待办」中处理")
 
         pending = await SocialCapacityService._get_pending_submit_attachment(
             db, capacity.id

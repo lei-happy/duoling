@@ -69,6 +69,12 @@
             />
           </el-form-item>
           <el-form-item>
+            <user-select
+              v-model="form.leaderUserId"
+              placeholder="请选择部门负责人"
+            />
+          </el-form-item>
+          <el-form-item>
             <floating-label
               label="请输入备注"
               type="input"
@@ -102,6 +108,7 @@
   import { useFormData } from '@/utils/use-form-data';
   import { useDictData } from '@/utils/use-dict-data';
   import OrganizationSelect from './organization-select.vue';
+  import UserSelect from '@/components/UserSelect/index.vue';
   import {
     addOrganization,
     updateOrganization
@@ -139,6 +146,7 @@
     organizationName: '',
     organizationCode: '',
     organizationType: void 0,
+    leaderUserId: void 0,
     sortNumber: void 0,
     comments: ''
   });

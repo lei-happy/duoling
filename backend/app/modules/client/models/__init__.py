@@ -75,6 +75,15 @@ from app.modules.client.models.task import (
     TaskFinanceDoc,
     TaskFinanceItem,
 )
+from app.modules.client.models.approval import (
+    ApprovalFlow,
+    ApprovalFlowNode,
+    ApprovalInstance,
+    ApprovalInstanceNode,
+    ApprovalTask,
+    ApprovalRecord,
+    ApprovalCc,
+)
 
 # ---- Tier 2: Business - AI 数字员工（biz_ai_*） ----
 from app.modules.ai.models.tenant.biz_ai_session import BizAiSession
@@ -133,6 +142,13 @@ __all__ = [
     "TaskLoadingRecordItem",
     "TaskFinanceDoc",
     "TaskFinanceItem",
+    "ApprovalFlow",
+    "ApprovalFlowNode",
+    "ApprovalInstance",
+    "ApprovalInstanceNode",
+    "ApprovalTask",
+    "ApprovalRecord",
+    "ApprovalCc",
     "Capacity",
     "CapacityLog",
     "SocialCapacity",

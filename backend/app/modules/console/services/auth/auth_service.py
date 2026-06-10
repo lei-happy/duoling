@@ -667,6 +667,23 @@ class AuthService:
                 )
                 version_name = pv_r.scalar()
 
+        # client 端补充发起人所属部门（来源租户库 biz_user.department_id），
+        # 供审批中心解析"发起人部门负责人 / 逐级上级"的起点（见 04.组织模型扩展依赖 §2.3）
+        organization_id = None
+        organization_name = None
+        if app_type == "client" and tenant_code:
+            try:
+                organization_id, organization_name = (
+                    await AuthService._get_user_organization(
+                        tenant_code, user.phone
+                    )
+                )
+            except Exception as e:
+                logger.exception(
+                    f"[get_user_info] 获取用户部门失败 "
+                    f"tenant_code={tenant_code} user_id={user_id} err={e!r}"
+                )
+
         gender_map = {0: None, 1: "男", 2: "女"}
         return UserInfoOut(
             userId=user.id,
@@ -680,6 +697,8 @@ class AuthService:
             workplaceConfig=user.workplace_config,
             tenantName=tenant_name,
             systemName=system_name,
+            organizationId=organization_id,
+            organizationName=organization_name,
             userType=user_type,
             menuVersion=menu_version,
             roles=[
@@ -709,6 +728,34 @@ class AuthService:
             versionCode=version_code,
             versionName=version_name,
         )
+
+    @staticmethod
+    async def _get_user_organization(
+        tenant_code: str, phone: str
+    ) -> tuple[Optional[int], Optional[str]]:
+        """查询租户库中该用户的所属部门 ID 与名称（按手机号关联 biz_user）。"""
+        from app.core.database import db_manager
+        from app.modules.client.models.user.biz_user import BizUser
+        from app.modules.client.models.organization.biz_department import BizDepartment
+
+        async for tenant_db in db_manager.get_tenant_session(tenant_code):
+            row = await tenant_db.execute(
+                select(BizUser.department_id).where(
+                    BizUser.phone == phone,
+                    BizUser.is_deleted == 0,
+                )
+            )
+            dept_id = row.scalar()
+            if not dept_id:
+                return None, None
+            name_row = await tenant_db.execute(
+                select(BizDepartment.dept_name).where(
+                    BizDepartment.id == dept_id,
+                    BizDepartment.is_deleted == 0,
+                )
+            )
+            return dept_id, name_row.scalar()
+        return None, None
 
     @staticmethod
     async def _get_user_menus(

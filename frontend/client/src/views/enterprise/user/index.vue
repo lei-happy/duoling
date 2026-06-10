@@ -296,6 +296,13 @@
       formatter: (row: User) => (row.roles || []).map((d) => d.roleName).join()
     },
     {
+      prop: 'supervisorName',
+      label: '直属上级',
+      minWidth: 110,
+      align: 'center',
+      formatter: (row: User) => row.supervisorName || '-'
+    },
+    {
       prop: 'createTime',
       label: '创建时间',
       sortable: 'custom',

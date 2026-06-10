@@ -34,6 +34,22 @@ def _dept_list_order_clauses(sort: Optional[str], order: Optional[str]):
 class DepartmentService:
 
     @staticmethod
+    async def _resolve_user_name(db: AsyncSession, user_id: Optional[int]) -> Optional[str]:
+        """把负责人 user_id 解析成展示用姓名（冗余写回 leader 文本）。"""
+        if not user_id:
+            return None
+        user = (
+            await db.execute(
+                select(BizUser).where(
+                    BizUser.id == user_id, BizUser.is_deleted == 0
+                )
+            )
+        ).scalar_one_or_none()
+        if not user:
+            return None
+        return user.real_name or user.nickname or user.phone
+
+    @staticmethod
     async def _subtree_user_counts(db: AsyncSession) -> Dict[int, int]:
         dept_result = await db.execute(
             select(BizDepartment).where(BizDepartment.is_deleted == 0)
@@ -181,12 +197,18 @@ class DepartmentService:
     async def create_department(
         db: AsyncSession, data: DepartmentCreate
     ) -> BizDepartment:
+        leader_text = data.leader
+        if data.leaderUserId and not leader_text:
+            leader_text = await DepartmentService._resolve_user_name(
+                db, data.leaderUserId
+            )
         dept = BizDepartment(
             parent_id=data.parentId,
             dept_name=data.organizationName,
             dept_code=data.organizationCode,
             dept_type=data.organizationType,
-            leader=data.leader,
+            leader=leader_text,
+            leader_user_id=data.leaderUserId,
             phone=data.phone,
             sort_order=data.sortNumber,
             remark=data.comments,
@@ -216,6 +238,7 @@ class DepartmentService:
             "organizationCode": "dept_code",
             "organizationType": "dept_type",
             "leader": "leader",
+            "leaderUserId": "leader_user_id",
             "phone": "phone",
             "sortNumber": "sort_order",
             "status": "status",
@@ -225,6 +248,12 @@ class DepartmentService:
             val = getattr(data, schema_field, None)
             if val is not None:
                 setattr(dept, model_field, val)
+
+        # 负责人变更时，按 user_id 刷新冗余的 leader 姓名文本
+        if data.leaderUserId is not None:
+            dept.leader = await DepartmentService._resolve_user_name(
+                db, data.leaderUserId
+            )
 
         await db.flush()
         await db.refresh(dept)

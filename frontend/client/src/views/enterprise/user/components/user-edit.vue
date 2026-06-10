@@ -57,6 +57,12 @@
               clearable
             />
           </el-form-item>
+          <el-form-item>
+            <user-select
+              v-model="form.supervisorUserId"
+              placeholder="请选择直属上级"
+            />
+          </el-form-item>
         </el-col>
         <el-col :sm="12" :xs="24">
           <el-form-item prop="phone">
@@ -119,6 +125,7 @@
   import { useDictData } from '@/utils/use-dict-data';
   import RoleSelect from './role-select.vue';
   import OrganizationSelect from '@/views/enterprise/organization/components/organization-select.vue';
+  import UserSelect from '@/components/UserSelect/index.vue';
   import { addUser, updateUser, checkExistence } from '@/api/system/user';
   import type { User } from '@/api/system/user/model';
 
@@ -157,6 +164,7 @@
     introduction: '',
     birthday: '',
     organizationId: props.organizationId,
+    supervisorUserId: void 0,
     status: 0
   });
 

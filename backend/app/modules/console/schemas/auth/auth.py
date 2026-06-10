@@ -123,6 +123,12 @@ class UserInfoOut(BaseModel):
     )
     tenantName: Optional[str] = Field(default=None, description="企业名称")
     systemName: Optional[str] = Field(default=None, description="系统自定义名称（客户端左上角显示）")
+    organizationId: Optional[int] = Field(
+        default=None, description="所属部门ID（client 端，来源 biz_user.department_id）"
+    )
+    organizationName: Optional[str] = Field(
+        default=None, description="所属部门名称（client 端，来源 biz_department.dept_name）"
+    )
     userType: Optional[int] = Field(default=None, description="用户类型 1-管理员 2-用户 3-驾驶员")
     menuVersion: Optional[int] = Field(
         default=None,
