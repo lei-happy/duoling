@@ -540,13 +540,13 @@ def seed_platform_data():
                 ),
                 ProductVersion(
                     version_code="standard", version_name="标准版",
-                    description="完整运输业务能力：basic + 运营调度 + 运力中心（自营/外协/社会三类）+ 计费中心",
+                    description="完整运输业务能力：basic + 运营调度 + 运力中心（自营/外协/社会三类）+ 计费中心 + 审批中心",
                     max_users=20, max_vehicles=100, price="2999/年",
                     sort_order=20, status=1,
                 ),
                 ProductVersion(
                     version_code="pro", version_name="专业版",
-                    description="企业级管理 + 数据分析：standard + 审批中心 + 财务结算（应收/应付三路径/对账中心）+ 数据洞察",
+                    description="企业级管理 + 数据分析：standard + 财务结算（应收/应付三路径/对账中心）+ 数据洞察",
                     max_users=100, max_vehicles=500, price="9999/年",
                     sort_order=30, status=1,
                 ),

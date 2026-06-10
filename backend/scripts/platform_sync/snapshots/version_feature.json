@@ -99,6 +99,8 @@
     "basic_data_dealer",
     "basic_data_region",
     "basic_data_vehicle_brand_series",
+    "approval_config",
+    "approval_manage",
     "billing_contract",
     "billing_route",
     "biz_receipt",
