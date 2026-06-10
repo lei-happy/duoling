@@ -245,6 +245,18 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui", app_typ
                 {"path": menu_path, "pid": parent_id, "app_type": app_type},
             )
             existing_id = result.scalar()
+            # 防御：空 menu_code 的行不要「抢占」同 path 下已有正式 menu_code 的记录
+            # （platform_menu 曾出现 id=812 与 id=811 同 path，后写入的空码行会抹掉 data_sync:region）
+            if existing_id:
+                coded = conn.execute(
+                    text(
+                        "SELECT menu_code FROM sys_menu "
+                        "WHERE id = :id AND is_deleted = 0"
+                    ),
+                    {"id": existing_id},
+                ).scalar()
+                if coded and str(coded).strip():
+                    existing_id = None
 
         if existing_id:
             if mode == "force_all":
