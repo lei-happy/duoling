@@ -15,21 +15,25 @@
           @click="onNodeClick"
         >
           <div class="wf-node-head">
-            <span class="wf-node-title">{{ node.nodeName }}</span>
+            <span class="wf-node-title">{{ node.nodeName || typeLabel }}</span>
             <el-icon
               v-if="node.type !== 'start' && !readonly"
               class="wf-node-del"
+              title="删除节点"
               @click.stop="removeSelf"
             >
               <Close />
             </el-icon>
           </div>
           <div class="wf-node-body">
-            <span v-if="contentText" class="wf-node-content">
-              {{ contentText }}
+            <span
+              v-if="displayText"
+              class="wf-node-content"
+              :class="{ 'is-placeholder': showPlaceholder }"
+            >
+              {{ displayText }}
             </span>
-            <span v-else class="wf-node-placeholder">{{ placeholder }}</span>
-            <el-icon v-if="node.type !== 'start'" class="wf-node-arrow">
+            <el-icon v-if="showArrow" class="wf-node-arrow">
               <ArrowRight />
             </el-icon>
           </div>
@@ -47,7 +51,7 @@
       <div class="wf-branch-wrap">
         <div class="wf-branch-box">
           <button
-            v-if="!readonly"
+            v-if="!readonly && supportsConditionBranch"
             type="button"
             class="wf-add-branch"
             @click="addBranch"
@@ -70,32 +74,37 @@
                   <span class="wf-condition-priority"
                     >优先级{{ index + 1 }}</span
                   >
-                  <el-icon
-                    v-if="!readonly"
-                    class="wf-node-del"
-                    @click.stop="removeBranch(index)"
-                  >
-                    <Close />
-                  </el-icon>
+                  <div v-if="!readonly" class="wf-condition-actions">
+                    <button
+                      v-if="canMoveBranch(index, -1)"
+                      type="button"
+                      class="wf-condition-action"
+                      title="提高优先级"
+                      @click.stop="moveBranch(index, -1)"
+                    >
+                      <el-icon><ArrowLeft /></el-icon>
+                    </button>
+                    <button
+                      v-if="canMoveBranch(index, 1)"
+                      type="button"
+                      class="wf-condition-action"
+                      title="降低优先级"
+                      @click.stop="moveBranch(index, 1)"
+                    >
+                      <el-icon><ArrowRight /></el-icon>
+                    </button>
+                    <el-icon
+                      v-if="!isDefaultBranch(index)"
+                      class="wf-node-del"
+                      title="删除条件"
+                      @click.stop="removeBranch(index)"
+                    >
+                      <Close />
+                    </el-icon>
+                  </div>
                 </div>
                 <div class="wf-condition-body">
                   {{ conditionText(branch) }}
-                </div>
-                <div v-if="!readonly" class="wf-branch-sort">
-                  <span
-                    v-if="index !== 0"
-                    class="wf-sort-btn"
-                    @click.stop="moveBranch(index, -1)"
-                  >
-                    <el-icon><ArrowLeft /></el-icon>
-                  </span>
-                  <span
-                    v-if="index !== (node.conditionNodes || []).length - 1"
-                    class="wf-sort-btn right"
-                    @click.stop="moveBranch(index, 1)"
-                  >
-                    <el-icon><ArrowRight /></el-icon>
-                  </span>
                 </div>
               </div>
               <add-node
@@ -138,7 +147,8 @@
   import {
     createBranch,
     approverSummary,
-    conditionSummary
+    conditionSummary,
+    initiatorSummary
   } from '@/api/approval/transform';
   import { WORKFLOW_CTX } from './context';
   import AddNode from './add-node.vue';
@@ -150,26 +160,65 @@
 
   const ctx = inject(WORKFLOW_CTX);
   const readonly = computed(() => ctx?.readonly ?? false);
+  const supportsConditionBranch = computed(
+    () => ctx?.supportsConditionBranch ?? false
+  );
+  const conditionFields = computed(() => ctx?.conditionFields ?? []);
+
+  const typeLabel = computed(() => {
+    if (node.value?.type === 'start') return '发起人';
+    if (node.value?.type === 'approval') return '审批人';
+    if (node.value?.type === 'cc') return '抄送人';
+    return node.value?.nodeName ?? '';
+  });
 
   const placeholder = computed(() => {
     if (node.value?.type === 'approval') return '请设置审批人';
     if (node.value?.type === 'cc') return '请设置抄送人';
-    return '所有人';
+    return '请设置发起人';
   });
 
   const contentText = computed(() => {
-    if (!node.value) return '';
-    if (node.value.type === 'start') return '所有人';
+    if (!node.value || node.value.type === 'start') return '';
     return approverSummary(node.value);
   });
 
+  const displayText = computed(() => {
+    if (node.value?.type === 'start') return initiatorSummary(node.value);
+    return contentText.value || placeholder.value;
+  });
+
+  const showPlaceholder = computed(() => {
+    if (node.value?.type === 'start') {
+      return displayText.value.startsWith('请设置');
+    }
+    return !contentText.value;
+  });
+
+  const showArrow = computed(() => {
+    if (readonly.value) return false;
+    return node.value?.type === 'start' || node.value?.type === 'approval' || node.value?.type === 'cc';
+  });
+
   const showError = computed(() => {
-    if (!node.value || node.value.type === 'start') return false;
+    if (!node.value) return false;
+    if (node.value.type === 'start') {
+      const type = node.value.initiatorType || 'all';
+      const cfg = node.value.initiatorConfig || {};
+      if (type === 'user') return !cfg.user_ids?.length;
+      if (type === 'role') return !cfg.role_ids?.length;
+      if (type === 'dept') return !cfg.dept_ids?.length;
+      return false;
+    }
     return !approverSummary(node.value);
   });
 
   const onNodeClick = () => {
-    if (!node.value || node.value.type === 'start') return;
+    if (!node.value || readonly.value) return;
+    if (node.value.type === 'start') {
+      ctx?.openStartConfig(node.value);
+      return;
+    }
     ctx?.openNodeConfig(node.value);
   };
 
@@ -178,12 +227,25 @@
   };
 
   const removeSelf = () => {
-    // 用自身的后继替换自己
-    node.value = node.value?.childNode ?? null;
+    if (!node.value || node.value.type === 'start') return;
+    node.value = node.value.childNode ?? null;
   };
 
   // ------- 条件分支操作 -------
-  const conditionText = (b: ConditionBranch) => conditionSummary(b);
+  const branchCount = computed(() => node.value?.conditionNodes?.length ?? 0);
+
+  const isDefaultBranch = (index: number) => index === branchCount.value - 1;
+
+  const canMoveBranch = (index: number, dir: -1 | 1) => {
+    const target = index + dir;
+    if (target < 0 || target >= branchCount.value) return false;
+    // 默认分支（其它情况）不参与排序
+    if (isDefaultBranch(index) || isDefaultBranch(target)) return false;
+    return true;
+  };
+
+  const conditionText = (b: ConditionBranch) =>
+    conditionSummary(b, conditionFields.value);
 
   const branchError = (b: ConditionBranch, index: number) => {
     const isLast = index === (node.value?.conditionNodes || []).length - 1;

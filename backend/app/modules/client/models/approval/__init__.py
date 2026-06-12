@@ -4,6 +4,7 @@ from app.modules.client.models.approval.flow import (
     ApprovalFlow,
     ApprovalFlowNode,
 )
+from app.modules.client.models.approval.flow_version_log import ApprovalFlowVersionLog
 from app.modules.client.models.approval.instance import (
     ApprovalInstance,
     ApprovalInstanceNode,
@@ -17,6 +18,7 @@ from app.modules.client.models.approval.task import (
 __all__ = [
     "ApprovalFlow",
     "ApprovalFlowNode",
+    "ApprovalFlowVersionLog",
     "ApprovalInstance",
     "ApprovalInstanceNode",
     "ApprovalTask",

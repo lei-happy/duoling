@@ -68,6 +68,10 @@ class ApprovalEngine:
         if not flow:
             raise BizException(f"未配置可用的审批流程（场景：{biz_type}）")
 
+        await flow_tree.check_initiator_allowed(
+            db, flow.process_config, initiator_id, initiator_dept_id
+        )
+
         initiator_name = await ApprovalEngine._user_name(db, initiator_id)
         instance = ApprovalInstance(
             instance_no=await ApprovalEngine._gen_instance_no(db),

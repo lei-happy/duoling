@@ -145,6 +145,64 @@ export function bizTypeLabel(bizType?: string): string {
   return BIZ_TYPE_LABELS[bizType] ?? bizType;
 }
 
+/** 审批场景下拉选项 */
+export const BIZ_TYPE_OPTIONS = Object.entries(BIZ_TYPE_LABELS).map(
+  ([value, label]) => ({ value, label })
+);
+
+/** 审批实例状态下拉选项 */
+export const INSTANCE_STATUS_OPTIONS = [
+  { value: INSTANCE_STATUS.RUNNING, label: '审批中' },
+  { value: INSTANCE_STATUS.APPROVED, label: '已通过' },
+  { value: INSTANCE_STATUS.REJECTED, label: '已拒绝' },
+  { value: INSTANCE_STATUS.WITHDRAWN, label: '已撤回' }
+] as const;
+
+/** 审批条件字段（variables 中的 key，供流程画布条件分支下拉选择） */
+export interface BizConditionField {
+  /** variables 字段名 */
+  field: string;
+  /** 展示名 */
+  label: string;
+  /** 值类型 */
+  valueType?: 'number' | 'string' | 'select';
+  /** valueType=select 时的可选值 */
+  options?: Array<{ label: string; value: string | number }>;
+}
+
+/**
+ * 各审批场景可配置的条件字段。
+ * 空数组表示该场景不支持条件分支（画布隐藏「条件分支」入口）。
+ */
+const BIZ_CONDITION_FIELDS: Record<string, BizConditionField[]> = {
+  /** 社会运力准入：无流程内条件分支字段 */
+  social_capacity_audit: [],
+  /** 示例：任务费用类审批（油费/路桥费等，接入业务后启用） */
+  task_finance_expense: [
+    { field: 'oil_fee', label: '油费', valueType: 'number' },
+    { field: 'toll_fee', label: '路桥费', valueType: 'number' },
+    { field: 'total_amount', label: '合计金额', valueType: 'number' }
+  ]
+};
+
+export function getBizConditionFields(bizType?: string): BizConditionField[] {
+  if (!bizType) return [];
+  return BIZ_CONDITION_FIELDS[bizType] ?? [];
+}
+
+/** 场景是否支持条件分支 */
+export function bizSupportsConditionBranch(bizType?: string): boolean {
+  return getBizConditionFields(bizType).length > 0;
+}
+
+export function conditionFieldLabel(
+  bizType: string | undefined,
+  field: string
+): string {
+  const item = getBizConditionFields(bizType).find((f) => f.field === field);
+  return item?.label ?? field;
+}
+
 /**
  * 业务摘要差异化渲染注册表。
  * 不同 biz_type 的 summary 字段不同；默认按 key/value 平铺，

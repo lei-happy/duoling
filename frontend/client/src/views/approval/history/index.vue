@@ -1,49 +1,14 @@
 <template>
   <ele-page>
+    <history-search @search="onSearch" />
     <ele-card :body-style="{ paddingTop: '8px' }">
-      <div class="approval-toolbar">
-        <el-input
-          v-model="keyword"
-          clearable
-          placeholder="搜索单号 / 发起人"
-          style="width: 220px"
-          @keyup.enter="reload(1)"
-          @clear="reload(1)"
-        />
-        <el-select
-          v-model="bizType"
-          clearable
-          placeholder="审批类型"
-          style="width: 180px"
-          @change="reload(1)"
-        >
-          <el-option
-            v-for="t in bizTypeOptions"
-            :key="t.value"
-            :value="t.value"
-            :label="t.label"
-          />
-        </el-select>
-        <el-select
-          v-model="status"
-          clearable
-          placeholder="状态"
-          style="width: 130px"
-          @change="reload(1)"
-        >
-          <el-option :value="0" label="审批中" />
-          <el-option :value="1" label="已通过" />
-          <el-option :value="2" label="已拒绝" />
-          <el-option :value="3" label="已撤回" />
-        </el-select>
-        <el-button type="primary" @click="reload(1)">查询</el-button>
-      </div>
       <ele-pro-table
         ref="tableRef"
         row-key="instanceId"
         :columns="columns"
         :datasource="datasource"
         :show-overflow-tooltip="true"
+        :highlight-current-row="true"
         cache-key="ApprovalHistoryTable"
       >
         <template #status="{ row }">
@@ -52,9 +17,11 @@
           </el-tag>
         </template>
         <template #action="{ row }">
-          <el-link type="primary" :underline="false" @click="openDetail(row)">
-            查看
-          </el-link>
+          <btn-items
+            divider
+            type="link"
+            :items="[{ title: '查看', onClick: () => openDetail(row) }]"
+          />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -68,15 +35,16 @@
 </template>
 
 <script lang="ts" setup>
-  import { onActivated, onMounted, ref } from 'vue';
+  import { onActivated, reactive, ref } from 'vue';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import HistorySearch from '../components/history-search.vue';
   import ApprovalDetailDrawer from '../components/approval-detail-drawer.vue';
   import { listHistory } from '@/api/approval';
-  import type { ApprovalListItem } from '@/api/approval/model';
+  import type { ApprovalListItem, ApprovalListParam } from '@/api/approval/model';
   import { formatDateTime } from '@/utils/date-util';
   import {
     instanceStatusLabel as statusLabel,
@@ -87,16 +55,26 @@
   defineOptions({ name: 'ApprovalHistory' });
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
-  const keyword = ref('');
-  const status = ref<number | undefined>(undefined);
-  const bizType = ref<string | undefined>(undefined);
 
-  const bizTypeOptions = [
-    { value: 'social_capacity_audit', label: '社会运力准入审核' }
-  ];
+  const where = reactive<
+    Pick<ApprovalListParam, 'keyword' | 'bizType' | 'status'>
+  >({
+    keyword: '',
+    bizType: void 0,
+    status: void 0
+  });
 
   const detailVisible = ref(false);
   const detailId = ref<number | undefined>(undefined);
+
+  const onSearch = (
+    payload: Pick<ApprovalListParam, 'keyword' | 'bizType' | 'status'>
+  ) => {
+    where.keyword = payload.keyword ?? '';
+    where.bizType = payload.bizType;
+    where.status = payload.status;
+    tableRef.value?.reload?.({ page: 1 });
+  };
 
   const columns = ref<Columns>([
     { prop: 'title', label: '审批事项', minWidth: 160 },
@@ -140,18 +118,21 @@
     }
   ]);
 
-  const datasource: DatasourceFunction = async ({ pages }) => {
+  const datasource: DatasourceFunction = async ({ page, limit, pages }) => {
+    const p = page ?? (Number(pages?.page) || 1);
+    const l = limit ?? (Number(pages?.limit) || 10);
     const res = await listHistory({
-      keyword: keyword.value || undefined,
-      status: status.value,
-      bizType: bizType.value,
-      ...pages
+      keyword: where.keyword || undefined,
+      status: where.status,
+      bizType: where.bizType,
+      page: p,
+      limit: l
     });
     return { list: res?.list ?? [], count: res?.count ?? 0 };
   };
 
-  const reload = (page?: number) => {
-    tableRef.value?.reload?.(page ? { page } : undefined);
+  const reload = () => {
+    tableRef.value?.reload?.();
   };
 
   const openDetail = (row: ApprovalListItem) => {
@@ -159,14 +140,5 @@
     detailVisible.value = true;
   };
 
-  onMounted(() => reload());
   onActivated(() => reload());
 </script>
-
-<style lang="scss" scoped>
-  .approval-toolbar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-</style>

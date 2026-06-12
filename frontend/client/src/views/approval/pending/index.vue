@@ -1,23 +1,14 @@
 <template>
   <ele-page>
+    <pending-search @search="onSearch" />
     <ele-card :body-style="{ paddingTop: '8px' }">
-      <div class="approval-toolbar">
-        <el-input
-          v-model="keyword"
-          clearable
-          placeholder="搜索单号 / 发起人"
-          style="width: 240px"
-          @keyup.enter="reload(1)"
-          @clear="reload(1)"
-        />
-        <el-button type="primary" @click="reload(1)">查询</el-button>
-      </div>
       <ele-pro-table
         ref="tableRef"
         row-key="instanceId"
         :columns="columns"
         :datasource="datasource"
         :show-overflow-tooltip="true"
+        :highlight-current-row="true"
         cache-key="ApprovalPendingTable"
       >
         <template #status="{ row }">
@@ -47,16 +38,17 @@
 </template>
 
 <script lang="ts" setup>
-  import { onActivated, onMounted, ref } from 'vue';
+  import { onActivated, reactive, ref } from 'vue';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import PendingSearch from '../components/pending-search.vue';
   import ApprovalDetailDrawer from '../components/approval-detail-drawer.vue';
   import ApprovalActionModal from '../components/approval-action-modal.vue';
   import { listPending } from '@/api/approval';
-  import type { ApprovalListItem } from '@/api/approval/model';
+  import type { ApprovalListItem, ApprovalListParam } from '@/api/approval/model';
   import { formatDateTime } from '@/utils/date-util';
   import {
     instanceStatusLabel as statusLabel,
@@ -67,7 +59,10 @@
   defineOptions({ name: 'ApprovalPending' });
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
-  const keyword = ref('');
+
+  const where = reactive<Pick<ApprovalListParam, 'keyword'>>({
+    keyword: ''
+  });
 
   const detailVisible = ref(false);
   const detailId = ref<number | undefined>(undefined);
@@ -75,6 +70,11 @@
   const actionVisible = ref(false);
   const actionMode = ref<'agree' | 'reject'>('agree');
   const actionTaskId = ref<number | undefined>(undefined);
+
+  const onSearch = (payload: Pick<ApprovalListParam, 'keyword'>) => {
+    where.keyword = payload.keyword ?? '';
+    tableRef.value?.reload?.({ page: 1 });
+  };
 
   const columns = ref<Columns>([
     { prop: 'title', label: '审批事项', minWidth: 160 },
@@ -103,16 +103,19 @@
     }
   ]);
 
-  const datasource: DatasourceFunction = async ({ pages }) => {
+  const datasource: DatasourceFunction = async ({ page, limit, pages }) => {
+    const p = page ?? (Number(pages?.page) || 1);
+    const l = limit ?? (Number(pages?.limit) || 10);
     const res = await listPending({
-      keyword: keyword.value || undefined,
-      ...pages
+      keyword: where.keyword || undefined,
+      page: p,
+      limit: l
     });
     return { list: res?.list ?? [], count: res?.count ?? 0 };
   };
 
-  const reload = (page?: number) => {
-    tableRef.value?.reload?.(page ? { page } : undefined);
+  const reload = () => {
+    tableRef.value?.reload?.();
   };
 
   const openDetail = (row: ApprovalListItem) => {
@@ -132,14 +135,5 @@
     { title: '驳回', danger: true, onClick: () => openAction('reject', row) }
   ];
 
-  onMounted(() => reload());
   onActivated(() => reload());
 </script>
-
-<style lang="scss" scoped>
-  .approval-toolbar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-</style>

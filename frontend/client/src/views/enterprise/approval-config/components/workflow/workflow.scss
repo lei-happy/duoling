@@ -34,6 +34,7 @@
     overflow: hidden;
     transition: box-shadow 0.2s;
     position: relative;
+    z-index: 1;
 
     &:hover {
       box-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
@@ -44,7 +45,19 @@
     }
 
     &.is-start {
-      cursor: default;
+      cursor: pointer;
+    }
+
+    &.is-start .wf-node-head {
+      background: var(--wf-start);
+    }
+
+    &.is-approval .wf-node-head {
+      background: var(--wf-approval);
+    }
+
+    &.is-cc .wf-node-head {
+      background: var(--wf-cc);
     }
   }
 
@@ -52,38 +65,36 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 24px;
+    height: 28px;
     padding: 0 12px;
     color: #fff;
     font-size: 12px;
-    line-height: 24px;
-
-    .is-start & {
-      background: var(--wf-start);
-    }
-    .is-approval & {
-      background: var(--wf-approval);
-    }
-    .is-cc & {
-      background: var(--wf-cc);
-    }
+    line-height: 28px;
   }
 
   .wf-node-title {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    font-weight: 500;
   }
 
   .wf-node-del {
     color: #fff;
     cursor: pointer;
-    opacity: 0;
+    font-size: 14px;
+    opacity: 0.65;
     transition: opacity 0.2s;
+    flex-shrink: 0;
+
+    &:hover {
+      opacity: 1;
+    }
   }
+
   .wf-node:hover .wf-node-del,
   .wf-condition:hover .wf-node-del {
-    opacity: 0.85;
+    opacity: 1;
   }
 
   .wf-node-body {
@@ -94,16 +105,17 @@
     padding: 10px 12px;
     font-size: 14px;
     color: #333;
+    background: #fff;
   }
 
   .wf-node-content {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-  }
 
-  .wf-node-placeholder {
-    color: #bbb;
+    &.is-placeholder {
+      color: #bbb;
+    }
   }
 
   .wf-node-arrow {
@@ -112,25 +124,34 @@
     margin-left: 8px;
   }
 
-  /* 加节点按钮 + 连接线 */
+  /* 加节点按钮 + 连接线（竖线贯穿，+ 按钮居中叠在线上） */
   .wf-add-node-btn {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    width: 100%;
+    justify-content: center;
+    position: relative;
+    width: var(--wf-node-w);
+    height: 56px;
     flex-shrink: 0;
-  }
 
-  .wf-add-line {
-    width: 2px;
-    height: 36px;
-    background: var(--wf-line);
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 2px;
+      margin-left: -1px;
+      background: var(--wf-line);
+      z-index: 0;
+    }
   }
 
   .wf-add-circle {
+    position: relative;
+    z-index: 1;
     width: 28px;
     height: 28px;
-    margin: -2px 0 28px;
     border: none;
     border-radius: 50%;
     background: var(--el-color-primary);
@@ -158,13 +179,29 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative;
+    padding-top: 8px;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -48px;
+      left: 50%;
+      width: 2px;
+      height: 48px;
+      margin-left: -1px;
+      background: var(--wf-line);
+    }
 
     .wf-end-circle {
       width: 10px;
       height: 10px;
       border-radius: 50%;
       background: #dbdcdc;
+      position: relative;
+      z-index: 1;
     }
+
     .wf-end-text {
       margin-top: 6px;
       font-size: 14px;
@@ -211,7 +248,6 @@
     background: #f5f5f7;
     padding: 0 32px;
 
-    /* 竖直连接线 */
     &::before {
       content: '';
       position: absolute;
@@ -219,6 +255,7 @@
       left: 50%;
       width: 2px;
       height: 100%;
+      margin-left: -1px;
       background: var(--wf-line);
     }
   }
@@ -235,15 +272,16 @@
   .wf-condition {
     width: var(--wf-node-w);
     background: #fff;
-    border-radius: 6px;
+    border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     cursor: pointer;
-    padding: 10px 12px;
+    overflow: hidden;
     position: relative;
 
     &:hover {
       box-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
     }
+
     &.is-error {
       box-shadow: 0 0 0 1px var(--el-color-danger);
     }
@@ -252,69 +290,70 @@
   .wf-condition-head {
     display: flex;
     align-items: center;
+    height: 28px;
+    padding: 0 12px;
     font-size: 12px;
-    color: #15bc83;
-    margin-bottom: 6px;
+    color: #fff;
+    background: var(--wf-condition);
   }
+
   .wf-condition-title {
     flex: 1;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    font-weight: 500;
   }
+
   .wf-condition-priority {
-    color: #999;
+    color: rgba(255, 255, 255, 0.85);
     margin: 0 8px;
+    font-size: 11px;
+    flex-shrink: 0;
   }
+
+  .wf-condition-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .wf-condition-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+  }
+
   .wf-condition-head .wf-node-del {
-    color: #999;
+    color: #fff;
   }
+
   .wf-condition-body {
+    padding: 10px 12px;
     font-size: 13px;
     color: #666;
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-  }
-  .wf-branch-sort {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    pointer-events: none;
-
-    .wf-sort-btn {
-      pointer-events: auto;
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      left: -10px;
-      width: 20px;
-      height: 20px;
-      background: #fff;
-      border: 1px solid var(--wf-line);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: #666;
-      cursor: pointer;
-
-      &.right {
-        left: auto;
-        right: -10px;
-      }
-      &:hover {
-        color: var(--el-color-primary);
-        border-color: var(--el-color-primary);
-      }
-    }
+    background: #fff;
   }
 
-  /* 分支首尾遮盖线（隐藏多余的横线两端） */
   .wf-cover-line {
     position: absolute;
     width: 50%;
@@ -326,14 +365,17 @@
       top: -2px;
       left: -1px;
     }
+
     &.top-right {
       top: -2px;
       right: -1px;
     }
+
     &.bottom-left {
       bottom: -2px;
       left: -1px;
     }
+
     &.bottom-right {
       bottom: -2px;
       right: -1px;
@@ -347,11 +389,15 @@
     display: flex;
     justify-content: space-around;
   }
+
   .wf-add-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 6px;
+    padding: 0;
+    border: none;
+    background: transparent;
     font-size: 12px;
     color: #333;
     cursor: pointer;
@@ -367,15 +413,19 @@
       color: #fff;
       transition: transform 0.1s;
     }
+
     &.approver .wf-add-item-icon {
       background: #ff943e;
     }
+
     &.notifier .wf-add-item-icon {
       background: #3296fa;
     }
+
     &.condition .wf-add-item-icon {
       background: #15bc83;
     }
+
     &:hover .wf-add-item-icon {
       transform: scale(1.08);
     }
@@ -390,11 +440,13 @@
   width: 100%;
   padding: 4px 0;
 }
+
 .wf-opt-tip {
   float: right;
   color: var(--el-text-color-secondary);
   font-size: 12px;
 }
+
 .wf-rule-row {
   display: flex;
   align-items: center;
@@ -407,10 +459,12 @@
     flex-shrink: 0;
   }
 }
+
 .wf-add-rule {
   width: 100%;
   border-style: dashed;
 }
+
 .wf-rule-tip {
   margin-top: 10px;
   font-size: 12px;

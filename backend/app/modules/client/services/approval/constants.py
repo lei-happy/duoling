@@ -34,8 +34,8 @@ NODE_TYPE_CC = 2
 APPROVER_USER = 1        # 指定成员
 APPROVER_ROLE = 2        # 指定角色
 APPROVER_DEPT = 3        # 指定部门（成员）
-APPROVER_DEPT_LEADER = 4  # 部门负责人（依赖组织扩展，第2期）
-APPROVER_SUPERVISOR = 5   # 逐级上级主管（依赖组织扩展，第2期）
+APPROVER_DEPT_LEADER = 4  # 部门负责人
+APPROVER_SUPERVISOR = 5   # 逐级上级主管
 APPROVER_INITIATOR_PICK = 6  # 发起人自选
 APPROVER_INITIATOR = 7    # 发起人本人
 

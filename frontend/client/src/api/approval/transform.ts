@@ -4,13 +4,161 @@
  * 画布内部节点结构与后端 processConfig 节点保持一致（见 model/index.ts），
  * 转换层主要负责：补默认值、生成稳定 nodeKey、剥离 UI 临时字段、结构校验。
  */
+import { cloneDeep } from 'lodash-es';
+import { getUser } from '@/api/system/user';
 import type {
   CanvasNode,
   CanvasNodeType,
   ConditionBranch,
   FlowNode,
+  InitiatorType,
   ProcessConfig
 } from './model';
+function stripApproverConfig(
+  cfg?: Record<string, any> | null
+): Record<string, any> | null {
+  if (!cfg) return null;
+  const { user_labels, ...rest } = cfg;
+  return rest;
+}
+
+function stripInitiatorConfig(
+  cfg?: Record<string, any> | null
+): Record<string, any> | null {
+  if (!cfg) return null;
+  const { user_labels, ...rest } = cfg;
+  return rest;
+}
+
+/** 深拷贝节点/分支，供配置抽屉编辑草稿使用 */
+export function cloneCanvasNode(node: CanvasNode): CanvasNode {
+  return cloneDeep(node);
+}
+
+export function cloneConditionBranch(branch: ConditionBranch): ConditionBranch {
+  return cloneDeep(branch);
+}
+
+/** 将抽屉草稿写回画布上的原节点（保持 childNode 等结构引用不变） */
+export function applyCanvasNodeDraft(target: CanvasNode, draft: CanvasNode) {
+  target.nodeName = draft.nodeName;
+  if (draft.type === 'start') {
+    target.initiatorType = draft.initiatorType;
+    target.initiatorConfig = draft.initiatorConfig
+      ? cloneDeep(draft.initiatorConfig)
+      : null;
+  }
+  if (draft.type === 'approval' || draft.type === 'cc') {
+    target.approverType = draft.approverType;
+    target.approverConfig = draft.approverConfig
+      ? cloneDeep(draft.approverConfig)
+      : null;
+    target.signType = draft.signType;
+    target.emptyStrategy = draft.emptyStrategy;
+    target.allowTransfer = draft.allowTransfer;
+    target.allowAddsign = draft.allowAddsign;
+  }
+}
+
+export function applyConditionBranchDraft(
+  target: ConditionBranch,
+  draft: ConditionBranch
+) {
+  target.nodeName = draft.nodeName;
+  target.condition = draft.condition ? cloneDeep(draft.condition) : null;
+}
+
+/** 解析成员姓名并写入 user_labels，供画布节点展示 */
+export async function enrichMemberDisplayLabels(root: CanvasNode) {
+  const idSet = new Set<number>();
+  const walk = (node?: CanvasNode | null) => {
+    if (!node) return;
+    if (
+      (node.type === 'approval' || node.type === 'cc') &&
+      node.approverType === 1
+    ) {
+      (node.approverConfig?.user_ids ?? []).forEach((id) => idSet.add(id));
+    }
+    if (node.type === 'start' && node.initiatorType === 'user') {
+      (node.initiatorConfig?.user_ids ?? []).forEach((id) => idSet.add(id));
+    }
+    if (node.type === 'condition') {
+      (node.conditionNodes || []).forEach((b) => walk(b.childNode));
+    }
+    walk(node.childNode);
+  };
+  walk(root);
+  if (!idSet.size) return;
+
+  const labelMap = new Map<number, string>();
+  await Promise.all(
+    [...idSet].map(async (id) => {
+      try {
+        const u = await getUser(id);
+        labelMap.set(id, u.nickname || String(id));
+      } catch {
+        labelMap.set(id, String(id));
+      }
+    })
+  );
+
+  const assignLabels = (cfg: Record<string, any> | null | undefined) => {
+    const ids = cfg?.user_ids ?? [];
+    if (!ids.length) return;
+    cfg!.user_labels = ids.map((id: number) => labelMap.get(id) ?? String(id));
+  };
+
+  const walkAssign = (node?: CanvasNode | null) => {
+    if (!node) return;
+    if (
+      (node.type === 'approval' || node.type === 'cc') &&
+      node.approverType === 1
+    ) {
+      if (!node.approverConfig) node.approverConfig = {};
+      assignLabels(node.approverConfig);
+    }
+    if (node.type === 'start' && node.initiatorType === 'user') {
+      if (!node.initiatorConfig) node.initiatorConfig = {};
+      assignLabels(node.initiatorConfig);
+    }
+    if (node.type === 'condition') {
+      (node.conditionNodes || []).forEach((b) => walkAssign(b.childNode));
+    }
+    walkAssign(node.childNode);
+  };
+  walkAssign(root);
+}
+
+export async function syncMemberLabels(
+  cfg: Record<string, any>,
+  userIds: number[]
+) {
+  if (!userIds.length) {
+    delete cfg.user_labels;
+    return;
+  }
+  const labels = await Promise.all(
+    userIds.map(async (id) => {
+      try {
+        const u = await getUser(id);
+        return u.nickname || String(id);
+      } catch {
+        return String(id);
+      }
+    })
+  );
+  cfg.user_labels = labels;
+}
+
+function memberSummary(cfg: Record<string, any>): string {
+  const ids = cfg.user_ids ?? [];
+  if (!ids.length) return '';
+  const labels = cfg.user_labels as string[] | undefined;
+  if (labels?.length) {
+    return labels.join('、');
+  }
+  return `${ids.length} 名成员`;
+}
 
 /** 审批人类型枚举（对齐后端 constants.py APPROVER_*） */
 export interface ApproverTypeOption {
@@ -23,20 +171,8 @@ export const APPROVER_TYPES: ApproverTypeOption[] = [
   { value: 1, label: '指定成员' },
   { value: 2, label: '指定角色' },
   { value: 3, label: '指定部门' },
-  {
-    value: 4,
-    label: '部门负责人',
-    disabled: true,
-    tip: '依赖组织扩展，第2期生效'
-  },
-  {
-    value: 5,
-    label: '逐级上级主管',
-    disabled: true,
-    tip: '依赖组织扩展，第2期生效'
-  },
-  { value: 6, label: '发起人自选' },
-  { value: 7, label: '发起人本人' }
+  { value: 4, label: '部门负责人' },
+  { value: 5, label: '逐级上级主管' }
 ];
 
 export const SIGN_TYPES = [
@@ -73,6 +209,8 @@ export function createStartNode(): CanvasNode {
     nodeKey: 'start',
     type: 'start',
     nodeName: '发起人',
+    initiatorType: 'all',
+    initiatorConfig: null,
     childNode: null
   };
 }
@@ -180,6 +318,10 @@ export function nodesToTree(nodes: FlowNode[]): CanvasNode {
 function normalizeNode(node: CanvasNode): CanvasNode {
   const n: CanvasNode = { ...node };
   if (!n.nodeKey) n.nodeKey = genKey();
+  if (n.type === 'start') {
+    n.initiatorType = n.initiatorType || 'all';
+    if (n.initiatorType === 'all') n.initiatorConfig = null;
+  }
   if (n.type === 'condition') {
     n.conditionNodes = (n.conditionNodes || []).map((b) => ({
       ...b,
@@ -203,9 +345,16 @@ function stripNode(node: CanvasNode): CanvasNode {
     nodeName: node.nodeName,
     childNode: node.childNode ? stripNode(node.childNode) : null
   };
+  if (node.type === 'start') {
+    base.initiatorType = node.initiatorType || 'all';
+    base.initiatorConfig =
+      base.initiatorType === 'all'
+        ? null
+        : stripInitiatorConfig(node.initiatorConfig);
+  }
   if (node.type === 'approval' || node.type === 'cc') {
     base.approverType = node.approverType;
-    base.approverConfig = node.approverConfig ?? null;
+    base.approverConfig = stripApproverConfig(node.approverConfig);
     base.signType = node.signType;
     base.emptyStrategy = node.emptyStrategy;
     base.allowTransfer = node.allowTransfer;
@@ -223,39 +372,68 @@ function stripNode(node: CanvasNode): CanvasNode {
   return base;
 }
 
+/** 发起人范围摘要文案 */
+export function initiatorSummary(node: CanvasNode): string {
+  const type: InitiatorType = node.initiatorType || 'all';
+  const cfg = node.initiatorConfig || {};
+  if (type === 'all') return '所有人';
+  if (type === 'user') {
+    return cfg.user_ids?.length
+      ? memberSummary(cfg)
+      : '请设置指定成员';
+  }
+  if (type === 'role') {
+    return cfg.role_ids?.length
+      ? `${cfg.role_ids.length} 个指定角色`
+      : '请设置指定角色';
+  }
+  if (type === 'dept') {
+    return cfg.dept_ids?.length
+      ? `${cfg.dept_ids.length} 个指定部门`
+      : '请设置指定部门';
+  }
+  return '所有人';
+}
+
 /** 审批人/抄送人摘要文案 */
 export function approverSummary(node: CanvasNode): string {
   const cfg = node.approverConfig || {};
   switch (node.approverType) {
     case 1:
-      return cfg.user_ids?.length ? `${cfg.user_ids.length} 名成员` : '';
+      return memberSummary(cfg);
     case 2:
       return cfg.role_ids?.length ? `${cfg.role_ids.length} 个角色` : '';
     case 3:
       return cfg.dept_ids?.length ? `${cfg.dept_ids.length} 个部门` : '';
     case 4:
-      return '部门负责人';
-    case 5:
-      return '逐级上级主管';
-    case 6:
-      return '发起人自选';
-    case 7:
-      return '发起人本人';
+      if (cfg.dept_ref === 'initiator' || !cfg.dept_id) {
+        return '发起人部门负责人';
+      }
+      return '指定部门负责人';
+    case 5: {
+      const level = Number(cfg.level ?? 1);
+      return level <= 1 ? '直接上级主管' : `第${level}级上级主管`;
+    }
     default:
       return '';
   }
 }
 
 /** 条件分支摘要文案 */
-export function conditionSummary(branch: ConditionBranch): string {
+export function conditionSummary(
+  branch: ConditionBranch,
+  fieldOptions?: Array<{ field: string; label: string }>
+): string {
   if (!branch.condition || !branch.condition.rules?.length) {
     return '其它条件进入此流程';
   }
+  const labelOf = (field: string) =>
+    fieldOptions?.find((f) => f.field === field)?.label ?? field;
   const opLabel = (op: string) =>
     CONDITION_OPS.find((o) => o.value === op)?.label || op;
   const joiner = branch.condition.logic === 'or' ? ' 或 ' : ' 且 ';
   return branch.condition.rules
-    .map((r) => `${r.field} ${opLabel(r.op)} ${formatValue(r.value)}`)
+    .map((r) => `${labelOf(r.field)} ${opLabel(r.op)} ${formatValue(r.value)}`)
     .join(joiner);
 }
 
@@ -270,6 +448,16 @@ export function validateTree(root: CanvasNode): string[] {
   let hasApproval = false;
   const walk = (node?: CanvasNode | null) => {
     if (!node) return;
+    if (node.type === 'start') {
+      const type = node.initiatorType || 'all';
+      const cfg = node.initiatorConfig || {};
+      if (type === 'user' && !cfg.user_ids?.length)
+        errors.push('发起人未设置指定成员');
+      else if (type === 'role' && !cfg.role_ids?.length)
+        errors.push('发起人未设置指定角色');
+      else if (type === 'dept' && !cfg.dept_ids?.length)
+        errors.push('发起人未设置指定部门');
+    }
     if (node.type === 'approval') {
       hasApproval = true;
       const cfg = node.approverConfig || {};
@@ -280,6 +468,19 @@ export function validateTree(root: CanvasNode): string[] {
         errors.push(`「${name}」未选择审批角色`);
       else if (node.approverType === 3 && !cfg.dept_ids?.length)
         errors.push(`「${name}」未选择审批部门`);
+      else if (
+        node.approverType === 4 &&
+        cfg.dept_ref === 'dept_id' &&
+        !cfg.dept_id
+      )
+        errors.push(`「${name}」未选择目标部门`);
+      else if (
+        node.approverType === 5 &&
+        (!cfg.level || Number(cfg.level) < 1)
+      )
+        errors.push(`「${name}」未设置上级层级`);
+      else if (node.approverType === 6 || node.approverType === 7)
+        errors.push(`「${name}」使用了已停用的审批人类型，请重新选择`);
     }
     if (node.type === 'cc') {
       const cfg = node.approverConfig || {};

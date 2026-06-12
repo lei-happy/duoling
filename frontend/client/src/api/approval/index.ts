@@ -13,7 +13,8 @@ import type {
   FlowOut,
   FlowParam,
   FlowCreateBody,
-  FlowUpdateBody
+  FlowUpdateBody,
+  FlowVersionLog
 } from './model';
 
 const BASE = '/approval';
@@ -153,6 +154,20 @@ export async function publishFlow(flowId: number) {
 export async function disableFlow(flowId: number) {
   const res = await request.post<ApiResult<FlowOut>>(
     `${BASE}/flow/${flowId}/disable`
+  );
+  return unwrap(res);
+}
+
+export async function enableFlow(flowId: number) {
+  const res = await request.post<ApiResult<FlowOut>>(
+    `${BASE}/flow/${flowId}/enable`
+  );
+  return unwrap(res);
+}
+
+export async function listFlowVersionHistory(flowId: number) {
+  const res = await request.get<ApiResult<FlowVersionLog[]>>(
+    `${BASE}/flow/${flowId}/version-history`
   );
   return unwrap(res);
 }

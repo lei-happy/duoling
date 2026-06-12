@@ -1,8 +1,7 @@
 """审批中心 - 审批人解析
 
 把节点「审批人类型 + 配置」动态翻译成具体 user_id 列表。只读组织数据，不写。
-类型 4/5（部门负责人 / 逐级上级）依赖组织模型扩展（第 2 期），当前若字段缺失
-则返回空，由节点 empty_strategy 兜底。
+类型 4/5 依赖部门 leader_user_id 与用户 supervisor_user_id（组织/用户模块维护）。
 
 详见《08.审批中心/01.审批引擎核心设计》§四。
 """
@@ -130,7 +129,6 @@ class ApproverResolver:
     async def _dept_leader(db: AsyncSession, dept_id) -> List[int]:
         if not dept_id:
             return []
-        # 组织扩展（第2期）后才有 leader_user_id；用 getattr 容错
         dept = (
             await db.execute(
                 select(BizDepartment).where(
@@ -138,10 +136,9 @@ class ApproverResolver:
                 )
             )
         ).scalar_one_or_none()
-        if not dept:
+        if not dept or not dept.leader_user_id:
             return []
-        leader_user_id = getattr(dept, "leader_user_id", None)
-        return [leader_user_id] if leader_user_id else []
+        return [dept.leader_user_id]
 
     @staticmethod
     async def _supervisor_chain(
@@ -157,7 +154,7 @@ class ApproverResolver:
                     )
                 )
             ).scalar_one_or_none()
-            sup = getattr(user, "supervisor_user_id", None) if user else None
+            sup = user.supervisor_user_id if user else None
             if not sup or sup in visited:
                 return []
             visited.add(sup)

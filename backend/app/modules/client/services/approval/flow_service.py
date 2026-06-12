@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
 from app.modules.client.models.approval.flow import ApprovalFlow, ApprovalFlowNode
+from app.modules.client.models.approval.flow_version_log import ApprovalFlowVersionLog
 from app.modules.client.schemas.approval.flow import (
     FlowCreate,
     FlowUpdate,
@@ -121,6 +122,9 @@ class ApprovalFlowService:
             flow.remark = data.remark
         if data.processConfig is not None:
             flow.process_config = data.processConfig
+            # 已发布/已停用模板修改流程定义后回到草稿，需重新发布
+            if flow.status in (FLOW_PUBLISHED, FLOW_DISABLED):
+                flow.status = FLOW_DRAFT
         flow.updated_user_id = operator_id
         if data.nodes is not None:
             await ApprovalFlowService._replace_nodes(db, flow_id, data.nodes)
@@ -128,8 +132,12 @@ class ApprovalFlowService:
         return await ApprovalFlowService.get_flow(db, flow_id)
 
     @staticmethod
-    async def publish_flow(db: AsyncSession, flow_id: int) -> FlowOut:
+    async def publish_flow(
+        db: AsyncSession, flow_id: int, operator_id: Optional[int] = None
+    ) -> FlowOut:
         flow = await ApprovalFlowService._get_or_404(db, flow_id)
+        if flow.status == FLOW_PUBLISHED:
+            raise BizException("流程已发布，修改流程定义保存为草稿后请重新发布")
         if flow.process_config:
             # 画布流程：校验树结构
             errors = flow_tree.validate_tree(flow.process_config)
@@ -143,15 +151,81 @@ class ApprovalFlowService:
                 raise BizException("流程至少需要一个审批节点才能发布")
         flow.status = FLOW_PUBLISHED
         flow.version = (flow.version or 0) + 1
+        flow.updated_user_id = operator_id
+        await ApprovalFlowService._write_version_log(
+            db,
+            flow,
+            change_type="publish",
+            operator_id=operator_id,
+            remark="发布流程",
+        )
         await db.flush()
         return await ApprovalFlowService.get_flow(db, flow_id)
 
     @staticmethod
-    async def disable_flow(db: AsyncSession, flow_id: int) -> FlowOut:
+    async def disable_flow(
+        db: AsyncSession, flow_id: int, operator_id: Optional[int] = None
+    ) -> FlowOut:
         flow = await ApprovalFlowService._get_or_404(db, flow_id)
+        if flow.status != FLOW_PUBLISHED:
+            raise BizException("仅已发布的流程可停用")
         flow.status = FLOW_DISABLED
+        flow.updated_user_id = operator_id
+        await ApprovalFlowService._write_version_log(
+            db,
+            flow,
+            change_type="disable",
+            operator_id=operator_id,
+            remark="停用流程",
+        )
         await db.flush()
         return await ApprovalFlowService.get_flow(db, flow_id)
+
+    @staticmethod
+    async def enable_flow(
+        db: AsyncSession, flow_id: int, operator_id: Optional[int] = None
+    ) -> FlowOut:
+        flow = await ApprovalFlowService._get_or_404(db, flow_id)
+        if flow.status != FLOW_DISABLED:
+            raise BizException("仅已停用的流程可启用")
+        flow.status = FLOW_PUBLISHED
+        flow.updated_user_id = operator_id
+        await ApprovalFlowService._write_version_log(
+            db,
+            flow,
+            change_type="enable",
+            operator_id=operator_id,
+            remark="重新启用流程",
+        )
+        await db.flush()
+        return await ApprovalFlowService.get_flow(db, flow_id)
+
+    @staticmethod
+    async def list_version_logs(db: AsyncSession, flow_id: int) -> List[dict]:
+        await ApprovalFlowService._get_or_404(db, flow_id)
+        rows = await db.execute(
+            select(ApprovalFlowVersionLog)
+            .where(
+                ApprovalFlowVersionLog.flow_id == flow_id,
+                ApprovalFlowVersionLog.is_deleted == 0,
+            )
+            .order_by(ApprovalFlowVersionLog.version.desc(), ApprovalFlowVersionLog.id.desc())
+        )
+        items = []
+        for log in rows.scalars().all():
+            items.append(
+                {
+                    "id": log.id,
+                    "flowId": log.flow_id,
+                    "version": log.version,
+                    "changeType": log.change_type,
+                    "snapshot": log.snapshot,
+                    "operatorId": log.operator_id,
+                    "remark": log.remark,
+                    "createdAt": log.created_at.isoformat() if log.created_at else None,
+                }
+            )
+        return items
 
     @staticmethod
     async def delete_flow(db: AsyncSession, flow_id: int) -> None:
@@ -189,7 +263,6 @@ class ApprovalFlowService:
     async def nodes_of(db: AsyncSession, flow_id: int) -> List[ApprovalFlowNode]:
         return await ApprovalFlowService._nodes_of(db, flow_id)
 
-    # ---------------- 内部 ----------------
     @staticmethod
     async def _get_or_404(db: AsyncSession, flow_id: int) -> ApprovalFlow:
         flow = (
@@ -237,3 +310,39 @@ class ApprovalFlowService:
                     allow_addsign=item.allowAddsign,
                 )
             )
+
+    @staticmethod
+    def _flow_snapshot(flow: ApprovalFlow) -> dict:
+        return {
+            "flowName": flow.flow_name,
+            "bizType": flow.biz_type,
+            "flowCode": flow.flow_code,
+            "condition": flow.condition,
+            "priority": flow.priority,
+            "isDefault": flow.is_default,
+            "allowWithdraw": flow.allow_withdraw,
+            "withdrawScope": flow.withdraw_scope,
+            "processConfig": flow.process_config,
+            "remark": flow.remark,
+            "status": flow.status,
+        }
+
+    @staticmethod
+    async def _write_version_log(
+        db: AsyncSession,
+        flow: ApprovalFlow,
+        *,
+        change_type: str,
+        operator_id: Optional[int] = None,
+        remark: Optional[str] = None,
+    ) -> None:
+        db.add(
+            ApprovalFlowVersionLog(
+                flow_id=flow.id,
+                version=flow.version,
+                change_type=change_type,
+                snapshot=ApprovalFlowService._flow_snapshot(flow),
+                operator_id=operator_id,
+                remark=remark,
+            )
+        )

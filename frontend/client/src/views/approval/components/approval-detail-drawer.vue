@@ -19,7 +19,7 @@
         </div>
 
         <el-descriptions :column="2" border size="small" class="mt-2">
-          <el-descriptions-item label="审批类型">
+          <el-descriptions-item label="审批场景">
             {{ bizTypeLabel(detail.bizType) }}
           </el-descriptions-item>
           <el-descriptions-item label="发起人">

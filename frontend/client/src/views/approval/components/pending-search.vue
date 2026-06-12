@@ -1,0 +1,51 @@
+<!-- 待我审批搜索 -->
+<template>
+  <ele-card search-form>
+    <el-form label-width="0" @keyup.enter="search" @submit.prevent="">
+      <el-row :gutter="8">
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+          <floating-label
+            label="请输入单号/发起人"
+            type="input"
+            v-model.trim="form.keyword"
+            clearable
+          />
+        </el-col>
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+          <el-form-item label-width="0px">
+            <btn-items
+              :wrap="false"
+              :items="[
+                { preset: 'search', onClick: () => search() },
+                { preset: 'reset', onClick: () => reset() }
+              ]"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+  </ele-card>
+</template>
+
+<script lang="ts" setup>
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
+  import { useFormData } from '@/utils/use-form-data';
+  import type { ApprovalListParam } from '@/api/approval/model';
+
+  const emit = defineEmits<{
+    (e: 'search', where: Pick<ApprovalListParam, 'keyword'>): void;
+  }>();
+
+  const [form, resetFields] = useFormData<{ keyword: string }>({
+    keyword: ''
+  });
+
+  const search = () => {
+    emit('search', { ...form });
+  };
+
+  const reset = () => {
+    resetFields();
+    search();
+  };
+</script>

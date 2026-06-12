@@ -13,8 +13,11 @@
       "nodeKey": "稳定唯一标识",
       "type": "start" | "approval" | "cc" | "condition",
       "nodeName": "节点名",
+      # start 专有：谁可以发起
+      "initiatorType": "all" | "user" | "role" | "dept",
+      "initiatorConfig": {"user_ids"|"role_ids"|"dept_ids", "include_child"} | None,
       # approval / cc 专有
-      "approverType": 1..7,
+      "approverType": 1..5,
       "approverConfig": {...} | None,
       "signType": 1..3,
       "emptyStrategy": 1..3,
@@ -40,6 +43,7 @@ from typing import Any, Dict, List, Optional
 
 from app.modules.client.services.approval import constants as C
 from app.modules.client.services.approval.condition import eval_condition
+from app.common.exceptions import BizException
 
 # 节点类型（画布树用字符串，区别于实例节点的数值 node_type）
 NODE_TYPE_START = "start"
@@ -137,6 +141,41 @@ def materialize_path(
     return materialized
 
 
+async def check_initiator_allowed(
+    db,
+    process_config: Optional[Dict[str, Any]],
+    initiator_id: int,
+    initiator_dept_id: Optional[int] = None,
+) -> None:
+    """校验发起人是否在 start 节点配置的范围内。"""
+    if not process_config:
+        return
+    root = process_config.get("root") if isinstance(process_config, dict) else None
+    if not root or root.get("type") != NODE_TYPE_START:
+        return
+    itype = root.get("initiatorType") or "all"
+    if itype == "all":
+        return
+    cfg = root.get("initiatorConfig") or {}
+    # 延迟导入避免循环依赖
+    from app.modules.client.services.approval.resolver import ApproverResolver
+
+    if itype == "user":
+        allowed = {int(x) for x in (cfg.get("user_ids") or [])}
+        if initiator_id not in allowed:
+            raise BizException("您无权发起该审批流程")
+    elif itype == "role":
+        allowed = await ApproverResolver._users_by_roles(db, cfg.get("role_ids") or [])
+        if initiator_id not in allowed:
+            raise BizException("您无权发起该审批流程")
+    elif itype == "dept":
+        allowed = await ApproverResolver._users_by_depts(
+            db, cfg.get("dept_ids") or [], bool(cfg.get("include_child", True))
+        )
+        if initiator_id not in allowed:
+            raise BizException("您无权发起该审批流程")
+
+
 def iter_nodes(process_config: Optional[Dict[str, Any]]):
     """遍历树中所有节点（含分支内），用于结构校验、统计审批节点等。"""
     if not process_config:
@@ -176,18 +215,33 @@ def validate_tree(process_config: Optional[Dict[str, Any]]) -> List[str]:
                 errors.append(f"节点标识重复：{key}")
             seen_keys.add(key)
         ntype = node.get("type")
+        if ntype == NODE_TYPE_START:
+            itype = node.get("initiatorType") or "all"
+            cfg = node.get("initiatorConfig") or {}
+            if itype == "user" and not cfg.get("user_ids"):
+                errors.append("发起人未设置指定成员")
+            elif itype == "role" and not cfg.get("role_ids"):
+                errors.append("发起人未设置指定角色")
+            elif itype == "dept" and not cfg.get("dept_ids"):
+                errors.append("发起人未设置指定部门")
         if ntype == NODE_TYPE_APPROVAL:
             has_approval = True
             at = node.get("approverType")
             cfg = node.get("approverConfig") or {}
             name = node.get("nodeName") or "审批节点"
-            # 指定成员/角色/部门 必须选了对象；动态类型(4/5/6/7)无需
-            if at == C.APPROVER_USER and not cfg.get("user_ids"):
+            # 指定成员/角色/部门 必须选了对象；动态类型 4/5 无需额外配置
+            if at in (C.APPROVER_INITIATOR_PICK, C.APPROVER_INITIATOR):
+                errors.append(f"「{name}」使用了已停用的审批人类型，请重新选择")
+            elif at == C.APPROVER_USER and not cfg.get("user_ids"):
                 errors.append(f"「{name}」未选择审批成员")
             elif at == C.APPROVER_ROLE and not cfg.get("role_ids"):
                 errors.append(f"「{name}」未选择审批角色")
             elif at == C.APPROVER_DEPT and not cfg.get("dept_ids"):
                 errors.append(f"「{name}」未选择审批部门")
+            elif at == C.APPROVER_DEPT_LEADER and cfg.get("dept_ref") == "dept_id" and not cfg.get("dept_id"):
+                errors.append(f"「{name}」未选择目标部门")
+            elif at == C.APPROVER_SUPERVISOR and int(cfg.get("level") or 0) < 1:
+                errors.append(f"「{name}」未设置上级层级")
         elif ntype == NODE_TYPE_CONDITION:
             branches = node.get("conditionNodes") or []
             if len(branches) < 2:

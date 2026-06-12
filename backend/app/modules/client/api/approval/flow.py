@@ -76,9 +76,11 @@ async def publish_flow(
     request: Request,
     flow_id: int,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    current_user: TokenData = Depends(get_current_user),
 ):
-    flow = await ApprovalFlowService.publish_flow(db, flow_id)
+    flow = await ApprovalFlowService.publish_flow(
+        db, flow_id, operator_id=current_user.user_id
+    )
     return success(data=flow.model_dump())
 
 
@@ -88,10 +90,36 @@ async def disable_flow(
     request: Request,
     flow_id: int,
     db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    flow = await ApprovalFlowService.disable_flow(
+        db, flow_id, operator_id=current_user.user_id
+    )
+    return success(data=flow.model_dump())
+
+
+@router.post("/{flow_id}/enable")
+@operation_log(module="审批流程配置", action="启用", description="启用审批流程模板")
+async def enable_flow(
+    request: Request,
+    flow_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    flow = await ApprovalFlowService.enable_flow(
+        db, flow_id, operator_id=current_user.user_id
+    )
+    return success(data=flow.model_dump())
+
+
+@router.get("/{flow_id}/version-history")
+async def list_flow_version_history(
+    flow_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    flow = await ApprovalFlowService.disable_flow(db, flow_id)
-    return success(data=flow.model_dump())
+    items = await ApprovalFlowService.list_version_logs(db, flow_id)
+    return success(data=items)
 
 
 @router.delete("/{flow_id}")

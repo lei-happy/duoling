@@ -163,6 +163,9 @@ export interface FlowOut {
 /** 节点类型：start-发起人 approval-审批 cc-抄送 condition-条件路由 */
 export type CanvasNodeType = 'start' | 'approval' | 'cc' | 'condition';
 
+/** 发起人范围：all-所有人 user-指定成员 role-指定角色 dept-指定部门 */
+export type InitiatorType = 'all' | 'user' | 'role' | 'dept';
+
 /** 条件规则（单层 and/or DSL，对齐后端 condition.py） */
 export interface ConditionRule {
   field: string;
@@ -189,6 +192,9 @@ export interface CanvasNode {
   nodeKey: string;
   type: CanvasNodeType;
   nodeName: string;
+  /** start 节点：谁可以发起 */
+  initiatorType?: InitiatorType;
+  initiatorConfig?: Record<string, any> | null;
   // approval / cc
   approverType?: number;
   approverConfig?: Record<string, any> | null;
@@ -228,3 +234,14 @@ export interface FlowCreateBody {
 }
 
 export type FlowUpdateBody = Partial<FlowCreateBody>;
+
+export interface FlowVersionLog {
+  id: number;
+  flowId: number;
+  version: number;
+  changeType: 'publish' | 'disable' | 'enable' | string;
+  snapshot?: Record<string, any> | null;
+  operatorId?: number;
+  remark?: string;
+  createdAt?: string;
+}

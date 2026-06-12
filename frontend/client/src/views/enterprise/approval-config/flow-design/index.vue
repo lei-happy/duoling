@@ -44,20 +44,28 @@
       </div>
     </div>
 
+    <start-config-drawer
+      v-model:visible="startConfigVisible"
+      v-model:node="activeStartNode"
+      @confirm="onStartConfigConfirm"
+    />
     <node-config-drawer
       v-model:visible="configVisible"
       v-model:node="activeNode"
+      @confirm="onNodeConfigConfirm"
     />
     <condition-drawer
       v-model:visible="conditionVisible"
       v-model:branch="activeBranch"
       :is-default="branchIsDefault"
+      :condition-fields="conditionFields"
+      @confirm="onConditionConfirm"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { ref, provide, onMounted } from 'vue';
+  import { ref, provide, onMounted, computed, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { ArrowLeft, ZoomIn, ZoomOut } from '@element-plus/icons-vue';
@@ -65,7 +73,12 @@
   import {
     configToTree,
     treeToConfig,
-    validateTree
+    validateTree,
+    cloneCanvasNode,
+    cloneConditionBranch,
+    applyCanvasNodeDraft,
+    applyConditionBranchDraft,
+    enrichMemberDisplayLabels
   } from '@/api/approval/transform';
   import type {
     CanvasNode,
@@ -73,9 +86,14 @@
     FlowOut
   } from '@/api/approval/model';
   import WorkflowNode from '../components/workflow/workflow-node.vue';
+  import StartConfigDrawer from '../components/workflow/start-config-drawer.vue';
   import NodeConfigDrawer from '../components/workflow/node-config-drawer.vue';
   import ConditionDrawer from '../components/workflow/condition-drawer.vue';
   import { WORKFLOW_CTX } from '../components/workflow/context';
+  import {
+    getBizConditionFields,
+    bizSupportsConditionBranch
+  } from '@/views/approval/constants';
 
   defineOptions({ name: 'EnterpriseApprovalFlowDesign' });
 
@@ -90,20 +108,85 @@
 
   const configVisible = ref(false);
   const activeNode = ref<CanvasNode | null>(null);
+  const nodeDraftTarget = ref<CanvasNode | null>(null);
+  const startConfigVisible = ref(false);
+  const activeStartNode = ref<CanvasNode | null>(null);
+  const startDraftTarget = ref<CanvasNode | null>(null);
   const conditionVisible = ref(false);
   const activeBranch = ref<ConditionBranch | null>(null);
+  const branchDraftTarget = ref<ConditionBranch | null>(null);
   const branchIsDefault = ref(false);
+
+  const conditionFields = computed(() =>
+    getBizConditionFields(flow.value?.bizType)
+  );
+  const supportsConditionBranch = computed(() =>
+    bizSupportsConditionBranch(flow.value?.bizType)
+  );
 
   provide(WORKFLOW_CTX, {
     readonly: false,
+    get bizType() {
+      return flow.value?.bizType;
+    },
+    get supportsConditionBranch() {
+      return supportsConditionBranch.value;
+    },
+    get conditionFields() {
+      return conditionFields.value;
+    },
+    openStartConfig: (node: CanvasNode) => {
+      startDraftTarget.value = node;
+      activeStartNode.value = cloneCanvasNode(node);
+      startConfigVisible.value = true;
+    },
     openNodeConfig: (node: CanvasNode) => {
-      activeNode.value = node;
+      nodeDraftTarget.value = node;
+      activeNode.value = cloneCanvasNode(node);
       configVisible.value = true;
     },
     openCondition: (branch: ConditionBranch, isDefault: boolean) => {
-      activeBranch.value = branch;
+      branchDraftTarget.value = branch;
+      activeBranch.value = cloneConditionBranch(branch);
       branchIsDefault.value = isDefault;
       conditionVisible.value = true;
+    }
+  });
+
+  const onStartConfigConfirm = () => {
+    if (startDraftTarget.value && activeStartNode.value) {
+      applyCanvasNodeDraft(startDraftTarget.value, activeStartNode.value);
+    }
+  };
+
+  const onNodeConfigConfirm = () => {
+    if (nodeDraftTarget.value && activeNode.value) {
+      applyCanvasNodeDraft(nodeDraftTarget.value, activeNode.value);
+    }
+  };
+
+  const onConditionConfirm = () => {
+    if (branchDraftTarget.value && activeBranch.value) {
+      applyConditionBranchDraft(branchDraftTarget.value, activeBranch.value);
+    }
+  };
+
+  watch(configVisible, (v) => {
+    if (!v) {
+      nodeDraftTarget.value = null;
+      activeNode.value = null;
+    }
+  });
+  watch(startConfigVisible, (v) => {
+    if (!v) {
+      startDraftTarget.value = null;
+      activeStartNode.value = null;
+    }
+  });
+  watch(conditionVisible, (v) => {
+    if (!v) {
+      branchDraftTarget.value = null;
+      activeBranch.value = null;
     }
   });
 
@@ -120,6 +203,9 @@
       const data = await getFlow(flowId);
       flow.value = data;
       root.value = configToTree(data.processConfig, data.nodes);
+      if (root.value) {
+        await enrichMemberDisplayLabels(root.value);
+      }
     } catch (e: any) {
       ElMessage.error(e?.message ?? '加载流程失败');
     } finally {
@@ -145,12 +231,17 @@
     }
     saving.value = true;
     try {
+      const wasPublished = Number(flow.value?.status) === 1;
       await updateFlow(flowId, { processConfig: treeToConfig(root.value) });
       if (publish) {
         await publishFlow(flowId);
         ElMessage.success('已保存并发布');
       } else {
-        ElMessage.success('草稿已保存');
+        ElMessage.success(
+          wasPublished
+            ? '草稿已保存，流程已回到草稿状态，请重新发布后生效'
+            : '草稿已保存'
+        );
       }
       await load();
     } catch (e: any) {

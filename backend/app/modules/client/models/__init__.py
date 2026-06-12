@@ -78,6 +78,7 @@ from app.modules.client.models.task import (
 from app.modules.client.models.approval import (
     ApprovalFlow,
     ApprovalFlowNode,
+    ApprovalFlowVersionLog,
     ApprovalInstance,
     ApprovalInstanceNode,
     ApprovalTask,
@@ -144,6 +145,7 @@ __all__ = [
     "TaskFinanceItem",
     "ApprovalFlow",
     "ApprovalFlowNode",
+    "ApprovalFlowVersionLog",
     "ApprovalInstance",
     "ApprovalInstanceNode",
     "ApprovalTask",
