@@ -56,12 +56,18 @@ class ApprovalInstance(TenantModelBase):
     summary: Mapped[Optional[Dict[str, Any]]] = mapped_column(
         JSON, nullable=True, comment="展示摘要快照（差异化渲染用）"
     )
+    process_config: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        JSON, nullable=True, comment="提交时冻结的画布流程定义快照（树/条件分支 JSON）"
+    )
     status: Mapped[int] = mapped_column(
         SmallInteger, default=0, server_default="0",
         comment="状态 0-审批中 1-已通过 2-已拒绝 3-已撤回",
     )
     current_node_order: Mapped[int] = mapped_column(
         Integer, default=0, server_default="0", comment="当前推进到的节点序号"
+    )
+    current_node_key: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True, comment="当前推进到的节点在画布树内的稳定标识"
     )
     result_comment: Mapped[Optional[str]] = mapped_column(
         String(500), nullable=True, comment="终态结论（如拒绝原因摘要）"
@@ -86,6 +92,9 @@ class ApprovalInstanceNode(TenantModelBase):
     )
     node_order: Mapped[int] = mapped_column(
         Integer, nullable=False, comment="节点序号"
+    )
+    node_key: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True, comment="节点在画布树内的稳定标识（线性流程为空）"
     )
     node_type: Mapped[int] = mapped_column(
         SmallInteger, default=1, server_default="1", comment="节点类型 1-审批 2-抄送"

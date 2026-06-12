@@ -896,6 +896,15 @@
           "comment": "同 biz_type 下匹配优先级（数值小优先）"
         },
         {
+          "name": "process_config",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "可视化画布流程定义（树/条件分支 JSON）；空=走旧线性 flow_node"
+        },
+        {
           "name": "remark",
           "type": "VARCHAR(255)",
           "nullable": true,
@@ -1155,6 +1164,15 @@
           "comment": "创建时间"
         },
         {
+          "name": "current_node_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "当前推进到的节点在画布树内的稳定标识"
+        },
+        {
           "name": "current_node_order",
           "type": "INTEGER",
           "nullable": false,
@@ -1243,6 +1261,15 @@
           "autoincrement": null,
           "server_default": "0",
           "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "process_config",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交时冻结的画布流程定义快照（树/条件分支 JSON）"
         },
         {
           "name": "result_comment",
@@ -1424,6 +1451,15 @@
           "autoincrement": null,
           "server_default": "0",
           "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "node_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "节点在画布树内的稳定标识（线性流程为空）"
         },
         {
           "name": "node_name",

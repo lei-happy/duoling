@@ -34,8 +34,9 @@
 #            ① Phase 1: 按 feature.required_tables 给已开通租户补建缺失业务表
 #               （审批中心 approval_manage → 7 张 biz_approval_* 表）
 #            ② Phase 2: 按 versions/ 下迁移文件顺序执行未应用的 ALTER 等不可逆变更
-#               （如 20260610_001~003 审批/组织扩展加列）
-#            ③ 随后 seed_approval_flows.py 下发默认审批模板（草稿，幂等）
+#               （如 20260610_001~003 审批/组织扩展加列、20260612_001 审批画布 process_config 加列）
+#            ③ 随后 seed_approval_flows.py 下发默认审批模板（草稿，幂等），
+#               并 migrate_approval_flows_to_tree.py 把存量线性流程转为画布流程树（幂等）
 #   事实源 = backend/scripts/migration/versions/*.py，执行记录写入每个租户库的 biz_migration_log
 #   开发环境一键脚本 = backend/scripts/dev/dev_migrate.py（本地 dev 用，prod 走本 deploy 流程）
 #
@@ -489,9 +490,22 @@ sync_approval_flow_seed() {
     set -e
     if [ "$rc" -eq 0 ]; then
         log_info "[OK] 审批中心默认流程模板已同步（草稿态，需在「审批流程配置」发布后生效）"
-        return 0
+    else
+        log_warn "审批中心默认流程模板下发返回 $rc（可能租户尚未开通 approval_manage，可忽略）"
     fi
-    log_warn "审批中心默认流程模板下发返回 $rc（可能租户尚未开通 approval_manage，可忽略）"
+
+    # 存量线性流程 → 画布流程树（process_config）转换（幂等：仅填 process_config IS NULL）
+    # 必须在 sync_tenant_business_schema 之后：process_config 等列由 runner 建好才有此列可写
+    log_info "转换存量审批流程为画布流程树（幂等）..."
+    set +e
+    docker compose exec -T backend python scripts/seed/migrate_approval_flows_to_tree.py
+    local conv_rc=$?
+    set -e
+    if [ "$conv_rc" -eq 0 ]; then
+        log_info "[OK] 存量审批流程已转换为画布流程树（无 process_config 的流程才会填充）"
+    else
+        log_warn "存量审批流程转换返回 $conv_rc（引擎/画布对无 process_config 流程已有回退，可忽略）"
+    fi
     return 0
 }
 
@@ -632,6 +646,7 @@ run_drift_check() {
 #   2) 租户库再据此补表 + 跑 versioned migration
 #      （含 20260610_001~003：approval_instance_id / leader_user_id / supervisor_user_id）
 #   3) 审批中心默认流程模板（草稿，seed_approval_flows.py，幂等）
+#      + 存量线性流程转画布树（migrate_approval_flows_to_tree.py，幂等）
 #   4) 字典最后灌（依赖 biz_dict 表已存在，core 表本来就有，所以顺序其实无强约束）
 #
 # 注意：平台元数据自检失败（如 platform_menu ID 冲突）不应阻断租户 schema 迁移——

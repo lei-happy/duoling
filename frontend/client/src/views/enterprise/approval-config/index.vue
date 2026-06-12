@@ -58,13 +58,14 @@
     <flow-edit
       v-model:visible="editVisible"
       :flow-id="editId"
-      @done="reload()"
+      @done="onEditDone"
     />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
   import { onMounted, ref } from 'vue';
+  import { useRouter } from 'vue-router';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
@@ -84,6 +85,7 @@
 
   defineOptions({ name: 'EnterpriseApprovalConfig' });
 
+  const router = useRouter();
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const keyword = ref('');
   const bizType = ref<string | undefined>(undefined);
@@ -127,7 +129,7 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 220,
+      width: 330,
       align: 'center',
       slot: 'action',
       fixed: 'right'
@@ -150,6 +152,14 @@
   const openEdit = (row?: FlowOut) => {
     editId.value = row?.id;
     editVisible.value = true;
+  };
+
+  const onEditDone = (createdId?: number) => {
+    reload();
+    // 新建流程后直接进入画布配置审批流
+    if (createdId) {
+      router.push(`/enterprise/approval-config/flow/${createdId}`);
+    }
   };
 
   const onPublish = (row: FlowOut) => {
@@ -186,8 +196,15 @@
       .catch(() => {});
   };
 
+  const openFlowDesign = (row: FlowOut) => {
+    router.push(`/enterprise/approval-config/flow/${row.id}`);
+  };
+
   const actionItems = (row: FlowOut) => {
-    const items: any[] = [{ title: '编辑', onClick: () => openEdit(row) }];
+    const items: any[] = [
+      { title: '编辑', onClick: () => openEdit(row) },
+      { title: '审批流程配置', onClick: () => openFlowDesign(row) }
+    ];
     if (row.status !== 1) {
       items.push({ title: '发布', onClick: () => onPublish(row) });
     }

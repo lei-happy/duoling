@@ -154,7 +154,57 @@ export interface FlowOut {
   status: number;
   version: number;
   remark?: string;
+  /** 可视化画布流程定义（树/条件分支 JSON） */
+  processConfig?: ProcessConfig | null;
   nodes: FlowNode[];
+}
+
+// ---------------- 画布流程树（条件分支） ----------------
+/** 节点类型：start-发起人 approval-审批 cc-抄送 condition-条件路由 */
+export type CanvasNodeType = 'start' | 'approval' | 'cc' | 'condition';
+
+/** 条件规则（单层 and/or DSL，对齐后端 condition.py） */
+export interface ConditionRule {
+  field: string;
+  op: string;
+  value: any;
+}
+export interface ConditionDSL {
+  logic: 'and' | 'or';
+  rules: ConditionRule[];
+}
+
+/** 条件路由下的一个分支 */
+export interface ConditionBranch {
+  nodeKey: string;
+  nodeName: string;
+  priority: number;
+  /** 空=默认（否则）分支 */
+  condition?: ConditionDSL | null;
+  childNode: CanvasNode | null;
+}
+
+/** 画布节点 */
+export interface CanvasNode {
+  nodeKey: string;
+  type: CanvasNodeType;
+  nodeName: string;
+  // approval / cc
+  approverType?: number;
+  approverConfig?: Record<string, any> | null;
+  signType?: number;
+  emptyStrategy?: number;
+  allowTransfer?: number;
+  allowAddsign?: number;
+  // condition
+  conditionNodes?: ConditionBranch[];
+  // 下一节点 / 条件路由的汇合点
+  childNode: CanvasNode | null;
+}
+
+export interface ProcessConfig {
+  version: number;
+  root: CanvasNode;
 }
 
 export interface FlowParam extends PageParam {
@@ -173,7 +223,8 @@ export interface FlowCreateBody {
   allowWithdraw?: number;
   withdrawScope?: number;
   remark?: string;
-  nodes: FlowNode[];
+  nodes?: FlowNode[];
+  processConfig?: ProcessConfig | null;
 }
 
 export type FlowUpdateBody = Partial<FlowCreateBody>;

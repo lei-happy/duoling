@@ -49,7 +49,10 @@ class FlowCreate(BaseModel):
     allowWithdraw: int = 1
     withdrawScope: int = 1
     remark: Optional[str] = None
-    nodes: List[FlowNodeIn] = []
+    # 旧线性节点（兼容保留，可不传）
+    nodes: Optional[List[FlowNodeIn]] = None
+    # 可视化画布流程定义（树/条件分支 JSON）
+    processConfig: Optional[Dict[str, Any]] = None
 
 
 class FlowUpdate(BaseModel):
@@ -62,6 +65,7 @@ class FlowUpdate(BaseModel):
     withdrawScope: Optional[int] = None
     remark: Optional[str] = None
     nodes: Optional[List[FlowNodeIn]] = None
+    processConfig: Optional[Dict[str, Any]] = None
 
 
 class FlowOut(BaseModel):
@@ -77,6 +81,7 @@ class FlowOut(BaseModel):
     status: int
     version: int
     remark: Optional[str] = None
+    processConfig: Optional[Dict[str, Any]] = None
     createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
     nodes: List[FlowNodeOut] = []
@@ -96,6 +101,7 @@ class FlowOut(BaseModel):
             status=m.status,
             version=m.version,
             remark=m.remark,
+            processConfig=getattr(m, "process_config", None),
             createdAt=m.created_at,
             updatedAt=m.updated_at,
             nodes=[FlowNodeOut.from_model(n) for n in (nodes or [])],

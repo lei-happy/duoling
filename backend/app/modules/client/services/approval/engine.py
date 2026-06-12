@@ -27,6 +27,7 @@ from app.modules.client.models.approval.task import (
     ApprovalCc,
 )
 from app.modules.client.services.approval import constants as C
+from app.modules.client.services.approval import tree as flow_tree
 from app.modules.client.services.approval.condition import eval_condition
 from app.modules.client.services.approval.resolver import ApproverResolver
 from app.modules.client.services.approval.flow_service import ApprovalFlowService
@@ -80,6 +81,7 @@ class ApprovalEngine:
             initiator_dept_id=initiator_dept_id,
             variables=variables,
             summary=summary,
+            process_config=flow.process_config,
             status=C.INSTANCE_RUNNING,
             current_node_order=0,
             submitted_at=datetime.now(),
@@ -88,24 +90,49 @@ class ApprovalEngine:
         await db.flush()
 
         # 冻结节点快照
-        flow_nodes = await ApprovalFlowService.nodes_of(db, flow.id)
-        for n in flow_nodes:
-            db.add(
-                ApprovalInstanceNode(
-                    instance_id=instance.id,
-                    node_order=n.node_order,
-                    node_type=n.node_type,
-                    node_name=n.node_name,
-                    approver_type=n.approver_type,
-                    approver_config=n.approver_config,
-                    sign_type=n.sign_type,
-                    condition=n.condition,
-                    empty_strategy=n.empty_strategy,
-                    allow_transfer=n.allow_transfer,
-                    allow_addsign=n.allow_addsign,
-                    status=C.NODE_NOT_STARTED,
+        if flow.process_config:
+            # 画布流程：按提交变量把条件分支树展开为线性执行路径，再落快照
+            path = flow_tree.materialize_path(flow.process_config, variables)
+            if not path:
+                raise BizException("流程未解析到任何可执行的审批节点")
+            for n in path:
+                db.add(
+                    ApprovalInstanceNode(
+                        instance_id=instance.id,
+                        node_order=n["node_order"],
+                        node_key=n.get("node_key"),
+                        node_type=n["node_type"],
+                        node_name=n["node_name"],
+                        approver_type=n["approver_type"],
+                        approver_config=n["approver_config"],
+                        sign_type=n["sign_type"],
+                        condition=None,  # 分支已在展开时确定，无需运行时再判
+                        empty_strategy=n["empty_strategy"],
+                        allow_transfer=n["allow_transfer"],
+                        allow_addsign=n["allow_addsign"],
+                        status=C.NODE_NOT_STARTED,
+                    )
                 )
-            )
+        else:
+            # 兼容旧线性流程：复制 flow_node 快照
+            flow_nodes = await ApprovalFlowService.nodes_of(db, flow.id)
+            for n in flow_nodes:
+                db.add(
+                    ApprovalInstanceNode(
+                        instance_id=instance.id,
+                        node_order=n.node_order,
+                        node_type=n.node_type,
+                        node_name=n.node_name,
+                        approver_type=n.approver_type,
+                        approver_config=n.approver_config,
+                        sign_type=n.sign_type,
+                        condition=n.condition,
+                        empty_strategy=n.empty_strategy,
+                        allow_transfer=n.allow_transfer,
+                        allow_addsign=n.allow_addsign,
+                        status=C.NODE_NOT_STARTED,
+                    )
+                )
         await db.flush()
 
         await ApprovalEngine._write_record(
@@ -351,6 +378,7 @@ class ApprovalEngine:
         # 正常：进入该节点，生成任务
         nxt.status = C.NODE_RUNNING
         instance.current_node_order = nxt.node_order
+        instance.current_node_key = nxt.node_key
         await db.flush()
         await ApprovalEngine._create_tasks_for_node(db, instance, nxt, approver_ids)
         await db.flush()

@@ -58,6 +58,10 @@ class ApprovalFlow(TenantModelBase):
     remark: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True, comment="备注"
     )
+    process_config: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        JSON, nullable=True,
+        comment="可视化画布流程定义（树/条件分支 JSON）；空=走旧线性 flow_node",
+    )
     created_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="创建人"
     )

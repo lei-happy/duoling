@@ -18,6 +18,7 @@ from app.modules.client.schemas.approval.flow import (
     FlowOut,
 )
 from app.modules.client.services.approval import constants as C
+from app.modules.client.services.approval import tree as flow_tree
 from app.modules.client.services.approval.condition import eval_condition
 
 FLOW_DRAFT = 0
@@ -85,12 +86,15 @@ class ApprovalFlowService:
             status=FLOW_DRAFT,
             version=1,
             remark=data.remark,
+            process_config=data.processConfig,
             created_user_id=operator_id,
             updated_user_id=operator_id,
         )
         db.add(flow)
         await db.flush()
-        await ApprovalFlowService._replace_nodes(db, flow.id, data.nodes)
+        # 兼容：仍允许传旧线性 nodes（画布流程走 process_config，可不传）
+        if data.nodes:
+            await ApprovalFlowService._replace_nodes(db, flow.id, data.nodes)
         await db.flush()
         return await ApprovalFlowService.get_flow(db, flow.id)
 
@@ -115,6 +119,8 @@ class ApprovalFlowService:
             flow.withdraw_scope = data.withdrawScope
         if data.remark is not None:
             flow.remark = data.remark
+        if data.processConfig is not None:
+            flow.process_config = data.processConfig
         flow.updated_user_id = operator_id
         if data.nodes is not None:
             await ApprovalFlowService._replace_nodes(db, flow_id, data.nodes)
@@ -124,10 +130,17 @@ class ApprovalFlowService:
     @staticmethod
     async def publish_flow(db: AsyncSession, flow_id: int) -> FlowOut:
         flow = await ApprovalFlowService._get_or_404(db, flow_id)
-        nodes = await ApprovalFlowService._nodes_of(db, flow_id)
-        approval_nodes = [n for n in nodes if n.node_type == C.NODE_TYPE_APPROVAL]
-        if not approval_nodes:
-            raise BizException("流程至少需要一个审批节点才能发布")
+        if flow.process_config:
+            # 画布流程：校验树结构
+            errors = flow_tree.validate_tree(flow.process_config)
+            if errors:
+                raise BizException("流程配置不完整：" + "；".join(errors))
+        else:
+            # 兼容旧线性流程
+            nodes = await ApprovalFlowService._nodes_of(db, flow_id)
+            approval_nodes = [n for n in nodes if n.node_type == C.NODE_TYPE_APPROVAL]
+            if not approval_nodes:
+                raise BizException("流程至少需要一个审批节点才能发布")
         flow.status = FLOW_PUBLISHED
         flow.version = (flow.version or 0) + 1
         await db.flush()
