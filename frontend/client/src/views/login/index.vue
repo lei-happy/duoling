@@ -767,6 +767,7 @@
     &:hover {
       text-decoration: underline;
     }
+
   }
 
   .tenant-list {
