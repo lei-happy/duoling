@@ -153,6 +153,16 @@
       <span>{{ label }}</span>
     </template>
   </ele-pro-layout>
+  <SystemWatermarkOverlay
+    v-if="watermarkReady && watermarkEnabled"
+    :key="watermarkRenderKey"
+    :content="watermarkContent"
+    :gap="watermarkGap"
+    :rotate="watermarkRotate"
+    :font="watermarkFont"
+    :z-index="watermarkZIndex"
+    fixed
+  />
   <!-- 内容全屏退出按钮 -->
   <el-icon
     v-if="maximized ? (!tabBar || tabInHeader ? true : expanded) : false"
@@ -164,7 +174,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { markRaw } from 'vue';
+  import { markRaw, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   import { storeToRefs } from 'pinia';
   import { useI18n } from 'vue-i18n';
@@ -206,6 +216,8 @@
   import HeaderRight from './components/header-right.vue';
   import PageFooter from './components/page-footer.vue';
   import { useMenuVersionWatcher } from '@/utils/use-menu-version-watcher';
+  import { useWatermarkConfig } from '@/utils/use-watermark-config';
+  import SystemWatermarkOverlay from '@/components/SystemWatermarkOverlay/index.vue';
   const DEFAULT_NAME = import.meta.env.VITE_APP_NAME;
 
   defineOptions({ name: 'Layout' });
@@ -213,6 +225,22 @@
   // 监听菜单版本戳变化（轮询 + 标签页可视性 + 窗口 focus）
   // 覆盖"用户停留在某页不切路由"时运营后台改授权的场景
   useMenuVersionWatcher();
+
+  const {
+    watermarkReady,
+    watermarkEnabled,
+    watermarkContent,
+    watermarkGap,
+    watermarkRotate,
+    watermarkFont,
+    watermarkZIndex,
+    watermarkRenderKey,
+    loadWatermarkConfig
+  } = useWatermarkConfig();
+
+  onMounted(() => {
+    loadWatermarkConfig();
+  });
 
   const { push, resolve } = useRouter();
   const { t, locale } = useI18n();

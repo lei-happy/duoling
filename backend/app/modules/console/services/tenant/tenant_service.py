@@ -464,6 +464,32 @@ class TenantService:
                         default_value='{"joiner":" ","parts":[{"kind":"route_od"},'
                         '{"kind":"vehicle_first"},{"kind":"carrier_driver_plate"}]}',
                     ),
+                    SystemConfig(
+                        config_key="system.watermark_enabled",
+                        config_value="false",
+                        config_group="security",
+                        description="是否启用页面水印（默认关闭）",
+                        value_type="boolean",
+                        default_value="false",
+                    ),
+                    SystemConfig(
+                        config_key="system.watermark_content",
+                        config_value="{nickname} {phoneLast4} {date}",
+                        config_group="security",
+                        description="页面水印文本模板，支持 {nickname} {phoneLast4} {date} 等变量",
+                        value_type="string",
+                        default_value="{nickname} {phoneLast4} {date}",
+                    ),
+                    SystemConfig(
+                        config_key="system.watermark_style",
+                        config_value='{"fontSize":14,"color":"rgba(0, 0, 0, 0.12)",'
+                        '"rotate":-22,"gap":[200,160],"zIndex":9999}',
+                        config_group="security",
+                        description="页面水印样式 JSON：fontSize/color/rotate/gap/zIndex",
+                        value_type="json",
+                        default_value='{"fontSize":14,"color":"rgba(0, 0, 0, 0.12)",'
+                        '"rotate":-22,"gap":[200,160],"zIndex":9999}',
+                    ),
                 ]
                 session.add_all(default_configs)
 

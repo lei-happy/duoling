@@ -2,6 +2,7 @@
 export const GROUP_LABELS: Record<string, string> = {
   waybill: '运单设置',
   task: '任务单设置',
+  security: '水印设置',
   default: '其它'
 };
 
@@ -11,7 +12,7 @@ export const GROUP_CARD_HEADER_LABELS: Record<string, string> = {
 };
 
 /** 侧栏分组顺序（避免按字母序 task 排在 waybill 前） */
-export const CONFIG_GROUP_SORT_ORDER = ['waybill', 'task', 'default'];
+export const CONFIG_GROUP_SORT_ORDER = ['waybill', 'task', 'security', 'default'];
 
 /** 与后端种子一致的默认 JSON（用于表单初始化/展示默认值文案） */
 export const TASK_NO_GEN_DEFAULT_JSON =

@@ -43,6 +43,7 @@
                   :is="resolveGroupPanel(currentGroup.name)"
                   :items="currentGroup.items"
                   @config-change="handleChange"
+                  @saved="handleWatermarkSaved"
                 />
               </ele-card>
               <ele-card v-else-if="!loading" :body-style="{ padding: '40px' }">
@@ -68,6 +69,7 @@
   import GenericGroupSettings from './components/generic-group-settings.vue';
   import TaskSettings from './components/task-settings.vue';
   import WaybillSettings from './components/waybill-settings.vue';
+  import WatermarkSettings from './components/watermark-settings.vue';
   import {
     CONFIG_GROUP_SORT_ORDER,
     GROUP_CARD_HEADER_LABELS,
@@ -86,7 +88,8 @@
 
   const groupPanels: Record<string, Component> = {
     waybill: WaybillSettings,
-    task: TaskSettings
+    task: TaskSettings,
+    security: WatermarkSettings
   };
 
   const resolveGroupPanel = (name: string) =>
@@ -193,6 +196,22 @@
         item.configValue = oldValue;
         EleMessage.error({ message: e.message, plain: true });
       });
+  };
+
+  const handleWatermarkSaved = (payload: {
+    enabled: string;
+    content: string;
+    style: string;
+  }) => {
+    for (const item of configs.value) {
+      if (item.configKey === 'system.watermark_enabled') {
+        item.configValue = payload.enabled;
+      } else if (item.configKey === 'system.watermark_content') {
+        item.configValue = payload.content;
+      } else if (item.configKey === 'system.watermark_style') {
+        item.configValue = payload.style;
+      }
+    }
   };
 
   query();
