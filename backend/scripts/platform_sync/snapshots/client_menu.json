@@ -1466,7 +1466,7 @@
     "component": "/capacity/compliance/index",
     "icon": "",
     "sort_order": 80,
-    "visible": 0,
+    "visible": 1,
     "status": 1,
     "app_type": "client",
     "feature_code": "fleet_compliance",

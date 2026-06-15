@@ -3,8 +3,9 @@
 Client 端的 API，服务于客户端产品（Web + 小程序）
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.core.permissions import require_feature
 from app.modules.client.api.auth import router as auth_router
 from app.modules.client.api.organization import router as dept_router
 from app.modules.client.api.user import router as user_router
@@ -20,6 +21,7 @@ from app.modules.client.api.capacity.carrier_capacity.list import router as carr
 from app.modules.client.api.capacity.carrier_capacity.approval import router as carrier_capacity_approval_router
 from app.modules.client.api.capacity.social_capacity.list import router as social_capacity_list_router
 from app.modules.client.api.capacity.social_capacity.approval import router as social_capacity_approval_router
+from app.modules.client.api.capacity.compliance.alerts import router as compliance_alert_router
 from app.modules.client.api.customer import router as customer_router
 from app.modules.client.api.route import router as route_router
 from app.modules.client.api.operation_record import router as operation_record_router
@@ -69,46 +71,61 @@ router.include_router(
     self_capacity_list_router,
     prefix="/capacity/self_capacity/list",
     tags=["客户端-自有运力-运力列表"],
+    dependencies=[Depends(require_feature("capacity_self_list"))],
 )
 router.include_router(
     self_capacity_log_router,
     prefix="/capacity/self_capacity/log",
     tags=["客户端-自有运力-变更记录"],
+    dependencies=[Depends(require_feature("capacity_self_log"))],
 )
 router.include_router(
     self_vehicle_router,
     prefix="/capacity/self_capacity/vehicle",
     tags=["客户端-自有运力-车辆管理"],
+    dependencies=[Depends(require_feature("capacity_self_vehicle"))],
 )
 router.include_router(
     self_trailer_router,
     prefix="/capacity/self_capacity/trailer",
     tags=["客户端-自有运力-挂车管理"],
+    dependencies=[Depends(require_feature("capacity_self_trailer"))],
 )
 router.include_router(
     self_driver_router,
     prefix="/capacity/self_capacity/driver",
     tags=["客户端-自有运力-驾驶员管理"],
+    dependencies=[Depends(require_feature("capacity_self_driver"))],
 )
 router.include_router(
     carrier_capacity_list_router,
     prefix="/capacity/carrier_capacity/list",
-    tags=["客户端-承运商运力-列表(占位)"],
+    tags=["客户端-承运商运力-列表"],
+    dependencies=[Depends(require_feature("capacity_carrier_list"))],
 )
 router.include_router(
     carrier_capacity_approval_router,
     prefix="/capacity/carrier_capacity/approval",
-    tags=["客户端-承运商运力-审批(占位)"],
+    tags=["客户端-承运商运力-审批"],
+    dependencies=[Depends(require_feature("capacity_carrier_approval"))],
 )
 router.include_router(
     social_capacity_list_router,
     prefix="/capacity/social_capacity/list",
     tags=["客户端-社会运力池-档案"],
+    dependencies=[Depends(require_feature("capacity_social_list"))],
 )
 router.include_router(
     social_capacity_approval_router,
     prefix="/capacity/social_capacity/approval",
     tags=["客户端-社会运力池-审批"],
+    dependencies=[Depends(require_feature("capacity_social_approval"))],
+)
+router.include_router(
+    compliance_alert_router,
+    prefix="/capacity/compliance/alerts",
+    tags=["客户端-证照监控-到期预警"],
+    dependencies=[Depends(require_feature("fleet_compliance"))],
 )
 router.include_router(customer_router, prefix="/resource/customer", tags=["客户端-客户管理"])
 router.include_router(route_router, prefix="/resource/route", tags=["客户端-路线管理"])

@@ -389,7 +389,9 @@
     "feature_name": "证照监控",
     "module": "capacity",
     "description": null,
-    "required_tables": null,
+    "required_tables": [
+      "biz_compliance_alert"
+    ],
     "sort_order": 47,
     "status": 1
   },
@@ -398,7 +400,11 @@
     "feature_name": "承运商运力-运力列表",
     "module": "capacity",
     "description": null,
-    "required_tables": null,
+    "required_tables": [
+      "biz_carrier_capacity",
+      "biz_carrier_capacity_vehicle",
+      "biz_carrier_capacity_driver"
+    ],
     "sort_order": 48,
     "status": 1
   },

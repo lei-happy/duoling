@@ -15,6 +15,7 @@ from app.modules.client.schemas.role.role import (
     BizRoleCreate, BizRoleUpdate, BizRoleOut, BizRoleMenuAssign,
 )
 from app.modules.client.services.role.role_service import BizRoleService
+from app.modules.client.services.user.platform_user_sync import BizPlatformUserSync
 
 router = APIRouter()
 
@@ -112,8 +113,14 @@ async def assign_role_menus(
     role_id: int,
     data: BizRoleMenuAssign,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    platform_db: AsyncSession = Depends(get_platform_db),
+    current_user: TokenData = Depends(get_current_user),
 ):
-    """分配角色菜单"""
+    """分配角色菜单（租户库 biz_role_menu + 平台库镜像 sys_role_menu 双写）"""
     await BizRoleService.assign_menus(db, role_id, data.menuIds)
+    # 同步到平台库镜像角色，确保登录算菜单（走 sys_role_menu）生效
+    if current_user.tenant_code:
+        await BizPlatformUserSync.sync_role_menus(
+            platform_db, db, current_user.tenant_code, role_id, data.menuIds
+        )
     return success()

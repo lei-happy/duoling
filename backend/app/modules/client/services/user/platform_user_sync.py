@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Sequence
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
@@ -120,6 +120,51 @@ class BizPlatformUserSync:
         )
         for mid in mid_rows.scalars().all():
             pdb.add(RoleMenu(role_id=role_id, menu_id=mid))
+
+    @staticmethod
+    async def sync_role_menus(
+        pdb: AsyncSession,
+        tenant_db: AsyncSession,
+        tenant_code: str,
+        biz_role_id: int,
+        menu_ids: Sequence[int],
+    ) -> None:
+        """把企业端「角色-菜单」配置同步到平台库镜像角色的 sys_role_menu。
+
+        修复点：登录算菜单走平台库 sys_role_menu，而企业端原本只写租户库
+        biz_role_menu，导致普通员工的角色菜单配置不生效。这里做全量镜像，
+        并 bump 租户 menu_version 触发在线客户端重拉菜单。
+        """
+        r = await tenant_db.execute(
+            select(BizRole).where(
+                BizRole.id == biz_role_id,
+                BizRole.is_deleted == 0,
+            )
+        )
+        biz_role = r.scalar_one_or_none()
+        if not biz_role:
+            return
+
+        role = await BizPlatformUserSync._ensure_mirrored_platform_role(
+            pdb, tenant_code, biz_role
+        )
+
+        # 全量替换镜像角色的 sys_role_menu
+        await pdb.execute(
+            delete(RoleMenu).where(RoleMenu.role_id == role.id)
+        )
+        for mid in menu_ids:
+            pdb.add(RoleMenu(role_id=role.id, menu_id=mid))
+
+        # bump 租户 menu_version：客户端轮询到变化后重拉菜单
+        from app.modules.console.models.tenant.tenant import Tenant
+
+        await pdb.execute(
+            update(Tenant)
+            .where(Tenant.tenant_code == tenant_code, Tenant.is_deleted == 0)
+            .values(menu_version=Tenant.menu_version + 1)
+        )
+        await pdb.commit()
 
     @staticmethod
     async def _clear_mirrored_user_roles(

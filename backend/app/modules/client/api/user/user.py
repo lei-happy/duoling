@@ -19,6 +19,7 @@ from app.modules.client.schemas.user.user import (
 )
 from app.modules.client.services.user.user_service import BizUserService
 from app.modules.client.services.user.platform_user_sync import BizPlatformUserSync
+from app.modules.client.services.quota_service import QuotaService
 
 router = APIRouter()
 
@@ -114,6 +115,7 @@ async def create_user(
     """创建员工"""
     if not current.tenant_code:
         raise TenantException("缺少租户信息，无法同步登录账号")
+    await QuotaService.ensure_user_quota(db, current.tenant_code)
     user = await BizUserService.create_user(db, data)
     try:
         await BizPlatformUserSync.sync_employee_create(

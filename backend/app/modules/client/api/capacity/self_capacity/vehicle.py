@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
 from app.core.dependencies import get_tenant_db, get_current_user
+from app.core.security import TokenData
 from app.common.response import success
 from app.common.operation_log import operation_log
 from app.modules.client.schemas.capacity.self_capacity.vehicle import (
@@ -17,6 +18,7 @@ from app.modules.client.schemas.capacity.self_capacity.vehicle import (
 from app.modules.client.services.capacity.self_capacity.vehicle_service import (
     VehicleService,
 )
+from app.modules.client.services.quota_service import QuotaService
 from app.modules.client.services.capacity.self_capacity.vehicle_status_service import (
     VehicleStatusService,
 )
@@ -57,8 +59,10 @@ async def create_vehicle(
     request: Request,
     data: VehicleCreate,
     db: AsyncSession = Depends(get_tenant_db),
-    _=Depends(get_current_user),
+    current_user: TokenData = Depends(get_current_user),
 ):
+    if current_user.tenant_code:
+        await QuotaService.ensure_vehicle_quota(db, current_user.tenant_code)
     vehicle = await VehicleService.create_vehicle(db, data)
     return success(data=vehicle.model_dump())
 

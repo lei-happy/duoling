@@ -147,6 +147,58 @@ services:
     # worker 没有 HTTP 端口；进程崩溃由 restart: unless-stopped 自动拉起，
     # 这里不再单独配 healthcheck（python:slim 默认不带 ps，避免镜像膨胀）。
 
+  # ---- 证照监控 Worker（独立进程） ----
+  # 运力宝核心：周期扫描各租户运力资质到期字段，生成 biz_compliance_alert 预警。
+  # 与 backend 共用同一镜像、同一份环境变量，启动命令是
+  # python -m app.workers.compliance_alert_main。
+  # 到期是「天」级变化，默认 1 小时扫一轮，独立进程避免拖累 API 性能。
+  backend-compliance-worker:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.backend
+    container_name: zhitu-backend-compliance-worker
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_SECRET_KEY=${APP_SECRET_KEY:-change-me-in-production}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-me-in-production}
+      - JWT_ALGORITHM=HS256
+      - DB_SUFFIX=
+      - PLATFORM_DB_HOST=host.docker.internal
+      - PLATFORM_DB_PORT=3306
+      - PLATFORM_DB_USER=${DB_USER:-root}
+      - PLATFORM_DB_PASSWORD=${DB_PASSWORD:-zhitu2026}
+      - PLATFORM_DB_NAME=zt_platform
+      - TENANT_DB_HOST=host.docker.internal
+      - TENANT_DB_PORT=3306
+      - TENANT_DB_USER=${DB_USER:-root}
+      - TENANT_DB_PASSWORD=${DB_PASSWORD:-zhitu2026}
+      - TENANT_DB_PREFIX=zt_biz_
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_PASSWORD=
+      - LOG_LEVEL=INFO
+      - LOG_DIR=logs
+      # worker 容器强制启用证照监控 scheduler
+      - COMPLIANCE_WORKER_ENABLED=1
+      # 扫描参数（按需在 .env 覆盖）
+      - COMPLIANCE_WORKER_INTERVAL=${COMPLIANCE_WORKER_INTERVAL:-3600}
+      - COMPLIANCE_ALERT_HORIZON_DAYS=${COMPLIANCE_ALERT_HORIZON_DAYS:-60}
+      - COMPLIANCE_ALERT_CRITICAL_DAYS=${COMPLIANCE_ALERT_CRITICAL_DAYS:-7}
+    volumes:
+      - backend_logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+    command:
+      - python
+      - -m
+      - app.workers.compliance_alert_main
+
   # ---- Nginx 反向代理 + 静态文件服务 ----
   nginx:
     build:

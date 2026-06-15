@@ -11,6 +11,17 @@
     "status": 1
   },
   {
+    "version_code": "ylb",
+    "version_name": "运力宝",
+    "description": "面向车队的轻量运力与证照合规产品：自有/外协运力建档 + 资质到期监控；与承运商基础版(lite)平行，可升级到综合业务系统",
+    "features": null,
+    "max_users": 10,
+    "max_vehicles": 50,
+    "price": "999/年",
+    "sort_order": 6,
+    "status": 1
+  },
+  {
     "version_code": "standard",
     "version_name": "标准版",
     "description": "适合中型车队，包含运单管理、路线管理等功能",

@@ -55,6 +55,12 @@ class VehicleExt(TenantModelBase):
     inspection_expire: Mapped[Optional[date]] = mapped_column(
         Date, nullable=True, comment="年检到期日"
     )
+    transport_license_no: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, comment="道路运输证号"
+    )
+    transport_license_expire: Mapped[Optional[date]] = mapped_column(
+        Date, nullable=True, comment="道路运输证有效期"
+    )
     gps_device_id: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, comment="GPS设备ID"
     )

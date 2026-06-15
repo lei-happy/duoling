@@ -44,6 +44,12 @@ from app.modules.client.models.capacity.social_capacity import (
     SocialCapacityAccount,
     SocialCapacityAudit,
 )
+from app.modules.client.models.capacity.carrier_capacity import (
+    CarrierCapacity,
+    CarrierCapacityVehicle,
+    CarrierCapacityDriver,
+)
+from app.modules.client.models.compliance import BizComplianceAlert
 from app.modules.client.models.route import Route
 from app.modules.client.models.partner.customer import Customer
 from app.modules.client.models.partner.carrier import Carrier
@@ -158,6 +164,10 @@ __all__ = [
     "SocialCapacityVehicle",
     "SocialCapacityAccount",
     "SocialCapacityAudit",
+    "CarrierCapacity",
+    "CarrierCapacityVehicle",
+    "CarrierCapacityDriver",
+    "BizComplianceAlert",
     "BizCompanyActivity",
     # AI 数字员工（biz_ai_*）
     "BizAiSession",
