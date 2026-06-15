@@ -254,6 +254,7 @@
       legend: {
         bottom: 4,
         type: 'scroll',
+        textStyle: { fontSize: 11 },
         data: items.map((i) => i.label)
       },
       color: items.map((i) => colorFor(i.customerType)),
@@ -261,8 +262,8 @@
         {
           name: '客户类型分布',
           type: 'pie',
-          radius: ['40%', '68%'],
-          center: ['48%', '46%'],
+          radius: ['38%', '62%'],
+          center: ['50%', '42%'],
           avoidLabelOverlap: true,
           itemStyle: {
             borderRadius: 4,
@@ -379,11 +380,6 @@
 <style lang="scss" scoped>
   .customer-card {
     margin-bottom: 16px;
-    flex: 1;
-    width: 100%;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
 
     /* 标题区域高度与标准卡片（如「运营效率」）保持一致：52px */
     :deep(.ele-card-header) {
@@ -393,14 +389,6 @@
     :deep(.ele-card-title) {
       flex: 1;
       min-width: 0;
-    }
-
-    :deep(.el-card__body),
-    :deep(.ele-card__body) {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
     }
   }
 
@@ -418,31 +406,30 @@
 
   .customer-body {
     padding: 16px 0 8px 0;
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
   }
 
   .customer-row {
     align-items: stretch;
-    flex: 1;
-    min-height: 0;
   }
 
+  /* 与趋势卡同高：固定内容区，排行在内部滚动 */
   .customer-chart-col,
   .customer-rank-col {
     display: flex;
     flex-direction: column;
-    min-height: 340px;
+    min-height: 360px;
   }
 
   @media (min-width: 768px) {
     .customer-chart-col,
     .customer-rank-col {
-      height: 380px;
-      min-height: 380px;
+      height: 420px;
+      min-height: 420px;
     }
+  }
+
+  .customer-rank-col {
+    overflow: hidden;
   }
 
   .customer-chart-wrap {
@@ -457,7 +444,7 @@
   .customer-chart-inner {
     flex: 1;
     width: 100%;
-    min-height: 320px;
+    min-height: 0;
     height: 100%;
   }
 
@@ -503,6 +490,11 @@
     flex: 1;
     min-height: 0;
     box-sizing: border-box;
+    overflow: hidden;
+
+    :deep(.el-scrollbar) {
+      height: 100%;
+    }
   }
 
   .rank-item {

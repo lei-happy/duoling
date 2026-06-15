@@ -35,11 +35,12 @@
             autoresize
           />
         </div>
-        <el-divider style="margin: 12px 0" />
-        <div class="eff-metrics">
-          <div class="eff-calc-block">
-            <div class="eff-calc-strip-head">
-              <div class="eff-calc-head-left">
+        <div class="eff-footer">
+          <div class="eff-divider" role="separator" />
+          <div class="eff-metrics">
+            <div class="eff-calc-block">
+              <div class="eff-calc-strip-head">
+                <div class="eff-calc-head-left">
                 <span class="eff-calc-head-title">运费计算状态</span>
                 <ele-tooltip
                   content="统计所选时间内，每张运单的「运费有没有被系统自动算出来、算得是否正常」。"
@@ -101,6 +102,7 @@
                 <span>{{ seg.label }}</span>
                 <span class="eff-calc-legend-num">{{ seg.count }}</span>
               </span>
+            </div>
             </div>
           </div>
         </div>
@@ -255,14 +257,20 @@
   const renderChart = () => {
     if (!data.value) return;
     const items = data.value.statusDist;
+    const showLegend = items.length > 3;
     Object.assign(statusOption, {
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)'
       },
       legend: {
+        show: showLegend,
         bottom: 0,
+        left: 'center',
         type: 'scroll',
+        itemWidth: 10,
+        itemHeight: 10,
+        itemGap: 8,
         textStyle: { fontSize: 11 },
         data: items.map((i) => i.label)
       },
@@ -270,8 +278,8 @@
       series: [
         {
           type: 'pie',
-          radius: ['38%', '62%'],
-          center: ['50%', '42%'],
+          radius: showLegend ? ['38%', '62%'] : ['40%', '64%'],
+          center: showLegend ? ['50%', '44%'] : ['50%', '46%'],
           avoidLabelOverlap: true,
           itemStyle: {
             borderRadius: 4,
@@ -314,9 +322,7 @@
 <style lang="scss" scoped>
   .eff-card {
     margin-bottom: 16px;
-    flex: 1;
-    width: 100%;
-    min-height: 0;
+    height: 100%;
     display: flex;
     flex-direction: column;
 
@@ -348,36 +354,45 @@
     width: 220px;
   }
 
-  /* 与客户类型卡片 body 同高：最小高度一致；同列拉伸时多余空间给饼图区 */
   .eff-body {
     box-sizing: border-box;
-    padding: 16px 0 8px 0;
+    padding: 16px 12px 8px;
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-height: 364px;
+    justify-content: flex-start;
+  }
+
+  /* 固定图表高度，避免 1:1 正方形撑高整行（左侧客户卡内容区为 420px） */
+  .eff-chart-wrap {
+    flex-shrink: 0;
+    height: 240px;
+    padding: 4px 0 0;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   @media (min-width: 768px) {
-    .eff-body {
-      min-height: 404px;
+    .eff-chart-wrap {
+      height: 280px;
     }
   }
 
-  .eff-chart-wrap {
-    flex: 1;
-    min-height: 0;
-    padding: 4px 8px 4px 12px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+  .eff-chart-inner {
+    width: 100%;
+    height: 100%;
   }
 
-  .eff-chart-inner {
-    flex: 1;
-    width: 100%;
-    min-height: 320px;
-    height: 100%;
+  .eff-footer {
+    flex-shrink: 0;
+    padding-top: 4px;
+  }
+
+  .eff-divider {
+    height: 1px;
+    margin: 0 0 8px;
+    background-color: var(--el-border-color-lighter);
   }
 
   .empty-state {
@@ -391,7 +406,7 @@
 
   .eff-metrics {
     flex-shrink: 0;
-    padding: 4px 12px 12px 12px;
+    padding: 0 0 2px;
   }
 
   .eff-calc-block {
