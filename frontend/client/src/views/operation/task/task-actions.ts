@@ -21,6 +21,7 @@ export type TaskActionKey =
   | 'revert-load' // 撤销装车 (2 → 1)
   | 'revert-depart' // 撤回出发 (3 → 2)
   | 'revert-arrive' // 撤回到达 (4 → 3)
+  | 'revert-sign' // 撤销签收（5 → 4，item 级 3→2 反向聚合驱动）
   | 'force-cancel' // 强制取消（2/3/4 → 9，线下取消）
   // —— 常规辅助通道
   | 'cancel-task' // 常规取消（-1/0/1/2 → 9，释放运单挂接 + 撤销未支付费用单）
@@ -41,6 +42,7 @@ export interface TaskActionConfig {
     | 'confirm-arrive'
     | 'confirm-sign'
     | 'revert'
+    | 'revert-sign'
     | 'force-cancel'
     | 'cancel-task';
   /** 是否纯 confirm（不打开弹窗，直接 ElMessageBox.confirm） */
@@ -147,6 +149,15 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     revertFrom: 4,
     revertTo: 3
   },
+  'revert-sign': {
+    key: 'revert-sign',
+    label: '撤销签收',
+    buttonType: 'warning',
+    permission: 'operation:task:revert-sign',
+    dialog: 'revert-sign',
+    revertFrom: 5,
+    revertTo: 4
+  },
   'force-cancel': {
     key: 'force-cancel',
     label: '强制取消',
@@ -222,15 +233,19 @@ export const getSecondaryTaskActions = (
  * - 2 → 撤销装车；强制取消
  * - 3 → 撤回出发；强制取消
  * - 4 → 撤回到达；强制取消
+ * - 5 → 撤销签收（避免误签收后流程卡死）
  *
- * 说明：5 已签收 由 item 全签收聚合驱动，回退路径走 item 级"撤销签收"
- * （修改对应 item.status 3→2），不在任务级 revert 列表里暴露。
+ * 说明：5 已签收 由 item 全签收聚合驱动；"撤销签收" 走 item 级
+ * （修改对应 item.status 3→2，后端 _aggregate_task_status_from_items
+ * 自动把 task 5→4、运单 5→4），不走任务级 revert-status 接口。
+ * 已关闭(7)/已取消(9) 为终态，不放开任何逆向。
  */
 const REVERSE_BY_STATUS: Record<number, TaskActionKey[]> = {
   1: ['revert-dispatch'],
   2: ['revert-load', 'force-cancel'],
   3: ['revert-depart', 'force-cancel'],
-  4: ['revert-arrive', 'force-cancel']
+  4: ['revert-arrive', 'force-cancel'],
+  5: ['revert-sign']
 };
 
 export const getReverseTaskActions = (

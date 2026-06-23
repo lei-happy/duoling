@@ -502,6 +502,11 @@
       :action-key="revertActionKey"
       @done="onActionDone"
     />
+    <action-revert-sign
+      v-model:visible="actionVisible['revert-sign']"
+      :tasks="task ? [task] : []"
+      @done="onActionDone"
+    />
     <action-force-cancel
       v-model:visible="actionVisible['force-cancel']"
       :tasks="task ? [task] : []"
@@ -566,6 +571,7 @@
   import ActionConfirmArrive from '../../task-workbench/components/action-confirm-arrive.vue';
   import ActionConfirmSign from '../../task-workbench/components/action-confirm-sign.vue';
   import ActionRevert from '../../task-workbench/components/action-revert.vue';
+  import ActionRevertSign from '../../task-workbench/components/action-revert-sign.vue';
   import ActionForceCancel from '../../task-workbench/components/action-force-cancel.vue';
   import WaybillStatusSummary from './waybill-status-summary.vue';
 
@@ -678,6 +684,7 @@
     'confirm-arrive': false,
     'confirm-sign': false,
     revert: false,
+    'revert-sign': false,
     'force-cancel': false
   });
   const revertActionKey = ref<TaskActionKey | null>(null);

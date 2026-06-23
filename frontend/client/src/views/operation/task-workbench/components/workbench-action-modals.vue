@@ -49,6 +49,12 @@
     @update:visible="(v) => onDialogVisible('revert', v)"
     @done="emit('done')"
   />
+  <action-revert-sign
+    :visible="actionDialog === 'revert-sign'"
+    :tasks="targets"
+    @update:visible="(v) => onDialogVisible('revert-sign', v)"
+    @done="emit('done')"
+  />
   <action-force-cancel
     :visible="actionDialog === 'force-cancel'"
     :tasks="targets"
@@ -88,6 +94,7 @@
   import ActionConfirmArrive from './action-confirm-arrive.vue';
   import ActionConfirmSign from './action-confirm-sign.vue';
   import ActionRevert from './action-revert.vue';
+  import ActionRevertSign from './action-revert-sign.vue';
   import ActionForceCancel from './action-force-cancel.vue';
   import ActionCancelTask from './action-cancel-task.vue';
   import TaskEdit from '../../task/components/task-edit.vue';

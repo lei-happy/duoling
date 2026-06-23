@@ -69,10 +69,10 @@ LEVEL2_UPDATES = {
              path="/operation/dispatch", component="/business/dispatch/index",
              icon="ScheduleOutlined", sort_order=10, visible=1, feature_code="biz_dispatch"),
     194: dict(parent_id=191, menu_name="在途监控", menu_code="business:tracking",
-             path="/operation/tracking", component="/business/tracking/index",
+             path="/operation/tracking", component="/operation/tracking/index",
              icon="EnvironmentOutlined", sort_order=20, visible=1, feature_code="biz_tracking"),
     195: dict(parent_id=191, menu_name="回单签收", menu_code="business:receipt",
-             path="/operation/receipt", component="/business/receipt/index",
+             path="/operation/receipt", component="/operation/receipt/index",
              icon="AuditOutlined", sort_order=30, visible=1, feature_code="biz_receipt"),
     # 运力中心（parent=260）—— 从原 资源管理(177) 迁入
     178: dict(parent_id=260, menu_name="车辆管理", menu_code="resource:vehicle",

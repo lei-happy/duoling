@@ -1,3 +1,11 @@
+<!--
+  在途监控
+
+  口径：展示「在途(status=3)」任务（已出发尚未到达）。原实现调用已废弃的
+  ``/business/order/tracking`` 接口（旧 Order 模型，后端已无该路由 → 401）；
+  现重指向运营任务接口 ``pageTasks({ status: 3 })``，并复用调度工作台的
+  「确认到达」弹窗（按卸车记录聚合驱动 task 3→4），不再调用废弃的 updateOrderStatus。
+-->
 <template>
   <ele-page>
     <ele-card :body-style="{ paddingTop: '8px' }">
@@ -8,74 +16,139 @@
         :datasource="datasource"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
-        cache-key="BusinessTrackingTable"
+        cache-key="OperationTrackingTable"
       >
         <template #toolbar>
           <el-form :model="where" class="ele-bg-wrap" inline>
             <el-form-item>
               <el-input
                 v-model="where.keyword"
-                placeholder="订单号/客户名称"
+                placeholder="任务单号 / 运单号"
                 clearable
                 @change="reload"
               />
             </el-form-item>
+            <el-form-item>
+              <el-button :icon="Refresh" plain @click="reload">刷新</el-button>
+            </el-form-item>
           </el-form>
         </template>
+
+        <template #carrierResource="{ row }">
+          <div v-if="row.carrierType === 2">{{ row.carrierName || '--' }}</div>
+          <div v-else>
+            {{ row.mainDriverName || '--' }}
+            <span v-if="row.plateNumber" class="ele-text-secondary">
+              / {{ row.plateNumber }}
+            </span>
+          </div>
+        </template>
+
         <template #route="{ row }">
-          {{ row.origin }} → {{ row.destination }}
+          {{ row.origin || '--' }} → {{ row.destination || '--' }}
         </template>
-        <template #status>
-          <el-tag type="warning" size="small">运输中</el-tag>
+
+        <template #plannedArriveTime="{ row }">
+          <span :class="{ 'is-overdue': isArriveOverdue(row) }">
+            {{ formatDateTime(row.plannedArriveTime) || '--' }}
+          </span>
         </template>
+
+        <template #actualLoadTime="{ row }">
+          {{ formatDateTime(row.actualLoadTime) || '--' }}
+        </template>
+
+        <template #status="{ row }">
+          <el-tag
+            :type="(TASK_STATUS_MAP[row.status]?.type as any) || 'warning'"
+            size="small"
+          >
+            {{ TASK_STATUS_MAP[row.status]?.label || '在途' }}
+          </el-tag>
+          <el-tag
+            v-if="isArriveOverdue(row)"
+            type="danger"
+            size="small"
+            effect="plain"
+            style="margin-left: 4px"
+          >
+            预警
+          </el-tag>
+        </template>
+
         <template #action="{ row }">
-          <el-link type="success" :underline="false" @click="handleArrive(row)">
+          <el-link
+            type="success"
+            :underline="false"
+            v-permission="'operation:task:confirm-arrive'"
+            @click="handleArrive(row)"
+          >
             确认到达
           </el-link>
         </template>
       </ele-pro-table>
     </ele-card>
+
+    <action-confirm-arrive
+      v-model:visible="arriveVisible"
+      :tasks="arriveTargets"
+      @done="onArriveDone"
+    />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
   import { ref, reactive } from 'vue';
-  import { ElMessageBox } from 'element-plus';
-  import { EleMessage } from 'ele-admin-plus';
+  import { Refresh } from '@element-plus/icons-vue';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import { pageTrackingOrders, updateOrderStatus } from '@/api/business/order';
-  import type { Order } from '@/api/business/order/model';
+  import { pageTasks } from '@/api/operation/task';
+  import type { Task, TaskParam } from '@/api/operation/task/model';
+  import { formatDateTime } from '@/utils/date-util';
+  import { TASK_STATUS_MAP } from '../task/status-config';
+  import ActionConfirmArrive from '../task-workbench/components/action-confirm-arrive.vue';
 
-  defineOptions({ name: 'BusinessTracking' });
+  defineOptions({ name: 'OperationTracking' });
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
-  const where = reactive({
-    keyword: ''
-  });
+  const where = reactive<{ keyword: string }>({ keyword: '' });
+
+  const arriveVisible = ref(false);
+  const arriveTargets = ref<Task[]>([]);
 
   const columns = ref<Columns>([
     { type: 'index', columnKey: 'index', width: 50, align: 'center' },
-    { prop: 'orderNo', label: '订单号', minWidth: 160 },
-    { prop: 'customerName', label: '客户名称', minWidth: 140 },
+    { prop: 'taskNo', label: '任务单号', minWidth: 160 },
     {
-      columnKey: 'route',
-      label: '路线',
-      minWidth: 200,
-      slot: 'route'
+      prop: 'carrierType',
+      columnKey: 'carrierResource',
+      label: '承运资源',
+      minWidth: 170,
+      slot: 'carrierResource'
     },
-    { prop: 'plateNumber', label: '车牌号', minWidth: 110 },
-    { prop: 'driverName', label: '司机', minWidth: 100 },
-    { prop: 'cargoName', label: '货物名称', minWidth: 120 },
-    { prop: 'actualDepartTime', label: '实际发车', minWidth: 160 },
-    { prop: 'planArriveTime', label: '计划到达', minWidth: 160 },
+    { columnKey: 'route', label: '运输线路', minWidth: 200, slot: 'route' },
+    { prop: 'totalQuantity', label: '台数', width: 70, align: 'center' },
+    {
+      prop: 'actualLoadTime',
+      label: '实际装车',
+      width: 168,
+      align: 'center',
+      slot: 'actualLoadTime'
+    },
+    {
+      prop: 'plannedArriveTime',
+      label: '计划到货',
+      width: 168,
+      align: 'center',
+      slot: 'plannedArriveTime'
+    },
     {
       prop: 'status',
       label: '状态',
-      width: 90,
+      width: 110,
       align: 'center',
       slot: 'status'
     },
@@ -84,42 +157,44 @@
       label: '操作',
       width: 100,
       align: 'center',
+      fixed: 'right',
       slot: 'action'
     }
   ]);
 
   const datasource: DatasourceFunction = async ({ page, limit }) => {
-    const res = await pageTrackingOrders({ ...where, page, limit });
+    const params: Partial<TaskParam> = {
+      page,
+      limit,
+      status: 3,
+      ...(where.keyword.trim() ? { keyword: where.keyword.trim() } : {})
+    };
+    const res = await pageTasks(params as TaskParam);
     return { list: res?.list ?? [], count: res?.count ?? 0 };
   };
 
   const reload = () => {
-    tableRef.value?.reload?.();
+    tableRef.value?.reload?.({ page: 1 });
   };
 
-  const handleArrive = (row: Order) => {
-    ElMessageBox.confirm(
-      `确定订单"${row.orderNo}"已到达目的地吗?`,
-      '系统提示',
-      { type: 'warning', draggable: true }
-    )
-      .then(() => {
-        const loading = EleMessage.loading({
-          message: '请求中..',
-          plain: true
-        });
-        const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
-        updateOrderStatus(row.id!, { status: 3, actualArriveTime: now })
-          .then((msg) => {
-            loading.close();
-            EleMessage.success({ message: msg, plain: true });
-            reload();
-          })
-          .catch((e) => {
-            loading.close();
-            EleMessage.error({ message: e.message, plain: true });
-          });
-      })
-      .catch(() => {});
+  const isArriveOverdue = (row: Task): boolean => {
+    if (!row.plannedArriveTime) return false;
+    return Date.parse(row.plannedArriveTime) < Date.now();
+  };
+
+  const handleArrive = (row: Task) => {
+    arriveTargets.value = [row];
+    arriveVisible.value = true;
+  };
+
+  const onArriveDone = () => {
+    reload();
   };
 </script>
+
+<style lang="scss" scoped>
+  .is-overdue {
+    color: var(--el-color-danger);
+    font-weight: 500;
+  }
+</style>
