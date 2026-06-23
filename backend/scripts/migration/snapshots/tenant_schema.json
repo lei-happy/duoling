@@ -11711,6 +11711,15 @@
           "comment": "运价ID"
         },
         {
+          "name": "receipt_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "回单确认时间（签收底单返还货主）"
+        },
+        {
           "name": "remark",
           "type": "TEXT",
           "nullable": true,
@@ -11744,7 +11753,7 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "状态 0-待确认 1-已确认 2-已调度 3-运输中 4-已送达 5-已完成 6-已取消"
+          "comment": "状态 0-待确认 1-待调度 2-调度中 3-运输中 4-待签收 5-已签收 6-已回单 7-已关闭"
         },
         {
           "name": "updated_at",
@@ -12693,6 +12702,133 @@
           "name": "idx_wir_validate",
           "columns": [
             "validate_status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_waybill_receipt",
+      "comment": "运单回单凭证表（签收底单返还货主）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "file_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "文件类型 1-图片 2-PDF"
+        },
+        {
+          "name": "file_urls",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "回单底单文件 URL 数组（OSS 路径，最多 9 张）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "operator_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人姓名（冗余）"
+        },
+        {
+          "name": "received_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "回单回收时间"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "uploaded_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人 user_id"
+        },
+        {
+          "name": "waybill_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_waybill.id"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_waybill_receipt_received_at",
+          "columns": [
+            "received_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_waybill_receipt_waybill_id",
+          "columns": [
+            "waybill_id"
           ],
           "unique": false
         }

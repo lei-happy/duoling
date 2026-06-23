@@ -78,3 +78,10 @@ def upgrade(conn, tenant_code: str) -> None:
     conn.execute(text(
         "UPDATE biz_waybill SET status = 7 WHERE status = 6 AND is_deleted = 0"
     ))
+
+    # 4. 同步 biz_waybill.status 列注释到新状态空间（仅注释，元数据级变更）
+    conn.execute(text(
+        "ALTER TABLE biz_waybill MODIFY COLUMN status SMALLINT NOT NULL DEFAULT 0 "
+        "COMMENT '状态 0-待确认 1-待调度 2-调度中 3-运输中 4-待签收 "
+        "5-已签收 6-已回单 7-已关闭'"
+    ))
