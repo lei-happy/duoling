@@ -37,6 +37,13 @@ from app.modules.client.schemas.task.task import (
 from app.modules.client.schemas.task.task_dispatch_order import (
     TaskDispatchOrderIn,
 )
+from app.modules.client.services.state_machine.dispatch_order_state_machine import (
+    DISPATCH_PENDING_LOAD,
+    DISPATCH_TYPE_DEFAULT,
+    DISPATCH_TYPE_HEAVY,
+    MAIN_LINE_ORDER_NO,
+    is_valid_dispatch_order_status,
+)
 from app.modules.client.services.state_machine.task_state_machine import (
     TASK_STATUS_LABELS,
     TaskStateMachine,
@@ -233,7 +240,7 @@ class TaskService:
             row = TaskDispatchOrder(
                 task_id=task.id,
                 order_no=s.orderNo,
-                dispatch_type=int(s.dispatchType or 1),
+                dispatch_type=int(s.dispatchType or DISPATCH_TYPE_DEFAULT),
                 from_location=s.fromLocation,
                 from_code=s.fromCode,
                 from_region_id=s.fromRegionId,
@@ -243,7 +250,7 @@ class TaskService:
                 mileage=s.mileage,
                 planned_load_time=s.plannedLoadTime,
                 planned_arrive_time=s.plannedArriveTime,
-                status=0,
+                status=DISPATCH_PENDING_LOAD,
                 remark=s.remark,
             )
             db.add(row)
@@ -254,7 +261,10 @@ class TaskService:
         task.segment_count = len(rows)
         if rows:
             # 取首条"重驶"调令的起点 + 末条"重驶"调令的终点；若无重驶则用第一/最后
-            heavy = [r for r in rows if int(r.dispatch_type or 1) == 1]
+            heavy = [
+                r for r in rows
+                if int(r.dispatch_type or DISPATCH_TYPE_DEFAULT) == DISPATCH_TYPE_HEAVY
+            ]
             head = heavy[0] if heavy else rows[0]
             tail = heavy[-1] if heavy else rows[-1]
             task.origin = head.from_location
@@ -328,6 +338,46 @@ class TaskService:
             task.destination_code = tail.destination_code
             task.destination_region_id = tail.destination_region_id
         await db.flush()
+
+    @staticmethod
+    async def ensure_main_line_dispatch_order(
+        db: AsyncSession,
+        task: Task,
+    ) -> Optional[TaskDispatchOrder]:
+        """确保任务至少有一条"主线路"调令（幂等）。
+
+        场景：用户未手动规划路线时，任务不会有任何调令，导致装卸 / 司机执行
+        环节"关联调令"为空、流程卡死。此处以任务起终点（``origin → destination``，
+        通常已由运单聚合回填）自动生成一条「重驶」主线路调令兜底。
+
+        - 幂等：已存在任意未删除调令则不处理，直接返回 None。
+        - 不依赖 ``origin/destination`` 是否齐全；即便为空也生成占位主线路，
+          保证下游流程有可关联的调令（调度员可在规划路线时再补全起终点）。
+        - 调用方负责（如需要）先回填 ``origin/destination``。
+        """
+        existing = await TaskService.list_dispatch_orders(db, task.id)
+        if existing:
+            return None
+
+        row = TaskDispatchOrder(
+            task_id=task.id,
+            order_no=MAIN_LINE_ORDER_NO,
+            dispatch_type=DISPATCH_TYPE_HEAVY,
+            from_location=task.origin,
+            from_code=task.origin_code,
+            from_region_id=task.origin_region_id,
+            to_location=task.destination,
+            to_code=task.destination_code,
+            to_region_id=task.destination_region_id,
+            planned_load_time=task.planned_load_time,
+            planned_arrive_time=task.planned_arrive_time,
+            status=DISPATCH_PENDING_LOAD,
+        )
+        db.add(row)
+        await db.flush()
+        task.segment_count = 1
+        await db.flush()
+        return row
 
     # ------------------------------------------------------------------
     # 路线规划（独立动作）
@@ -413,7 +463,7 @@ class TaskService:
         actual_arrive_time: Optional[datetime] = None,
         remark: Optional[str] = None,
     ) -> TaskDispatchOrder:
-        if status not in (0, 1, 2, 3, 4):
+        if not is_valid_dispatch_order_status(status):
             raise BizException(f"非法调令状态 {status}")
         r = await db.execute(
             select(TaskDispatchOrder).where(
@@ -522,9 +572,11 @@ class TaskService:
         # 5. 货物挂接
         await TaskWaybillItemService.add_items(db, task, data.waybillItems)
 
-        # 6. 若无分段，根据已挂接的运单聚合 origin/destination
+        # 6. 若无分段，根据已挂接的运单聚合 origin/destination，
+        #    并生成一条"主线路"调令兜底（保证装卸 / 司机执行有可关联调令）
         if not data.segments:
             await TaskService._fill_route_from_waybills(db, task)
+            await TaskService.ensure_main_line_dispatch_order(db, task)
 
         await db.refresh(task)
         return task
@@ -579,9 +631,11 @@ class TaskService:
             await TaskWaybillItemService.replace_items(
                 db, task, data.waybillItems
             )
-            # 若当前任务没有有效分段，用最新挂接的运单回填起终地
+            # 若当前任务没有有效分段，用最新挂接的运单回填起终地，
+            # 并生成"主线路"调令兜底
             if int(task.segment_count or 0) == 0:
                 await TaskService._fill_route_from_waybills(db, task)
+                await TaskService.ensure_main_line_dispatch_order(db, task)
 
         await db.flush()
         await db.refresh(task)

@@ -98,10 +98,10 @@
             <el-table-column label="状态" width="100" align="center">
               <template #default="{ row }">
                 <el-tag
-                  :type="(ITEM_STATUS_TAG[row.status]?.type as any) || 'info'"
+                  :type="(ITEM_STATUS_MAP[row.status]?.type as any) || 'info'"
                   size="small"
                 >
-                  {{ ITEM_STATUS_TAG[row.status]?.label || '--' }}
+                  {{ ITEM_STATUS_MAP[row.status]?.label || '--' }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -202,13 +202,11 @@
     TaskWaybillItem
   } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
-
-  const ITEM_STATUS_TAG: Record<number, { label: string; type: string }> = {
-    0: { label: '待装车', type: 'info' },
-    1: { label: '已装车', type: 'warning' },
-    2: { label: '已卸车', type: 'primary' },
-    3: { label: '已签收', type: 'success' }
-  };
+  import {
+    DISPATCH_TYPE_DEFAULT,
+    DISPATCH_TYPE_HEAVY,
+    ITEM_STATUS_MAP
+  } from '../../task/status-config';
 
   const props = defineProps<{
     visible: boolean;
@@ -255,7 +253,9 @@
   const task = computed<Task | null>(() => props.tasks?.[0] ?? null);
 
   const heavyOrders = computed(() =>
-    dispatchOrders.value.filter((o) => (o.dispatchType ?? 1) === 1)
+    dispatchOrders.value.filter(
+      (o) => (o.dispatchType ?? DISPATCH_TYPE_DEFAULT) === DISPATCH_TYPE_HEAVY
+    )
   );
 
   const unloadableItems = computed(() => {
@@ -294,7 +294,7 @@
       items.value = its;
       unloadHistory.value = history.filter((r) => r.eventType === 2);
       const heavy = dispatchOrders.value.filter(
-        (o) => (o.dispatchType ?? 1) === 1
+        (o) => (o.dispatchType ?? DISPATCH_TYPE_DEFAULT) === DISPATCH_TYPE_HEAVY
       );
       if (heavy.length === 1) {
         form.dispatchOrderId = heavy[0]!.id;

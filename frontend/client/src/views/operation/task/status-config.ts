@@ -55,6 +55,32 @@ export const CARRIER_TYPE_DETAIL_HINT: Record<number, string> = {
   3: '选定社会运力后任务直接进入「待装车」，无需再派车。'
 };
 
+/** 调令类型（dispatch_type，与后端 dispatch_order_state_machine 保持一致） */
+export const DISPATCH_TYPE_HEAVY = 1; // 重驶：带货主业务段
+export const DISPATCH_TYPE_EMPTY = 2; // 空驶
+export const DISPATCH_TYPE_INSPECTION = 3; // 年检
+export const DISPATCH_TYPE_EMERGENCY = 4; // 应急
+export const DISPATCH_TYPE_OTHER = 5; // 其他
+/** 默认调令类型（未指定时按"重驶"处理） */
+export const DISPATCH_TYPE_DEFAULT = DISPATCH_TYPE_HEAVY;
+
+export const DISPATCH_TYPE_OPTIONS = [
+  { value: DISPATCH_TYPE_HEAVY, label: '重驶', type: 'success' },
+  { value: DISPATCH_TYPE_EMPTY, label: '空驶', type: 'info' },
+  { value: DISPATCH_TYPE_INSPECTION, label: '年检', type: 'warning' },
+  { value: DISPATCH_TYPE_EMERGENCY, label: '应急', type: 'danger' },
+  { value: DISPATCH_TYPE_OTHER, label: '其他', type: 'info' }
+] as const;
+
+export const DISPATCH_TYPE_MAP: Record<number, { label: string; type: string }> =
+  DISPATCH_TYPE_OPTIONS.reduce(
+    (m, x) => {
+      m[x.value] = { label: x.label, type: x.type };
+      return m;
+    },
+    {} as Record<number, { label: string; type: string }>
+  );
+
 /** 段状态 */
 export const SEGMENT_STATUS_OPTIONS = [
   { value: 0, label: '待装车', type: 'info' },
@@ -64,6 +90,17 @@ export const SEGMENT_STATUS_OPTIONS = [
   { value: 4, label: '已卸车', type: 'success' }
 ] as const;
 
+export const SEGMENT_STATUS_MAP: Record<
+  number,
+  { label: string; type: string }
+> = SEGMENT_STATUS_OPTIONS.reduce(
+  (m, x) => {
+    m[x.value] = { label: x.label, type: x.type };
+    return m;
+  },
+  {} as Record<number, { label: string; type: string }>
+);
+
 /** 挂接货物状态 */
 export const ITEM_STATUS_OPTIONS = [
   { value: 0, label: '待装车', type: 'info' },
@@ -71,6 +108,15 @@ export const ITEM_STATUS_OPTIONS = [
   { value: 2, label: '已卸车', type: 'primary' },
   { value: 3, label: '已签收', type: 'success' }
 ] as const;
+
+export const ITEM_STATUS_MAP: Record<number, { label: string; type: string }> =
+  ITEM_STATUS_OPTIONS.reduce(
+    (m, x) => {
+      m[x.value] = { label: x.label, type: x.type };
+      return m;
+    },
+    {} as Record<number, { label: string; type: string }>
+  );
 
 /** 承运成本类型 */
 export const CARRIER_COST_TYPE_OPTIONS = [

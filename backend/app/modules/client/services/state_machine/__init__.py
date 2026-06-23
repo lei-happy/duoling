@@ -25,6 +25,23 @@ from app.modules.client.services.state_machine.item_state_machine import (
     ITEM_VALID_TRANS,
     ItemStateMachine,
 )
+from app.modules.client.services.state_machine.dispatch_order_state_machine import (
+    CARGO_DISPATCH_TYPES,
+    DISPATCH_ORDER_NO_MAX,
+    DISPATCH_ORDER_NO_MIN,
+    DISPATCH_ORDER_STATUS_LABELS,
+    DISPATCH_ORDER_STATUS_MAX,
+    DISPATCH_ORDER_STATUS_MIN,
+    DISPATCH_TYPE_DEFAULT,
+    DISPATCH_TYPE_HEAVY,
+    DISPATCH_TYPE_LABELS,
+    DISPATCH_TYPE_MAX,
+    DISPATCH_TYPE_MIN,
+    DISPATCH_PENDING_LOAD,
+    MAIN_LINE_ORDER_NO,
+    is_valid_dispatch_order_status,
+    is_valid_dispatch_type,
+)
 
 __all__ = [
     "TASK_FORCE_CANCEL_FROM",
@@ -38,4 +55,19 @@ __all__ = [
     "ITEM_STATUS_LABELS",
     "ITEM_VALID_TRANS",
     "ItemStateMachine",
+    "CARGO_DISPATCH_TYPES",
+    "DISPATCH_ORDER_NO_MAX",
+    "DISPATCH_ORDER_NO_MIN",
+    "DISPATCH_ORDER_STATUS_LABELS",
+    "DISPATCH_ORDER_STATUS_MAX",
+    "DISPATCH_ORDER_STATUS_MIN",
+    "DISPATCH_TYPE_DEFAULT",
+    "DISPATCH_TYPE_HEAVY",
+    "DISPATCH_TYPE_LABELS",
+    "DISPATCH_TYPE_MAX",
+    "DISPATCH_TYPE_MIN",
+    "DISPATCH_PENDING_LOAD",
+    "MAIN_LINE_ORDER_NO",
+    "is_valid_dispatch_order_status",
+    "is_valid_dispatch_type",
 ]

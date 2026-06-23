@@ -597,6 +597,10 @@ async def list_dispatch_orders(
     db: AsyncSession = Depends(get_tenant_db),
     _: TokenData = Depends(get_current_user),
 ):
+    # 懒修复：历史/未规划路线的任务可能零调令，按起终点自动补一条主线路调令，
+    # 避免装卸 / 司机执行环节"关联调令"为空导致流程卡死（幂等）。
+    task = await TaskService.get_or_404(db, task_id)
+    await TaskService.ensure_main_line_dispatch_order(db, task)
     segs = await TaskService.list_dispatch_orders(db, task_id)
     return success(
         data=[TaskDispatchOrderOut.from_model(s).model_dump() for s in segs]

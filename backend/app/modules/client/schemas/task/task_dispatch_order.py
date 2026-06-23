@@ -5,6 +5,16 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.modules.client.services.state_machine.dispatch_order_state_machine import (
+    DISPATCH_ORDER_NO_MAX,
+    DISPATCH_ORDER_NO_MIN,
+    DISPATCH_ORDER_STATUS_MAX,
+    DISPATCH_ORDER_STATUS_MIN,
+    DISPATCH_TYPE_DEFAULT,
+    DISPATCH_TYPE_MAX,
+    DISPATCH_TYPE_MIN,
+)
+
 
 class TaskDispatchOrderIn(BaseModel):
     """调令入参（创建/整单替换）
@@ -12,9 +22,12 @@ class TaskDispatchOrderIn(BaseModel):
     兼容旧前端字段：``segmentNo`` 仍可被接受并自动映射到 ``orderNo``。
     """
 
-    orderNo: int = Field(ge=1, le=20, description="调令序号 1-20")
+    orderNo: int = Field(
+        ge=DISPATCH_ORDER_NO_MIN, le=DISPATCH_ORDER_NO_MAX,
+        description=f"调令序号 {DISPATCH_ORDER_NO_MIN}-{DISPATCH_ORDER_NO_MAX}",
+    )
     dispatchType: int = Field(
-        default=1, ge=1, le=5,
+        default=DISPATCH_TYPE_DEFAULT, ge=DISPATCH_TYPE_MIN, le=DISPATCH_TYPE_MAX,
         description="调令类型 1-重驶 2-空驶 3-年检 4-应急 5-其他",
     )
     fromLocation: Optional[str] = None
@@ -39,7 +52,10 @@ class TaskDispatchOrderIn(BaseModel):
 
 
 class TaskDispatchOrderStatusUpdate(BaseModel):
-    status: int = Field(ge=0, le=4)
+    status: int = Field(
+        ge=DISPATCH_ORDER_STATUS_MIN, le=DISPATCH_ORDER_STATUS_MAX,
+        description="调令状态 0-待装车 1-装车中 2-在途 3-已到达 4-已卸车",
+    )
     actualLoadTime: Optional[datetime] = None
     actualArriveTime: Optional[datetime] = None
     acceptedAt: Optional[datetime] = None

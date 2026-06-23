@@ -206,11 +206,14 @@
                   <el-tag
                     size="small"
                     :type="
-                      (DISPATCH_TYPE_LABEL[row.dispatchType ?? 1]
+                      (DISPATCH_TYPE_MAP[row.dispatchType ?? DISPATCH_TYPE_DEFAULT]
                         ?.type as any) || 'info'
                     "
                   >
-                    {{ DISPATCH_TYPE_LABEL[row.dispatchType ?? 1]?.label || '--' }}
+                    {{
+                      DISPATCH_TYPE_MAP[row.dispatchType ?? DISPATCH_TYPE_DEFAULT]
+                        ?.label || '--'
+                    }}
                   </el-tag>
                 </template>
               </el-table-column>
@@ -256,7 +259,7 @@
               <el-table-column label="状态" width="100" align="center">
                 <template #default="{ row }">
                   <el-tag size="small">
-                    {{ SEGMENT_STATUS_LABEL[row.status] || row.status }}
+                    {{ SEGMENT_STATUS_MAP[row.status]?.label || row.status }}
                   </el-tag>
                 </template>
               </el-table-column>
@@ -379,7 +382,7 @@
               <el-table-column label="状态" width="100" align="center">
                 <template #default="{ row }">
                   <el-tag size="small">
-                    {{ ITEM_STATUS_LABEL[row.status] || row.status }}
+                    {{ ITEM_STATUS_MAP[row.status]?.label || row.status }}
                   </el-tag>
                 </template>
               </el-table-column>
@@ -539,7 +542,14 @@
     TaskLoadingRecord
   } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
-  import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from '../status-config';
+  import {
+    CARRIER_TYPE_MAP,
+    DISPATCH_TYPE_DEFAULT,
+    DISPATCH_TYPE_MAP,
+    ITEM_STATUS_MAP,
+    SEGMENT_STATUS_MAP,
+    TASK_STATUS_MAP
+  } from '../status-config';
   import {
     TASK_ACTION_CONFIGS,
     getPrimaryTaskAction,
@@ -573,26 +583,6 @@
   const financeDocs = ref<TaskFinanceSummaryItem[]>([]);
   const activeTab = ref('segments');
 
-  const SEGMENT_STATUS_LABEL: Record<number, string> = {
-    0: '待装车',
-    1: '装车中',
-    2: '在途',
-    3: '已到达',
-    4: '已卸车'
-  };
-  const ITEM_STATUS_LABEL: Record<number, string> = {
-    0: '待装车',
-    1: '已装车',
-    2: '已卸车',
-    3: '已签收'
-  };
-  const DISPATCH_TYPE_LABEL: Record<number, { label: string; type: string }> = {
-    1: { label: '重驶', type: 'success' },
-    2: { label: '空驶', type: 'info' },
-    3: { label: '年检', type: 'warning' },
-    4: { label: '应急', type: 'danger' },
-    5: { label: '其他', type: 'info' }
-  };
 
   const orderNoOf = (orderId?: number | null): string | number => {
     if (!orderId) return '--';
