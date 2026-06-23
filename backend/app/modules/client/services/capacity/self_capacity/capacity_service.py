@@ -15,8 +15,13 @@ from app.modules.client.models.capacity.self_capacity.capacity import (
     Capacity, CapacityLog,
 )
 from app.modules.client.models.capacity.self_capacity.driver.driver import Driver
+from app.modules.client.models.capacity.self_capacity.driver.driver_operation import (
+    DriverOperation,
+)
 from app.modules.client.models.capacity.self_capacity.vehicle import Vehicle
+from app.modules.client.models.capacity.self_capacity.vehicle_ext import VehicleExt
 from app.modules.client.models.capacity.self_capacity.trailer import Trailer
+from app.modules.client.models.organization.biz_department import BizDepartment
 from app.modules.client.models.user.biz_user import BizUser
 from app.modules.client.schemas.capacity.self_capacity.capacity import (
     CapacityOut, CapacityLogOut,
@@ -114,11 +119,15 @@ class CapacityService:
             },
         )
 
+        extras = await CapacityService._load_capacity_extras(
+            db, driver_id, vehicle_id
+        )
         return CapacityOut.from_model(
             capacity,
             vehicle.plate_category,
             trailer_plate,
             trailer_cat,
+            **extras,
         )
 
     @staticmethod
@@ -194,11 +203,15 @@ class CapacityService:
             await CapacityService._trailer_plates_for_vehicle(db, vehicle)
         )
 
+        extras = await CapacityService._load_capacity_extras(
+            db, capacity.driver_id, capacity.vehicle_id
+        )
         return CapacityOut.from_model(
             capacity,
             pc,
             trailer_plate,
             trailer_cat,
+            **extras,
         )
 
     @staticmethod
@@ -215,6 +228,10 @@ class CapacityService:
                 Vehicle.plate_category,
                 Trailer.plate_number.label("trailer_plate"),
                 Trailer.plate_category.label("trailer_cat"),
+                Driver.avatar.label("driver_avatar"),
+                BizDepartment.dept_name.label("department_name"),
+                DriverOperation.operation_status.label("operation_status"),
+                VehicleExt.vehicle_type.label("vehicle_type"),
             )
             .outerjoin(
                 Vehicle,
@@ -223,6 +240,31 @@ class CapacityService:
             .outerjoin(
                 Trailer,
                 and_(Trailer.id == Vehicle.trailer_id, Trailer.is_deleted == 0),
+            )
+            .outerjoin(
+                Driver,
+                and_(Driver.id == Capacity.driver_id, Driver.is_deleted == 0),
+            )
+            .outerjoin(
+                DriverOperation,
+                and_(
+                    DriverOperation.driver_id == Driver.id,
+                    DriverOperation.is_deleted == 0,
+                ),
+            )
+            .outerjoin(
+                BizDepartment,
+                and_(
+                    BizDepartment.id == DriverOperation.department_id,
+                    BizDepartment.is_deleted == 0,
+                ),
+            )
+            .outerjoin(
+                VehicleExt,
+                and_(
+                    VehicleExt.vehicle_id == Vehicle.id,
+                    VehicleExt.is_deleted == 0,
+                ),
             )
             .where(
                 Capacity.is_deleted == 0,
@@ -258,8 +300,12 @@ class CapacityService:
                     pc or "YELLOW",
                     tp,
                     tc,
+                    driver_avatar=avatar,
+                    department_name=dept_name,
+                    operation_status=op_status,
+                    vehicle_type=vtype,
                 ).model_dump()
-                for cap, pc, tp, tc in rows
+                for cap, pc, tp, tc, avatar, dept_name, op_status, vtype in rows
             ],
             "total": total,
             "count": total,
@@ -342,6 +388,62 @@ class CapacityService:
             "total": total,
             "page": page,
             "page_size": page_size,
+        }
+
+    @staticmethod
+    async def _load_capacity_extras(
+        db: AsyncSession,
+        driver_id: int,
+        vehicle_id: int,
+    ) -> dict:
+        """加载卡片展示所需的关联字段"""
+        driver_avatar = None
+        department_name = None
+        operation_status = None
+        vehicle_type = None
+
+        dr = await db.execute(
+            select(Driver.avatar).where(
+                Driver.id == driver_id,
+                Driver.is_deleted == 0,
+            )
+        )
+        driver_avatar = dr.scalar_one_or_none()
+
+        op = await db.execute(
+            select(
+                DriverOperation.operation_status,
+                BizDepartment.dept_name,
+            )
+            .outerjoin(
+                BizDepartment,
+                and_(
+                    BizDepartment.id == DriverOperation.department_id,
+                    BizDepartment.is_deleted == 0,
+                ),
+            )
+            .where(
+                DriverOperation.driver_id == driver_id,
+                DriverOperation.is_deleted == 0,
+            )
+        )
+        op_row = op.one_or_none()
+        if op_row:
+            operation_status, department_name = op_row
+
+        ext = await db.execute(
+            select(VehicleExt.vehicle_type).where(
+                VehicleExt.vehicle_id == vehicle_id,
+                VehicleExt.is_deleted == 0,
+            )
+        )
+        vehicle_type = ext.scalar_one_or_none()
+
+        return {
+            "driver_avatar": driver_avatar,
+            "department_name": department_name,
+            "operation_status": operation_status,
+            "vehicle_type": vehicle_type,
         }
 
     @staticmethod

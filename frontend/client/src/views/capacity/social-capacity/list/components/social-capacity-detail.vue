@@ -146,6 +146,14 @@
 
           <el-tab-pane label="驾驶员信息" name="driver">
             <div class="sc-detail-tab-pane">
+              <div v-if="detail.driver?.avatar" class="sc-detail-portrait-wrap">
+                <el-image
+                  :src="resolveUploadUrl(detail.driver.avatar)"
+                  fit="cover"
+                  class="sc-detail-portrait"
+                  :preview-src-list="[resolveUploadUrl(detail.driver.avatar)]"
+                />
+              </div>
               <el-descriptions :column="2" border size="small">
                 <el-descriptions-item label="姓名">{{ detail.driver?.name || '—' }}</el-descriptions-item>
                 <el-descriptions-item label="手机号">{{ detail.driver?.phone || '—' }}</el-descriptions-item>
@@ -509,6 +517,18 @@
     overflow-x: hidden;
     padding: 14px 6px 12px 4px;
     scrollbar-gutter: stable;
+  }
+
+  .sc-detail-portrait-wrap {
+    margin-bottom: 14px;
+  }
+
+  .sc-detail-portrait {
+    width: 96px;
+    aspect-ratio: 3 / 4;
+    border-radius: 10px;
+    display: block;
+    box-shadow: inset 0 0 0 1px var(--el-border-color-lighter);
   }
 
   .sc-detail-section-title {

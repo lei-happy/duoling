@@ -16,6 +16,10 @@ export interface Capacity {
   unboundAt?: string;
   remark?: string;
   createdAt?: string;
+  driverAvatar?: string;
+  departmentName?: string;
+  operationStatus?: number;
+  vehicleType?: string;
 }
 
 export interface CapacityParam extends PageParam {

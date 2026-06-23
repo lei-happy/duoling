@@ -169,6 +169,8 @@ class SocialCapacityListItem(BaseModel):
     ratingScore: Optional[float] = None
     ratingLevel: Optional[int] = None
     defaultAccount: Optional[SocialCapacityAccountBrief] = None
+    driverAvatar: Optional[str] = None
+    trailerPlateNumber: Optional[str] = None
     createdAt: datetime
     updatedAt: datetime
 

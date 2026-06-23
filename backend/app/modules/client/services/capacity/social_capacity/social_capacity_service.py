@@ -721,12 +721,19 @@ class SocialCapacityService:
         order_clauses = _list_order_clauses(sort, order)
 
         result = await db.execute(
-            select(SocialCapacity, SocialCapacityVehicle)
+            select(SocialCapacity, SocialCapacityVehicle, SocialCapacityDriver)
             .outerjoin(
                 SocialCapacityVehicle,
                 and_(
                     SocialCapacityVehicle.social_capacity_id == SocialCapacity.id,
                     SocialCapacityVehicle.is_deleted == 0,
+                ),
+            )
+            .outerjoin(
+                SocialCapacityDriver,
+                and_(
+                    SocialCapacityDriver.social_capacity_id == SocialCapacity.id,
+                    SocialCapacityDriver.is_deleted == 0,
                 ),
             )
             .where(*base_filter)
@@ -737,7 +744,7 @@ class SocialCapacityService:
         rows = result.all()
 
         items: List[dict] = []
-        for r, veh in rows:
+        for r, veh, driver in rows:
             default_acc = await SocialCapacityService._load_default_account_brief(db, r.id)
             items.append(
                 SocialCapacityListItem(
@@ -754,6 +761,8 @@ class SocialCapacityService:
                     ratingScore=float(r.rating_score) if r.rating_score is not None else None,
                     ratingLevel=r.rating_level,
                     defaultAccount=default_acc,
+                    driverAvatar=driver.avatar if driver else None,
+                    trailerPlateNumber=veh.trailer_plate if veh else None,
                     createdAt=r.created_at,
                     updatedAt=r.updated_at,
                 ).model_dump()

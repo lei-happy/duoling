@@ -137,6 +137,8 @@ export interface SocialCapacityListItem {
   ratingScore?: number;
   ratingLevel?: number;
   defaultAccount?: SocialCapacityAccountBrief;
+  driverAvatar?: string;
+  trailerPlateNumber?: string;
   createdAt?: string;
   updatedAt?: string;
 }

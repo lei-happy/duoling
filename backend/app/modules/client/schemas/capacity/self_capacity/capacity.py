@@ -35,6 +35,10 @@ class CapacityOut(BaseModel):
     unboundAt: Optional[datetime] = None
     remark: Optional[str] = None
     createdAt: Optional[datetime] = None
+    driverAvatar: Optional[str] = None
+    departmentName: Optional[str] = None
+    operationStatus: Optional[int] = None
+    vehicleType: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -45,6 +49,10 @@ class CapacityOut(BaseModel):
         plate_category: Optional[str] = None,
         trailer_plate_number: Optional[str] = None,
         trailer_plate_category: Optional[str] = None,
+        driver_avatar: Optional[str] = None,
+        department_name: Optional[str] = None,
+        operation_status: Optional[int] = None,
+        vehicle_type: Optional[str] = None,
     ) -> "CapacityOut":
         return cls(
             id=cap.id,
@@ -61,6 +69,10 @@ class CapacityOut(BaseModel):
             unboundAt=cap.unbound_at,
             remark=cap.remark,
             createdAt=cap.created_at,
+            driverAvatar=driver_avatar,
+            departmentName=department_name,
+            operationStatus=operation_status,
+            vehicleType=vehicle_type,
         )
 
 

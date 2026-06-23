@@ -21,90 +21,119 @@
       <el-tabs v-model="activeTab" class="driver-edit-tabs">
         <el-tab-pane label="基础信息" name="basic">
           <div class="driver-tab-pane">
-            <el-row :gutter="16">
-              <el-col :span="12">
-                <el-form-item prop="name">
-                  <floating-label
-                    label="请输入姓名"
-                    type="input"
-                    v-model.trim="form.name"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item prop="phone">
-                  <floating-label
-                    label="请输入手机号"
-                    type="input"
-                    v-model.trim="form.phone"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item>
-                  <floating-label
-                    v-model="form.gender"
-                    label="请选择性别"
-                    type="select"
-                    clearable
+            <div class="driver-photo-section-title">驾驶员照片</div>
+            <el-row :gutter="16" class="driver-basic-row">
+              <el-col :span="8" :xs="24">
+                <div class="driver-portrait-upload">
+                  <div
+                    class="driver-portrait-frame"
+                    @click="openDriverPhotoCropper"
                   >
-                    <el-option label="男" :value="1" />
-                    <el-option label="女" :value="2" />
-                  </floating-label>
-                </el-form-item>
+                    <el-image
+                      v-if="form.avatar"
+                      :src="resolveUploadUrl(form.avatar)"
+                      fit="cover"
+                      class="driver-portrait-image"
+                    />
+                    <div v-else class="driver-portrait-empty">
+                      <el-icon :size="28"><Plus /></el-icon>
+                      <span>上传驾驶员照片</span>
+                    </div>
+                    <div class="driver-portrait-overlay">
+                      <el-icon :size="24"><CloudUploadOutlined /></el-icon>
+                      <span>{{ form.avatar ? '更换照片' : '上传照片' }}</span>
+                    </div>
+                  </div>
+                  <p class="driver-portrait-hint">半身照 JPG / PNG</p>
+                </div>
               </el-col>
-              <el-col :span="12">
-                <el-form-item>
-                  <floating-label
-                    label="请输入身份证号"
-                    type="input"
-                    v-model.trim="form.idCard"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item>
-                  <floating-label
-                    label="请输入紧急联系人"
-                    type="input"
-                    v-model.trim="form.emergencyContact"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item>
-                  <floating-label
-                    label="请输入紧急联系电话"
-                    type="input"
-                    v-model.trim="form.emergencyPhone"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="24">
-                <el-form-item>
-                  <floating-label
-                    label="请输入家庭住址"
-                    type="input"
-                    v-model.trim="form.homeAddress"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="24">
-                <el-form-item>
-                  <floating-label
-                    label="请输入备注"
-                    type="input"
-                    input-type="textarea"
-                    v-model.trim="form.remark"
-                    clearable
-                  />
-                </el-form-item>
+              <el-col :span="16" :xs="24">
+                <el-row :gutter="16">
+                  <el-col :span="12">
+                    <el-form-item prop="name">
+                      <floating-label
+                        label="请输入姓名"
+                        type="input"
+                        v-model.trim="form.name"
+                        clearable
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-form-item prop="phone">
+                      <floating-label
+                        label="请输入手机号"
+                        type="input"
+                        v-model.trim="form.phone"
+                        clearable
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-form-item>
+                      <floating-label
+                        v-model="form.gender"
+                        label="请选择性别"
+                        type="select"
+                        clearable
+                      >
+                        <el-option label="男" :value="1" />
+                        <el-option label="女" :value="2" />
+                      </floating-label>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-form-item>
+                      <floating-label
+                        label="请输入身份证号"
+                        type="input"
+                        v-model.trim="form.idCard"
+                        clearable
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-form-item>
+                      <floating-label
+                        label="请输入紧急联系人"
+                        type="input"
+                        v-model.trim="form.emergencyContact"
+                        clearable
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-form-item>
+                      <floating-label
+                        label="请输入紧急联系电话"
+                        type="input"
+                        v-model.trim="form.emergencyPhone"
+                        clearable
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="24">
+                    <el-form-item>
+                      <floating-label
+                        label="请输入家庭住址"
+                        type="input"
+                        v-model.trim="form.homeAddress"
+                        clearable
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="24">
+                    <el-form-item>
+                      <floating-label
+                        label="请输入备注"
+                        type="input"
+                        input-type="textarea"
+                        v-model.trim="form.remark"
+                        clearable
+                      />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
               </el-col>
             </el-row>
           </div>
@@ -481,6 +510,20 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 驾驶员半身照裁剪弹窗 -->
+    <ele-cropper-modal
+      v-model="cropperVisible"
+      :src="cropperSrc"
+      :options="{
+        aspectRatio: 3 / 4,
+        autoCropArea: 1,
+        viewMode: 1,
+        dragMode: 'move'
+      }"
+      :modal-props="{ destroyOnClose: true }"
+      @done="handleDriverPhotoCrop"
+    />
   </el-dialog>
 </template>
 
@@ -489,6 +532,7 @@
   import type { FormInstance, FormRules } from 'element-plus';
   import { ElMessageBox } from 'element-plus';
   import { Plus } from '@element-plus/icons-vue';
+  import { CloudUploadOutlined } from '@/components/icons';
   import { EleMessage } from 'ele-admin-plus';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
@@ -569,6 +613,11 @@
 
   const routes = ref<RouteRow[]>([]);
 
+  const cropperVisible = ref(false);
+  const cropperSrc = ref('');
+
+  const MAX_DRIVER_PHOTO_SIZE = 5 * 1024 * 1024;
+
   /** 资质页证件画廊项（字段名与 Driver 一致） */
   const driverPhotoGallery = [
     {
@@ -611,6 +660,75 @@
     ],
     accountNo: [{ required: true, message: '请输入账户号', trigger: 'blur' }]
   });
+
+  const compressImage = (base64: string, quality = 0.85): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('无法创建画布'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('图片加载失败'));
+      img.src = base64;
+    });
+  };
+
+  const base64ToFile = (base64: string, fileName: string): File => {
+    const arr = base64.split(',');
+    const mime = arr[0]?.match(/:(.*?);/)?.[1] || 'image/png';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], fileName, { type: mime });
+  };
+
+  const openDriverPhotoCropper = () => {
+    cropperSrc.value = form.avatar ? resolveUploadUrl(form.avatar) : '';
+    cropperVisible.value = true;
+  };
+
+  const handleDriverPhotoCrop = async (result: string | Blob | null) => {
+    cropperVisible.value = false;
+    if (!result || typeof result !== 'string') {
+      return;
+    }
+    const loadingMsg = EleMessage.loading({ message: '上传中..', plain: true });
+    try {
+      const compressed = await compressImage(result);
+      const file = base64ToFile(compressed, 'driver-photo.jpg');
+      if (file.size > MAX_DRIVER_PHOTO_SIZE) {
+        loadingMsg.close();
+        EleMessage.error({
+          message: '图片过大，请选择较小的图片',
+          plain: true
+        });
+        return;
+      }
+      const uploadRes = await uploadFile(
+        file,
+        undefined,
+        'driver-photo.jpg',
+        'avatar'
+      );
+      form.avatar = uploadRes.url;
+      loadingMsg.close();
+      EleMessage.success({ message: '照片上传成功', plain: true });
+    } catch (e: any) {
+      loadingMsg.close();
+      EleMessage.error({ message: e.message || '上传失败', plain: true });
+    }
+  };
 
   const handlePhotoUpload = async (options: any, field: string) => {
     try {
@@ -954,6 +1072,86 @@
     padding-left: 2px;
     border-left: 3px solid var(--el-color-primary);
     line-height: 1.2;
+  }
+
+  .driver-basic-row {
+    margin-bottom: 4px;
+  }
+
+  .driver-portrait-upload {
+    max-width: 180px;
+    margin: 0 auto 12px;
+  }
+
+  @media (min-width: 768px) {
+    .driver-portrait-upload {
+      margin: 0 0 12px;
+    }
+  }
+
+  .driver-portrait-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px dashed var(--el-border-color);
+    background: var(--el-fill-color-light);
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .driver-portrait-frame:hover {
+    border-color: var(--el-color-primary);
+  }
+
+  .driver-portrait-frame:hover .driver-portrait-overlay {
+    opacity: 1;
+  }
+
+  .driver-portrait-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .driver-portrait-empty {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    text-align: center;
+    padding: 0 8px;
+    box-sizing: border-box;
+  }
+
+  .driver-portrait-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #fff;
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+
+  .driver-portrait-hint {
+    margin: 8px 0 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--el-text-color-placeholder);
+    line-height: 1.3;
   }
 
   .driver-section-toolbar {

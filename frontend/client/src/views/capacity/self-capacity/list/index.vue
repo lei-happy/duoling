@@ -2,48 +2,44 @@
   <ele-page>
     <capacity-search @search="onSearch" />
     <ele-card :body-style="{ paddingTop: '8px' }">
-      <ele-pro-table
-        ref="tableRef"
-        row-key="id"
-        :columns="columns"
-        :datasource="datasource"
-        :show-overflow-tooltip="true"
-        :highlight-current-row="true"
-        :default-sort="{ prop: 'boundAt', order: 'descending' }"
-        cache-key="CapacityListTable"
-      >
-        <template #toolbar>
-          <btn-items
-            :items="[
-              {
-                preset: 'add',
-                title: '新建运力',
-                onClick: () => openBind()
-              }
-            ]"
+      <div class="capacity-list-toolbar">
+        <btn-items
+          :items="[
+            {
+              preset: 'add',
+              title: '新建运力',
+              onClick: () => openBind()
+            }
+          ]"
+        />
+      </div>
+
+      <div v-loading="loading" class="capacity-list-body">
+        <div v-if="list.length" class="capacity-card-grid">
+          <capacity-card
+            v-for="item in list"
+            :key="item.id"
+            :item="item"
+            @unbind="handleUnbind"
           />
-        </template>
-        <template #plateNumber="{ row }">
-          <plate-number-tag
-            :text="row.plateNumber"
-            :category="row.plateCategory"
-          />
-        </template>
-        <template #trailerPlateNumber="{ row }">
-          <plate-number-tag
-            v-if="row.trailerPlateNumber"
-            :text="row.trailerPlateNumber"
-            :category="row.trailerPlateCategory"
-          />
-          <span v-else style="color: var(--el-text-color-placeholder)">—</span>
-        </template>
-        <template #action="{ row }">
-          <el-button type="danger" link size="small" @click="handleUnbind(row)">
-            下车
-          </el-button>
-        </template>
-      </ele-pro-table>
+        </div>
+        <el-empty v-else-if="!loading" description="暂无绑定中的运力" />
+      </div>
+
+      <div v-if="total > 0" class="capacity-list-pagination">
+        <el-pagination
+          v-model:current-page="page"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="[18, 36, 54]"
+          layout="total, sizes, prev, pager, next, jumper"
+          background
+          @current-change="loadData"
+          @size-change="onPageSizeChange"
+        />
+      </div>
     </ele-card>
+
     <capacity-bind v-model:visible="bindVisible" @done="reload" />
 
     <el-dialog
@@ -102,16 +98,12 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive } from 'vue';
+  import { ref, reactive, onMounted } from 'vue';
   import { WarningFilled } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
-  import type { EleProTable } from 'ele-admin-plus';
-  import type {
-    DatasourceFunction,
-    Columns
-  } from 'ele-admin-plus/es/ele-pro-table/types';
   import CapacitySearch from './components/capacity-search.vue';
   import CapacityBind from './components/capacity-bind.vue';
+  import CapacityCard from './components/capacity-card.vue';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
   import {
     pageCapacities,
@@ -121,69 +113,54 @@
     Capacity,
     CapacityParam
   } from '@/api/capacity/self-capacity/list/model';
-  import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'CapacityList' });
 
-  const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const bindVisible = ref(false);
+  const loading = ref(false);
+  const list = ref<Capacity[]>([]);
+  const total = ref(0);
+  const page = ref(1);
+  const pageSize = ref(18);
 
   const where = reactive<Pick<CapacityParam, 'keyword'>>({
     keyword: ''
   });
 
-  const onSearch = (payload: Pick<CapacityParam, 'keyword'>) => {
-    where.keyword = payload.keyword ?? '';
-    tableRef.value?.reload?.({ page: 1 });
+  const loadData = async () => {
+    loading.value = true;
+    try {
+      const res = await pageCapacities({
+        ...where,
+        page: page.value,
+        limit: pageSize.value
+      });
+      const raw = res as { list?: Capacity[]; count?: number; total?: number };
+      list.value = raw?.list ?? [];
+      total.value = raw?.count ?? raw?.total ?? 0;
+    } catch (e: unknown) {
+      list.value = [];
+      total.value = 0;
+      const message = e instanceof Error ? e.message : String(e);
+      EleMessage.error({ message, plain: true });
+    } finally {
+      loading.value = false;
+    }
   };
 
-  const columns = ref<Columns>([
-    { prop: 'driverName', label: '驾驶员姓名', minWidth: 100 },
-    { prop: 'driverPhone', label: '手机号', minWidth: 130 },
-    {
-      prop: 'plateNumber',
-      label: '车牌号',
-      minWidth: 120,
-      slot: 'plateNumber'
-    },
-    {
-      prop: 'trailerPlateNumber',
-      label: '挂车',
-      minWidth: 120,
-      slot: 'trailerPlateNumber'
-    },
-    {
-      prop: 'boundAt',
-      label: '绑定时间',
-      minWidth: 170,
-      align: 'center',
-      formatter: (row) => formatDateTime(row.boundAt)
-    },
-    {
-      columnKey: 'action',
-      label: '操作',
-      width: 100,
-      align: 'center',
-      slot: 'action',
-      hideInPrint: true,
-      hideInExport: true,
-      fixed: 'right'
-    }
-  ]);
+  const onSearch = (payload: Pick<CapacityParam, 'keyword'>) => {
+    where.keyword = payload.keyword ?? '';
+    page.value = 1;
+    loadData();
+  };
 
-  const datasource: DatasourceFunction = async ({ page, limit, pages }) => {
-    const p = page ?? (Number(pages?.page) || 1);
-    const l = limit ?? (Number(pages?.limit) || 10);
-    const res = await pageCapacities({ ...where, page: p, limit: l });
-    const raw = res as { list?: Capacity[]; count?: number; total?: number };
-    return {
-      list: raw?.list ?? [],
-      count: raw?.count ?? raw?.total ?? 0
-    };
+  const onPageSizeChange = () => {
+    page.value = 1;
+    loadData();
   };
 
   const reload = () => {
-    tableRef.value?.reload?.();
+    loadData();
   };
 
   const openBind = () => {
@@ -225,9 +202,60 @@
       unbindLoading.value = false;
     }
   };
+
+  onMounted(() => {
+    loadData();
+  });
 </script>
 
 <style scoped>
+  .capacity-list-toolbar {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .capacity-list-body {
+    min-height: 200px;
+  }
+
+  .capacity-card-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  @media (max-width: 1600px) {
+    .capacity-card-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 1280px) {
+    .capacity-card-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 992px) {
+    .capacity-card-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .capacity-card-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .capacity-list-pagination {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 8px;
+  }
+
   .capacity-unbind-dialog-body {
     display: flex;
     gap: 12px;
