@@ -22,7 +22,7 @@
     → ``2 调度中``
 
 注意：
-- ``status = 0 草稿`` 与 ``status = 6 已关闭`` 不被聚合器覆盖，需要走显式 API。
+- ``status = 0 草稿``、``6 已回单``、``7 已关闭`` 不被聚合器覆盖（人工/终态），需走显式 API。
 - ``allow_downgrade=True`` 允许从高位回退到低位（撤销签收 / 撤销到达 / 取消挂接等场景）。
 - 状态变更受 ``WaybillStateMachine.assert_transition`` 约束，遇到非法跳转抛出 BizException。
 """
@@ -42,14 +42,18 @@ from app.modules.client.services.state_machine.waybill_state_machine import (
     WAYBILL_DRAFT,
     WAYBILL_IN_TRANSIT,
     WAYBILL_PENDING,
+    WAYBILL_RECEIPTED,
     WAYBILL_SCHEDULING,
     WAYBILL_COMPLETED,
     WaybillStateMachine,
 )
 
 
-# 不参与聚合（终态）；进入这些状态后聚合器应跳过
-_SKIP_STATES: Set[int] = {WAYBILL_CLOSED, WAYBILL_DRAFT}
+# 不参与聚合（人工 / 终态）；进入这些状态后聚合器跳过、不自动改写。
+# - WAYBILL_DRAFT(0)：草稿，待运营手动确认
+# - WAYBILL_RECEIPTED(6)：已回单，运单侧人工动作，与 item 进度无关
+# - WAYBILL_CLOSED(7)：已关闭终态
+_SKIP_STATES: Set[int] = {WAYBILL_DRAFT, WAYBILL_RECEIPTED, WAYBILL_CLOSED}
 
 
 class WaybillStatusAggregator:

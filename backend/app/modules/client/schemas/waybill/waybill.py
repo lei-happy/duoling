@@ -200,6 +200,9 @@ class WaybillOut(BaseModel):
     contractId: Optional[int] = None
     rateId: Optional[int] = None
     status: int
+    receiptAt: Optional[datetime] = Field(
+        default=None, description="回单确认时间（签收底单返还货主）",
+    )
     calcStatus: Optional[str] = None
     isLocked: Optional[int] = None
     waybillVersion: Optional[int] = None
@@ -293,6 +296,7 @@ class WaybillOut(BaseModel):
             contractId=m.contract_id,
             rateId=m.rate_id,
             status=m.status,
+            receiptAt=getattr(m, "receipt_at", None),
             calcStatus=getattr(m, "calc_status", None),
             isLocked=getattr(m, "is_locked", None),
             waybillVersion=getattr(m, "waybill_version", None),

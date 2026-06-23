@@ -208,7 +208,8 @@
     "module": "operation",
     "description": null,
     "required_tables": [
-      "biz_waybill"
+      "biz_waybill",
+      "biz_waybill_receipt"
     ],
     "sort_order": 30,
     "status": 1
@@ -239,7 +240,8 @@
     "module": "operation",
     "description": null,
     "required_tables": [
-      "biz_waybill"
+      "biz_waybill",
+      "biz_waybill_receipt"
     ],
     "sort_order": 33,
     "status": 1

@@ -18,6 +18,34 @@ TaskSegmentIn = TaskDispatchOrderIn
 TaskSegmentOut = TaskDispatchOrderOut
 
 
+class WaybillStatusCount(BaseModel):
+    """单个运单状态的计数（用于任务侧只读展示运单状态分布）"""
+    status: int
+    count: int
+
+
+class WaybillStatusSummary(BaseModel):
+    """任务关联运单的状态分布（只读视图，与任务状态机彼此独立）。
+
+    例如 1 个任务挂接 3 张运单，其中 1 张「已回单(6)」、2 张「已签收(5)」，
+    则 total=3，items=[{5,2},{6,1}]。前端据此展示"部分回单/全部回单"等提示，
+    但**不改变任务状态**。
+    """
+    total: int = 0
+    items: List[WaybillStatusCount] = Field(default_factory=list)
+
+    @classmethod
+    def from_counts(cls, summary: Optional[Mapping]) -> "WaybillStatusSummary":
+        if not summary:
+            return cls(total=0, items=[])
+        counts = summary.get("counts") or {}
+        items = [
+            WaybillStatusCount(status=int(s), count=int(c))
+            for s, c in sorted(counts.items(), key=lambda kv: int(kv[0]))
+        ]
+        return cls(total=int(summary.get("total") or 0), items=items)
+
+
 class TaskCarrierInfo(BaseModel):
     """承运方信息（可被嵌入 Create / Update / Assign）"""
     carrierType: int = Field(ge=1, le=3,
@@ -256,6 +284,10 @@ class TaskListItemOut(BaseModel):
     status: int
     dispatcherName: Optional[str] = None
     createdAt: datetime
+    # —— 只读：关联运单状态分布（运单状态机独立于任务，仅供展示）
+    waybillStatusSummary: Optional[WaybillStatusSummary] = None
+    # —— 预留：关联财务单据状态分布（后续财务模块接入时填充）
+    financeStatusSummary: Optional[WaybillStatusSummary] = None
 
     model_config = {"from_attributes": True}
 
@@ -266,6 +298,7 @@ class TaskListItemOut(BaseModel):
         *,
         loaded_quantity: int = 0,
         unloaded_quantity: int = 0,
+        waybill_status_summary: Optional[Mapping] = None,
     ) -> "TaskListItemOut":
         return cls(
             id=m.id,
@@ -300,6 +333,9 @@ class TaskListItemOut(BaseModel):
             status=m.status,
             dispatcherName=m.dispatcher_name,
             createdAt=m.created_at,
+            waybillStatusSummary=WaybillStatusSummary.from_counts(
+                waybill_status_summary
+            ),
         )
 
 
@@ -346,6 +382,10 @@ class TaskOut(BaseModel):
     remark: Optional[str] = None
     createdAt: datetime
     updatedAt: datetime
+    # —— 只读：关联运单状态分布（运单状态机独立于任务，仅供展示）
+    waybillStatusSummary: Optional[WaybillStatusSummary] = None
+    # —— 预留：关联财务单据状态分布（后续财务模块接入时填充）
+    financeStatusSummary: Optional[WaybillStatusSummary] = None
 
     segments: List[TaskDispatchOrderOut] = Field(default_factory=list)
     waybillItems: List[TaskWaybillItemOut] = Field(default_factory=list)
@@ -360,6 +400,7 @@ class TaskOut(BaseModel):
         waybill_items: Optional[list] = None,
         *,
         series_lookup: Optional[Mapping[str, Optional[str]]] = None,
+        waybill_status_summary: Optional[Mapping] = None,
     ) -> "TaskOut":
         return cls(
             id=m.id,
@@ -406,6 +447,9 @@ class TaskOut(BaseModel):
             remark=m.remark,
             createdAt=m.created_at,
             updatedAt=m.updated_at,
+            waybillStatusSummary=WaybillStatusSummary.from_counts(
+                waybill_status_summary
+            ),
             segments=[TaskDispatchOrderOut.from_model(s) for s in (segments or [])],
             waybillItems=[
                 TaskWaybillItemOut.from_model(w, series_lookup=series_lookup)

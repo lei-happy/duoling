@@ -27,8 +27,12 @@ from app.modules.client.schemas.task.task_waybill_item import (
 )
 from app.modules.client.schemas.waybill.waybill import waybill_brand_model_key
 from app.modules.client.services.state_machine.item_state_machine import (
+    ITEM_SIGNED,
     ITEM_UNFINISHED_THRESHOLD,
     ItemStateMachine,
+)
+from app.modules.client.services.state_machine.waybill_state_machine import (
+    WAYBILL_RECEIPTED,
 )
 from app.modules.client.services.state_machine.task_state_machine import (
     TASK_ARRIVED,
@@ -434,6 +438,17 @@ class TaskWaybillItemService:
 
         old_status = int(item.status)
         new_status = int(data.status)
+
+        # 独立性防护：运单已进入「已回单(6)」后，底单已交付货主，
+        # 禁止 item 级"撤销签收"（3→2）直接回退，必须先在运单侧撤销回单。
+        if old_status == ITEM_SIGNED and new_status < ITEM_SIGNED:
+            wb_r = await db.execute(
+                select(Waybill.status).where(Waybill.id == item.waybill_id)
+            )
+            wb_status = wb_r.scalar_one_or_none()
+            if wb_status is not None and int(wb_status) >= WAYBILL_RECEIPTED:
+                raise BizException("运单已回单，请先在运单侧撤销回单后再撤销签收")
+
         await TaskWaybillItemService._switch_item_status(
             db, item, new_status,
             loaded_at=data.loadedAt,

@@ -81,6 +81,10 @@
           </span>
         </template>
 
+        <template #waybillStatusSummary="{ row }">
+          <waybill-status-summary :summary="row.waybillStatusSummary" inline />
+        </template>
+
         <template #action="{ row }">
           <el-link type="primary" :underline="false" @click="openDetail(row)">
             详情
@@ -203,6 +207,7 @@
   import TaskEdit from './components/task-edit.vue';
   import TaskDetail from './components/task-detail.vue';
   import TaskSearch from './components/task-search.vue';
+  import WaybillStatusSummary from './components/waybill-status-summary.vue';
   import ActionAssignCarrier from '../task-workbench/components/action-assign-carrier.vue';
   import ActionDispatch from '../task-workbench/components/action-dispatch.vue';
   import ActionPlanRoute from '../task-workbench/components/action-plan-route.vue';
@@ -274,6 +279,13 @@
       label: '运单数',
       width: 80,
       align: 'center'
+    },
+    {
+      columnKey: 'waybillStatusSummary',
+      label: '运单状态',
+      minWidth: 180,
+      align: 'center',
+      slot: 'waybillStatusSummary'
     },
     {
       prop: 'plannedLoadTime',

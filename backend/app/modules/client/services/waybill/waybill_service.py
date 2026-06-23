@@ -490,10 +490,10 @@ class WaybillService:
         created_at_start: Optional[date] = None,
         created_at_end: Optional[date] = None,
     ) -> dict:
-        """运单工作台 KPI 聚合：按 status 0~6 计数（可选叠加与列表相同的筛选条件）。
+        """运单工作台 KPI 聚合：按 status 0~7 计数（可选叠加与列表相同的筛选条件）。
 
-        7 个卡片：
-            0 待确认 / 1 待调度 / 2 调度中 / 3 运输中 / 4 已送达 / 5 已完成 / 6 已关闭
+        8 个卡片：
+            0 待确认 / 1 待调度 / 2 调度中 / 3 运输中 / 4 待签收 / 5 已签收 / 6 已回单 / 7 已关闭
         """
         use_pinyin_filters = any(
             [
@@ -544,7 +544,8 @@ class WaybillService:
                 "inTransit": status_counts.get(3, 0),
                 "delivered": status_counts.get(4, 0),
                 "completed": status_counts.get(5, 0),
-                "closed": status_counts.get(6, 0),
+                "receipted": status_counts.get(6, 0),
+                "closed": status_counts.get(7, 0),
             },
         }
 
@@ -897,7 +898,7 @@ class WaybillService:
         waybill = result.scalar_one_or_none()
         if not waybill:
             raise BizException("运单不存在")
-        if waybill.status not in (0, 1, 6):
+        if waybill.status not in (0, 1, 7):
             raise BizException("仅草稿、待调度或已关闭的运单可以删除")
         if await WaybillStatusAggregator.has_active_task_items(db, waybill_id):
             raise BizException(

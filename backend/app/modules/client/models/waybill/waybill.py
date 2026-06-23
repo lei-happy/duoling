@@ -87,7 +87,13 @@ class Waybill(TenantModelBase):
     )
     status: Mapped[int] = mapped_column(
         SmallInteger, default=0,
-        comment="状态 0-待确认 1-已确认 2-已调度 3-运输中 4-已送达 5-已完成 6-已取消"
+        comment=(
+            "状态 0-待确认 1-待调度 2-调度中 3-运输中 4-待签收 "
+            "5-已签收 6-已回单 7-已关闭"
+        )
+    )
+    receipt_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, comment="回单确认时间（签收底单返还货主）"
     )
     calc_status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="pending",

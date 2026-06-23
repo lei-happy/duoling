@@ -41,6 +41,8 @@ export interface Waybill {
   contractId?: number;
   rateId?: number;
   status?: number;
+  /** 回单确认时间（签收底单返还货主；status=6 已回单时有值） */
+  receiptAt?: string | null;
   remark?: string;
   createdBy?: number;
   createdAt?: string;
@@ -67,8 +69,31 @@ export interface WaybillWorkbenchStats {
     inTransit: number;
     delivered: number;
     completed: number;
+    receipted: number;
     closed: number;
   };
+}
+
+/** 运单回单凭证（签收底单返还货主） */
+export interface WaybillReceipt {
+  id: number;
+  waybillId: number;
+  fileUrls: string[];
+  /** 1-图片 2-PDF */
+  fileType: number;
+  receivedAt: string;
+  uploadedBy?: number | null;
+  operatorName?: string | null;
+  remark?: string | null;
+  createdAt: string;
+}
+
+/** 确认回单入参（运单 5 已签收 → 6 已回单） */
+export interface WaybillReceiptConfirmPayload {
+  fileUrls: string[];
+  fileType?: number;
+  receivedAt?: string;
+  remark?: string;
 }
 
 export interface WaybillParam extends PageParam {

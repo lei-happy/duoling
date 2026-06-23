@@ -27,6 +27,9 @@ from app.modules.client.models.region.biz_region import BizRegion
 from app.modules.client.models.vehicle_basic.biz_vehicle_brand import BizVehicleBrand
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
+from app.modules.client.services.state_machine.waybill_state_machine import (
+    WAYBILL_STATUS_LABELS as _WAYBILL_STATUS_LABELS,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -41,15 +44,7 @@ _CUSTOMER_TYPE_LABELS = {
     4: "其他",
 }
 
-_WAYBILL_STATUS_LABELS = {
-    0: "待确认",
-    1: "已确认",
-    2: "已调度",
-    3: "运输中",
-    4: "已送达",
-    5: "已完成",
-    6: "已取消",
-}
+# 运单状态标签统一取自运单状态机（见 _WAYBILL_STATUS_LABELS import）
 
 # 运单运费计算状态（biz_waybill.calc_status）
 _CALC_STATUS_LABELS = {

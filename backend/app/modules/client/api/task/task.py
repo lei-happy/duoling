@@ -88,8 +88,12 @@ async def _task_detail_dump(
         else await TaskWaybillItemService.list_items_of_task(db, task.id)
     )
     lookup = await WaybillService._series_image_lookup_map(db)
+    wb_summary_map = await TaskService.aggregate_waybill_status_summary(
+        db, [task.id],
+    )
     return TaskOut.from_model(
-        task, segments=segs, waybill_items=items, series_lookup=lookup
+        task, segments=segs, waybill_items=items, series_lookup=lookup,
+        waybill_status_summary=wb_summary_map.get(int(task.id)),
     ).model_dump()
 
 
@@ -166,8 +170,10 @@ async def page_tasks(
         only_normal=onlyNormal,
         in_transit_only_normal=inTransitOnlyNormal,
     )
-    qty_map = await TaskService.aggregate_loaded_unloaded(
-        db, [t.id for t in items],
+    task_ids = [t.id for t in items]
+    qty_map = await TaskService.aggregate_loaded_unloaded(db, task_ids)
+    wb_summary_map = await TaskService.aggregate_waybill_status_summary(
+        db, task_ids,
     )
     rows = []
     for t in items:
@@ -175,6 +181,7 @@ async def page_tasks(
         rows.append(
             TaskListItemOut.from_model(
                 t, loaded_quantity=loaded, unloaded_quantity=unloaded,
+                waybill_status_summary=wb_summary_map.get(int(t.id)),
             ).model_dump()
         )
     return success(data={

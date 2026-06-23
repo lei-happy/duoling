@@ -213,8 +213,24 @@ export interface Task {
   remark?: string;
   createdAt?: string;
   updatedAt?: string;
+  /** 只读：关联运单状态分布（运单状态机独立于任务，仅供展示） */
+  waybillStatusSummary?: WaybillStatusSummary | null;
+  /** 预留：关联财务单据状态分布（财务模块接入时填充） */
+  financeStatusSummary?: WaybillStatusSummary | null;
   segments?: TaskSegment[];
   waybillItems?: TaskWaybillItem[];
+}
+
+/** 单个运单状态计数 */
+export interface WaybillStatusCount {
+  status: number;
+  count: number;
+}
+
+/** 任务关联运单的状态分布（只读视图） */
+export interface WaybillStatusSummary {
+  total: number;
+  items: WaybillStatusCount[];
 }
 
 export interface TaskCreatePayload {

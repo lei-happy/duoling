@@ -6,11 +6,13 @@
  *
  * 状态空间参考 backend WaybillStateMachine + 实际落库行为：
  *   0 待确认（新建即落 0，需要运营点击「确认」推进到 1，UI 上独立出卡）
- *   1 待调度 / 2 调度中 / 3 运输中 / 4 待签收 / 5 已签收 / 6 已关闭
+ *   1 待调度 / 2 调度中 / 3 运输中 / 4 待签收 / 5 已签收 / 6 已回单 / 7 已关闭
  *
  * 4 待签收 / 5 已签收 文案为 2026-05 调整后，与 task.status 解耦后强调"客户视角的票据流转"：
  *   - 4 待签收 = 全量货物已到达，等客户签收
  *   - 5 已签收 = 全量货物已签收，运单对客户层面已闭环
+ *   - 6 已回单 = 签收底单返还货主（人工动作，回单台账在「回单签收」页操作）
+ *   - 7 已关闭 = 终态（原 6 后移）
  */
 
 import type { Columns } from 'ele-admin-plus/es/ele-pro-table/types';
@@ -42,7 +44,8 @@ export const WAYBILL_STATUS_TO_POOL_KEY: Record<number, string> = {
   3: 'in-transit',
   4: 'delivered',
   5: 'completed',
-  6: 'closed'
+  6: 'receipted',
+  7: 'closed'
 };
 
 /** 与 waybill-pool 模板中 #slot 一一对应 */
@@ -301,9 +304,37 @@ export const WAYBILL_POOLS: WaybillPool[] = [
     actionColumnWidth: 132
   },
   {
+    key: 'receipted',
+    label: '已回单',
+    status: 6,
+    filterFields: [
+      'keyword',
+      'customer',
+      'origin',
+      'destination',
+      'createdRange'
+    ],
+    columns: [
+      'waybillNo',
+      'customerName',
+      'origin',
+      'destination',
+      'vehicleInfo',
+      'quantity',
+      'freightAmount',
+      'calcStatus',
+      'status',
+      'createdAt',
+      'action'
+    ],
+    rowActions: ['detail', 'freight-detail'],
+    defaultSort: { prop: 'createdAt', order: 'descending' },
+    actionColumnWidth: 132
+  },
+  {
     key: 'closed',
     label: '已关闭',
-    status: 6,
+    status: 7,
     filterFields: ['keyword', 'customer', 'createdRange'],
     columns: [
       'waybillNo',

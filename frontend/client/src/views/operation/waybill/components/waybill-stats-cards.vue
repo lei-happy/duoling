@@ -2,7 +2,7 @@
   运单工作台 KPI 卡片
   ====================
 
-  - 7 张状态卡：待确认 / 待调度 / 调度中 / 运输中 / 待签收 / 已签收 / 已关闭
+  - 8 张状态卡：待确认 / 待调度 / 调度中 / 运输中 / 待签收 / 已签收 / 已回单 / 已关闭
   - 仅展示主数字 + 标题（"简单统计"），不做"常 / 警"分桶
   - 点击卡片 emit `selectCard` 切换列表
 
@@ -69,6 +69,7 @@
     'in-transit': 'inTransit',
     delivered: 'delivered',
     completed: 'completed',
+    receipted: 'receipted',
     closed: 'closed'
   };
 
@@ -80,6 +81,7 @@
     'in-transit': '部分或全部在途',
     delivered: '全部到达待签收',
     completed: '客户全部签收',
+    receipted: '底单已返还货主',
     closed: '终态'
   };
 
@@ -158,6 +160,11 @@
       --wb-accent: var(--el-color-success);
       --wb-soft-bg: var(--el-color-success-light-9);
       --wb-soft-ring: var(--el-color-success-light-7);
+    }
+    &--receipted {
+      --wb-accent: #16a34a;
+      --wb-soft-bg: rgba(22, 163, 74, 0.1);
+      --wb-soft-ring: rgba(22, 163, 74, 0.32);
     }
     &--closed {
       --wb-accent: var(--el-color-info);

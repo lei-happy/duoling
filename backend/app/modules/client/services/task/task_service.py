@@ -1138,6 +1138,50 @@ class TaskService:
             for tid in ids
         }
 
+    @staticmethod
+    async def aggregate_waybill_status_summary(
+        db: AsyncSession,
+        task_ids: List[int],
+    ) -> dict[int, dict]:
+        """聚合每个任务「关联运单」按运单状态的分布（只读视图）。
+
+        返回 ``{task_id: {"total": n, "counts": {wb_status: count}}}``。
+
+        说明（独立性约束）：
+        - 这是任务侧对运单状态机的**只读展示**，不参与任何状态推进；
+        - 关联口径：该任务存在 ``is_deleted=0 且 status!=9`` 的挂接行的运单（去重）。
+        - 运单状态语义见 ``WaybillStateMachine``（含 6 已回单 / 7 已关闭）。
+        """
+        if not task_ids:
+            return {}
+        ids = list({int(i) for i in task_ids if i})
+        r = await db.execute(
+            select(
+                TaskWaybillItem.task_id,
+                Waybill.status,
+                func.count(func.distinct(Waybill.id)),
+            )
+            .join(Waybill, Waybill.id == TaskWaybillItem.waybill_id)
+            .where(
+                TaskWaybillItem.task_id.in_(ids),
+                TaskWaybillItem.is_deleted == 0,
+                TaskWaybillItem.status != 9,
+                Waybill.is_deleted == 0,
+            )
+            .group_by(TaskWaybillItem.task_id, Waybill.status)
+        )
+        out: dict[int, dict] = {
+            tid: {"total": 0, "counts": {}} for tid in ids
+        }
+        for tid, st, cnt in r.all():
+            tid_i = int(tid)
+            st_i = int(st or 0)
+            cnt_i = int(cnt or 0)
+            entry = out.setdefault(tid_i, {"total": 0, "counts": {}})
+            entry["counts"][st_i] = entry["counts"].get(st_i, 0) + cnt_i
+            entry["total"] += cnt_i
+        return out
+
     # ------------------------------------------------------------------
     # 工作台聚合 + 批量操作
     # ------------------------------------------------------------------

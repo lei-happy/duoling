@@ -26,20 +26,19 @@ from app.modules.client.schemas.waybill.waybill import (
     WaybillUpdate,
     WaybillStatusUpdate,
 )
+from app.modules.client.schemas.waybill.waybill_receipt import (
+    WaybillReceiptConfirm,
+)
 from app.modules.client.services.company_activity_service import CompanyActivityService
+from app.modules.client.services.state_machine.waybill_state_machine import (
+    WAYBILL_STATUS_LABELS as _WAYBILL_STATUS_LABELS,
+)
+from app.modules.client.services.waybill.waybill_receipt_service import (
+    WaybillReceiptService,
+)
 from app.modules.client.services.waybill.waybill_service import WaybillService
 
 router = APIRouter()
-
-_WAYBILL_STATUS_LABELS = {
-    0: "待确认",
-    1: "已确认",
-    2: "已调度",
-    3: "运输中",
-    4: "已送达",
-    5: "已完成",
-    6: "已取消",
-}
 
 
 def _require_tenant_for_activity(current_user: TokenData) -> None:
@@ -249,6 +248,101 @@ async def update_waybill_status(
         db,
         occurred_at=datetime.now(),
         event_code="waybill.status_changed",
+        summary=summary,
+        actor_user_id=current_user.user_id,
+        actor_display_name=op_name,
+        payload=payload,
+    )
+    out = await WaybillService.waybill_to_out(db, waybill)
+    return success(data=out.model_dump())
+
+
+@router.get("/{waybill_id}/receipts")
+async def list_waybill_receipts(
+    waybill_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    """列举运单的回单凭证。"""
+    receipts = await WaybillReceiptService.list_receipts(db, waybill_id)
+    return success(data=[r.model_dump() for r in receipts])
+
+
+@router.post("/{waybill_id}/receipt")
+@operation_log(module="运单管理", action="确认回单", description="确认运单回单")
+async def confirm_waybill_receipt(
+    request: Request,
+    waybill_id: int,
+    data: WaybillReceiptConfirm,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+    _: None = Depends(ensure_biz_company_activity_table),
+):
+    """确认回单：运单 5 已签收 → 6 已回单。"""
+    _require_tenant_for_activity(current_user)
+    op_name = await CompanyActivityService.actor_display_name(
+        db, current_user.user_id
+    )
+    receipt = await WaybillReceiptService.confirm(
+        db, waybill_id, data,
+        operator_id=current_user.user_id,
+        operator_name=op_name,
+    )
+    waybill = await WaybillService.get_waybill(db, waybill_id)
+    label = op_name or "用户"
+    suffix = _waybill_summary_customer_suffix(waybill.customer_name)
+    summary = f"{label} 确认运单「{waybill.waybill_no}」回单{suffix}"
+    payload = {
+        "waybill_id": waybill.id,
+        "waybill_no": waybill.waybill_no,
+        "status": waybill.status,
+        "receipt_id": receipt.id,
+    }
+    if waybill.customer_id is not None:
+        payload["customer_id"] = waybill.customer_id
+    await CompanyActivityService.record(
+        db,
+        occurred_at=datetime.now(),
+        event_code="waybill.receipt_confirmed",
+        summary=summary,
+        actor_user_id=current_user.user_id,
+        actor_display_name=op_name,
+        payload=payload,
+    )
+    out = await WaybillService.waybill_to_out(db, waybill)
+    return success(data=out.model_dump())
+
+
+@router.delete("/{waybill_id}/receipt")
+@operation_log(module="运单管理", action="撤销回单", description="撤销运单回单")
+async def revoke_waybill_receipt(
+    request: Request,
+    waybill_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+    _: None = Depends(ensure_biz_company_activity_table),
+):
+    """撤销回单：运单 6 已回单 → 5 已签收。"""
+    _require_tenant_for_activity(current_user)
+    await WaybillReceiptService.revoke(db, waybill_id)
+    waybill = await WaybillService.get_waybill(db, waybill_id)
+    op_name = await CompanyActivityService.actor_display_name(
+        db, current_user.user_id
+    )
+    label = op_name or "用户"
+    suffix = _waybill_summary_customer_suffix(waybill.customer_name)
+    summary = f"{label} 撤销运单「{waybill.waybill_no}」回单{suffix}"
+    payload = {
+        "waybill_id": waybill.id,
+        "waybill_no": waybill.waybill_no,
+        "status": waybill.status,
+    }
+    if waybill.customer_id is not None:
+        payload["customer_id"] = waybill.customer_id
+    await CompanyActivityService.record(
+        db,
+        occurred_at=datetime.now(),
+        event_code="waybill.receipt_revoked",
         summary=summary,
         actor_user_id=current_user.user_id,
         actor_display_name=op_name,

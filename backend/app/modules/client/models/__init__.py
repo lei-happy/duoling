@@ -68,6 +68,7 @@ from app.modules.client.models.billing.region_alias import RegionAlias
 from app.modules.client.models.billing.vehicle_alias import VehicleAlias
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
+from app.modules.client.models.waybill.waybill_receipt import WaybillReceipt
 from app.modules.client.models.waybill.waybill_import import (
     WaybillImportBatch,
     WaybillImportRow,
@@ -140,6 +141,7 @@ __all__ = [
     "VehicleAlias",
     "Waybill",
     "WaybillCargo",
+    "WaybillReceipt",
     "WaybillImportBatch",
     "WaybillImportRow",
     "Task",

@@ -168,6 +168,24 @@
           </el-descriptions-item>
         </el-descriptions>
 
+        <!-- 关联单据状态（只读：运单/财务单据状态机独立于任务） -->
+        <el-divider content-position="left">关联单据状态</el-divider>
+        <el-descriptions :column="1" border size="small">
+          <el-descriptions-item label="运单状态分布">
+            <waybill-status-summary :summary="task.waybillStatusSummary" />
+            <span
+              v-if="(task.waybillStatusSummary?.total ?? 0) > 0"
+              class="ele-text-secondary"
+              style="margin-left: 8px"
+            >
+              共 {{ task.waybillStatusSummary?.total }} 张运单
+            </span>
+          </el-descriptions-item>
+          <el-descriptions-item label="财务单据状态">
+            <span class="ele-text-secondary">（财务模块接入后展示）</span>
+          </el-descriptions-item>
+        </el-descriptions>
+
         <!-- Tab: 调令 / 装卸记录 / 挂接货物 / 费用单 -->
         <el-divider />
         <el-tabs v-model="activeTab" type="border-card">
@@ -539,6 +557,7 @@
   import ActionConfirmSign from '../../task-workbench/components/action-confirm-sign.vue';
   import ActionRevert from '../../task-workbench/components/action-revert.vue';
   import ActionForceCancel from '../../task-workbench/components/action-force-cancel.vue';
+  import WaybillStatusSummary from './waybill-status-summary.vue';
 
   const props = defineProps<{ visible: boolean; taskId: number | null }>();
   const emit = defineEmits<{

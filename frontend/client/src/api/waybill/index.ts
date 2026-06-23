@@ -1,7 +1,13 @@
 import request from '@/utils/request';
 import { download } from '@/utils/common';
 import type { ApiResult, PageResult } from '@/api';
-import type { Waybill, WaybillParam, WaybillWorkbenchStats } from './model';
+import type {
+  Waybill,
+  WaybillParam,
+  WaybillWorkbenchStats,
+  WaybillReceipt,
+  WaybillReceiptConfirmPayload
+} from './model';
 
 export async function pageWaybills(params: WaybillParam) {
   const res = await request.get<ApiResult<PageResult<Waybill>>>(
@@ -77,6 +83,43 @@ export async function updateWaybillStatus(id: number, status: number) {
   );
   if (res.data.code === 0) {
     return res.data.message;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 列举运单回单凭证 */
+export async function listWaybillReceipts(id: number) {
+  const res = await request.get<ApiResult<WaybillReceipt[]>>(
+    `/business/waybill/${id}/receipts`
+  );
+  if (res.data.code === 0) {
+    return res.data.data ?? [];
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 确认回单：运单 5 已签收 → 6 已回单 */
+export async function confirmWaybillReceipt(
+  id: number,
+  data: WaybillReceiptConfirmPayload
+) {
+  const res = await request.post<ApiResult<Waybill>>(
+    `/business/waybill/${id}/receipt`,
+    data
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 撤销回单：运单 6 已回单 → 5 已签收 */
+export async function revokeWaybillReceipt(id: number) {
+  const res = await request.delete<ApiResult<Waybill>>(
+    `/business/waybill/${id}/receipt`
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
   }
   return Promise.reject(new Error(res.data.message));
 }

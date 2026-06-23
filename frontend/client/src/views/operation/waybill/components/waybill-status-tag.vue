@@ -11,10 +11,11 @@
   | 3    | 运输中 | warning|
   | 4    | 待签收 | success|
   | 5    | 已签收 | success|
-  | 6    | 已关闭 | danger |
+  | 6    | 已回单 | success|
+  | 7    | 已关闭 | danger |
 
   说明：2026-05 文案调整为"客户视角的票据流转"，强调签收是运单维度的核心动作；
-  数据库 status 数值不变，无需历史数据兼容字段。
+  2026-06 新增 6 已回单（签收底单返还货主），原 6 已关闭后移为 7。
 -->
 <template>
   <el-tag :type="tagType as any" size="small">{{ label }}</el-tag>
@@ -34,7 +35,8 @@
     3: { label: '运输中', type: 'warning' },
     4: { label: '待签收', type: 'success' },
     5: { label: '已签收', type: 'success' },
-    6: { label: '已关闭', type: 'danger' }
+    6: { label: '已回单', type: 'success' },
+    7: { label: '已关闭', type: 'danger' }
   };
 
   const label = computed(() => STATUS_LABEL[props.status ?? 0]?.label || '--');
