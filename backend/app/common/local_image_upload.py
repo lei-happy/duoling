@@ -24,6 +24,7 @@ ALLOWED_SCENES = {
     "brand_logo",
     "car_series",
     "driver_license",
+    "task_loading",  # 任务装卸车凭证（confirm-load / confirm-arrive）
 }
 
 
