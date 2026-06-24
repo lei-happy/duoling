@@ -26,7 +26,7 @@
     </template>
     <div class="eff-body" v-loading="loading">
       <div v-if="!data" class="empty-state">暂无数据</div>
-      <template v-else>
+      <div v-else class="eff-content">
         <div class="eff-chart-wrap">
           <v-chart
             ref="statusChartRef"
@@ -106,13 +106,13 @@
             </div>
           </div>
         </div>
-      </template>
+      </div>
     </div>
   </ele-card>
 </template>
 
 <script lang="ts" setup>
-  import { computed, reactive, ref } from 'vue';
+  import { computed, nextTick, reactive, ref } from 'vue';
   import dayjs from 'dayjs';
   import { EleMessage } from 'ele-admin-plus';
   import { use } from 'echarts/core';
@@ -265,7 +265,7 @@
       },
       legend: {
         show: showLegend,
-        bottom: 0,
+        bottom: 4,
         left: 'center',
         type: 'scroll',
         itemWidth: 10,
@@ -278,8 +278,8 @@
       series: [
         {
           type: 'pie',
-          radius: showLegend ? ['38%', '62%'] : ['40%', '64%'],
-          center: showLegend ? ['50%', '44%'] : ['50%', '46%'],
+          radius: showLegend ? ['40%', '66%'] : ['42%', '68%'],
+          center: showLegend ? ['50%', '46%'] : ['50%', '48%'],
           avoidLabelOverlap: true,
           itemStyle: {
             borderRadius: 4,
@@ -306,6 +306,8 @@
         end: win.end
       });
       renderChart();
+      await nextTick();
+      statusChartRef.value?.resize?.();
     } catch (e: any) {
       EleMessage.error({
         message: e?.message || '加载运营效率失败',
@@ -361,37 +363,49 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
   }
 
-  /* 固定图表高度，避免 1:1 正方形撑高整行（左侧客户卡内容区为 420px） */
-  .eff-chart-wrap {
-    flex-shrink: 0;
-    height: 240px;
-    padding: 4px 0 0;
-    box-sizing: border-box;
-    overflow: hidden;
+  /* 与左侧 customer-row 同高：420px 内容区，内部 chart 弹性 + footer 贴底 */
+  .eff-content {
+    flex: 1;
+    min-height: 360px;
+    display: flex;
+    flex-direction: column;
   }
 
   @media (min-width: 768px) {
-    .eff-chart-wrap {
-      height: 280px;
+    .eff-content {
+      flex: none;
+      height: 420px;
+      min-height: 420px;
     }
   }
 
+  .eff-chart-wrap {
+    flex: 1;
+    min-height: 0;
+    padding: 4px 0 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
   .eff-chart-inner {
+    flex: 1;
+    min-height: 0;
     width: 100%;
     height: 100%;
   }
 
   .eff-footer {
     flex-shrink: 0;
-    padding-top: 4px;
+    padding-top: 2px;
   }
 
   .eff-divider {
     height: 1px;
-    margin: 0 0 8px;
+    margin: 0 0 6px;
     background-color: var(--el-border-color-lighter);
   }
 
@@ -418,7 +432,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     flex-wrap: wrap;
   }
 
@@ -493,7 +507,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px 14px;
-    margin-top: 8px;
+    margin-top: 6px;
     font-size: 12px;
     color: var(--el-text-color-regular);
   }
