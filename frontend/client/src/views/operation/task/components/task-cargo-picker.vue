@@ -1214,7 +1214,6 @@
   const quickFillGroup = (group: Group) => {
     let list = [...(props.modelValue || [])];
     let touchedCount = 0;
-    let addedQuantity = 0;
 
     group.subgroups.forEach((sg) => {
       sg.mergedRows.forEach((mw) => {
@@ -1227,7 +1226,6 @@
           const newQty = after?.quantity || 0;
           if (newQty > prevQty) {
             touchedCount += 1;
-            addedQuantity += newQty - prevQty;
           }
         });
       });
@@ -1238,8 +1236,9 @@
       return;
     }
     emit('update:modelValue', list);
+    const cumulativeQuantity = list.reduce((s, x) => s + (x.quantity || 0), 0);
     EleMessage.success({
-      message: `已加入/更新 ${touchedCount} 条，共 ${addedQuantity} 台`,
+      message: `已加入/更新 ${touchedCount} 条，共 ${cumulativeQuantity} 台`,
       plain: true
     });
   };

@@ -37,8 +37,21 @@ def _format_region_path(res: RegionResolution) -> str:
     return (res.region_name or "").strip()
 
 
-def _default_route_name(origin_disp: str, dest_disp: str) -> str:
-    raw = f"{origin_disp}-{dest_disp}".strip("-")
+def _format_region_path_short(res: RegionResolution) -> str:
+    """线路名称用：仅保留市/区级，不含省名；直辖市整市选中时保留市名。"""
+    if not res.chain:
+        return (res.region_name or "").strip()
+    leaf = res.chain[0]
+    if leaf.level == 1 and len(res.chain) == 1:
+        return leaf.name
+    names = [n.name for n in reversed(res.chain) if n.level != 1]
+    return "/".join(names) if names else (res.region_name or "").strip()
+
+
+def _default_route_name(origin_res: RegionResolution, dest_res: RegionResolution) -> str:
+    disp_o = _format_region_path_short(origin_res)
+    disp_d = _format_region_path_short(dest_res)
+    raw = f"{disp_o}-{disp_d}".strip("-")
     if len(raw) <= 100:
         return raw or "未命名线路"
     return raw[:100]
@@ -160,7 +173,7 @@ class RouteService:
         disp_o = _format_region_path(res_o)
         disp_d = _format_region_path(res_d)
         name_in = (data.routeName or "").strip()
-        route_name = name_in if name_in else _default_route_name(disp_o, disp_d)
+        route_name = name_in if name_in else _default_route_name(res_o, res_d)
         route_code = await _next_route_code(db)
 
         route = Route(

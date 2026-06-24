@@ -40,6 +40,7 @@
   let originMarker: any = null;
   let destMarker: any = null;
   let routePolyline: any = null;
+  let fitTimer: ReturnType<typeof setTimeout> | null = null;
 
   const hasPoints = computed(
     () =>
@@ -102,15 +103,81 @@
     mapIns.setZoomAndCenter(DEFAULT_ZOOM, DEFAULT_CENTER);
   };
 
-  const fitMapView = () => {
-    if (!mapIns) return;
-    const overlays: any[] = [];
-    if (originMarker) overlays.push(originMarker);
-    if (destMarker) overlays.push(destMarker);
-    if (routePolyline) overlays.push(routePolyline);
-    if (overlays.length) {
-      mapIns.setFitView(overlays, false, [48, 48, 48, 48]);
+  const MARKER_ICON_SIZE = { w: 25, h: 34 };
+  const MARKER_ICON_OFFSET = { x: -12, y: -28 };
+
+  const createMarkerIcon = (kind: 'origin' | 'dest') => {
+    const image =
+      kind === 'origin'
+        ? '//a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-default.png'
+        : '//a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-red.png';
+    return new AMapNS.Icon({
+      size: new AMapNS.Size(MARKER_ICON_SIZE.w, MARKER_ICON_SIZE.h),
+      image,
+      imageSize: new AMapNS.Size(MARKER_ICON_SIZE.w, MARKER_ICON_SIZE.h)
+    });
+  };
+
+  /** 收集起终点与折线坐标，用于计算视野 */
+  const collectRoutePoints = (): [number, number][] => {
+    const points: [number, number][] = [];
+    if (hasPoints.value) {
+      points.push(
+        [props.origin!.longitude, props.origin!.latitude],
+        [props.destination!.longitude, props.destination!.latitude]
+      );
     }
+    routePath.value.forEach((p) => points.push(p));
+    return points;
+  };
+
+  const fitMapView = () => {
+    if (!mapIns || !AMapNS) return;
+    const points = collectRoutePoints();
+    if (!points.length) return;
+
+    let minLng = points[0][0];
+    let maxLng = points[0][0];
+    let minLat = points[0][1];
+    let maxLat = points[0][1];
+    for (const [lng, lat] of points) {
+      minLng = Math.min(minLng, lng);
+      maxLng = Math.max(maxLng, lng);
+      minLat = Math.min(minLat, lat);
+      maxLat = Math.max(maxLat, lat);
+    }
+
+    const minSpan = 0.08;
+    if (maxLng - minLng < minSpan) {
+      const pad = (minSpan - (maxLng - minLng)) / 2;
+      minLng -= pad;
+      maxLng += pad;
+    }
+    if (maxLat - minLat < minSpan) {
+      const pad = (minSpan - (maxLat - minLat)) / 2;
+      minLat -= pad;
+      maxLat += pad;
+    }
+
+    const bounds = new AMapNS.Bounds(
+      new AMapNS.LngLat(minLng, minLat),
+      new AMapNS.LngLat(maxLng, maxLat)
+    );
+    // 顶部留更多空间给「起/终」标签；整体略放大边距，等效于 fit 后再缩小一级
+    mapIns.setBounds(bounds, false, [72, 60, 60, 60]);
+  };
+
+  /** 等容器 layout / resize 完成后再适配，避免弹窗未展开时 fit 失败 */
+  const scheduleFitMapView = () => {
+    if (fitTimer) {
+      clearTimeout(fitTimer);
+    }
+    fitTimer = window.setTimeout(() => {
+      fitTimer = null;
+      if (!mapIns) return;
+      mapIns.resize?.();
+      fitMapView();
+    }, 180);
   };
 
   const updateMarkers = () => {
@@ -132,7 +199,8 @@
     originMarker = new AMapNS.Marker({
       position: oPos,
       title: o.name,
-      anchor: 'bottom-center',
+      icon: createMarkerIcon('origin'),
+      offset: new AMapNS.Pixel(MARKER_ICON_OFFSET.x, MARKER_ICON_OFFSET.y),
       label: {
         content: '<span class="route-map-label route-map-label-origin">起</span>',
         direction: 'top',
@@ -142,7 +210,8 @@
     destMarker = new AMapNS.Marker({
       position: dPos,
       title: d.name,
-      anchor: 'bottom-center',
+      icon: createMarkerIcon('dest'),
+      offset: new AMapNS.Pixel(MARKER_ICON_OFFSET.x, MARKER_ICON_OFFSET.y),
       label: {
         content: '<span class="route-map-label route-map-label-dest">终</span>',
         direction: 'top',
@@ -153,7 +222,7 @@
     originMarker.setMap(mapIns);
     destMarker.setMap(mapIns);
     updatePolyline();
-    fitMapView();
+    scheduleFitMapView();
   };
 
   const initMap = async () => {
@@ -162,7 +231,7 @@
       AMapNS = await AMapLoader.load({
         key: import.meta.env.VITE_MAP_KEY,
         version: '2.0',
-        plugins: ['AMap.Marker', 'AMap.Polyline']
+        plugins: ['AMap.Marker', 'AMap.Polyline', 'AMap.Icon']
       });
       mapIns = new AMapNS.Map(mapRef.value, {
         zoom: DEFAULT_ZOOM,
@@ -172,8 +241,7 @@
       });
       updateMarkers();
       await nextTick();
-      mapIns.resize?.();
-      window.setTimeout(() => mapIns?.resize?.(), 200);
+      scheduleFitMapView();
     } catch (e) {
       console.error(e);
     }
@@ -186,7 +254,7 @@
     }
     updateMarkers();
     await nextTick();
-    mapIns.resize?.();
+    scheduleFitMapView();
   };
 
   onMounted(() => {
@@ -194,6 +262,10 @@
   });
 
   onBeforeUnmount(() => {
+    if (fitTimer) {
+      clearTimeout(fitTimer);
+      fitTimer = null;
+    }
     destroyMarkers();
     destroyPolyline();
     if (mapIns) {
@@ -225,8 +297,8 @@
       if (!mapIns) {
         await initMap();
       } else {
-        mapIns.resize?.();
         updateMarkers();
+        scheduleFitMapView();
       }
     }
   );
