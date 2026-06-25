@@ -24,7 +24,7 @@ from app.core.database import db_manager
 from app.common.response import success
 from app.common.operation_log import operation_log
 from app.modules.client.schemas.capacity.self_capacity.capacity import (
-    CapacityBind, CapacityUnbind,
+    CapacityBind, CapacityUnbind, CapacityStatusUpdate,
 )
 from app.modules.client.services.capacity.self_capacity.capacity_service import (
     CapacityService,
@@ -60,12 +60,13 @@ async def page_capacities(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, alias="limit", ge=1, le=200),
     keyword: Optional[str] = None,
+    operation_status: Optional[int] = Query(None, alias="operationStatus"),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     """运力分页列表（仅绑定中；已解绑见变动记录）"""
     data = await CapacityService.page_capacities(
-        db, page=page, page_size=page_size, keyword=keyword,
+        db, page=page, page_size=page_size, keyword=keyword, operation_status=operation_status
     )
     return success(data=data)
 
@@ -112,3 +113,23 @@ async def unbind_capacity(
     if current_user.tenant_code:
         await _sync_to_platform(current_user.tenant_code, result)
     return success(data=result.model_dump())
+
+
+@router.put("/{capacity_id}/operation-status")
+@operation_log(module="运力管理", action="状态变更", description="变更运力运营状态")
+async def update_operation_status(
+    request: Request,
+    capacity_id: int,
+    data: CapacityStatusUpdate,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+    _: None = Depends(ensure_biz_company_activity_table),
+):
+    """变更运力运营状态（手动：可接单/休假/停运）"""
+    result = await CapacityService.update_operation_status(
+        db,
+        capacity_id=capacity_id,
+        operation_status=data.operationStatus,
+        operator_user_id=current_user.user_id,
+    )
+    return success(data=result.model_dump(), message="运力状态已更新")

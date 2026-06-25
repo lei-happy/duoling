@@ -2045,6 +2045,15 @@
           "comment": "是否删除 0-否 1-是"
         },
         {
+          "name": "operation_status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "运力运营状态 1-可接单 2-运输中 3-休假 4-停运 5-维修保养"
+        },
+        {
           "name": "plate_number",
           "type": "VARCHAR(20)",
           "nullable": false,

@@ -19,6 +19,11 @@ class CapacityUnbind(BaseModel):
     remark: Optional[str] = None
 
 
+class CapacityStatusUpdate(BaseModel):
+    """运力运营状态变更"""
+    operationStatus: int
+
+
 class CapacityOut(BaseModel):
     """运力响应"""
     id: int
@@ -38,6 +43,7 @@ class CapacityOut(BaseModel):
     driverAvatar: Optional[str] = None
     departmentName: Optional[str] = None
     operationStatus: Optional[int] = None
+    driverOperationStatus: Optional[int] = None
     vehicleType: Optional[str] = None
 
     model_config = {"from_attributes": True}
@@ -51,7 +57,7 @@ class CapacityOut(BaseModel):
         trailer_plate_category: Optional[str] = None,
         driver_avatar: Optional[str] = None,
         department_name: Optional[str] = None,
-        operation_status: Optional[int] = None,
+        driver_operation_status: Optional[int] = None,
         vehicle_type: Optional[str] = None,
     ) -> "CapacityOut":
         return cls(
@@ -71,7 +77,8 @@ class CapacityOut(BaseModel):
             createdAt=cap.created_at,
             driverAvatar=driver_avatar,
             departmentName=department_name,
-            operationStatus=operation_status,
+            operationStatus=getattr(cap, "operation_status", None),
+            driverOperationStatus=driver_operation_status,
             vehicleType=vehicle_type,
         )
 

@@ -14,6 +14,15 @@
         />
       </div>
 
+      <el-tabs v-model="activeTab" class="capacity-list-tabs" @tab-change="onTabChange">
+        <el-tab-pane label="全部" name="all" />
+        <el-tab-pane label="可接单" name="1" />
+        <el-tab-pane label="运输中" name="2" />
+        <el-tab-pane label="休假" name="3" />
+        <el-tab-pane label="停运" name="4" />
+        <el-tab-pane label="维修保养中" name="5" />
+      </el-tabs>
+
       <div v-loading="loading" class="capacity-list-body">
         <div v-if="list.length" class="capacity-card-grid">
           <capacity-card
@@ -21,9 +30,11 @@
             :key="item.id"
             :item="item"
             @unbind="handleUnbind"
+            @change-status="handleChangeStatus"
+            @detail="handleDetail"
           />
         </div>
-        <el-empty v-else-if="!loading" description="暂无绑定中的运力" />
+        <el-empty v-else-if="!loading" description="暂无运力数据" />
       </div>
 
       <div v-if="total > 0" class="capacity-list-pagination">
@@ -41,6 +52,9 @@
     </ele-card>
 
     <capacity-bind v-model:visible="bindVisible" @done="reload" />
+    <flip-modal ref="flipModalRef" width="800px" @closed="onDetailClosed">
+      <capacity-detail :data="detailTarget" />
+    </flip-modal>
 
     <el-dialog
       v-model="unbindVisible"
@@ -100,14 +114,18 @@
 <script lang="ts" setup>
   import { ref, reactive, onMounted } from 'vue';
   import { WarningFilled } from '@element-plus/icons-vue';
+  import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import CapacitySearch from './components/capacity-search.vue';
   import CapacityBind from './components/capacity-bind.vue';
   import CapacityCard from './components/capacity-card.vue';
+  import CapacityDetail from './components/capacity-detail.vue';
+  import FlipModal from '@/components/FlipModal/index.vue';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
   import {
     pageCapacities,
-    unbindCapacity
+    unbindCapacity,
+    updateCapacityOperationStatus
   } from '@/api/capacity/self-capacity/list';
   import type {
     Capacity,
@@ -122,9 +140,11 @@
   const total = ref(0);
   const page = ref(1);
   const pageSize = ref(18);
+  const activeTab = ref('all');
 
-  const where = reactive<Pick<CapacityParam, 'keyword'>>({
-    keyword: ''
+  const where = reactive<Pick<CapacityParam, 'keyword' | 'operationStatus'>>({
+    keyword: '',
+    operationStatus: undefined
   });
 
   const loadData = async () => {
@@ -154,6 +174,16 @@
     loadData();
   };
 
+  const onTabChange = (name: string | number) => {
+    if (name === 'all') {
+      where.operationStatus = undefined;
+    } else {
+      where.operationStatus = Number(name);
+    }
+    page.value = 1;
+    loadData();
+  };
+
   const onPageSizeChange = () => {
     page.value = 1;
     loadData();
@@ -165,6 +195,18 @@
 
   const openBind = () => {
     bindVisible.value = true;
+  };
+
+  const flipModalRef = ref<InstanceType<typeof FlipModal> | null>(null);
+  const detailTarget = ref<Capacity | null>(null);
+
+  const handleDetail = (item: Capacity, el: HTMLElement) => {
+    detailTarget.value = item;
+    flipModalRef.value?.open(el);
+  };
+
+  const onDetailClosed = () => {
+    detailTarget.value = null;
   };
 
   const unbindVisible = ref(false);
@@ -183,23 +225,44 @@
     unbindVisible.value = true;
   };
 
-  const confirmUnbind = async () => {
-    const row = unbindTarget.value;
-    const id = row?.id;
+  const STATUS_ACTION_LABEL: Record<number, string> = {
+    1: '恢复可接单',
+    3: '置为休假',
+    4: '置为停运'
+  };
+
+  const handleChangeStatus = async (payload: {
+    item: Capacity;
+    status: number;
+  }) => {
+    const { item, status } = payload;
+    const id = item?.id;
     if (id == null) return;
 
-    const remark = unbindRemark.value.trim();
-    unbindLoading.value = true;
+    const actionLabel = STATUS_ACTION_LABEL[status] ?? '变更状态';
     try {
-      const msg = await unbindCapacity(id, remark ? { remark } : {});
+      await ElMessageBox.confirm(
+        `确定将驾驶员「${item.driverName ?? ''}」与车辆「${item.plateNumber ?? ''}」的运力${actionLabel}吗？`,
+        '运力状态变更',
+        {
+          type: 'warning',
+          confirmButtonText: '确定',
+          cancelButtonText: '取消'
+        }
+      );
+    } catch {
+      return;
+    }
+
+    try {
+      const msg = await updateCapacityOperationStatus(id, {
+        operationStatus: status
+      });
       EleMessage.success({ message: msg, plain: true });
-      unbindVisible.value = false;
       reload();
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       EleMessage.error({ message, plain: true });
-    } finally {
-      unbindLoading.value = false;
     }
   };
 
@@ -212,7 +275,20 @@
   .capacity-list-toolbar {
     display: flex;
     justify-content: flex-start;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
+  }
+
+  .capacity-list-tabs {
+    margin-bottom: 16px;
+  }
+
+  .capacity-list-tabs :deep(.el-tabs__nav-wrap::after) {
+    height: 1px;
+    background-color: var(--el-border-color-extra-light);
+  }
+
+  .capacity-list-tabs :deep(.el-tabs__item) {
+    font-size: 15px;
   }
 
   .capacity-list-body {

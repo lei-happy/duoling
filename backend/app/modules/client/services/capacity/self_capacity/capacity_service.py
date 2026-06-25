@@ -71,6 +71,7 @@ class CapacityService:
             vehicle_id=vehicle_id,
             plate_number=vehicle.plate_number,
             status=1,
+            operation_status=1,
             bound_at=now,
             remark=remark,
         )
@@ -214,12 +215,124 @@ class CapacityService:
             **extras,
         )
 
+    # 运力运营状态 1-可接单 2-运输中 3-休假 4-停运 5-维修保养
+    OPERATION_STATUS_LABELS = {
+        1: "可接单",
+        2: "运输中",
+        3: "休假",
+        4: "停运",
+        5: "维修保养中",
+    }
+    # 允许人工手动切换到的目标状态（运输中/维修保养由上游模块驱动，不允许手动置位）
+    MANUAL_TARGET_STATUSES = {1, 3, 4}
+
+    @staticmethod
+    async def update_operation_status(
+        db: AsyncSession,
+        capacity_id: int,
+        operation_status: int,
+        operator_user_id: Optional[int] = None,
+    ) -> CapacityOut:
+        """变更运力运营状态（手动）"""
+        if operation_status not in CapacityService.MANUAL_TARGET_STATUSES:
+            raise BizException(
+                "该状态由任务单或维修保养等模块自动管理，不支持手动切换"
+            )
+
+        result = await db.execute(
+            select(Capacity).where(
+                Capacity.id == capacity_id,
+                Capacity.is_deleted == 0,
+            )
+        )
+        capacity = result.scalar_one_or_none()
+        if not capacity:
+            raise BizException("运力记录不存在")
+        if capacity.status != 1:
+            raise BizException("该运力已解绑，无法变更状态")
+
+        prev_status = capacity.operation_status
+        if prev_status == operation_status:
+            raise BizException("运力当前已是该状态，无需变更")
+
+        labels = CapacityService.OPERATION_STATUS_LABELS
+        prev_label = labels.get(prev_status, "未知")
+        next_label = labels.get(operation_status, "未知")
+
+        now = datetime.now()
+        capacity.operation_status = operation_status
+
+        operator_name = await CapacityService._get_operator_name(
+            db, operator_user_id
+        )
+        change_note = f"运力状态：{prev_label} → {next_label}"
+        log = CapacityLog(
+            capacity_id=capacity.id,
+            driver_id=capacity.driver_id,
+            driver_name=capacity.driver_name,
+            vehicle_id=capacity.vehicle_id,
+            plate_number=capacity.plate_number,
+            action=3,
+            action_time=now,
+            operator_id=operator_user_id,
+            operator_name=operator_name,
+            remark=change_note,
+        )
+        db.add(log)
+        await db.flush()
+
+        op_label = operator_name or "用户"
+        await CompanyActivityService.record(
+            db,
+            occurred_at=now,
+            event_code="capacity.self_status_change",
+            summary=(
+                f"{op_label} 将司机「{capacity.driver_name}」与车辆"
+                f"「{capacity.plate_number}」的运力状态从「{prev_label}」"
+                f"调整为「{next_label}」"
+            ),
+            actor_user_id=operator_user_id,
+            actor_display_name=operator_name,
+            payload={
+                "capacity_id": capacity.id,
+                "driver_id": capacity.driver_id,
+                "vehicle_id": capacity.vehicle_id,
+                "plate_number": capacity.plate_number,
+                "prev_status": prev_status,
+                "next_status": operation_status,
+            },
+        )
+
+        vr = await db.execute(
+            select(Vehicle).where(
+                Vehicle.id == capacity.vehicle_id,
+                Vehicle.is_deleted == 0,
+            )
+        )
+        vehicle = vr.scalar_one_or_none()
+        pc = (vehicle.plate_category if vehicle else None) or "YELLOW"
+        trailer_plate, trailer_cat = (
+            await CapacityService._trailer_plates_for_vehicle(db, vehicle)
+        )
+
+        extras = await CapacityService._load_capacity_extras(
+            db, capacity.driver_id, capacity.vehicle_id
+        )
+        return CapacityOut.from_model(
+            capacity,
+            pc,
+            trailer_plate,
+            trailer_cat,
+            **extras,
+        )
+
     @staticmethod
     async def page_capacities(
         db: AsyncSession,
         page: int = 1,
         page_size: int = 20,
         keyword: Optional[str] = None,
+        operation_status: Optional[int] = None,
     ) -> dict:
         """运力分页列表（仅当前绑定中的运力；已解绑请在变动记录中查看）"""
         query = (
@@ -230,7 +343,7 @@ class CapacityService:
                 Trailer.plate_category.label("trailer_cat"),
                 Driver.avatar.label("driver_avatar"),
                 BizDepartment.dept_name.label("department_name"),
-                DriverOperation.operation_status.label("operation_status"),
+                DriverOperation.operation_status.label("driver_operation_status"),
                 VehicleExt.vehicle_type.label("vehicle_type"),
             )
             .outerjoin(
@@ -283,6 +396,9 @@ class CapacityService:
                 )
             )
 
+        if operation_status is not None:
+            query = query.where(Capacity.operation_status == operation_status)
+
         count_q = select(func.count()).select_from(query.subquery())
         total = (await db.execute(count_q)).scalar() or 0
 
@@ -302,7 +418,7 @@ class CapacityService:
                     tc,
                     driver_avatar=avatar,
                     department_name=dept_name,
-                    operation_status=op_status,
+                    driver_operation_status=op_status,
                     vehicle_type=vtype,
                 ).model_dump()
                 for cap, pc, tp, tc, avatar, dept_name, op_status, vtype in rows
@@ -442,7 +558,7 @@ class CapacityService:
         return {
             "driver_avatar": driver_avatar,
             "department_name": department_name,
-            "operation_status": operation_status,
+            "driver_operation_status": operation_status,
             "vehicle_type": vehicle_type,
         }
 

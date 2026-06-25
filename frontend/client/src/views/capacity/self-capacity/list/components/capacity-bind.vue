@@ -92,7 +92,7 @@
                   :show-after="150"
                 >
                   <span class="capacity-bind-tt-cell">
-                    <el-tag type="warning" size="small">已绑车</el-tag>
+                    <el-tag type="warning" size="small">已关联车辆</el-tag>
                   </span>
                 </el-tooltip>
                 <span v-else class="capacity-bind-free">空闲</span>
@@ -200,7 +200,7 @@
                   :show-after="150"
                 >
                   <span class="capacity-bind-tt-cell">
-                    <el-tag type="warning" size="small">已绑人</el-tag>
+                    <el-tag type="warning" size="small">已关联驾驶员</el-tag>
                   </span>
                 </el-tooltip>
                 <span v-else class="capacity-bind-free">空闲</span>
@@ -1003,6 +1003,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     vertical-align: middle;
+  }
+
+  .capacity-bind-table-card
+    :deep(.el-table__body tr:not(.capacity-bind-row-disabled)) {
+    cursor: pointer;
   }
 
   .capacity-bind-table-card :deep(tr.capacity-bind-row-disabled) {

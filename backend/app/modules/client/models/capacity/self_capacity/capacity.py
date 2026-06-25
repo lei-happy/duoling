@@ -37,6 +37,13 @@ class Capacity(TenantModelBase):
     status: Mapped[int] = mapped_column(
         SmallInteger, default=1, comment="状态 1-绑定中 0-已解绑"
     )
+    operation_status: Mapped[int] = mapped_column(
+        SmallInteger,
+        default=1,
+        server_default="1",
+        nullable=False,
+        comment="运力运营状态 1-可接单 2-运输中 3-休假 4-停运 5-维修保养",
+    )
     bound_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), comment="绑定（上车）时间"
     )
