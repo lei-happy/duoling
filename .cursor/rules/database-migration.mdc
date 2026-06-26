@@ -1,9 +1,6 @@
 ---
-description: ORM 模型变更必须同步生成迁移文件 + 刷新 schema snapshot
-globs:
-  - backend/app/modules/**/models/**
-  - backend/scripts/migration/**
-  - backend/migrations/**
+description: 
+globs: backend/app/modules/**/models/**, backend/scripts/migration/**, backend/migrations/**
 alwaysApply: false
 ---
 
