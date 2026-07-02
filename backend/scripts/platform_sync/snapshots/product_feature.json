@@ -266,7 +266,8 @@
     "description": null,
     "required_tables": [
       "biz_task_finance_doc",
-      "biz_task_finance_item"
+      "biz_task_finance_item",
+      "biz_finance_doc_event"
     ],
     "sort_order": 35,
     "status": 1
@@ -319,7 +320,8 @@
       "biz_driver_license",
       "biz_driver_operation",
       "biz_driver_account",
-      "biz_driver_route"
+      "biz_driver_route",
+      "biz_driver_settlement_config"
     ],
     "sort_order": 43,
     "status": 1

@@ -3,6 +3,9 @@ from app.modules.client.models.capacity.self_capacity.driver.driver_license impo
 from app.modules.client.models.capacity.self_capacity.driver.driver_operation import DriverOperation
 from app.modules.client.models.capacity.self_capacity.driver.driver_account import DriverAccount
 from app.modules.client.models.capacity.self_capacity.driver.driver_route import DriverRoute
+from app.modules.client.models.capacity.self_capacity.driver.driver_settlement_config import (
+    DriverSettlementConfig,
+)
 
 __all__ = [
     "Driver",
@@ -10,4 +13,5 @@ __all__ = [
     "DriverOperation",
     "DriverAccount",
     "DriverRoute",
+    "DriverSettlementConfig",
 ]

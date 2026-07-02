@@ -26,6 +26,10 @@ class DriverOperation(TenantModelBase):
     driver_type: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, comment="自有驾驶员类型（数据字典 dictDataCode）"
     )
+    settlement_mode: Mapped[int] = mapped_column(
+        SmallInteger, default=2, server_default="2",
+        comment="结算模式 1-承包制 2-统一管理各费用 3-计件提成",
+    )
     resident_areas: Mapped[Optional[Any]] = mapped_column(
         JSON, nullable=True, comment="常驻区域，存储省市代码数组"
     )

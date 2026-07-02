@@ -5404,6 +5404,15 @@
           "comment": "常驻区域，存储省市代码数组"
         },
         {
+          "name": "settlement_mode",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "结算模式 1-承包制 2-统一管理各费用 3-计件提成"
+        },
+        {
           "name": "updated_at",
           "type": "DATETIME",
           "nullable": false,
@@ -5532,6 +5541,307 @@
           "name": "ix_biz_driver_route_driver_id",
           "columns": [
             "driver_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_driver_settlement_config",
+      "comment": "驾驶员承包结算配置表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "contract_base_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承包费基准（每周期金额，>= 0）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "driver_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联驾驶员ID"
+        },
+        {
+          "name": "effective_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承包合同生效止（空表示长期）"
+        },
+        {
+          "name": "effective_start",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承包合同生效起"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "period_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承包周期类型 1-按月 2-按季 3-按年 4-自定义区间"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-生效"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_dsc_driver_effective",
+          "columns": [
+            "driver_id",
+            "effective_start"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_biz_driver_settlement_config_driver_id",
+          "columns": [
+            "driver_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_finance_doc_event",
+      "comment": "财务单据审计事件表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收/付方向 1-收 2-付"
+        },
+        {
+          "name": "doc_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据 ID"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据大类（同 FinanceDocBaseMixin.doc_kind）"
+        },
+        {
+          "name": "event_time",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "事件时间"
+        },
+        {
+          "name": "event_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "事件类型 1-创建 2-提交 3-审批通过 4-审批拒绝 5-退回草稿 6-支付 7-撤销支付 8-撤销 9-强制撤销 10-核销 11-锁定 12-解锁 13-开票 14-作废 15-红冲"
+        },
+        {
+          "name": "from_status",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变更前状态"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "occurred_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "该事件涉及金额（撤销/红冲填负数）"
+        },
+        {
+          "name": "operator_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人 user_id"
+        },
+        {
+          "name": "operator_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人姓名（冗余）"
+        },
+        {
+          "name": "payload_snapshot",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关键字段快照（金额/关联范围等）"
+        },
+        {
+          "name": "reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "原因"
+        },
+        {
+          "name": "to_status",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变更后状态"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_fde_doc_kind_id",
+          "columns": [
+            "doc_kind",
+            "doc_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_fde_event_time",
+          "columns": [
+            "event_time"
           ],
           "unique": false
         }
@@ -8760,6 +9070,15 @@
           "comment": "承运类型 1-自有车 2-承运商 3-社会运力"
         },
         {
+          "name": "contracted_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已承包结算金额（冗余，承包单 doc_type=4 已支付合计）"
+        },
+        {
           "name": "cost_remark",
           "type": "VARCHAR(255)",
           "nullable": true,
@@ -8859,6 +9178,51 @@
           "comment": "是否删除 0-否 1-是"
         },
         {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定 0-否 1-是（最终结算单/承运商结算单支付后置1，禁改成本字段）"
+        },
+        {
+          "name": "is_payroll_bound",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否已挂入司机工资单（软标记，预留）"
+        },
+        {
+          "name": "is_recon_bound",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否已挂入承运商对账单（软标记，预留）"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源财务单据 ID"
+        },
+        {
           "name": "main_driver_id_card",
           "type": "VARCHAR(20)",
           "nullable": true,
@@ -8911,6 +9275,15 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "起点行政区 ID"
+        },
+        {
+          "name": "payroll_settled",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "司机工资单是否已发放（冗余，预留）"
         },
         {
           "name": "planned_arrive_time",
@@ -9392,6 +9765,33 @@
           "comment": "关联审批单（远期对接审批中心）"
         },
         {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销/强制撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
           "name": "created_at",
           "type": "DATETIME",
           "nullable": false,
@@ -9419,6 +9819,24 @@
           "comment": "币种"
         },
         {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "收/付方向 1-收款（应收） 2-付款（应付），任务级费用单恒为 2"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "task_finance",
+          "comment": "单据大类（冗余常量 task_finance，对齐 FinanceDocBaseMixin）"
+        },
+        {
           "name": "doc_no",
           "type": "VARCHAR(50)",
           "nullable": false,
@@ -9434,7 +9852,7 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "单据类型 1-预付单 2-补款单 3-结算单"
+          "comment": "单据类型 1-预付单 2-补款单 3-结算单 4-承包单"
         },
         {
           "name": "id",
@@ -9444,6 +9862,15 @@
           "autoincrement": true,
           "server_default": null,
           "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
         },
         {
           "name": "is_deleted",
@@ -9462,6 +9889,33 @@
           "autoincrement": null,
           "server_default": "0",
           "comment": "是否最终结算单（仅 doc_type=3 可为 1）"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID"
         },
         {
           "name": "paid_by",
@@ -9554,6 +10008,24 @@
           "comment": "收款人类型 1-司机 2-承运商 3-其他"
         },
         {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "结算周期止（承包单必填）"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "结算周期起（承包单必填）"
+        },
+        {
           "name": "planned_amount",
           "type": "NUMERIC(12, 2)",
           "nullable": false,
@@ -9606,6 +10078,24 @@
           "autoincrement": null,
           "server_default": "0",
           "comment": "状态 0-草稿 1-待审批 2-已审批 3-已支付 4-已撤销"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
         },
         {
           "name": "task_id",

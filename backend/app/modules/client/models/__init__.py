@@ -92,6 +92,10 @@ from app.modules.client.models.approval import (
     ApprovalRecord,
     ApprovalCc,
 )
+from app.modules.client.models.finance import FinanceDocEvent
+from app.modules.client.models.capacity.self_capacity.driver.driver_settlement_config import (
+    DriverSettlementConfig,
+)
 
 # ---- Tier 2: Business - AI 数字员工（biz_ai_*） ----
 from app.modules.ai.models.tenant.biz_ai_session import BizAiSession
@@ -159,6 +163,8 @@ __all__ = [
     "ApprovalTask",
     "ApprovalRecord",
     "ApprovalCc",
+    "FinanceDocEvent",
+    "DriverSettlementConfig",
     "Capacity",
     "CapacityLog",
     "SocialCapacity",

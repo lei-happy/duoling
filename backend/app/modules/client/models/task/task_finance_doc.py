@@ -1,8 +1,12 @@
 """
 任务单财务费用单（租户库）
 
-一个任务单可挂多张：预付单（1）/ 补款单（2）/ 结算单（3）。
+一个任务单可挂多张：预付单（1）/ 补款单（2）/ 结算单（3）/ 承包单（4）。
 收款人 = (payee_type + payee_id)：自有车=司机，承运商=承运商，其他=自由文本。
+
+字段语义与 ``finance.FinanceDocBaseMixin`` 保持一致：本表出于向后兼容不直接继承
+mixin，而是通过渐进 ALTER 补齐同名字段（见文档 05）。``doc_kind`` 冗余常量
+``'task_finance'``，供跨单据统一查询审计事件（biz_finance_doc_event）时定位。
 """
 
 from decimal import Decimal
@@ -37,7 +41,17 @@ class TaskFinanceDoc(TenantModelBase):
         String(50), unique=True, nullable=False, comment="单据编号（系统生成）"
     )
     doc_type: Mapped[int] = mapped_column(
-        SmallInteger, nullable=False, comment="单据类型 1-预付单 2-补款单 3-结算单"
+        SmallInteger, nullable=False,
+        comment="单据类型 1-预付单 2-补款单 3-结算单 4-承包单",
+    )
+    doc_kind: Mapped[str] = mapped_column(
+        String(30), default="task_finance", server_default="task_finance",
+        nullable=False,
+        comment="单据大类（冗余常量 task_finance，对齐 FinanceDocBaseMixin）",
+    )
+    direction: Mapped[int] = mapped_column(
+        SmallInteger, default=2, server_default="2",
+        comment="收/付方向 1-收款（应收） 2-付款（应付），任务级费用单恒为 2",
     )
     is_final: Mapped[int] = mapped_column(
         SmallInteger, default=0, server_default="0",
@@ -81,6 +95,14 @@ class TaskFinanceDoc(TenantModelBase):
         String(8), default="CNY", server_default="CNY", comment="币种"
     )
 
+    # ===== 周期（承包单必填，预付/补款/结算可空） =====
+    period_start: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, comment="结算周期起（承包单必填）"
+    )
+    period_end: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, comment="结算周期止（承包单必填）"
+    )
+
     # ===== 支付 =====
     pay_method: Mapped[Optional[int]] = mapped_column(
         SmallInteger, nullable=True,
@@ -104,6 +126,12 @@ class TaskFinanceDoc(TenantModelBase):
     created_by: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="创建人 user_id"
     )
+    submitted_by: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, comment="提交审批人 user_id"
+    )
+    submitted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, comment="提交审批时间"
+    )
     reviewed_by: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="审批人 user_id"
     )
@@ -113,8 +141,35 @@ class TaskFinanceDoc(TenantModelBase):
     paid_by: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="付款操作人 user_id"
     )
+
+    # ===== 撤销 =====
+    cancelled_by: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, comment="撤销操作人 user_id"
+    )
+    cancelled_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, comment="撤销时间"
+    )
+    cancel_reason: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True, comment="撤销原因（撤销/强制撤销必填）"
+    )
+
+    # ===== 锁定（最终结算单支付后置 1，禁改） =====
+    is_locked: Mapped[int] = mapped_column(
+        SmallInteger, default=0, server_default="0",
+        comment="是否锁定（终态后置 1）",
+    )
+    locked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, comment="锁定时间"
+    )
+    locked_by_doc_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, comment="锁定来源单据 ID"
+    )
+
     approval_no: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, comment="关联审批单（远期对接审批中心）"
+    )
+    idempotency_key: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True, comment="幂等键（远期写库唯一索引）"
     )
     remark: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="备注"

@@ -23,6 +23,7 @@ from app.modules.client.schemas.task.task_finance_doc import (
     TaskFinanceDocListItem,
     TaskFinanceDocOut,
     TaskFinanceDocPayRequest,
+    TaskFinanceDocReasonRequest,
     TaskFinanceDocUpdate,
 )
 from app.modules.client.services.task.task_finance_service import (
@@ -276,3 +277,78 @@ async def cancel_doc(
     doc = await TaskFinanceService.cancel_doc(db, doc_id, payload)
     items = await TaskFinanceService.list_items(db, doc.id)
     return success(data=TaskFinanceDocOut.from_model(doc, items=items).model_dump())
+
+
+@router.post("/{doc_id}/withdraw")
+@operation_log(module="任务单财务", action="退回草稿", description="费用单退回草稿")
+async def withdraw_doc(
+    request: Request,
+    doc_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    doc = await TaskFinanceService.withdraw_to_draft(db, doc_id, current_user.user_id)
+    items = await TaskFinanceService.list_items(db, doc.id)
+    return success(data=TaskFinanceDocOut.from_model(doc, items=items).model_dump())
+
+
+@router.post("/{doc_id}/cancel-pay")
+@operation_log(module="任务单财务", action="撤销支付", description="撤销费用单支付（高权限）")
+async def cancel_pay_doc(
+    request: Request,
+    doc_id: int,
+    data: TaskFinanceDocReasonRequest,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    doc = await TaskFinanceService.cancel_payment(
+        db, doc_id,
+        TaskFinanceDocCancelRequest(reason=data.reason),
+        current_user.user_id,
+    )
+    items = await TaskFinanceService.list_items(db, doc.id)
+    return success(data=TaskFinanceDocOut.from_model(doc, items=items).model_dump())
+
+
+@router.post("/{doc_id}/force-cancel")
+@operation_log(module="任务单财务", action="强制撤销", description="强制撤销已支付费用单（高权限）")
+async def force_cancel_doc(
+    request: Request,
+    doc_id: int,
+    data: TaskFinanceDocReasonRequest,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    _require_tenant(current_user)
+    doc = await TaskFinanceService.force_cancel(
+        db, doc_id,
+        TaskFinanceDocCancelRequest(reason=data.reason),
+        current_user.user_id,
+    )
+    items = await TaskFinanceService.list_items(db, doc.id)
+    return success(data=TaskFinanceDocOut.from_model(doc, items=items).model_dump())
+
+
+@router.get("/{doc_id}/events")
+async def list_doc_events(
+    doc_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """费用单审计事件流（时间倒序），供详情抽屉审计区块。"""
+    events = await TaskFinanceService.list_events(db, doc_id)
+    rows = [{
+        "id": e.id,
+        "eventType": e.event_type,
+        "fromStatus": e.from_status,
+        "toStatus": e.to_status,
+        "direction": e.direction,
+        "occurredAmount": float(e.occurred_amount) if e.occurred_amount is not None else None,
+        "operatorId": e.operator_id,
+        "operatorName": e.operator_name,
+        "reason": e.reason,
+        "eventTime": e.event_time,
+    } for e in events]
+    return success(data=rows)

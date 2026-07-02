@@ -154,8 +154,36 @@ class Task(TenantModelBase):
     settled_amount: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), default=0, server_default="0", comment="已结算金额（冗余）"
     )
+    contracted_amount: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), default=0, server_default="0",
+        comment="已承包结算金额（冗余，承包单 doc_type=4 已支付合计）",
+    )
     finance_doc_count: Mapped[int] = mapped_column(
         Integer, default=0, server_default="0", comment="费用单数量（冗余）"
+    )
+
+    # ===== 财务锁定 / 绑定标记 =====
+    is_locked: Mapped[int] = mapped_column(
+        SmallInteger, default=0, server_default="0",
+        comment="是否锁定 0-否 1-是（最终结算单/承运商结算单支付后置1，禁改成本字段）",
+    )
+    locked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, comment="锁定时间"
+    )
+    locked_by_doc_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, comment="锁定来源财务单据 ID"
+    )
+    is_recon_bound: Mapped[int] = mapped_column(
+        SmallInteger, default=0, server_default="0",
+        comment="是否已挂入承运商对账单（软标记，预留）",
+    )
+    is_payroll_bound: Mapped[int] = mapped_column(
+        SmallInteger, default=0, server_default="0",
+        comment="是否已挂入司机工资单（软标记，预留）",
+    )
+    payroll_settled: Mapped[int] = mapped_column(
+        SmallInteger, default=0, server_default="0",
+        comment="司机工资单是否已发放（冗余，预留）",
     )
 
     # ===== 状态与审计 =====
