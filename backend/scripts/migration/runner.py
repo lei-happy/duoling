@@ -39,6 +39,7 @@ import argparse
 import importlib
 import os
 import pkgutil
+import re
 import socket
 import sys
 import traceback
@@ -201,6 +202,32 @@ def _safe_default_for_not_null(col) -> Optional[str]:
     return None
 
 
+def _format_server_default(raw: str) -> str:
+    """把 ORM 里 `server_default` 的原始文本渲染成合法的 MySQL DEFAULT 值。
+
+    SQLAlchemy 对 `server_default="task_finance"`、`server_default="CNY"`
+    这类**字符串字面量**会包成 TextClause，其 `.text` 直接就是裸串
+    （`task_finance` / `CNY`）。若不加引号拼进 `DEFAULT ...`，MySQL 会把它
+    当成标识符/表达式，报 1064 语法错误（参考 doc_kind DEFAULT task_finance）。
+
+    识别规则与 `autogen._columns_to_set_clause` 保持一致：
+      * now() / current_timestamp → CURRENT_TIMESTAMP（不加引号）
+      * 纯数字（含负号/小数）      → 原样（不加引号）
+      * 以 ( 开头的表达式          → 原样（视为 SQL 表达式，如 (JSON_OBJECT())）
+      * 其余一律按字符串字面量加单引号并转义内部单引号
+    """
+    s = raw.strip()
+    low = s.lower()
+    if low in ("now()", "current_timestamp", "current_timestamp()"):
+        return "CURRENT_TIMESTAMP"
+    if re.fullmatch(r"-?\d+(\.\d+)?", s):
+        return s
+    if s.startswith("("):
+        return s
+    esc = s.replace("'", "''")
+    return f"'{esc}'"
+
+
 def _column_add_clause(col) -> Optional[str]:
     """把 SQLAlchemy Column 编译成 MySQL `ADD COLUMN` 子句。
 
@@ -219,9 +246,8 @@ def _column_add_clause(col) -> Optional[str]:
     if col.server_default is not None:
         arg = getattr(col.server_default, "arg", None)
         if arg is not None:
-            default_expr = (
-                str(arg.text) if hasattr(arg, "text") else str(arg)
-            )
+            raw = str(arg.text) if hasattr(arg, "text") else str(arg)
+            default_expr = _format_server_default(raw)
     if default_expr is None and not col.nullable:
         default_expr = _safe_default_for_not_null(col)
         if default_expr is None:
