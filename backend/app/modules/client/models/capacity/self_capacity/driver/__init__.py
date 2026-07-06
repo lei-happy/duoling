@@ -6,6 +6,12 @@ from app.modules.client.models.capacity.self_capacity.driver.driver_route import
 from app.modules.client.models.capacity.self_capacity.driver.driver_settlement_config import (
     DriverSettlementConfig,
 )
+from app.modules.client.models.capacity.self_capacity.driver.driver_fund_account import (
+    DriverFundAccount,
+)
+from app.modules.client.models.capacity.self_capacity.driver.driver_fund_transaction import (
+    DriverFundTransaction,
+)
 
 __all__ = [
     "Driver",
@@ -14,4 +20,6 @@ __all__ = [
     "DriverAccount",
     "DriverRoute",
     "DriverSettlementConfig",
+    "DriverFundAccount",
+    "DriverFundTransaction",
 ]

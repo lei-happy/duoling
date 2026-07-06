@@ -687,6 +687,12 @@ class TaskFinanceService:
 
         await TaskFinanceService._refresh_task_finance_aggregates(db, task)
 
+        # 联动：司机预付单支付 → 写资金账户「预付登记」流水
+        from app.modules.client.services.finance.linkage.driver_fund_orchestrator import (
+            DriverFundOrchestrator,
+        )
+        await DriverFundOrchestrator.on_finance_doc_paid(db, doc, current_user_id)
+
         await db.refresh(doc)
         return doc
 
@@ -751,6 +757,15 @@ class TaskFinanceService:
         from app.modules.client.services.task.task_service import TaskService
         task = await TaskService.get_or_404(db, doc.task_id)
         await TaskFinanceService._refresh_task_finance_aggregates(db, task)
+
+        # 联动：撤销司机预付单支付 → 冲正资金账户「预付登记」
+        from app.modules.client.services.finance.linkage.driver_fund_orchestrator import (
+            DriverFundOrchestrator,
+        )
+        await DriverFundOrchestrator.on_finance_doc_payment_reversed(
+            db, doc, current_user_id
+        )
+
         await db.refresh(doc)
         return doc
 
@@ -784,6 +799,15 @@ class TaskFinanceService:
         from app.modules.client.services.task.task_service import TaskService
         task = await TaskService.get_or_404(db, doc.task_id)
         await TaskFinanceService._refresh_task_finance_aggregates(db, task)
+
+        # 联动：强制撤销司机预付单（已支付）→ 冲正资金账户「预付登记」
+        from app.modules.client.services.finance.linkage.driver_fund_orchestrator import (
+            DriverFundOrchestrator,
+        )
+        await DriverFundOrchestrator.on_finance_doc_payment_reversed(
+            db, doc, current_user_id
+        )
+
         await db.refresh(doc)
         return doc
 

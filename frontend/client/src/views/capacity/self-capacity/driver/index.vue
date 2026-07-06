@@ -99,6 +99,11 @@
       @done="reload"
     />
 
+    <driver-fund-account
+      v-model:visible="fundVisible"
+      :driver="fundDriver"
+    />
+
     <el-dialog
       v-model="hrStatusVisible"
       title="调整人事状态"
@@ -147,6 +152,7 @@
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import DriverEdit from './components/driver-edit.vue';
+  import DriverFundAccount from './components/driver-fund-account.vue';
   import DriverSearch from './components/driver-search.vue';
   import DictData from '@/components/DictData/index.vue';
   import {
@@ -169,6 +175,8 @@
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const editVisible = ref(false);
   const editData = ref<Driver | null>(null);
+  const fundVisible = ref(false);
+  const fundDriver = ref<Driver | null>(null);
 
   const HR_STATUS_LABEL: Record<number, string> = {
     0: '冻结',
@@ -304,6 +312,11 @@
     editVisible.value = true;
   };
 
+  const openFundAccount = (row: Driver) => {
+    fundDriver.value = row;
+    fundVisible.value = true;
+  };
+
   const openHrStatusDialog = async (row: Driver) => {
     if (!row?.id) return;
     hrStatusLoading.value = true;
@@ -388,6 +401,11 @@
     {
       preset: 'more',
       dropdownItems: [
+        {
+          title: '资金账户',
+          permission: 'capacity:self_capacity:driver:fund-account',
+          onClick: () => openFundAccount(row)
+        },
         {
           title: '调整人事状态',
           onClick: () => openHrStatusDialog(row)

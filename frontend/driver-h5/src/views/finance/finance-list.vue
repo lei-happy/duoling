@@ -18,6 +18,10 @@
           <div class="cell-val">¥{{ formatMoney(summary.settledAmount) }}</div>
         </div>
       </div>
+      <div class="summary-entry" @click="$router.push('/finance/fund-account')">
+        <span>我的资金账户（往来账）</span>
+        <van-icon name="arrow" />
+      </div>
     </div>
 
     <van-tabs v-model:active="docType" sticky @change="reload">
@@ -171,6 +175,15 @@ onActivated(() => {
         margin-top: 2px;
       }
     }
+  }
+  .summary-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: $spacing-md;
+    padding-top: $spacing-md;
+    border-top: 1px solid rgba(255, 255, 255, 0.24);
+    font-size: $font-size-sm;
   }
 }
 .finance-card {

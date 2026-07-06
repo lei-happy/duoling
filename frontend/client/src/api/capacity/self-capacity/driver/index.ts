@@ -1,6 +1,14 @@
 import request from '@/utils/request';
 import type { ApiResult, PageResult } from '@/api';
-import type { Driver, DriverParam, DriverAccount, DriverRoute } from './model';
+import type {
+  Driver,
+  DriverParam,
+  DriverAccount,
+  DriverRoute,
+  DriverFundAccount,
+  DriverFundTransaction,
+  DriverFundTransactionParam
+} from './model';
 
 const BASE = '/capacity/self_capacity/driver';
 
@@ -143,6 +151,65 @@ export async function saveDriverRoutes(
   const res = await request.put<ApiResult<unknown>>(
     `${BASE}/${driverId}/routes`,
     routes
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 资金账户（往来账） */
+export async function getDriverFundAccount(driverId: number) {
+  const res = await request.get<ApiResult<DriverFundAccount>>(
+    `${BASE}/${driverId}/fund-account`
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function listDriverFundTransactions(
+  driverId: number,
+  params: {
+    page?: number;
+    limit?: number;
+    bizType?: number;
+    source?: number;
+    start?: string;
+    end?: string;
+  }
+) {
+  const res = await request.get<
+    ApiResult<{ list: DriverFundTransaction[]; total: number }>
+  >(`${BASE}/${driverId}/fund-account/transactions`, { params });
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function postDriverFundTransaction(
+  driverId: number,
+  data: DriverFundTransactionParam
+) {
+  const res = await request.post<ApiResult<DriverFundTransaction>>(
+    `${BASE}/${driverId}/fund-account/transactions`,
+    data
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function toggleFundAccountStatus(
+  accountId: number,
+  status: number
+) {
+  const res = await request.patch<ApiResult<DriverFundAccount>>(
+    `${BASE}/fund-account/${accountId}/status`,
+    { status }
   );
   if (res.data.code === 0) {
     return res.data.data;

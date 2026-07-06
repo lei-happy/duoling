@@ -321,7 +321,9 @@
       "biz_driver_operation",
       "biz_driver_account",
       "biz_driver_route",
-      "biz_driver_settlement_config"
+      "biz_driver_settlement_config",
+      "biz_driver_fund_account",
+      "biz_driver_fund_transaction"
     ],
     "sort_order": 43,
     "status": 1

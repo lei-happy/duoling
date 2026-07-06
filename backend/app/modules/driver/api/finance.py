@@ -66,6 +66,33 @@ async def list_my_accounts(
     return success(data=[it.model_dump() for it in items])
 
 
+@router.get("/fund-account", summary="我的资金账户（往来账）")
+async def get_my_fund_account(
+    tenant_db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    ctx = await get_current_driver(tenant_db, current_user)
+    data = await DriverFinanceService.get_my_fund_account(tenant_db, ctx)
+    return success(data=data)
+
+
+@router.get("/fund-account/transactions", summary="我的资金流水")
+async def list_my_fund_transactions(
+    page: int = Query(default=1, ge=1),
+    pageSize: int = Query(default=15, ge=1, le=100, alias="pageSize"),
+    bizType: Optional[int] = Query(default=None),
+    tenant_db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    ctx = await get_current_driver(tenant_db, current_user)
+    items, total = await DriverFinanceService.list_my_fund_transactions(
+        tenant_db, ctx, biz_type=bizType, page=page, page_size=pageSize,
+    )
+    return success(
+        data={"list": items, "total": total, "page": page, "pageSize": pageSize}
+    )
+
+
 @router.get("/{doc_id}", summary="费用单详情")
 async def get_doc_detail(
     doc_id: int,

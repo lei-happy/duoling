@@ -14,6 +14,10 @@ from app.modules.client.schemas.capacity.self_capacity.driver.driver_account imp
 from app.modules.client.schemas.capacity.self_capacity.driver.driver_route import (
     DriverRouteCreate, DriverRouteOut, DriverRouteSave,
 )
+from app.modules.client.schemas.capacity.self_capacity.driver.driver_fund_account import (
+    DriverFundAccountOut, DriverFundTransactionCreate, DriverFundTransactionOut,
+    DriverFundAccountStatusUpdate,
+)
 
 __all__ = [
     "DriverCreate",
@@ -29,4 +33,8 @@ __all__ = [
     "DriverRouteCreate",
     "DriverRouteOut",
     "DriverRouteSave",
+    "DriverFundAccountOut",
+    "DriverFundTransactionCreate",
+    "DriverFundTransactionOut",
+    "DriverFundAccountStatusUpdate",
 ]

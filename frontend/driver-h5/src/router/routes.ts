@@ -54,6 +54,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: '我的收入', tab: 'finance' }
   },
   {
+    path: '/finance/fund-account',
+    name: 'FundAccount',
+    component: () => import('@/views/finance/fund-account.vue'),
+    meta: { title: '我的账户' }
+  },
+  {
     path: '/finance/:id',
     name: 'FinanceDetail',
     component: () => import('@/views/finance/finance-detail.vue'),

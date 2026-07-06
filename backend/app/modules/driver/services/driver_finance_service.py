@@ -256,6 +256,38 @@ class DriverFinanceService:
         ]
 
     # ------------------------------------------------------------------
+    # 资金账户（往来账）— 只读，硬过滤只看自己
+    # ------------------------------------------------------------------
+    @staticmethod
+    async def get_my_fund_account(
+        db: AsyncSession, ctx: DriverContext
+    ) -> dict:
+        from app.modules.client.services.capacity.self_capacity.driver import (
+            DriverFundAccountService,
+        )
+
+        acc = await DriverFundAccountService.get_account(db, ctx.driver_id)
+        return acc.model_dump()
+
+    @staticmethod
+    async def list_my_fund_transactions(
+        db: AsyncSession,
+        ctx: DriverContext,
+        *,
+        biz_type: Optional[int] = None,
+        page: int = 1,
+        page_size: int = 15,
+    ) -> Tuple[List[dict], int]:
+        from app.modules.client.services.capacity.self_capacity.driver import (
+            DriverFundAccountService,
+        )
+
+        return await DriverFundAccountService.list_transactions(
+            db, ctx.driver_id,
+            biz_type=biz_type, page=page, page_size=page_size,
+        )
+
+    # ------------------------------------------------------------------
     # 输出裁剪
     # ------------------------------------------------------------------
     @staticmethod

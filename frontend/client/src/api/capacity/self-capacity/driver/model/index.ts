@@ -67,3 +67,53 @@ export interface DriverRoute {
   destName?: string;
   status?: number;
 }
+
+/** 驾驶员资金账户（往来账） */
+export interface DriverFundAccount {
+  id?: number;
+  driverId?: number;
+  enterpriseId?: number;
+  balance?: number;
+  frozenAmount?: number;
+  totalIn?: number;
+  totalOut?: number;
+  status?: number;
+  lastTxnAt?: string;
+  remark?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** 资金流水 */
+export interface DriverFundTransaction {
+  id?: number;
+  accountId?: number;
+  driverId?: number;
+  enterpriseId?: number;
+  txnNo?: string;
+  bizType?: number;
+  direction?: number;
+  amount?: number;
+  delta?: number;
+  balanceBefore?: number;
+  balanceAfter?: number;
+  relatedTaskId?: number;
+  relatedFinanceDocId?: number;
+  source?: number;
+  operatorId?: number;
+  operatorName?: string;
+  voucherUrl?: string;
+  remark?: string;
+  createdAt?: string;
+}
+
+/** 记账入参 */
+export interface DriverFundTransactionParam {
+  bizType: number;
+  amount: number;
+  direction?: number;
+  relatedTaskId?: number;
+  relatedFinanceDocId?: number;
+  voucherUrl?: string;
+  remark?: string;
+}

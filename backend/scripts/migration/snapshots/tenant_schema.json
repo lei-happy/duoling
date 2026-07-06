@@ -5172,6 +5172,390 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_driver_fund_account",
+      "comment": "驾驶员资金账户（往来账）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "balance",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "当前净余额（带符号：正=公司欠司机 负=司机欠公司）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "driver_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_driver.id"
+        },
+        {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属经营主体ID"
+        },
+        {
+          "name": "frozen_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "冻结金额（抵扣中/审批中占用，二期启用）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_txn_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近一笔流水时间"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 1-正常 0-冻结（冻结后禁止新流水）"
+        },
+        {
+          "name": "total_in",
+          "type": "NUMERIC(16, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计入账（对账用）"
+        },
+        {
+          "name": "total_out",
+          "type": "NUMERIC(16, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计出账（对账用）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_dfa_driver_ent",
+          "columns": [
+            "driver_id",
+            "enterprise_id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "ix_biz_driver_fund_account_driver_id",
+          "columns": [
+            "driver_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_driver_fund_transaction",
+      "comment": "驾驶员资金流水",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_driver_fund_account.id"
+        },
+        {
+          "name": "amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "金额（正数，展示用）"
+        },
+        {
+          "name": "balance_after",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "记账后余额快照"
+        },
+        {
+          "name": "balance_before",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "记账前余额快照"
+        },
+        {
+          "name": "biz_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "业务类型 1-预付登记 2-退款入账 3-人工入账 4-人工出账 5-人工调整 6-任务抵扣(二期) 7-任务结算入账(二期)"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "delta",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "带符号变动额（记账用，=±amount）"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "方向 1-入 2-出（由 delta 符号派生，冗余展示）"
+        },
+        {
+          "name": "driver_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "冗余 driver_id，便于按司机查"
+        },
+        {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "冗余经营主体ID"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "operator_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人 user_id"
+        },
+        {
+          "name": "operator_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人姓名（冗余）"
+        },
+        {
+          "name": "related_finance_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_task_finance_doc.id（可空）"
+        },
+        {
+          "name": "related_task_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_task.id（可空）"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "source",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "来源 1-手工 2-系统联动（二期）"
+        },
+        {
+          "name": "txn_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "流水号（系统生成）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "txn_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_dft_account",
+          "columns": [
+            "account_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_dft_biz_type",
+          "columns": [
+            "biz_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_dft_created",
+          "columns": [
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_dft_driver",
+          "columns": [
+            "driver_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_driver_license",
       "comment": "驾驶员资质信息表",
       "table_tier": "business",

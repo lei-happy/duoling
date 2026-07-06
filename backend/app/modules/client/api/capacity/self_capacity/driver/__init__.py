@@ -9,6 +9,10 @@ from app.modules.client.api.capacity.self_capacity.driver.driver_account import 
 from app.modules.client.api.capacity.self_capacity.driver.driver_route import (
     router as _route_router,
 )
+from app.modules.client.api.capacity.self_capacity.driver.driver_fund_account import (
+    router as _fund_account_router,
+)
 
 router.include_router(_account_router)
 router.include_router(_route_router)
+router.include_router(_fund_account_router)

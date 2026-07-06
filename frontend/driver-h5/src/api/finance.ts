@@ -73,3 +73,43 @@ export function getFinanceSummary(params?: { yearMonth?: string }) {
 export function listMyAccounts() {
   return get<DriverAccount[]>('/finance/account');
 }
+
+/** 资金账户（往来账） */
+export interface FundAccount {
+  id: number;
+  driverId: number;
+  balance: number;
+  frozenAmount: number;
+  totalIn: number;
+  totalOut: number;
+  status: number;
+  lastTxnAt?: string;
+}
+
+export interface FundTransaction {
+  id: number;
+  txnNo: string;
+  bizType: number;
+  direction: number;
+  amount: number;
+  delta: number;
+  balanceAfter: number;
+  operatorName?: string;
+  remark?: string;
+  createdAt: string;
+}
+
+export function getMyFundAccount() {
+  return get<FundAccount>('/finance/fund-account');
+}
+
+export function listMyFundTransactions(params: {
+  page?: number;
+  pageSize?: number;
+  bizType?: number;
+}) {
+  return get<PageResult<FundTransaction>>(
+    '/finance/fund-account/transactions',
+    params as Record<string, unknown>
+  );
+}
