@@ -14,6 +14,7 @@ class VehicleCreate(BaseModel):
     """创建车辆（核心+扩展字段合并提交）"""
     plateNumber: str
     plateCategory: str
+    enterpriseId: Optional[int] = None
     trailerId: Optional[int] = None
     # 扩展字段
     vehicleType: Optional[str] = None
@@ -35,6 +36,7 @@ class VehicleUpdate(BaseModel):
     """更新车辆"""
     plateNumber: Optional[str] = None
     plateCategory: Optional[str] = None
+    enterpriseId: Optional[int] = None
     trailerId: Optional[int] = None
     status: Optional[int] = None
     # 扩展字段
@@ -64,6 +66,7 @@ class VehicleOut(BaseModel):
     id: int
     plateNumber: str
     plateCategory: str
+    enterpriseId: Optional[int] = None
     trailerId: Optional[int] = None
     trailerPlateNumber: Optional[str] = None
     trailerPlateCategory: Optional[str] = None
@@ -100,6 +103,7 @@ class VehicleOut(BaseModel):
             id=vehicle.id,
             plateNumber=vehicle.plate_number,
             plateCategory=getattr(vehicle, "plate_category", None) or "YELLOW",
+            enterpriseId=getattr(vehicle, "enterprise_id", None),
             trailerId=vehicle.trailer_id,
             trailerPlateNumber=trailer_plate,
             trailerPlateCategory=trailer_plate_category,

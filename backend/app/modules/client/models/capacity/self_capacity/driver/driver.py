@@ -23,6 +23,10 @@ class Driver(TenantModelBase):
     user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="关联的用户ID"
     )
+    enterprise_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, index=True,
+        comment="所属经营主体ID（biz_business_entity.id）",
+    )
     name: Mapped[str] = mapped_column(
         String(50), nullable=False, comment="姓名"
     )

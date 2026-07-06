@@ -1977,6 +1977,206 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_business_entity",
+      "comment": "经营主体表（法人/独立核算单元）",
+      "table_tier": "core",
+      "columns": [
+        {
+          "name": "bank_account",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "对公账号"
+        },
+        {
+          "name": "bank_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "对公开户行"
+        },
+        {
+          "name": "contact_person",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "联系人"
+        },
+        {
+          "name": "contact_phone",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "联系电话"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "entity_code",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主体编码（业务唯一标识）"
+        },
+        {
+          "name": "entity_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主体名称（法人全称）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "invoice_tax_no",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开票税号（默认取 unified_credit_code）"
+        },
+        {
+          "name": "invoice_title",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开票抬头（默认取 entity_name）"
+        },
+        {
+          "name": "is_default",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否默认主体 1-是 0-否（租户内至多 1 条为 1）"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "legal_person",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "法定代表人"
+        },
+        {
+          "name": "registered_address",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "注册地址"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "short_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "简称（列表/选择器展示）"
+        },
+        {
+          "name": "sort_order",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "排序号"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 1-正常 0-停用（停用后不可被新业务选择）"
+        },
+        {
+          "name": "unified_credit_code",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "统一社会信用代码"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "entity_code"
+          ]
+        }
+      ],
+      "indexes": [],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_capacity",
       "comment": "运力表（司机-车辆绑定关系）",
       "table_tier": "business",
@@ -2025,6 +2225,15 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "司机手机号（冗余）"
+        },
+        {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属经营主体ID（biz_business_entity.id）"
         },
         {
           "name": "id",
@@ -2112,7 +2321,15 @@
         "id"
       ],
       "unique_constraints": [],
-      "indexes": [],
+      "indexes": [
+        {
+          "name": "ix_biz_capacity_enterprise_id",
+          "columns": [
+            "enterprise_id"
+          ],
+          "unique": false
+        }
+      ],
       "foreign_keys": []
     },
     {
@@ -4938,6 +5155,15 @@
           "comment": "紧急联系人电话"
         },
         {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属经营主体ID（biz_business_entity.id）"
+        },
+        {
           "name": "gender",
           "type": "SMALLINT",
           "nullable": false,
@@ -5048,7 +5274,15 @@
           ]
         }
       ],
-      "indexes": [],
+      "indexes": [
+        {
+          "name": "ix_biz_driver_enterprise_id",
+          "columns": [
+            "enterprise_id"
+          ],
+          "unique": false
+        }
+      ],
       "foreign_keys": []
     },
     {
@@ -9535,6 +9769,15 @@
           "comment": "调度员姓名（冗余）"
         },
         {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属经营主体ID（biz_business_entity.id），费用单据继承此归属"
+        },
+        {
           "name": "finance_doc_count",
           "type": "INTEGER",
           "nullable": false,
@@ -9867,6 +10110,13 @@
           "name": "idx_task_status",
           "columns": [
             "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_biz_task_enterprise_id",
+          "columns": [
+            "enterprise_id"
           ],
           "unique": false
         }
@@ -10239,6 +10489,15 @@
           "comment": "单据类型 1-预付单 2-补款单 3-结算单 4-承包单"
         },
         {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属经营主体ID（biz_business_entity.id），继承自任务"
+        },
+        {
           "name": "id",
           "type": "BIGINT",
           "nullable": false,
@@ -10538,6 +10797,13 @@
           "name": "idx_tfd_task_id",
           "columns": [
             "task_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_biz_task_finance_doc_enterprise_id",
+          "columns": [
+            "enterprise_id"
           ],
           "unique": false
         }
@@ -11689,6 +11955,15 @@
           "comment": "创建时间"
         },
         {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属经营主体ID（biz_business_entity.id）"
+        },
+        {
           "name": "id",
           "type": "BIGINT",
           "nullable": false,
@@ -11772,7 +12047,15 @@
           ]
         }
       ],
-      "indexes": [],
+      "indexes": [
+        {
+          "name": "ix_biz_vehicle_enterprise_id",
+          "columns": [
+            "enterprise_id"
+          ],
+          "unique": false
+        }
+      ],
       "foreign_keys": []
     },
     {

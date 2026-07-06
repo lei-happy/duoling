@@ -39,7 +39,7 @@
         </el-tag>
       </el-descriptions-item>
       <el-descriptions-item
-        v-if="form.carrier.carrierType === 2"
+        v-if="form.carrier.carrierType === CARRIER_TYPE.CARRIER"
         label="承运商"
       >
         {{ task?.carrierName || '--' }}
@@ -53,7 +53,7 @@
       v-loading="submitting"
     >
       <!-- 自有车：选具体运力 -->
-      <template v-if="form.carrier.carrierType === 1">
+      <template v-if="form.carrier.carrierType === CARRIER_TYPE.SELF">
         <el-form-item label="选择运力" required>
           <el-select
             v-model="form.carrier.capacityId"
@@ -98,7 +98,7 @@
       </template>
 
       <!-- 承运商：等待 lite 上报 + 调度员代填兜底 -->
-      <template v-if="form.carrier.carrierType === 2">
+      <template v-if="form.carrier.carrierType === CARRIER_TYPE.CARRIER">
         <el-alert
           type="info"
           :closable="false"
@@ -137,7 +137,7 @@
       </template>
 
       <!-- 社会运力 -->
-      <template v-if="form.carrier.carrierType === 3">
+      <template v-if="form.carrier.carrierType === CARRIER_TYPE.SOCIAL">
         <el-form-item label="选择运力" required>
           <el-select
             v-model="form.carrier.socialDriverId"
@@ -212,7 +212,11 @@
   import { EleMessage } from 'ele-admin-plus';
   import { assignCarrier } from '@/api/operation/task';
   import type { Task, TaskCarrierInfo } from '@/api/operation/task/model';
-  import { CARRIER_TYPE_OPTIONS } from '../../task/status-config';
+  import {
+    CARRIER_TYPE,
+    CARRIER_TYPE_OPTIONS,
+    TASK_STATUS
+  } from '../../task/status-config';
   import { pageCapacities } from '@/api/capacity/self-capacity/list';
   import type { Capacity } from '@/api/capacity/self-capacity/list/model';
   import {
@@ -237,7 +241,7 @@
   const proxyPanelOpen = ref<string[]>([]);
 
   const defaultCarrier = (): TaskCarrierInfo => ({
-    carrierType: 1,
+    carrierType: CARRIER_TYPE.SELF,
     capacityId: undefined,
     carrierId: undefined,
     mainDriverName: '',
@@ -254,11 +258,13 @@
   });
 
   const isReassign = computed(
-    () => (props.task?.status ?? 0) === 1 && !!props.task?.carrierType
+    () =>
+      (props.task?.status ?? TASK_STATUS.PENDING_DISPATCH) ===
+        TASK_STATUS.DISPATCHED && !!props.task?.carrierType
   );
   const title = computed(() => (isReassign.value ? '重新派车' : '派车'));
   const confirmLabel = computed(() => {
-    if (form.carrier.carrierType === 2) {
+    if (form.carrier.carrierType === CARRIER_TYPE.CARRIER) {
       return form.isProxy ? '提交代填运力' : '通知承运商上报';
     }
     return isReassign.value ? '确认换车' : '确认派车';
@@ -298,10 +304,13 @@
       };
       form.isProxy = false;
       proxyPanelOpen.value = [];
-      if (form.carrier.carrierType === 1 && capacities.value.length === 0) {
+      if (
+        form.carrier.carrierType === CARRIER_TYPE.SELF &&
+        capacities.value.length === 0
+      ) {
         searchCapacities('');
       }
-      if (form.carrier.carrierType === 3) {
+      if (form.carrier.carrierType === CARRIER_TYPE.SOCIAL) {
         if (socialCapacities.value.length === 0) {
           await searchSocialCapacities('');
         }
@@ -398,12 +407,12 @@
 
   const validate = (): string | null => {
     const c = form.carrier;
-    if (c.carrierType === 1) {
+    if (c.carrierType === CARRIER_TYPE.SELF) {
       if (!c.capacityId && !c.mainDriverName?.trim()) {
         return '请选择运力或手动填写主驾姓名+车牌';
       }
       if (!c.plateNumber?.trim()) return '请填写车牌号';
-    } else if (c.carrierType === 2) {
+    } else if (c.carrierType === CARRIER_TYPE.CARRIER) {
       // 承运商类型：调度员是否代填
       const hasProxyData =
         c.mainDriverName?.trim() &&
@@ -415,7 +424,7 @@
         return '请填写完整的主驾/电话/车牌或关闭代填面板';
       }
       // 不填运力则提交后等待 lite 上报，无需校验
-    } else if (c.carrierType === 3) {
+    } else if (c.carrierType === CARRIER_TYPE.SOCIAL) {
       if (!c.socialDriverId) {
         return '请选择社会运力';
       }
@@ -439,7 +448,7 @@
 
     // 承运商类型未代填运力时：仅提示等待 lite 上报，不发请求
     if (
-      form.carrier.carrierType === 2 &&
+      form.carrier.carrierType === CARRIER_TYPE.CARRIER &&
       !form.isProxy &&
       !form.carrier.mainDriverName?.trim()
     ) {

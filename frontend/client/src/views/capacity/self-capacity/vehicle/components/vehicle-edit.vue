@@ -71,6 +71,16 @@
                 </el-form-item>
               </el-col>
             </el-row>
+            <el-row :gutter="10">
+              <el-col :span="8">
+                <el-form-item>
+                  <business-entity-select
+                    v-model="form.enterpriseId"
+                    placeholder="请选择所属经营主体"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
           </div>
         </el-tab-pane>
 
@@ -253,6 +263,7 @@
   import { EleMessage } from 'ele-admin-plus';
   import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
+  import BusinessEntitySelect from '@/components/BusinessEntitySelect/index.vue';
   import {
     addVehicle,
     updateVehicle,

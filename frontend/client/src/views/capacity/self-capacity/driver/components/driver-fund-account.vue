@@ -39,11 +39,17 @@
           <div class="fund-account__label">账户状态</div>
           <div class="fund-account__num">
             <el-tag
-              :type="account?.status === 1 ? 'success' : 'danger'"
+              :type="
+                account?.status === FUND_ACCOUNT_STATUS.NORMAL
+                  ? 'success'
+                  : 'danger'
+              "
               size="small"
               :disable-transitions="true"
             >
-              {{ account?.status === 1 ? '正常' : '冻结' }}
+              {{
+                account?.status === FUND_ACCOUNT_STATUS.NORMAL ? '正常' : '冻结'
+              }}
             </el-tag>
           </div>
         </div>
@@ -55,19 +61,23 @@
           <el-button
             v-if="canPost"
             type="primary"
-            :disabled="account?.status !== 1"
+            :disabled="account?.status !== FUND_ACCOUNT_STATUS.NORMAL"
             @click="openPost"
           >
             记账
           </el-button>
           <template v-if="canFreeze">
             <el-button
-              v-if="account?.status === 1"
-              @click="toggleStatus(0)"
+              v-if="account?.status === FUND_ACCOUNT_STATUS.NORMAL"
+              @click="toggleStatus(FUND_ACCOUNT_STATUS.FROZEN)"
             >
               冻结账户
             </el-button>
-            <el-button v-else type="warning" @click="toggleStatus(1)">
+            <el-button
+              v-else
+              type="warning"
+              @click="toggleStatus(FUND_ACCOUNT_STATUS.NORMAL)"
+            >
               解冻账户
             </el-button>
           </template>
@@ -162,10 +172,14 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="postForm.bizType === 5" label="方向" prop="direction">
+        <el-form-item
+          v-if="postForm.bizType === FUND_BIZ_TYPE.ADJUST"
+          label="方向"
+          prop="direction"
+        >
           <el-radio-group v-model="postForm.direction">
-            <el-radio :value="1">入账（+）</el-radio>
-            <el-radio :value="2">出账（-）</el-radio>
+            <el-radio :value="FUND_DIRECTION.IN">入账（+）</el-radio>
+            <el-radio :value="FUND_DIRECTION.OUT">出账（-）</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="金额" prop="amount">
@@ -218,6 +232,15 @@
   } from '@/api/capacity/self-capacity/driver/model';
   import { formatDateTime } from '@/utils/date-util';
   import { usePermission } from '@/utils/use-permission';
+  import {
+    FUND_ACCOUNT_STATUS,
+    FUND_BIZ_TYPE,
+    FUND_DIRECTION,
+    MANUAL_BIZ_TYPE_OPTIONS,
+    MANUAL_REMARK_MIN_LEN,
+    fundBizTypeLabel,
+    resolveManualSign
+  } from '../fund-account.constants';
 
   const { hasPermission } = usePermission();
   const canPost = computed(() =>
@@ -240,15 +263,8 @@
     set: (v) => emit('update:visible', v)
   });
 
-  const bizTypeOptions = [
-    { value: 1, label: '预付登记' },
-    { value: 2, label: '退款入账' },
-    { value: 3, label: '人工入账' },
-    { value: 4, label: '人工出账' },
-    { value: 5, label: '人工调整' }
-  ];
-  const bizTypeLabel = (v: number) =>
-    bizTypeOptions.find((o) => o.value === v)?.label ?? String(v);
+  const bizTypeOptions = MANUAL_BIZ_TYPE_OPTIONS;
+  const bizTypeLabel = fundBizTypeLabel;
 
   const loading = ref(false);
   const account = ref<DriverFundAccount | null>(null);
@@ -306,7 +322,7 @@
 
   const toggleStatus = async (status: number) => {
     if (!account.value?.id) return;
-    const label = status === 0 ? '冻结' : '解冻';
+    const label = status === FUND_ACCOUNT_STATUS.FROZEN ? '冻结' : '解冻';
     try {
       await ElMessageBox.confirm(`确定${label}该资金账户吗？`, '系统提示', {
         type: 'warning'
@@ -331,7 +347,12 @@
     amount: number | undefined;
     direction: number | undefined;
     remark: string;
-  }>({ bizType: 1, amount: undefined, direction: 1, remark: '' });
+  }>({
+    bizType: FUND_BIZ_TYPE.PREPAY_REGISTER,
+    amount: undefined,
+    direction: FUND_DIRECTION.IN,
+    remark: ''
+  });
 
   const postRules = {
     bizType: [{ required: true, message: '请选择业务类型', trigger: 'change' }],
@@ -339,17 +360,16 @@
   };
 
   const postAmountAbs = computed(() => Number(postForm.amount ?? 0));
-  const postDelta = computed(() => {
-    const amt = postAmountAbs.value;
-    if (postForm.bizType === 5) return postForm.direction === 1 ? amt : -amt;
-    const sign = [2, 3].includes(postForm.bizType) ? 1 : -1;
-    return sign * amt;
-  });
+  const postDelta = computed(
+    () =>
+      resolveManualSign(postForm.bizType, postForm.direction) *
+      postAmountAbs.value
+  );
 
   const openPost = () => {
-    postForm.bizType = 1;
+    postForm.bizType = FUND_BIZ_TYPE.PREPAY_REGISTER;
     postForm.amount = undefined;
-    postForm.direction = 1;
+    postForm.direction = FUND_DIRECTION.IN;
     postForm.remark = '';
     postVisible.value = true;
   };
@@ -361,8 +381,11 @@
       ElMessage.warning('金额必须大于 0');
       return;
     }
-    if (postForm.bizType === 5 && postForm.remark.trim().length < 5) {
-      ElMessage.warning('人工调整必须填写不少于 5 字的备注');
+    if (
+      postForm.bizType === FUND_BIZ_TYPE.ADJUST &&
+      postForm.remark.trim().length < MANUAL_REMARK_MIN_LEN
+    ) {
+      ElMessage.warning(`人工调整必须填写不少于 ${MANUAL_REMARK_MIN_LEN} 字的备注`);
       return;
     }
     posting.value = true;
@@ -370,7 +393,10 @@
       await postDriverFundTransaction(props.driver.id, {
         bizType: postForm.bizType,
         amount: postForm.amount,
-        direction: postForm.bizType === 5 ? postForm.direction : undefined,
+        direction:
+          postForm.bizType === FUND_BIZ_TYPE.ADJUST
+            ? postForm.direction
+            : undefined,
         remark: postForm.remark || undefined
       });
       ElMessage.success('记账成功');

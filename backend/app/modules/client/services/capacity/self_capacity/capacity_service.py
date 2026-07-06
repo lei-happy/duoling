@@ -68,6 +68,11 @@ class CapacityService:
             driver_id=driver_id,
             driver_name=driver.name,
             driver_phone=driver.phone,
+            # 运力归属继承自司机的经营主体（车辆缺省时兜底取司机主体）
+            enterprise_id=(
+                getattr(driver, "enterprise_id", None)
+                or getattr(vehicle, "enterprise_id", None)
+            ),
             vehicle_id=vehicle_id,
             plate_number=vehicle.plate_number,
             status=1,
@@ -333,6 +338,7 @@ class CapacityService:
         page_size: int = 20,
         keyword: Optional[str] = None,
         operation_status: Optional[int] = None,
+        enterprise_id: Optional[int] = None,
     ) -> dict:
         """运力分页列表（仅当前绑定中的运力；已解绑请在变动记录中查看）"""
         query = (
@@ -398,6 +404,9 @@ class CapacityService:
 
         if operation_status is not None:
             query = query.where(Capacity.operation_status == operation_status)
+
+        if enterprise_id is not None:
+            query = query.where(Capacity.enterprise_id == enterprise_id)
 
         count_q = select(func.count()).select_from(query.subquery())
         total = (await db.execute(count_q)).scalar() or 0

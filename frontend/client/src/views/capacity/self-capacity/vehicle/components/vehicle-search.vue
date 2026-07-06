@@ -44,6 +44,13 @@
           </floating-label>
         </el-col>
         <el-col :lg="6" :md="8" :sm="12" :xs="24">
+          <business-entity-select
+            v-model="form.enterpriseId"
+            placeholder="请选择经营主体"
+            clearable
+          />
+        </el-col>
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <el-form-item label-width="0px">
             <btn-items
               :wrap="false"
@@ -62,6 +69,7 @@
 <script lang="ts" setup>
   import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
+  import BusinessEntitySelect from '@/components/BusinessEntitySelect/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import { useDictData } from '@/utils/use-dict-data';
   import type { VehicleParam } from '@/api/capacity/self-capacity/vehicle/model';
@@ -72,7 +80,10 @@
   const emit = defineEmits<{
     (
       e: 'search',
-      where: Pick<VehicleParam, 'keyword' | 'status' | 'vehicleType'>
+      where: Pick<
+        VehicleParam,
+        'keyword' | 'status' | 'vehicleType' | 'enterpriseId'
+      >
     ): void;
   }>();
 
@@ -80,10 +91,12 @@
     keyword: string;
     vehicleType: string | undefined;
     status: number | undefined;
+    enterpriseId: number | undefined;
   }>({
     keyword: '',
     vehicleType: void 0,
-    status: void 0
+    status: void 0,
+    enterpriseId: void 0
   });
 
   const search = () => {

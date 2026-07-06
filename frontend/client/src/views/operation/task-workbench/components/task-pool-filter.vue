@@ -147,7 +147,7 @@
   import { selectCarriers } from '@/api/partner/carrier';
   import type { CarrierSelectItem } from '@/api/partner/carrier/model';
   import type { TaskParam, TaskTimeField } from '@/api/operation/task/model';
-  import { CARRIER_TYPE_OPTIONS } from '../../task/status-config';
+  import { CARRIER_TYPE, CARRIER_TYPE_OPTIONS } from '../../task/status-config';
   import {
     TASK_TIME_FIELD_OPTIONS,
     resolveDefaultTimeField,
@@ -191,9 +191,13 @@
 
   const [form, resetFields] = useFormData<FilterForm>(buildInitial());
 
-  const showCarrierFilter = computed(() => form.carrierType === 2);
+  const showCarrierFilter = computed(
+    () => form.carrierType === CARRIER_TYPE.CARRIER
+  );
 
-  const timeRangeLabel = computed(() => `请选择${timeFieldLabel(form.timeField)}`);
+  const timeRangeLabel = computed(
+    () => `请选择${timeFieldLabel(form.timeField)}`
+  );
 
   /** 第二行与第一行四列对齐：承运商(6) | 时间类型(4)+时间范围(8)=出发地+目的地(12) | 操作(6) */
   const fieldCol = { lg: 6, md: 6, sm: 12, xs: 24 };

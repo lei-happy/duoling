@@ -25,10 +25,12 @@
     </div>
 
     <van-tabs v-model:active="docType" sticky @change="reload">
-      <van-tab title="全部" name="" />
-      <van-tab title="预付单" name="1" />
-      <van-tab title="补款单" name="2" />
-      <van-tab title="结算单" name="3" />
+      <van-tab
+        v-for="tab in docTypeTabs"
+        :key="tab.name"
+        :title="tab.title"
+        :name="tab.name"
+      />
     </van-tabs>
 
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
@@ -78,6 +80,15 @@ import { FINANCE_DOC_TYPE, FINANCE_STATUS } from '@/views/task/status-config';
 import { formatDate, formatMoney } from '@/utils/format';
 
 defineOptions({ name: 'FinanceList' });
+
+// tab 直接从单据类型映射派生，避免码值 / 文案在此处重复硬编码
+const docTypeTabs = [
+  { title: '全部', name: '' },
+  ...Object.entries(FINANCE_DOC_TYPE).map(([value, title]) => ({
+    title,
+    name: value
+  }))
+];
 
 const docType = ref<string>('');
 const list = ref<FinanceDocItem[]>([]);

@@ -61,12 +61,14 @@ async def page_capacities(
     page_size: int = Query(20, alias="limit", ge=1, le=200),
     keyword: Optional[str] = None,
     operation_status: Optional[int] = Query(None, alias="operationStatus"),
+    enterpriseId: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     """运力分页列表（仅绑定中；已解绑见变动记录）"""
     data = await CapacityService.page_capacities(
-        db, page=page, page_size=page_size, keyword=keyword, operation_status=operation_status
+        db, page=page, page_size=page_size, keyword=keyword,
+        operation_status=operation_status, enterprise_id=enterpriseId,
     )
     return success(data=data)
 

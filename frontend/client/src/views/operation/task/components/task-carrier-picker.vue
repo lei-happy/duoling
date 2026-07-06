@@ -50,7 +50,7 @@
         label="选择承运商"
         required
         class="carrier-picker__simple-carrier-field"
-        :class="{ 'is-inactive': local.carrierType !== 2 }"
+        :class="{ 'is-inactive': local.carrierType !== CARRIER_TYPE.CARRIER }"
       >
         <el-select
           v-model="local.carrierId"
@@ -73,7 +73,7 @@
     </div>
 
     <!-- A. 自有车 -->
-    <template v-if="local.carrierType === 1">
+    <template v-if="local.carrierType === CARRIER_TYPE.SELF">
       <template v-if="!simpleMode">
         <el-form-item label="选择运力">
           <el-select
@@ -123,7 +123,7 @@
     </template>
 
     <!-- B. 承运商 -->
-    <template v-if="local.carrierType === 2">
+    <template v-if="local.carrierType === CARRIER_TYPE.CARRIER">
       <template v-if="!simpleMode">
         <el-form-item label="选择承运商">
           <el-select
@@ -195,7 +195,7 @@
     </template>
 
     <!-- C. 社会运力 -->
-    <template v-if="local.carrierType === 3">
+    <template v-if="local.carrierType === CARRIER_TYPE.SOCIAL">
       <el-form-item label="选择运力" :required="simpleMode">
         <el-select
           v-model="local.socialDriverId"
@@ -308,7 +308,12 @@
     listForDispatch
   } from '@/api/capacity/social-capacity/list';
   import type { SocialCapacitySelectItem } from '@/api/capacity/social-capacity/list/model';
-  import { CARRIER_TYPE_DETAIL_HINT, CARRIER_TYPE_INTRO, CARRIER_TYPE_OPTIONS } from '../status-config';
+  import {
+    CARRIER_TYPE,
+    CARRIER_TYPE_DETAIL_HINT,
+    CARRIER_TYPE_INTRO,
+    CARRIER_TYPE_OPTIONS
+  } from '../status-config';
 
   const props = withDefaults(
     defineProps<{
@@ -342,11 +347,7 @@
   const showSimpleFixedBody = computed(() => {
     if (!props.simpleMode) return false;
     const allowed = props.allowedCarrierTypes;
-    return (
-      allowed?.length === 2 &&
-      allowed.includes(1) &&
-      allowed.includes(2)
-    );
+    return allowed?.length === 2 && allowed.includes(1) && allowed.includes(2);
   });
 
   const ensureAllowedCarrierType = () => {
@@ -359,7 +360,7 @@
   };
 
   const local = reactive<TaskCarrierInfo>({
-    carrierType: 1,
+    carrierType: CARRIER_TYPE.SELF,
     capacityId: undefined,
     carrierId: undefined,
     mainDriverName: '',
@@ -511,10 +512,10 @@
     if (props.lockType || local.carrierType === value) return;
     local.carrierType = value;
     onTypeChange();
-    if (value === 2 && carriers.value.length === 0) {
+    if (value === CARRIER_TYPE.CARRIER && carriers.value.length === 0) {
       searchCarriers('');
     }
-    if (value === 3 && socialCapacities.value.length === 0) {
+    if (value === CARRIER_TYPE.SOCIAL && socialCapacities.value.length === 0) {
       searchSocialCapacities('');
     }
   };
@@ -540,13 +541,19 @@
   /** 触发一次初始搜索（弹窗打开时调用） */
   const init = async () => {
     ensureAllowedCarrierType();
-    if (local.carrierType === 1 && capacities.value.length === 0) {
+    if (
+      local.carrierType === CARRIER_TYPE.SELF &&
+      capacities.value.length === 0
+    ) {
       searchCapacities('');
     }
-    if (local.carrierType === 2 && carriers.value.length === 0) {
+    if (
+      local.carrierType === CARRIER_TYPE.CARRIER &&
+      carriers.value.length === 0
+    ) {
       searchCarriers('');
     }
-    if (local.carrierType === 3) {
+    if (local.carrierType === CARRIER_TYPE.SOCIAL) {
       if (socialCapacities.value.length === 0) {
         await searchSocialCapacities('');
       }

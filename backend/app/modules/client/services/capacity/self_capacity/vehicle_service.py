@@ -32,6 +32,7 @@ class VehicleService:
         keyword: Optional[str] = None,
         vehicle_type: Optional[str] = None,
         status: Optional[int] = None,
+        enterprise_id: Optional[int] = None,
     ) -> dict:
         base = (
             select(
@@ -64,6 +65,8 @@ class VehicleService:
             base = base.where(VehicleExt.vehicle_type == vehicle_type)
         if status is not None:
             base = base.where(Vehicle.status == status)
+        if enterprise_id is not None:
+            base = base.where(Vehicle.enterprise_id == enterprise_id)
 
         count_q = select(func.count()).select_from(
             select(Vehicle.id)
@@ -86,6 +89,11 @@ class VehicleService:
             )
             .where(VehicleExt.vehicle_type == vehicle_type if vehicle_type else True)
             .where(Vehicle.status == status if status is not None else True)
+            .where(
+                Vehicle.enterprise_id == enterprise_id
+                if enterprise_id is not None
+                else True
+            )
             .subquery()
         )
         total = (await db.execute(count_q)).scalar() or 0
@@ -155,6 +163,7 @@ class VehicleService:
         vehicle = Vehicle(
             plate_number=plate_norm,
             plate_category=data.plateCategory,
+            enterprise_id=data.enterpriseId,
             trailer_id=data.trailerId,
             status=1,
             status_source="manual",
@@ -229,6 +238,9 @@ class VehicleService:
 
         if "status" in update_data and update_data["status"] is not None:
             vehicle.status = update_data["status"]
+
+        if "enterpriseId" in update_data:
+            vehicle.enterprise_id = update_data["enterpriseId"]
 
         if "plateNumber" in update_data and update_data["plateNumber"]:
             new_pn = normalize_plate_input(update_data["plateNumber"])

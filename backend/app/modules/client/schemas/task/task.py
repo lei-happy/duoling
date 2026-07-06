@@ -5,6 +5,7 @@ from typing import List, Mapping, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.modules.client.models.task.constants import CarrierType
 from app.modules.client.schemas.task.task_dispatch_order import (
     TaskDispatchOrderIn, TaskDispatchOrderOut,
 )
@@ -64,13 +65,13 @@ class TaskCarrierInfo(BaseModel):
     @model_validator(mode="after")
     def _check_required(self):
         # 自有车与承运商需要至少有对应的 ID 或快照
-        if self.carrierType == 1:
+        if self.carrierType == CarrierType.SELF:
             if not (self.capacityId or (self.mainDriverName and self.plateNumber)):
                 raise ValueError("自有车任务必须选择运力或填写主驾+车牌")
-        elif self.carrierType == 2:
+        elif self.carrierType == CarrierType.CARRIER:
             if not (self.carrierId or self.carrierName):
                 raise ValueError("承运商任务必须选择承运商或填写承运商名称")
-        elif self.carrierType == 3:
+        elif self.carrierType == CarrierType.SOCIAL:
             if not (self.mainDriverName and self.mainDriverPhone and self.plateNumber):
                 raise ValueError("社会运力必须填写司机姓名/电话/车牌")
         return self
@@ -98,10 +99,10 @@ class TaskCarrierAssignmentInfo(BaseModel):
 
     @model_validator(mode="after")
     def _check_required(self):
-        if self.carrierType == 2:
+        if self.carrierType == CarrierType.CARRIER:
             if not (self.carrierId or (self.carrierName and self.carrierName.strip())):
                 raise ValueError("承运商任务必须选择承运商或填写承运商名称")
-        elif self.carrierType == 3:
+        elif self.carrierType == CarrierType.SOCIAL:
             if not self.socialDriverId:
                 raise ValueError("社会运力必须选择具体运力")
             if not (
@@ -248,7 +249,7 @@ class TaskBatchCarrierAssignmentRequest(BaseModel):
 
     @model_validator(mode="after")
     def _batch_carrier_type(self):
-        if int(self.carrier.carrierType) == 3:
+        if int(self.carrier.carrierType) == CarrierType.SOCIAL:
             raise ValueError("社会运力不支持批量分配，请逐单操作")
         return self
 

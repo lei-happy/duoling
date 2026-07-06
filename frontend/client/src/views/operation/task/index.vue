@@ -55,7 +55,7 @@
         </template>
 
         <template #carrierResource="{ row }">
-          <div v-if="row.carrierType === 2">
+          <div v-if="row.carrierType === CARRIER_TYPE.CARRIER">
             {{ row.carrierName || '--' }}
           </div>
           <div v-else>
@@ -226,7 +226,11 @@
   } from '@/api/operation/task';
   import type { Task, TaskParam } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
-  import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from './status-config';
+  import {
+    CARRIER_TYPE,
+    CARRIER_TYPE_MAP,
+    TASK_STATUS_MAP
+  } from './status-config';
   import { getTaskRowActions } from './task-actions';
   import type { TaskActionConfig, TaskActionKey } from './task-actions';
 
@@ -418,7 +422,7 @@
     reload();
     if (
       updated &&
-      updated.carrierType === 1 &&
+      updated.carrierType === CARRIER_TYPE.SELF &&
       (updated.segmentCount ?? 0) === 0
     ) {
       try {

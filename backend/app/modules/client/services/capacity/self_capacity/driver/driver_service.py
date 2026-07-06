@@ -73,6 +73,7 @@ class DriverService:
         driver_type: Optional[str] = None,
         operation_status: Optional[int] = None,
         department_id: Optional[int] = None,
+        enterprise_id: Optional[int] = None,
         sort: Optional[str] = None,
         order: Optional[str] = None,
     ) -> dict:
@@ -112,6 +113,8 @@ class DriverService:
             base = base.where(DriverOperation.operation_status == operation_status)
         if department_id is not None:
             base = base.where(DriverOperation.department_id == department_id)
+        if enterprise_id is not None:
+            base = base.where(Driver.enterprise_id == enterprise_id)
 
         count_base = (
             select(Driver.id)
@@ -135,6 +138,8 @@ class DriverService:
             count_base = count_base.where(DriverOperation.operation_status == operation_status)
         if department_id is not None:
             count_base = count_base.where(DriverOperation.department_id == department_id)
+        if enterprise_id is not None:
+            count_base = count_base.where(Driver.enterprise_id == enterprise_id)
 
         count_q = select(func.count()).select_from(count_base.subquery())
         total = (await db.execute(count_q)).scalar() or 0
@@ -214,6 +219,7 @@ class DriverService:
             home_address=data.homeAddress,
             status=1,
             remark=data.remark,
+            enterprise_id=data.enterpriseId,
         )
         db.add(driver)
         await db.flush()
@@ -285,6 +291,7 @@ class DriverService:
             "homeAddress": "home_address",
             "status": "status",
             "remark": "remark",
+            "enterpriseId": "enterprise_id",
         }
         for schema_f, model_f in core_fields.items():
             if schema_f in update_data:

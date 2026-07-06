@@ -44,7 +44,22 @@ from app.modules.client.services.state_machine.dispatch_order_state_machine impo
     MAIN_LINE_ORDER_NO,
     is_valid_dispatch_order_status,
 )
+from app.modules.client.models.task.constants import CarrierType
+from app.modules.client.services.state_machine.item_state_machine import (
+    ITEM_CANCELLED,
+    ITEM_LOADED,
+    ITEM_UNLOADED,
+)
 from app.modules.client.services.state_machine.task_state_machine import (
+    TASK_ARRIVED,
+    TASK_CANCELLED,
+    TASK_CLOSED,
+    TASK_DISPATCHED,
+    TASK_LOADED,
+    TASK_PENDING_ASSIGN,
+    TASK_PENDING_DISPATCH,
+    TASK_ON_WAY,
+    TASK_SIGNED,
     TASK_STATUS_LABELS,
     TaskStateMachine,
 )
@@ -140,7 +155,7 @@ class TaskService:
             "carrier_short_name": carrier_info.carrierShortName,
         }
 
-        if carrier_info.carrierType == 1:
+        if carrier_info.carrierType == CarrierType.SELF:
             if carrier_info.capacityId:
                 cap_res = await db.execute(
                     select(Capacity).where(
@@ -154,6 +169,8 @@ class TaskService:
                         f"运力不存在 (id={carrier_info.capacityId})"
                     )
                 snapshot["capacity_id"] = cap.id
+                # 经营主体：自有车任务归属继承自运力主体
+                snapshot["enterprise_id"] = getattr(cap, "enterprise_id", None)
                 if not snapshot["main_driver_name"]:
                     snapshot["main_driver_name"] = cap.driver_name
                 if not snapshot["main_driver_phone"]:
@@ -161,7 +178,7 @@ class TaskService:
                 if not snapshot["plate_number"]:
                     snapshot["plate_number"] = cap.plate_number
 
-        elif carrier_info.carrierType == 2:
+        elif carrier_info.carrierType == CarrierType.CARRIER:
             if carrier_info.carrierId:
                 car_res = await db.execute(
                     select(Carrier).where(
@@ -190,9 +207,9 @@ class TaskService:
     ) -> dict:
         """待分配 → 待派车：写入承运方式及可得快照（自有车可不绑定具体运力）。"""
         ct = int(data.carrierType)
-        if ct == 1 and not data.capacityId:
+        if ct == CarrierType.SELF and not data.capacityId:
             return {
-                "carrier_type": 1,
+                "carrier_type": CarrierType.SELF,
                 "capacity_id": None,
                 "carrier_id": None,
                 "social_driver_id": None,
@@ -390,7 +407,9 @@ class TaskService:
     ) -> Task:
         """补齐 / 重做任务单的分段路线。仅在「待分配 / 待派车 / 已派车 / 已装车」可用。"""
         task = await TaskService.get_or_404(db, task_id)
-        if int(task.status) not in (-1, 0, 1, 2):
+        if int(task.status) not in (
+            TASK_PENDING_ASSIGN, TASK_PENDING_DISPATCH, TASK_DISPATCHED, TASK_LOADED
+        ):
             raise BizException(
                 f"任务单当前状态「{_STATUS_LABELS.get(task.status, task.status)}」"
                 f"不允许调整路线（仅待分配/待派车/已派车/已装车可规划）"
@@ -527,11 +546,11 @@ class TaskService:
                 carrier_cost_amount=data.carrierCostAmount,
                 carrier_cost_type=data.carrierCostType,
                 cost_remark=data.costRemark,
-                status=-1,
+                status=TASK_PENDING_ASSIGN,
                 dispatcher_id=current_user_id,
                 dispatcher_name=dispatcher_name,
                 remark=data.remark,
-                carrier_type=1,  # 占位，下面 carrier 字段会覆盖
+                carrier_type=CarrierType.SELF,  # 占位，下面 carrier 字段会覆盖
             )
 
             # 3. 承运方快照
@@ -539,11 +558,11 @@ class TaskService:
                 snap = await TaskService._resolve_carrier_snapshot(db, data.carrier)
                 for k, v in snap.items():
                     setattr(task, k, v)
-                task.status = 1  # 已派车
+                task.status = TASK_DISPATCHED  # 已派车
                 TaskService._stamp_assigned(task)
                 TaskService._stamp_dispatched(task)
             else:
-                task.carrier_type = 1  # 默认自有车占位
+                task.carrier_type = CarrierType.SELF  # 默认自有车占位
 
             db.add(task)
             try:
@@ -589,7 +608,9 @@ class TaskService:
         current_user_id: Optional[int] = None,
     ) -> Task:
         task = await TaskService.get_or_404(db, task_id)
-        if int(task.status) not in (-1, 0, 1):
+        if int(task.status) not in (
+            TASK_PENDING_ASSIGN, TASK_PENDING_DISPATCH, TASK_DISPATCHED
+        ):
             raise BizException(
                 f"任务单当前状态「{_STATUS_LABELS.get(task.status, task.status)}」"
                 f"不允许编辑（仅待分配/待派车/已派车可编辑）"
@@ -614,8 +635,8 @@ class TaskService:
             snap = await TaskService._resolve_carrier_snapshot(db, data.carrier)
             for k, v in snap.items():
                 setattr(task, k, v)
-            if int(task.status) == 0:
-                task.status = 1
+            if int(task.status) == TASK_PENDING_DISPATCH:
+                task.status = TASK_DISPATCHED
                 TaskService._stamp_dispatched(task)
 
         if data.segments is not None:
@@ -644,7 +665,9 @@ class TaskService:
     @staticmethod
     async def delete_task(db: AsyncSession, task_id: int) -> None:
         task = await TaskService.get_or_404(db, task_id)
-        if int(task.status) not in (-1, 0, 9):
+        if int(task.status) not in (
+            TASK_PENDING_ASSIGN, TASK_PENDING_DISPATCH, TASK_CANCELLED
+        ):
             raise BizException("仅「待分配/待派车/已取消」状态的任务单允许删除")
 
         # 软删调令
@@ -665,7 +688,7 @@ class TaskService:
     ) -> Task:
         task = await TaskService.get_or_404(db, task_id)
         TaskStateMachine.assert_cancellable(int(task.status))
-        task.status = 9
+        task.status = TASK_CANCELLED
         if reason:
             existing = (task.remark or "").rstrip()
             task.remark = (existing + "\n" if existing else "") + f"[取消原因] {reason}"
@@ -701,7 +724,7 @@ class TaskService:
         old = int(task.status)
         TaskStateMachine.assert_force_cancellable(old)
 
-        task.status = 9
+        task.status = TASK_CANCELLED
         existing = (task.remark or "").rstrip()
         actor = f"#{current_user_id}" if current_user_id else "system"
         task.remark = (
@@ -750,9 +773,9 @@ class TaskService:
         TaskStateMachine.assert_transition(old, new)
 
         task.status = new
-        if old == 0 and new == 1:
+        if old == TASK_PENDING_DISPATCH and new == TASK_DISPATCHED:
             TaskService._stamp_dispatched(task)
-        if data.actualLoadTime is not None and new == 3:
+        if data.actualLoadTime is not None and new == TASK_ON_WAY:
             # 出发动作携带的"实际装车时间"用于补录历史装车数据兜底；
             # 正常流程已由装车记录写入。
             task.actual_load_time = data.actualLoadTime
@@ -764,13 +787,13 @@ class TaskService:
         # 正向推进：Task → Item 同步 → 聚合 Waybill
         # - 4→5（已签收）由 item 全签收聚合自动写入，不在此处理
         # - 1→2 / 3→4 已经被 assert_transition 拦截，不会到这里
-        if new == 9:
+        if new == TASK_CANCELLED:
             # 走 cancel 路径不应进到这里；保底兜底
             await TaskWaybillItemService.release_all_items_of_task(db, task)
         else:
             await TaskWaybillItemService.propagate_to_items(
                 db, task,
-                loaded_at=data.actualLoadTime if new == 3 else None,
+                loaded_at=data.actualLoadTime if new == TASK_ON_WAY else None,
                 unloaded_at=None,
                 signed_at=None,
             )
@@ -893,8 +916,8 @@ class TaskService:
         - 社会运力且已选定具体运力（socialDriverId + 人/车快照齐全）→ 1 已派车（工作台待装车池）
         - 其余（自有车仅定方式、承运商等）→ 0 待派车
         """
-        if int(data.carrierType) != 3 or not data.socialDriverId:
-            return 0
+        if int(data.carrierType) != CarrierType.SOCIAL or not data.socialDriverId:
+            return TASK_PENDING_DISPATCH
         if not (
             data.mainDriverName
             and str(data.mainDriverName).strip()
@@ -903,8 +926,8 @@ class TaskService:
             and data.plateNumber
             and str(data.plateNumber).strip()
         ):
-            return 0
-        return 1
+            return TASK_PENDING_DISPATCH
+        return TASK_DISPATCHED
 
     @staticmethod
     async def complete_carrier_assignment(
@@ -918,7 +941,7 @@ class TaskService:
         其余进入待派车（status=0）。
         """
         task = await TaskService.get_or_404(db, task_id)
-        if int(task.status) != -1:
+        if int(task.status) != TASK_PENDING_ASSIGN:
             raise BizException(
                 "仅「待分配」状态可确认承运方分配；当前："
                 f"{_STATUS_LABELS.get(int(task.status), task.status)}"
@@ -929,7 +952,7 @@ class TaskService:
         TaskService._stamp_assigned(task)
         target = TaskService._assignment_target_status(data)
         task.status = target
-        if target == 1:
+        if target == TASK_DISPATCHED:
             TaskService._stamp_dispatched(task)
         await db.flush()
         await db.refresh(task)
@@ -942,7 +965,7 @@ class TaskService:
         data: TaskCarrierAssignmentInfo,
     ) -> dict:
         """批量待分配 → 待派车：逐条复用 complete_carrier_assignment。"""
-        if int(data.carrierType) == 3:
+        if int(data.carrierType) == CarrierType.SOCIAL:
             raise BizException("社会运力不支持批量分配，请逐单操作")
         if not ids:
             return {"success": 0, "failed": 0, "failures": []}
@@ -969,7 +992,7 @@ class TaskService:
         data: TaskAssignCarrierRequest,
     ) -> Task:
         task = await TaskService.get_or_404(db, task_id)
-        if int(task.status) not in (0, 1):
+        if int(task.status) not in (TASK_PENDING_DISPATCH, TASK_DISPATCHED):
             raise BizException("仅「待派车/已派车」状态可重新派车")
         snap = await TaskService._resolve_carrier_snapshot(db, data.carrier)
         for k, v in snap.items():
@@ -980,8 +1003,8 @@ class TaskService:
             task.carrier_cost_amount = data.carrierCostAmount
         if data.costRemark is not None:
             task.cost_remark = data.costRemark
-        if int(task.status) == 0:
-            task.status = 1
+        if int(task.status) == TASK_PENDING_DISPATCH:
+            task.status = TASK_DISPATCHED
             TaskService._stamp_dispatched(task)
         await db.flush()
         await db.refresh(task)
@@ -1050,7 +1073,7 @@ class TaskService:
         now = datetime.now()
         if in_transit_overdue:
             od = (
-                Task.status.in_([2, 3]),
+                Task.status.in_([TASK_LOADED, TASK_ON_WAY]),
                 Task.planned_arrive_time.isnot(None),
                 Task.planned_arrive_time < now,
             )
@@ -1058,7 +1081,7 @@ class TaskService:
             cnt = cnt.where(*od)
         elif in_transit_only_normal:
             od = (
-                Task.status.in_([2, 3]),
+                Task.status.in_([TASK_LOADED, TASK_ON_WAY]),
                 or_(
                     Task.planned_arrive_time.is_(None),
                     Task.planned_arrive_time >= now,
@@ -1173,7 +1196,7 @@ class TaskService:
             .where(
                 TaskWaybillItem.task_id.in_(ids),
                 TaskWaybillItem.is_deleted == 0,
-                TaskWaybillItem.status != 9,
+                TaskWaybillItem.status != ITEM_CANCELLED,
             )
             .group_by(TaskWaybillItem.task_id, TaskWaybillItem.status)
         )
@@ -1183,9 +1206,9 @@ class TaskService:
             tid_i = int(tid)
             st_i = int(st)
             qty_i = int(qty or 0)
-            if st_i >= 1:
+            if st_i >= ITEM_LOADED:
                 loaded[tid_i] = loaded.get(tid_i, 0) + qty_i
-            if st_i >= 2:
+            if st_i >= ITEM_UNLOADED:
                 unloaded[tid_i] = unloaded.get(tid_i, 0) + qty_i
         return {
             tid: (loaded.get(tid, 0), unloaded.get(tid, 0))
@@ -1219,7 +1242,7 @@ class TaskService:
             .where(
                 TaskWaybillItem.task_id.in_(ids),
                 TaskWaybillItem.is_deleted == 0,
-                TaskWaybillItem.status != 9,
+                TaskWaybillItem.status != ITEM_CANCELLED,
                 Waybill.is_deleted == 0,
             )
             .group_by(TaskWaybillItem.task_id, Waybill.status)
@@ -1370,21 +1393,21 @@ class TaskService:
 
         overdue_assignment = await _alert_count(
             (
-                Task.status == -1,
+                Task.status == TASK_PENDING_ASSIGN,
                 Task.planned_load_time.isnot(None),
                 Task.planned_load_time < now,
             )
         )
         overdue_dispatch = await _alert_count(
             (
-                Task.status == 0,
+                Task.status == TASK_PENDING_DISPATCH,
                 Task.planned_load_time.isnot(None),
                 Task.planned_load_time < now,
             )
         )
         overdue_arrive = await _alert_count(
             (
-                Task.status.in_([2, 3]),
+                Task.status.in_([TASK_LOADED, TASK_ON_WAY]),
                 Task.planned_arrive_time.isnot(None),
                 Task.planned_arrive_time < now,
             )
@@ -1393,16 +1416,16 @@ class TaskService:
         return {
             "statusCounts": status_counts,
             "totals": {
-                "pendingAssign": status_counts.get(-1, 0),
-                "pendingDispatch": status_counts.get(0, 0),
-                "pendingLoad": status_counts.get(1, 0),
-                "loading": status_counts.get(2, 0),
-                "onWay": status_counts.get(3, 0),
-                "arrived": status_counts.get(4, 0),
-                "pendingSign": status_counts.get(4, 0),
-                "signed": status_counts.get(5, 0),
-                "closed": status_counts.get(7, 0),
-                "cancelled": status_counts.get(9, 0),
+                "pendingAssign": status_counts.get(TASK_PENDING_ASSIGN, 0),
+                "pendingDispatch": status_counts.get(TASK_PENDING_DISPATCH, 0),
+                "pendingLoad": status_counts.get(TASK_DISPATCHED, 0),
+                "loading": status_counts.get(TASK_LOADED, 0),
+                "onWay": status_counts.get(TASK_ON_WAY, 0),
+                "arrived": status_counts.get(TASK_ARRIVED, 0),
+                "pendingSign": status_counts.get(TASK_ARRIVED, 0),
+                "signed": status_counts.get(TASK_SIGNED, 0),
+                "closed": status_counts.get(TASK_CLOSED, 0),
+                "cancelled": status_counts.get(TASK_CANCELLED, 0),
             },
             "alerts": {
                 "overdueAssignment": overdue_assignment,

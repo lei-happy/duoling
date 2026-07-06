@@ -27,6 +27,7 @@ from app.modules.client.models.capacity.self_capacity.driver.driver_account impo
 from app.modules.client.models.partner.carrier import Carrier
 from app.modules.client.models.partner.carrier_settlement import CarrierSettlement
 from app.modules.client.models.task.task import Task
+from app.modules.client.models.task.constants import CarrierType
 from app.modules.client.models.task.task_finance_doc import TaskFinanceDoc
 from app.modules.client.models.task.task_finance_item import TaskFinanceItem
 from app.modules.client.schemas.task.task_finance_doc import (
@@ -36,11 +37,19 @@ from app.modules.client.schemas.task.task_finance_doc import (
     TaskFinanceDocUpdate,
 )
 from app.modules.client.schemas.task.task_finance_item import TaskFinanceItemIn
+from app.modules.client.services.finance.base.constants import (
+    DocType,
+    PayeeType,
+    PayMethod,
+)
 from app.modules.client.services.finance.base.finance_doc_event_writer import (
     FinanceDocEventWriter,
     FinanceEventType,
 )
 from app.modules.client.services.finance.base.finance_state_machine import (
+    FIN_CANCELLED,
+    FIN_PAID,
+    FIN_STATUS_LABELS,
     FinanceStateMachine,
 )
 from app.modules.client.services.finance.linkage.lock_orchestrator import (
@@ -51,19 +60,18 @@ from app.modules.client.services.finance.linkage.lock_orchestrator import (
 # 本单据在通用基座中的 doc_kind 常量
 _DOC_KIND = "task_finance"
 
-_FIN_STATUS_LABELS = {
-    0: "草稿", 1: "待审批", 2: "已审批", 3: "已支付", 4: "已撤销",
-}
+# 状态标签复用通用状态机（避免与 FIN_STATUS_LABELS 重复维护）
+_FIN_STATUS_LABELS = FIN_STATUS_LABELS
 
 # 撤销 / 撤销支付 / 强制撤销原因最小长度（对齐 Schema 层）
 _CANCEL_REASON_MIN_LEN = 5
 
 # doc_type → 主表冗余字段
 _DOC_TYPE_TO_AGG = {
-    1: "prepaid_amount",
-    2: "supplement_amount",
-    3: "settled_amount",
-    4: "contracted_amount",
+    DocType.PREPAY: "prepaid_amount",
+    DocType.SUPPLEMENT: "supplement_amount",
+    DocType.SETTLE: "settled_amount",
+    DocType.CONTRACTED: "contracted_amount",
 }
 
 
@@ -83,7 +91,12 @@ class TaskFinanceService:
     # ------------------------------------------------------------------
     @staticmethod
     async def generate_doc_no(db: AsyncSession, doc_type: int) -> str:
-        prefix_map = {1: "FY", 2: "FB", 3: "FS", 4: "FC"}
+        prefix_map = {
+            DocType.PREPAY: "FY",
+            DocType.SUPPLEMENT: "FB",
+            DocType.SETTLE: "FS",
+            DocType.CONTRACTED: "FC",
+        }
         today = ddate.today().strftime("%Y%m%d")
         prefix = f"{prefix_map.get(doc_type, 'F')}{today}"
         like = f"{prefix}%"
@@ -132,7 +145,7 @@ class TaskFinanceService:
             "payee_bank_account_masked": payee_bank_account_masked,
         }
 
-        if payee_type == 1 and payee_id:
+        if payee_type == PayeeType.DRIVER and payee_id:
             r = await db.execute(
                 select(Driver).where(
                     Driver.id == payee_id, Driver.is_deleted == 0
@@ -156,13 +169,13 @@ class TaskFinanceService:
                     raise BizException(
                         f"司机账户不存在 (account_id={payee_account_id})"
                     )
-                out["payee_account_type"] = 1
+                out["payee_account_type"] = PayeeType.DRIVER
                 out["payee_bank_account_masked"] = (
                     out["payee_bank_account_masked"]
                     or _mask_bank_account(acc.account_no)
                 )
 
-        elif payee_type == 2 and payee_id:
+        elif payee_type == PayeeType.CARRIER and payee_id:
             r = await db.execute(
                 select(Carrier).where(
                     Carrier.id == payee_id, Carrier.is_deleted == 0
@@ -186,19 +199,19 @@ class TaskFinanceService:
                     raise BizException(
                         f"承运商结算账户不存在 (account_id={payee_account_id})"
                     )
-                out["payee_account_type"] = 2
+                out["payee_account_type"] = PayeeType.CARRIER
                 if not out["payee_bank_name"]:
                     out["payee_bank_name"] = acc.bank_name
                 if not out["payee_bank_account_masked"]:
                     out["payee_bank_account_masked"] = _mask_bank_account(
                         acc.bank_account
                     )
-        elif payee_type == 3:
+        elif payee_type == PayeeType.OTHER:
             # 自由文本：要求至少有 payee_name
             if not out["payee_name"]:
                 raise BizException("自由文本收款人必须填写名称")
             if out["payee_account_type"] is None:
-                out["payee_account_type"] = 3
+                out["payee_account_type"] = PayeeType.OTHER
 
         return out
 
@@ -219,7 +232,7 @@ class TaskFinanceService:
         - 必填结算周期，且起 < 止；
         - 与结算单互斥：同一任务下不允许并存未撤销的结算单（doc_type=3）。
         """
-        if payee_type != 1:
+        if payee_type != PayeeType.DRIVER:
             raise BizException("承包单收款人必须为司机（payeeType=1）")
         if period_start is None or period_end is None:
             raise BizException("承包单必须填写结算周期起止")
@@ -230,8 +243,8 @@ class TaskFinanceService:
         conflict = select(func.count(TaskFinanceDoc.id)).where(
             TaskFinanceDoc.task_id == task_id,
             TaskFinanceDoc.is_deleted == 0,
-            TaskFinanceDoc.doc_type == 3,
-            TaskFinanceDoc.status != 4,
+            TaskFinanceDoc.doc_type == DocType.SETTLE,
+            TaskFinanceDoc.status != FIN_CANCELLED,
         )
         if exclude_doc_id is not None:
             conflict = conflict.where(TaskFinanceDoc.id != exclude_doc_id)
@@ -247,9 +260,9 @@ class TaskFinanceService:
         当 ``task.carrier_type=3``（社会运力）且收款人为其他（payeeType=3）时，
         强制填写收款人名称与脱敏银行账号（合规留痕）。
         """
-        if int(getattr(task, "carrier_type", 0) or 0) != 3:
+        if int(getattr(task, "carrier_type", 0) or 0) != CarrierType.SOCIAL:
             return
-        if int(snap.get("payee_type") or 0) != 3:
+        if int(snap.get("payee_type") or 0) != PayeeType.OTHER:
             return
         if not snap.get("payee_name"):
             raise BizException("社会运力付款必须填写收款人名称")
@@ -262,7 +275,9 @@ class TaskFinanceService:
         pay_voucher_url: Optional[str],
     ) -> None:
         """现金/微信/支付宝（4/5/6）支付必须上传凭证。"""
-        if int(pay_method or 0) in (4, 5, 6) and not (pay_voucher_url or "").strip():
+        if int(pay_method or 0) in PayMethod.VOUCHER_REQUIRED and not (
+            pay_voucher_url or ""
+        ).strip():
             raise BizException("现金 / 微信 / 支付宝支付方式必须上传支付凭证")
 
     # ------------------------------------------------------------------
@@ -342,9 +357,9 @@ class TaskFinanceService:
         from app.modules.client.services.task.task_service import TaskService
         task = await TaskService.get_or_404(db, task_id)
 
-        if data.docType not in (1, 2, 3, 4):
+        if data.docType not in DocType.ALL:
             raise BizException("非法 docType")
-        if data.isFinal == 1 and data.docType != 3:
+        if data.isFinal == 1 and data.docType != DocType.SETTLE:
             raise BizException("仅结算单 (docType=3) 可标记为最终结算")
 
         # 校验金额合理性
@@ -355,7 +370,7 @@ class TaskFinanceService:
         period_end = getattr(data, "periodEnd", None)
 
         # 承包单（doc_type=4）业务规则
-        if data.docType == 4:
+        if data.docType == DocType.CONTRACTED:
             await TaskFinanceService._validate_contracted_payee(
                 db,
                 task_id=task.id,
@@ -381,6 +396,8 @@ class TaskFinanceService:
         doc_no = await TaskFinanceService.generate_doc_no(db, data.docType)
         doc = TaskFinanceDoc(
             task_id=task.id,
+            # 经营主体：费用单归属继承自任务，保证分主体对账口径一致
+            enterprise_id=getattr(task, "enterprise_id", None),
             doc_no=doc_no,
             doc_type=data.docType,
             doc_kind=_DOC_KIND,
@@ -476,7 +493,7 @@ class TaskFinanceService:
             doc.period_start = data.periodStart
         if getattr(data, "periodEnd", None) is not None:
             doc.period_end = data.periodEnd
-        if doc.doc_type == 4 and doc.period_start and doc.period_end:
+        if doc.doc_type == DocType.CONTRACTED and doc.period_start and doc.period_end:
             if doc.period_start >= doc.period_end:
                 raise BizException("承包单结算周期起必须早于周期止")
         if data.payMethod is not None:
@@ -484,7 +501,7 @@ class TaskFinanceService:
         if data.plannedPayTime is not None:
             doc.planned_pay_time = data.plannedPayTime
         if data.isFinal is not None:
-            if data.isFinal == 1 and doc.doc_type != 3:
+            if data.isFinal == 1 and doc.doc_type != DocType.SETTLE:
                 raise BizException("仅结算单 (docType=3) 可标记为最终结算")
             doc.is_final = int(data.isFinal)
         if data.remark is not None:
@@ -855,7 +872,7 @@ class TaskFinanceService:
             select(TaskFinanceDoc).where(
                 TaskFinanceDoc.task_id == task_id,
                 TaskFinanceDoc.is_deleted == 0,
-                TaskFinanceDoc.status < 3,
+                TaskFinanceDoc.status < FIN_PAID,
             )
         )
         docs = list(r.scalars().all())
@@ -891,7 +908,7 @@ class TaskFinanceService:
             select(func.count(TaskFinanceDoc.id)).where(
                 TaskFinanceDoc.task_id == task.id,
                 TaskFinanceDoc.is_deleted == 0,
-                TaskFinanceDoc.status != 4,
+                TaskFinanceDoc.status != FIN_CANCELLED,
             )
         )
         task.finance_doc_count = int(cnt_res.scalar() or 0)
@@ -905,7 +922,7 @@ class TaskFinanceService:
                     TaskFinanceDoc.task_id == task.id,
                     TaskFinanceDoc.is_deleted == 0,
                     TaskFinanceDoc.doc_type == doc_type,
-                    TaskFinanceDoc.status == 3,
+                    TaskFinanceDoc.status == FIN_PAID,
                 )
             )
             setattr(task, field, Decimal(str(res.scalar() or 0)))
@@ -1027,7 +1044,7 @@ class TaskFinanceService:
             select(func.coalesce(func.sum(TaskFinanceDoc.actual_amount), 0))
             .where(
                 TaskFinanceDoc.is_deleted == 0,
-                TaskFinanceDoc.status == 3,
+                TaskFinanceDoc.status == FIN_PAID,
                 TaskFinanceDoc.actual_pay_time >= today_start,
                 TaskFinanceDoc.actual_pay_time <= today_end,
             )

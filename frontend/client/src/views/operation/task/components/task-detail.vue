@@ -125,7 +125,7 @@
         <el-divider content-position="left">基础信息</el-divider>
         <el-descriptions :column="3" border size="small">
           <el-descriptions-item label="承运资源">
-            <div v-if="task.carrierType === 2">
+            <div v-if="task.carrierType === CARRIER_TYPE.CARRIER">
               {{ task.carrierName || '--' }}
             </div>
             <div v-else>
@@ -206,13 +206,15 @@
                   <el-tag
                     size="small"
                     :type="
-                      (DISPATCH_TYPE_MAP[row.dispatchType ?? DISPATCH_TYPE_DEFAULT]
-                        ?.type as any) || 'info'
+                      (DISPATCH_TYPE_MAP[
+                        row.dispatchType ?? DISPATCH_TYPE_DEFAULT
+                      ]?.type as any) || 'info'
                     "
                   >
                     {{
-                      DISPATCH_TYPE_MAP[row.dispatchType ?? DISPATCH_TYPE_DEFAULT]
-                        ?.label || '--'
+                      DISPATCH_TYPE_MAP[
+                        row.dispatchType ?? DISPATCH_TYPE_DEFAULT
+                      ]?.label || '--'
                     }}
                   </el-tag>
                 </template>
@@ -548,11 +550,13 @@
   } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
   import {
+    CARRIER_TYPE,
     CARRIER_TYPE_MAP,
     DISPATCH_TYPE_DEFAULT,
     DISPATCH_TYPE_MAP,
     ITEM_STATUS_MAP,
     SEGMENT_STATUS_MAP,
+    TASK_STATUS,
     TASK_STATUS_MAP
   } from '../status-config';
   import {
@@ -588,7 +592,6 @@
   const loadingRecords = ref<TaskLoadingRecord[]>([]);
   const financeDocs = ref<TaskFinanceSummaryItem[]>([]);
   const activeTab = ref('segments');
-
 
   const orderNoOf = (orderId?: number | null): string | number => {
     if (!orderId) return '--';
@@ -646,19 +649,19 @@
   };
 
   const statusStep = computed(() => {
-    const s = task.value?.status ?? 0;
-    if (s === 9) return 0;
+    const s = task.value?.status ?? TASK_STATUS.PENDING_DISPATCH;
+    if (s === TASK_STATUS.CANCELLED) return 0;
     // 7 步：待分配 / 待派车 / 已派车 / 已装车 / 在途 / 已到达 / 已签收
-    // 7 已关闭：超过已签收，整条时间轴标 finish
+    // 已关闭：超过已签收，整条时间轴标 finish
     const map: Record<number, number> = {
-      [-1]: 0,
-      0: 1,
-      1: 2,
-      2: 3,
-      3: 4,
-      4: 5,
-      5: 6,
-      7: 7
+      [TASK_STATUS.PENDING_ASSIGN]: 0,
+      [TASK_STATUS.PENDING_DISPATCH]: 1,
+      [TASK_STATUS.DISPATCHED]: 2,
+      [TASK_STATUS.LOADED]: 3,
+      [TASK_STATUS.ON_WAY]: 4,
+      [TASK_STATUS.ARRIVED]: 5,
+      [TASK_STATUS.SIGNED]: 6,
+      [TASK_STATUS.CLOSED]: 7
     };
     return map[s] ?? 0;
   });
@@ -768,7 +771,7 @@
     emit('done');
     if (!task.value) return;
     const t = task.value;
-    if (t.carrierType === 1 && (t.segmentCount ?? 0) === 0) {
+    if (t.carrierType === CARRIER_TYPE.SELF && (t.segmentCount ?? 0) === 0) {
       try {
         await ElMessageBox.confirm(
           '已派车成功。该任务是自有车且尚未规划运输路线，建议立即规划（含起终点、里程）。',

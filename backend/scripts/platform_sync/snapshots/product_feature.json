@@ -68,6 +68,15 @@
     "status": 1
   },
   {
+    "feature_code": "base_business_entity",
+    "feature_name": "经营主体",
+    "module": "enterprise",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 11,
+    "status": 1
+  },
+  {
     "feature_code": "base_user",
     "feature_name": "员工管理",
     "module": "enterprise",

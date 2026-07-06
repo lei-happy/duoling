@@ -276,6 +276,14 @@
               </el-col>
               <el-col :span="8" :xs="24" :sm="8">
                 <el-form-item class="driver-op-form-item">
+                  <business-entity-select
+                    v-model="form.enterpriseId"
+                    placeholder="请选择所属经营主体"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8" :xs="24" :sm="8">
+                <el-form-item class="driver-op-form-item">
                   <floating-label
                     v-model="form.operationStatus"
                     label="请选择运营状态"
@@ -537,6 +545,7 @@
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import DepartmentSelect from '@/components/DepartmentSelect/index.vue';
+  import BusinessEntitySelect from '@/components/BusinessEntitySelect/index.vue';
   import RegionsSelect from '@/components/RegionsSelect/index.vue';
   import { uploadFile } from '@/api/system/file';
   import { resolveUploadUrl } from '@/utils/upload-url';

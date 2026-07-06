@@ -65,6 +65,7 @@ async def page_drivers(
     driverType: Optional[str] = None,
     operationStatus: Optional[int] = None,
     departmentId: Optional[int] = None,
+    enterpriseId: Optional[int] = Query(None),
     sort: Optional[str] = None,
     order: Optional[str] = None,
     db: AsyncSession = Depends(get_tenant_db),
@@ -76,6 +77,7 @@ async def page_drivers(
         driver_type=driverType,
         operation_status=operationStatus,
         department_id=departmentId,
+        enterprise_id=enterpriseId,
         sort=sort,
         order=order,
     )

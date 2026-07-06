@@ -10,10 +10,7 @@
   详见《02.运单与任务单状态机联动设计.md》。
 -->
 <template>
-  <div
-    class="kpi-cards"
-    :style="{ '--kpi-cards-count': cards.length }"
-  >
+  <div class="kpi-cards" :style="{ '--kpi-cards-count': cards.length }">
     <div
       v-for="card in cards"
       :key="card.key"

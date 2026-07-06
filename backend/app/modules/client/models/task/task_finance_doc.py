@@ -37,6 +37,10 @@ class TaskFinanceDoc(TenantModelBase):
     task_id: Mapped[int] = mapped_column(
         BigInteger, nullable=False, comment="关联 biz_task.id"
     )
+    enterprise_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, index=True,
+        comment="所属经营主体ID（biz_business_entity.id），继承自任务",
+    )
     doc_no: Mapped[str] = mapped_column(
         String(50), unique=True, nullable=False, comment="单据编号（系统生成）"
     )

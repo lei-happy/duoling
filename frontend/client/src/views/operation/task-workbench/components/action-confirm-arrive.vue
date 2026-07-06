@@ -162,7 +162,9 @@
       empty-text="暂无卸车记录"
     >
       <el-table-column label="时间" width="160">
-        <template #default="{ row }">{{ formatDateTime(row.happenedAt) }}</template>
+        <template #default="{ row }">{{
+          formatDateTime(row.happenedAt)
+        }}</template>
       </el-table-column>
       <el-table-column label="地点" prop="location" min-width="140" />
       <el-table-column label="台数" prop="quantity" width="80" align="center" />
@@ -205,6 +207,7 @@
   import {
     DISPATCH_TYPE_DEFAULT,
     DISPATCH_TYPE_HEAVY,
+    ITEM_STATUS,
     ITEM_STATUS_MAP
   } from '../../task/status-config';
 
@@ -261,8 +264,13 @@
   const unloadableItems = computed(() => {
     const oid = form.dispatchOrderId;
     return items.value.filter((it) => {
-      if ((it.status ?? 0) !== 1) return false;
-      if (oid != null && it.dispatchOrderId != null && it.dispatchOrderId !== oid) {
+      if ((it.status ?? ITEM_STATUS.PENDING_LOAD) !== ITEM_STATUS.LOADED)
+        return false;
+      if (
+        oid != null &&
+        it.dispatchOrderId != null &&
+        it.dispatchOrderId !== oid
+      ) {
         return false;
       }
       return true;
@@ -271,7 +279,9 @@
 
   const unloadedQuantity = computed(() =>
     items.value
-      .filter((it) => (it.status ?? 0) >= 2)
+      .filter(
+        (it) => (it.status ?? ITEM_STATUS.PENDING_LOAD) >= ITEM_STATUS.UNLOADED
+      )
       .reduce((s, it) => s + (it.quantity || 0), 0)
   );
 
@@ -352,9 +362,7 @@
       return;
     }
     if (!task.value?.id) return;
-    const selected = items.value.filter((it) =>
-      form.itemIds.includes(it.id!)
-    );
+    const selected = items.value.filter((it) => form.itemIds.includes(it.id!));
     if (!selected.length) {
       EleMessage.warning({ message: '请至少勾选一行', plain: true });
       return;

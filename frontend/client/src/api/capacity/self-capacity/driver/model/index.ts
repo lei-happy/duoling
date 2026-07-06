@@ -25,6 +25,8 @@ export interface Driver {
   idCardBackPhoto?: string;
   departmentId?: number;
   departmentName?: string;
+  /** 所属经营主体ID */
+  enterpriseId?: number;
   driverType?: string;
   residentAreas?: ResidentArea[];
   commonRoutes?: string;
@@ -43,6 +45,7 @@ export interface DriverParam extends PageParam {
   driverType?: string;
   operationStatus?: number;
   departmentId?: number;
+  enterpriseId?: number;
 }
 
 export interface DriverAccount {

@@ -27,11 +27,7 @@
     >
       <template #toolbar>
         <el-radio-group v-model="activeTab" @change="onTabChange">
-          <el-radio-button
-            v-for="t in TABS"
-            :key="t.key"
-            :label="t.key"
-          >
+          <el-radio-button v-for="t in TABS" :key="t.key" :label="t.key">
             {{ t.label }}（{{ tabCount(t.key) }}）
           </el-radio-button>
         </el-radio-group>
@@ -55,7 +51,10 @@
       </template>
 
       <template #carrierResource="{ row }">
-        <div v-if="row.carrierType === 2" class="cell-ellipsis">
+        <div
+          v-if="row.carrierType === CARRIER_TYPE.CARRIER"
+          class="cell-ellipsis"
+        >
           {{ row.carrierName || '--' }}
         </div>
         <div v-else class="cell-ellipsis">
@@ -147,7 +146,12 @@
     TaskWorkbenchStats
   } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
-  import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from '../../task/status-config';
+  import {
+    CARRIER_TYPE,
+    CARRIER_TYPE_MAP,
+    TASK_STATUS,
+    TASK_STATUS_MAP
+  } from '../../task/status-config';
   import { getTaskRowActions } from '../../task/task-actions';
   import type { TaskActionConfig } from '../../task/task-actions';
 
@@ -168,16 +172,17 @@
   }>();
 
   const TABS: Array<{ key: CompletedTabKey; label: string; status: number }> = [
-    { key: 'signed', label: '已签收', status: 5 },
-    { key: 'closed', label: '已关闭', status: 7 },
-    { key: 'cancelled', label: '已取消', status: 9 }
+    { key: 'signed', label: '已签收', status: TASK_STATUS.SIGNED },
+    { key: 'closed', label: '已关闭', status: TASK_STATUS.CLOSED },
+    { key: 'cancelled', label: '已取消', status: TASK_STATUS.CANCELLED }
   ];
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const activeTab = ref<CompletedTabKey>('signed');
 
   const currentStatus = computed(
-    () => TABS.find((t) => t.key === activeTab.value)?.status ?? 5
+    () =>
+      TABS.find((t) => t.key === activeTab.value)?.status ?? TASK_STATUS.SIGNED
   );
 
   const tabCount = (key: CompletedTabKey): number => {
@@ -246,7 +251,10 @@
   const getRowMore = (row: Task): TaskActionConfig[] =>
     getTaskRowActions(row).more;
 
-  const filterParamsWithoutKeyword = (): Omit<Partial<TaskParam>, 'keyword'> => {
+  const filterParamsWithoutKeyword = (): Omit<
+    Partial<TaskParam>,
+    'keyword'
+  > => {
     const { keyword: _k, status: _s, ...rest } = props.searchWhere ?? {};
     return rest;
   };

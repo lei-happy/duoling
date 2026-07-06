@@ -34,6 +34,7 @@ class DriverCreate(BaseModel):
     idCardFrontPhoto: Optional[str] = None
     idCardBackPhoto: Optional[str] = None
     # 运营属性
+    enterpriseId: Optional[int] = None
     departmentId: Optional[int] = None
     driverType: Optional[str] = None
     residentAreas: Optional[Any] = None
@@ -65,6 +66,7 @@ class DriverUpdate(BaseModel):
     idCardFrontPhoto: Optional[str] = None
     idCardBackPhoto: Optional[str] = None
     # 运营属性
+    enterpriseId: Optional[int] = None
     departmentId: Optional[int] = None
     driverType: Optional[str] = None
     residentAreas: Optional[Any] = None
@@ -97,6 +99,7 @@ class DriverOut(BaseModel):
     homeAddress: Optional[str] = None
     status: int
     remark: Optional[str] = None
+    enterpriseId: Optional[int] = None
     # 资质信息
     licenseType: Optional[str] = None
     licenseNo: Optional[str] = None
@@ -136,6 +139,7 @@ class DriverOut(BaseModel):
             homeAddress=driver.home_address,
             status=driver.status,
             remark=driver.remark,
+            enterpriseId=getattr(driver, "enterprise_id", None),
             createdAt=driver.created_at,
         )
         if license_info:

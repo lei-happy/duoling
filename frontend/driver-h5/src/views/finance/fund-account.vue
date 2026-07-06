@@ -1,10 +1,17 @@
 <template>
   <PageContainer title="我的账户">
     <!-- 余额卡片 -->
-    <div class="fund-card" :class="{ frozen: account?.status === 0 }">
+    <div
+      class="fund-card"
+      :class="{ frozen: account?.status === FUND_ACCOUNT_STATUS.FROZEN }"
+    >
       <div class="fund-title">
         账户余额
-        <span v-if="account?.status === 0" class="frozen-tag">已冻结</span>
+        <span
+          v-if="account?.status === FUND_ACCOUNT_STATUS.FROZEN"
+          class="frozen-tag"
+          >已冻结</span
+        >
       </div>
       <div class="fund-amount">¥ {{ formatMoney(Math.abs(balanceNum)) }}</div>
       <div class="fund-hint">{{ balanceHint }}</div>
@@ -60,19 +67,14 @@ import {
   type FundTransaction
 } from '@/api/finance';
 import { formatDate, formatMoney } from '@/utils/format';
+import {
+  FUND_ACCOUNT_STATUS,
+  fundBizTypeLabel
+} from './fund-account.constants';
 
 defineOptions({ name: 'FundAccount' });
 
-const BIZ_TYPE: Record<number, string> = {
-  1: '预付登记',
-  2: '退款入账',
-  3: '入账',
-  4: '出账',
-  5: '调整',
-  6: '任务抵扣',
-  7: '任务结算'
-};
-const bizTypeLabel = (v: number) => BIZ_TYPE[v] ?? '其他';
+const bizTypeLabel = fundBizTypeLabel;
 
 const account = ref<FundAccount | null>(null);
 const list = ref<FundTransaction[]>([]);

@@ -7,6 +7,7 @@
 
 import type { Columns } from 'ele-admin-plus/es/ele-pro-table/types';
 import type { TaskActionKey } from '../task/task-actions';
+import { TASK_STATUS } from '../task/status-config';
 
 /** 与 task-pool 模板中 #slot 一一对应 */
 export type WorkbenchColumnId =
@@ -32,12 +33,12 @@ export type WorkbenchToolbarPreset = 'default' | 'pending-dispatch';
 
 /** 任务 status → 工作台 pool key（用于按单号跨状态搜索后自动切换阶段卡） */
 export const TASK_STATUS_TO_POOL_KEY: Record<number, string> = {
-  [-1]: 'pending-assign',
-  0: 'pending-dispatch',
-  1: 'pending-load',
-  2: 'on-way',
-  3: 'on-way',
-  4: 'pending-sign'
+  [TASK_STATUS.PENDING_ASSIGN]: 'pending-assign',
+  [TASK_STATUS.PENDING_DISPATCH]: 'pending-dispatch',
+  [TASK_STATUS.DISPATCHED]: 'pending-load',
+  [TASK_STATUS.LOADED]: 'on-way',
+  [TASK_STATUS.ON_WAY]: 'on-way',
+  [TASK_STATUS.ARRIVED]: 'pending-sign'
 };
 
 export const resolveWorkbenchPoolKey = (status?: number): string | undefined =>
@@ -86,7 +87,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
   {
     key: 'pending-assign',
     label: '待分配',
-    status: -1,
+    status: TASK_STATUS.PENDING_ASSIGN,
     primaryActionKey: 'assign-carrier',
     allowBatchPrimary: true,
     quantityOpenCargoDetail: true,
@@ -110,7 +111,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
   {
     key: 'pending-dispatch',
     label: '待派车',
-    status: 0,
+    status: TASK_STATUS.PENDING_DISPATCH,
     primaryActionKey: 'dispatch',
     allowBatchPrimary: false,
     quantityOpenCargoDetail: true,
@@ -136,7 +137,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
   {
     key: 'pending-load',
     label: '待装车',
-    status: 1,
+    status: TASK_STATUS.DISPATCHED,
     primaryActionKey: 'confirm-load',
     allowBatchPrimary: false,
     actionColumnWidth: 190,
@@ -162,7 +163,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
   {
     key: 'on-way',
     label: '在途中',
-    status: [2, 3],
+    status: [TASK_STATUS.LOADED, TASK_STATUS.ON_WAY],
     primaryActionKey: 'confirm-arrive',
     allowBatchPrimary: false,
     actionColumnWidth: 190,
@@ -186,7 +187,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
   {
     key: 'pending-sign',
     label: '待签收',
-    status: 4,
+    status: TASK_STATUS.ARRIVED,
     primaryActionKey: 'confirm-sign',
     actionColumnWidth: 190,
     columns: [

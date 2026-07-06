@@ -14,7 +14,11 @@
         />
       </div>
 
-      <el-tabs v-model="activeTab" class="capacity-list-tabs" @tab-change="onTabChange">
+      <el-tabs
+        v-model="activeTab"
+        class="capacity-list-tabs"
+        @tab-change="onTabChange"
+      >
         <el-tab-pane label="全部" name="all" />
         <el-tab-pane label="可接单" name="1" />
         <el-tab-pane label="运输中" name="2" />
@@ -142,9 +146,12 @@
   const pageSize = ref(18);
   const activeTab = ref('all');
 
-  const where = reactive<Pick<CapacityParam, 'keyword' | 'operationStatus'>>({
+  const where = reactive<
+    Pick<CapacityParam, 'keyword' | 'operationStatus' | 'enterpriseId'>
+  >({
     keyword: '',
-    operationStatus: undefined
+    operationStatus: undefined,
+    enterpriseId: undefined
   });
 
   const loadData = async () => {
@@ -168,8 +175,11 @@
     }
   };
 
-  const onSearch = (payload: Pick<CapacityParam, 'keyword'>) => {
+  const onSearch = (
+    payload: Pick<CapacityParam, 'keyword' | 'enterpriseId'>
+  ) => {
     where.keyword = payload.keyword ?? '';
+    where.enterpriseId = payload.enterpriseId;
     page.value = 1;
     loadData();
   };

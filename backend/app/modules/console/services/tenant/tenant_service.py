@@ -342,6 +342,7 @@ class TenantService:
         """
         from app.modules.client.models.role.biz_role import BizRole
         from app.modules.client.models.organization.biz_department import BizDepartment
+        from app.modules.client.models.organization.business_entity import BusinessEntity
         from app.modules.client.models.user.biz_user import BizUser
         from app.modules.client.models.user.biz_user_role import BizUserRole
         from app.modules.client.models.biz_dict import BizDict, BizDictItem
@@ -375,6 +376,18 @@ class TenantService:
                     BizDepartment(parent_id=hq.id, dept_name="财务部", dept_code="FI", dept_type="department", sort_order=20, status=1),
                 ]
                 session.add_all(sub_depts)
+                await session.flush()
+
+                # 默认经营主体（法人/独立核算单元；分主体对账的归属维度）
+                default_entity = BusinessEntity(
+                    entity_code="ENT0001",
+                    entity_name="默认经营主体",
+                    invoice_title="默认经营主体",
+                    is_default=1,
+                    status=1,
+                    sort_order=0,
+                )
+                session.add(default_entity)
                 await session.flush()
 
                 # 管理员用户

@@ -19,9 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.client.services.capacity.self_capacity.driver.driver_fund_account_service import (
     DriverFundAccountService,
 )
-
-_PREPAY_DOC_TYPE = 1
-_PAYEE_TYPE_DRIVER = 1
+from app.modules.client.services.finance.base.constants import DocType, PayeeType
 
 
 class DriverFundOrchestrator:
@@ -30,8 +28,8 @@ class DriverFundOrchestrator:
     @staticmethod
     def _is_driver_prepay(doc) -> bool:
         return (
-            int(getattr(doc, "doc_type", 0) or 0) == _PREPAY_DOC_TYPE
-            and int(getattr(doc, "payee_type", 0) or 0) == _PAYEE_TYPE_DRIVER
+            int(getattr(doc, "doc_type", 0) or 0) == DocType.PREPAY
+            and int(getattr(doc, "payee_type", 0) or 0) == PayeeType.DRIVER
             and getattr(doc, "payee_id", None) is not None
         )
 
@@ -51,7 +49,9 @@ class DriverFundOrchestrator:
             db,
             driver_id=int(doc.payee_id),
             amount=Decimal(str(amount)),
-            enterprise_id=None,
+            # 经营主体：费用单继承任务归属，账户按 (driver_id, enterprise_id) 记账；
+            # 为空时由账户服务归一到租户默认主体。
+            enterprise_id=int(getattr(doc, "enterprise_id", 0)) or None,
             task_id=int(getattr(doc, "task_id", 0)) or None,
             finance_doc_id=int(doc.id),
             operator_id=operator_id,

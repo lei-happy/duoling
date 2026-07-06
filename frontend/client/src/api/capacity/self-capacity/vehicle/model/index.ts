@@ -5,6 +5,8 @@ export interface Vehicle {
   id?: number;
   plateNumber?: string;
   plateCategory?: PlateCategory;
+  /** 所属经营主体ID */
+  enterpriseId?: number | null;
   trailerId?: number | null;
   trailerPlateNumber?: string;
   trailerPlateCategory?: PlateCategory;
@@ -30,6 +32,7 @@ export interface VehicleParam extends PageParam {
   keyword?: string;
   vehicleType?: string;
   status?: number;
+  enterpriseId?: number;
 }
 
 export interface TrailerOption {

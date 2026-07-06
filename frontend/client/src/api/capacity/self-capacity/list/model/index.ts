@@ -28,6 +28,7 @@ export interface Capacity {
 export interface CapacityParam extends PageParam {
   keyword?: string;
   operationStatus?: number;
+  enterpriseId?: number;
 }
 
 export interface CapacityBindData {

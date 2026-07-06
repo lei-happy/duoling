@@ -19,6 +19,10 @@ class Capacity(TenantModelBase):
     __table_args__ = {"comment": "运力表（司机-车辆绑定关系）"}
     __table_tier__ = "business"
 
+    enterprise_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, index=True,
+        comment="所属经营主体ID（biz_business_entity.id）",
+    )
     driver_id: Mapped[int] = mapped_column(
         BigInteger, nullable=False, comment="关联司机ID"
     )

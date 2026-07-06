@@ -19,11 +19,7 @@
         <span class="assign-carrier-dialog-header__title">{{
           dialogTitle
         }}</span>
-        <el-tooltip
-          placement="bottom-start"
-          :show-after="200"
-          :width="360"
-        >
+        <el-tooltip placement="bottom-start" :show-after="200" :width="360">
           <template #content>
             <div class="assign-carrier-dialog-header__tip">
               批量分配仅支持「自有车」或「承运商」。社会运力对应具体司机，请逐单分配。自有车可在待派车池再绑定运力。
@@ -84,7 +80,7 @@
         }}</span>
         <span class="assign-carrier-batch-summary__unit">张</span>
       </div>
-      <div class="assign-carrier-batch-summary__divider" />
+      <div class="assign-carrier-batch-summary__divider"></div>
       <div class="assign-carrier-batch-summary__item">
         <span class="assign-carrier-batch-summary__label">商品车台数</span>
         <span class="assign-carrier-batch-summary__value">{{
@@ -149,6 +145,7 @@
     listTaskWaybillItems
   } from '@/api/operation/task';
   import type { Task, TaskCarrierInfo } from '@/api/operation/task/model';
+  import { CARRIER_TYPE, TASK_STATUS } from '../../task/status-config';
   import { summarizeTaskBrandModels } from '../task-cargo-detail-adapter';
 
   const BATCH_ALLOWED_CARRIER_TYPES = [1, 2];
@@ -192,7 +189,7 @@
   );
 
   const defaultCarrier = (): TaskCarrierInfo => ({
-    carrierType: 1,
+    carrierType: CARRIER_TYPE.SELF,
     capacityId: undefined,
     carrierId: undefined,
     mainDriverName: '',
@@ -246,13 +243,17 @@
   };
 
   const validateAssignment = (c: TaskCarrierInfo): string | null => {
-    if (isBatch.value && c.carrierType === 3) {
+    if (isBatch.value && c.carrierType === CARRIER_TYPE.SOCIAL) {
       return '社会运力不支持批量分配，请逐单操作';
     }
-    if (c.carrierType === 2 && !c.carrierId && !c.carrierName?.trim()) {
+    if (
+      c.carrierType === CARRIER_TYPE.CARRIER &&
+      !c.carrierId &&
+      !c.carrierName?.trim()
+    ) {
       return '请选择承运商';
     }
-    if (c.carrierType === 3) {
+    if (c.carrierType === CARRIER_TYPE.SOCIAL) {
       if (!c.socialDriverId) {
         return '请选择社会运力';
       }
@@ -322,7 +323,10 @@
         emit('update:visible', false);
         return;
       }
-      if ((task.status ?? 0) !== -1) {
+      if (
+        (task.status ?? TASK_STATUS.PENDING_DISPATCH) !==
+        TASK_STATUS.PENDING_ASSIGN
+      ) {
         EleMessage.warning({
           message: '仅待分配状态可执行本操作',
           plain: true
@@ -331,7 +335,7 @@
       }
       await completeCarrierAssignment(task.id, form.carrier);
       const nextStage =
-        form.carrier.carrierType === 3 ? '待装车' : '待派车';
+        form.carrier.carrierType === CARRIER_TYPE.SOCIAL ? '待装车' : '待派车';
       EleMessage.success({
         message: `已确认承运分配，任务已进入${nextStage}`,
         plain: true

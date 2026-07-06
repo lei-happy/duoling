@@ -11,6 +11,7 @@
 from app.modules.client.models.user.biz_user import BizUser
 from app.modules.client.models.role.biz_role import BizRole
 from app.modules.client.models.organization.biz_department import BizDepartment
+from app.modules.client.models.organization.business_entity import BusinessEntity
 from app.modules.client.models.user.biz_user_role import BizUserRole
 from app.modules.client.models.role.biz_role_menu import BizRoleMenu
 from app.modules.client.models.region.biz_region import BizRegion
@@ -108,6 +109,7 @@ __all__ = [
     "BizUser",
     "BizRole",
     "BizDepartment",
+    "BusinessEntity",
     "BizUserRole",
     "BizRoleMenu",
     "BizRegion",

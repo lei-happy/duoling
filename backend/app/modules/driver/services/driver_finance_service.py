@@ -29,11 +29,16 @@ from app.modules.driver.schemas.finance import (
     DriverFinanceSummary,
     FinanceMonthlyAmount,
 )
+from app.modules.client.services.finance.base.constants import DocType, PayeeType
+from app.modules.client.services.finance.base.finance_state_machine import FIN_PAID
 from app.modules.driver.services.driver_context import DriverContext
 
-PAYEE_TYPE_DRIVER = 1
-STATUS_PAID = 3
-STATUS_CANCELLED = 4
+PAYEE_TYPE_DRIVER = PayeeType.DRIVER
+
+# 汇总：近 N 个月
+SUMMARY_RECENT_MONTHS = 6
+# 分页上限
+MAX_PAGE_SIZE = 100
 
 
 def _to_float(v: Optional[Decimal]) -> float:
@@ -85,7 +90,7 @@ class DriverFinanceService:
         )
 
         page = max(1, page)
-        page_size = max(1, min(page_size, 100))
+        page_size = max(1, min(page_size, MAX_PAGE_SIZE))
         rows = (
             await db.execute(
                 select(TaskFinanceDoc)
@@ -183,7 +188,7 @@ class DriverFinanceService:
             TaskFinanceDoc.is_deleted == 0,
             TaskFinanceDoc.payee_type == PAYEE_TYPE_DRIVER,
             TaskFinanceDoc.payee_id == ctx.driver_id,
-            TaskFinanceDoc.status == STATUS_PAID,
+            TaskFinanceDoc.status == FIN_PAID,
         ]
 
         async def sum_by_type(doc_type: int) -> float:
@@ -193,9 +198,9 @@ class DriverFinanceService:
             )
             return float(r.scalar_one() or 0)
 
-        prepaid = await sum_by_type(1)
-        supplement = await sum_by_type(2)
-        settled = await sum_by_type(3)
+        prepaid = await sum_by_type(DocType.PREPAY)
+        supplement = await sum_by_type(DocType.SUPPLEMENT)
+        settled = await sum_by_type(DocType.SETTLE)
 
         # 按月：近 6 个月，按 actual_pay_time
         from sqlalchemy import literal_column
@@ -209,7 +214,7 @@ class DriverFinanceService:
                 .where(*base_conds, TaskFinanceDoc.actual_pay_time.is_not(None))
                 .group_by(literal_column("ym"))
                 .order_by(literal_column("ym").desc())
-                .limit(6)
+                .limit(SUMMARY_RECENT_MONTHS)
             )
         ).all()
         by_month = [

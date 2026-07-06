@@ -23,7 +23,8 @@
           effect="plain"
           :title="candidateStatsTitle"
         >
-          共 {{ candidateStats.waybillCount }} 单 / {{ candidateStats.quantityTotal }} 台
+          共 {{ candidateStats.waybillCount }} 单 /
+          {{ candidateStats.quantityTotal }} 台
         </el-tag>
         <el-radio-group
           v-model="groupMode"
@@ -54,12 +55,7 @@
           <el-icon><InfoFilled /></el-icon>
           操作说明
         </el-button>
-        <el-button
-          v-else
-          :icon="Refresh"
-          size="small"
-          @click="loadCandidates"
-        >
+        <el-button v-else :icon="Refresh" size="small" @click="loadCandidates">
           刷新
         </el-button>
       </div>
@@ -185,8 +181,7 @@
                       class="cargo-row__wb"
                       :title="mw.lines[0]?.waybillNo"
                       >{{
-                        mw.lines[0]?.waybillNo ||
-                        `#${mw.lines[0]?.waybillId}`
+                        mw.lines[0]?.waybillNo || `#${mw.lines[0]?.waybillId}`
                       }}</span
                     >
                     <span class="cargo-row__customer">{{
@@ -464,9 +459,7 @@
                   placement="top"
                   :show-after="300"
                 >
-                  <span class="picked-row__wb">{{
-                    pickWaybillLabel(p)
-                  }}</span>
+                  <span class="picked-row__wb">{{ pickWaybillLabel(p) }}</span>
                 </el-tooltip>
                 <el-tooltip
                   :content="p.customerName || '—'"
@@ -610,8 +603,12 @@
                 <el-icon :size="20"><component :is="step.icon" /></el-icon>
               </div>
             </div>
-            <div class="cargo-picker-help-dialog__step-title">{{ step.title }}</div>
-            <div class="cargo-picker-help-dialog__step-desc">{{ step.desc }}</div>
+            <div class="cargo-picker-help-dialog__step-title">{{
+              step.title
+            }}</div>
+            <div class="cargo-picker-help-dialog__step-desc">{{
+              step.desc
+            }}</div>
           </div>
           <div
             v-if="index < helpSteps.length - 1"
@@ -629,7 +626,9 @@
             <el-icon :size="18"><Opportunity /></el-icon>
           </div>
           <div>
-            <div class="cargo-picker-help-dialog__highlight-title">配载技巧</div>
+            <div class="cargo-picker-help-dialog__highlight-title"
+              >配载技巧</div
+            >
             <div class="cargo-picker-help-dialog__highlight-text">
               建议优先选择<strong>同线路、同车型</strong>的运单凑成一板，减少混装与后续调度成本。
             </div>
@@ -1275,7 +1274,11 @@
   }
 
   function pickedVinOf(p: PickedItem): string {
-    return (p.vin ?? candidateById.value.get(p.waybillCargoId)?.vin ?? '').trim();
+    return (
+      p.vin ??
+      candidateById.value.get(p.waybillCargoId)?.vin ??
+      ''
+    ).trim();
   }
 
   function pickedVinRaw(p: PickedItem): string {
@@ -1726,8 +1729,9 @@
 
   .cargo-subline__vin {
     font-size: 12px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-      'Liberation Mono', 'Courier New', monospace;
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+      'Courier New', monospace;
     color: var(--el-text-color-secondary);
     margin-top: 2px;
     overflow: hidden;

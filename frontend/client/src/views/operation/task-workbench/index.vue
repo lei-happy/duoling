@@ -75,8 +75,13 @@
     removeTask,
     updateTaskStatus
   } from '@/api/operation/task';
-  import type { Task, TaskParam, TaskWorkbenchStats } from '@/api/operation/task/model';
+  import type {
+    Task,
+    TaskParam,
+    TaskWorkbenchStats
+  } from '@/api/operation/task/model';
   import type { TaskActionConfig, TaskActionKey } from '../task/task-actions';
+  import { CARRIER_TYPE } from '../task/status-config';
 
   type WorkbenchListSubset = 'all' | 'normal' | 'alert';
 
@@ -157,8 +162,7 @@
   const loadStats = async () => {
     statsLoading.value = true;
     try {
-      stats.value =
-        (await getTaskWorkbenchStats(buildStatsParams())) ?? null;
+      stats.value = (await getTaskWorkbenchStats(buildStatsParams())) ?? null;
     } catch (e: unknown) {
       const msg = (e as { message?: string }).message;
       if (msg) EleMessage.error({ message: msg, plain: true });
@@ -382,7 +386,7 @@
     await reloadAll();
     if (
       updated &&
-      updated.carrierType === 1 &&
+      updated.carrierType === CARRIER_TYPE.SELF &&
       (updated.segmentCount ?? 0) === 0
     ) {
       try {

@@ -178,6 +178,7 @@
     buildWaybillItemsPayload,
     validateCargoTab as validateCargoItems
   } from '../task-create-utils';
+  import { CARRIER_TYPE, TASK_STATUS } from '../status-config';
 
   type TabName = 'cargo' | 'carrier' | 'segments' | 'remark';
 
@@ -206,7 +207,7 @@
     plannedArriveTime: undefined,
     remark: '',
     carrier: {
-      carrierType: 1,
+      carrierType: CARRIER_TYPE.SELF,
       capacityId: undefined,
       carrierId: undefined,
       mainDriverName: '',
@@ -248,16 +249,16 @@
 
   const carrierStepDone = computed(() => {
     const c = form.carrier!;
-    if (c.carrierType === 1) {
+    if (c.carrierType === CARRIER_TYPE.SELF) {
       return !!(
         c.capacityId ||
         (c.mainDriverName?.trim() && c.plateNumber?.trim())
       );
     }
-    if (c.carrierType === 2) {
+    if (c.carrierType === CARRIER_TYPE.CARRIER) {
       return !!(c.carrierId || c.carrierName?.trim());
     }
-    if (c.carrierType === 3) {
+    if (c.carrierType === CARRIER_TYPE.SOCIAL) {
       return !!(
         c.mainDriverName?.trim() &&
         c.mainDriverPhone?.trim() &&
@@ -386,7 +387,7 @@
 
   function validateCarrierAssignmentTab(): boolean {
     const c = form.carrier!;
-    if (c.carrierType === 2) {
+    if (c.carrierType === CARRIER_TYPE.CARRIER) {
       if (!c.carrierId && !c.carrierName?.trim()) {
         EleMessage.error({
           message: '请选择承运商或填写承运商名称',
@@ -394,7 +395,7 @@
         });
         return false;
       }
-    } else if (c.carrierType === 3) {
+    } else if (c.carrierType === CARRIER_TYPE.SOCIAL) {
       if (!c.mainDriverName || !c.mainDriverPhone || !c.plateNumber) {
         EleMessage.error({
           message: '社会运力需填写司机姓名/电话/车牌',
@@ -408,7 +409,7 @@
 
   function validateCarrierTab(): boolean {
     const c = form.carrier!;
-    if (c.carrierType === 1) {
+    if (c.carrierType === CARRIER_TYPE.SELF) {
       if (!c.capacityId && !(c.mainDriverName && c.plateNumber)) {
         EleMessage.error({
           message: '自有车任务请选择运力或填写主驾+车牌',
@@ -416,7 +417,7 @@
         });
         return false;
       }
-    } else if (c.carrierType === 2) {
+    } else if (c.carrierType === CARRIER_TYPE.CARRIER) {
       if (!c.carrierId && !c.carrierName) {
         EleMessage.error({
           message: '请选择承运商或填写承运商名称',
@@ -424,7 +425,7 @@
         });
         return false;
       }
-    } else if (c.carrierType === 3) {
+    } else if (c.carrierType === CARRIER_TYPE.SOCIAL) {
       if (!c.mainDriverName || !c.mainDriverPhone || !c.plateNumber) {
         EleMessage.error({
           message: '社会运力需填写司机姓名/电话/车牌',
@@ -506,14 +507,16 @@
           EleMessage.success({ message: '商品车已保存', plain: true });
           break;
         case 'carrier':
-          if (props.data?.status === -1) {
+          if (props.data?.status === TASK_STATUS.PENDING_ASSIGN) {
             if (!validateCarrierAssignmentTab()) return;
             await completeCarrierAssignment(
               id,
               cleanCarrier(form.carrier) as TaskCarrierInfo
             );
             const nextStage =
-              form.carrier?.carrierType === 3 ? '待装车' : '待派车';
+              form.carrier?.carrierType === CARRIER_TYPE.SOCIAL
+                ? '待装车'
+                : '待派车';
             EleMessage.success({
               message: `已确认承运分配，任务已进入${nextStage}`,
               plain: true

@@ -29,27 +29,43 @@ from app.modules.client.schemas.capacity.self_capacity.driver.driver_fund_accoun
     DriverFundTransactionOut,
 )
 
+# 业务类型常量（对齐 biz_driver_fund_transaction.biz_type 注释）
+BIZ_TYPE_PREPAY_REGISTER = 1   # 预付登记（delta<0，系统联动亦复用）
+BIZ_TYPE_PREPAY_REVERSE = 2    # 退款入账 / 预付冲正（delta>0）
+BIZ_TYPE_MANUAL_IN = 3         # 人工入账（delta>0）
+BIZ_TYPE_MANUAL_OUT = 4        # 人工出账（delta<0）
+BIZ_TYPE_ADJUST = 5            # 人工调整（由 direction 决定符号，强制备注）
+
 # 手工业务类型对应的余额变动方向（正=入账/余额增；负=出账/余额减）
 _MANUAL_BIZ_SIGN = {
-    1: -1,  # 预付登记（司机占用公司资金）
-    2: +1,  # 退款入账
-    3: +1,  # 人工入账
-    4: -1,  # 人工出账
-    # 5 人工调整：由 direction 决定符号
+    BIZ_TYPE_PREPAY_REGISTER: -1,  # 预付登记（司机占用公司资金）
+    BIZ_TYPE_PREPAY_REVERSE: +1,   # 退款入账
+    BIZ_TYPE_MANUAL_IN: +1,        # 人工入账
+    BIZ_TYPE_MANUAL_OUT: -1,       # 人工出账
+    # BIZ_TYPE_ADJUST 人工调整：由 direction 决定符号
 }
-_ADJUST_BIZ_TYPE = 5
-_MANUAL_BIZ_TYPES = {1, 2, 3, 4, 5}
+_MANUAL_BIZ_TYPES = {
+    BIZ_TYPE_PREPAY_REGISTER, BIZ_TYPE_PREPAY_REVERSE,
+    BIZ_TYPE_MANUAL_IN, BIZ_TYPE_MANUAL_OUT, BIZ_TYPE_ADJUST,
+}
 
-# 业务类型常量
-BIZ_TYPE_PREPAY_REGISTER = 1   # 预付登记（系统联动，delta<0）
-BIZ_TYPE_PREPAY_REVERSE = 2    # 退款入账 / 预付冲正（系统联动，delta>0）
+# 流水方向（direction，由 delta 符号派生）
+DIRECTION_IN = 1
+DIRECTION_OUT = 2
 
 # 流水来源
 SOURCE_MANUAL = 1
 SOURCE_SYSTEM = 2
 
+# 账户状态
 STATUS_NORMAL = 1
 STATUS_FROZEN = 0
+
+# 人工调整强制备注最小长度
+MANUAL_REMARK_MIN_LEN = 5
+
+# 流水台账分页上限
+MAX_PAGE_SIZE = 100
 
 
 class DriverFundAccountService:
@@ -84,12 +100,31 @@ class DriverFundAccountService:
         return drv
 
     @staticmethod
+    async def _resolve_enterprise_id(
+        db: AsyncSession, enterprise_id: Optional[int]
+    ) -> int:
+        """把 None 归一到租户默认经营主体，保证账户按主体唯一定位。"""
+        if enterprise_id:
+            return enterprise_id
+        from app.modules.client.services.organization.business_entity_service import (
+            BusinessEntityService,
+        )
+        default_entity = await BusinessEntityService.ensure_default(db)
+        return default_entity.id
+
+    @staticmethod
     async def _get_or_create(
         db: AsyncSession, driver_id: int, enterprise_id: Optional[int],
         *, for_update: bool = False,
     ) -> DriverFundAccount:
+        # 账户按 (driver_id, enterprise_id) 唯一定位（uk_dfa_driver_ent）。
+        # enterprise_id 为空时归一到租户默认经营主体，避免 NULL 造成账户碎裂。
+        enterprise_id = await DriverFundAccountService._resolve_enterprise_id(
+            db, enterprise_id
+        )
         stmt = select(DriverFundAccount).where(
             DriverFundAccount.driver_id == driver_id,
+            DriverFundAccount.enterprise_id == enterprise_id,
             DriverFundAccount.is_deleted == 0,
         )
         if for_update:
@@ -170,7 +205,7 @@ class DriverFundAccountService:
         )
 
         page = max(1, page)
-        page_size = max(1, min(page_size, 100))
+        page_size = max(1, min(page_size, MAX_PAGE_SIZE))
         rows = (
             await db.execute(
                 select(DriverFundTransaction)
@@ -195,10 +230,10 @@ class DriverFundAccountService:
     def _resolve_delta(
         biz_type: int, amount: Decimal, direction: Optional[int]
     ) -> Decimal:
-        if biz_type == _ADJUST_BIZ_TYPE:
-            if direction not in (1, 2):
+        if biz_type == BIZ_TYPE_ADJUST:
+            if direction not in (DIRECTION_IN, DIRECTION_OUT):
                 raise BizException("人工调整必须指定方向 direction（1-入 2-出）")
-            sign = 1 if direction == 1 else -1
+            sign = 1 if direction == DIRECTION_IN else -1
         else:
             sign = _MANUAL_BIZ_SIGN[biz_type]
         return (amount if sign > 0 else -amount)
@@ -216,9 +251,11 @@ class DriverFundAccountService:
             raise BizException("不支持的记账类型")
         if data.amount is None or data.amount <= 0:
             raise BizException("金额必须大于 0")
-        if data.bizType == _ADJUST_BIZ_TYPE:
-            if not data.remark or len(data.remark.strip()) < 5:
-                raise BizException("人工调整必须填写不少于 5 字的备注")
+        if data.bizType == BIZ_TYPE_ADJUST:
+            if not data.remark or len(data.remark.strip()) < MANUAL_REMARK_MIN_LEN:
+                raise BizException(
+                    f"人工调整必须填写不少于 {MANUAL_REMARK_MIN_LEN} 字的备注"
+                )
 
         await DriverFundAccountService._ensure_driver(db, driver_id)
         acc = await DriverFundAccountService._get_or_create(
@@ -238,7 +275,7 @@ class DriverFundAccountService:
             biz_type=data.bizType,
             delta=delta,
             amount=data.amount,
-            source=1,
+            source=SOURCE_MANUAL,
             operator_id=operator_id,
             operator_name=operator_name,
             related_task_id=data.relatedTaskId,
@@ -275,7 +312,7 @@ class DriverFundAccountService:
             enterprise_id=acc.enterprise_id,
             txn_no=await DriverFundAccountService._generate_txn_no(db),
             biz_type=biz_type,
-            direction=1 if delta > 0 else 2,
+            direction=DIRECTION_IN if delta > 0 else DIRECTION_OUT,
             amount=amount,
             delta=delta,
             balance_before=before,

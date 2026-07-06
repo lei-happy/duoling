@@ -30,6 +30,7 @@ class CapacityOut(BaseModel):
     driverId: int
     driverName: str
     driverPhone: str
+    enterpriseId: Optional[int] = None
     vehicleId: int
     plateNumber: str
     plateCategory: Optional[str] = None
@@ -65,6 +66,7 @@ class CapacityOut(BaseModel):
             driverId=cap.driver_id,
             driverName=cap.driver_name,
             driverPhone=cap.driver_phone,
+            enterpriseId=getattr(cap, "enterprise_id", None),
             vehicleId=cap.vehicle_id,
             plateNumber=cap.plate_number,
             plateCategory=plate_category,

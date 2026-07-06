@@ -33,12 +33,14 @@ async def page_vehicles(
     keyword: Optional[str] = None,
     vehicleType: Optional[str] = None,
     status: Optional[int] = None,
+    enterpriseId: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     data = await VehicleService.page_vehicles(
         db, page=page, page_size=page_size,
         keyword=keyword, vehicle_type=vehicleType, status=status,
+        enterprise_id=enterpriseId,
     )
     return success(data=data)
 

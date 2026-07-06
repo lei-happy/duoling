@@ -7,6 +7,8 @@
  * 每个 status 在每个时点最多对应 1 个"主动作"。
  */
 
+import { CARRIER_TYPE, TASK_STATUS } from './status-config';
+
 export type TaskActionKey =
   | 'assign-carrier' // 确认承运分配 (status -1 → 0)
   | 'dispatch' // 派车 (status 0 → 1)
@@ -196,15 +198,15 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
  * - 7,9：无主动作。
  */
 const PRIMARY_BY_STATUS: Record<number, TaskActionKey | null> = {
-  [-1]: 'assign-carrier',
-  0: 'dispatch',
-  1: 'confirm-load',
-  2: 'depart',
-  3: 'confirm-arrive',
-  4: 'confirm-sign',
-  5: 'close',
-  7: null,
-  9: null
+  [TASK_STATUS.PENDING_ASSIGN]: 'assign-carrier',
+  [TASK_STATUS.PENDING_DISPATCH]: 'dispatch',
+  [TASK_STATUS.DISPATCHED]: 'confirm-load',
+  [TASK_STATUS.LOADED]: 'depart',
+  [TASK_STATUS.ON_WAY]: 'confirm-arrive',
+  [TASK_STATUS.ARRIVED]: 'confirm-sign',
+  [TASK_STATUS.SIGNED]: 'close',
+  [TASK_STATUS.CLOSED]: null,
+  [TASK_STATUS.CANCELLED]: null
 };
 
 export const getPrimaryTaskAction = (
@@ -241,11 +243,11 @@ export const getSecondaryTaskActions = (
  * 已关闭(7)/已取消(9) 为终态，不放开任何逆向。
  */
 const REVERSE_BY_STATUS: Record<number, TaskActionKey[]> = {
-  1: ['revert-dispatch'],
-  2: ['revert-load', 'force-cancel'],
-  3: ['revert-depart', 'force-cancel'],
-  4: ['revert-arrive', 'force-cancel'],
-  5: ['revert-sign']
+  [TASK_STATUS.DISPATCHED]: ['revert-dispatch'],
+  [TASK_STATUS.LOADED]: ['revert-load', 'force-cancel'],
+  [TASK_STATUS.ON_WAY]: ['revert-depart', 'force-cancel'],
+  [TASK_STATUS.ARRIVED]: ['revert-arrive', 'force-cancel'],
+  [TASK_STATUS.SIGNED]: ['revert-sign']
 };
 
 export const getReverseTaskActions = (
@@ -269,13 +271,11 @@ export interface TaskRowActions {
   more: TaskActionConfig[];
 }
 
-export const getTaskRowActions = (
-  row: {
-    status?: number | null;
-    carrierType?: number | null;
-    segmentCount?: number | null;
-  }
-): TaskRowActions => {
+export const getTaskRowActions = (row: {
+  status?: number | null;
+  carrierType?: number | null;
+  segmentCount?: number | null;
+}): TaskRowActions => {
   const primary = getPrimaryTaskAction(row.status ?? null);
 
   const status = row.status ?? null;
@@ -285,7 +285,13 @@ export const getTaskRowActions = (
 
   const more: TaskActionConfig[] = [];
 
-  const canEdit = [-1, 0, 1].includes(status);
+  const canEdit = (
+    [
+      TASK_STATUS.PENDING_ASSIGN,
+      TASK_STATUS.PENDING_DISPATCH,
+      TASK_STATUS.DISPATCHED
+    ] as number[]
+  ).includes(status);
   if (canEdit) more.push(TASK_ACTION_CONFIGS['edit']);
 
   if (shouldShowPlanRoute(row)) {
@@ -294,12 +300,24 @@ export const getTaskRowActions = (
 
   more.push(...getReverseTaskActions(status));
 
-  // 2 已装车起已有「强制取消（force-cancel）」专门通道；为避免与常规「取消任务」
-  // 在同一行同时出现造成调度员歧义，常规取消仅在 -1/0/1 暴露。
-  const canCancel = [-1, 0, 1].includes(status);
+  // 已装车起已有「强制取消（force-cancel）」专门通道；为避免与常规「取消任务」
+  // 在同一行同时出现造成调度员歧义，常规取消仅在 待分配/待派车/已派车 暴露。
+  const canCancel = (
+    [
+      TASK_STATUS.PENDING_ASSIGN,
+      TASK_STATUS.PENDING_DISPATCH,
+      TASK_STATUS.DISPATCHED
+    ] as number[]
+  ).includes(status);
   if (canCancel) more.push(TASK_ACTION_CONFIGS['cancel-task']);
 
-  const canDelete = [-1, 0, 9].includes(status);
+  const canDelete = (
+    [
+      TASK_STATUS.PENDING_ASSIGN,
+      TASK_STATUS.PENDING_DISPATCH,
+      TASK_STATUS.CANCELLED
+    ] as number[]
+  ).includes(status);
   if (canDelete) more.push(TASK_ACTION_CONFIGS['delete']);
 
   return { primary, more };
@@ -317,8 +335,14 @@ export const shouldShowPlanRoute = (task: {
   carrierType?: number | null;
   segmentCount?: number | null;
 }): boolean => {
-  const st = task.status ?? -1;
-  if (![-1, 0, 1, 2].includes(st)) return false;
-  if (task.carrierType === 1) return true;
+  const st = task.status ?? TASK_STATUS.PENDING_ASSIGN;
+  const planRouteStatuses: number[] = [
+    TASK_STATUS.PENDING_ASSIGN,
+    TASK_STATUS.PENDING_DISPATCH,
+    TASK_STATUS.DISPATCHED,
+    TASK_STATUS.LOADED
+  ];
+  if (!planRouteStatuses.includes(st)) return false;
+  if (task.carrierType === CARRIER_TYPE.SELF) return true;
   return (task.segmentCount ?? 0) === 0;
 };

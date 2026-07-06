@@ -53,6 +53,13 @@
             </floating-label>
           </dict-select-hint-wrap>
         </el-col>
+        <el-col :lg="5" :md="8" :sm="12" :xs="24">
+          <business-entity-select
+            v-model="form.enterpriseId"
+            placeholder="请选择经营主体"
+            clearable
+          />
+        </el-col>
         <el-col :lg="4" :md="8" :sm="12" :xs="24">
           <el-form-item label-width="0px">
             <btn-items
@@ -72,6 +79,7 @@
 <script lang="ts" setup>
   import DictSelectHintWrap from '@/components/DictSelectHintWrap/index.vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
+  import BusinessEntitySelect from '@/components/BusinessEntitySelect/index.vue';
   import { useFormData } from '@/utils/use-form-data';
   import { useDictData } from '@/utils/use-dict-data';
   import type { DriverParam } from '@/api/capacity/self-capacity/driver/model';
@@ -87,7 +95,8 @@
     keyword: '',
     status: void 0,
     operationStatus: void 0,
-    driverType: void 0
+    driverType: void 0,
+    enterpriseId: void 0
   });
 
   const search = () => {

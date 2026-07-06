@@ -28,216 +28,219 @@
         :title="subsetBanner.title"
       />
       <ele-pro-table
-      ref="tableRef"
-      row-key="id"
-      :columns="columns"
-      :datasource="datasource"
-      :pagination="{ pageSize: 20 }"
-      :show-overflow-tooltip="true"
-      v-model:selections="selections"
-      :default-sort="tableDefaultSort"
-      :cache-key="`OperationTaskPool-${tabKey}-${listSubset}`"
-      @done="onTableDone"
-    >
-      <template #toolbar>
-        <el-button
-          v-if="showBatchToolbar"
-          type="primary"
-          plain
-          class="ele-btn-icon"
-          :icon="Operation"
-          :disabled="selections.length === 0"
-          v-permission="primaryAction!.permission"
-          @click="onBatch"
-        >
-          批量{{ primaryAction!.label }} ({{ selections.length }})
-        </el-button>
-        <el-button
-          v-if="showToolbarRefresh"
-          :icon="Refresh"
-          plain
-          class="ele-btn-icon"
-          @click="doReload"
-        >
-          刷新
-        </el-button>
-      </template>
-
-      <template #waybillCount="{ row }">
-        {{ row.waybillCount ?? 0 }}
-      </template>
-
-      <template #createdAt="{ row }">
-        {{ formatDateTime(row.createdAt) || '--' }}
-      </template>
-
-      <template #totalQuantity="{ row }">
-        <el-tag
-          v-if="pool.quantityOpenCargoDetail && (row.totalQuantity ?? 0) > 0"
-          type="primary"
-          effect="plain"
-          size="small"
-          class="tb-qty-tag"
-          @click.stop="openTaskCargoDetail(row)"
-        >
-          {{ row.totalQuantity ?? 0 }}
-        </el-tag>
-        <span v-else>{{ row.totalQuantity ?? 0 }}</span>
-      </template>
-
-      <template #carrierType="{ row }">
-        <el-tag
-          :type="(CARRIER_TYPE_MAP[row.carrierType]?.type as any) || 'info'"
-          size="small"
-        >
-          {{ CARRIER_TYPE_MAP[row.carrierType]?.label || '--' }}
-        </el-tag>
-      </template>
-
-      <template #route="{ row }">
-        <div class="route-cell cell-ellipsis">
-          <span class="cell-ellipsis">{{ row.origin || '--' }}</span>
-          <el-icon class="route-cell__arrow"><Right /></el-icon>
-          <span class="cell-ellipsis">{{ row.destination || '--' }}</span>
-          <el-tag
-            v-if="(row.segmentCount || 0) > 1"
-            size="small"
-            type="info"
-            effect="plain"
-            class="route-cell__seg"
-          >
-            {{ row.segmentCount }} 段
-          </el-tag>
-        </div>
-      </template>
-
-      <template #carrierResource="{ row }">
-        <div v-if="row.carrierType === 2" class="cell-ellipsis">
-          {{ row.carrierName || '--' }}
-        </div>
-        <div v-else class="cell-ellipsis">
-          {{ row.mainDriverName || '--' }}
-          <span v-if="row.plateNumber" class="ele-text-secondary">
-            / {{ row.plateNumber }}
-          </span>
-        </div>
-      </template>
-
-      <template #carrierName="{ row }">
-        <div class="cell-ellipsis">
-          <template v-if="row.carrierType === 2">
-            {{ row.carrierShortName || row.carrierName || '--' }}
-          </template>
-          <template v-else-if="row.carrierType === 1">
-            <span class="ele-text-secondary">自有 ·</span>
-            {{ row.mainDriverName || '待派车' }}
-          </template>
-          <template v-else-if="row.carrierType === 3">
-            <span class="ele-text-secondary">社会 ·</span>
-            {{ row.mainDriverName || '--' }}
-          </template>
-          <template v-else>--</template>
-        </div>
-      </template>
-
-      <template #plateNumber="{ row }">
-        <span>
-          {{ row.plateNumber || '--' }}
-          <span
-            v-if="row.trailerPlateNumber"
-            class="ele-text-secondary"
-            style="margin-left: 4px"
-          >
-            / {{ row.trailerPlateNumber }}
-          </span>
-        </span>
-      </template>
-
-      <template #status="{ row }">
-        <div class="status-cell">
-          <el-tag
-            :type="(TASK_STATUS_MAP[row.status]?.type as any) || 'info'"
-            size="small"
-          >
-            {{ TASK_STATUS_MAP[row.status]?.label || '--' }}
-          </el-tag>
-          <span
-            v-if="loadProgressText(row)"
-            class="ele-text-secondary status-cell__progress"
-          >
-            {{ loadProgressText(row) }}
-          </span>
-          <el-tag
-            v-if="isOverdue(row)"
-            type="warning"
-            size="small"
-            effect="plain"
-            class="status-cell__overdue"
-          >
-            预警
-          </el-tag>
-        </div>
-      </template>
-
-      <template #plannedLoadTime="{ row }">
-        <span :class="{ 'is-overdue': isDispatchOverdue(row) }">
-          {{ formatDateTime(row.plannedLoadTime) || '--' }}
-        </span>
-      </template>
-
-      <template #plannedArriveTime="{ row }">
-        <span :class="{ 'is-overdue': isArriveOverdue(row) }">
-          {{ formatDateTime(row.plannedArriveTime) || '--' }}
-        </span>
-      </template>
-
-      <template #actualLoadTime="{ row }">
-        {{ formatDateTime(row.actualLoadTime) || '--' }}
-      </template>
-
-      <template #action="{ row }">
-        <div class="action-cell">
-          <el-link
+        ref="tableRef"
+        row-key="id"
+        :columns="columns"
+        :datasource="datasource"
+        :pagination="{ pageSize: 20 }"
+        :show-overflow-tooltip="true"
+        v-model:selections="selections"
+        :default-sort="tableDefaultSort"
+        :cache-key="`OperationTaskPool-${tabKey}-${listSubset}`"
+        @done="onTableDone"
+      >
+        <template #toolbar>
+          <el-button
+            v-if="showBatchToolbar"
             type="primary"
-            :underline="false"
-            @click="emit('openDetail', row)"
+            plain
+            class="ele-btn-icon"
+            :icon="Operation"
+            :disabled="selections.length === 0"
+            v-permission="primaryAction!.permission"
+            @click="onBatch"
           >
-            详情
-          </el-link>
-          <template v-if="getRowPrimary(row)">
-            <el-divider direction="vertical" />
-            <el-link
-              :type="getRowPrimary(row)!.buttonType as any"
-              :underline="false"
-              v-permission="getRowPrimary(row)!.permission"
-              @click="emit('action', row, getRowPrimary(row)!)"
+            批量{{ primaryAction!.label }} ({{ selections.length }})
+          </el-button>
+          <el-button
+            v-if="showToolbarRefresh"
+            :icon="Refresh"
+            plain
+            class="ele-btn-icon"
+            @click="doReload"
+          >
+            刷新
+          </el-button>
+        </template>
+
+        <template #waybillCount="{ row }">
+          {{ row.waybillCount ?? 0 }}
+        </template>
+
+        <template #createdAt="{ row }">
+          {{ formatDateTime(row.createdAt) || '--' }}
+        </template>
+
+        <template #totalQuantity="{ row }">
+          <el-tag
+            v-if="pool.quantityOpenCargoDetail && (row.totalQuantity ?? 0) > 0"
+            type="primary"
+            effect="plain"
+            size="small"
+            class="tb-qty-tag"
+            @click.stop="openTaskCargoDetail(row)"
+          >
+            {{ row.totalQuantity ?? 0 }}
+          </el-tag>
+          <span v-else>{{ row.totalQuantity ?? 0 }}</span>
+        </template>
+
+        <template #carrierType="{ row }">
+          <el-tag
+            :type="(CARRIER_TYPE_MAP[row.carrierType]?.type as any) || 'info'"
+            size="small"
+          >
+            {{ CARRIER_TYPE_MAP[row.carrierType]?.label || '--' }}
+          </el-tag>
+        </template>
+
+        <template #route="{ row }">
+          <div class="route-cell cell-ellipsis">
+            <span class="cell-ellipsis">{{ row.origin || '--' }}</span>
+            <el-icon class="route-cell__arrow"><Right /></el-icon>
+            <span class="cell-ellipsis">{{ row.destination || '--' }}</span>
+            <el-tag
+              v-if="(row.segmentCount || 0) > 1"
+              size="small"
+              type="info"
+              effect="plain"
+              class="route-cell__seg"
             >
-              {{ getRowPrimary(row)!.label }}
+              {{ row.segmentCount }} 段
+            </el-tag>
+          </div>
+        </template>
+
+        <template #carrierResource="{ row }">
+          <div
+            v-if="row.carrierType === CARRIER_TYPE.CARRIER"
+            class="cell-ellipsis"
+          >
+            {{ row.carrierName || '--' }}
+          </div>
+          <div v-else class="cell-ellipsis">
+            {{ row.mainDriverName || '--' }}
+            <span v-if="row.plateNumber" class="ele-text-secondary">
+              / {{ row.plateNumber }}
+            </span>
+          </div>
+        </template>
+
+        <template #carrierName="{ row }">
+          <div class="cell-ellipsis">
+            <template v-if="row.carrierType === CARRIER_TYPE.CARRIER">
+              {{ row.carrierShortName || row.carrierName || '--' }}
+            </template>
+            <template v-else-if="row.carrierType === CARRIER_TYPE.SELF">
+              <span class="ele-text-secondary">自有 ·</span>
+              {{ row.mainDriverName || '待派车' }}
+            </template>
+            <template v-else-if="row.carrierType === CARRIER_TYPE.SOCIAL">
+              <span class="ele-text-secondary">社会 ·</span>
+              {{ row.mainDriverName || '--' }}
+            </template>
+            <template v-else>--</template>
+          </div>
+        </template>
+
+        <template #plateNumber="{ row }">
+          <span>
+            {{ row.plateNumber || '--' }}
+            <span
+              v-if="row.trailerPlateNumber"
+              class="ele-text-secondary"
+              style="margin-left: 4px"
+            >
+              / {{ row.trailerPlateNumber }}
+            </span>
+          </span>
+        </template>
+
+        <template #status="{ row }">
+          <div class="status-cell">
+            <el-tag
+              :type="(TASK_STATUS_MAP[row.status]?.type as any) || 'info'"
+              size="small"
+            >
+              {{ TASK_STATUS_MAP[row.status]?.label || '--' }}
+            </el-tag>
+            <span
+              v-if="loadProgressText(row)"
+              class="ele-text-secondary status-cell__progress"
+            >
+              {{ loadProgressText(row) }}
+            </span>
+            <el-tag
+              v-if="isOverdue(row)"
+              type="warning"
+              size="small"
+              effect="plain"
+              class="status-cell__overdue"
+            >
+              预警
+            </el-tag>
+          </div>
+        </template>
+
+        <template #plannedLoadTime="{ row }">
+          <span :class="{ 'is-overdue': isDispatchOverdue(row) }">
+            {{ formatDateTime(row.plannedLoadTime) || '--' }}
+          </span>
+        </template>
+
+        <template #plannedArriveTime="{ row }">
+          <span :class="{ 'is-overdue': isArriveOverdue(row) }">
+            {{ formatDateTime(row.plannedArriveTime) || '--' }}
+          </span>
+        </template>
+
+        <template #actualLoadTime="{ row }">
+          {{ formatDateTime(row.actualLoadTime) || '--' }}
+        </template>
+
+        <template #action="{ row }">
+          <div class="action-cell">
+            <el-link
+              type="primary"
+              :underline="false"
+              @click="emit('openDetail', row)"
+            >
+              详情
             </el-link>
-          </template>
-          <template v-if="getRowMore(row).length">
-            <el-divider direction="vertical" />
-            <el-dropdown trigger="click">
-              <el-link type="info" :underline="false">
-                更多<el-icon style="margin-left: 2px"><ArrowDown /></el-icon>
+            <template v-if="getRowPrimary(row)">
+              <el-divider direction="vertical" />
+              <el-link
+                :type="getRowPrimary(row)!.buttonType as any"
+                :underline="false"
+                v-permission="getRowPrimary(row)!.permission"
+                @click="emit('action', row, getRowPrimary(row)!)"
+              >
+                {{ getRowPrimary(row)!.label }}
               </el-link>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item
-                    v-for="act in getRowMore(row)"
-                    :key="act.key"
-                    v-permission="act.permission"
-                    @click="emit('action', row, act)"
-                  >
-                    {{ buildMoreLabel(row, act) }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-        </div>
-      </template>
-    </ele-pro-table>
+            </template>
+            <template v-if="getRowMore(row).length">
+              <el-divider direction="vertical" />
+              <el-dropdown trigger="click">
+                <el-link type="info" :underline="false">
+                  更多<el-icon style="margin-left: 2px"><ArrowDown /></el-icon>
+                </el-link>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item
+                      v-for="act in getRowMore(row)"
+                      :key="act.key"
+                      v-permission="act.permission"
+                      @click="emit('action', row, act)"
+                    >
+                      {{ buildMoreLabel(row, act) }}
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
+          </div>
+        </template>
+      </ele-pro-table>
     </ele-card>
 
     <waybill-cargoes-detail
@@ -254,13 +257,23 @@
     DatasourceFunction,
     DoneParams
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import { ArrowDown, Operation, Refresh, Right } from '@element-plus/icons-vue';
+  import {
+    ArrowDown,
+    Operation,
+    Refresh,
+    Right
+  } from '@element-plus/icons-vue';
   import { pageTasks, listTaskWaybillItems } from '@/api/operation/task';
   import type { Task, TaskParam } from '@/api/operation/task/model';
   import type { Waybill } from '@/api/waybill/model';
   import { formatDateTime } from '@/utils/date-util';
   import { EleMessage } from 'ele-admin-plus';
-  import { CARRIER_TYPE_MAP, TASK_STATUS_MAP } from '../../task/status-config';
+  import {
+    CARRIER_TYPE,
+    CARRIER_TYPE_MAP,
+    TASK_STATUS,
+    TASK_STATUS_MAP
+  } from '../../task/status-config';
   import {
     TASK_ACTION_CONFIGS,
     getTaskRowActions
@@ -403,11 +416,14 @@
       )
   );
 
-  const showBatchToolbar = computed(
-    () => Boolean(primaryAction.value && allowBatchPrimary.value)
+  const showBatchToolbar = computed(() =>
+    Boolean(primaryAction.value && allowBatchPrimary.value)
   );
 
-  const filterParamsWithoutKeyword = (): Omit<Partial<TaskParam>, 'keyword'> => {
+  const filterParamsWithoutKeyword = (): Omit<
+    Partial<TaskParam>,
+    'keyword'
+  > => {
     const { keyword: _k, ...rest } = props.searchWhere ?? {};
     return rest;
   };
@@ -432,10 +448,10 @@
   const loadProgressText = (row: Task): string => {
     const total = row.totalQuantity ?? 0;
     if (!total) return '';
-    if (row.status === 1) {
+    if (row.status === TASK_STATUS.DISPATCHED) {
       const loaded = row.loadedQuantity ?? 0;
       if (loaded > 0) return `已装 ${loaded}/${total}`;
-    } else if (row.status === 3) {
+    } else if (row.status === TASK_STATUS.ON_WAY) {
       const unloaded = row.unloadedQuantity ?? 0;
       if (unloaded > 0) return `已卸 ${unloaded}/${total}`;
     }
@@ -573,13 +589,21 @@
   const isDispatchOverdue = (row: Task): boolean => {
     if (!row.plannedLoadTime) return false;
     const overdue = Date.parse(row.plannedLoadTime) < Date.now();
-    if (row.status === -1 || row.status === 0) return overdue;
+    if (
+      row.status === TASK_STATUS.PENDING_ASSIGN ||
+      row.status === TASK_STATUS.PENDING_DISPATCH
+    )
+      return overdue;
     return false;
   };
 
   /** 在途：计划到货已过 */
   const isArriveOverdue = (row: Task): boolean => {
-    if ((row.status !== 2 && row.status !== 3) || !row.plannedArriveTime) {
+    if (
+      (row.status !== TASK_STATUS.LOADED &&
+        row.status !== TASK_STATUS.ON_WAY) ||
+      !row.plannedArriveTime
+    ) {
       return false;
     }
     return Date.parse(row.plannedArriveTime) < Date.now();

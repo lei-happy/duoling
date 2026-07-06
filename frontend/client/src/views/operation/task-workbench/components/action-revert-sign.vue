@@ -60,11 +60,13 @@
         v-if="isSingleTask"
         label="已签收货物"
         prop="selectedItemIds"
-        :rules="[{
-          required: true,
-          validator: validateSelected,
-          trigger: 'change'
-        }]"
+        :rules="[
+          {
+            required: true,
+            validator: validateSelected,
+            trigger: 'change'
+          }
+        ]"
       >
         <div class="action-revert-sign__items">
           <el-alert
@@ -104,7 +106,11 @@
               min-width="120"
               show-overflow-tooltip
             />
-            <el-table-column label="品牌/车型" min-width="160" show-overflow-tooltip>
+            <el-table-column
+              label="品牌/车型"
+              min-width="160"
+              show-overflow-tooltip
+            >
               <template #default="{ row }">
                 {{ row.vehicleBrand || '--' }} / {{ row.vehicleModel || '--' }}
               </template>
@@ -144,6 +150,7 @@
     updateTaskWaybillItem
   } from '@/api/operation/task';
   import type { Task, TaskWaybillItem } from '@/api/operation/task/model';
+  import { ITEM_STATUS } from '../../task/status-config';
 
   const props = defineProps<{
     visible: boolean;
@@ -179,9 +186,11 @@
     isSingleTask.value ? '撤销签收' : '批量撤销签收'
   );
 
-  /** 已签收 = status === 3 */
+  /** 已签收 = status === 已签收 */
   const signedItems = computed(() =>
-    items.value.filter((it) => (it.status ?? 0) === 3)
+    items.value.filter(
+      (it) => (it.status ?? ITEM_STATUS.PENDING_LOAD) === ITEM_STATUS.SIGNED
+    )
   );
 
   const submitDisabled = computed(() => {
@@ -273,7 +282,10 @@
         for (const id of selectedItemIds.value) {
           total += 1;
           try {
-            await updateTaskWaybillItem(id, { status: 2, remark });
+            await updateTaskWaybillItem(id, {
+              status: ITEM_STATUS.UNLOADED,
+              remark
+            });
           } catch {
             failed += 1;
           }
@@ -289,10 +301,17 @@
             continue;
           }
           for (const it of taskItems) {
-            if ((it.status ?? 0) !== 3 || !it.id) continue;
+            if (
+              (it.status ?? ITEM_STATUS.PENDING_LOAD) !== ITEM_STATUS.SIGNED ||
+              !it.id
+            )
+              continue;
             total += 1;
             try {
-              await updateTaskWaybillItem(it.id, { status: 2, remark });
+              await updateTaskWaybillItem(it.id, {
+                status: ITEM_STATUS.UNLOADED,
+                remark
+              });
             } catch {
               failed += 1;
             }

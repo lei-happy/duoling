@@ -133,19 +133,24 @@
   const dictCodeVehicleType = DICT_CODE_VEHICLE_TYPE;
 
   const where = reactive<
-    Pick<VehicleParam, 'keyword' | 'status' | 'vehicleType'>
+    Pick<VehicleParam, 'keyword' | 'status' | 'vehicleType' | 'enterpriseId'>
   >({
     keyword: '',
     status: void 0,
-    vehicleType: void 0
+    vehicleType: void 0,
+    enterpriseId: void 0
   });
 
   const onSearch = (
-    payload: Pick<VehicleParam, 'keyword' | 'status' | 'vehicleType'>
+    payload: Pick<
+      VehicleParam,
+      'keyword' | 'status' | 'vehicleType' | 'enterpriseId'
+    >
   ) => {
     where.keyword = payload.keyword ?? '';
     where.status = payload.status;
     where.vehicleType = payload.vehicleType;
+    where.enterpriseId = payload.enterpriseId;
     tableRef.value?.reload?.({ page: 1 });
   };
 

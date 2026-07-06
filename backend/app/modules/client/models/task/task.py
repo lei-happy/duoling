@@ -38,6 +38,10 @@ class Task(TenantModelBase):
     task_name: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, comment="任务名称"
     )
+    enterprise_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, index=True,
+        comment="所属经营主体ID（biz_business_entity.id），费用单据继承此归属",
+    )
     source: Mapped[int] = mapped_column(
         SmallInteger, default=1, server_default="1",
         comment="来源 1-手动 2-AI智能调度 3-导入",

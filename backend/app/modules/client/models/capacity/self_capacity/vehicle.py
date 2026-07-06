@@ -20,6 +20,10 @@ class Vehicle(TenantModelBase):
     plate_number: Mapped[str] = mapped_column(
         String(20), unique=True, nullable=False, comment="车牌号"
     )
+    enterprise_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, index=True,
+        comment="所属经营主体ID（biz_business_entity.id）",
+    )
     trailer_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="关联挂车ID"
     )

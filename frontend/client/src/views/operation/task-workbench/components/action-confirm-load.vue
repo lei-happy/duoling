@@ -139,16 +139,22 @@
                   <div v-else class="load-item-card__ph">
                     <el-icon :size="18"><Picture /></el-icon>
                   </div>
-                  <span class="load-item-card__qty">×{{ row.quantity || 0 }}</span>
+                  <span class="load-item-card__qty"
+                    >×{{ row.quantity || 0 }}</span
+                  >
                 </div>
                 <div class="load-item-card__body">
                   <div
                     class="load-item-card__model"
                     :title="`${row.vehicleBrand || '--'} / ${row.vehicleModel || '--'}`"
                   >
-                    {{ row.vehicleBrand || '--' }} / {{ row.vehicleModel || '--' }}
+                    {{ row.vehicleBrand || '--' }} /
+                    {{ row.vehicleModel || '--' }}
                   </div>
-                  <div class="load-item-card__waybill" :title="row.waybillNo || ''">
+                  <div
+                    class="load-item-card__waybill"
+                    :title="row.waybillNo || ''"
+                  >
                     {{ row.waybillNo || '--' }}
                   </div>
                 </div>
@@ -164,10 +170,7 @@
 
       <el-form-item class="photo-form-item">
         <template #label>
-          <el-tooltip
-            content="最多 9 张，每张不超过 5MB。"
-            placement="top"
-          >
+          <el-tooltip content="最多 9 张，每张不超过 5MB。" placement="top">
             <span class="photo-form-item__label">装车照片</span>
           </el-tooltip>
         </template>
@@ -177,7 +180,12 @@
             :key="url"
             class="photo-item"
           >
-            <el-image :src="url" fit="cover" :preview-src-list="form.photoUrls" :initial-index="idx" />
+            <el-image
+              :src="url"
+              fit="cover"
+              :preview-src-list="form.photoUrls"
+              :initial-index="idx"
+            />
             <el-icon class="photo-remove" @click="removePhoto(idx)">
               <Close />
             </el-icon>
@@ -194,7 +202,6 @@
           </el-upload>
         </div>
       </el-form-item>
-
     </el-form>
 
     <div class="load-history-entry">
@@ -312,7 +319,13 @@
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
-  import { Check, Close, EditPen, Picture, Plus } from '@element-plus/icons-vue';
+  import {
+    Check,
+    Close,
+    EditPen,
+    Picture,
+    Plus
+  } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import { listTaskSegments, listTaskWaybillItems } from '@/api/operation/task';
   import {
@@ -329,7 +342,8 @@
   import { formatDateTime } from '@/utils/date-util';
   import {
     DISPATCH_TYPE_DEFAULT,
-    DISPATCH_TYPE_HEAVY
+    DISPATCH_TYPE_HEAVY,
+    ITEM_STATUS
   } from '../../task/status-config';
 
   const props = defineProps<{
@@ -388,8 +402,13 @@
   const loadableItems = computed(() => {
     const oid = form.dispatchOrderId;
     return items.value.filter((it) => {
-      if ((it.status ?? 0) >= 1) return false;
-      if (oid != null && it.dispatchOrderId != null && it.dispatchOrderId !== oid) {
+      if ((it.status ?? ITEM_STATUS.PENDING_LOAD) >= ITEM_STATUS.LOADED)
+        return false;
+      if (
+        oid != null &&
+        it.dispatchOrderId != null &&
+        it.dispatchOrderId !== oid
+      ) {
         return false;
       }
       return true;
@@ -420,7 +439,9 @@
     const time = formatDateTime(latest.happenedAt) || '--';
     const qty = latest.quantity ?? 0;
     const loc = latest.location?.trim();
-    return loc ? `最近 ${time} · ${loc} · ${qty} 台` : `最近 ${time} · ${qty} 台`;
+    return loc
+      ? `最近 ${time} · ${loc} · ${qty} 台`
+      : `最近 ${time} · ${qty} 台`;
   });
 
   const remarkFilled = computed(() => !!form.remark.trim());
@@ -439,7 +460,9 @@
 
   const loadedQuantity = computed(() =>
     items.value
-      .filter((it) => (it.status ?? 0) >= 1)
+      .filter(
+        (it) => (it.status ?? ITEM_STATUS.PENDING_LOAD) >= ITEM_STATUS.LOADED
+      )
       .reduce((s, it) => s + (it.quantity || 0), 0)
   );
 
@@ -560,9 +583,7 @@
       return;
     }
     if (!task.value?.id) return;
-    const selected = items.value.filter((it) =>
-      form.itemIds.includes(it.id!)
-    );
+    const selected = items.value.filter((it) => form.itemIds.includes(it.id!));
     if (!selected.length) {
       EleMessage.warning({ message: '请至少勾选一行', plain: true });
       return;
