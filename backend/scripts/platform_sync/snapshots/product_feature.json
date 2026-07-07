@@ -704,6 +704,15 @@
     "status": 1
   },
   {
+    "feature_code": "bi_cockpit_profit",
+    "feature_name": "经营驾驶舱-利润总览",
+    "module": "insight",
+    "description": null,
+    "required_tables": null,
+    "sort_order": 95,
+    "status": 1
+  },
+  {
     "feature_code": "ecosystem_cargo_hall",
     "feature_name": "货源大厅",
     "module": "ecosystem",

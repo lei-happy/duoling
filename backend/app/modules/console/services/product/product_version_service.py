@@ -35,6 +35,9 @@ class ProductVersionService:
         version = ProductVersion(**data.model_dump())
         db.add(version)
         await db.flush()
+        # server_default 生成的 created_at/updated_at 在 flush 后未回填，
+        # 需 refresh 以避免响应序列化时触发异步懒加载(MissingGreenlet)
+        await db.refresh(version)
         return version
 
     @staticmethod
@@ -83,6 +86,8 @@ class ProductVersionService:
             setattr(version, key, value)
 
         await db.flush()
+        # 更新会刷新 updated_at(server_default/onupdate)，refresh 回填后再序列化
+        await db.refresh(version)
         return version
 
     @staticmethod

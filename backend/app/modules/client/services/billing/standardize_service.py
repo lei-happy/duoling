@@ -54,7 +54,11 @@ def _expand_leaf_name_variants(leaf: str) -> list[str]:
     seen: set[str] = set()
     trials = [s]
     last_ch = s[-1]
-    if last_ch not in "省市县区盟州旗":
+    # 仅当末字为标准行政后缀「省/市/县/区」时才认为地名已完整、跳过补全。
+    # 「州/盟/旗」既可能是完整行政后缀（锡林郭勒盟），也可能是地级市名词干末字
+    # （达州/沧州/兰州，库中实为「…州市」），故对这类地名仍需补「市」等候选，
+    # 避免用户省略「市」后缀时层级路径解析失败（BUG-CLI-001）。
+    if last_ch not in "省市县区":
         for sfx in ("市", "地区", "盟", "州", "县", "区", "旗"):
             trials.append(s + sfx)
     for t in trials:

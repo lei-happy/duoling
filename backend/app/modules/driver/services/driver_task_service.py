@@ -164,7 +164,14 @@ class DriverTaskService:
         list_stmt = (
             select(Task)
             .where(*base_conds)
-            .order_by(Task.planned_load_time.desc().nullslast(), Task.id.desc())
+            # MySQL 不支持 `NULLS LAST` 字面量语法（仅 PG/Oracle 支持），
+            # 用 `col IS NULL` 布尔表达式升序模拟"空值置底"：
+            # 非空(0) 排在空值(1) 前，再按计划装车时间倒序、id 倒序。
+            .order_by(
+                Task.planned_load_time.is_(None).asc(),
+                Task.planned_load_time.desc(),
+                Task.id.desc(),
+            )
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
