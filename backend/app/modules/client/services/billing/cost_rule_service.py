@@ -33,8 +33,8 @@ _SNAPSHOT_FIELDS = [
     "qty_dimension", "multiply_by_qty", "unit_price", "distance_km",
     "min_amount", "max_amount", "round_mode", "tiers_json", "percent_base",
     "rate_percent", "payee_type", "origin_region_id", "destination_region_id",
-    "is_bidirectional", "brand_id", "series_id", "price_type", "priority",
-    "status", "rule_version",
+    "is_bidirectional", "brand_id", "series_id", "conditions_json",
+    "price_type", "priority", "status", "rule_version",
 ]
 
 
@@ -180,6 +180,7 @@ class CostRuleService:
             is_bidirectional=data.isBidirectional,
             brand_id=data.brandId,
             series_id=data.seriesId,
+            conditions_json=data.conditionsJson,
             price_type=data.priceType,
             priority=data.priority,
             effective_date=data.effectiveDate,
@@ -224,7 +225,8 @@ class CostRuleService:
             "origin": "origin", "destinationRegionId": "destination_region_id",
             "destinationCode": "destination_code", "destination": "destination",
             "isBidirectional": "is_bidirectional", "brandId": "brand_id",
-            "seriesId": "series_id", "priceType": "price_type",
+            "seriesId": "series_id", "conditionsJson": "conditions_json",
+            "priceType": "price_type",
             "priority": "priority", "effectiveDate": "effective_date",
             "expiryDate": "expiry_date", "status": "status", "remark": "remark",
         }

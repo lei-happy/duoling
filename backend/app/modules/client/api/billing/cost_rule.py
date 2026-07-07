@@ -82,6 +82,7 @@ class _CheckConflictPayload(BaseModel):
     destinationRegionId: Optional[int] = None
     brandId: Optional[int] = None
     seriesId: Optional[int] = None
+    conditionsJson: Optional[dict] = None
     priceType: int = 0
     effectiveDate: Optional[date] = None
     expiryDate: Optional[date] = None
@@ -102,6 +103,7 @@ async def check_conflict(
         destination_region_id=payload.destinationRegionId,
         brand_id=payload.brandId,
         series_id=payload.seriesId,
+        conditions_json=payload.conditionsJson,
         price_type=payload.priceType,
         effective_date=payload.effectiveDate,
         expiry_date=payload.expiryDate,

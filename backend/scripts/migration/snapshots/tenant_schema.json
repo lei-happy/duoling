@@ -5033,6 +5033,15 @@
           "comment": "标准品牌ID，空表示不限品牌"
         },
         {
+          "name": "conditions_json",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "AND/OR 条件树（可插拔条件类型），空则回退 legacy 列(线路/车型)"
+        },
+        {
           "name": "created_at",
           "type": "DATETIME",
           "nullable": false,

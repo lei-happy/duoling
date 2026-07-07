@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 
-COST_ENGINE_VERSION = "cost-v1.0.0"
+COST_ENGINE_VERSION = "cost-v2.0.0"
 
 
 # ---- 计价方式 ----
@@ -85,6 +85,24 @@ SCOPE_SCORE = {
     3: 35_000,   # 指定运力
     1: 30_000,   # 指定承运商
     0: 10_000,   # 全局默认
+}
+
+# ---- 通用条件特异度评分（条件引擎 v2）----
+# region_route 复用 LINE_SCORE+DIR_SCORE、vehicle_brand/series 复用 MODEL_SCORE，
+# 数值口径与收入侧一致；以下为通用等值/区间/包含类条件的固定特异度权重。
+# 量级低于线路(万级)与车型(千级)分，避免通用条件盖过线路/车型的层级语义。
+CONDITION_SCORE = {
+    "carrier": 6_500,        # 指定承运商（强特异）
+    "capacity": 6_000,       # 指定运力
+    "driver": 5_500,         # 指定司机
+    "dispatch_route": 4_500,  # 调令起终点
+    "text_contains": 4_000,  # 地名包含
+    "mileage_range": 3_500,  # 里程区间
+    "quantity_range": 3_000,  # 台数区间
+    "vehicle_attr": 2_500,   # 运输车辆属性
+    "driver_attr": 2_500,    # 司机属性
+    "carrier_type": 1_500,   # 承运方式
+    "enterprise": 1_000,     # 经营主体
 }
 
 

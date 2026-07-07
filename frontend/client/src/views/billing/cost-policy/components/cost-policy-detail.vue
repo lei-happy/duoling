@@ -86,20 +86,12 @@
               width="90"
               align="right"
             />
-            <el-table-column label="线路" min-width="150">
+            <el-table-column label="适用条件" min-width="200">
               <template #default="{ row }">
-                <span v-if="row.origin || row.destination">
-                  {{ row.origin || '任意' }} → {{ row.destination || '任意' }}
-                </span>
-                <span v-else>不限</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="车型" width="110" align="center">
-              <template #default="{ row }">
-                <span v-if="row.brandId || row.seriesId">
-                  品牌{{ row.brandId || '-' }}/车系{{ row.seriesId || '-' }}
-                </span>
-                <span v-else>不限</span>
+                <el-tag v-if="row.conditionsJson" size="small" type="warning">
+                  高级
+                </el-tag>
+                <span class="cond-summary-text">{{ ruleSummary(row) }}</span>
               </template>
             </el-table-column>
             <el-table-column label="状态" width="70" align="center">
@@ -160,7 +152,12 @@
   import type {
     CostPolicy,
     CostRule,
-    CostMeta
+    CostMeta,
+    ConditionType
+  } from '@/api/billing/cost-policy/model';
+  import {
+    legacyToConditionTree,
+    summarizeCondition
   } from '@/api/billing/cost-policy/model';
 
   const props = defineProps<{
@@ -179,6 +176,17 @@
   const ruleEditVisible = ref(false);
   const ruleEditData = ref<CostRule | null>(null);
   const activeNames = ref<string[]>([]);
+
+  const typeMap = computed<Record<string, ConditionType>>(() => {
+    const m: Record<string, ConditionType> = {};
+    (props.meta.conditionTypes || []).forEach((c) => (m[c.key] = c));
+    return m;
+  });
+
+  const ruleSummary = (row: CostRule): string => {
+    const tree = row.conditionsJson || legacyToConditionTree(row);
+    return summarizeCondition(tree, typeMap.value);
+  };
 
   interface RuleGroup {
     feeType: string;

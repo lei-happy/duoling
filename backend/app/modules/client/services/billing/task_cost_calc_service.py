@@ -27,23 +27,32 @@ from app.modules.client.models.billing.task_cost_result import (
     TaskCostResultItem,
 )
 from app.modules.client.models.capacity.self_capacity.capacity import Capacity
+from app.modules.client.models.capacity.self_capacity.driver.driver import Driver
+from app.modules.client.models.capacity.self_capacity.driver.driver_operation import (
+    DriverOperation,
+)
+from app.modules.client.models.capacity.self_capacity.vehicle import Vehicle
+from app.modules.client.models.capacity.self_capacity.vehicle_ext import VehicleExt
 from app.modules.client.models.billing.freight_calc_result import WaybillFreightResult
 from app.modules.client.models.region.biz_region import BizRegion
 from app.modules.client.models.route import Route
 from app.modules.client.models.task.task import Task
+from app.modules.client.models.task.task_dispatch_order import TaskDispatchOrder
 from app.modules.client.models.task.task_waybill_item import TaskWaybillItem
+from app.modules.client.services.billing.conditions import collect_leaf_types
 from app.modules.client.services.billing.cost_constants import (
     COST_ENGINE_VERSION,
     ERR_AREA_NOT_RECOGNIZED,
     ERR_POLICY_NOT_FOUND,
     FEE_TYPES,
     PM_PERCENTAGE,
+    PM_PER_TON_KM,
     carrier_cost_type_of,
 )
 from app.modules.client.services.billing.cost_matcher import (
+    CostFactContext,
     CostMatcher,
     FeeItemResult,
-    TaskCostContext,
     VehicleGroup,
 )
 from app.modules.client.services.billing.standardize_service import (
@@ -203,11 +212,32 @@ class TaskCostCalcService:
         return rules
 
     @staticmethod
+    def _region_ids_in_tree(node: Optional[dict]) -> set[int]:
+        """收集条件树里 region_route 叶子引用的行政区 ID（用于层级评分缓存）。"""
+        ids: set[int] = set()
+        if not node:
+            return ids
+        if "type" in node:
+            if node.get("type") == "region_route":
+                for k in ("originRegionId", "origin_region_id",
+                          "destinationRegionId", "destination_region_id"):
+                    v = node.get(k)
+                    if v:
+                        ids.add(int(v))
+            return ids
+        for ch in node.get("children") or []:
+            ids |= TaskCostCalcService._region_ids_in_tree(ch)
+        return ids
+
+    @staticmethod
     async def _build_region_level_cache(
         db: AsyncSession, rules: list[CostRule]
     ) -> dict[int, str]:
         ids = {r.origin_region_id for r in rules if r.origin_region_id}
         ids |= {r.destination_region_id for r in rules if r.destination_region_id}
+        for r in rules:
+            if getattr(r, "conditions_json", None):
+                ids |= TaskCostCalcService._region_ids_in_tree(r.condition_tree())
         if not ids:
             return {}
         r = await db.execute(
@@ -273,6 +303,64 @@ class TaskCostCalcService:
             if row[0] is not None:
                 total += Decimal(str(row[0]))
         return total
+
+    @staticmethod
+    async def _load_dispatch_orders(
+        db: AsyncSession, task_id: int
+    ) -> list[TaskDispatchOrder]:
+        if not task_id:
+            return []
+        r = await db.execute(
+            select(TaskDispatchOrder).where(
+                TaskDispatchOrder.task_id == task_id,
+                TaskDispatchOrder.is_deleted == 0,
+            ).order_by(TaskDispatchOrder.order_no.asc())
+        )
+        return list(r.scalars().all())
+
+    @staticmethod
+    async def _load_driver_facts(
+        db: AsyncSession, driver_id: Optional[int]
+    ) -> tuple[Optional[Driver], Optional[DriverOperation]]:
+        if not driver_id:
+            return None, None
+        rd = await db.execute(
+            select(Driver).where(Driver.id == driver_id, Driver.is_deleted == 0)
+        )
+        driver = rd.scalar_one_or_none()
+        ro = await db.execute(
+            select(DriverOperation).where(
+                DriverOperation.driver_id == driver_id,
+                DriverOperation.is_deleted == 0,
+            )
+        )
+        return driver, ro.scalar_one_or_none()
+
+    @staticmethod
+    async def _load_vehicle_facts(
+        db: AsyncSession, capacity_id: Optional[int]
+    ) -> tuple[Optional[Vehicle], Optional[VehicleExt]]:
+        if not capacity_id:
+            return None, None
+        rc = await db.execute(
+            select(Capacity.vehicle_id).where(
+                Capacity.id == capacity_id, Capacity.is_deleted == 0,
+            )
+        )
+        row = rc.first()
+        vehicle_id = row[0] if row else None
+        if not vehicle_id:
+            return None, None
+        rv = await db.execute(
+            select(Vehicle).where(Vehicle.id == vehicle_id, Vehicle.is_deleted == 0)
+        )
+        vehicle = rv.scalar_one_or_none()
+        re = await db.execute(
+            select(VehicleExt).where(
+                VehicleExt.vehicle_id == vehicle_id, VehicleExt.is_deleted == 0,
+            )
+        )
+        return vehicle, re.scalar_one_or_none()
 
     # ---------- 内部：单次计算（不写库） ----------
 
@@ -382,7 +470,37 @@ class TaskCostCalcService:
         if any(r.pricing_method == PM_PERCENTAGE for r in rules):
             freight_income = await TaskCostCalcService._load_freight_income(db, task.id)
 
-        ctx = TaskCostContext(
+        # 条件引擎 v2：按"规则集用到的条件类型"决定富事实的按需加载，避免多余 DB 访问
+        needed_types: set[str] = set()
+        for rule in rules:
+            needed_types |= collect_leaf_types(rule.condition_tree())
+
+        dispatch_orders: list[TaskDispatchOrder] = []
+        if needed_types & {"dispatch_route", "text_contains", "mileage_range"}:
+            dispatch_orders = await TaskCostCalcService._load_dispatch_orders(
+                db, task.id,
+            )
+
+        driver_obj = driver_op = None
+        if "driver_attr" in needed_types:
+            driver_obj, driver_op = await TaskCostCalcService._load_driver_facts(
+                db, driver_id,
+            )
+
+        transport_vehicle = vehicle_ext = None
+        need_vehicle = "vehicle_attr" in needed_types
+        has_ton_rule = any(r.pricing_method == PM_PER_TON_KM for r in rules)
+        if need_vehicle or has_ton_rule:
+            transport_vehicle, vehicle_ext = (
+                await TaskCostCalcService._load_vehicle_facts(db, task.capacity_id)
+            )
+
+        # 吨位：per_ton_km 缺失里程/吨位一直不可用；以运输车辆核定载重兜底
+        ton = None
+        if has_ton_rule and vehicle_ext is not None and vehicle_ext.load_capacity:
+            ton = Decimal(str(vehicle_ext.load_capacity))
+
+        ctx = CostFactContext(
             carrier_type=task.carrier_type,
             transport_date=billing_date,
             origin=origin,
@@ -391,9 +509,19 @@ class TaskCostCalcService:
             vehicle_groups=vehicle_groups,
             distance_km=distance_km,
             distance_source="biz_route" if distance_km is not None else None,
+            ton=ton,
             freight_income=freight_income,
             payee_id=payee_id,
             payee_name=payee_name,
+            carrier_id=task.carrier_id,
+            capacity_id=task.capacity_id,
+            driver_id=driver_id,
+            enterprise_id=getattr(task, "enterprise_id", None),
+            dispatch_orders=dispatch_orders,
+            driver=driver_obj,
+            driver_operation=driver_op,
+            transport_vehicle=transport_vehicle,
+            vehicle_ext=vehicle_ext,
         )
 
         # 按 fee_type 分组
@@ -622,30 +750,63 @@ class TaskCostCalcService:
     # ---------- 受影响任务查找 ----------
 
     @staticmethod
+    def _extract_region_routes(node: Optional[dict]) -> list[dict]:
+        """从条件树里收集顶层 AND 语义下的 region_route 叶子（用于粗筛）。
+
+        仅在"树顶层为 AND 且含 region_route"时用于行政区收敛；OR 树或不含
+        region_route 时返回空，交由更宽的召回 + 精算兜底。
+        """
+        if not node:
+            return []
+        if "type" in node:
+            return [node] if node.get("type") == "region_route" else []
+        logic = (node.get("logic") or "and").lower()
+        if logic != "and":
+            return []
+        out: list[dict] = []
+        for ch in node.get("children") or []:
+            if isinstance(ch, dict) and ch.get("type") == "region_route":
+                out.append(ch)
+        return out
+
+    @staticmethod
     async def find_affected_tasks_for_rule(
         db: AsyncSession, rule: CostRule, *, only_unlocked: bool = True,
     ) -> list[int]:
-        """成本规则变更后，粗匹配受影响任务 ID。"""
+        """成本规则变更后，粗匹配受影响任务 ID。
+
+        条件树含顶层 region_route 时保留行政区粗筛；否则放宽到未锁定的在办任务，
+        由精算阶段兜底（性能权衡：召回优先，避免漏算）。
+        """
         conds = [Task.is_deleted == 0, Task.status.notin_((7, 9))]
         if only_unlocked:
             conds.append(Task.is_locked == 0)
-        if rule.origin_region_id and rule.destination_region_id:
-            if rule.is_bidirectional == 1:
-                conds.append(
-                    and_(
-                        Task.origin_region_id == rule.origin_region_id,
-                        Task.destination_region_id == rule.destination_region_id,
-                    )
+
+        routes = TaskCostCalcService._extract_region_routes(rule.condition_tree())
+        route_ors = []
+        for rt in routes:
+            oid = rt.get("originRegionId") or rt.get("origin_region_id")
+            did = rt.get("destinationRegionId") or rt.get("destination_region_id")
+            bidir = int(rt.get("bidirectional") or rt.get("is_bidirectional") or 0)
+            if not oid or not did:
+                continue
+            forward = and_(
+                Task.origin_region_id == oid,
+                Task.destination_region_id == did,
+            )
+            if bidir == 1:
+                route_ors.append(
+                    forward
                     | and_(
-                        Task.origin_region_id == rule.destination_region_id,
-                        Task.destination_region_id == rule.origin_region_id,
+                        Task.origin_region_id == did,
+                        Task.destination_region_id == oid,
                     )
                 )
             else:
-                conds.append(and_(
-                    Task.origin_region_id == rule.origin_region_id,
-                    Task.destination_region_id == rule.destination_region_id,
-                ))
+                route_ors.append(forward)
+        if route_ors:
+            conds.append(or_(*route_ors))
+
         r = await db.execute(select(Task.id).where(*conds))
         return [row[0] for row in r.all()]
 

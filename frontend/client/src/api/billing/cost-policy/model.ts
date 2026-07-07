@@ -55,6 +55,7 @@ export interface CostRule {
   isBidirectional?: number;
   brandId?: number | null;
   seriesId?: number | null;
+  conditionsJson?: ConditionNode | null;
   priceType?: number;
   priority?: number;
   ruleVersion?: number;
@@ -70,7 +71,35 @@ export interface TierSeg {
   unitPrice: number;
 }
 
-/** 费用类型 / 计价方式元数据 */
+/** 条件树节点：分组（logic+children）或叶子（type+op+value…） */
+export interface ConditionNode {
+  // 分组
+  logic?: 'and' | 'or';
+  children?: ConditionNode[];
+  // 叶子
+  type?: string;
+  op?: string;
+  value?: unknown;
+  field?: string;
+  negate?: boolean;
+  // region_route 叶子
+  originRegionId?: number | null;
+  destinationRegionId?: number | null;
+  bidirectional?: number;
+  [key: string]: unknown;
+}
+
+/** 条件类型元数据（由后端 registry.describe_all 下发） */
+export interface ConditionType {
+  key: string;
+  label: string;
+  valueType: string;
+  operators: string[];
+  optionSource?: string | null;
+  fields?: { value: string; label: string }[];
+}
+
+/** 费用类型 / 计价方式 / 条件类型元数据 */
 export interface CostMeta {
   feeTypes: {
     code: string;
@@ -85,6 +114,55 @@ export interface CostMeta {
     label: string;
     qtyDimension: string | null;
   }[];
+  conditionTypes?: ConditionType[];
+}
+
+/** 由 legacy 列合成条件树（编辑存量规则且无 conditionsJson 时回显用） */
+export function legacyToConditionTree(rule: CostRule): ConditionNode {
+  const children: ConditionNode[] = [];
+  if (rule.originRegionId != null || rule.destinationRegionId != null) {
+    children.push({
+      type: 'region_route',
+      originRegionId: rule.originRegionId ?? null,
+      destinationRegionId: rule.destinationRegionId ?? null,
+      bidirectional: rule.isBidirectional ?? 0
+    });
+  }
+  if (rule.seriesId != null) {
+    children.push({ type: 'vehicle_series', op: 'eq', value: rule.seriesId });
+  } else if (rule.brandId != null) {
+    children.push({ type: 'vehicle_brand', op: 'eq', value: rule.brandId });
+  }
+  return { logic: 'and', children };
+}
+
+/** 条件树 → 人类可读摘要串（列表/详情/trace 展示用） */
+export function summarizeCondition(
+  node?: ConditionNode | null,
+  typeMap?: Record<string, ConditionType>
+): string {
+  if (!node) return '不限';
+  // 分组
+  if (node.children !== undefined || node.logic !== undefined) {
+    const kids = (node.children || [])
+      .map((c) => summarizeCondition(c, typeMap))
+      .filter((s) => s && s !== '不限');
+    if (!kids.length) return '不限';
+    const sep = node.logic === 'or' ? ' 或 ' : ' 且 ';
+    return kids.length > 1 ? `(${kids.join(sep)})` : kids[0];
+  }
+  // 叶子
+  const label = typeMap?.[node.type || '']?.label || node.type || '条件';
+  const neg = node.negate ? '非' : '';
+  if (node.type === 'region_route') {
+    const dir = node.bidirectional ? '↔' : '→';
+    return `${neg}线路[${node.originRegionId ?? '*'}${dir}${node.destinationRegionId ?? '*'}]`;
+  }
+  const v = Array.isArray(node.value)
+    ? (node.value as unknown[]).join('~')
+    : String(node.value ?? '');
+  const field = node.field ? `.${node.field}` : '';
+  return `${neg}${label}${field} ${node.op || ''} ${v}`.trim();
 }
 
 /** 费用中心：跨政策规则（含所属政策信息） */

@@ -34,6 +34,7 @@ class CostRuleCreate(BaseModel):
     isBidirectional: int = 0
     brandId: Optional[int] = None
     seriesId: Optional[int] = None
+    conditionsJson: Optional[dict] = None
     priceType: int = 0
     priority: int = 0
     effectiveDate: Optional[date] = None
@@ -66,6 +67,7 @@ class CostRuleUpdate(BaseModel):
     isBidirectional: Optional[int] = None
     brandId: Optional[int] = None
     seriesId: Optional[int] = None
+    conditionsJson: Optional[dict] = None
     priceType: Optional[int] = None
     priority: Optional[int] = None
     effectiveDate: Optional[date] = None
@@ -101,6 +103,7 @@ class CostRuleOut(BaseModel):
     isBidirectional: int
     brandId: Optional[int] = None
     seriesId: Optional[int] = None
+    conditionsJson: Optional[dict] = None
     priceType: int
     priority: int
     ruleVersion: int
@@ -139,6 +142,7 @@ class CostRuleOut(BaseModel):
             isBidirectional=m.is_bidirectional,
             brandId=m.brand_id,
             seriesId=m.series_id,
+            conditionsJson=getattr(m, "conditions_json", None),
             priceType=m.price_type,
             priority=m.priority,
             ruleVersion=m.rule_version,

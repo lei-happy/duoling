@@ -20,6 +20,9 @@ from typing import Optional
 
 from app.modules.client.models.billing.cost_policy import CostPolicy
 from app.modules.client.models.billing.cost_rule import CostRule
+from app.modules.client.services.billing.conditions import (
+    evaluate_tree,
+)
 from app.modules.client.services.billing.cost_constants import (
     COST_ENGINE_VERSION,
     ERR_DISTANCE_NOT_FOUND,
@@ -40,18 +43,18 @@ from app.modules.client.services.billing.cost_constants import (
     fee_type_name,
 )
 from app.modules.client.services.billing.freight_matcher import (
-    DIR_SCORE,
-    LINE_SCORE,
     MODEL_SCORE,
     PRICE_TYPE_SCORE,
     VERSION_BONUS_PER,
-    FreightMatcher,
 )
 from app.modules.client.services.billing.standardize_service import (
     REGION_LEVEL_LABEL,
     RegionResolution,
     VehicleResolution,
 )
+
+# 未限线路时的"通用线路分"（与旧引擎 general 分支口径一致）
+_LINE_DEFAULT_SCORE = 5_000
 
 
 # ---- 数据结构 ----
@@ -66,8 +69,13 @@ class VehicleGroup:
 
 
 @dataclass
-class TaskCostContext:
-    """任务级别的成本匹配上下文"""
+class CostFactContext:
+    """任务级别的成本匹配"富事实"上下文（条件引擎 v2）。
+
+    在原 TaskCostContext 基础上补充调令 / 司机 / 运输车辆 / 承运主体等事实，
+    供可插拔条件评估器按需读取。编排层按"规则集用到的条件类型"决定是否加载，
+    避免不必要的 DB 访问。
+    """
 
     carrier_type: Optional[int]
     transport_date: date
@@ -81,6 +89,27 @@ class TaskCostContext:
     freight_income: Optional[Decimal] = None       # 收入侧运费合计（percentage 基数）
     payee_id: Optional[int] = None
     payee_name: Optional[str] = None
+
+    # ---- 承运 / 主体维度 ----
+    carrier_id: Optional[int] = None
+    capacity_id: Optional[int] = None
+    driver_id: Optional[int] = None
+    enterprise_id: Optional[int] = None
+
+    # ---- 按需加载的富事实（可空）----
+    dispatch_orders: list = field(default_factory=list)   # list[TaskDispatchOrder]
+    driver: Optional[object] = None                        # Driver
+    driver_operation: Optional[object] = None              # DriverOperation
+    transport_vehicle: Optional[object] = None             # Vehicle
+    vehicle_ext: Optional[object] = None                   # VehicleExt
+
+    # ---- 评估期临时注入（逐车型组）----
+    current_vehicle: Optional[VehicleResolution] = None
+    region_level_cache: dict = field(default_factory=dict)
+
+
+# 向后兼容别名：历史代码以 TaskCostContext 引用
+TaskCostContext = CostFactContext
 
 
 @dataclass
@@ -230,92 +259,71 @@ class CostMatcher:
     # ---------- 候选构造与评分 ----------
 
     @staticmethod
-    def _build_candidates_for_rule(
+    def _build_candidate_for_rule(
         rule: CostRule,
         policy: CostPolicy,
-        ctx: TaskCostContext,
+        ctx: CostFactContext,
         vehicle: VehicleResolution,
         region_level_cache: dict[int, str],
-    ) -> list[_Candidate]:
-        out: list[_Candidate] = []
+    ) -> Optional[_Candidate]:
+        """用条件树求值单条规则；返回 None 表示不命中（规则淘汰）。
 
-        # 车型维度
-        model_type = FreightMatcher._model_match_type(rule, vehicle)
-        if model_type is None:
-            return out
+        评分 = scope + 条件树特异度分 + 维度默认分（未命中线路/车型时补齐）
+             + price_type + version + policy.priority + rule.priority。
+        维度默认分保证存量 legacy 规则的命中与分数与旧引擎完全一致。
+        """
+        # 逐车型组注入评估上下文
+        ctx.current_vehicle = vehicle
+        ctx.region_level_cache = region_level_cache
+
+        tree = rule.condition_tree()
+        match = evaluate_tree(tree, ctx)
+        if match is None:
+            return None
 
         scope_s = SCOPE_SCORE.get(policy.scope_type, 0)
         scope_label = _SCOPE_LABEL.get(policy.scope_type, "global")
+        price_type_s = PRICE_TYPE_SCORE.get(rule.price_type, 0)
+        version_s = (rule.rule_version or 1) * VERSION_BONUS_PER
 
-        # 线路维度：规则未限线路 → 通用命中
-        if rule.origin_region_id is None and rule.destination_region_id is None:
-            model_s = MODEL_SCORE.get(model_type, 0)
-            price_type_s = PRICE_TYPE_SCORE.get(rule.price_type, 0)
-            version_s = (rule.rule_version or 1) * VERSION_BONUS_PER
-            total = (
-                scope_s + 5_000 + model_s + price_type_s + version_s
-                + (policy.priority or 0) + (rule.priority or 0)
-            )
-            out.append(_Candidate(
-                rule=rule, policy=policy, scope_matched=scope_label,
-                direction="general",
-                origin_match_level="any", destination_match_level="any",
-                origin_match_region_id=0, destination_match_region_id=0,
-                model_match_type=model_type, score=total,
-                score_breakdown={
-                    "scope": scope_s, "scope_label": scope_label,
-                    "line": 5_000, "line_pair": "any",
-                    "model": model_s, "model_layer": model_type,
-                    "price_type": price_type_s, "version": version_s,
-                    "policy_priority": (policy.priority or 0),
-                    "rule_priority": (rule.priority or 0),
-                },
-            ))
-            return out
+        line_default = 0 if match.facts.get("line_matched") else _LINE_DEFAULT_SCORE
+        model_default = (
+            0 if match.facts.get("model_match_type") else MODEL_SCORE["general"]
+        )
 
-        # 限线路：按区域链路展开评分
-        origin_chain = [(n.region_id, n.level_label) for n in ctx.origin.chain]
-        dest_chain = [(n.region_id, n.level_label) for n in ctx.destination.chain]
-        for oid, ol in origin_chain:
-            for did, dl in dest_chain:
-                direction = FreightMatcher._direction_for(rule, oid, did)
-                if direction is None:
-                    continue
-                rule_o_level, rule_d_level = FreightMatcher._resolve_rule_levels(
-                    rule, region_level_cache
-                )
-                line_s = LINE_SCORE.get((rule_o_level, rule_d_level), 5_000)
-                model_s = MODEL_SCORE.get(model_type, 0)
-                dir_s = DIR_SCORE.get(direction, 0)
-                price_type_s = PRICE_TYPE_SCORE.get(rule.price_type, 0)
-                version_s = (rule.rule_version or 1) * VERSION_BONUS_PER
-                total = (
-                    scope_s + line_s + model_s + dir_s + price_type_s + version_s
-                    + (policy.priority or 0) + (rule.priority or 0)
-                )
-                out.append(_Candidate(
-                    rule=rule, policy=policy, scope_matched=scope_label,
-                    direction=direction,
-                    origin_match_level=ol, destination_match_level=dl,
-                    origin_match_region_id=oid, destination_match_region_id=did,
-                    model_match_type=model_type, score=total,
-                    score_breakdown={
-                        "scope": scope_s, "scope_label": scope_label,
-                        "line": line_s, "line_pair": f"{rule_o_level}->{rule_d_level}",
-                        "model": model_s, "model_layer": model_type,
-                        "direction": dir_s, "direction_label": direction,
-                        "price_type": price_type_s, "version": version_s,
-                        "policy_priority": (policy.priority or 0),
-                        "rule_priority": (rule.priority or 0),
-                    },
-                ))
-        return out
+        total = (
+            scope_s + match.score_delta + line_default + model_default
+            + price_type_s + version_s
+            + (policy.priority or 0) + (rule.priority or 0)
+        )
+
+        model_layer = match.facts.get("model_match_type", "general")
+        direction = match.facts.get("direction", "general")
+        return _Candidate(
+            rule=rule, policy=policy, scope_matched=scope_label,
+            direction=direction,
+            origin_match_level=match.facts.get("origin_level", "any"),
+            destination_match_level=match.facts.get("destination_level", "any"),
+            origin_match_region_id=match.facts.get("matched_origin", 0),
+            destination_match_region_id=match.facts.get("matched_destination", 0),
+            model_match_type=model_layer, score=total,
+            score_breakdown={
+                "scope": scope_s, "scope_label": scope_label,
+                "conditions": match.score_delta,
+                "line_default": line_default, "model_default": model_default,
+                "model_layer": model_layer, "direction_label": direction,
+                "price_type": price_type_s, "version": version_s,
+                "policy_priority": (policy.priority or 0),
+                "rule_priority": (rule.priority or 0),
+                "condition_trace": match.trace,
+            },
+        )
 
     @staticmethod
     def _select_best(
         candidates: list[CostRule],
         policy_map: dict[int, CostPolicy],
-        ctx: TaskCostContext,
+        ctx: CostFactContext,
         vehicle: VehicleResolution,
         region_level_cache: dict[int, str],
     ) -> tuple[Optional[_Candidate], list[_Candidate], bool]:
@@ -325,9 +333,11 @@ class CostMatcher:
             policy = policy_map.get(rule.policy_id)
             if not policy:
                 continue
-            all_cands.extend(CostMatcher._build_candidates_for_rule(
+            cand = CostMatcher._build_candidate_for_rule(
                 rule, policy, ctx, vehicle, region_level_cache,
-            ))
+            )
+            if cand is not None:
+                all_cands.append(cand)
         if not all_cands:
             return None, [], False
 

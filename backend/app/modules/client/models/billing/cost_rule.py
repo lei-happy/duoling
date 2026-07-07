@@ -131,6 +131,13 @@ class CostRule(TenantModelBase):
         Integer, nullable=True, comment="标准车系ID，空表示不限车型"
     )
 
+    # 条件引擎 v2：AND/OR 条件树（JSON）。为空时由 legacy 列合成等价条件树，
+    # 保证存量规则零迁移向后兼容。结构见 conditions 包 base.py。
+    conditions_json: Mapped[Optional[dict]] = mapped_column(
+        JSON, nullable=True,
+        comment="AND/OR 条件树（可插拔条件类型），空则回退 legacy 列(线路/车型)",
+    )
+
     effective_date: Mapped[Optional[date]] = mapped_column(
         Date, nullable=True, comment="规则生效日期（空则继承政策）"
     )
@@ -163,3 +170,32 @@ class CostRule(TenantModelBase):
     updated_by: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="更新人"
     )
+
+    def condition_tree(self) -> dict:
+        """返回本规则的 AND/OR 条件树。
+
+        - conditions_json 非空：直接使用（v2 规则）。
+        - 否则由 legacy 列合成等价 AND 树（线路 region_route + 车型 vehicle_*），
+          使存量规则在新引擎下的命中与评分与旧引擎完全一致（零数据迁移）。
+        """
+        cj = self.conditions_json
+        if cj:
+            return cj
+
+        children: list[dict] = []
+        if self.origin_region_id is not None or self.destination_region_id is not None:
+            children.append({
+                "type": "region_route",
+                "originRegionId": self.origin_region_id,
+                "destinationRegionId": self.destination_region_id,
+                "bidirectional": self.is_bidirectional or 0,
+            })
+        if self.series_id is not None:
+            children.append({
+                "type": "vehicle_series", "op": "eq", "value": self.series_id,
+            })
+        elif self.brand_id is not None:
+            children.append({
+                "type": "vehicle_brand", "op": "eq", "value": self.brand_id,
+            })
+        return {"logic": "and", "children": children}

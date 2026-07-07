@@ -21,6 +21,7 @@ from app.modules.client.schemas.billing.task_cost import (
     TaskCostItemOut,
     TaskCostResultOut,
 )
+from app.modules.client.services.billing.conditions import describe_all
 from app.modules.client.services.billing.cost_constants import FEE_TYPES, PRICING_METHODS
 from app.modules.client.services.billing.task_cost_calc_service import (
     TaskCostCalcService,
@@ -183,5 +184,9 @@ async def get_task_cost_result(
 
 @router.get("/cost-meta")
 async def get_cost_meta(_=Depends(get_current_user)):
-    """费用类型 / 计价方式元数据，供前端下拉。"""
-    return success(data={"feeTypes": FEE_TYPES, "pricingMethods": PRICING_METHODS})
+    """费用类型 / 计价方式 / 条件类型元数据，供前端下拉与动态条件构建器。"""
+    return success(data={
+        "feeTypes": FEE_TYPES,
+        "pricingMethods": PRICING_METHODS,
+        "conditionTypes": describe_all(),
+    })

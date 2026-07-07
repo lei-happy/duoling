@@ -225,6 +225,199 @@ r = CostMatcher.match_fee_type(
 )
 check("扣减项方向", (r[0].direction, r[0].amount), (2, Decimal("50.00")))
 
+# ============================================================
+# 条件引擎 v2：新条件类型 / AND-OR 组合 / conditions_json 回归
+# ============================================================
+
+from types import SimpleNamespace  # noqa: E402
+
+
+def _rule_cond(rid, fee_type, pricing_method, unit_price, conditions_json, **kw):
+    r = _rule(rid, fee_type, pricing_method, unit_price, **kw)
+    r.conditions_json = conditions_json
+    return r
+
+
+def _ctx_facts(total_qty=5, distance_km=None, groups=None, **facts):
+    ctx = _ctx(total_qty=total_qty, distance_km=distance_km, groups=groups)
+    for k, v in facts.items():
+        setattr(ctx, k, v)
+    return ctx
+
+
+# 16) mileage_range between 命中：距离 150 ∈ [100,200] → per_vehicle 5*20=100
+r = CostMatcher.match_fee_type(
+    "highway",
+    [_rule_cond(20, "highway", "per_vehicle", 20, {
+        "logic": "and", "children": [
+            {"type": "mileage_range", "op": "between", "value": [100, 200]},
+        ],
+    })],
+    policy_map, _ctx_facts(total_qty=5, distance_km=150), cache,
+)
+check("里程区间命中", r[0].amount, Decimal("100.00"))
+
+# 17) mileage_range 不命中：距离 300 ∉ [100,200] → 可选项跳过
+r = CostMatcher.match_fee_type(
+    "highway",
+    [_rule_cond(21, "highway", "per_vehicle", 20, {
+        "logic": "and", "children": [
+            {"type": "mileage_range", "op": "between", "value": [100, 200]},
+        ],
+    })],
+    policy_map, _ctx_facts(total_qty=5, distance_km=300), cache,
+)
+check("里程区间不命中跳过", len(r), 0)
+
+# 18) text_contains 命中任务出发地名称（_ctx origin=A区）
+r = CostMatcher.match_fee_type(
+    "loading",
+    [_rule_cond(22, "loading", "per_trip", 80, {
+        "logic": "and", "children": [
+            {"type": "text_contains", "field": "origin_name",
+             "op": "contains", "value": "A区"},
+        ],
+    })],
+    policy_map, _ctx_facts(total_qty=5), cache,
+)
+check("地名包含命中", r[0].amount, Decimal("80.00"))
+
+# 19) AND 组合：里程命中 且 台数区间命中
+r = CostMatcher.match_fee_type(
+    "other",
+    [_rule_cond(23, "other", "per_vehicle", 10, {
+        "logic": "and", "children": [
+            {"type": "mileage_range", "op": "gte", "value": 100},
+            {"type": "quantity_range", "op": "between", "value": [1, 10]},
+        ],
+    })],
+    policy_map, _ctx_facts(total_qty=5, distance_km=150), cache,
+)
+check("AND 组合命中", r[0].amount, Decimal("50.00"))
+
+# 20) AND 组合部分不满足 → 淘汰（可选项跳过）
+r = CostMatcher.match_fee_type(
+    "other",
+    [_rule_cond(24, "other", "per_vehicle", 10, {
+        "logic": "and", "children": [
+            {"type": "mileage_range", "op": "gte", "value": 100},
+            {"type": "quantity_range", "op": "between", "value": [100, 200]},
+        ],
+    })],
+    policy_map, _ctx_facts(total_qty=5, distance_km=150), cache,
+)
+check("AND 部分不满足淘汰", len(r), 0)
+
+# 21) OR 组合：里程不满足 但 地名满足 → 命中
+r = CostMatcher.match_fee_type(
+    "other",
+    [_rule_cond(25, "other", "per_trip", 66, {
+        "logic": "or", "children": [
+            {"type": "mileage_range", "op": "between", "value": [1, 10]},
+            {"type": "text_contains", "field": "destination_name",
+             "op": "contains", "value": "B区"},
+        ],
+    })],
+    policy_map, _ctx_facts(total_qty=5, distance_km=150), cache,
+)
+check("OR 组合命中", r[0].amount, Decimal("66.00"))
+
+# 22) 司机属性：结算模式=1（承包制）命中
+drv_op = SimpleNamespace(settlement_mode=1, driver_type="A", department_id=7,
+                         operation_status=1)
+r = CostMatcher.match_fee_type(
+    "driver_freight",
+    [_rule_cond(26, "driver_freight", "per_vehicle", 120, {
+        "logic": "and", "children": [
+            {"type": "driver_attr", "field": "settlement_mode",
+             "op": "eq", "value": 1},
+        ],
+    })],
+    policy_map, _ctx_facts(total_qty=2, driver_operation=drv_op), cache,
+)
+check("司机属性命中", r[0].amount, Decimal("240.00"))
+
+# 23) 车辆属性：车牌类型=NEW_ENERGY 命中
+veh = SimpleNamespace(plate_category="NEW_ENERGY", status=1,
+                      plate_number="", enterprise_id=None)
+veh_ext = SimpleNamespace(vehicle_type="重型", load_capacity=Decimal("18.5"),
+                          volume_capacity=None)
+r = CostMatcher.match_fee_type(
+    "fuel_subsidy",
+    [_rule_cond(27, "fuel_subsidy", "per_trip", 30, {
+        "logic": "and", "children": [
+            {"type": "vehicle_attr", "field": "plate_category",
+             "op": "eq", "value": "NEW_ENERGY"},
+        ],
+    })],
+    policy_map,
+    _ctx_facts(total_qty=2, transport_vehicle=veh, vehicle_ext=veh_ext),
+    cache,
+)
+check("车辆属性命中", r[0].amount, Decimal("30.00"))
+
+# 24) 车辆属性区间：核定载重 >=15 命中
+r = CostMatcher.match_fee_type(
+    "other",
+    [_rule_cond(28, "other", "per_trip", 12, {
+        "logic": "and", "children": [
+            {"type": "vehicle_attr", "field": "load_capacity",
+             "op": "gte", "value": 15},
+        ],
+    })],
+    policy_map,
+    _ctx_facts(total_qty=2, transport_vehicle=veh, vehicle_ext=veh_ext),
+    cache,
+)
+check("车辆载重区间命中", r[0].amount, Decimal("12.00"))
+
+# 25) negate：非承包制（settlement_mode != 1）时命中；当前=1 → 淘汰
+r = CostMatcher.match_fee_type(
+    "other",
+    [_rule_cond(29, "other", "per_trip", 5, {
+        "logic": "and", "children": [
+            {"type": "driver_attr", "field": "settlement_mode",
+             "op": "eq", "value": 1, "negate": True},
+        ],
+    })],
+    policy_map, _ctx_facts(total_qty=2, driver_operation=drv_op), cache,
+)
+check("negate 取反淘汰", len(r), 0)
+
+# 26) conditions_json 的 region_route 与 legacy 列同分（口径一致）
+route_json = _rule_cond(30, "loading", "per_vehicle", 10, {
+    "logic": "and", "children": [
+        {"type": "region_route", "originRegionId": 101,
+         "destinationRegionId": 202, "bidirectional": 0},
+    ],
+})
+route_legacy = _rule(31, "loading", "per_vehicle", 10,
+                     origin_region_id=101, destination_region_id=202)
+cand_json = CostMatcher._build_candidate_for_rule(
+    route_json, _policy(), _ctx_facts(total_qty=3),
+    VehicleResolution(None, None, None, None, "general"), cache,
+)
+cand_legacy = CostMatcher._build_candidate_for_rule(
+    route_legacy, _policy(), _ctx_facts(total_qty=3),
+    VehicleResolution(None, None, None, None, "general"), cache,
+)
+check("conditions_json 与 legacy region_route 同分",
+      cand_json.score, cand_legacy.score)
+
+# 27) 空条件树（无约束）通用命中，与旧通用规则一致
+cand_empty = CostMatcher._build_candidate_for_rule(
+    _rule_cond(32, "loading", "per_vehicle", 10, {"logic": "and", "children": []}),
+    _policy(), _ctx_facts(total_qty=3),
+    VehicleResolution(None, None, None, None, "general"), cache,
+)
+cand_general = CostMatcher._build_candidate_for_rule(
+    _rule(33, "loading", "per_vehicle", 10),
+    _policy(), _ctx_facts(total_qty=3),
+    VehicleResolution(None, None, None, None, "general"), cache,
+)
+check("空条件树与通用规则同分", cand_empty.score, cand_general.score)
+
+
 print(f"\n==== 结果：{passed} 通过 / {failed} 失败 ====")
 if failed:
     raise SystemExit(1)

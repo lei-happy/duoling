@@ -199,66 +199,94 @@
           </el-form-item>
         </el-col>
 
-        <el-divider content-position="left">适用范围（可空=不限）</el-divider>
-        <el-col :span="12">
-          <el-form-item label="出发地">
-            <el-input
-              v-model.trim="form.origin"
-              placeholder="出发地名称"
-              clearable
-            />
+        <el-divider content-position="left">
+          适用范围（可空=不限）
+          <el-switch
+            v-model="useAdvanced"
+            class="adv-switch"
+            inline-prompt
+            active-text="高级条件"
+            inactive-text="基础条件"
+            @change="onToggleAdvanced"
+          />
+        </el-divider>
+
+        <!-- 基础条件：线路 + 车型（legacy 列） -->
+        <template v-if="!useAdvanced">
+          <el-col :span="12">
+            <el-form-item label="出发地">
+              <el-input
+                v-model.trim="form.origin"
+                placeholder="出发地名称"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="目的地">
+              <el-input
+                v-model.trim="form.destination"
+                placeholder="目的地名称"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="出发地编码">
+              <el-input v-model.trim="form.originCode" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="目的地编码">
+              <el-input v-model.trim="form.destinationCode" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="双向">
+              <el-switch
+                v-model="form.isBidirectional"
+                :active-value="1"
+                :inactive-value="0"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="品牌ID">
+              <el-input-number
+                v-model="form.brandId"
+                :min="1"
+                controls-position="right"
+                placeholder="不限"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="车系ID">
+              <el-input-number
+                v-model="form.seriesId"
+                :min="1"
+                controls-position="right"
+                placeholder="不限"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </template>
+
+        <!-- 高级条件：AND/OR 条件树构建器 -->
+        <el-col :span="24" v-else>
+          <el-form-item label="条件树">
+            <div class="cond-builder-wrap">
+              <condition-tree-builder
+                :node="conditionRoot"
+                :condition-types="meta.conditionTypes || []"
+              />
+              <div class="cond-summary">摘要：{{ conditionSummaryText }}</div>
+            </div>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="目的地">
-            <el-input
-              v-model.trim="form.destination"
-              placeholder="目的地名称"
-              clearable
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="出发地编码">
-            <el-input v-model.trim="form.originCode" clearable />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="目的地编码">
-            <el-input v-model.trim="form.destinationCode" clearable />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="双向">
-            <el-switch
-              v-model="form.isBidirectional"
-              :active-value="1"
-              :inactive-value="0"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="品牌ID">
-            <el-input-number
-              v-model="form.brandId"
-              :min="1"
-              controls-position="right"
-              placeholder="不限"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="车系ID">
-            <el-input-number
-              v-model="form.seriesId"
-              :min="1"
-              controls-position="right"
-              placeholder="不限"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
+
         <el-col :span="24">
           <el-form-item label="备注">
             <el-input v-model="form.remark" type="textarea" :rows="2" />
@@ -283,8 +311,15 @@
   import type {
     CostRule,
     CostMeta,
+    ConditionNode,
+    ConditionType,
     TierSeg
   } from '@/api/billing/cost-policy/model';
+  import {
+    legacyToConditionTree,
+    summarizeCondition
+  } from '@/api/billing/cost-policy/model';
+  import ConditionTreeBuilder from './condition-tree-builder.vue';
 
   const props = defineProps<{
     visible: boolean;
@@ -316,6 +351,31 @@
   });
 
   const form = reactive<CostRule>(defaultForm());
+
+  // 高级条件（AND/OR 条件树）开关与根节点
+  const useAdvanced = ref(false);
+  const conditionRoot = reactive<ConditionNode>({ logic: 'and', children: [] });
+
+  const typeMap = computed<Record<string, ConditionType>>(() => {
+    const m: Record<string, ConditionType> = {};
+    (props.meta.conditionTypes || []).forEach((c) => (m[c.key] = c));
+    return m;
+  });
+  const conditionSummaryText = computed(() =>
+    summarizeCondition(conditionRoot, typeMap.value)
+  );
+
+  const setConditionRoot = (tree: ConditionNode) => {
+    conditionRoot.logic = tree.logic || 'and';
+    conditionRoot.children = Array.isArray(tree.children) ? tree.children : [];
+  };
+
+  const onToggleAdvanced = (val: boolean) => {
+    // 从基础切到高级：用 legacy 列种子回显为初始条件树
+    if (val && !(conditionRoot.children && conditionRoot.children.length)) {
+      setConditionRoot(legacyToConditionTree(form));
+    }
+  };
 
   const rules = reactive<FormRules>({
     feeType: [{ required: true, message: '请选择费用类型', trigger: 'change' }],
@@ -350,9 +410,16 @@
     (val) => {
       if (!val) return;
       Object.assign(form, defaultForm());
+      setConditionRoot({ logic: 'and', children: [] });
+      useAdvanced.value = false;
       if (props.data?.id) {
         Object.assign(form, props.data);
         if (!Array.isArray(form.tiersJson)) form.tiersJson = [];
+        // 存量规则回显：有 conditionsJson 用高级条件，否则由 legacy 列合成
+        if (props.data.conditionsJson) {
+          useAdvanced.value = true;
+          setConditionRoot(props.data.conditionsJson);
+        }
       }
       nextTick(() => formRef.value?.clearValidate());
     }
@@ -367,6 +434,15 @@
       try {
         const payload: CostRule = { ...form, policyId: props.policyId };
         if (payload.pricingMethod !== 'tiered') payload.tiersJson = null;
+        // 高级条件：下发条件树；基础条件：清空 conditionsJson 走 legacy 列
+        if (useAdvanced.value) {
+          payload.conditionsJson = {
+            logic: conditionRoot.logic,
+            children: conditionRoot.children
+          };
+        } else {
+          payload.conditionsJson = null;
+        }
         if (isEdit.value) {
           await updateRule(props.data!.id!, payload);
         } else {
@@ -387,6 +463,23 @@
 <style scoped>
   .tier-editor {
     width: 100%;
+  }
+  .adv-switch {
+    margin-left: 12px;
+  }
+  .cond-builder-wrap {
+    width: 100%;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 6px;
+    padding: 10px;
+  }
+  .cond-summary {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--el-border-color);
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    word-break: break-all;
   }
   .tier-row {
     display: flex;
