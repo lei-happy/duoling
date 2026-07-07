@@ -1,17 +1,26 @@
 """客户端对话相关 Schema"""
 
 from typing import Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ChatRequest(BaseModel):
     employeeCode: str = Field(..., description="数字员工编码")
     sessionId: Optional[int] = Field(None, description="已有会话 ID；为空时新建会话")
-    content: str = Field(..., min_length=1, description="用户消息内容")
+    content: str = Field(
+        "",
+        description="用户消息内容；允许为空（仅上传附件时）",
+    )
     attachments: Optional[list[dict[str, Any]]] = Field(
         None,
         description="附件列表，元素至少含 fileId / name / size / mime",
     )
+
+    @model_validator(mode="after")
+    def ensure_content_or_attachments(self):
+        if not (self.content or "").strip() and not self.attachments:
+            raise ValueError("消息内容与附件不能同时为空")
+        return self
 
 
 class ConfirmRequest(BaseModel):

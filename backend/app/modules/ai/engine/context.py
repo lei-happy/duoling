@@ -18,6 +18,64 @@ from app.modules.ai.llm.base import ChatMessage, ToolCall
 from app.modules.ai.models.tenant.biz_ai_message import BizAiMessage
 from app.modules.ai.tools.registry import encode_tool_name
 
+# 附件类型推断：扩展名 -> 逻辑类型（供 LLM 选择对应工具）
+_EXCEL_EXTS = {".xlsx", ".xls"}
+_CSV_EXTS = {".csv"}
+_IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"}
+_PDF_EXTS = {".pdf"}
+
+
+def _infer_attach_type(name: str, mime: str) -> str:
+    """按文件名后缀与 mime 推断附件逻辑类型"""
+    lower = (name or "").lower()
+    for ext in _EXCEL_EXTS:
+        if lower.endswith(ext):
+            return "excel"
+    if any(lower.endswith(e) for e in _CSV_EXTS):
+        return "csv"
+    if any(lower.endswith(e) for e in _IMAGE_EXTS):
+        return "image"
+    if any(lower.endswith(e) for e in _PDF_EXTS):
+        return "pdf"
+    m = (mime or "").lower()
+    if m.startswith("image/"):
+        return "image"
+    if "spreadsheet" in m or "excel" in m:
+        return "excel"
+    if "csv" in m:
+        return "csv"
+    if "pdf" in m:
+        return "pdf"
+    return "file"
+
+
+def _build_attachments_note(attachments: list) -> str:
+    """把用户附件渲染成结构化文本，注入到用户消息末尾，
+    让模型知道有哪些文件、fileId 与类型，从而选择正确的工具。
+    """
+    lines: list[str] = []
+    for att in attachments or []:
+        if not isinstance(att, dict):
+            continue
+        file_id = att.get("fileId") or att.get("file_id") or ""
+        if not file_id:
+            continue
+        name = att.get("name") or file_id
+        mime = att.get("mime") or att.get("content_type") or ""
+        atype = _infer_attach_type(name, mime)
+        lines.append(f"[附件] name={name} | fileId={file_id} | type={atype}")
+    if not lines:
+        return ""
+    tips = {
+        "excel": "excel/csv 附件请调用 file.parse_excel(file_id=...) 解析后再做字段映射；",
+        "csv": "excel/csv 附件请调用 file.parse_excel(file_id=...) 解析后再做字段映射；",
+        "image": "image 附件请调用 image.extract_waybill(file_id=...) 识别运单信息；",
+    }
+    used = {t for t in ("excel", "csv", "image") if any(f"type={t}" in ln for ln in lines)}
+    hint = "".join(tips[t] for t in ("excel", "csv", "image") if t in used)
+    header = "用户本次上传了以下附件（" + (hint or "请按类型选择合适工具处理") + "）：\n"
+    return header + "\n".join(lines)
+
 
 class ContextManager:
     @staticmethod
@@ -65,9 +123,15 @@ class ContextManager:
                         arguments=tc.get("arguments") or fn.get("arguments") or "{}",
                     )
                 )
+        content = row.content
+        # 用户消息若带附件，把附件清单注入到文本末尾，让模型拿到 fileId 与类型
+        if row.role == "user" and row.attachments:
+            note = _build_attachments_note(row.attachments)
+            if note:
+                content = f"{content}\n\n{note}" if content else note
         return ChatMessage(
             role=row.role,
-            content=row.content,
+            content=content,
             tool_calls=tool_calls,
             tool_call_id=row.tool_call_id,
             # tool 消息的 name 同样编码，确保和 assistant.tool_calls 的 wire 名一致

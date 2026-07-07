@@ -32,3 +32,4 @@ def import_all_tools() -> None:
     from app.modules.ai.tools import vehicle_tools  # noqa: F401
     from app.modules.ai.tools import customer_tools  # noqa: F401
     from app.modules.ai.tools import file_tools  # noqa: F401
+    from app.modules.ai.tools import image_tools  # noqa: F401

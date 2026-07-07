@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator, Optional
+from typing import Any, AsyncIterator, Optional, Union
 
 
 @dataclass
@@ -49,10 +49,17 @@ class ToolCall:
 
 @dataclass
 class ChatMessage:
-    """对话消息（统一结构）"""
+    """对话消息（统一结构）
+
+    content 允许两种形态：
+    - str  : 普通文本消息
+    - list : OpenAI 多模态 content parts，如
+             [{"type": "text", "text": "..."},
+              {"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}}]
+    """
 
     role: str  # system/user/assistant/tool
-    content: Optional[str] = None
+    content: Optional[Union[str, list[dict]]] = None
     tool_calls: list[ToolCall] = field(default_factory=list)
     tool_call_id: Optional[str] = None
     name: Optional[str] = None  # 工具消息时为工具名

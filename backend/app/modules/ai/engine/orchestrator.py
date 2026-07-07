@@ -320,6 +320,10 @@ class Orchestrator:
                 user=self.ctx.user,
                 tenant_code=self.ctx.tenant_code,
                 session=self.ctx.session,
+                extras={
+                    "model_config": self.ctx.model_config,
+                    "employee_code": self.ctx.employee.code,
+                },
             )
             raw = await spec.handler(tool_ctx, **params)
             result: ToolResult

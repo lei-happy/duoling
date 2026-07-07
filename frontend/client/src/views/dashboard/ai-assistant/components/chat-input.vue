@@ -27,7 +27,10 @@
     />
 
     <div class="ai-input__bar">
-      <el-tooltip content="上传 Excel/CSV 等附件（≤20MB）" placement="top">
+      <el-tooltip
+        content="上传 Excel/CSV 表格，或运单截图/照片（≤20MB）"
+        placement="top"
+      >
         <el-button :icon="Paperclip" :loading="uploading" @click="pickFile">
           附件
         </el-button>

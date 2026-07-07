@@ -160,6 +160,13 @@ class MapColumnsParams(BaseModel):
             "源列名 -> 目标字段名 的映射；目标字段名应与目标 Service 的字段对齐"
         ),
     )
+    constant_fields: Optional[dict[str, object]] = Field(
+        None,
+        description=(
+            "整批统一填充的常量字段，会合并进每一行。"
+            "典型用于用户追问确认客户后统一回填 customerId，如 {\"customerId\": 12}"
+        ),
+    )
     sheet_name: Optional[str] = Field(None, description="工作表名")
     max_rows: int = Field(500, ge=1, le=2000, description="本次最多映射行数")
 
@@ -196,6 +203,7 @@ async def map_columns(ctx: ToolContext, **kwargs) -> ToolResult:
     headers = preview.get("headers", [])
     src_rows = preview.get("rows", [])
     mapping = params.column_mapping
+    constants = params.constant_fields or {}
     unknown_src = [c for c in mapping.keys() if c not in headers]
 
     target_rows = []
@@ -205,6 +213,9 @@ async def map_columns(ctx: ToolContext, **kwargs) -> ToolResult:
             v = row.get(src_col)
             if v is not None and v != "":
                 out[dst_field] = v
+        # 常量字段合并：不覆盖行内已有的同名字段
+        for k, cv in constants.items():
+            out.setdefault(k, cv)
         if out:
             target_rows.append(out)
 
@@ -214,6 +225,10 @@ async def map_columns(ctx: ToolContext, **kwargs) -> ToolResult:
             "rows": target_rows,
             "row_count": len(target_rows),
             "unknown_source_columns": unknown_src,
+            "constant_fields_applied": list(constants.keys()),
         },
-        message=f"已映射 {len(target_rows)} 行；未识别的源列 {len(unknown_src)} 个",
+        message=(
+            f"已映射 {len(target_rows)} 行；未识别的源列 {len(unknown_src)} 个"
+            + (f"；统一填充字段 {list(constants.keys())}" if constants else "")
+        ),
     )
