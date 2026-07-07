@@ -87,6 +87,13 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       component: () => import('@/views/billing/contract/detail.vue'),
       meta: { title: '合同详情' }
     },
+    // 承运商合同详情（独立页，不在后端菜单中注册）
+    {
+      path: '/billing/carrier-contract/detail/:id',
+      name: 'BillingCarrierContractDetail',
+      component: () => import('@/views/billing/carrier-contract/detail.vue'),
+      meta: { title: '承运商合同详情' }
+    },
     // 运单批量导入（从运单列表进入，不在后端菜单中单独挂路由）
     {
       path: '/operation/waybill/import',

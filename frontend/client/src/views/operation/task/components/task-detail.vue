@@ -498,6 +498,111 @@
             </div>
           </el-tab-pane>
 
+          <el-tab-pane
+            v-if="task && task.carrierType === CARRIER_TYPE.CARRIER"
+            name="carrierFreight"
+            label="承运运费"
+          >
+            <div class="cost-tab-toolbar">
+              <div class="cost-tab-summary">
+                <template v-if="carrierFreightResult">
+                  <span class="cost-total">
+                    合计承运运费：{{
+                      formatAmount(carrierFreightResult.totalAmount)
+                    }}
+                  </span>
+                  <el-tag
+                    size="small"
+                    :type="costStatusTag(carrierFreightResult.calcStatus).type"
+                    style="margin-left: 8px"
+                  >
+                    {{ costStatusTag(carrierFreightResult.calcStatus).text }}
+                  </el-tag>
+                  <span
+                    v-if="carrierFreightResult.carrierName"
+                    class="ele-text-secondary"
+                    style="margin-left: 8px"
+                  >
+                    承运商：{{ carrierFreightResult.carrierName }}
+                  </span>
+                </template>
+                <span v-else class="ele-text-secondary">
+                  暂无承运运费结果（可点击「重算运费」生成）
+                </span>
+              </div>
+              <el-button
+                type="primary"
+                size="small"
+                :loading="carrierFreightLoading"
+                @click="recalcCarrierFreight"
+              >
+                重算运费
+              </el-button>
+            </div>
+            <el-table
+              :data="carrierFreightResult?.items ?? []"
+              border
+              size="small"
+              v-loading="carrierFreightLoading"
+            >
+              <el-table-column label="品牌/车型" min-width="150">
+                <template #default="{ row }">
+                  {{ carrierFreightBrandModel(row) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="台数"
+                prop="quantity"
+                width="70"
+                align="center"
+              />
+              <el-table-column label="计费模式" width="90" align="center">
+                <template #default="{ row }">
+                  {{ carrierBillingModeText(row.billingMode) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="单价" width="110" align="right">
+                <template #default="{ row }">
+                  {{
+                    row.unitPrice != null
+                      ? Number(row.unitPrice).toFixed(2)
+                      : '--'
+                  }}
+                </template>
+              </el-table-column>
+              <el-table-column label="金额" width="110" align="right">
+                <template #default="{ row }">
+                  {{ formatAmount(row.amount) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="状态" width="160">
+                <template #default="{ row }">
+                  <el-tag
+                    v-if="row.calcStatus === 'success'"
+                    type="success"
+                    size="small"
+                  >
+                    已匹配
+                  </el-tag>
+                  <el-tooltip v-else :content="row.errorMessage || ''">
+                    <el-tag type="warning" size="small">
+                      {{ row.errorType || '未匹配' }}
+                    </el-tag>
+                  </el-tooltip>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div
+              v-if="carrierFreightResult?.calcTime"
+              class="ele-text-secondary cost-tab-meta"
+            >
+              计算时间：{{ formatDateTime(carrierFreightResult.calcTime) }}
+              <span v-if="carrierFreightResult.calcEngineVersion">
+                · 引擎 {{ carrierFreightResult.calcEngineVersion }}
+              </span>
+            </div>
+          </el-tab-pane>
+
           <el-tab-pane name="finance" :label="`费用单 (${financeDocs.length})`">
             <el-table :data="financeDocs" border size="small">
               <el-table-column label="单据号" prop="docNo" min-width="160" />
@@ -653,6 +758,14 @@
     recalculateTaskCost
   } from '@/api/billing/cost-policy';
   import type { TaskCostResult } from '@/api/billing/cost-policy/model';
+  import {
+    getTaskCarrierFreightResult,
+    recalculateTaskCarrierFreight
+  } from '@/api/billing/carrier-contract';
+  import type {
+    CarrierFreightItem,
+    CarrierFreightResult
+  } from '@/api/billing/carrier-contract/model';
   import type {
     Task,
     TaskSegment,
@@ -708,7 +821,9 @@
   const costResult = ref<TaskCostResult | null>(null);
   const costLoading = ref(false);
 
-  const costStatusTag = (s?: string) => {
+  const costStatusTag = (
+    s?: string
+  ): { type: 'success' | 'warning' | 'info' | 'danger'; text: string } => {
     switch (s) {
       case 'success':
         return { type: 'success', text: '计算成功' };
@@ -740,6 +855,46 @@
       EleMessage.error({ message: msg, plain: true });
     } finally {
       costLoading.value = false;
+    }
+  };
+
+  const carrierFreightResult = ref<CarrierFreightResult | null>(null);
+  const carrierFreightLoading = ref(false);
+
+  const carrierBillingModeText = (m?: number | null) => {
+    if (m === 1) return '单公里';
+    if (m === 2) return '整单价';
+    return '台单价';
+  };
+
+  const carrierFreightBrandModel = (row: CarrierFreightItem) => {
+    const b = row.vehicleBrand?.trim();
+    const m = row.vehicleModel?.trim();
+    if (!b && !m) return '不限';
+    return `${b || '不限'}/${m || '不限'}`;
+  };
+
+  const loadCarrierFreightResult = async (id: number) => {
+    try {
+      carrierFreightResult.value =
+        (await getTaskCarrierFreightResult(id)) ?? null;
+    } catch (_) {
+      carrierFreightResult.value = null;
+    }
+  };
+
+  const recalcCarrierFreight = async () => {
+    if (!task.value?.id) return;
+    carrierFreightLoading.value = true;
+    try {
+      carrierFreightResult.value =
+        (await recalculateTaskCarrierFreight(task.value.id)) ?? null;
+      EleMessage.success({ message: '承运运费已重算', plain: true });
+    } catch (e: unknown) {
+      const msg = (e as { message?: string }).message || '重算失败';
+      EleMessage.error({ message: msg, plain: true });
+    } finally {
+      carrierFreightLoading.value = false;
     }
   };
 
@@ -791,6 +946,11 @@
       financeDocs.value = fins;
       loadingRecords.value = recs;
       loadCostResult(id);
+      if (t?.carrierType === CARRIER_TYPE.CARRIER) {
+        loadCarrierFreightResult(id);
+      } else {
+        carrierFreightResult.value = null;
+      }
     } catch (e: unknown) {
       const msg = (e as { message?: string }).message || '加载失败';
       EleMessage.error({ message: msg, plain: true });
