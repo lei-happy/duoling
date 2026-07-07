@@ -602,7 +602,7 @@ class TaskService:
 
         await db.refresh(task)
         if int(task.status) == TASK_DISPATCHED:
-            await TaskService._try_enqueue_cost_calc(db, task.id)
+            await TaskService._try_enqueue_billing_calc(db, task)
         return task
 
     @staticmethod
@@ -955,6 +955,38 @@ class TaskService:
             logger.debug(f"[task] 成本计算入队跳过 task={task_id}: {e!r}")
 
     @staticmethod
+    async def _try_enqueue_carrier_freight_calc(
+        db: AsyncSession, task_id: int, *, task_type: str = "task_dispatched",
+    ) -> None:
+        """派车给承运商后 best-effort 触发承运运费计算入队。
+
+        使用 SAVEPOINT 包裹，即便租户未开通承运运费引擎（表缺失）也不会污染派车主事务。
+        """
+        try:
+            from app.modules.client.services.billing.carrier_freight_calc_task_service import (
+                CarrierFreightCalcTaskService,
+            )
+            async with db.begin_nested():
+                await CarrierFreightCalcTaskService.enqueue_task_recalc(
+                    db, task_id, task_type=task_type, priority=3,
+                )
+        except Exception as e:  # noqa: BLE001
+            from loguru import logger
+            logger.debug(f"[task] 承运运费计算入队跳过 task={task_id}: {e!r}")
+
+    @staticmethod
+    async def _try_enqueue_billing_calc(db: AsyncSession, task) -> None:
+        """派车完成后按承运类型二选一分工触发计费引擎入队，避免双算。
+
+        - carrier_type=2（承运商）：走承运商运费引擎，自动算整单运费并回填 carrier_cost_amount
+        - 其它（自有车 / 社会运力）：走成本引擎，计算司机侧应付成本
+        """
+        if getattr(task, "carrier_type", None) == 2:
+            await TaskService._try_enqueue_carrier_freight_calc(db, task.id)
+        else:
+            await TaskService._try_enqueue_cost_calc(db, task.id)
+
+    @staticmethod
     async def complete_carrier_assignment(
         db: AsyncSession,
         task_id: int,
@@ -982,7 +1014,7 @@ class TaskService:
         await db.flush()
         await db.refresh(task)
         if target == TASK_DISPATCHED:
-            await TaskService._try_enqueue_cost_calc(db, task.id)
+            await TaskService._try_enqueue_billing_calc(db, task)
         return task
 
     @staticmethod
@@ -1037,7 +1069,7 @@ class TaskService:
         await db.flush()
         await db.refresh(task)
         if int(task.status) == TASK_DISPATCHED:
-            await TaskService._try_enqueue_cost_calc(db, task.id)
+            await TaskService._try_enqueue_billing_calc(db, task)
         return task
 
     # ------------------------------------------------------------------

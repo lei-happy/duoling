@@ -60,6 +60,19 @@ from app.modules.client.api.billing.cost_engine import (
     task_router as cost_calc_task_router,
     exception_router as cost_calc_exception_router,
 )
+from app.modules.client.api.billing.carrier_contract import (
+    router as carrier_contract_router,
+)
+from app.modules.client.api.billing.carrier_rate import (
+    router as carrier_rate_router,
+)
+from app.modules.client.api.billing.carrier_freight import (
+    router as carrier_freight_router,
+)
+from app.modules.client.api.billing.carrier_freight_engine import (
+    task_router as carrier_freight_task_router,
+    exception_router as carrier_freight_exception_router,
+)
 from app.modules.client.api.waybill.waybill import router as waybill_router
 from app.modules.client.api.task import (
     task_router,
@@ -233,6 +246,36 @@ router.include_router(
     prefix="/billing/cost-calc/exceptions",
     tags=["客户端-成本引擎-异常"],
     dependencies=[Depends(require_feature("billing_cost_rule"))],
+)
+router.include_router(
+    carrier_contract_router,
+    prefix="/billing/carrier-contract",
+    tags=["客户端-承运商合同"],
+    dependencies=[Depends(require_feature("billing_carrier_freight"))],
+)
+router.include_router(
+    carrier_rate_router,
+    prefix="/billing/carrier-rate",
+    tags=["客户端-承运价规则"],
+    dependencies=[Depends(require_feature("billing_carrier_freight"))],
+)
+router.include_router(
+    carrier_freight_router,
+    prefix="/billing",
+    tags=["客户端-承运商运费计算"],
+    dependencies=[Depends(require_feature("billing_carrier_freight"))],
+)
+router.include_router(
+    carrier_freight_task_router,
+    prefix="/billing/carrier-freight-calc/tasks",
+    tags=["客户端-承运运费引擎-任务"],
+    dependencies=[Depends(require_feature("billing_carrier_freight"))],
+)
+router.include_router(
+    carrier_freight_exception_router,
+    prefix="/billing/carrier-freight-calc/exceptions",
+    tags=["客户端-承运运费引擎-异常"],
+    dependencies=[Depends(require_feature("billing_carrier_freight"))],
 )
 router.include_router(waybill_router, prefix="/business/waybill", tags=["客户端-运单管理V2"])
 router.include_router(task_router, prefix="/business/task", tags=["客户端-运输任务单"])

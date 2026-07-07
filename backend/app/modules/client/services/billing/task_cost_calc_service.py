@@ -535,6 +535,11 @@ class TaskCostCalcService:
             if ft["isRequired"]:
                 fee_types.add(ft["code"])
 
+        # 边界切分：承运商任务（carrier_type=2）的整单运费由「承运商运费引擎」负责，
+        # 成本引擎在此类任务上停用 carrier_freight 费用项，避免与承运运费双算。
+        if task.carrier_type == 2:
+            fee_types.discard("carrier_freight")
+
         items: list[FeeItemResult] = []
         for ft in sorted(fee_types):
             fee_results = CostMatcher.match_fee_type(

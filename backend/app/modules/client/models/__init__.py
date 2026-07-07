@@ -76,6 +76,21 @@ from app.modules.client.models.billing.task_cost_result import (
 from app.modules.client.models.billing.cost_calc_task import CostCalcTask
 from app.modules.client.models.billing.cost_calc_exception import CostCalcException
 from app.modules.client.models.billing.cost_rule_change_log import CostRuleChangeLog
+from app.modules.client.models.billing.carrier_contract import CarrierContract
+from app.modules.client.models.billing.carrier_rate import CarrierRate
+from app.modules.client.models.billing.carrier_freight_result import (
+    CarrierFreightResult,
+    CarrierFreightResultDetail,
+)
+from app.modules.client.models.billing.carrier_freight_calc_task import (
+    CarrierFreightCalcTask,
+)
+from app.modules.client.models.billing.carrier_freight_calc_exception import (
+    CarrierFreightCalcException,
+)
+from app.modules.client.models.billing.carrier_rate_change_log import (
+    CarrierRateChangeLog,
+)
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
 from app.modules.client.models.waybill.waybill_receipt import WaybillReceipt
@@ -161,6 +176,13 @@ __all__ = [
     "CostCalcTask",
     "CostCalcException",
     "CostRuleChangeLog",
+    "CarrierContract",
+    "CarrierRate",
+    "CarrierFreightResult",
+    "CarrierFreightResultDetail",
+    "CarrierFreightCalcTask",
+    "CarrierFreightCalcException",
+    "CarrierRateChangeLog",
     "Waybill",
     "WaybillCargo",
     "WaybillReceipt",

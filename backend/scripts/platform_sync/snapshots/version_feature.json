@@ -72,6 +72,7 @@
     "bi_overview",
     "bi_prediction",
     "bi_report",
+    "billing_carrier_freight",
     "billing_contract",
     "billing_cost_rule",
     "billing_fee_template",

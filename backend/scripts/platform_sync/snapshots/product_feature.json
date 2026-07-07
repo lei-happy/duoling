@@ -561,6 +561,23 @@
     "status": 1
   },
   {
+    "feature_code": "billing_carrier_freight",
+    "feature_name": "承运商合同",
+    "module": "billing",
+    "description": "承运商运费自动计算引擎（承运商合同/承运价规则/运费结果/异常），派车给承运商时自动算整单运费",
+    "required_tables": [
+      "biz_carrier_contract",
+      "biz_carrier_rate",
+      "biz_carrier_freight_result",
+      "biz_carrier_freight_result_detail",
+      "biz_carrier_freight_calc_task",
+      "biz_carrier_freight_calc_exception",
+      "biz_carrier_rate_change_log"
+    ],
+    "sort_order": 62,
+    "status": 1
+  },
+  {
     "feature_code": "billing_fee_template",
     "feature_name": "费用模板",
     "module": "billing",
