@@ -91,6 +91,7 @@ def _load_features() -> list:
             "feature_code": item["feature_code"],
             "feature_name": item["feature_name"],
             "module": item.get("module"),
+            "description": item.get("description"),
             "sort_order": int(item.get("sort_order") or 0),
             "required_tables": rt_serialized,
         })
@@ -175,6 +176,7 @@ def main():
                 conn.execute(text(
                     "UPDATE sys_product_feature SET "
                     "  feature_name = :name, module = :module, "
+                    "  description = :description, "
                     "  sort_order = :sort, required_tables = :tables, "
                     "  status = 1, is_deleted = 0 "
                     "WHERE id = :id"
@@ -182,6 +184,7 @@ def main():
                     "id": int(row.id),
                     "name": f["feature_name"],
                     "module": f["module"],
+                    "description": f["description"],
                     "sort": f["sort_order"],
                     "tables": f["required_tables"],
                 })
@@ -189,12 +192,13 @@ def main():
                 print(f"  {tag}功能: {f['feature_code']} (id={int(row.id)})")
             else:
                 conn.execute(text(
-                    "INSERT INTO sys_product_feature (feature_code, feature_name, module, sort_order, required_tables) "
-                    "VALUES (:code, :name, :module, :sort, :tables)"
+                    "INSERT INTO sys_product_feature (feature_code, feature_name, module, description, sort_order, required_tables) "
+                    "VALUES (:code, :name, :module, :description, :sort, :tables)"
                 ), {
                     "code": f["feature_code"],
                     "name": f["feature_name"],
                     "module": f["module"],
+                    "description": f["description"],
                     "sort": f["sort_order"],
                     "tables": f["required_tables"],
                 })
