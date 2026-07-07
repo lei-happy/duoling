@@ -61,6 +61,19 @@
           </el-tag>
           <span v-else>—</span>
         </template>
+        <template #loginAccount="{ row }">
+          <el-tag
+            v-if="row.userId"
+            type="success"
+            size="small"
+            :disable-transitions="true"
+          >
+            已开通
+          </el-tag>
+          <el-tag v-else type="info" size="small" :disable-transitions="true">
+            未开通
+          </el-tag>
+        </template>
         <template #status="{ row }">
           <el-tag
             v-if="normalizeHrStatus(row.status) === 1"
@@ -159,7 +172,8 @@
     pageDrivers,
     getDriver,
     removeDriver,
-    updateDriverStatus
+    updateDriverStatus,
+    resetDriverPassword
   } from '@/api/capacity/self-capacity/driver';
   import type {
     Driver,
@@ -245,6 +259,13 @@
       width: 90,
       align: 'center',
       slot: 'operationStatus'
+    },
+    {
+      columnKey: 'loginAccount',
+      label: '登录账号',
+      width: 90,
+      align: 'center',
+      slot: 'loginAccount'
     },
     {
       prop: 'status',
@@ -411,6 +432,10 @@
           onClick: () => openHrStatusDialog(row)
         },
         {
+          title: '重置登录密码',
+          onClick: () => resetPassword(row)
+        },
+        {
           title: '删除',
           divided: true,
           danger: true,
@@ -420,6 +445,30 @@
       ]
     }
   ];
+
+  const resetPassword = (row: Driver) => {
+    ElMessageBox.confirm(
+      `确定将驾驶员「${row.name}」的 H5 登录密码重置为默认密码吗？重置后司机首次登录需强制改密。`,
+      '系统提示',
+      { type: 'warning', draggable: true }
+    )
+      .then(() => {
+        const loading = EleMessage.loading({
+          message: '请求中..',
+          plain: true
+        });
+        resetDriverPassword(row.id!)
+          .then((msg) => {
+            loading.close();
+            EleMessage.success({ message: msg, plain: true });
+          })
+          .catch((e) => {
+            loading.close();
+            EleMessage.error({ message: e.message, plain: true });
+          });
+      })
+      .catch(() => {});
+  };
 
   const remove = (row: Driver) => {
     ElMessageBox.confirm(`确定要删除驾驶员"${row.name}"吗?`, '系统提示', {

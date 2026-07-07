@@ -52,6 +52,18 @@ class DriverRevertSignRequest(BaseModel):
     reason: str = Field(min_length=1, max_length=255, description="撤销原因")
 
 
+class DriverAcceptTaskRequest(BaseModel):
+    """接收调令（轻量：仅写 dispatch_order.accepted_at，不改 task.status）。"""
+
+    remark: Optional[str] = Field(default=None, max_length=255)
+
+
+class DriverRejectTaskRequest(BaseModel):
+    """拒绝调令（task 1→0 退回待派车池）；reason 必填。"""
+
+    reason: str = Field(min_length=1, max_length=255, description="拒单原因")
+
+
 # ============================================================
 # 任务返回 Schemas
 # ============================================================
@@ -63,6 +75,8 @@ class DriverTaskListItem(BaseModel):
     taskNo: str
     taskName: Optional[str] = None
     status: int
+    accepted: bool = False
+    acceptedAt: Optional[datetime] = None
     origin: Optional[str] = None
     destination: Optional[str] = None
     plannedLoadTime: Optional[datetime] = None
@@ -106,6 +120,7 @@ class DriverTaskSegment(BaseModel):
     toLocation: Optional[str] = None
     plannedLoadTime: Optional[datetime] = None
     plannedArriveTime: Optional[datetime] = None
+    acceptedAt: Optional[datetime] = None
     actualLoadTime: Optional[datetime] = None
     actualArriveTime: Optional[datetime] = None
     status: int = 0

@@ -19,6 +19,10 @@ from app.modules.client.schemas.capacity.self_capacity.driver import (
     DriverStatusUpdate, DriverOperationStatusUpdate,
 )
 from app.modules.client.services.capacity.self_capacity.driver import DriverService
+from app.modules.client.services.capacity.self_capacity.driver.driver_account_sync import (
+    AccountSyncResult,
+    DriverPlatformAccountSync,
+)
 from app.modules.console.services.driver.sys_driver_service import SysDriverService
 
 logger = logging.getLogger(__name__)
@@ -41,6 +45,61 @@ async def _sync_to_platform(tenant_code: str, driver_out: DriverOut):
             )
     except Exception as e:
         logger.warning(f"平台驾驶员同步失败: {e}")
+
+
+async def _sync_login_account(
+    tenant_code: str, tenant_db: AsyncSession, driver_id: int
+) -> Optional[AccountSyncResult]:
+    """创建/编辑驾驶员后开通或刷新 H5 登录账号（fire-and-forget，不阻断主流程）。
+
+    注意：不能在 ``async for`` 中提前 return，否则平台库 Session 不会 commit。
+    """
+    result: Optional[AccountSyncResult] = None
+    try:
+        async for platform_db in db_manager.get_platform_session():
+            result = await DriverPlatformAccountSync.sync_account(
+                platform_db, tenant_db, tenant_code, driver_id
+            )
+    except Exception as e:
+        logger.warning(f"驾驶员登录账号开通失败: {e}")
+    return result
+
+
+async def _sync_login_status(
+    tenant_code: str, tenant_db: AsyncSession, driver_id: int
+) -> None:
+    """人事状态变更后同步登录账号启用/停用。"""
+    try:
+        async for platform_db in db_manager.get_platform_session():
+            await DriverPlatformAccountSync.sync_status(
+                platform_db, tenant_db, tenant_code, driver_id
+            )
+    except Exception as e:
+        logger.warning(f"驾驶员登录账号状态同步失败: {e}")
+
+
+async def _close_login_account(
+    tenant_code: str, user_id: Optional[int], phone: Optional[str]
+) -> None:
+    """删除驾驶员时软删本企业登录关联。"""
+    try:
+        async for platform_db in db_manager.get_platform_session():
+            await DriverPlatformAccountSync.close_account(
+                platform_db, tenant_code, user_id, phone
+            )
+    except Exception as e:
+        logger.warning(f"驾驶员登录账号关闭失败: {e}")
+
+
+def _attach_account(data: dict, result: Optional[AccountSyncResult]) -> dict:
+    """把账号开通结果并入返回数据，供前端展示登录账号状态与冲突提示。"""
+    data["loginAccount"] = {
+        "opened": bool(result.opened) if result else False,
+        "userId": result.user_id if result else data.get("userId"),
+        "conflict": bool(result.conflict) if result else False,
+        "message": result.message if result else "",
+    }
+    return data
 
 
 async def _remove_from_platform(tenant_code: str, biz_driver_id: int):
@@ -103,9 +162,15 @@ async def create_driver(
     current_user: TokenData = Depends(get_current_user),
 ):
     driver = await DriverService.create_driver(db, data)
+    acct: Optional[AccountSyncResult] = None
     if current_user.tenant_code:
         await _sync_to_platform(current_user.tenant_code, driver)
-    return success(data=driver.model_dump())
+        acct = await _sync_login_account(current_user.tenant_code, db, driver.id)
+    data_out = _attach_account(driver.model_dump(), acct)
+    msg = "操作成功"
+    if acct and acct.conflict:
+        msg = acct.message
+    return success(data=data_out, message=msg)
 
 
 @router.put("/{driver_id}")
@@ -118,9 +183,15 @@ async def update_driver(
     current_user: TokenData = Depends(get_current_user),
 ):
     driver = await DriverService.update_driver(db, driver_id, data)
+    acct: Optional[AccountSyncResult] = None
     if current_user.tenant_code:
         await _sync_to_platform(current_user.tenant_code, driver)
-    return success(data=driver.model_dump())
+        acct = await _sync_login_account(current_user.tenant_code, db, driver.id)
+    data_out = _attach_account(driver.model_dump(), acct)
+    msg = "操作成功"
+    if acct and acct.conflict:
+        msg = acct.message
+    return success(data=data_out, message=msg)
 
 
 @router.delete("/{driver_id}")
@@ -131,9 +202,22 @@ async def delete_driver(
     db: AsyncSession = Depends(get_tenant_db),
     current_user: TokenData = Depends(get_current_user),
 ):
+    # 删除前取出 user_id / phone，用于软删平台登录关联
+    login_user_id: Optional[int] = None
+    login_phone: Optional[str] = None
+    try:
+        existing = await DriverService.get_driver(db, driver_id)
+        login_user_id = getattr(existing, "userId", None)
+        login_phone = getattr(existing, "phone", None)
+    except Exception:
+        pass
+
     await DriverService.delete_driver(db, driver_id)
     if current_user.tenant_code:
         await _remove_from_platform(current_user.tenant_code, driver_id)
+        await _close_login_account(
+            current_user.tenant_code, login_user_id, login_phone
+        )
     return success()
 
 
@@ -149,6 +233,7 @@ async def update_status(
     driver = await DriverService.update_status(db, driver_id, data.status)
     if current_user.tenant_code:
         await _sync_to_platform(current_user.tenant_code, driver)
+        await _sync_login_status(current_user.tenant_code, db, driver_id)
     return success(data=driver.model_dump())
 
 
@@ -165,3 +250,29 @@ async def update_operation_status(
         db, driver_id, data.operationStatus
     )
     return success(data=driver.model_dump())
+
+
+@router.post("/{driver_id}/reset-password")
+@operation_log(module="驾驶员管理", action="重置密码", description="重置驾驶员登录密码")
+async def reset_login_password(
+    request: Request,
+    driver_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """将驾驶员 H5 登录密码重置为默认密码，并要求首次登录改密。"""
+    result: Optional[AccountSyncResult] = None
+    if current_user.tenant_code:
+        try:
+            async for platform_db in db_manager.get_platform_session():
+                result = await DriverPlatformAccountSync.reset_password(
+                    platform_db, db, current_user.tenant_code, driver_id
+                )
+        except Exception as e:
+            logger.warning(f"驾驶员登录密码重置失败: {e}")
+    if not result or not result.opened:
+        return success(
+            data={"reset": False},
+            message=(result.message if result else "重置失败"),
+        )
+    return success(data={"reset": True}, message=result.message)

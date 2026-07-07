@@ -5,6 +5,8 @@ export interface TaskListItem {
   taskNo: string;
   taskName?: string;
   status: number;
+  accepted?: boolean;
+  acceptedAt?: string;
   origin?: string;
   destination?: string;
   plannedLoadTime?: string;
@@ -29,6 +31,7 @@ export interface TaskSegment {
   toLocation?: string;
   plannedLoadTime?: string;
   plannedArriveTime?: string;
+  acceptedAt?: string;
   actualLoadTime?: string;
   actualArriveTime?: string;
   status: number;
@@ -77,7 +80,23 @@ export function getTaskDetail(id: number) {
   return get<TaskDetail>(`/task/${id}`);
 }
 
-export function confirmLoad(id: number, payload?: { actualLoadTime?: string; remark?: string }) {
+export function acceptTask(id: number, payload?: { remark?: string }) {
+  return post<TaskDetail>(`/task/${id}/accept`, payload || {});
+}
+
+export function rejectTask(id: number, payload: { reason: string }) {
+  return post<void>(`/task/${id}/reject`, payload);
+}
+
+export function confirmLoad(
+  id: number,
+  payload?: {
+    actualLoadTime?: string;
+    location?: string;
+    photoUrls?: string[];
+    remark?: string;
+  }
+) {
   return post<void>(`/task/${id}/confirm-load`, payload || {});
 }
 
@@ -85,7 +104,15 @@ export function depart(id: number, payload?: { remark?: string }) {
   return post<void>(`/task/${id}/depart`, payload || {});
 }
 
-export function confirmArrive(id: number, payload?: { actualArriveTime?: string; remark?: string }) {
+export function confirmArrive(
+  id: number,
+  payload?: {
+    actualArriveTime?: string;
+    location?: string;
+    photoUrls?: string[];
+    remark?: string;
+  }
+) {
   return post<void>(`/task/${id}/confirm-arrive`, payload || {});
 }
 

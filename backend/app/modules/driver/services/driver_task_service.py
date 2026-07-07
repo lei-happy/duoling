@@ -42,9 +42,11 @@ from app.modules.client.services.task.task_waybill_item_service import (
     TaskWaybillItemService,
 )
 from app.modules.driver.schemas.task import (
+    DriverAcceptTaskRequest,
     DriverConfirmArriveRequest,
     DriverConfirmLoadRequest,
     DriverDepartRequest,
+    DriverRejectTaskRequest,
     DriverRevertSignRequest,
     DriverSignItemRequest,
     DriverTaskDetail,
@@ -70,6 +72,38 @@ class DriverTaskService:
             select(Capacity.id).where(Capacity.driver_id == driver_id)
         )
         return [int(r) for r in res.scalars().all()]
+
+    @staticmethod
+    async def _accepted_task_ids(
+        db: AsyncSession, task_ids: List[int]
+    ) -> set:
+        """返回这些任务中"至少有一条调令已接收（accepted_at 非空）"的 task_id 集合。"""
+        if not task_ids:
+            return set()
+        res = await db.execute(
+            select(TaskDispatchOrder.task_id)
+            .where(
+                TaskDispatchOrder.task_id.in_(task_ids),
+                TaskDispatchOrder.accepted_at.isnot(None),
+                TaskDispatchOrder.is_deleted == 0,
+            )
+            .distinct()
+        )
+        return {int(r) for r in res.scalars().all()}
+
+    @staticmethod
+    async def _task_accepted_at(
+        db: AsyncSession, task_id: int
+    ) -> Optional[datetime]:
+        """任务维度接收时间：取该任务下最早的一条 accepted_at。"""
+        res = await db.execute(
+            select(func.min(TaskDispatchOrder.accepted_at)).where(
+                TaskDispatchOrder.task_id == task_id,
+                TaskDispatchOrder.accepted_at.isnot(None),
+                TaskDispatchOrder.is_deleted == 0,
+            )
+        )
+        return res.scalar_one_or_none()
 
     @staticmethod
     def _build_visibility_condition(capacity_ids: List[int], driver_id: int):
@@ -136,7 +170,13 @@ class DriverTaskService:
         )
         rows = (await db.execute(list_stmt)).scalars().all()
 
-        items = [DriverTaskService._to_list_item(t) for t in rows]
+        accepted_ids = await DriverTaskService._accepted_task_ids(
+            db, [int(t.id) for t in rows]
+        )
+        items = [
+            DriverTaskService._to_list_item(t, accepted=int(t.id) in accepted_ids)
+            for t in rows
+        ]
         return items, total
 
     # ------------------------------------------------------------------
@@ -161,7 +201,10 @@ class DriverTaskService:
         # 货物
         item_rows = await TaskWaybillItemService.list_items_of_task(db, task.id)
 
-        base = DriverTaskService._to_list_item(task)
+        accepted_at = await DriverTaskService._task_accepted_at(db, task.id)
+        base = DriverTaskService._to_list_item(
+            task, accepted=accepted_at is not None, accepted_at=accepted_at
+        )
         return DriverTaskDetail(
             **base.model_dump(),
             segments=[
@@ -172,6 +215,7 @@ class DriverTaskService:
                     toLocation=s.to_location,
                     plannedLoadTime=s.planned_load_time,
                     plannedArriveTime=s.planned_arrive_time,
+                    acceptedAt=s.accepted_at,
                     actualLoadTime=s.actual_load_time,
                     actualArriveTime=s.actual_arrive_time,
                     status=int(s.status),
@@ -181,6 +225,54 @@ class DriverTaskService:
             ],
             items=[DriverTaskService._to_item_out(it) for it in item_rows],
             remark=task.remark,
+        )
+
+    # ------------------------------------------------------------------
+    # 动作：接收调令（轻量）→ 写 dispatch_order.accepted_at，不改 task.status
+    # ------------------------------------------------------------------
+    @staticmethod
+    async def accept(
+        db: AsyncSession,
+        ctx: DriverContext,
+        task_id: int,
+        data: DriverAcceptTaskRequest,
+    ) -> DriverTaskDetail:
+        task = await DriverTaskService._get_visible_task_or_404(db, ctx, task_id)
+        # 仅"已派车"状态可接单（-1 待分配 / 0 待派车 尚未派到司机）
+        if int(task.status) != 1:
+            raise BizException("仅「已派车」的任务可接收调令")
+        # 兜底：没有任何调令时先生成主线路调令
+        await TaskService.ensure_main_line_dispatch_order(db, task)
+        orders = await TaskService.list_dispatch_orders(db, task.id)
+        now = datetime.now()
+        touched = 0
+        for o in orders:
+            if o.accepted_at is None:
+                o.accepted_at = now
+                touched += 1
+        if touched == 0:
+            raise BizException("该任务的调令已全部接收")
+        await db.flush()
+        return await DriverTaskService.get_my_task(db, ctx, task.id)
+
+    # ------------------------------------------------------------------
+    # 动作：拒绝调令 → task 1→0 退回待派车池 + remark 记录
+    # ------------------------------------------------------------------
+    @staticmethod
+    async def reject(
+        db: AsyncSession,
+        ctx: DriverContext,
+        task_id: int,
+        data: DriverRejectTaskRequest,
+    ) -> None:
+        task = await DriverTaskService._get_visible_task_or_404(db, ctx, task_id)
+        if int(task.status) != 1:
+            raise BizException("仅「已派车」且未装车的任务可拒单")
+        await TaskService.revert_status(
+            db, task.id,
+            target_status=0,
+            reason=f"[司机拒单] {data.reason}（driver={ctx.driver.name}#{ctx.driver_id}）",
+            current_user_id=ctx.user_id,
         )
 
     # ------------------------------------------------------------------
@@ -194,6 +286,10 @@ class DriverTaskService:
         data: DriverConfirmLoadRequest,
     ) -> DriverTaskDetail:
         task = await DriverTaskService._get_visible_task_or_404(db, ctx, task_id)
+        # 接单前置校验：必须先接收调令
+        accepted_at = await DriverTaskService._task_accepted_at(db, task.id)
+        if accepted_at is None:
+            raise BizException("请先接收调令，再确认装车")
         items = await TaskWaybillItemService.list_items_of_task(db, task.id)
         # 仅 status<1 的 item 需要装车
         pending = [it for it in items if int(it.status) < 1]
@@ -360,12 +456,19 @@ class DriverTaskService:
     # 输出裁剪
     # ------------------------------------------------------------------
     @staticmethod
-    def _to_list_item(t: Task) -> DriverTaskListItem:
+    def _to_list_item(
+        t: Task,
+        *,
+        accepted: bool = False,
+        accepted_at: Optional[datetime] = None,
+    ) -> DriverTaskListItem:
         return DriverTaskListItem(
             id=int(t.id),
             taskNo=t.task_no,
             taskName=t.task_name,
             status=int(t.status),
+            accepted=accepted,
+            acceptedAt=accepted_at,
             origin=t.origin,
             destination=t.destination,
             plannedLoadTime=t.planned_load_time,

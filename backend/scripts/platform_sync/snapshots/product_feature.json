@@ -263,7 +263,8 @@
     "required_tables": [
       "biz_task",
       "biz_task_segment",
-      "biz_task_waybill_item"
+      "biz_task_waybill_item",
+      "biz_task_receipt"
     ],
     "sort_order": 34,
     "status": 1

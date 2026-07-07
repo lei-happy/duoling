@@ -34,12 +34,28 @@ export function getTaskStatusInfo(status: number): TaskStatusInfo {
 /** 司机端可见的任务状态（无 -1/0 待分配 / 待派车，因为还没派给驾驶员） */
 export const VISIBLE_STATUS_TABS: { label: string; value?: number }[] = [
   { label: '全部' },
-  { label: '待装车', value: 1 },
+  { label: '待接收', value: 1 },
   { label: '已装车', value: 2 },
   { label: '在途', value: 3 },
   { label: '已到达', value: 4 },
   { label: '已签收', value: 5 }
 ];
+
+/**
+ * 任务在司机视角的展示状态（引入"接收调令"子态）：
+ * status=1 且未接收 -> 待接收；status=1 且已接收 -> 待装车。
+ */
+export function getDriverDisplayStatus(
+  status: number,
+  accepted?: boolean
+): TaskStatusInfo {
+  if (status === 1) {
+    return accepted
+      ? { label: '待装车', level: 'primary' }
+      : { label: '待接收', level: 'warning' };
+  }
+  return getTaskStatusInfo(status);
+}
 
 /** 司机端 item 状态 */
 const ITEM_STATUS_MAP: Record<number, TaskStatusInfo> = {
@@ -55,15 +71,33 @@ export function getItemStatusInfo(status: number): TaskStatusInfo {
 
 /** 当前状态下可执行的司机动作 */
 export interface DriverAction {
-  key: 'confirm-load' | 'depart' | 'confirm-arrive' | 'sign-items';
+  key:
+    | 'accept'
+    | 'reject'
+    | 'confirm-load'
+    | 'depart'
+    | 'confirm-arrive'
+    | 'sign-items';
   label: string;
   level?: 'primary' | 'success' | 'warning' | 'danger';
 }
 
-export function getAvailableActions(status: number): DriverAction[] {
+/**
+ * 当前状态下可执行的司机动作。
+ * status=1 时依据是否已接收调令切换：未接收 -> 接收/拒绝；已接收 -> 确认装车。
+ */
+export function getAvailableActions(
+  status: number,
+  accepted?: boolean
+): DriverAction[] {
   switch (status) {
     case 1:
-      return [{ key: 'confirm-load', label: '确认装车', level: 'primary' }];
+      return accepted
+        ? [{ key: 'confirm-load', label: '确认装车', level: 'primary' }]
+        : [
+            { key: 'accept', label: '接收调令', level: 'primary' },
+            { key: 'reject', label: '拒绝', level: 'danger' }
+          ];
     case 2:
       return [{ key: 'depart', label: '确认出发', level: 'primary' }];
     case 3:

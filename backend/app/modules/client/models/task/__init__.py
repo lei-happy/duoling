@@ -19,6 +19,7 @@ from app.modules.client.models.task.task_loading_record import (
 )
 from app.modules.client.models.task.task_finance_doc import TaskFinanceDoc
 from app.modules.client.models.task.task_finance_item import TaskFinanceItem
+from app.modules.client.models.task.task_receipt import TaskReceipt
 
 __all__ = [
     "Task",
@@ -28,4 +29,5 @@ __all__ = [
     "TaskLoadingRecordItem",
     "TaskFinanceDoc",
     "TaskFinanceItem",
+    "TaskReceipt",
 ]

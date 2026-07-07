@@ -11,9 +11,11 @@ from app.common.response import success
 from app.core.dependencies import get_current_user, get_tenant_db
 from app.core.security import TokenData
 from app.modules.driver.schemas.task import (
+    DriverAcceptTaskRequest,
     DriverConfirmArriveRequest,
     DriverConfirmLoadRequest,
     DriverDepartRequest,
+    DriverRejectTaskRequest,
     DriverRevertSignRequest,
     DriverSignItemRequest,
 )
@@ -59,6 +61,30 @@ async def get_task_detail(
     ctx = await get_current_driver(tenant_db, current_user)
     detail = await DriverTaskService.get_my_task(tenant_db, ctx, task_id)
     return success(data=detail.model_dump())
+
+
+@router.post("/{task_id}/accept", summary="接收调令")
+async def accept_task(
+    task_id: int,
+    payload: DriverAcceptTaskRequest,
+    tenant_db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    ctx = await get_current_driver(tenant_db, current_user)
+    detail = await DriverTaskService.accept(tenant_db, ctx, task_id, payload)
+    return success(data=detail.model_dump(), message="已接收调令")
+
+
+@router.post("/{task_id}/reject", summary="拒绝调令")
+async def reject_task(
+    task_id: int,
+    payload: DriverRejectTaskRequest,
+    tenant_db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    ctx = await get_current_driver(tenant_db, current_user)
+    await DriverTaskService.reject(tenant_db, ctx, task_id, payload)
+    return success(message="已拒单，任务已退回待派车")
 
 
 @router.post("/{task_id}/confirm-load", summary="确认装车")

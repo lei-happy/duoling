@@ -18,6 +18,7 @@ from app.modules.driver.api.task import router as task_router
 from app.modules.driver.api.task_receipt import router as task_receipt_router
 from app.modules.driver.api.finance import router as finance_router
 from app.modules.driver.api.profile import router as profile_router
+from app.modules.driver.api.file import router as file_router
 
 router = APIRouter()
 router.include_router(auth_router, prefix="/auth", tags=["司机端-认证"])
@@ -27,5 +28,6 @@ router.include_router(
 )
 router.include_router(finance_router, prefix="/finance", tags=["司机端-财务"])
 router.include_router(profile_router, prefix="/profile", tags=["司机端-个人中心"])
+router.include_router(file_router, prefix="/file", tags=["司机端-文件上传"])
 
 __all__ = ["router"]

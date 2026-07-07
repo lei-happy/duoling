@@ -32,13 +32,15 @@ import { computed } from 'vue';
 import StatusTag from './StatusTag.vue';
 import type { TaskListItem } from '@/api/task';
 import { formatDateTime } from '@/utils/format';
-import { getTaskStatusInfo } from '@/views/task/status-config';
+import { getDriverDisplayStatus } from '@/views/task/status-config';
 
 const props = defineProps<{ task: TaskListItem }>();
 
 defineEmits<{ (e: 'click'): void }>();
 
-const statusInfo = computed(() => getTaskStatusInfo(props.task.status));
+const statusInfo = computed(() =>
+  getDriverDisplayStatus(props.task.status, props.task.accepted)
+);
 </script>
 
 <style lang="scss" scoped>

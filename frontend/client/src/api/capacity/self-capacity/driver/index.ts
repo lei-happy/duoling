@@ -64,6 +64,16 @@ export async function updateDriverStatus(id: number, status: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
+export async function resetDriverPassword(id: number) {
+  const res = await request.post<ApiResult<{ reset: boolean }>>(
+    `${BASE}/${id}/reset-password`
+  );
+  if (res.data.code === 0) {
+    return res.data.message;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
 export async function updateOperationStatus(
   id: number,
   operationStatus: number

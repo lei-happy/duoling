@@ -67,6 +67,16 @@
         </div>
       </div>
 
+      <!-- 回单 -->
+      <div v-if="task.status >= 3" class="section card">
+        <div class="section-title">回单凭证</div>
+        <van-cell
+          title="上传 / 查看回单"
+          is-link
+          @click="$router.push(`/task/${task.id}/receipt`)"
+        />
+      </div>
+
       <!-- 司机/车辆信息 -->
       <div class="section card">
         <div class="section-title">承运资源</div>
@@ -119,6 +129,16 @@
     >
       <div class="dialog-body">
         <div class="tip">{{ confirmDialog.message }}</div>
+        <van-uploader
+          v-if="showPhotoUploader"
+          v-model="photoFiles"
+          :max-count="9"
+          :after-read="onPhotoRead"
+          :before-delete="onPhotoDelete"
+          multiple
+          class="dialog-uploader"
+          :upload-text="confirmDialog.action === 'confirm-load' ? '装车照片' : '卸车照片'"
+        />
         <van-field
           v-model="confirmDialog.remark"
           rows="2"
@@ -128,28 +148,52 @@
         />
       </div>
     </van-dialog>
+
+    <!-- 拒单弹层（原因必填） -->
+    <van-dialog
+      v-model:show="rejectDialog.show"
+      title="拒绝调令"
+      show-cancel-button
+      :before-close="onRejectDialog"
+    >
+      <div class="dialog-body">
+        <div class="tip">拒单后该任务将退回企业调度台重新派车</div>
+        <van-field
+          v-model="rejectDialog.reason"
+          rows="2"
+          autosize
+          type="textarea"
+          placeholder="请填写拒单原因（必填）"
+          maxlength="255"
+          show-word-limit
+        />
+      </div>
+    </van-dialog>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { showFailToast, showToast } from 'vant';
+import { showFailToast, showToast, type UploaderFileListItem } from 'vant';
 import PageContainer from '@/components/PageContainer.vue';
 import StatusTag from '@/components/StatusTag.vue';
+import { uploadImage } from '@/api/file';
 import {
+  acceptTask,
   confirmArrive,
   confirmLoad,
   depart,
   getTaskDetail,
+  rejectTask,
   signItem,
   type TaskDetail
 } from '@/api/task';
 import { formatDateTime, formatMoney } from '@/utils/format';
 import {
   getAvailableActions,
+  getDriverDisplayStatus,
   getItemStatusInfo,
-  getTaskStatusInfo,
   type DriverAction
 } from './status-config';
 
@@ -160,10 +204,14 @@ const task = ref<TaskDetail | null>(null);
 const acting = ref(false);
 
 const statusInfo = computed(() =>
-  task.value ? getTaskStatusInfo(task.value.status) : { label: '', level: 'default' as const }
+  task.value
+    ? getDriverDisplayStatus(task.value.status, task.value.accepted)
+    : { label: '', level: 'default' as const }
 );
 const availableActions = computed<DriverAction[]>(() =>
-  task.value ? getAvailableActions(task.value.status) : []
+  task.value
+    ? getAvailableActions(task.value.status, task.value.accepted)
+    : []
 );
 
 const confirmDialog = ref<{
@@ -173,6 +221,51 @@ const confirmDialog = ref<{
   remark: string;
   action: DriverAction['key'] | '';
 }>({ show: false, title: '', message: '', remark: '', action: '' });
+
+const rejectDialog = ref<{ show: boolean; reason: string }>({
+  show: false,
+  reason: ''
+});
+
+// 装/卸车照片
+const photoFiles = ref<UploaderFileListItem[]>([]);
+const photoUrls = ref<string[]>([]);
+const showPhotoUploader = computed(
+  () =>
+    confirmDialog.value.action === 'confirm-load' ||
+    confirmDialog.value.action === 'confirm-arrive'
+);
+
+async function onPhotoRead(
+  item: UploaderFileListItem | UploaderFileListItem[]
+) {
+  const items = Array.isArray(item) ? item : [item];
+  for (const it of items) {
+    if (!it.file) continue;
+    it.status = 'uploading';
+    it.message = '上传中';
+    try {
+      const res = await uploadImage(it.file, 'task_loading');
+      it.status = 'done';
+      it.message = '';
+      (it as UploaderFileListItem & { serverUrl?: string }).serverUrl = res.url;
+      photoUrls.value.push(res.url);
+    } catch (e) {
+      it.status = 'failed';
+      it.message = '上传失败';
+      console.error(e);
+    }
+  }
+}
+
+function onPhotoDelete(item: UploaderFileListItem) {
+  const serverUrl = (item as UploaderFileListItem & { serverUrl?: string })
+    .serverUrl;
+  if (serverUrl) {
+    photoUrls.value = photoUrls.value.filter((u) => u !== serverUrl);
+  }
+  return true;
+}
 
 async function load() {
   const id = Number(route.params.id);
@@ -197,13 +290,20 @@ function onAction(key: DriverAction['key']) {
     else showToast('暂无可签收的运单');
     return;
   }
+  if (key === 'reject') {
+    rejectDialog.value = { show: true, reason: '' };
+    return;
+  }
   const dialogConfigs: Record<string, { title: string; message: string }> = {
+    accept: { title: '接收调令', message: '确认接收该调令？接收后即可确认装车' },
     'confirm-load': { title: '确认装车', message: '请确认车辆已完成装车，状态将更新为「已装车」' },
     depart: { title: '确认出发', message: '请确认已发车上路，状态将更新为「在途」' },
     'confirm-arrive': { title: '确认到达', message: '请确认已抵达卸货点，状态将更新为「已到达」' }
   };
   const cfg = dialogConfigs[key];
   if (!cfg) return;
+  photoFiles.value = [];
+  photoUrls.value = [];
   confirmDialog.value = { show: true, title: cfg.title, message: cfg.message, remark: '', action: key };
 }
 
@@ -214,15 +314,40 @@ async function onConfirmDialog(action: string) {
   try {
     const taskId = task.value.id;
     const remark = confirmDialog.value.remark.trim() || undefined;
-    if (confirmDialog.value.action === 'confirm-load') {
-      await confirmLoad(taskId, { remark });
+    const photos = photoUrls.value.length ? [...photoUrls.value] : undefined;
+    if (confirmDialog.value.action === 'accept') {
+      await acceptTask(taskId, { remark });
+    } else if (confirmDialog.value.action === 'confirm-load') {
+      await confirmLoad(taskId, { remark, photoUrls: photos });
     } else if (confirmDialog.value.action === 'depart') {
       await depart(taskId, { remark });
     } else if (confirmDialog.value.action === 'confirm-arrive') {
-      await confirmArrive(taskId, { remark });
+      await confirmArrive(taskId, { remark, photoUrls: photos });
     }
     showToast({ message: '操作成功', type: 'success' });
     await load();
+    return true;
+  } catch (e) {
+    console.error(e);
+    return false;
+  } finally {
+    acting.value = false;
+  }
+}
+
+async function onRejectDialog(action: string) {
+  if (action !== 'confirm') return true;
+  if (!task.value) return true;
+  const reason = rejectDialog.value.reason.trim();
+  if (!reason) {
+    showFailToast('请填写拒单原因');
+    return false;
+  }
+  acting.value = true;
+  try {
+    await rejectTask(task.value.id, { reason });
+    showToast({ message: '已拒单', type: 'success' });
+    router.back();
     return true;
   } catch (e) {
     console.error(e);
@@ -409,6 +534,9 @@ async function onSignItem(itemId: number) {
     color: $text-secondary;
     margin-bottom: $spacing-md;
     font-size: $font-size-sm;
+  }
+  .dialog-uploader {
+    margin-bottom: $spacing-md;
   }
 }
 .loading {

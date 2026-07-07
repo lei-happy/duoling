@@ -48,6 +48,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: '任务详情' }
   },
   {
+    path: '/task/:id/receipt',
+    name: 'TaskReceipt',
+    component: () => import('@/views/task/receipt-upload.vue'),
+    meta: { title: '上传回单' }
+  },
+  {
     path: '/finance',
     name: 'FinanceList',
     component: () => import('@/views/finance/finance-list.vue'),
