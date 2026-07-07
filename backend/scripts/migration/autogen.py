@@ -331,6 +331,9 @@ def _render_file(mid: str, name: str, ops: List[Dict[str, Any]]) -> str:
     body_blocks: List[str] = []
     for op in ops:
         body_blocks.append(_render_op(op))
+    # 末尾始终补一条 return None：新增表场景下每个 op 只渲染注释，
+    # 若无此语句，upgrade() 函数体全是注释 → Python 直接 IndentationError。
+    body_blocks.append("    return None\n")
     body = "\n".join(body_blocks) if body_blocks else "    pass\n"
     requires = _required_tables_from_ops(ops)
     safe_name = name.replace('"', '\\"')

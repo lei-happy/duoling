@@ -78,4 +78,5 @@ def upgrade(conn, tenant_code: str) -> None:
     # NOTE: 新表 `biz_carrier_rate_change_log` —— 推荐直接由 runner Phase 1 (feature.required_tables) 自动建表。
     # 如本迁移确实需要在租户库强建该表，请改用 metadata.create_all 风格。
     # 此处空操作。
+    return None
 
