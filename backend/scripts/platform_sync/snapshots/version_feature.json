@@ -154,6 +154,7 @@
     "capacity_social",
     "capacity_social_approval",
     "capacity_social_list",
+    "finance_payable",
     "fleet_compliance",
     "partner_carrier",
     "partner_customer",
