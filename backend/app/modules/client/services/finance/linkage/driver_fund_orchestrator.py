@@ -9,6 +9,10 @@
 
 结算单 / 补款单为即时对价（收付相抵），不改往来账，留给财务或下次任务手工核销，
 避免与实际现金流重复计账。所有写入幂等（按 ``related_finance_doc_id`` 去重）。
+
+社会运力（``carrier_type=3``）在费用单里以 ``payee_type=OTHER`` 自由文本收款人表示
+（无结构化 ``biz_social_capacity.id``），故不做自动预付联动；其资金账户由企业端
+手工记账维护（见社会运力资金账户 API，``owner_type=3``）。
 """
 
 from decimal import Decimal
@@ -47,7 +51,7 @@ class DriverFundOrchestrator:
             return
         await DriverFundAccountService.system_register_prepay(
             db,
-            driver_id=int(doc.payee_id),
+            owner_id=int(doc.payee_id),
             amount=Decimal(str(amount)),
             # 经营主体：费用单继承任务归属，账户按 (driver_id, enterprise_id) 记账；
             # 为空时由账户服务归一到租户默认主体。

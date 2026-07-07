@@ -71,9 +71,11 @@ export interface DriverRoute {
   status?: number;
 }
 
-/** 驾驶员资金账户（往来账） */
+/** 资金账户（往来账，收款方泛化） */
 export interface DriverFundAccount {
   id?: number;
+  ownerType?: number;
+  ownerId?: number;
   driverId?: number;
   enterpriseId?: number;
   balance?: number;
@@ -87,10 +89,12 @@ export interface DriverFundAccount {
   updatedAt?: string;
 }
 
-/** 资金流水 */
+/** 资金流水（收款方泛化） */
 export interface DriverFundTransaction {
   id?: number;
   accountId?: number;
+  ownerType?: number;
+  ownerId?: number;
   driverId?: number;
   enterpriseId?: number;
   txnNo?: string;

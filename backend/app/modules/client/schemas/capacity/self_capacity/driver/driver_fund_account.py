@@ -12,6 +12,9 @@ from pydantic import BaseModel, Field
 class DriverFundAccountOut(BaseModel):
     """资金账户响应"""
     id: int
+    ownerType: int
+    ownerId: int
+    # driverId 冗余保留：owner_type=1 时即司机 ID，兼容自有司机前端
     driverId: int
     enterpriseId: Optional[int] = None
     balance: Decimal
@@ -28,7 +31,9 @@ class DriverFundAccountOut(BaseModel):
     def from_model(cls, m) -> "DriverFundAccountOut":
         return cls(
             id=m.id,
-            driverId=m.driver_id,
+            ownerType=m.owner_type,
+            ownerId=m.owner_id,
+            driverId=m.owner_id,
             enterpriseId=m.enterprise_id,
             balance=m.balance,
             frozenAmount=m.frozen_amount,
@@ -59,6 +64,8 @@ class DriverFundTransactionOut(BaseModel):
     """资金流水响应"""
     id: int
     accountId: int
+    ownerType: int
+    ownerId: int
     driverId: int
     enterpriseId: Optional[int] = None
     txnNo: str
@@ -82,7 +89,9 @@ class DriverFundTransactionOut(BaseModel):
         return cls(
             id=m.id,
             accountId=m.account_id,
-            driverId=m.driver_id,
+            ownerType=m.owner_type,
+            ownerId=m.owner_id,
+            driverId=m.owner_id,
             enterpriseId=m.enterprise_id,
             txnNo=m.txn_no,
             bizType=m.biz_type,

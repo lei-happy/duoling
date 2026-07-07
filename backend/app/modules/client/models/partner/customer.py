@@ -4,7 +4,7 @@
 """
 
 from typing import Optional
-from sqlalchemy import String, SmallInteger, Text
+from sqlalchemy import String, SmallInteger, Text, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.modules.client.models.base import TenantModelBase
@@ -24,6 +24,10 @@ class Customer(TenantModelBase):
     )
     short_name: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, comment="客户简称"
+    )
+    enterprise_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, index=True,
+        comment="默认经营主体ID（biz_business_entity.id），运单收入归属默认带出，空=租户默认主体",
     )
     customer_type: Mapped[int] = mapped_column(
         SmallInteger, default=0, comment="客户类型 0-主机厂 1-贸易商 2-经销商 3-个人 4-其他"

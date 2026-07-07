@@ -67,6 +67,15 @@ from app.modules.client.models.billing.freight_calc_exception import FreightCalc
 from app.modules.client.models.billing.freight_rate_change_log import FreightRateChangeLog
 from app.modules.client.models.billing.region_alias import RegionAlias
 from app.modules.client.models.billing.vehicle_alias import VehicleAlias
+from app.modules.client.models.billing.cost_policy import CostPolicy
+from app.modules.client.models.billing.cost_rule import CostRule
+from app.modules.client.models.billing.task_cost_result import (
+    TaskCostResult,
+    TaskCostResultItem,
+)
+from app.modules.client.models.billing.cost_calc_task import CostCalcTask
+from app.modules.client.models.billing.cost_calc_exception import CostCalcException
+from app.modules.client.models.billing.cost_rule_change_log import CostRuleChangeLog
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
 from app.modules.client.models.waybill.waybill_receipt import WaybillReceipt
@@ -145,6 +154,13 @@ __all__ = [
     "FreightRateChangeLog",
     "RegionAlias",
     "VehicleAlias",
+    "CostPolicy",
+    "CostRule",
+    "TaskCostResult",
+    "TaskCostResultItem",
+    "CostCalcTask",
+    "CostCalcException",
+    "CostRuleChangeLog",
     "Waybill",
     "WaybillCargo",
     "WaybillReceipt",

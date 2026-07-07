@@ -210,10 +210,27 @@ NEW_MENUS = [
     _new_menu(307, 237, "供应商管理", "partner:supplier", 0,
               "/partner/supplier", "/partner/supplier/index",
               "gongyingshang", 20, 1, "partner_supplier"),
-    # 计费中心：成本规则（远期）/ 费用模板（远期）
-    _new_menu(308, 248, "成本规则", "billing:cost-rule", 0,
-              "/billing/cost-rule", "/billing/cost-rule/index",
-              "chengbenguize", 20, 0, "billing_cost_rule"),  # visible=0 远期
+    # 计费中心：成本政策（任务支出成本自动计算引擎）/ 费用模板（远期）
+    _new_menu(308, 248, "成本政策", "billing:cost-policy", 0,
+              "/billing/cost-policy", "/billing/cost-policy/index",
+              "chengbenguize", 20, 1, "billing_cost_rule"),
+    _new_menu(830, 308, "查询", "billing:cost-policy:list", 1,
+              None, None, "", 0, 1, "billing_cost_rule"),
+    _new_menu(831, 308, "新增", "billing:cost-policy:add", 1,
+              None, None, "", 1, 1, "billing_cost_rule"),
+    _new_menu(832, 308, "编辑", "billing:cost-policy:edit", 1,
+              None, None, "", 2, 1, "billing_cost_rule"),
+    _new_menu(833, 308, "删除", "billing:cost-policy:delete", 1,
+              None, None, "", 3, 1, "billing_cost_rule"),
+    _new_menu(834, 308, "重算", "billing:cost-policy:recalc", 1,
+              None, None, "", 4, 1, "billing_cost_rule"),
+    # 社会运力资金账户（往来账）按钮点（parent 344 运力列表）
+    _new_menu(835, 344, "资金账户", "capacity:social_capacity:list:fund-account", 1,
+              None, None, "", 7, 1, "capacity_social_list"),
+    _new_menu(836, 344, "资金记账", "capacity:social_capacity:list:fund-post", 1,
+              None, None, "", 8, 1, "capacity_social_list"),
+    _new_menu(837, 344, "冻结/解冻资金账户", "capacity:social_capacity:list:fund-freeze", 1,
+              None, None, "", 9, 1, "capacity_social_list"),
     _new_menu(309, 248, "费用模板", "billing:fee-template", 0,
               "/billing/fee-template", "/billing/fee-template/index",
               "feiyongmoban", 30, 0, "billing_fee_template"),  # visible=0 远期

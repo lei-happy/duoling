@@ -391,6 +391,113 @@
             </el-table>
           </el-tab-pane>
 
+          <el-tab-pane name="cost" label="应付成本">
+            <div class="cost-tab-toolbar">
+              <div class="cost-tab-summary">
+                <template v-if="costResult">
+                  <span class="cost-total">
+                    合计应付：{{ formatAmount(costResult.totalCostAmount) }}
+                  </span>
+                  <el-tag
+                    size="small"
+                    :type="costStatusTag(costResult.calcStatus).type"
+                    style="margin-left: 8px"
+                  >
+                    {{ costStatusTag(costResult.calcStatus).text }}
+                  </el-tag>
+                  <span
+                    v-if="costResult.payeeName"
+                    class="ele-text-secondary"
+                    style="margin-left: 8px"
+                  >
+                    收款方：{{ costResult.payeeName }}
+                  </span>
+                </template>
+                <span v-else class="ele-text-secondary">
+                  暂无成本结果（可点击「重算成本」生成）
+                </span>
+              </div>
+              <el-button
+                type="primary"
+                size="small"
+                :loading="costLoading"
+                @click="recalcCost"
+              >
+                重算成本
+              </el-button>
+            </div>
+            <el-table
+              :data="costResult?.items ?? []"
+              border
+              size="small"
+              v-loading="costLoading"
+            >
+              <el-table-column label="费用项" min-width="110">
+                <template #default="{ row }">
+                  {{ row.feeName || row.feeType }}
+                </template>
+              </el-table-column>
+              <el-table-column label="方向" width="70" align="center">
+                <template #default="{ row }">
+                  <el-tag
+                    size="small"
+                    :type="row.direction === 1 ? 'success' : 'warning'"
+                  >
+                    {{ row.direction === 1 ? '加项' : '扣减' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="计价方式"
+                prop="pricingMethod"
+                width="100"
+                align="center"
+              />
+              <el-table-column
+                label="单价"
+                prop="unitPrice"
+                width="90"
+                align="right"
+              />
+              <el-table-column
+                label="数量"
+                prop="quantity"
+                width="80"
+                align="right"
+              />
+              <el-table-column label="金额" width="100" align="right">
+                <template #default="{ row }">
+                  {{ formatAmount(row.amount) }}
+                </template>
+              </el-table-column>
+              <el-table-column label="状态" width="160">
+                <template #default="{ row }">
+                  <el-tag
+                    v-if="row.calcStatus === 'success'"
+                    type="success"
+                    size="small"
+                  >
+                    成功
+                  </el-tag>
+                  <el-tooltip v-else :content="row.errorMessage || ''">
+                    <el-tag type="danger" size="small">
+                      {{ row.errorType || '异常' }}
+                    </el-tag>
+                  </el-tooltip>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div
+              v-if="costResult?.calcTime"
+              class="ele-text-secondary cost-tab-meta"
+            >
+              计算时间：{{ formatDateTime(costResult.calcTime) }}
+              <span v-if="costResult.calcEngineVersion">
+                · 引擎 {{ costResult.calcEngineVersion }}
+              </span>
+            </div>
+          </el-tab-pane>
+
           <el-tab-pane name="finance" :label="`费用单 (${financeDocs.length})`">
             <el-table :data="financeDocs" border size="small">
               <el-table-column label="单据号" prop="docNo" min-width="160" />
@@ -541,6 +648,11 @@
     updateTaskStatus
   } from '@/api/operation/task';
   import { listLoadingRecords } from '@/api/operation/task/loading-record';
+  import {
+    getTaskCostResult,
+    recalculateTaskCost
+  } from '@/api/billing/cost-policy';
+  import type { TaskCostResult } from '@/api/billing/cost-policy/model';
   import type {
     Task,
     TaskSegment,
@@ -593,6 +705,44 @@
   const financeDocs = ref<TaskFinanceSummaryItem[]>([]);
   const activeTab = ref('segments');
 
+  const costResult = ref<TaskCostResult | null>(null);
+  const costLoading = ref(false);
+
+  const costStatusTag = (s?: string) => {
+    switch (s) {
+      case 'success':
+        return { type: 'success', text: '计算成功' };
+      case 'partial':
+        return { type: 'warning', text: '部分成功' };
+      case 'locked':
+        return { type: 'info', text: '已锁定' };
+      default:
+        return { type: 'danger', text: '异常' };
+    }
+  };
+
+  const loadCostResult = async (id: number) => {
+    try {
+      costResult.value = await getTaskCostResult(id);
+    } catch (_) {
+      costResult.value = null;
+    }
+  };
+
+  const recalcCost = async () => {
+    if (!task.value?.id) return;
+    costLoading.value = true;
+    try {
+      costResult.value = await recalculateTaskCost(task.value.id);
+      EleMessage.success({ message: '成本已重算', plain: true });
+    } catch (e: unknown) {
+      const msg = (e as { message?: string }).message || '重算失败';
+      EleMessage.error({ message: msg, plain: true });
+    } finally {
+      costLoading.value = false;
+    }
+  };
+
   const orderNoOf = (orderId?: number | null): string | number => {
     if (!orderId) return '--';
     const seg = segments.value.find((s) => s.id === orderId);
@@ -640,6 +790,7 @@
       items.value = its;
       financeDocs.value = fins;
       loadingRecords.value = recs;
+      loadCostResult(id);
     } catch (e: unknown) {
       const msg = (e as { message?: string }).message || '加载失败';
       EleMessage.error({ message: msg, plain: true });
@@ -840,6 +991,23 @@
 
   .dispatch-time-cell {
     line-height: 1.6;
+    font-size: 12px;
+  }
+
+  .cost-tab-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .cost-total {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .cost-tab-meta {
+    margin-top: 8px;
     font-size: 12px;
   }
 

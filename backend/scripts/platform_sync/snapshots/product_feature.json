@@ -473,7 +473,9 @@
       "biz_social_capacity_driver",
       "biz_social_capacity_vehicle",
       "biz_social_capacity_account",
-      "biz_social_capacity_audit"
+      "biz_social_capacity_audit",
+      "biz_driver_fund_account",
+      "biz_driver_fund_transaction"
     ],
     "sort_order": 51,
     "status": 1
@@ -543,10 +545,18 @@
   },
   {
     "feature_code": "billing_cost_rule",
-    "feature_name": "成本规则",
+    "feature_name": "成本政策",
     "module": "billing",
-    "description": null,
-    "required_tables": null,
+    "description": "任务支出成本自动计算引擎（成本政策/费用规则/成本结果/异常）",
+    "required_tables": [
+      "biz_cost_policy",
+      "biz_cost_rule",
+      "biz_task_cost_result",
+      "biz_task_cost_result_item",
+      "biz_cost_calc_exception",
+      "biz_cost_calc_task",
+      "biz_cost_rule_change_log"
+    ],
     "sort_order": 62,
     "status": 1
   },

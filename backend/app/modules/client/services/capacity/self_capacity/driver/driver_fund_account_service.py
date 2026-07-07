@@ -16,6 +16,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
 from app.modules.client.models.capacity.self_capacity.driver.driver import Driver
+from app.modules.client.models.capacity.social_capacity.social_capacity import (
+    SocialCapacity,
+)
 from app.modules.client.models.capacity.self_capacity.driver.driver_fund_account import (
     DriverFundAccount,
 )
@@ -57,6 +60,12 @@ DIRECTION_OUT = 2
 SOURCE_MANUAL = 1
 SOURCE_SYSTEM = 2
 
+# 收款方类型（owner_type）
+OWNER_DRIVER = 1   # 自有司机 biz_driver.id
+OWNER_CARRIER = 2  # 承运商（预留）
+OWNER_SOCIAL = 3   # 社会运力 biz_social_capacity.id
+_VALID_OWNER_TYPES = {OWNER_DRIVER, OWNER_CARRIER, OWNER_SOCIAL}
+
 # 账户状态
 STATUS_NORMAL = 1
 STATUS_FROZEN = 0
@@ -90,14 +99,31 @@ class DriverFundAccountService:
     # 账户获取 / 懒创建
     # ------------------------------------------------------------------
     @staticmethod
-    async def _ensure_driver(db: AsyncSession, driver_id: int) -> Driver:
-        r = await db.execute(
-            select(Driver).where(Driver.id == driver_id, Driver.is_deleted == 0)
-        )
-        drv = r.scalar_one_or_none()
-        if not drv:
-            raise BizException("驾驶员不存在")
-        return drv
+    async def _ensure_owner(
+        db: AsyncSession, owner_type: int, owner_id: int
+    ) -> None:
+        """校验收款方存在：type=1 自有司机，type=3 社会运力。"""
+        if owner_type not in _VALID_OWNER_TYPES:
+            raise BizException("不支持的收款方类型")
+        if owner_type == OWNER_DRIVER:
+            exists = (await db.execute(
+                select(Driver.id).where(
+                    Driver.id == owner_id, Driver.is_deleted == 0
+                )
+            )).scalar_one_or_none()
+            if not exists:
+                raise BizException("驾驶员不存在")
+        elif owner_type == OWNER_SOCIAL:
+            exists = (await db.execute(
+                select(SocialCapacity.id).where(
+                    SocialCapacity.id == owner_id,
+                    SocialCapacity.is_deleted == 0,
+                )
+            )).scalar_one_or_none()
+            if not exists:
+                raise BizException("社会运力不存在")
+        else:
+            raise BizException("承运商资金账户暂未开放")
 
     @staticmethod
     async def _resolve_enterprise_id(
@@ -114,16 +140,18 @@ class DriverFundAccountService:
 
     @staticmethod
     async def _get_or_create(
-        db: AsyncSession, driver_id: int, enterprise_id: Optional[int],
+        db: AsyncSession, owner_type: int, owner_id: int,
+        enterprise_id: Optional[int],
         *, for_update: bool = False,
     ) -> DriverFundAccount:
-        # 账户按 (driver_id, enterprise_id) 唯一定位（uk_dfa_driver_ent）。
+        # 账户按 (owner_type, owner_id, enterprise_id) 唯一定位（uk_dfa_owner_ent）。
         # enterprise_id 为空时归一到租户默认经营主体，避免 NULL 造成账户碎裂。
         enterprise_id = await DriverFundAccountService._resolve_enterprise_id(
             db, enterprise_id
         )
         stmt = select(DriverFundAccount).where(
-            DriverFundAccount.driver_id == driver_id,
+            DriverFundAccount.owner_type == owner_type,
+            DriverFundAccount.owner_id == owner_id,
             DriverFundAccount.enterprise_id == enterprise_id,
             DriverFundAccount.is_deleted == 0,
         )
@@ -134,7 +162,8 @@ class DriverFundAccountService:
             return acc
 
         acc = DriverFundAccount(
-            driver_id=driver_id,
+            owner_type=owner_type,
+            owner_id=owner_id,
             enterprise_id=enterprise_id,
             balance=Decimal("0"),
             frozen_amount=Decimal("0"),
@@ -162,11 +191,12 @@ class DriverFundAccountService:
     # ------------------------------------------------------------------
     @staticmethod
     async def get_account(
-        db: AsyncSession, driver_id: int, enterprise_id: Optional[int] = None
+        db: AsyncSession, owner_id: int, enterprise_id: Optional[int] = None,
+        *, owner_type: int = OWNER_DRIVER,
     ) -> DriverFundAccountOut:
-        await DriverFundAccountService._ensure_driver(db, driver_id)
+        await DriverFundAccountService._ensure_owner(db, owner_type, owner_id)
         acc = await DriverFundAccountService._get_or_create(
-            db, driver_id, enterprise_id
+            db, owner_type, owner_id, enterprise_id
         )
         return DriverFundAccountOut.from_model(acc)
 
@@ -176,8 +206,9 @@ class DriverFundAccountService:
     @staticmethod
     async def list_transactions(
         db: AsyncSession,
-        driver_id: int,
+        owner_id: int,
         *,
+        owner_type: int = OWNER_DRIVER,
         biz_type: Optional[int] = None,
         source: Optional[int] = None,
         start: Optional[datetime] = None,
@@ -186,7 +217,8 @@ class DriverFundAccountService:
         page_size: int = 20,
     ) -> Tuple[list[dict], int]:
         conds = [
-            DriverFundTransaction.driver_id == driver_id,
+            DriverFundTransaction.owner_type == owner_type,
+            DriverFundTransaction.owner_id == owner_id,
             DriverFundTransaction.is_deleted == 0,
         ]
         if biz_type is not None:
@@ -241,11 +273,12 @@ class DriverFundAccountService:
     @staticmethod
     async def post_transaction(
         db: AsyncSession,
-        driver_id: int,
+        owner_id: int,
         data: DriverFundTransactionCreate,
         *,
         operator_id: Optional[int],
         enterprise_id: Optional[int] = None,
+        owner_type: int = OWNER_DRIVER,
     ) -> DriverFundTransactionOut:
         if data.bizType not in _MANUAL_BIZ_TYPES:
             raise BizException("不支持的记账类型")
@@ -257,9 +290,9 @@ class DriverFundAccountService:
                     f"人工调整必须填写不少于 {MANUAL_REMARK_MIN_LEN} 字的备注"
                 )
 
-        await DriverFundAccountService._ensure_driver(db, driver_id)
+        await DriverFundAccountService._ensure_owner(db, owner_type, owner_id)
         acc = await DriverFundAccountService._get_or_create(
-            db, driver_id, enterprise_id, for_update=True
+            db, owner_type, owner_id, enterprise_id, for_update=True
         )
         if acc.status == STATUS_FROZEN:
             raise BizException("账户已冻结，禁止记账")
@@ -308,7 +341,8 @@ class DriverFundAccountService:
         after = before + delta
         txn = DriverFundTransaction(
             account_id=acc.id,
-            driver_id=acc.driver_id,
+            owner_type=acc.owner_type,
+            owner_id=acc.owner_id,
             enterprise_id=acc.enterprise_id,
             txn_no=await DriverFundAccountService._generate_txn_no(db),
             biz_type=biz_type,
@@ -343,15 +377,16 @@ class DriverFundAccountService:
     async def system_register_prepay(
         db: AsyncSession,
         *,
-        driver_id: int,
+        owner_id: int,
         amount: Decimal,
         enterprise_id: Optional[int],
         task_id: Optional[int],
         finance_doc_id: int,
         operator_id: Optional[int],
         doc_no: Optional[str] = None,
+        owner_type: int = OWNER_DRIVER,
     ) -> Optional[DriverFundTransaction]:
-        """预付单支付后登记为账户预付（delta<0：司机占用公司资金）。幂等。"""
+        """预付单支付后登记为账户预付（delta<0：收款方占用公司资金）。幂等。"""
         if amount is None or amount <= 0:
             return None
         # 幂等：同一费用单已登记过则跳过
@@ -369,7 +404,7 @@ class DriverFundAccountService:
             return None
 
         acc = await DriverFundAccountService._get_or_create(
-            db, driver_id, enterprise_id, for_update=True
+            db, owner_type, owner_id, enterprise_id, for_update=True
         )
         operator_name = await DriverFundAccountService._resolve_operator_name(
             db, operator_id

@@ -13,6 +13,11 @@ import type {
   SocialCapacityStatusBody,
   SocialCapacityListStats
 } from './model';
+import type {
+  DriverFundAccount,
+  DriverFundTransaction,
+  DriverFundTransactionParam
+} from '@/api/capacity/self-capacity/driver/model';
 
 const BASE = '/capacity/social_capacity/list';
 
@@ -50,7 +55,9 @@ export async function listForDispatch(keyword?: string, limit = 50) {
 }
 
 export async function getSocialCapacity(id: number) {
-  const res = await request.get<ApiResult<SocialCapacityDetail>>(`${BASE}/${id}`);
+  const res = await request.get<ApiResult<SocialCapacityDetail>>(
+    `${BASE}/${id}`
+  );
   if (res.data.code === 0) {
     return res.data.data;
   }
@@ -200,6 +207,67 @@ export async function setDefaultAccount(
 ) {
   const res = await request.post<ApiResult<SocialCapacityAccount>>(
     `${BASE}/${socialCapacityId}/accounts/${accountId}/set-default`
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+// =====================================================
+// 资金账户（往来账，owner_type=3 社会运力）—— 复用统一资金账户模型
+// =====================================================
+export async function getSocialFundAccount(socialCapacityId: number) {
+  const res = await request.get<ApiResult<DriverFundAccount>>(
+    `${BASE}/${socialCapacityId}/fund-account`
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function listSocialFundTransactions(
+  socialCapacityId: number,
+  params: {
+    page?: number;
+    limit?: number;
+    bizType?: number;
+    source?: number;
+    start?: string;
+    end?: string;
+  }
+) {
+  const res = await request.get<
+    ApiResult<{ list: DriverFundTransaction[]; total: number }>
+  >(`${BASE}/${socialCapacityId}/fund-account/transactions`, { params });
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function postSocialFundTransaction(
+  socialCapacityId: number,
+  data: DriverFundTransactionParam
+) {
+  const res = await request.post<ApiResult<DriverFundTransaction>>(
+    `${BASE}/${socialCapacityId}/fund-account/transactions`,
+    data
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function toggleSocialFundAccountStatus(
+  accountId: number,
+  status: number
+) {
+  const res = await request.patch<ApiResult<DriverFundAccount>>(
+    `${BASE}/fund-account/${accountId}/status`,
+    { status }
   );
   if (res.data.code === 0) {
     return res.data.data;

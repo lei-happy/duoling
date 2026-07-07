@@ -321,6 +321,9 @@ class BusinessEntityService:
         from app.modules.client.models.capacity.self_capacity.capacity import Capacity
         from app.modules.client.models.task.task import Task
         from app.modules.client.models.task.task_finance_doc import TaskFinanceDoc
+        from app.modules.client.models.partner.customer import Customer
+        from app.modules.client.models.partner.carrier import Carrier
+        from app.modules.client.models.waybill.waybill import Waybill
 
         checks = [
             (Driver, "司机"),
@@ -328,6 +331,9 @@ class BusinessEntityService:
             (Capacity, "运力"),
             (Task, "任务"),
             (TaskFinanceDoc, "费用单"),
+            (Customer, "客户"),
+            (Carrier, "承运商"),
+            (Waybill, "运单"),
         ]
         for model, label in checks:
             hit = (

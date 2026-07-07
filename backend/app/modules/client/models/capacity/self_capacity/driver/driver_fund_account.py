@@ -1,10 +1,14 @@
 """
-驾驶员资金账户（往来账户，租户库）
+资金账户（往来账户，租户库）
 
-与既有 ``biz_driver_account``（收款账户/银行卡）是**不同概念**：本表是司机与公司
-之间的资金往来台账/钱包，一个司机 × 一个经营主体唯一一账；``balance`` 为带符号净额
-（以司机视角：正=公司欠司机，负=司机欠公司），且只能通过资金流水
-``biz_driver_fund_transaction`` 改变。
+收款方资金往来台账/钱包，按 ``(owner_type, owner_id, enterprise_id)`` 唯一定位：
+  * ``owner_type=1`` 自有司机，``owner_id`` = ``biz_driver.id``
+  * ``owner_type=3`` 社会运力，``owner_id`` = ``biz_social_capacity.id``
+  * ``owner_type=2`` 承运商（预留）
+
+与既有 ``biz_driver_account``（收款账户/银行卡）是**不同概念**：本表是收款方与公司
+之间的资金往来台账/钱包；``balance`` 为带符号净额（以收款方视角：正=公司欠对方，
+负=对方欠公司），且只能通过资金流水 ``biz_driver_fund_transaction`` 改变。
 """
 
 from decimal import Decimal
@@ -20,19 +24,24 @@ from app.modules.client.models.base import TenantModelBase
 
 
 class DriverFundAccount(TenantModelBase):
-    """驾驶员资金账户（往来账）"""
+    """资金账户（往来账，收款方泛化）"""
 
     __tablename__ = "biz_driver_fund_account"
     __table_args__ = (
         UniqueConstraint(
-            "driver_id", "enterprise_id", name="uk_dfa_driver_ent"
+            "owner_type", "owner_id", "enterprise_id", name="uk_dfa_owner_ent"
         ),
-        {"comment": "驾驶员资金账户（往来账）"},
+        {"comment": "资金账户（往来账，收款方泛化）"},
     )
     __table_tier__ = "business"
 
-    driver_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, index=True, comment="关联 biz_driver.id"
+    owner_type: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, default=1, server_default="1",
+        comment="收款方类型 1-自有司机 2-承运商(预留) 3-社会运力",
+    )
+    owner_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, index=True,
+        comment="收款方ID：owner_type=1时为biz_driver.id，=3时为biz_social_capacity.id",
     )
     enterprise_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="所属经营主体ID"

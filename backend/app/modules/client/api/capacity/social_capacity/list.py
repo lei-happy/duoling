@@ -5,6 +5,7 @@
 调度选择器等接口。审核动作 (approve/reject) 由 approval.py 提供。
 """
 
+from datetime import datetime
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, Query
@@ -25,10 +26,20 @@ from app.modules.client.schemas.capacity.social_capacity import (
     SocialCapacityAccountCreate,
     SocialCapacityAccountUpdate,
 )
+from app.modules.client.schemas.capacity.self_capacity.driver import (
+    DriverFundAccountStatusUpdate,
+    DriverFundTransactionCreate,
+)
 from app.modules.client.services.capacity.social_capacity import (
     SocialCapacityService,
     SocialCapacityAccountService,
     SocialCapacityAuditService,
+)
+from app.modules.client.services.capacity.self_capacity.driver import (
+    DriverFundAccountService,
+)
+from app.modules.client.services.capacity.self_capacity.driver.driver_fund_account_service import (
+    OWNER_SOCIAL,
 )
 
 
@@ -341,3 +352,68 @@ async def set_default_account(
         db, social_capacity_id, account_id
     )
     return success(data=out.model_dump())
+
+
+# =============================================================================
+# 资金账户（往来账，owner_type=3 社会运力）—— 复用统一资金账户服务
+# =============================================================================
+@router.get("/{social_capacity_id}/fund-account")
+async def get_social_fund_account(
+    social_capacity_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    data = await DriverFundAccountService.get_account(
+        db, social_capacity_id, owner_type=OWNER_SOCIAL
+    )
+    return success(data=data.model_dump())
+
+
+@router.get("/{social_capacity_id}/fund-account/transactions")
+async def list_social_fund_transactions(
+    social_capacity_id: int,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, alias="limit", ge=1, le=100),
+    bizType: Optional[int] = None,
+    source: Optional[int] = None,
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    items, total = await DriverFundAccountService.list_transactions(
+        db, social_capacity_id,
+        owner_type=OWNER_SOCIAL,
+        biz_type=bizType, source=source, start=start, end=end,
+        page=page, page_size=page_size,
+    )
+    return success(data={"list": items, "total": total})
+
+
+@router.post("/{social_capacity_id}/fund-account/transactions")
+@operation_log(module="社会运力池", action="资金账户记账", description="社会运力资金账户记账")
+async def post_social_fund_transaction(
+    request: Request,
+    social_capacity_id: int,
+    data: DriverFundTransactionCreate,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    txn = await DriverFundAccountService.post_transaction(
+        db, social_capacity_id, data,
+        operator_id=current_user.user_id, owner_type=OWNER_SOCIAL,
+    )
+    return success(data=txn.model_dump())
+
+
+@router.patch("/fund-account/{account_id}/status")
+@operation_log(module="社会运力池", action="资金账户状态", description="冻结/解冻社会运力资金账户")
+async def toggle_social_fund_account_status(
+    request: Request,
+    account_id: int,
+    data: DriverFundAccountStatusUpdate,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    acc = await DriverFundAccountService.toggle_status(db, account_id, data.status)
+    return success(data=acc.model_dump())

@@ -1,8 +1,9 @@
 """
-驾驶员资金流水（租户库，append-only）
+资金流水（租户库，append-only，收款方泛化）
 
 资金账户 ``biz_driver_fund_account.balance`` 的唯一事实来源：
 ``balance == Σ delta``。流水只增不改不删，写错只能新增反向冲正流水。
+按 ``(owner_type, owner_id)`` 标识收款方（自有司机/社会运力/承运商）。
 """
 
 from decimal import Decimal
@@ -17,23 +18,28 @@ from app.modules.client.models.base import TenantModelBase
 
 
 class DriverFundTransaction(TenantModelBase):
-    """驾驶员资金流水"""
+    """资金流水（收款方泛化）"""
 
     __tablename__ = "biz_driver_fund_transaction"
     __table_args__ = (
         Index("idx_dft_account", "account_id"),
-        Index("idx_dft_driver", "driver_id"),
+        Index("idx_dft_owner", "owner_type", "owner_id"),
         Index("idx_dft_biz_type", "biz_type"),
         Index("idx_dft_created", "created_at"),
-        {"comment": "驾驶员资金流水"},
+        {"comment": "资金流水（收款方泛化）"},
     )
     __table_tier__ = "business"
 
     account_id: Mapped[int] = mapped_column(
         BigInteger, nullable=False, comment="关联 biz_driver_fund_account.id"
     )
-    driver_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, comment="冗余 driver_id，便于按司机查"
+    owner_type: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, default=1, server_default="1",
+        comment="收款方类型 1-自有司机 2-承运商(预留) 3-社会运力（冗余）",
+    )
+    owner_id: Mapped[int] = mapped_column(
+        BigInteger, nullable=False,
+        comment="收款方ID（冗余，便于按收款方查）",
     )
     enterprise_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="冗余经营主体ID"

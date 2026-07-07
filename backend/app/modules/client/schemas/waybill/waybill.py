@@ -81,6 +81,7 @@ class WaybillCreate(BaseModel):
     waybillNo: Optional[str] = None
     customerId: Optional[int] = None
     customerName: Optional[str] = None
+    enterpriseId: Optional[int] = None
     origin: Optional[str] = None
     originCode: Optional[str] = None
     originRegionId: Optional[int] = None
@@ -125,6 +126,7 @@ class WaybillCreate(BaseModel):
 class WaybillUpdate(BaseModel):
     customerId: Optional[int] = None
     customerName: Optional[str] = None
+    enterpriseId: Optional[int] = None
     origin: Optional[str] = None
     originCode: Optional[str] = None
     originRegionId: Optional[int] = None
@@ -173,6 +175,7 @@ class WaybillOut(BaseModel):
     waybillNo: str
     customerId: Optional[int] = None
     customerName: Optional[str] = None
+    enterpriseId: Optional[int] = None
     origin: Optional[str] = None
     originCode: Optional[str] = None
     originRegionId: Optional[int] = None
@@ -272,6 +275,7 @@ class WaybillOut(BaseModel):
             waybillNo=m.waybill_no,
             customerId=m.customer_id,
             customerName=m.customer_name,
+            enterpriseId=getattr(m, "enterprise_id", None),
             origin=m.origin,
             originCode=m.origin_code,
             originRegionId=getattr(m, "origin_region_id", None),

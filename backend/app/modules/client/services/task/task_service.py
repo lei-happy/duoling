@@ -192,12 +192,15 @@ class TaskService:
                         f"承运商不存在 (id={carrier_info.carrierId})"
                     )
                 snapshot["carrier_id"] = car.id
+                # 经营主体：承运商任务成本归属继承自承运商档案默认主体
+                snapshot["enterprise_id"] = getattr(car, "enterprise_id", None)
                 if not snapshot["carrier_name"]:
                     snapshot["carrier_name"] = car.carrier_name
                 if not snapshot["carrier_short_name"]:
                     snapshot["carrier_short_name"] = car.short_name
 
-        # 社会运力：完全依赖前端传入的快照字段（已在 Schema 校验必填）
+        # 社会运力：完全依赖前端传入的快照字段（已在 Schema 校验必填）；
+        # 成本归属经营主体留空，由下游财务按租户默认主体兜底解析
         return snapshot
 
     @staticmethod
@@ -598,6 +601,8 @@ class TaskService:
             await TaskService.ensure_main_line_dispatch_order(db, task)
 
         await db.refresh(task)
+        if int(task.status) == TASK_DISPATCHED:
+            await TaskService._try_enqueue_cost_calc(db, task.id)
         return task
 
     @staticmethod
@@ -930,6 +935,26 @@ class TaskService:
         return TASK_DISPATCHED
 
     @staticmethod
+    async def _try_enqueue_cost_calc(
+        db: AsyncSession, task_id: int, *, task_type: str = "task_dispatched",
+    ) -> None:
+        """派车/分配完成后 best-effort 触发成本计算入队。
+
+        使用 SAVEPOINT 包裹，即便租户未开通成本引擎（表缺失）也不会污染派车主事务。
+        """
+        try:
+            from app.modules.client.services.billing.cost_calc_task_service import (
+                CostCalcTaskService,
+            )
+            async with db.begin_nested():
+                await CostCalcTaskService.enqueue_task_recalc(
+                    db, task_id, task_type=task_type, priority=3,
+                )
+        except Exception as e:  # noqa: BLE001
+            from loguru import logger
+            logger.debug(f"[task] 成本计算入队跳过 task={task_id}: {e!r}")
+
+    @staticmethod
     async def complete_carrier_assignment(
         db: AsyncSession,
         task_id: int,
@@ -956,6 +981,8 @@ class TaskService:
             TaskService._stamp_dispatched(task)
         await db.flush()
         await db.refresh(task)
+        if target == TASK_DISPATCHED:
+            await TaskService._try_enqueue_cost_calc(db, task.id)
         return task
 
     @staticmethod
@@ -1003,11 +1030,14 @@ class TaskService:
             task.carrier_cost_amount = data.carrierCostAmount
         if data.costRemark is not None:
             task.cost_remark = data.costRemark
-        if int(task.status) == TASK_PENDING_DISPATCH:
+        became_dispatched = int(task.status) == TASK_PENDING_DISPATCH
+        if became_dispatched:
             task.status = TASK_DISPATCHED
             TaskService._stamp_dispatched(task)
         await db.flush()
         await db.refresh(task)
+        if int(task.status) == TASK_DISPATCHED:
+            await TaskService._try_enqueue_cost_calc(db, task.id)
         return task
 
     # ------------------------------------------------------------------

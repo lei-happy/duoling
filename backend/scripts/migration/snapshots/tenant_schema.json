@@ -2603,6 +2603,15 @@
           "comment": "区/县"
         },
         {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "默认经营主体ID（biz_business_entity.id），承运成本归属默认带出，空=租户默认主体"
+        },
+        {
           "name": "id",
           "type": "BIGINT",
           "nullable": false,
@@ -2785,6 +2794,13 @@
           "columns": [
             "status",
             "invite_status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_biz_carrier_enterprise_id",
+          "columns": [
+            "enterprise_id"
           ],
           "unique": false
         }
@@ -4471,6 +4487,1086 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_cost_calc_exception",
+      "comment": "成本计算异常表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "context_json",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "上下文JSON（触发来源/匹配轨迹）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "exception_message",
+          "type": "VARCHAR(1000)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "异常描述"
+        },
+        {
+          "name": "exception_type",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "异常类型"
+        },
+        {
+          "name": "fee_type",
+          "type": "VARCHAR(32)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "费用类型（整任务级异常时为空）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "process_remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理备注"
+        },
+        {
+          "name": "processed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理时间"
+        },
+        {
+          "name": "processed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理人"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "'pending'",
+          "comment": "处理状态 pending/processed/ignored"
+        },
+        {
+          "name": "task_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务ID"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_cce_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cce_task",
+          "columns": [
+            "task_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cce_type",
+          "columns": [
+            "exception_type"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_cost_calc_task",
+      "comment": "成本计算任务表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "error_message",
+          "type": "VARCHAR(1000)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近一次错误信息"
+        },
+        {
+          "name": "finished_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "完成时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "max_retry_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "3",
+          "comment": "最大重试次数"
+        },
+        {
+          "name": "priority",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "优先级（越大越优先）"
+        },
+        {
+          "name": "retry_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已重试次数"
+        },
+        {
+          "name": "started_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开始时间"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "'pending'",
+          "comment": "状态 pending/running/success/failed"
+        },
+        {
+          "name": "target_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目标ID"
+        },
+        {
+          "name": "target_type",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目标类型 task/policy/rule"
+        },
+        {
+          "name": "task_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "冗余的任务ID（政策/规则触发时由展开阶段写入；task_changed 与 target_id 相同）"
+        },
+        {
+          "name": "task_type",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务类型"
+        },
+        {
+          "name": "triggered_by_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "触发用户ID"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_cct_status_priority",
+          "columns": [
+            "status",
+            "priority",
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cct_target",
+          "columns": [
+            "target_type",
+            "target_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cct_task",
+          "columns": [
+            "task_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_cost_policy",
+      "comment": "成本政策表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "carrier_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "适用承运类型 1-自有车 2-承运商 3-社会运力，空表示不限"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人"
+        },
+        {
+          "name": "effective_date",
+          "type": "DATE",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "生效日期"
+        },
+        {
+          "name": "expiry_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "失效日期（空表示长期）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "policy_name",
+          "type": "VARCHAR(200)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "政策名称"
+        },
+        {
+          "name": "policy_no",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "政策编号（租户内唯一）"
+        },
+        {
+          "name": "priority",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "政策级人工优先级（越大越优先）"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "scope_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "适用范围对象ID（承运商/司机/运力ID，scope_type=0时为空）"
+        },
+        {
+          "name": "scope_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "适用范围类型 0-全局默认 1-指定承运商 2-指定司机 3-指定运力"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-草稿 1-生效 2-已过期 3-已终止"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "updated_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "更新人"
+        },
+        {
+          "name": "version_no",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "政策版本号"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_cost_policy_carrier_type",
+          "columns": [
+            "carrier_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cost_policy_scope",
+          "columns": [
+            "scope_type",
+            "scope_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cost_policy_status_date",
+          "columns": [
+            "status",
+            "effective_date",
+            "expiry_date"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_cost_policy_no",
+          "columns": [
+            "policy_no"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_cost_rule",
+      "comment": "成本费用规则表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "brand_id",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "标准品牌ID，空表示不限品牌"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人"
+        },
+        {
+          "name": "destination",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目的地名称"
+        },
+        {
+          "name": "destination_code",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目的地编码"
+        },
+        {
+          "name": "destination_region_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目的地行政区ID"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "方向 1-应付加项 2-扣减项"
+        },
+        {
+          "name": "distance_km",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "政策核定里程（per_km 时优先于线路里程）"
+        },
+        {
+          "name": "effective_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "规则生效日期（空则继承政策）"
+        },
+        {
+          "name": "expiry_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "规则失效日期（空则继承政策）"
+        },
+        {
+          "name": "fee_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "费用名称（字典 label 冗余）"
+        },
+        {
+          "name": "fee_type",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "费用类型（字典 cost_fee_type）：driver_freight/car_wash/loading/..."
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_bidirectional",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "线路是否双向 0-否 1-是"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "max_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "该费用项封顶金额"
+        },
+        {
+          "name": "min_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "该费用项保底金额"
+        },
+        {
+          "name": "multiply_by_qty",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "每公里/每吨公里是否再乘台数 0-否 1-是"
+        },
+        {
+          "name": "origin",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出发地名称"
+        },
+        {
+          "name": "origin_code",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出发地编码"
+        },
+        {
+          "name": "origin_region_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出发地行政区ID（biz_region.id），空表示不限线路"
+        },
+        {
+          "name": "payee_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "收款方类型 1-司机 2-承运商 3-社会运力"
+        },
+        {
+          "name": "percent_base",
+          "type": "VARCHAR(32)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "比例计价基数来源 freight_income/fixed_base（percentage 计价时使用）"
+        },
+        {
+          "name": "policy_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属成本政策ID"
+        },
+        {
+          "name": "price_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "价格类型 0-明确 1-预估"
+        },
+        {
+          "name": "pricing_method",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "'per_vehicle'",
+          "comment": "计价方式 per_vehicle/per_km/per_trip/per_ton_km/fixed/percentage/tiered"
+        },
+        {
+          "name": "priority",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "人工优先级（越大越优先）"
+        },
+        {
+          "name": "qty_dimension",
+          "type": "VARCHAR(16)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计价数量维度 vehicle/km/trip/ton"
+        },
+        {
+          "name": "rate_percent",
+          "type": "NUMERIC(8, 4)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "比例（%，percentage 计价时使用）"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "round_mode",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "取整方式 0-不取整 1-四舍五入到元 2-进一法到元"
+        },
+        {
+          "name": "rule_version",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "规则版本号（每次更新+1，旧版本快照在 biz_cost_rule_change_log）"
+        },
+        {
+          "name": "series_id",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "标准车系ID，空表示不限车型"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-启用"
+        },
+        {
+          "name": "tiers_json",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "阶梯分段配置（tiered 计价时使用）"
+        },
+        {
+          "name": "unit_price",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "单价（含义随 pricing_method 变化）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "updated_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "更新人"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_cost_rule_brand",
+          "columns": [
+            "brand_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cost_rule_fee_type",
+          "columns": [
+            "fee_type",
+            "status",
+            "is_deleted"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cost_rule_policy",
+          "columns": [
+            "policy_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cost_rule_route",
+          "columns": [
+            "origin_region_id",
+            "destination_region_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cost_rule_series",
+          "columns": [
+            "series_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_cost_rule_change_log",
+      "comment": "成本规则变更日志表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "affected_task_count",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "本次变更触发重算的任务数量"
+        },
+        {
+          "name": "change_type",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变更类型 create/update/disable/enable/delete"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "operator_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人用户ID"
+        },
+        {
+          "name": "policy_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属政策ID"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "rule_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "成本规则ID"
+        },
+        {
+          "name": "rule_version_after",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变更后版本号"
+        },
+        {
+          "name": "rule_version_before",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变更前版本号"
+        },
+        {
+          "name": "snapshot_after",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变更后完整字段快照"
+        },
+        {
+          "name": "snapshot_before",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变更前完整字段快照"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_crcl_policy",
+          "columns": [
+            "policy_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_crcl_rule",
+          "columns": [
+            "rule_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_customer",
       "comment": "客户表",
       "table_tier": "business",
@@ -4548,6 +5644,15 @@
           "comment": "客户类型 0-主机厂 1-贸易商 2-经销商 3-个人 4-其他"
         },
         {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "默认经营主体ID（biz_business_entity.id），运单收入归属默认带出，空=租户默认主体"
+        },
+        {
           "name": "id",
           "type": "BIGINT",
           "nullable": false,
@@ -4622,7 +5727,15 @@
           ]
         }
       ],
-      "indexes": [],
+      "indexes": [
+        {
+          "name": "ix_biz_customer_enterprise_id",
+          "columns": [
+            "enterprise_id"
+          ],
+          "unique": false
+        }
+      ],
       "foreign_keys": []
     },
     {
@@ -5407,7 +6520,7 @@
     },
     {
       "name": "biz_driver_fund_account",
-      "comment": "驾驶员资金账户（往来账）",
+      "comment": "资金账户（往来账，收款方泛化）",
       "table_tier": "business",
       "columns": [
         {
@@ -5427,15 +6540,6 @@
           "autoincrement": null,
           "server_default": "now()",
           "comment": "创建时间"
-        },
-        {
-          "name": "driver_id",
-          "type": "BIGINT",
-          "nullable": false,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "关联 biz_driver.id"
         },
         {
           "name": "enterprise_id",
@@ -5481,6 +6585,24 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "最近一笔流水时间"
+        },
+        {
+          "name": "owner_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款方ID：owner_type=1时为biz_driver.id，=3时为biz_social_capacity.id"
+        },
+        {
+          "name": "owner_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "收款方类型 1-自有司机 2-承运商(预留) 3-社会运力"
         },
         {
           "name": "remark",
@@ -5533,18 +6655,19 @@
       ],
       "unique_constraints": [
         {
-          "name": "uk_dfa_driver_ent",
+          "name": "uk_dfa_owner_ent",
           "columns": [
-            "driver_id",
+            "owner_type",
+            "owner_id",
             "enterprise_id"
           ]
         }
       ],
       "indexes": [
         {
-          "name": "ix_biz_driver_fund_account_driver_id",
+          "name": "ix_biz_driver_fund_account_owner_id",
           "columns": [
-            "driver_id"
+            "owner_id"
           ],
           "unique": false
         }
@@ -5553,7 +6676,7 @@
     },
     {
       "name": "biz_driver_fund_transaction",
-      "comment": "驾驶员资金流水",
+      "comment": "资金流水（收款方泛化）",
       "table_tier": "business",
       "columns": [
         {
@@ -5629,15 +6752,6 @@
           "comment": "方向 1-入 2-出（由 delta 符号派生，冗余展示）"
         },
         {
-          "name": "driver_id",
-          "type": "BIGINT",
-          "nullable": false,
-          "primary_key": false,
-          "autoincrement": null,
-          "server_default": null,
-          "comment": "冗余 driver_id，便于按司机查"
-        },
-        {
           "name": "enterprise_id",
           "type": "BIGINT",
           "nullable": true,
@@ -5681,6 +6795,24 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "操作人姓名（冗余）"
+        },
+        {
+          "name": "owner_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款方ID（冗余，便于按收款方查）"
+        },
+        {
+          "name": "owner_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "收款方类型 1-自有司机 2-承运商(预留) 3-社会运力（冗余）"
         },
         {
           "name": "related_finance_doc_id",
@@ -5780,9 +6912,10 @@
           "unique": false
         },
         {
-          "name": "idx_dft_driver",
+          "name": "idx_dft_owner",
           "columns": [
-            "driver_id"
+            "owner_type",
+            "owner_id"
           ],
           "unique": false
         }
@@ -10124,6 +11257,478 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_task_cost_result",
+      "comment": "任务成本计算结果主表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "calc_engine_version",
+          "type": "VARCHAR(32)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "成本引擎版本"
+        },
+        {
+          "name": "calc_status",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计算状态 success/partial/exception/locked"
+        },
+        {
+          "name": "calc_time",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计算时间"
+        },
+        {
+          "name": "carrier_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运类型快照 1-自有车 2-承运商 3-社会运力"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "error_message",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "异常摘要"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_active",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否当前有效结果 0-否 1-是"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "payee_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主收款方ID快照（司机/承运商）"
+        },
+        {
+          "name": "payee_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主收款方名称快照"
+        },
+        {
+          "name": "payee_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主收款方类型快照"
+        },
+        {
+          "name": "task_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务ID"
+        },
+        {
+          "name": "task_version",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "任务版本号（要素变更+1，用于识别过期结果）"
+        },
+        {
+          "name": "total_addition_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "加项合计"
+        },
+        {
+          "name": "total_cost_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "成本合计（所有加项-扣减项）"
+        },
+        {
+          "name": "total_deduction_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "扣减项合计"
+        },
+        {
+          "name": "triggered_by",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "触发来源 dispatch/manual_recalc/policy_changed/task_changed"
+        },
+        {
+          "name": "triggered_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "触发人"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_tcr_active",
+          "columns": [
+            "task_id",
+            "is_active"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_tcr_calc_status",
+          "columns": [
+            "calc_status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_tcr_calc_time",
+          "columns": [
+            "calc_time"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_tcr_task",
+          "columns": [
+            "task_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_task_cost_result_item",
+      "comment": "任务成本费用明细表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "该费用项金额"
+        },
+        {
+          "name": "calc_status",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计算状态 success/exception/skipped"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "方向 1-加项 2-扣减项"
+        },
+        {
+          "name": "distance_km",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "本次采用的里程"
+        },
+        {
+          "name": "error_message",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "异常信息"
+        },
+        {
+          "name": "error_type",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "异常类型"
+        },
+        {
+          "name": "fee_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "费用名称（冗余）"
+        },
+        {
+          "name": "fee_type",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "费用类型（字典 cost_fee_type）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "match_score",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "匹配得分"
+        },
+        {
+          "name": "match_trace_json",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "匹配过程JSON"
+        },
+        {
+          "name": "matched_policy_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "命中政策ID"
+        },
+        {
+          "name": "matched_rule_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "命中规则ID"
+        },
+        {
+          "name": "matched_rule_version",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "命中规则版本"
+        },
+        {
+          "name": "payee_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款方类型"
+        },
+        {
+          "name": "pricing_method",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计价方式"
+        },
+        {
+          "name": "quantity",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计价数量（台/公里/趟/吨）"
+        },
+        {
+          "name": "result_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "成本结果主表ID"
+        },
+        {
+          "name": "task_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务ID"
+        },
+        {
+          "name": "unit_price",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "匹配单价"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_tcri_fee_type",
+          "columns": [
+            "fee_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_tcri_matched_rule",
+          "columns": [
+            "matched_rule_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_tcri_result",
+          "columns": [
+            "result_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_tcri_task",
+          "columns": [
+            "task_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_task_dispatch_order",
       "comment": "任务单调令表（运输任务的最小调度单位）",
       "table_tier": "business",
@@ -12760,6 +14365,15 @@
           "comment": "目的地行政区ID（biz_region.id）"
         },
         {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收入归属经营主体ID（biz_business_entity.id），默认取客户主体，可改，空=租户默认主体"
+        },
+        {
           "name": "freight_amount",
           "type": "NUMERIC(12, 2)",
           "nullable": true,
@@ -12978,7 +14592,15 @@
           ]
         }
       ],
-      "indexes": [],
+      "indexes": [
+        {
+          "name": "ix_biz_waybill_enterprise_id",
+          "columns": [
+            "enterprise_id"
+          ],
+          "unique": false
+        }
+      ],
       "foreign_keys": []
     },
     {

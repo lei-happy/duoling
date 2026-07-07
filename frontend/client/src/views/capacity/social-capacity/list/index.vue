@@ -63,6 +63,10 @@
       :row="statusRow"
       @done="onMutationDone"
     />
+    <social-capacity-fund-account
+      v-model:visible="fundVisible"
+      :capacity="fundCapacity"
+    />
   </ele-page>
 </template>
 
@@ -81,6 +85,7 @@
   import SocialCapacityStatus from './components/social-capacity-status.vue';
   import SocialCapacityCard from './components/social-capacity-card.vue';
   import type { SocialCapacityCardMenuItem } from './components/social-capacity-card.vue';
+  import SocialCapacityFundAccount from './components/social-capacity-fund-account.vue';
   import {
     pageSocialCapacities,
     removeSocialCapacity,
@@ -93,8 +98,11 @@
     SocialCapacityListStats,
     SocialCapacityParam
   } from '@/api/capacity/social-capacity/list/model';
+  import { usePermission } from '@/utils/use-permission';
 
   defineOptions({ name: 'CapacitySocial' });
+
+  const { hasPermission } = usePermission();
 
   const editVisible = ref(false);
   const editData = ref<SocialCapacityListItem | null>(null);
@@ -104,6 +112,9 @@
 
   const statusVisible = ref(false);
   const statusRow = ref<SocialCapacityListItem | null>(null);
+
+  const fundVisible = ref(false);
+  const fundCapacity = ref<SocialCapacityListItem | null>(null);
 
   const searchWhere = ref<SocialCapacityParam>({});
   const stats = ref<SocialCapacityListStats | null>(null);
@@ -314,6 +325,12 @@
     detailVisible.value = true;
   };
 
+  const openFund = (row: SocialCapacityListItem) => {
+    if (!row.id) return;
+    fundCapacity.value = row;
+    fundVisible.value = true;
+  };
+
   const openStatus = (row: SocialCapacityListItem) => {
     if (row.approvalStatus !== 2) {
       EleMessage.warning({
@@ -403,6 +420,13 @@
       items.push({ key: 'status', title: '状态变更申请' });
     }
 
+    if (
+      row.approvalStatus === 2 &&
+      hasPermission('capacity:social_capacity:list:fund-account')
+    ) {
+      items.push({ key: 'fund', title: '资金账户' });
+    }
+
     const canDelete =
       row.approvalStatus === 0 ||
       row.approvalStatus === 3 ||
@@ -436,6 +460,9 @@
         break;
       case 'status':
         openStatus(row);
+        break;
+      case 'fund':
+        openFund(row);
         break;
       case 'delete':
         void remove(row);

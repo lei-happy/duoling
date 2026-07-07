@@ -15,6 +15,7 @@ from app.common.exceptions import BizException
 from app.common.pinyin_utils import match_pinyin
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
+from app.modules.client.models.partner.customer import Customer
 from app.modules.client.models.vehicle_basic.biz_vehicle_brand import BizVehicleBrand
 from app.modules.client.models.vehicle_basic.biz_vehicle_series import BizVehicleSeries
 from app.modules.client.schemas.waybill.waybill import (
@@ -665,10 +666,23 @@ class WaybillService:
         auto_confirm = (auto_confirm_raw or "").strip().lower() == "true"
         initial_status = 1 if auto_confirm else 0
 
+        # 收入归属经营主体：优先取入参；未传则从客户档案默认主体带出（不拦截，仅带出）
+        enterprise_id = data.enterpriseId
+        if enterprise_id is None and data.customerId:
+            enterprise_id = (
+                await db.execute(
+                    select(Customer.enterprise_id).where(
+                        Customer.id == data.customerId,
+                        Customer.is_deleted == 0,
+                    )
+                )
+            ).scalar_one_or_none()
+
         waybill = Waybill(
             waybill_no=waybill_no,
             customer_id=data.customerId,
             customer_name=data.customerName,
+            enterprise_id=enterprise_id,
             origin=data.origin,
             origin_code=data.originCode,
             origin_region_id=getattr(data, "originRegionId", None),

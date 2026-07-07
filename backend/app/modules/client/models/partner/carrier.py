@@ -32,6 +32,10 @@ class Carrier(TenantModelBase):
     short_name: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, comment="简称"
     )
+    enterprise_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, index=True,
+        comment="默认经营主体ID（biz_business_entity.id），承运成本归属默认带出，空=租户默认主体",
+    )
     carrier_type: Mapped[int] = mapped_column(
         SmallInteger, default=0, server_default="0",
         comment="承运商类型 0-公司车队 1-个体司机/小车队 2-其他",

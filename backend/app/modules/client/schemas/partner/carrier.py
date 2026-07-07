@@ -16,6 +16,9 @@ class CarrierBase(BaseModel):
     carrierCode: Optional[str] = None
     carrierName: str = Field(description="承运商全称")
     shortName: Optional[str] = None
+    enterpriseId: Optional[int] = Field(
+        default=None, description="默认经营主体ID（承运成本归属默认带出）"
+    )
     carrierType: int = Field(default=0, description="0-公司车队 1-个体司机/小车队 2-其他")
     creditCode: Optional[str] = None
     idCardNo: Optional[str] = None
@@ -45,6 +48,7 @@ class CarrierUpdate(BaseModel):
     carrierCode: Optional[str] = None
     carrierName: Optional[str] = None
     shortName: Optional[str] = None
+    enterpriseId: Optional[int] = None
     carrierType: Optional[int] = None
     creditCode: Optional[str] = None
     idCardNo: Optional[str] = None
@@ -67,6 +71,7 @@ class CarrierOut(BaseModel):
     carrierCode: Optional[str] = None
     carrierName: str
     shortName: Optional[str] = None
+    enterpriseId: Optional[int] = None
     carrierType: int
     creditCode: Optional[str] = None
     idCardNo: Optional[str] = None
@@ -104,6 +109,7 @@ class CarrierOut(BaseModel):
             carrierCode=m.carrier_code,
             carrierName=m.carrier_name,
             shortName=m.short_name,
+            enterpriseId=m.enterprise_id,
             carrierType=m.carrier_type,
             creditCode=m.credit_code,
             idCardNo=m.id_card_no,

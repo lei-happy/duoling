@@ -11,6 +11,7 @@ class CustomerCreate(BaseModel):
     customerCode: Optional[str] = None
     customerName: str
     shortName: Optional[str] = None
+    enterpriseId: Optional[int] = None
     customerType: Optional[int] = None
     contactPerson: Optional[str] = None
     contactPhone: Optional[str] = None
@@ -25,6 +26,7 @@ class CustomerUpdate(BaseModel):
     customerCode: Optional[str] = None
     customerName: Optional[str] = None
     shortName: Optional[str] = None
+    enterpriseId: Optional[int] = None
     customerType: Optional[int] = None
     contactPerson: Optional[str] = None
     contactPhone: Optional[str] = None
@@ -40,6 +42,7 @@ class CustomerOut(BaseModel):
     customerCode: Optional[str] = None
     customerName: str
     shortName: Optional[str] = None
+    enterpriseId: Optional[int] = None
     customerType: Optional[int] = None
     contactPerson: Optional[str] = None
     contactPhone: Optional[str] = None
@@ -59,6 +62,7 @@ class CustomerOut(BaseModel):
             customerCode=m.customer_code,
             customerName=m.customer_name,
             shortName=m.short_name,
+            enterpriseId=m.enterprise_id,
             customerType=m.customer_type,
             contactPerson=m.contact_person,
             contactPhone=m.contact_phone,

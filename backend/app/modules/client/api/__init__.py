@@ -53,6 +53,13 @@ from app.modules.client.api.billing.freight_engine import (
     vehicle_alias_router as basic_data_vehicle_alias_router,
     regression_router as freight_calc_regression_router,
 )
+from app.modules.client.api.billing.cost_policy import router as cost_policy_router
+from app.modules.client.api.billing.cost_rule import router as cost_rule_router
+from app.modules.client.api.billing.task_cost import router as task_cost_router
+from app.modules.client.api.billing.cost_engine import (
+    task_router as cost_calc_task_router,
+    exception_router as cost_calc_exception_router,
+)
 from app.modules.client.api.waybill.waybill import router as waybill_router
 from app.modules.client.api.task import (
     task_router,
@@ -196,6 +203,36 @@ router.include_router(
     freight_calc_regression_router,
     prefix="/billing/freight-calc/regression",
     tags=["客户端-计费引擎-双引擎回归"],
+)
+router.include_router(
+    cost_policy_router,
+    prefix="/billing/cost-policy",
+    tags=["客户端-成本政策"],
+    dependencies=[Depends(require_feature("billing_cost_rule"))],
+)
+router.include_router(
+    cost_rule_router,
+    prefix="/billing/cost-rule",
+    tags=["客户端-成本费用规则"],
+    dependencies=[Depends(require_feature("billing_cost_rule"))],
+)
+router.include_router(
+    task_cost_router,
+    prefix="/billing",
+    tags=["客户端-任务成本计算"],
+    dependencies=[Depends(require_feature("billing_cost_rule"))],
+)
+router.include_router(
+    cost_calc_task_router,
+    prefix="/billing/cost-calc/tasks",
+    tags=["客户端-成本引擎-任务"],
+    dependencies=[Depends(require_feature("billing_cost_rule"))],
+)
+router.include_router(
+    cost_calc_exception_router,
+    prefix="/billing/cost-calc/exceptions",
+    tags=["客户端-成本引擎-异常"],
+    dependencies=[Depends(require_feature("billing_cost_rule"))],
 )
 router.include_router(waybill_router, prefix="/business/waybill", tags=["客户端-运单管理V2"])
 router.include_router(task_router, prefix="/business/task", tags=["客户端-运输任务单"])

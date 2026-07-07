@@ -25,6 +25,10 @@ class Waybill(TenantModelBase):
     customer_name: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, comment="客户名称"
     )
+    enterprise_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, index=True,
+        comment="收入归属经营主体ID（biz_business_entity.id），默认取客户主体，可改，空=租户默认主体",
+    )
     origin: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True, comment="出发地"
     )
