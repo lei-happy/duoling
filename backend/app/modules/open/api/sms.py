@@ -3,8 +3,10 @@
 无需认证：发送验证码、验证码重置密码
 """
 
+import re
+
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_platform_db
@@ -12,6 +14,8 @@ from app.common.response import success
 from app.modules.open.services.sms_service import SmsService
 
 router = APIRouter()
+
+_CN_MOBILE = re.compile(r"^1[3-9]\d{9}$")
 
 
 class SmsSendRequest(BaseModel):
@@ -24,12 +28,26 @@ class SmsSendRequest(BaseModel):
         description="应用类型 console-管理后台 client-客户端 website-官网"
     )
 
+    @field_validator("phone")
+    @classmethod
+    def validate_mobile(cls, v: str) -> str:
+        if not _CN_MOBILE.match(v or ""):
+            raise ValueError("请输入正确的手机号码")
+        return v
+
 
 class SmsResetPasswordRequest(BaseModel):
     """验证码重置密码请求"""
     phone: str = Field(description="手机号")
     code: str = Field(description="验证码")
     newPassword: str = Field(description="新密码", min_length=6)
+
+    @field_validator("phone")
+    @classmethod
+    def validate_mobile(cls, v: str) -> str:
+        if not _CN_MOBILE.match(v or ""):
+            raise ValueError("请输入正确的手机号码")
+        return v
 
 
 @router.post("/send")

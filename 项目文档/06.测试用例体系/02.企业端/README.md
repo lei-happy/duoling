@@ -56,6 +56,13 @@ python -m pytest tests/client -v
 | `test_task_waybill_state.py` | 纯逻辑 | 任务/运单/明细状态机业务不变量与派生聚合 |
 | `test_insight_profit.py` | 纯逻辑+集成 | 利润总览辅助函数 + KPI/趋势/结构/排行聚合 SQL 冒烟 |
 | `test_ai_desensitize.py` | 纯逻辑 | AI 工具日志脱敏（手机号/身份证/银行卡/敏感 key） |
+| `test_standardize_service.py` | 纯逻辑+集成 | 地名末级后缀扩展（BUG-CLI-001）+ 层级路径解析 |
+| `test_system_user.py` | 集成(租户库) | 员工 CRUD、手机号去重、状态变更 |
+| `test_system_role.py` | 集成(租户库) | 角色 CRUD、编码唯一、admin 保护 |
+| `test_system_organization.py` | 集成(租户库) | 部门树增删改、子部门/员工删除约束 |
+| `test_billing_freight_match.py` | 集成(租户库) | 合同+费率创建后 preview 命中（TC-CLI-BILLING-101） |
+| `test_task_dispatch.py` | 集成(租户库) | 任务创建+运单挂接、候选 cargo、单号唯一 |
+| `test_ai_employee.py` | 集成(平台库) | 启用数字员工列表、按 code 查询、工具绑定 |
 
 ## 四、执行结果概览
 
@@ -63,10 +70,10 @@ python -m pytest tests/client -v
 
 ```
 python -m pytest tests/client -v
-=> 188 passed
+=> 211 passed
 ```
 
-- **通过**：188
+- **通过**：211
 - **跳过**：0（本机 DB 可用；无 DB 环境下集成用例将 skip）
 - **失败**：0
 
@@ -74,8 +81,8 @@ python -m pytest tests/client -v
 
 | 编号 | 标题 | 级别 | 状态 |
 |---|---|---|---|
-| BUG-CLI-001 | 地名标准化：以「州」等结尾的地级市省略「市」后缀时层级路径解析失败 | S3 | 待确认 |
-| BUG-CLI-002 | AI 日志脱敏：身份证正则反向断言用 `\w` 与手机号/银行卡的 `\d` 不一致 | S4 | 待确认 |
+| BUG-CLI-001 | 地名标准化：以「州」等结尾的地级市省略「市」后缀时层级路径解析失败 | S3 | 已修复 |
+| BUG-CLI-002 | AI 日志脱敏：身份证正则反向断言用 `\w` 与手机号/银行卡的 `\d` 不一致 | S4 | 已修复 |
 
 详见 [缺陷记录.md](./缺陷记录.md)。
 

@@ -13,7 +13,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.common.exceptions import BizException
+from app.common.exceptions import BizException, PermissionException
 from app.modules.driver.services.driver_task_service import DriverTaskService
 
 
@@ -99,4 +99,88 @@ class TestTaskIntegration:
         with pytest.raises(BizException):
             await DriverTaskService._get_visible_item_or_404(
                 session, ctx, 999_000_111
+            )
+
+    async def test_full_workflow_accept_to_sign(self, driver_dispatched_task):
+        """TC-DRV-TASK-011：接单 → 装车 → 出发 → 到达 → 签收"""
+        session, ctx, task, item = driver_dispatched_task
+        from app.modules.driver.schemas.task import (
+            DriverAcceptTaskRequest,
+            DriverConfirmArriveRequest,
+            DriverConfirmLoadRequest,
+            DriverDepartRequest,
+            DriverSignItemRequest,
+        )
+
+        detail = await DriverTaskService.accept(
+            session, ctx, int(task.id), DriverAcceptTaskRequest()
+        )
+        assert detail.accepted is True
+
+        detail = await DriverTaskService.confirm_load(
+            session, ctx, int(task.id), DriverConfirmLoadRequest()
+        )
+        assert detail.status == 2
+
+        detail = await DriverTaskService.depart(
+            session, ctx, int(task.id), DriverDepartRequest()
+        )
+        assert detail.status == 3
+
+        detail = await DriverTaskService.confirm_arrive(
+            session, ctx, int(task.id), DriverConfirmArriveRequest()
+        )
+        assert detail.status == 4
+
+        await DriverTaskService.sign_item(
+            session, ctx, int(item.id), DriverSignItemRequest()
+        )
+        detail = await DriverTaskService.get_my_task(session, ctx, int(task.id))
+        assert detail.status == 5
+        assert all(it.status == 3 for it in detail.items)
+
+    async def test_confirm_load_without_accept_rejected(self, driver_dispatched_task):
+        """TC-DRV-TASK-005：未接单不可装车"""
+        session, ctx, task, _item = driver_dispatched_task
+        from app.modules.driver.schemas.task import DriverConfirmLoadRequest
+
+        with pytest.raises(BizException, match="请先接收调令"):
+            await DriverTaskService.confirm_load(
+                session, ctx, int(task.id), DriverConfirmLoadRequest()
+            )
+
+    async def test_revert_sign_without_permission_rejected(self, driver_dispatched_task):
+        """TC-DRV-TASK-012：无 operation:task:revert-sign 权限不可撤销签收"""
+        from app.modules.driver.schemas.task import (
+            DriverAcceptTaskRequest,
+            DriverConfirmArriveRequest,
+            DriverConfirmLoadRequest,
+            DriverDepartRequest,
+            DriverRevertSignRequest,
+            DriverSignItemRequest,
+        )
+        from tests.driver.conftest import make_token
+
+        session, ctx, task, item = driver_dispatched_task
+        tid = int(task.id)
+        iid = int(item.id)
+
+        await DriverTaskService.accept(session, ctx, tid, DriverAcceptTaskRequest())
+        await DriverTaskService.confirm_load(
+            session, ctx, tid, DriverConfirmLoadRequest()
+        )
+        await DriverTaskService.depart(session, ctx, tid, DriverDepartRequest())
+        await DriverTaskService.confirm_arrive(
+            session, ctx, tid, DriverConfirmArriveRequest()
+        )
+        await DriverTaskService.sign_item(session, ctx, iid, DriverSignItemRequest())
+
+        actor = make_token(user_id=ctx.user_id, phone=ctx.phone)
+        with pytest.raises(PermissionException, match="revert-sign"):
+            await DriverTaskService.revert_sign_item(
+                session,
+                ctx,
+                iid,
+                DriverRevertSignRequest(reason="签收信息有误"),
+                actor=actor,
             )

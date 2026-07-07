@@ -13,8 +13,13 @@ import uuid
 
 import pytest
 
-from app.common.exceptions import AuthException
-from app.modules.console.schemas.auth.auth import LoginRequest, SwitchTenantRequest
+from app.common.exceptions import AuthException, BizException
+from app.modules.console.schemas.auth.auth import (
+    ChangePasswordRequest,
+    LoginRequest,
+    SwitchTenantRequest,
+)
+from app.modules.console.services.auth.auth_service import AuthService
 from app.modules.driver.services.driver_auth_service import DriverAuthService
 
 
@@ -39,4 +44,26 @@ class TestDriverAuthIntegration:
                 platform_session,
                 user_id=999_000_111,
                 request=SwitchTenantRequest(tenant_code="1001"),
+            )
+
+    async def test_user_info_unknown_user_rejected(self, platform_session):
+        """TC-DRV-AUTH user-info 反向：用户不存在"""
+        with pytest.raises(AuthException):
+            await AuthService.get_user_info(
+                platform_session,
+                user_id=999_000_111,
+                app_type="client",
+                tenant_code="1001",
+            )
+
+    async def test_change_password_unknown_user_rejected(self, platform_session):
+        """TC-DRV-AUTH 改密反向：用户不存在"""
+        with pytest.raises(BizException, match="用户不存在"):
+            await AuthService.change_password(
+                platform_session,
+                user_id=999_000_111,
+                request=ChangePasswordRequest(
+                    oldPassword="old123456",
+                    newPassword="new123456",
+                ),
             )

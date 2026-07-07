@@ -50,10 +50,32 @@ def _index_exists(conn, table_name: str, index_name: str) -> bool:
     ).fetchone() is not None
 
 
-def upgrade(conn, tenant_code: str) -> None:
-    # NOTE: 新表 `biz_task_receipt` —— 推荐直接由 runner Phase 1 (feature.required_tables) 自动建表。
-    # 如本迁移确实需要在租户库强建该表，请改用 metadata.create_all 风格。
-    # 此处空操作。
+_RECEIPT_DDL = """
+CREATE TABLE IF NOT EXISTS biz_task_receipt (
+    id BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    is_deleted SMALLINT NOT NULL DEFAULT 0 COMMENT '是否删除 0-否 1-是',
+    task_id BIGINT NOT NULL COMMENT '关联 biz_task.id',
+    dispatch_order_id BIGINT NULL COMMENT '关联调令 biz_task_dispatch_order.id（可空）',
+    item_id BIGINT NULL COMMENT '关联挂接行 biz_task_waybill_item.id（整票为空）',
+    driver_id BIGINT NULL COMMENT '上传司机 biz_driver.id',
+    receipt_type SMALLINT NOT NULL DEFAULT 1 COMMENT '回单类型 1-签收回单 2-其他凭证',
+    file_urls TEXT NOT NULL COMMENT '图片 URL 列表（JSON 数组字符串）',
+    remark VARCHAR(255) NULL COMMENT '备注',
+    uploaded_by BIGINT NULL COMMENT '上传人 user_id',
+    uploader_name VARCHAR(50) NULL COMMENT '上传人姓名（冗余）',
+    PRIMARY KEY (id),
+    INDEX idx_task_receipt_task_id (task_id),
+    INDEX idx_task_receipt_driver_id (driver_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='任务回单/签收凭证表'
+"""
 
-    return None
+
+def upgrade(conn, tenant_code: str) -> None:
+    # runner Phase 1 也会按 required_tables 补建；此处显式 DDL 保证
+    # --skip-ensure 或测试库未跑 runner 时仍可落表。
+    conn.execute(text(_RECEIPT_DDL))
 

@@ -21,7 +21,7 @@ from app.core.security import (
     decode_refresh_token,
 )
 from app.modules.console.services.auth.auth_service import AuthService
-from app.common.exceptions import AuthException
+from app.common.exceptions import AuthException, BizException
 
 
 # =====================================================================
@@ -66,19 +66,19 @@ class TestAuthPureLogic:
         )
 
     def test_workplace_config_quick_actions_not_list(self):
-        """TC-CON-AUTH-005：quickActions 非数组应被拒绝"""
-        with pytest.raises(AuthException):
+        """TC-CON-AUTH-005：quickActions 非数组应被拒绝（BizException，非 AuthException）"""
+        with pytest.raises(BizException):
             AuthService._validate_workplace_config({"quickActions": "x"})
 
     def test_workplace_config_too_many_quick_actions(self):
-        """TC-CON-AUTH-006：quickActions 超过 12 项应被拒绝"""
-        with pytest.raises(AuthException):
+        """TC-CON-AUTH-006：quickActions 超过 12 项应被拒绝（BUG-CON-002 已修复）"""
+        with pytest.raises(BizException):
             AuthService._validate_workplace_config(
                 {"quickActions": [str(i) for i in range(13)]}
             )
 
     def test_workplace_config_empty_item_rejected(self):
-        with pytest.raises(AuthException):
+        with pytest.raises(BizException):
             AuthService._validate_workplace_config({"quickActions": ["", " "]})
 
 
@@ -180,14 +180,13 @@ class TestWorkplaceConfigApi:
         assert resp.status_code == 200
         assert resp.json()["code"] == 0
 
-    async def test_update_workplace_config_invalid_returns_401(self, auth_client):
-        """TC-CON-AUTH-016：非法工作台配置当前返回 HTTP 401（见 BUG-CON-002）。
-
-        校验失败本应是「业务/参数错误(400)」，但服务用 AuthException 抛出，
-        被全局处理器映射为 401。此处断言当前实际行为并关联缺陷。
-        """
+    async def test_update_workplace_config_invalid_returns_biz_error(self, auth_client):
+        """TC-CON-AUTH-016：非法工作台配置返回业务错误（BUG-CON-002 已修复，不再 401）"""
         resp = await auth_client.put(
             "/api/console/auth/user-workplace-config",
             json={"workplaceConfig": {"quickActions": [str(i) for i in range(20)]}},
         )
-        assert resp.status_code == 401
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] != 0
+        assert "12" in body["message"]

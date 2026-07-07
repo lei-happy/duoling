@@ -2,20 +2,16 @@
 
 分两层：
 1. 纯逻辑：``_to_dict`` 的 file_urls JSON 解析与容错；
-2. 集成：连租户库 ``1001``，创建/列表/删除回单，并校验按 driver_id 的越权保护；
-   若 ``biz_task_receipt`` 表在测试库尚未建立，则相关集成用例 skip。
+2. 集成：连租户库 ``1001``，创建/列表/删除回单，并校验按 driver_id 的越权保护。
 
 对应需求：项目文档/02.需求文档/03.移动端/02.驾驶员H5端/04.回单签收与凭证上传.md
 覆盖用例：TC-DRV-RECEIPT-001/002/003/006/007
 """
 
 import pytest
-from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from app.common.exceptions import BizException
 from app.modules.driver.services.driver_receipt_service import DriverReceiptService
-
-_DB_ERRORS = (ProgrammingError, OperationalError)
 
 
 # =====================================================================
@@ -55,17 +51,11 @@ class TestToDict:
 # 2) 集成（真实租户库，事务回滚）
 # =====================================================================
 class TestReceiptIntegration:
-    async def _create(self, session, ctx, **kw):
-        try:
-            return await DriverReceiptService.create_receipt(
-                session, ctx, task_id=1001, file_urls=["u1.jpg"], **kw
-            )
-        except _DB_ERRORS as e:  # pragma: no cover - 表未建立时跳过
-            pytest.skip(f"biz_task_receipt 表不可用：{e}")
-
     async def test_create_and_list(self, driver_ctx):
         session, ctx = driver_ctx
-        data = await self._create(session, ctx, remark="第一张回单")
+        data = await DriverReceiptService.create_receipt(
+            session, ctx, task_id=1001, file_urls=["u1.jpg"], remark="第一张回单"
+        )
         assert data["driverId"] == ctx.driver_id
         assert data["fileUrls"] == ["u1.jpg"]
 
@@ -92,14 +82,18 @@ class TestReceiptIntegration:
 
     async def test_delete_own_receipt(self, driver_ctx):
         session, ctx = driver_ctx
-        data = await self._create(session, ctx)
+        data = await DriverReceiptService.create_receipt(
+            session, ctx, task_id=1001, file_urls=["u1.jpg"]
+        )
         await DriverReceiptService.delete_receipt(session, ctx, data["id"])
         items, total = await DriverReceiptService.list_my_receipts(session, ctx)
         assert total == 0
 
     async def test_delete_others_receipt_rejected(self, driver_ctx):
         session, ctx = driver_ctx
-        data = await self._create(session, ctx)
+        data = await DriverReceiptService.create_receipt(
+            session, ctx, task_id=1001, file_urls=["u1.jpg"]
+        )
         # 伪造另一名司机上下文（同库，不同 driver_id）—— 用轻量假 driver 避免污染 ctx
         from types import SimpleNamespace
 

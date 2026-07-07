@@ -70,6 +70,38 @@ class TestSendSchema:
         assert req.purpose == 4
         assert req.app_type == "website"
 
+    @pytest.mark.parametrize("phone", ["abc", "12345678901", "23800000000", ""])
+    def test_invalid_phone_rejected(self, phone):
+        with pytest.raises(ValidationError):
+            SmsSendRequest(phone=phone, purpose=4, app_type="website")
+
+
+@pytest.mark.asyncio
+class TestSmsResendThrottle:
+    """TC-OPN-SMS-010：重发节流按最近一次发送时间，不区分 status。"""
+
+    async def test_consumed_record_still_throttles(self, platform_session):
+        from datetime import datetime, timedelta
+
+        from app.modules.console.models.sms.sms_code import SmsCode
+
+        phone = "13800000077"
+        platform_session.add(
+            SmsCode(
+                phone=phone,
+                code="111111",
+                purpose=PURPOSE_TENANT_REGISTER,
+                status=1,
+                expire_at=datetime.now() + timedelta(minutes=5),
+            )
+        )
+        await platform_session.flush()
+
+        with pytest.raises(BizException, match="发送过于频繁"):
+            await SmsService.send_code(
+                platform_session, phone, PURPOSE_TENANT_REGISTER, app_type="website"
+            )
+
 
 # =====================================================================
 # 2) HTTP 集成：平台库不可达时 skip
@@ -121,3 +153,11 @@ class TestSmsHttp:
         )
         assert resp.status_code == 200
         assert resp.json()["code"] != 0
+
+    async def test_send_invalid_phone_format(self, platform_client):
+        """TC-OPN-SMS-009：非法手机号 → 422 参数校验（BUG-OPN-002 已修复）"""
+        resp = await platform_client.post(
+            "/api/open/sms/send",
+            json={"phone": "abc", "purpose": 4, "app_type": "website"},
+        )
+        assert resp.status_code == 422

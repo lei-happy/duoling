@@ -1,0 +1,93 @@
+============================= test session starts =============================
+platform win32 -- Python 3.9.13, pytest-8.4.2, pluggy-1.6.0
+rootdir: D:\zhitu\backend
+configfile: pytest.ini
+plugins: anyio-4.11.0, asyncio-1.2.0
+asyncio: mode=auto, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 211 items
+
+tests\client\test_ai_desensitize.py ...F......                           [  4%]
+tests\client\test_ai_employee.py ...                                     [  6%]
+tests\client\test_auth.py ...                                            [  7%]
+tests\client\test_billing_conditions.py ................................ [ 22%]
+.......................                                                  [ 33%]
+tests\client\test_billing_cost_matcher.py ........                       [ 37%]
+tests\client\test_billing_engine.py .............................        [ 51%]
+tests\client\test_billing_freight_match.py .                             [ 51%]
+tests\client\test_http_auth_guard.py ..............                      [ 58%]
+tests\client\test_insight_profit.py ............                         [ 63%]
+tests\client\test_partner_carrier.py .....                               [ 66%]
+tests\client\test_partner_customer.py .......                            [ 69%]
+tests\client\test_resource_plate.py ......................               [ 80%]
+tests\client\test_resource_vehicle.py .....                              [ 82%]
+tests\client\test_standardize_service.py ......                          [ 85%]
+tests\client\test_system_organization.py F.                              [ 86%]
+tests\client\test_system_role.py ...                                     [ 87%]
+tests\client\test_system_user.py ...                                     [ 89%]
+tests\client\test_task_dispatch.py ...                                   [ 90%]
+tests\client\test_task_waybill_state.py ....................             [100%]
+
+================================== FAILURES ===================================
+_________ TestDesensitizeText.test_id_card_15_digit_adjacent_chinese __________
+
+self = <tests.client.test_ai_desensitize.TestDesensitizeText object at 0x0000010FC4B17FA0>
+
+    def test_id_card_15_digit_adjacent_chinese(self):
+        """15 位旧身份证紧邻中文时也应脱敏。"""
+        out = desensitize_text("证件110101900101123")
+>       assert out == "证件110101*****123"
+E       AssertionError: assert '证件110101*****1123' == '证件110101*****123'
+E         
+E         - 证件110101*****123
+E         + 证件110101*****1123
+E         ?               +
+
+tests\client\test_ai_desensitize.py:37: AssertionError
+______________ TestDepartmentCrud.test_create_update_tree_delete ______________
+
+self = <tests.client.test_system_organization.TestDepartmentCrud object at 0x0000010FC7C7AAF0>
+tenant_session = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x0000010FD1A59100>
+
+    async def test_create_update_tree_delete(self, tenant_session):
+        parent = await DepartmentService.create_department(
+            tenant_session,
+            DepartmentCreate(parentId=0, organizationName=_dept_name("父部门")),
+        )
+        child = await DepartmentService.create_department(
+            tenant_session,
+            DepartmentCreate(
+                parentId=parent.id,
+                organizationName=_dept_name("子部门"),
+            ),
+        )
+    
+        updated = await DepartmentService.update_department(
+            tenant_session,
+            child.id,
+            DepartmentUpdate(
+                organizationId=child.id,
+                organizationName="子部门已更新",
+                sortNumber=99,
+            ),
+        )
+        assert updated.dept_name == "子部门已更新"
+        assert updated.sort_order == 99
+    
+        tree = await DepartmentService.get_department_tree(
+            tenant_session, organization_name=parent.dept_name
+        )
+        assert tree
+        root = tree[0]
+        assert root["organizationName"] == parent.dept_name
+>       assert any(
+            c["organizationName"] == "子部门已更新"
+            for c in (root.get("children") or [])
+        )
+E       assert False
+E        +  where False = any(<generator object TestDepartmentCrud.test_create_update_tree_delete.<locals>.<genexpr> at 0x0000010FD1A16890>)
+
+tests\client\test_system_organization.py:58: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/client/test_ai_desensitize.py::TestDesensitizeText::test_id_card_15_digit_adjacent_chinese
+FAILED tests/client/test_system_organization.py::TestDepartmentCrud::test_create_update_tree_delete
+======================= 2 failed, 209 passed in 14.69s ========================

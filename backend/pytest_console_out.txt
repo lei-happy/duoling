@@ -1,0 +1,15 @@
+============================= test session starts =============================
+platform win32 -- Python 3.9.13, pytest-8.4.2, pluggy-1.6.0
+rootdir: D:\zhitu\backend
+configfile: pytest.ini
+plugins: anyio-4.11.0, asyncio-1.2.0
+asyncio: mode=auto, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 63 items
+
+tests\console\test_ai_console.py .........                               [ 14%]
+tests\console\test_auth.py ..................                            [ 42%]
+tests\console\test_basicdata.py .........                                [ 57%]
+tests\console\test_system.py .................                           [ 84%]
+tests\console\test_tenant_product.py ..........                          [100%]
+
+============================= 63 passed in 32.64s =============================

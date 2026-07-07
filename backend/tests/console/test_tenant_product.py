@@ -13,8 +13,6 @@
 
 import uuid
 
-import pytest
-
 
 class TestTenantRead:
     async def test_tenant_page(self, auth_client):
@@ -54,12 +52,8 @@ class TestProductVersionCrud:
         assert body["code"] == 0
         assert "list" in body["data"]
 
-    @pytest.mark.xfail(
-        reason="BUG-CON-001：创建产品版本响应序列化触发 created_at/updated_at 懒加载(MissingGreenlet)，接口返回 500",
-        strict=False,
-    )
     async def test_create_then_get_product_version(self, auth_client):
-        """TC-CON-PRODUCT-002：新增版本应返回 code=0 与 id（当前受 BUG-CON-001 影响 500）"""
+        """TC-CON-PRODUCT-002：新增版本应返回 code=0 与 id（BUG-CON-001 已修复）"""
         code = f"test_ver_{uuid.uuid4().hex[:8]}"
         create = await auth_client.post(
             "/api/console/product-version",
@@ -73,23 +67,31 @@ class TestProductVersionCrud:
         body = create.json()
         assert body["code"] == 0, body
         version_id = body["data"]["id"]
+        assert body["data"].get("createdAt") or body["data"].get("created_at")
 
         got = await auth_client.get(f"/api/console/product-version/{version_id}")
         assert got.status_code == 200
         assert got.json()["code"] == 0
 
-    async def test_create_product_version_currently_500(self, auth_client):
-        """TC-CON-PRODUCT-003：回归护栏——记录 BUG-CON-001 当前实际行为(HTTP 500)。
-
-        修复 BUG-CON-001 后本用例会失败，提示同步更新 TC-CON-PRODUCT-002 的 xfail 标记。
-        """
+    async def test_update_product_version(self, auth_client):
+        """TC-CON-PRODUCT-003：创建后更新版本名称 → code=0，含 updatedAt"""
         code = f"test_ver_{uuid.uuid4().hex[:8]}"
         create = await auth_client.post(
             "/api/console/product-version",
-            json={"version_code": code, "version_name": "回归护栏"},
+            json={"version_code": code, "version_name": "更新前"},
         )
-        assert create.status_code == 500
-        assert create.json()["code"] == 500
+        assert create.status_code == 200, create.text
+        version_id = create.json()["data"]["id"]
+
+        updated = await auth_client.put(
+            f"/api/console/product-version/{version_id}",
+            json={"versionName": "更新后"},
+        )
+        assert updated.status_code == 200, updated.text
+        body = updated.json()
+        assert body["code"] == 0, body
+        assert body["data"]["versionName"] == "更新后"
+        assert body["data"].get("updatedAt") or body["data"].get("updated_at")
 
     async def test_get_nonexistent_version(self, auth_client):
         """TC-CON-PRODUCT-004：查询不存在的版本 → code!=0"""

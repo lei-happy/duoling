@@ -135,7 +135,6 @@ class SmsService:
             select(SmsCode).where(
                 SmsCode.phone == phone,
                 SmsCode.purpose == purpose,
-                SmsCode.status == 0,
             ).order_by(SmsCode.created_at.desc()).limit(1)
         )
         last_record = last.scalar_one_or_none()

@@ -17,10 +17,27 @@
 
 from __future__ import annotations
 
+import uuid
+
 import pytest
 
 # 测试租户固定 1001（开发库 zt_biz_1001_ci），平台库 zt_platform_ci。
 TENANT_CODE = "1001"
+
+
+def unique_suffix(n: int = 8) -> str:
+    """生成短随机后缀，避免集成测试数据冲突。"""
+    return uuid.uuid4().hex[:n]
+
+
+def unique_phone() -> str:
+    """生成未占用的 11 位测试手机号（199 号段）。"""
+    return f"199{int(uuid.uuid4().hex[:8], 16) % 10 ** 8:08d}"
+
+
+def unique_code(prefix: str) -> str:
+    """生成带前缀的唯一业务编码。"""
+    return f"{prefix}{uuid.uuid4().hex[:8].upper()}"
 
 
 # ---------------------------------------------------------------------------

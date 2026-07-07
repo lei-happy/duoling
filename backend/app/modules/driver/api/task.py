@@ -143,5 +143,7 @@ async def revert_sign_item(
     current_user: TokenData = Depends(get_current_user),
 ):
     ctx = await get_current_driver(tenant_db, current_user)
-    await DriverTaskService.revert_sign_item(tenant_db, ctx, item_id, payload)
+    await DriverTaskService.revert_sign_item(
+        tenant_db, ctx, item_id, payload, actor=current_user
+    )
     return success(message="已撤销签收")

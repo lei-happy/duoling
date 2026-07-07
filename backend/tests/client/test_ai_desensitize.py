@@ -25,6 +25,19 @@ class TestDesensitizeText:
         assert "110101********1234" in out
         assert "199001011234" not in out
 
+    def test_id_card_adjacent_chinese(self):
+        """TC-CLI-AI-002：紧邻中文时不应回退到银行卡掩码（BUG-CLI-002）。"""
+        out = desensitize_text("身份证110101199001011234")
+        assert out == "身份证110101********1234"
+        assert "1101****1234" not in out
+
+    def test_id_card_15_digit_adjacent_chinese(self):
+        """15 位旧身份证紧邻中文时也应脱敏。"""
+        # 15 位：6 位地区 + 5 位出生 + 4 位顺序/校验
+        out = desensitize_text("证件110101900101123")
+        assert out == "证件110101*****1123"
+        assert "900101123" not in out
+
     def test_bank_card_masked(self):
         out = desensitize_text("卡号 6222021234567890123")
         assert out.startswith("卡号 6222")

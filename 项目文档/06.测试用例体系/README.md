@@ -111,29 +111,33 @@ backend/tests/
 
 ---
 
-## 七、首轮执行总览（2026-07-07）
+## 七、执行总览
 
-### 用例与脚本产出
+### 首轮测试（2026-07-07）
 
 | 端 | 用例文档 | 测试脚本 | pytest 结果 | 缺陷 |
 |---|---|---|---|---|
-| 运营后台 Console | 5 份（`01.运营后台端/`） | `tests/conftest.py`（共享基座）+ `tests/console/` 4 个 | 53 passed / 1 xfailed | BUG-CON-001(S2)、BUG-CON-002(S3) |
-| 企业端 Client | 10 份（`02.企业端/`） | `tests/client/` 13 个 | 188 passed | BUG-CLI-001(S3)、BUG-CLI-002(S4) |
-| 驾驶员 H5 Driver | 6 份（`03.驾驶员H5端/`） | `tests/driver/` 7 个 | 48 passed / 3 skipped / 1 xfailed | BUG-DRV-001(S1)、BUG-DRV-002(S2)、BUG-DRV-003(S3) |
-| 开放接口 Open | 6 份（`04.开放接口与LITE与运力宝/`） | `tests/open/` 7 个 | 68 passed / 9 skipped | BUG-OPN-001(S2)、BUG-OPN-002/003(S3) |
-| **合计** | **27 份** | **~31 个脚本** | **357 passed / 12 skipped / 2 xfailed / 0 failed** | **10（S1×1,S2×3,S3×5,S4×1）** |
+| 运营后台 Console | 5 份 | `tests/conftest.py` + `tests/console/` 4 个 | 53 passed / 1 xfailed | BUG-CON-001(S2)、BUG-CON-002(S3) |
+| 企业端 Client | 10 份 | `tests/client/` 13 个 | 188 passed | BUG-CLI-001(S3)、BUG-CLI-002(S4) |
+| 驾驶员 H5 Driver | 6 份 | `tests/driver/` 7 个 | 48 passed / 3 skipped / 1 xfailed | BUG-DRV-001(S1)、BUG-DRV-002(S2)、BUG-DRV-003(S3) |
+| 开放接口 Open | 6 份 | `tests/open/` 7 个 | 68 passed / 9 skipped | BUG-OPN-001(S2)、BUG-OPN-002/003(S3) |
+| **合计** | **27 份** | **~31 个** | **357 passed / 12 skipped / 2 xfailed** | **10 个** |
 
-> 说明：skip 均为需真实 DB/建表/外部依赖的集成用例，本地环境缺失时按规范 skip 而非 fail；xfailed 为已挂缺陷号、修复后自动转 xpass 的用例。全部脚本可被 pytest 收集、无导入错误、纯逻辑用例全通过。
+### 修复轮次（2026-07-07）— 10/10 缺陷已修复
+
+| 端 | 修复内容 | 修复后 pytest | 新增/增强测试 |
+|---|---|---|---|
+| 运营后台 | BUG-CON-001 `refresh`；BUG-CON-002 `BizException` | 63 passed | +`test_basicdata.py`（品牌/车系/经销商/role-menu） |
+| 企业端 | BUG-CLI-001 地名变体；BUG-CLI-002 脱敏边界 | 211 passed | +7 脚本（组织/角色/运价命中/调度/AI员工等） |
+| 驾驶员 H5 | BUG-DRV-001 排序；BUG-DRV-002 回单表迁移；BUG-DRV-003 权限 | 57 passed | 全链路/改密/回单 CRUD 集成 |
+| 开放接口 | BUG-OPN-001 显式切库；BUG-OPN-002/003 短信校验与节流 | 79 passed / 9 skipped | LITE/短信反向用例 |
+| **合计（全量 `pytest tests`）** | **10 缺陷全部关闭** | **~640+ passed / 9 skipped / 0 failed** | 脚本增至 ~40 个 |
+
+> skip 均为无平台库 `zt_platform_ci` 时的 HTTP 集成用例，按规范 skip 而非 fail。
 
 ### 待办（后续补测）
 
-- **需登录 Token/种子数据的写链路**：租户创建与产品授权（建真实库不可回滚）、员工/角色/组织增改、运价合同命中、任务全链路调度、承运商结算联动等 → 需一套可复用的种子/登录夹具后脚本化。
-- **异步 Worker / 外部依赖**：计费与成本引擎 worker、双引擎回归、证照预警 worker、AI 对话 SSE 与工具编排（依赖 LLM Provider）→ 仅手工/待补。
-- **待测（未开发）**：财务结算「应收/跨任务应付/对账单」、承运商独立结算、移动端 BI 看板与管理侧、LITE 前端、资质自助上报/OCR/位置上报 → 按差距清单仅登记，暂不编接口测试。
-
-### 优先修复建议
-
-1. `BUG-DRV-001`（S1）司机端"我的任务"MySQL `NULLS LAST` 语法 → 生产阻断，优先修复（`driver_task_service.py` 去掉 `.nullslast()`）。
-2. `BUG-CON-001`（S2）产品版本创建/更新 500 → 返回前 `await db.refresh(version)`。
-3. `BUG-OPN-001`（S2）LITE 上报接口开放路径无租户上下文 → 需重设计鉴权/租户注入。
-4. `BUG-DRV-002`（S2）回单表缺失与需求口径不一致 → 补迁移或对齐需求。
+- **仍待脚本化**：多企业登录/切租户、角色菜单授权后 menu-version、运单批量导入+地名、SSE 对话/配额守卫（见各端 README「待补」节）。
+- **异步 Worker / 外部依赖**：计费/成本 worker、双引擎回归、证照预警 worker、AI 工具编排（依赖 LLM）→ 仅手工。
+- **待测（未开发）**：财务结算「应收/跨任务应付/对账单」、承运商独立结算、移动端 BI、LITE 前端、资质自助上报/OCR → 按差距清单登记，暂不编接口测试。
+- **文档口径待对齐**：回单签收需求文档仍写「占位不落表」，与已落表实现不一致（见驾驶员 H5 缺陷记录）。

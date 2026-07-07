@@ -1,0 +1,67 @@
+........................................................................ [ 10%]
+........................................................................ [ 21%]
+....................................F................................... [ 32%]
+........................................................................ [ 42%]
+........................................................................ [ 53%]
+..s.s..s.s.s.s...................s.s..................s................. [ 64%]
+........................................................................ [ 75%]
+........................................................................ [ 85%]
+........................................................................ [ 96%]
+.......................                                                  [100%]
+================================== FAILURES ===================================
+______________ TestDepartmentCrud.test_create_update_tree_delete ______________
+
+self = <tests.client.test_system_organization.TestDepartmentCrud object at 0x0000028FCC6D0FA0>
+tenant_session = <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x0000028FD676AF40>
+
+    async def test_create_update_tree_delete(self, tenant_session):
+        parent = await DepartmentService.create_department(
+            tenant_session,
+            DepartmentCreate(parentId=0, organizationName=_dept_name("父部门")),
+        )
+        child = await DepartmentService.create_department(
+            tenant_session,
+            DepartmentCreate(
+                parentId=parent.id,
+                organizationName=_dept_name("子部门"),
+            ),
+        )
+    
+        updated = await DepartmentService.update_department(
+            tenant_session,
+            child.id,
+            DepartmentUpdate(
+                organizationId=child.id,
+                organizationName="子部门已更新",
+                sortNumber=99,
+            ),
+        )
+        assert updated.dept_name == "子部门已更新"
+        assert updated.sort_order == 99
+    
+        tree = await DepartmentService.get_department_tree(tenant_session)
+        parent_node = next(
+            (n for n in tree if n["organizationId"] == parent.id), None
+        )
+        assert parent_node is not None
+        assert any(
+            c["organizationName"] == "子部门已更新"
+            for c in (parent_node.get("children") or [])
+        )
+    
+        await DepartmentService.delete_department(tenant_session, child.id)
+        with pytest.raises(BizException):
+>           await DepartmentService.delete_department(tenant_session, parent.id)
+E           Failed: DID NOT RAISE <class 'app.common.exceptions.BizException'>
+
+tests\client\test_system_organization.py:64: Failed
+=========================== short test summary info ===========================
+SKIPPED [1] tests\open\test_lite_carrier_dispatch.py:113: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_lite_carrier_dispatch.py:133: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_product_changelog.py:16: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_product_changelog.py:43: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [2] tests\open\test_product_changelog.py:65: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_register.py:110: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_register.py:126: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_sms.py:111: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+FAILED tests/client/test_system_organization.py::TestDepartmentCrud::test_create_update_tree_delete

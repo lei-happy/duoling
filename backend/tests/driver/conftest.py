@@ -109,6 +109,88 @@ async def driver_ctx(tenant_session):
     yield tenant_session, ctx
 
 
+@pytest.fixture()
+async def driver_dispatched_task(driver_ctx):
+    """预置司机运力 + 已派车任务 + 1 条待装车挂接行（供全流程集成测试）。"""
+    import uuid
+
+    from app.modules.client.models.capacity.self_capacity.capacity import Capacity
+    from app.modules.client.models.capacity.self_capacity.vehicle import Vehicle
+    from app.modules.client.models.task.task import Task
+    from app.modules.client.models.task.task_waybill_item import TaskWaybillItem
+    from app.modules.client.models.waybill.waybill import Waybill
+    from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
+
+    session, ctx = driver_ctx
+    suffix = uuid.uuid4().hex[:8]
+
+    waybill = Waybill(
+        waybill_no=f"WB{suffix}",
+        origin="上海",
+        destination="北京",
+        quantity=1,
+        status=3,
+    )
+    session.add(waybill)
+    await session.flush()
+
+    cargo = WaybillCargo(
+        waybill_id=int(waybill.id),
+        vehicle_brand="测试品牌",
+        vehicle_model="测试车型",
+        quantity=1,
+        allocated_quantity=1,
+    )
+    session.add(cargo)
+    await session.flush()
+
+    vehicle = Vehicle(
+        plate_number=f"沪T{suffix[:5].upper()}",
+        plate_category="YELLOW",
+    )
+    session.add(vehicle)
+    await session.flush()
+
+    capacity = Capacity(
+        driver_id=ctx.driver_id,
+        driver_name=ctx.driver.name,
+        driver_phone=ctx.phone,
+        vehicle_id=int(vehicle.id),
+        plate_number=vehicle.plate_number,
+    )
+    session.add(capacity)
+    await session.flush()
+
+    task = Task(
+        task_no=f"TD{suffix}",
+        task_name="H5全流程测试",
+        status=1,
+        capacity_id=int(capacity.id),
+        carrier_type=1,
+        origin="上海",
+        destination="北京",
+        main_driver_name=ctx.driver.name,
+        plate_number=vehicle.plate_number,
+        total_quantity=1,
+        waybill_count=1,
+    )
+    session.add(task)
+    await session.flush()
+
+    item = TaskWaybillItem(
+        task_id=int(task.id),
+        waybill_id=int(waybill.id),
+        waybill_cargo_id=int(cargo.id),
+        waybill_no=waybill.waybill_no,
+        quantity=1,
+        status=0,
+    )
+    session.add(item)
+    await session.flush()
+
+    yield session, ctx, task, item
+
+
 def make_token(
     *,
     user_id: int = 990001,

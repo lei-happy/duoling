@@ -1,0 +1,25 @@
+============================= test session starts =============================
+platform win32 -- Python 3.9.13, pytest-8.4.2, pluggy-1.6.0
+rootdir: D:\zhitu\backend
+configfile: pytest.ini
+plugins: anyio-4.11.0, asyncio-1.2.0
+asyncio: mode=auto, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 88 items
+
+tests\open\test_carrier_invite.py ..............                         [ 15%]
+tests\open\test_compliance_scan.py .......                               [ 23%]
+tests\open\test_lite_carrier_dispatch.py ..........s.s..                 [ 40%]
+tests\open\test_product_changelog.py s.s.s.s                             [ 48%]
+tests\open\test_register.py ...................s.s..                     [ 76%]
+tests\open\test_sms.py ................s....                             [100%]
+
+=========================== short test summary info ===========================
+SKIPPED [1] tests\open\test_lite_carrier_dispatch.py:113: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_lite_carrier_dispatch.py:133: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_product_changelog.py:16: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_product_changelog.py:43: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [2] tests\open\test_product_changelog.py:65: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_register.py:110: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_register.py:126: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+SKIPPED [1] tests\open\test_sms.py:111: 平台库 zt_platform_ci 不可连接，跳过开放接口 HTTP 集成用例
+======================= 79 passed, 9 skipped in 15.77s ========================

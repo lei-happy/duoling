@@ -103,6 +103,15 @@ class PermissionGuard:
         ).scalar_one_or_none()
 
     @staticmethod
+    async def user_has_menu_permission(
+        tenant_db: AsyncSession, user: TokenData, permission_code: str
+    ) -> bool:
+        """根据用户角色 → 角色绑定菜单 → menu_code 反查是否拥有指定权限码。"""
+        return await PermissionGuard._user_has_permission(
+            tenant_db, user, permission_code
+        )
+
+    @staticmethod
     async def _user_has_permission(
         tenant_db: AsyncSession, user: TokenData, permission_code: str
     ) -> bool:

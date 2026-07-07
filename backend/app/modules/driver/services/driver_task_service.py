@@ -21,7 +21,9 @@ from typing import List, Optional, Tuple
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.common.exceptions import BizException
+from app.common.exceptions import BizException, PermissionException
+from app.core.security import TokenData
+from app.modules.ai.security.permission_guard import PermissionGuard
 from app.modules.client.models.capacity.self_capacity.capacity import Capacity
 from app.modules.client.models.task.task import Task
 from app.modules.client.models.task.task_dispatch_order import TaskDispatchOrder
@@ -55,6 +57,9 @@ from app.modules.driver.schemas.task import (
     DriverTaskSegment,
 )
 from app.modules.driver.services.driver_context import DriverContext
+
+
+_REVERT_SIGN_PERMISSION = "operation:task:revert-sign"
 
 
 class DriverTaskService:
@@ -407,8 +412,17 @@ class DriverTaskService:
         ctx: DriverContext,
         item_id: int,
         data: DriverRevertSignRequest,
+        *,
+        actor: TokenData,
     ) -> None:
         item = await DriverTaskService._get_visible_item_or_404(db, ctx, item_id)
+        allowed = await PermissionGuard.user_has_menu_permission(
+            db, actor, _REVERT_SIGN_PERMISSION
+        )
+        if not allowed:
+            raise PermissionException(
+                f"当前用户缺少权限码 {_REVERT_SIGN_PERMISSION}，无法撤销签收"
+            )
         if int(item.status) != 3:
             raise BizException("仅「已签收」的运单可撤销签收")
         await TaskWaybillItemService.update_item_status(
