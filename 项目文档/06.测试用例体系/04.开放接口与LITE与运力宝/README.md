@@ -72,6 +72,14 @@ cd backend && python -m pytest tests/open -v
 
 ## 四、最近一次执行结果
 
+### 2026-07-09（平台库可连接 + 修复误跳过）
+
+- 环境：Windows / Python 3.9.13；平台库 `zt_platform_ci`、租户库 `zt_biz_1001_ci` 均可连接。
+- 结果：**88 passed, 0 skipped**。
+- 关键：修复了本端 `conftest.py` 的测试基座缺陷（BUG-TEST-001）——`db_manager` 全局单例的平台库异步引擎绑定到旧事件循环，导致 9 个 HTTP 集成用例在全量执行时被静默判为「平台库不可连接」而 skip（假绿）。修复后这 9 个用例**真正执行并通过**。
+
+### 2026-07-07（无 DB 环境）
+
 - 环境：本地无平台库 / 租户库连接。
 - 结果：**68 passed, 9 skipped**（9 条 skip 均为需平台库的 HTTP 集成用例）。
 - 纯逻辑 / schema 用例全部通过，脚本可正常收集、无导入错误。

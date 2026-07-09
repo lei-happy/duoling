@@ -45,13 +45,22 @@ def lite_dispatch_headers(token: str = LITE_PLACEHOLDER_TOKEN) -> dict:
 
 
 async def _platform_db_reachable() -> bool:
-    """探测平台库是否可连接，初始化 db_manager 引擎；不可达返回 False。"""
+    """探测平台库是否可连接，初始化 db_manager 引擎；不可达返回 False。
+
+    注意：``db_manager`` 是全局单例，其平台引擎会绑定到「首次初始化时的事件循环」。
+    而 pytest-asyncio（asyncio_mode=auto）给每个 async 用例分配独立的函数级事件循环，
+    若沿用上一个用例遗留的陈旧 ``_platform_session_factory``（其引擎绑定在已关闭的
+    事件循环上），会抛出 ``Event loop is closed`` 被静默吞掉 → 用例全部误 skip。
+    因此这里每次都强制在「当前事件循环」上重建引擎，保证探测与后续 HTTP 请求一致。
+    """
     from sqlalchemy import text
     from app.core.database import db_manager
 
     try:
-        if db_manager._platform_session_factory is None:
-            await db_manager.init_platform_db()
+        # 丢弃可能绑定在旧事件循环上的引擎/工厂，在当前循环重建
+        db_manager._platform_engine = None
+        db_manager._platform_session_factory = None
+        await db_manager.init_platform_db()
         async with db_manager._platform_session_factory() as session:
             await session.execute(text("SELECT 1"))
         return True
