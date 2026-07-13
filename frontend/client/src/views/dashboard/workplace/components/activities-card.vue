@@ -1,10 +1,14 @@
 <!-- 最新动态 -->
 <template>
-  <ele-card :header="title" :body-style="{ padding: '6px 0', height: '400px' }">
+  <ele-card
+    :header="title"
+    class="activities-card"
+    :body-style="{ padding: '6px 0' }"
+  >
     <template #extra>
       <more-icon :hide-edit="true" @command="handleCommand" />
     </template>
-    <el-scrollbar :view-style="{ padding: '20px 20px 0 20px' }">
+    <el-scrollbar height="100%" :view-style="{ padding: '20px 20px 0 20px' }">
       <div v-if="loading" class="activities-loading">
         <el-skeleton :rows="6" animated />
       </div>
@@ -17,6 +21,7 @@
         <el-timeline-item
           v-for="{ item, parts } in activityRows"
           :key="item.id"
+          placement="top"
           :timestamp="item.display_time"
           :color="scenarioColor(item.event_code)"
           :hollow="timelineHollow(item.event_code)"
@@ -221,6 +226,37 @@
 </script>
 
 <style lang="scss" scoped>
+  /* 卡片撑满右列高度并封顶，内部动态列表滚动（与我的待办等高） */
+  .activities-card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    /* 移除标题下分割线 */
+    :deep(.ele-card-header) {
+      border-bottom: none;
+    }
+
+    :deep(.ele-card-body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    :deep(.el-scrollbar) {
+      flex: 1;
+      min-height: 0;
+    }
+  }
+
+  :deep(.ele-card-title) {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
   .activities-loading {
     padding: 8px 0;
   }
@@ -284,25 +320,24 @@
     }
 
     :deep(.el-timeline-item__wrapper) {
-      display: flex;
+      padding-left: 22px;
 
+      /* 时间在上：加粗深色小字 */
       .el-timeline-item__timestamp {
-        order: 0;
-        flex-shrink: 0;
-        margin: 1px 12px 0 0;
-        height: 22px;
-        line-height: 22px;
-        font-size: 14px;
+        margin: 0 0 4px;
+        line-height: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--el-text-color-primary);
       }
 
       .el-timeline-item__content {
-        order: 1;
-        flex: 1;
+        line-height: 1.55;
       }
     }
 
     :deep(.el-timeline-item__node) {
-      top: 3px;
+      top: 4px;
       --el-color-white: var(--el-bg-color);
     }
 
@@ -332,8 +367,12 @@
       ) !important;
     }
 
+    /* 虚线竖轴 */
     :deep(.el-timeline-item__tail) {
-      top: 3px;
+      top: 4px;
+      left: 4px;
+      border-left-style: dashed;
+      border-left-color: var(--el-border-color);
     }
 
     /* 解绑/删除：虚线边框，仍为场景色；中心不透明显示以挡住竖线 */

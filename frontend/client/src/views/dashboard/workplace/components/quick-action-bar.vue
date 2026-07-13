@@ -1,13 +1,22 @@
 <!-- 快捷操作 -->
 <template>
-  <ele-card shadow="never" :body-style="{ padding: '12px 16px 8px' }">
-    <el-row :gutter="12" ref="wrapRef" class="quick-action-row">
+  <ele-card
+    shadow="never"
+    class="quick-card"
+    :body-style="{ padding: '0 20px 14px' }"
+  >
+    <template #header>
+      <div class="quick-header">
+        <span class="quick-title">快捷操作</span>
+      </div>
+    </template>
+    <el-row :gutter="8" ref="wrapRef" class="quick-action-row">
       <el-col
         v-for="item in displayedItems"
         :key="item.key"
         :md="3"
         :sm="6"
-        :xs="12"
+        :xs="8"
         class="quick-action-sortable"
       >
         <component
@@ -19,14 +28,20 @@
             class="quick-action-item__icon"
             :style="{ '--action-accent': item.color || '#69c0ff' }"
           >
-            <el-icon class="quick-action-item__icon-inner">
+            <img
+              v-if="item.image"
+              :src="item.image"
+              :alt="item.title"
+              class="quick-action-item__img"
+            />
+            <el-icon v-else class="quick-action-item__icon-inner">
               <component :is="item.icon" />
             </el-icon>
           </div>
           <div class="quick-action-item__title">{{ item.title }}</div>
         </component>
       </el-col>
-      <el-col :md="3" :sm="6" :xs="12">
+      <el-col :md="3" :sm="6" :xs="8">
         <div
           class="quick-action-item quick-action-manage"
           role="button"
@@ -181,48 +196,89 @@
 </script>
 
 <style lang="scss" scoped>
+  .quick-card {
+    border-radius: 12px;
+    height: 190px;
+    display: flex;
+    flex-direction: column;
+
+    /* 移除标题下分割线 */
+    :deep(.ele-card-header) {
+      border-bottom: none;
+    }
+
+    /* body 撑满并使图标+文字整体垂直居中 */
+    :deep(.ele-card-body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+  }
+
+  .quick-header {
+    display: flex;
+    align-items: center;
+  }
+
+  .quick-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
   .quick-action-row {
-    margin-bottom: -4px;
+    width: 100%;
   }
 
   .quick-action-item {
-    display: block;
-    margin-bottom: 12px;
-    padding: 14px 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 4px;
     text-align: center;
     text-decoration: none;
     color: inherit;
     user-select: none;
     border-radius: 10px;
-    border: 1px solid transparent;
-    background: var(--el-fill-color-blank);
     transition:
       transform 0.22s ease,
-      box-shadow 0.22s ease,
-      border-color 0.22s ease,
       background-color 0.22s ease;
 
     &__icon {
-      width: 48px;
-      height: 48px;
-      margin: 0 auto 10px;
+      width: 50px;
+      height: 50px;
+      margin-bottom: 8px;
       border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: color-mix(in srgb, var(--action-accent) 12%, transparent);
+      overflow: hidden;
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--action-accent) 92%, white) 0%,
+        var(--action-accent) 100%
+      );
+      box-shadow: 0 6px 14px
+        color-mix(in srgb, var(--action-accent) 32%, transparent);
       transition:
         transform 0.22s ease,
-        background-color 0.22s ease,
         box-shadow 0.22s ease;
+    }
+
+    &__img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     &__icon-inner {
       font-size: 26px;
-      color: var(--action-accent);
+      color: #fff;
 
       :deep(svg) {
-        stroke-width: 2.5;
+        stroke-width: 2.2;
       }
     }
 
@@ -235,16 +291,11 @@
 
     &:hover {
       transform: translateY(-2px);
-      border-color: color-mix(in srgb, var(--action-accent) 28%, transparent);
-      background: var(--el-bg-color);
-      box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.06),
-        0 1px 3px rgba(0, 0, 0, 0.04);
 
       .quick-action-item__icon {
-        transform: scale(1.06);
-        background: color-mix(in srgb, var(--action-accent) 18%, transparent);
-        box-shadow: 0 4px 10px color-mix(in srgb, var(--action-accent) 22%, transparent);
+        transform: scale(1.05);
+        box-shadow: 0 8px 18px
+          color-mix(in srgb, var(--action-accent) 42%, transparent);
       }
 
       .quick-action-item__title {
@@ -262,8 +313,8 @@
     --action-accent: var(--el-text-color-placeholder);
 
     .quick-action-item__icon {
-      --action-accent: var(--el-text-color-secondary);
       background: var(--el-fill-color-light);
+      box-shadow: none;
     }
 
     .quick-action-item__icon-inner {
@@ -273,6 +324,7 @@
     &:hover {
       .quick-action-item__icon {
         background: var(--el-fill-color);
+        box-shadow: none;
       }
 
       .quick-action-item__icon-inner {
@@ -282,8 +334,7 @@
   }
 
   .el-col.sortable-chosen .quick-action-item {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    border-color: var(--el-color-primary-light-7);
+    background: var(--el-fill-color-light);
   }
 
   .el-col.sortable-ghost {
@@ -292,6 +343,5 @@
 
   .el-col.sortable-fallback .quick-action-item {
     opacity: 1 !important;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
   }
 </style>

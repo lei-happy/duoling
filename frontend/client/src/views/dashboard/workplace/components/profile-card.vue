@@ -1,48 +1,42 @@
-<!-- 用户信息 + 今日需关注 -->
+<!-- 用户问候 + 今日需关注统计 -->
 <template>
-  <ele-card :body-style="{ padding: '20px' }">
+  <ele-card shadow="never" class="profile-card" :body-style="{ padding: '20px' }">
     <div class="profile-wrapper">
-      <div class="profile-main">
-        <el-avatar :size="68" :src="loginUser.avatar" class="profile-avatar" />
-        <div class="profile-body">
-          <ele-text size="xl" type="heading" style="font-weight: normal">
-            {{ greetingText }}
-          </ele-text>
-          <ele-text type="placeholder" :icon="PartlyCloudy">
-            今日多云转阴, 18℃ ~ 22℃, 出门记得穿外套哦~
-          </ele-text>
+      <!-- 头像 + 问候 -->
+      <div class="profile-header">
+        <el-avatar :size="48" :src="loginUser.avatar" class="profile-avatar" />
+        <div class="profile-header-body">
+          <div class="profile-greeting">{{ greetingText }}</div>
+          <div class="profile-sub">
+            <span v-if="roleName" class="profile-role">{{ roleName }}</span>
+            <span class="profile-weather">
+              <el-icon class="profile-weather-icon"><PartlyCloudy /></el-icon>
+              今日多云转阴 18℃~22℃
+            </span>
+          </div>
         </div>
       </div>
-      <div v-if="items.length" class="profile-count">
+
+      <!-- 今日需关注统计卡片组 -->
+      <div v-if="items.length" class="profile-stats">
         <button
           v-for="item in items"
           :key="item.key"
           type="button"
-          class="profile-count-item"
+          class="profile-stat"
           :class="{ 'is-urgent': item.urgent }"
           @click="goMetric(item)"
         >
-          <div class="profile-count-header">
-            <el-tag
-              size="large"
-              :type="item.tagType"
-              :disable-transitions="true"
-            >
-              <el-icon>
-                <component :is="iconMap[item.icon]" />
-              </el-icon>
-            </el-tag>
-            <span class="profile-count-name">{{ item.label }}</span>
+          <div class="profile-stat-info">
+            <span class="profile-stat-label">{{ item.label }}</span>
+            <span class="profile-stat-value">
+              <template v-if="loading">—</template>
+              <template v-else>{{ formatCount(item.value) }}</template>
+            </span>
           </div>
-          <ele-text
-            size="xl"
-            type="heading"
-            class="profile-count-value"
-            style="font-weight: normal"
-          >
-            <template v-if="loading">—</template>
-            <template v-else>{{ formatCount(item.value) }}</template>
-          </ele-text>
+          <el-icon class="profile-stat-icon">
+            <component :is="iconMap[item.icon]" />
+          </el-icon>
         </button>
       </div>
     </div>
@@ -52,7 +46,12 @@
 <script lang="ts" setup>
   import { computed, ref, watch } from 'vue';
   import { useRouter } from 'vue-router';
-  import { DocumentChecked, Promotion, Select, PartlyCloudy } from '@element-plus/icons-vue';
+  import {
+    DocumentChecked,
+    Promotion,
+    Select,
+    PartlyCloudy
+  } from '@element-plus/icons-vue';
   import { useUserStore } from '@/store/modules/user';
   import { getProfileGreetingText } from '../utils/profile-greeting';
   import {
@@ -72,6 +71,11 @@
 
   /** 当前登录用户信息 */
   const loginUser = computed(() => userStore.info ?? {});
+
+  /** 角色名称（取首个角色） */
+  const roleName = computed(
+    () => userStore.info?.roles?.[0]?.roleName?.trim() || ''
+  );
 
   /** 按上海时段随机问候（仅用户身份变化时刷新，避免快捷操作等偏好保存触发重随机） */
   const greetingText = ref('');
@@ -105,101 +109,144 @@
 </script>
 
 <style lang="scss" scoped>
+  .profile-card {
+    border-radius: 12px;
+    height: 216px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+
+    :deep(.ele-card-body) {
+      flex: 1;
+      min-height: 0;
+    }
+  }
+
   .profile-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .profile-header {
     display: flex;
     align-items: center;
+    gap: 12px;
 
-    .profile-main {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      overflow: hidden;
-
-      .profile-avatar {
-        flex-shrink: 0;
-        background: none;
-      }
-
-      .profile-body {
-        flex: 1;
-        padding-left: 12px;
-        box-sizing: border-box;
-      }
+    .profile-avatar {
+      flex-shrink: 0;
+      background: var(--el-fill-color-light);
     }
   }
 
-  .profile-count {
-    flex-shrink: 0;
-    text-align: right;
+  .profile-header-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .profile-greeting {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    line-height: 1.4;
+  }
+
+  .profile-sub {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .profile-role {
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+  }
+
+  .profile-weather {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     white-space: nowrap;
+  }
 
-    .profile-count-item {
-      display: inline-block;
-      margin: 0 4px 0 24px;
-      padding: 0;
-      border: none;
-      background: none;
-      cursor: pointer;
-      text-align: right;
-      color: inherit;
-      transition: opacity 0.15s ease;
+  .profile-weather-icon {
+    font-size: 14px;
+    color: var(--el-color-warning);
+  }
 
-      &:hover {
-        opacity: 0.82;
-      }
+  /* 统计卡片组 */
+  .profile-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
 
-      .el-tag {
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        line-height: 0;
-        padding: 0;
-      }
+  .profile-stat {
+    flex: 1 1 0;
+    min-width: 120px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    background: linear-gradient(135deg, #eaf4ff 0%, #eff6ff 100%);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
 
-      .profile-count-name {
-        margin-left: 8px;
-      }
-
-      .profile-count-header {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        margin-bottom: 4px;
-      }
-
-      .profile-count-value {
-        transition: color 0.15s ease;
-      }
-
-      &.is-urgent .profile-count-value {
-        color: var(--el-color-warning);
-      }
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(22, 93, 255, 0.14);
     }
   }
 
-  @media screen and (max-width: 992px) {
-    .profile-count .profile-count-item {
-      margin: 0 2px 0 12px;
-    }
+  .profile-stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
   }
 
-  @media screen and (max-width: 768px) {
-    .profile-wrapper {
-      display: block;
+  .profile-stat-label {
+    font-size: 13px;
+    color: #4e5969;
+    white-space: nowrap;
+  }
 
-      .profile-count {
-        margin-top: 14px;
-        text-align: left;
+  .profile-stat-value {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--el-color-primary);
+  }
 
-        .profile-count-item {
-          margin: 0 16px 0 0;
-          text-align: left;
+  .profile-stat.is-urgent .profile-stat-value {
+    color: var(--el-color-primary);
+  }
 
-          .profile-count-header {
-            justify-content: flex-start;
-          }
-        }
-      }
+  .profile-stat-icon {
+    font-size: 34px;
+    color: rgba(22, 93, 255, 0.16);
+    flex-shrink: 0;
+  }
+
+  @media screen and (max-width: 480px) {
+    .profile-stat {
+      flex-basis: 100%;
     }
   }
 </style>

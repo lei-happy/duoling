@@ -1,47 +1,35 @@
 <!-- 我的待办 -->
 <template>
   <ele-card
-    :body-style="{ padding: '6px 0', height: '400px' }"
+    :body-style="{ padding: '6px 0', height: '520px' }"
     class="todo-card"
   >
     <template #header>
       <div class="card-header">
-        <span>{{ title }}</span>
-        <el-button
-          type="primary"
-          size="small"
-          class="create-btn"
-          @click="showCreateForm = true"
-        >
-          创建待办
-        </el-button>
+        <span class="card-title">{{ title }}</span>
+        <button type="button" class="create-link" @click="showCreateForm = true">
+          <el-icon><CirclePlus /></el-icon>
+          <span>创建待办</span>
+        </button>
       </div>
     </template>
     <template #extra>
       <!-- 阻止工作台 Sortable 在 header/extra 区域抢 mousedown，否则下拉菜单点不到、刷新无效 -->
       <div class="todo-card-extra-inner" @mousedown.stop>
         <div class="todo-tabs">
-          <!-- 状态筛选 -->
-          <el-radio-group
-            id="todo-status-filter"
-            v-model="activeStatus"
-            size="small"
-            @change="handleStatusChange"
-            class="status-radio-group"
+          <!-- 状态筛选（文字下划线 tab） -->
+          <button
+            v-for="item in statusOptions"
+            :key="item.value"
+            :id="`todo-filter-status-${item.value}`"
+            type="button"
+            class="todo-tab"
+            :class="{ 'is-active': activeStatus === item.value }"
+            @click="switchStatus(item.value)"
           >
-            <el-radio-button
-              v-for="item in statusOptions"
-              :key="item.value"
-              :id="`todo-filter-status-${item.value}`"
-              :value="item.value"
-              class="status-button"
-            >
-              {{ item.label }}
-              <span class="status-count"
-                >({{ getStatusCount(item.value) }})</span
-              >
-            </el-radio-button>
-          </el-radio-group>
+            {{ item.label }}
+            <span class="status-count">({{ getStatusCount(item.value) }})</span>
+          </button>
         </div>
         <more-icon
           :hide-edit="true"
@@ -81,36 +69,12 @@
 
           <!-- 任务内容 -->
           <div class="task-content">
-            <!-- 任务标题行 -->
-            <div class="task-title-row">
-              <div
-                class="task-title"
-                :class="{ 'completed-title': task.status === 2 }"
-              >
-                {{ task.title }}
-              </div>
-              <!-- 更多操作菜单 - 右上角 -->
-              <div class="task-more-action" @click.stop>
-                <el-dropdown
-                  trigger="click"
-                  @command="(cmd) => handleTaskAction(task, cmd)"
-                >
-                  <el-button
-                    link
-                    size="small"
-                    :icon="More"
-                    class="action-btn"
-                  />
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="delete" class="delete-option">
-                        <el-icon><Delete /></el-icon>
-                        删除
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
+            <!-- 任务标题 -->
+            <div
+              class="task-title"
+              :class="{ 'completed-title': task.status === 2 }"
+            >
+              {{ task.title }}
             </div>
 
             <!-- 任务描述 -->
@@ -179,29 +143,52 @@
                   </span>
                 </span>
               </div>
-
-              <!-- 快速操作按钮 - 与元信息同行右侧 -->
-              <div class="task-quick-actions" @click.stop>
-                <el-button
-                  v-if="task.status === 0"
-                  link
-                  size="small"
-                  @click="updateTaskStatus(task, 1)"
-                  class="quick-action-btn start-btn"
-                >
-                  开始处理
-                </el-button>
-                <el-button
-                  v-if="task.status === 1"
-                  link
-                  size="small"
-                  @click="updateTaskStatus(task, 2)"
-                  class="quick-action-btn complete-btn"
-                >
-                  任务完成
-                </el-button>
-              </div>
             </div>
+          </div>
+
+          <!-- 更多操作：右上角竖排 -->
+          <div class="task-more-action" @click.stop>
+            <el-dropdown
+              trigger="click"
+              @command="(cmd) => handleTaskAction(task, cmd)"
+            >
+              <el-button
+                link
+                size="small"
+                :icon="MoreFilled"
+                class="action-btn"
+              />
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="delete" class="delete-option">
+                    <el-icon><Delete /></el-icon>
+                    删除
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+
+          <!-- 开始处理/任务完成：右侧垂直居中 -->
+          <div class="task-quick-actions" @click.stop>
+            <el-button
+              v-if="task.status === 0"
+              link
+              size="small"
+              @click="updateTaskStatus(task, 1)"
+              class="quick-action-btn start-btn"
+            >
+              开始处理
+            </el-button>
+            <el-button
+              v-if="task.status === 1"
+              link
+              size="small"
+              @click="updateTaskStatus(task, 2)"
+              class="quick-action-btn complete-btn"
+            >
+              任务完成
+            </el-button>
           </div>
         </div>
 
@@ -458,9 +445,10 @@
   import {
     Delete,
     Clock,
-    More,
+    MoreFilled,
     EditPen,
-    Avatar
+    Avatar,
+    CirclePlus
   } from '@element-plus/icons-vue';
   import MoreIcon from './more-icon.vue';
   import type { Command } from '../model';
@@ -662,12 +650,20 @@
   };
 
   const handleStatusChange = async (status: number) => {
-    // el-radio-group 会自动更新 v-model，这里可以添加额外逻辑
     console.log('状态切换到:', status);
     // 状态切换时重新获取数据
     await fetchTasks(true);
     // 同时更新统计信息
     await fetchStats();
+  };
+
+  /** 切换状态 tab（先更新选中态再拉取数据） */
+  const switchStatus = (status: number) => {
+    if (activeStatus.value === status) {
+      return;
+    }
+    activeStatus.value = status;
+    handleStatusChange(status);
   };
 
   // 加载更多任务
@@ -1086,47 +1082,48 @@
 <style lang="scss" scoped>
   // ============ 卡片基础样式 ============
   .todo-card {
-    // 表头内控件压到与 ele-card 标题行高（24px）一致，与其它工作台卡片视觉等高
     :deep(.ele-card-header) {
       align-items: center;
-    }
-
-    :deep(.status-radio-group) {
-      display: inline-flex;
-      flex-wrap: nowrap;
-      vertical-align: middle;
-    }
-
-    :deep(.status-radio-group .el-radio-button__inner) {
-      padding: 0 10px;
-      height: 24px;
-      line-height: 24px;
-      font-size: 12px;
-      box-sizing: border-box;
-    }
-
-    // 与筛选条同高，保留主色实心按钮形态
-    :deep(.card-header .create-btn.el-button) {
-      height: 24px;
-      min-height: 24px;
-      padding: 0 10px;
-      font-size: 12px;
-      line-height: 1;
-      box-sizing: border-box;
+      border-bottom: none;
     }
   }
 
-  // ============ 卡片头部（保持一致风格） ============
+  // ============ 卡片头部（标题 + 创建待办链接） ============
   .card-header {
     display: flex;
     align-items: center;
+    gap: 14px;
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  // 创建待办：文字链接样式
+  .create-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--el-color-primary);
+    transition: opacity 0.2s;
+
+    .el-icon {
+      font-size: 15px;
+    }
+
+    &:hover {
+      opacity: 0.8;
+    }
   }
 
   // ============ 头部操作区 ============
-  .create-btn {
-    margin-left: 12px;
-  }
-
   .todo-card-extra-inner {
     display: flex;
     flex-wrap: wrap;
@@ -1135,23 +1132,52 @@
   }
 
   .todo-tabs {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 18px;
     pointer-events: all;
     z-index: 10;
   }
 
-  .status-radio-group {
+  // 文字下划线 tab
+  .todo-tab {
+    position: relative;
+    padding: 0 0 6px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
     pointer-events: all !important;
-  }
+    transition: color 0.2s;
 
-  .status-button {
-    pointer-events: all !important;
+    &:hover {
+      color: var(--el-text-color-primary);
+    }
+
+    &.is-active {
+      color: var(--el-color-primary);
+      font-weight: 600;
+
+      &::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        transform: translateX(-50%);
+        width: 20px;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--el-color-primary);
+      }
+    }
   }
 
   .status-count {
-    font-size: 11px;
+    font-size: 12px;
     margin-left: 2px;
-    opacity: 0.8;
+    opacity: 0.85;
+    font-weight: 400;
   }
 
   // ============ 加载和空状态 ============
@@ -1206,19 +1232,17 @@
   // ============ 任务列表 ============
   .task-list {
     .task-item {
+      position: relative;
       display: flex;
       align-items: flex-start;
-      padding: 12px 0;
+      padding: 14px 8px;
       border-bottom: 1px solid var(--el-border-color-lighter);
       cursor: pointer;
       transition: background-color 0.2s;
 
       &:hover {
         background-color: var(--el-fill-color-lighter);
-        border-radius: 8px;
-        margin: 0 -12px;
-        padding-left: 12px;
-        padding-right: 12px;
+        border-radius: 4px;
       }
 
       &:last-child {
@@ -1246,30 +1270,21 @@
     flex-shrink: 0;
   }
 
-  // 任务内容
+  // 任务内容（右侧预留操作区宽度）
   .task-content {
     flex: 1;
     min-width: 0;
-  }
-
-  // 任务标题行 - 标题和更多按钮并排
-  .task-title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 6px;
+    padding-right: 116px;
   }
 
   // 任务标题
   .task-title {
-    flex: 1;
     font-size: 15px;
     font-weight: 600;
     color: var(--el-text-color-primary);
     line-height: 1.3;
     letter-spacing: 0.02em;
-    margin-right: 8px;
-    margin-top: -3px;
+    margin-bottom: 6px;
 
     &.completed-title {
       color: var(--el-text-color-secondary);
@@ -1277,9 +1292,12 @@
     }
   }
 
-  // 更多操作按钮 - 右上角
+  // 更多操作按钮 - 右侧竖排，垂直居中
   .task-more-action {
-    flex-shrink: 0;
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
   }
 
   // 任务描述
@@ -1292,11 +1310,10 @@
     opacity: 0.9;
   }
 
-  // 元信息行 - 元信息和快速操作按钮并排
+  // 元信息行
   .task-meta-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
   }
 
@@ -1310,9 +1327,12 @@
     min-width: 0;
   }
 
-  // 快速操作按钮区域 - 与元信息同行右侧
+  // 开始处理/任务完成 - 右侧垂直居中
   .task-quick-actions {
-    flex-shrink: 0;
+    position: absolute;
+    top: 50%;
+    right: 40px;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -1402,32 +1422,30 @@
 
   // 快速操作按钮样式 - 更紧凑的设计
   .quick-action-btn {
-    font-size: 11px;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-weight: 500;
-    min-width: 60px;
+    font-size: 12px;
+    height: 30px;
+    padding: 0 14px;
+    border-radius: 4px;
+    font-weight: 400;
+    min-width: 72px;
     white-space: nowrap;
+    background-color: #fff;
 
     &.start-btn {
       color: var(--el-color-primary);
-      background-color: var(--el-color-primary-light-9);
-      border: 1px solid var(--el-color-primary-light-7);
+      border: 1px solid var(--el-color-primary);
 
       &:hover {
-        background-color: var(--el-color-primary-light-8);
-        border-color: var(--el-color-primary-light-5);
+        background-color: var(--el-color-primary-light-9);
       }
     }
 
     &.complete-btn {
       color: var(--el-color-success);
-      background-color: var(--el-color-success-light-9);
-      border: 1px solid var(--el-color-success-light-7);
+      border: 1px solid var(--el-color-success);
 
       &:hover {
-        background-color: var(--el-color-success-light-8);
-        border-color: var(--el-color-success-light-5);
+        background-color: var(--el-color-success-light-9);
       }
     }
   }

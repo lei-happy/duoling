@@ -16,6 +16,8 @@ export interface QuickActionConfig {
   title: string;
   /** 图标组件名（ele-admin-plus icons） */
   icon: string;
+  /** 图标图片地址（设计素材，优先于 icon 渲染；暂未提供时留空用占位图标） */
+  image?: string;
   color?: string;
   /** 分组标题，用于管理弹窗 */
   group: string;
