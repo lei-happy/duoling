@@ -1,6 +1,6 @@
 """AI 数字人 · 数字员工列表（平台库，事务回滚不落库）集成测试
 
-对应需求：项目文档/02.需求文档/02.企业端/11.AI数字员工/**
+对应需求：doc/02.需求文档/02.企业端/11.AI数字员工/**
 对应代码：backend/app/modules/ai/services/employee_service.py
 覆盖用例：TC-CLI-AI-030
 """

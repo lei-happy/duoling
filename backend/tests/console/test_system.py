@@ -2,7 +2,7 @@
 
 覆盖用例：TC-CON-ROLE-001~005、TC-CON-DICT-001~004、
           TC-CON-USER-001~004、TC-CON-REGION-001~004
-对应需求：项目文档/02.需求文档/01.运营后台/**（系统管理 / 基础数据）
+对应需求：doc/02.需求文档/01.运营后台/**（系统管理 / 基础数据）
 对应后端：backend/app/modules/console/api/system/{user,role}.py
           backend/app/modules/console/api/dictionary/dict.py
           backend/app/modules/console/api/region/region.py

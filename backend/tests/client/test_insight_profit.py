@@ -5,7 +5,7 @@
   2. 集成冒烟：真实租户库上跑 KPI / 趋势 / 承运结构 / 成本构成 / 客户排行
      聚合 SQL（事务回滚不落库），校验可执行且返回结构正确（不校验具体数值）。
 
-对应需求：项目文档/02.需求文档/02.企业端/10.数据洞察/利润总览.md
+对应需求：doc/02.需求文档/02.企业端/10.数据洞察/利润总览.md
 对应接口：/api/client/insight/cockpit/profit/**
 对应代码：backend/app/modules/client/services/insight/profit_service.py
 覆盖用例：TC-CLI-PROFIT-001 ~ TC-CLI-PROFIT-020

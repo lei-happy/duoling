@@ -1,7 +1,7 @@
 """运营后台端 - 租户管理与产品版本测试
 
 覆盖用例：TC-CON-TENANT-001 ~ TC-CON-TENANT-006、TC-CON-PRODUCT-001 ~ 006
-对应需求：项目文档/02.需求文档/01.运营后台/**（租户管理 / 产品版本授权）
+对应需求：doc/02.需求文档/01.运营后台/**（租户管理 / 产品版本授权）
 对应后端：backend/app/modules/console/api/tenant/tenant.py
           backend/app/modules/console/api/product/product_version.py
 

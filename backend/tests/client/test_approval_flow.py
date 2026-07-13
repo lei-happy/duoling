@@ -1,6 +1,6 @@
 """审批中心（Approval）纯逻辑单元测试
 
-对应需求：项目文档/02.需求文档/02.企业端/08.审批中心/**
+对应需求：doc/02.需求文档/02.企业端/08.审批中心/**
 对应后端：
     backend/app/modules/client/services/approval/condition.py（条件 DSL 求值）
     backend/app/modules/client/services/approval/tree.py（画布树 → 线性路径、结构校验）

@@ -1,7 +1,7 @@
 """企业自助注册接口测试
 
-对应需求：项目文档/02.需求文档/01.运营后台/09.产品管理（开放侧）
-         项目文档/06.测试用例体系/04.开放接口与LITE与运力宝/01.企业自助注册.md
+对应需求：doc/02.需求文档/01.运营后台/09.产品管理（开放侧）
+         doc/06.测试用例体系/04.开放接口与LITE与运力宝/01.企业自助注册.md
 对应后端：backend/app/modules/open/api/register.py
          backend/app/modules/open/services/register_service.py
          backend/app/modules/open/schemas/register.py

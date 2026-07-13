@@ -1,6 +1,6 @@
 """公开产品版本 / 版本功能矩阵 / 更新日志接口测试
 
-对应需求：项目文档/06.测试用例体系/04.开放接口与LITE与运力宝/02.公开产品与更新日志.md
+对应需求：doc/06.测试用例体系/04.开放接口与LITE与运力宝/02.公开产品与更新日志.md
 对应后端：backend/app/modules/open/api/product.py
          backend/app/modules/open/api/changelog.py
 覆盖用例：TC-OPN-PRODUCT-001 ~ TC-OPN-PRODUCT-004、TC-OPN-CHANGELOG-001 ~ 003

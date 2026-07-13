@@ -4,7 +4,7 @@
 这里以**反向用例**为主（不存在的手机号、错误密码、缺租户），
 在平台库连接可用时执行、事务回滚不落库；无 DB 时 skip。
 
-对应需求：项目文档/02.需求文档/02.企业端/01.账号与组织/**
+对应需求：doc/02.需求文档/02.企业端/01.账号与组织/**
 对应接口：POST /api/client/auth/login
 对应代码：backend/app/modules/console/services/auth/auth_service.py::client_login
 覆盖用例：TC-CLI-AUTH-001 ~ TC-CLI-AUTH-006

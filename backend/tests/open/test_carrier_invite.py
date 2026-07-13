@@ -1,6 +1,6 @@
 """承运商邀请着陆页 / 激活开放接口测试
 
-对应需求：项目文档/06.测试用例体系/04.开放接口与LITE与运力宝/05.运力宝证照监控与承运商建档.md
+对应需求：doc/06.测试用例体系/04.开放接口与LITE与运力宝/05.运力宝证照监控与承运商建档.md
 对应后端：backend/app/modules/open/api/carrier_invite.py
          backend/app/modules/client/services/partner/carrier_invite_service.py
          backend/app/modules/open/schemas/carrier_invite.py

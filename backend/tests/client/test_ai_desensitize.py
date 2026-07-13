@@ -3,7 +3,7 @@
 AI 工具调用日志需对手机号 / 身份证 / 银行卡脱敏，敏感 key（password/token 等）
 整体屏蔽，避免明文落库。
 
-对应需求：项目文档/02.需求文档/02.企业端/11.AI数字员工/**
+对应需求：doc/02.需求文档/02.企业端/11.AI数字员工/**
 对应代码：backend/app/modules/ai/security/desensitize.py
 覆盖用例：TC-CLI-AI-001 ~ TC-CLI-AI-012
 """

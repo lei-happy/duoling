@@ -4,7 +4,7 @@
 > **后端模块**：`backend/app/modules/driver/**`（+ 交叉只读 `client/.../driver_fund_account`）
 > **前端**：`frontend/driver-h5`
 > **测试脚本**：`backend/tests/driver/`
-> **需求文档**：`项目文档/02.需求文档/03.移动端/02.驾驶员H5端/**`、`项目文档/01.架构设计/驾驶员H5架构设计.md`
+> **需求文档**：`doc/02.需求文档/03.移动端/02.驾驶员H5端/**`、`doc/01.架构设计/驾驶员H5架构设计.md`
 
 本目录归档驾驶员 H5 端的测试用例、缺陷记录，测试脚本位于 `backend/tests/driver/`。
 判定口径以 `backend/app/modules/driver/**` 实际代码为准，逐条比对需求文档，只对**已落地模块**做接口/服务测试。

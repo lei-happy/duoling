@@ -2,7 +2,7 @@
 
 覆盖 CarrierService 核心链路：新增、查询、编码唯一、联系电话唯一、更新。
 
-对应需求：项目文档/02.需求文档/02.企业端/09.合作伙伴/承运商管理.md
+对应需求：doc/02.需求文档/02.企业端/09.合作伙伴/承运商管理.md
 对应接口：/api/client/partner/carrier
 对应代码：backend/app/modules/client/services/partner/carrier_service.py
 覆盖用例：TC-CLI-CARRIER-001 ~ TC-CLI-CARRIER-010

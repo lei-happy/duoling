@@ -6,7 +6,7 @@ tests/test_state_machines.py 的穷举矩阵互补，此处偏业务语义断言
   - Item 由 Task 状态派生（聚合）
   - Waybill 删除/新增挂接门槛、终态
 
-对应需求：项目文档/02.需求文档/02.企业端/06.运营调度模块/
+对应需求：doc/02.需求文档/02.企业端/06.运营调度模块/
           02.运单与任务单状态机联动设计.md
 对应代码：backend/app/modules/client/services/state_machine/**
 覆盖用例：TC-CLI-TASK-001 ~ TC-CLI-TASK-015、TC-CLI-WAYBILL-001 ~ 010

@@ -1,7 +1,7 @@
 """运营后台端 - 基础数据测试（品牌 / 车系 / 经销商 / 角色菜单）
 
 覆盖用例：TC-CON-BASIC-001~006、TC-CON-ROLEMENU-001~002
-对应需求：项目文档/02.需求文档/01.运营后台/**（基础数据 / 角色菜单）
+对应需求：doc/02.需求文档/01.运营后台/**（基础数据 / 角色菜单）
 对应后端：backend/app/modules/console/api/basicdata/*
           backend/app/modules/console/api/system/role_menu.py
 

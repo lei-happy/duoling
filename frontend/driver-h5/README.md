@@ -72,4 +72,4 @@ pnpm build              # 生产构建
 | `POST /api/driver/task/items/{itemId}/sign` | item 级签收（聚合驱动 task 4→5） |
 | `GET /api/driver/finance/my` | 我的费用单 |
 
-详见 [项目文档/01.架构设计/驾驶员H5架构设计.md](../../项目文档/01.架构设计/驾驶员H5架构设计.md)。
+详见 [doc/01.架构设计/驾驶员H5架构设计.md](../../doc/01.架构设计/驾驶员H5架构设计.md)。

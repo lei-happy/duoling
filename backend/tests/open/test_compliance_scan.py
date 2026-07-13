@@ -1,7 +1,7 @@
 """运力宝 - 证照监控扫描分级逻辑测试（纯逻辑）
 
-对应需求：项目文档/02.需求文档/06.运力宝/02.证照监控引擎技术设计.md
-         项目文档/06.测试用例体系/04.开放接口与LITE与运力宝/05.运力宝证照监控与承运商建档.md
+对应需求：doc/02.需求文档/06.运力宝/02.证照监控引擎技术设计.md
+         doc/06.测试用例体系/04.开放接口与LITE与运力宝/05.运力宝证照监控与承运商建档.md
 对应后端：backend/app/modules/client/services/compliance/compliance_scan_service.py
 覆盖用例：TC-OPN-COMPLIANCE-001 ~ TC-OPN-COMPLIANCE-006
 

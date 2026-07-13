@@ -6,8 +6,8 @@
 - 本地无法连接租户库时，相关 fixture 直接 ``pytest.skip``，用例记为 skip 而非 fail；
 - 纯逻辑用例（Pydantic schema / 输出裁剪等）不依赖以下任何 fixture。
 
-对应设计：项目文档/01.架构设计/驾驶员H5架构设计.md
-        项目文档/02.需求文档/03.移动端/02.驾驶员H5端/**
+对应设计：doc/01.架构设计/驾驶员H5架构设计.md
+        doc/02.需求文档/03.移动端/02.驾驶员H5端/**
 """
 
 from __future__ import annotations

@@ -12,7 +12,7 @@
                             **不触发 lifespan**（不启动 worker / 不初始化 db_manager）。
                             适用于鉴权门槛（401/403/400）等无需真实 DB 的冒烟用例。
 
-约定见：项目文档/06.测试用例体系/README.md（第四章 测试脚本约定）。
+约定见：doc/06.测试用例体系/README.md（第四章 测试脚本约定）。
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
 """LITE 端 - 承运商运力上报接口测试（契约占位实现）
 
-对应需求：项目文档/02.需求文档/03.LITE端/承运商运力上报.md
-         项目文档/06.测试用例体系/04.开放接口与LITE与运力宝/04.LITE承运商运力上报.md
+对应需求：doc/02.需求文档/03.LITE端/承运商运力上报.md
+         doc/06.测试用例体系/04.开放接口与LITE与运力宝/04.LITE承运商运力上报.md
 对应后端：backend/app/modules/open/api/lite_carrier_dispatch.py
 覆盖用例：TC-OPN-LITE-001 ~ TC-OPN-LITE-007
 

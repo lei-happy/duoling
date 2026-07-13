@@ -29,7 +29,7 @@ RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua
 COPY backend/ .
 
 # 复制项目文档（供文档中心接口读取）
-COPY 项目文档/ /app/docs/
+COPY doc/ /app/docs/
 
 # 创建日志目录
 RUN mkdir -p logs

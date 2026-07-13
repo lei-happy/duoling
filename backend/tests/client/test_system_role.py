@@ -1,6 +1,6 @@
 """账号与组织 · 角色管理（租户库，事务回滚不落库）集成测试
 
-对应需求：项目文档/02.需求文档/02.企业端/01.账号与组织/**
+对应需求：doc/02.需求文档/02.企业端/01.账号与组织/**
 对应代码：backend/app/modules/client/services/role/role_service.py
 覆盖用例：TC-CLI-ROLE-001（CRUD 部分）
 """

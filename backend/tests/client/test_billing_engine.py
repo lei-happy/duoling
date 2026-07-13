@@ -8,7 +8,7 @@
     无规则 / 同分冲突
   - ``cost_constants``：费用类型映射、承运成本类型映射、评分权重排序
 
-对应需求：项目文档/02.需求文档/02.企业端/05.计费引擎模块/**
+对应需求：doc/02.需求文档/02.企业端/05.计费引擎模块/**
 对应代码：backend/app/modules/client/services/billing/freight_matcher.py
           backend/app/modules/client/services/billing/cost_constants.py
 覆盖用例：TC-CLI-BILLING-041 ~ TC-CLI-BILLING-070

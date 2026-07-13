@@ -2,7 +2,7 @@
 
 在真实 biz_region / 合同 / 费率数据上验证 FreightCalcService 编排层能命中规则。
 
-对应需求：项目文档/02.需求文档/02.企业端/05.计费引擎模块/**
+对应需求：doc/02.需求文档/02.企业端/05.计费引擎模块/**
 对应代码：backend/app/modules/client/services/billing/freight_calc_service.py
 覆盖用例：TC-CLI-BILLING-101
 """

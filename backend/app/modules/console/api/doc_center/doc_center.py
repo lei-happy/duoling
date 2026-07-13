@@ -19,7 +19,7 @@ router = APIRouter()
 # 否则按本地开发目录结构自动推导
 _DOC_ROOT = Path(os.environ.get("DOC_ROOT", "")).resolve() \
     if os.environ.get("DOC_ROOT") \
-    else Path(__file__).resolve().parent.parent.parent.parent.parent.parent.parent / "项目文档"
+    else Path(__file__).resolve().parent.parent.parent.parent.parent.parent.parent / "doc"
 
 _ALLOWED_EXTENSIONS = {".md"}
 

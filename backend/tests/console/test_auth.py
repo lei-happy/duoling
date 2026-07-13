@@ -1,7 +1,7 @@
 """运营后台端 - 认证与鉴权接口测试
 
 覆盖用例：TC-CON-AUTH-001 ~ TC-CON-AUTH-012
-对应需求：项目文档/02.需求文档/01.运营后台/**（认证登录 / 个人配置）
+对应需求：doc/02.需求文档/01.运营后台/**（认证登录 / 个人配置）
 对应后端：backend/app/modules/console/api/auth/auth.py
           backend/app/modules/console/services/auth/auth_service.py
 

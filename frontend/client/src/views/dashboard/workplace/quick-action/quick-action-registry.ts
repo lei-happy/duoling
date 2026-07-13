@@ -2,7 +2,7 @@
  * 工作台快捷操作 — 注册表
  *
  * 新增业务入口时只需在本文件追加 QuickActionConfig，
- * 详见：项目文档/04.开发手册/15.快捷操作接入说明.md
+ * 详见：doc/04.开发手册/15.快捷操作接入说明.md
  */
 
 import type { QuickActionConfig } from './types';

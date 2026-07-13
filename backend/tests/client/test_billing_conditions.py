@@ -6,7 +6,7 @@
   - 各内置 ``ConditionEvaluator`` 命中/不命中/不约束三态
   - 注册表 ``CONDITION_REGISTRY`` 完整性与 ``describe`` 结构
 
-对应需求：项目文档/02.需求文档/02.企业端/05.计费引擎模块/**
+对应需求：doc/02.需求文档/02.企业端/05.计费引擎模块/**
 对应代码：backend/app/modules/client/services/billing/conditions/**
 覆盖用例：TC-CLI-BILLING-001 ~ TC-CLI-BILLING-040
 """

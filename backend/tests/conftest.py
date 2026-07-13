@@ -23,7 +23,7 @@
 - ``make_console_token`` 提供「伪造 token」能力，便于构造越权/异常 token 的反向用例，
   不依赖库内是否已 seed 特定用户。
 
-对应测试体系总纲：``项目文档/06.测试用例体系/README.md``
+对应测试体系总纲：``doc/06.测试用例体系/README.md``
 """
 
 from __future__ import annotations

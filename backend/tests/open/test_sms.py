@@ -1,6 +1,6 @@
 """短信验证码开放接口测试
 
-对应需求：项目文档/06.测试用例体系/04.开放接口与LITE与运力宝/03.短信验证码.md
+对应需求：doc/06.测试用例体系/04.开放接口与LITE与运力宝/03.短信验证码.md
 对应后端：backend/app/modules/open/api/sms.py
          backend/app/modules/open/services/sms_service.py
 覆盖用例：TC-OPN-SMS-001 ~ TC-OPN-SMS-010

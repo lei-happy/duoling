@@ -2,7 +2,7 @@
 
 覆盖用例：TC-CON-AIEMP-001~005、TC-CON-AIPROV-001、TC-CON-AIPROMPT-001、
           TC-CON-AITOOL-001~002
-对应需求：项目文档/02.需求文档/01.运营后台/**（AI 数字员工平台配置）
+对应需求：doc/02.需求文档/01.运营后台/**（AI 数字员工平台配置）
 对应后端：backend/app/modules/ai/api/console/{employee,provider,prompt,tool}.py
 
 写操作仅落平台库 ai_* 表并由外层事务回滚，不落库。

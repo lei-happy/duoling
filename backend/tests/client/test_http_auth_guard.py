@@ -4,7 +4,7 @@
 而不会返回 200 成功。这些用例在 ``get_current_user`` / ``TenantMiddleware``
 层即被拒绝，不触达数据库，因此无需 DB 也能稳定执行。
 
-对应需求：项目文档/02.需求文档/02.企业端/01.账号与组织/**
+对应需求：doc/02.需求文档/02.企业端/01.账号与组织/**
 对应代码：backend/app/core/middleware.py、backend/app/core/dependencies.py
 覆盖用例：TC-CLI-AUTH-010 ~ TC-CLI-AUTH-020
 """

@@ -7,7 +7,7 @@
   - 装载率下限过滤
   - 多目标打分排序（装载率高的方案排前）
 
-对应设计：项目文档/02.需求文档/02.企业端/09.智能配载模块设计.md
+对应设计：doc/02.需求文档/02.企业端/09.智能配载模块设计.md
 对应代码：backend/app/modules/client/services/task/smart_stowage/stowage_engine.py
 """
 

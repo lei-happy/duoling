@@ -4,7 +4,7 @@
   - ``CostMatcher._round``：舍入模式 0-分/1-四舍五入到元/2-向上取整
   - ``CostMatcher._tiered_amount``：阶梯累进计价
 
-对应需求：项目文档/02.需求文档/02.企业端/05.计费引擎模块/成本引擎.md
+对应需求：doc/02.需求文档/02.企业端/05.计费引擎模块/成本引擎.md
 对应代码：backend/app/modules/client/services/billing/cost_matcher.py
 覆盖用例：TC-CLI-BILLING-071 ~ TC-CLI-BILLING-085
 """

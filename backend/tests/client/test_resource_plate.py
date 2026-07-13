@@ -6,7 +6,7 @@
   - ``validate_plate_for_category``：蓝/黄(7 位) 与 新能源(8 位)
   - ``validate_trailer_plate_for_category``：黄牌挂车「省+字母+4数字+挂」
 
-对应需求：项目文档/02.需求文档/02.企业端/04.运力资源模块/**
+对应需求：doc/02.需求文档/02.企业端/04.运力资源模块/**
 对应代码：backend/app/modules/client/constants/plate_category.py
 覆盖用例：TC-CLI-VEHICLE-050 ~ TC-CLI-VEHICLE-065
 """

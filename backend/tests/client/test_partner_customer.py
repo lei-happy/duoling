@@ -3,7 +3,7 @@
 覆盖 CustomerService 核心链路：新增（自动编码）、查询、更新、软删除、
 以及反向：同名去重、按 ID 查询不存在报错。
 
-对应需求：项目文档/02.需求文档/02.企业端/09.合作伙伴/客户管理.md
+对应需求：doc/02.需求文档/02.企业端/09.合作伙伴/客户管理.md
 对应接口：GET/POST/PUT/DELETE /api/client/partner/customer
 对应代码：backend/app/modules/client/services/partner/customer_service.py
 覆盖用例：TC-CLI-CUSTOMER-001 ~ TC-CLI-CUSTOMER-010

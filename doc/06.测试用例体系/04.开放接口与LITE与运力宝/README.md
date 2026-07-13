@@ -21,7 +21,7 @@
 | 05 | 承运商邀请着陆页 / 激活 | `open/api/carrier_invite.py` + `client/services/partner/carrier_invite_service.py` | `/api/open/carrier-invite` | 已落地（路径 B） | [05.运力宝证照监控与承运商建档.md](05.运力宝证照监控与承运商建档.md) |
 | 05 | 运力宝-证照监控扫描 | `client/services/compliance/compliance_scan_service.py` | worker（无 HTTP 触发） | 已落地（v1） | [05.运力宝证照监控与承运商建档.md](05.运力宝证照监控与承运商建档.md) |
 
-> LITE 端前端（承运商运力上报页）未开发，前端整体登记为「待测（未开发）」，参见 `项目文档/05.开发计划/需求-代码落地差距清单.md`。
+> LITE 端前端（承运商运力上报页）未开发，前端整体登记为「待测（未开发）」，参见 `doc/05.开发计划/需求-代码落地差距清单.md`。
 
 ---
 

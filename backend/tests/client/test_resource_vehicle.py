@@ -2,7 +2,7 @@
 
 覆盖 VehicleService 核心+扩展双表联写、车牌校验、唯一性、更新与软删除。
 
-对应需求：项目文档/02.需求文档/02.企业端/04.运力资源模块/自有运力-车辆.md
+对应需求：doc/02.需求文档/02.企业端/04.运力资源模块/自有运力-车辆.md
 对应接口：/api/client/capacity/self_capacity/vehicle
 对应代码：backend/app/modules/client/services/capacity/self_capacity/vehicle_service.py
 覆盖用例：TC-CLI-VEHICLE-001 ~ TC-CLI-VEHICLE-020

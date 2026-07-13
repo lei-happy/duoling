@@ -1,5 +1,5 @@
 """
-将 backend/scripts/seed/sys_menu.json 转换为 项目文档/sys_menu.sql 的 INSERT 语句格式。
+将 backend/scripts/seed/sys_menu.json 转换为 doc/sys_menu.sql 的 INSERT 语句格式。
 
 输出与现有 sys_menu.sql 完全一致的结构（每行一条 INSERT），便于作为参考文档。
 """
@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 SRC = ROOT / "backend" / "scripts" / "seed" / "sys_menu.json"
-DST = ROOT / "项目文档" / "sys_menu.sql"
+DST = ROOT / "doc" / "sys_menu.sql"
 
 
 def _date(s):
