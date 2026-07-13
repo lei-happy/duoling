@@ -1,7 +1,7 @@
 <!-- 我的待办 -->
 <template>
   <ele-card
-    :body-style="{ padding: '6px 0', height: '520px' }"
+    :body-style="{ padding: '6px 0' }"
     class="todo-card"
   >
     <template #header>
@@ -1082,9 +1082,25 @@
 <style lang="scss" scoped>
   // ============ 卡片基础样式 ============
   .todo-card {
+    /* 弹性填充左列，底部与右列最新动态对齐；内部列表滚动 */
+    display: flex;
+    flex-direction: column;
+
     :deep(.ele-card-header) {
       align-items: center;
       border-bottom: none;
+    }
+
+    :deep(.ele-card-body) {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    :deep(.el-scrollbar) {
+      flex: 1;
+      min-height: 0;
     }
   }
 

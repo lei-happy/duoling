@@ -20,8 +20,12 @@
   <layout-tool>
     <header-user />
   </layout-tool>
-  <!-- 夜间模式 -->
-  <layout-tool ref="darkSwitchRef" class="ele-dark-switch hidden-sm-and-down">
+  <!-- 夜间模式：暂不提供切换功能，隐藏开关 -->
+  <layout-tool
+    v-if="false"
+    ref="darkSwitchRef"
+    class="ele-dark-switch hidden-sm-and-down"
+  >
     <el-switch
       :active-action-icon="MoonOutlined"
       :inactive-action-icon="SunOutlined"

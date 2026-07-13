@@ -102,9 +102,8 @@
     window.removeEventListener('resize', syncActivitiesHeight);
   });
 
-  /** 从其他页签返回时刷新今日需关注指标并重新校正高度 */
+  /** 从其他页签返回时重新校正右列高度 */
   onActivated(() => {
-    profileCardRef.value?.reloadMetrics?.();
     nextTick(syncActivitiesHeight);
   });
 </script>
@@ -142,6 +141,13 @@
       flex: 1 1 auto;
       min-height: 0;
     }
+  }
+
+  /* 左列我的待办弹性填充剩余高度，使其底部与右列最新动态底部对齐，
+     内容超出时卡片内部滚动 */
+  .workplace-stack .workplace-todo {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   /* 小屏下两列堆叠，右列间距补齐 */
