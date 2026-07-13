@@ -107,6 +107,11 @@ from app.modules.client.models.task import (
     TaskFinanceDoc,
     TaskFinanceItem,
 )
+from app.modules.client.models.task.smart_stowage import (
+    SmartStowagePlanTask,
+    SmartStowagePlan,
+    SmartStowagePlanItem,
+)
 from app.modules.client.models.approval import (
     ApprovalFlow,
     ApprovalFlowNode,
@@ -195,6 +200,9 @@ __all__ = [
     "TaskLoadingRecordItem",
     "TaskFinanceDoc",
     "TaskFinanceItem",
+    "SmartStowagePlanTask",
+    "SmartStowagePlan",
+    "SmartStowagePlanItem",
     "ApprovalFlow",
     "ApprovalFlowNode",
     "ApprovalFlowVersionLog",

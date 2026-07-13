@@ -106,6 +106,12 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       component: () => import('@/views/operation/task-create/index.vue'),
       meta: { title: '配载建单' }
     },
+    // 智能配载（专业版功能；菜单同步前可本地访问，页面内按 feature 门控）
+    {
+      path: '/operation/smart-stowage',
+      component: () => import('@/views/operation/smart-stowage/index.vue'),
+      meta: { title: '智能配载' }
+    },
     // 审批流程画布配置（从审批流程配置列表进入，独立页，不在后端菜单中单独挂路由）
     {
       path: '/enterprise/approval-config/flow/:id',

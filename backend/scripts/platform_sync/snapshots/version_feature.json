@@ -117,7 +117,8 @@
     "partner_manage",
     "resource_customer",
     "resource_manage",
-    "resource_route"
+    "resource_route",
+    "smart_stowage"
   ],
   "standard": [
     "base_config",

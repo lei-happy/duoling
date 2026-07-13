@@ -283,6 +283,19 @@
     "status": 1
   },
   {
+    "feature_code": "smart_stowage",
+    "feature_name": "智能配载",
+    "module": "operation",
+    "description": "AI 算法推荐商品车组合成配载单（专业版）",
+    "required_tables": [
+      "biz_smart_stowage_task",
+      "biz_smart_stowage_plan",
+      "biz_smart_stowage_plan_item"
+    ],
+    "sort_order": 36,
+    "status": 1
+  },
+  {
     "feature_code": "bi_analytics",
     "feature_name": "数据分析",
     "module": "bi",

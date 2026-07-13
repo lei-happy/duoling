@@ -77,6 +77,7 @@ from app.modules.client.api.waybill.waybill import router as waybill_router
 from app.modules.client.api.task import (
     task_router,
     task_finance_router,
+    smart_stowage_router,
 )
 from app.modules.client.api.insight.cockpit import router as insight_cockpit_router
 from app.modules.client.api.insight.profit import router as insight_profit_router
@@ -284,6 +285,12 @@ router.include_router(
     task_finance_router,
     prefix="/business/task-finance",
     tags=["客户端-任务单财务费用"],
+)
+router.include_router(
+    smart_stowage_router,
+    prefix="/business/smart-stowage",
+    tags=["客户端-智能配载"],
+    dependencies=[Depends(require_feature("smart_stowage"))],
 )
 router.include_router(
     insight_cockpit_router,
