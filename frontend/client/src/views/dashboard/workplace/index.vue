@@ -39,6 +39,7 @@
   import QuickActionBar from './components/quick-action-bar.vue';
   import ActivitiesCard from './components/activities-card.vue';
   import TodoCard from './components/todo-card.vue';
+  import { WORKPLACE_STACK_BREAKPOINT } from './layout';
 
   defineOptions({
     name: 'DashboardWorkplace'
@@ -53,7 +54,7 @@
   /** 右列卡片间距，与 .workplace-stack 的 gap 保持一致 */
   const STACK_GAP = 10;
   /** 小屏断点，堆叠时不强制等高 */
-  const STACK_BREAKPOINT = 992;
+  const STACK_BREAKPOINT = WORKPLACE_STACK_BREAKPOINT;
 
   const activitiesStyle = computed<CSSProperties | undefined>(() =>
     activitiesHeight.value ? { height: activitiesHeight.value } : undefined
@@ -85,7 +86,9 @@
 
   onMounted(() => {
     nextTick(syncActivitiesHeight);
-    resizeObserver = new ResizeObserver(() => syncActivitiesHeight());
+    resizeObserver = new ResizeObserver(() => {
+      nextTick(syncActivitiesHeight);
+    });
     if (leftStackRef.value) {
       resizeObserver.observe(leftStackRef.value);
     }

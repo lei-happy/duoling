@@ -1,11 +1,18 @@
 <!-- 首页营销 Banner（轮播）：后台配置 + 点击跳转 + 曝光/点击埋点；无数据时回退占位设计 -->
 <template>
-  <ele-card shadow="never" class="banner-card" :body-style="{ padding: '0' }">
+  <ele-card
+    ref="bannerCardRef"
+    shadow="never"
+    class="banner-card"
+    :class="{ 'is-empty': !banners.length }"
+    :style="cardStyle"
+    :body-style="{ padding: '0' }"
+  >
     <!-- 有配置数据：真实图片轮播 -->
     <el-carousel
       v-if="banners.length"
       ref="carouselRef"
-      height="212px"
+      :height="carouselHeight"
       :interval="5000"
       indicator-position="none"
       arrow="never"
@@ -80,7 +87,8 @@
 </template>
 
 <script lang="ts" setup>
-  import { onMounted, ref } from 'vue';
+  import { computed, onBeforeUnmount, onMounted, ref, nextTick } from 'vue';
+  import type { CSSProperties } from 'vue';
   import { useRouter } from 'vue-router';
   import type { CarouselInstance } from 'element-plus';
   import { Van, Location, Lock, Sort, Timer } from '@element-plus/icons-vue';
@@ -89,6 +97,7 @@
     reportBannerEvent,
     type WorkbenchBanner
   } from '@/api/home/workbench/banner';
+  import { BANNER_IMAGE_ASPECT_RATIO, BANNER_MARGIN } from '../layout';
 
   defineOptions({ name: 'BannerCard' });
 
@@ -104,7 +113,27 @@
 
   const banners = ref<WorkbenchBanner[]>([]);
   const carouselRef = ref<CarouselInstance | null>(null);
+  const bannerCardRef = ref<{ $el: HTMLElement } | null>(null);
   const activeIndex = ref(0);
+  const carouselHeight = ref('208px');
+  let resizeObserver: ResizeObserver | null = null;
+
+  /**
+   * 卡片尺寸策略：始终按真实图片比例（6.23）确定高度，高度随列宽等比缩放，
+   * 保证任意分辨率下图片都能完整展示、edge 内容不被裁切；
+   * 无数据回退时交由 .is-empty 的 min-height 兜底，避免占位内容被压扁。
+   */
+  const cardStyle = computed<CSSProperties>(() => {
+    if (!banners.value.length) return {};
+    return { aspectRatio: String(BANNER_IMAGE_ASPECT_RATIO) };
+  });
+
+  const updateCarouselHeight = () => {
+    const el = bannerCardRef.value?.$el;
+    if (!el) return;
+    const height = Math.max(el.offsetHeight - BANNER_MARGIN, 0);
+    carouselHeight.value = `${height}px`;
+  };
 
   // 曝光去重：同一用户对同一 banner 每日仅上报一次
   const viewedKeys = new Set<string>();
@@ -175,6 +204,18 @@
     } catch {
       banners.value = [];
     }
+    await nextTick();
+    updateCarouselHeight();
+    const el = bannerCardRef.value?.$el;
+    if (el) {
+      resizeObserver = new ResizeObserver(updateCarouselHeight);
+      resizeObserver.observe(el);
+    }
+  });
+
+  onBeforeUnmount(() => {
+    resizeObserver?.disconnect();
+    resizeObserver = null;
   });
 </script>
 
@@ -183,21 +224,29 @@
     position: relative;
     overflow: hidden;
     border-radius: 12px;
-    height: 216px;
+    width: 100%;
+    /* 高度策略见脚本 cardStyle：大屏由父级注入固定高度，小屏按真实图片比例自适应 */
+    flex-shrink: 0;
     background: #fff;
   }
 
-  /* 真实图片轮播：与占位图保持一致的 2px 白边 */
+  /* 无后台配置回退到占位设计时，保证有足够高度容纳文案，避免被压成细条 */
+  .banner-card.is-empty {
+    min-height: 180px;
+  }
+
+  /* 真实图片轮播：2px 白边由卡片底色与轮播 margin 共同形成 */
   .banner-carousel {
-    padding: 2px;
-    box-sizing: border-box;
+    margin: 2px;
+    width: calc(100% - 4px);
+    border-radius: 10px;
+    overflow: hidden;
   }
 
   .banner-image-slide {
     position: relative;
     height: 100%;
     width: 100%;
-    border-radius: 10px;
     overflow: hidden;
 
     &.is-clickable {
@@ -209,14 +258,15 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
     display: block;
+    border-radius: 10px;
   }
 
   /* 占位图区域（无后台配置时回退） */
   .banner-slide {
-    position: relative;
-    height: 212px;
-    margin: 2px;
+    position: absolute;
+    inset: 2px;
     border-radius: 10px;
     overflow: hidden;
     padding: 22px 28px;

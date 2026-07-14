@@ -1,6 +1,11 @@
 <!-- 用户问候 + 天气预报 -->
 <template>
-  <ele-card shadow="never" class="profile-card" :body-style="{ padding: '20px' }">
+  <ele-card
+    shadow="never"
+    class="profile-card"
+    :body-style="{ padding: '20px', height: '100%', boxSizing: 'border-box' }"
+    :style="cardStyle"
+  >
     <div class="profile-wrapper">
       <!-- 背景点缀层 -->
       <div class="profile-bg" aria-hidden="true">
@@ -37,6 +42,15 @@
   import { useUserStore } from '@/store/modules/user';
   import { getProfileGreetingParts } from '../utils/profile-greeting';
   import WeatherWidget from './weather-widget.vue';
+
+  const props = defineProps<{
+    /** 与 Banner 同步的顶部行高度，由父级 workplace 注入 */
+    height?: string;
+  }>();
+
+  const cardStyle = computed(() =>
+    props.height ? { height: props.height } : undefined
+  );
 
   const userStore = useUserStore();
 
@@ -80,10 +94,13 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    box-sizing: border-box;
 
     :deep(.ele-card-body) {
       position: relative;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
   }
 
@@ -91,6 +108,8 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
     z-index: 1;
   }
 
@@ -179,7 +198,8 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    margin-top: 20px;
+    margin-top: auto;
+    padding-top: 20px;
   }
 
   .profile-header {
