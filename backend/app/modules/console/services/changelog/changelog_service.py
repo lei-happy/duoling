@@ -26,6 +26,8 @@ class ChangelogService:
         changelog = Changelog(**data.model_dump())
         db.add(changelog)
         await db.flush()
+        # 显式回读服务端默认值（created_at/updated_at 等），避免后续同步序列化触发异步惰性加载
+        await db.refresh(changelog)
         return changelog
 
     @staticmethod
@@ -88,6 +90,7 @@ class ChangelogService:
             setattr(changelog, key, value)
 
         await db.flush()
+        await db.refresh(changelog)
         return changelog
 
     @staticmethod

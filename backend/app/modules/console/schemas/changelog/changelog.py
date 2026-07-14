@@ -14,6 +14,7 @@ class ChangelogCreate(BaseModel):
     content: Optional[str] = None
     release_date: date
     sort_order: int = 0
+    is_popup: int = 0
 
 
 class ChangelogUpdate(BaseModel):
@@ -24,6 +25,7 @@ class ChangelogUpdate(BaseModel):
     release_date: Optional[date] = None
     sort_order: Optional[int] = None
     status: Optional[int] = None
+    is_popup: Optional[int] = None
 
 
 class ChangelogOut(BaseModel):
@@ -35,6 +37,7 @@ class ChangelogOut(BaseModel):
     release_date: date
     sort_order: int
     status: int
+    is_popup: int
     created_at: datetime
     updated_at: datetime
 

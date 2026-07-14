@@ -764,6 +764,42 @@ def seed_platform_data():
                 session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
             print(f"[OK] AI 子菜单 {name} 已补充")
 
+        # ---- 补充：运营推广 → Banner 管理菜单 ----
+        promotion_root = session.query(Menu).filter_by(
+            menu_code="promotion", app_type="platform", is_deleted=0
+        ).first()
+        if not promotion_root:
+            promotion_root = Menu(
+                parent_id=0, menu_name="运营推广",
+                menu_code="promotion", menu_type=0,
+                path="/promotion", icon="PictureFilled",
+                sort_order=19, app_type="platform",
+            )
+            session.add(promotion_root)
+            session.flush()
+            all_menus.append(promotion_root)
+            if role_admin:
+                session.add(RoleMenu(role_id=role_admin.id, menu_id=promotion_root.id))
+            print("[OK] 运营推广 顶级菜单已补充")
+
+        banner_menu = session.query(Menu).filter_by(
+            menu_code="promotion:banner", app_type="platform", is_deleted=0
+        ).first()
+        if promotion_root and not banner_menu:
+            m = Menu(
+                parent_id=promotion_root.id, menu_name="Banner 管理",
+                menu_code="promotion:banner", menu_type=0,
+                path="/promotion/banner",
+                component="/promotion/banner/index",
+                icon="PictureFilled", sort_order=0, app_type="platform",
+            )
+            session.add(m)
+            session.flush()
+            all_menus.append(m)
+            if role_admin:
+                session.add(RoleMenu(role_id=role_admin.id, menu_id=m.id))
+            print("[OK] Banner 管理菜单已补充")
+
         # ---- 自助注册策略默认配置 ----
         _policy_defaults = [
             (

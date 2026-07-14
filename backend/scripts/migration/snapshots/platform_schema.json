@@ -1982,6 +1982,15 @@
           "comment": "是否删除 0-否 1-是"
         },
         {
+          "name": "is_popup",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "租户端是否弹框强提醒 0-否 1-是"
+        },
+        {
           "name": "release_date",
           "type": "DATE",
           "nullable": false,
@@ -2041,6 +2050,100 @@
       ],
       "unique_constraints": [],
       "indexes": [],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_changelog_read",
+      "comment": "版本升级说明用户已读记录表",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "changelog_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "更新记录ID"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "read_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "已读时间"
+        },
+        {
+          "name": "tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "租户编码（冗余，便于统计）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "user_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "用户ID"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "uk_changelog_user",
+          "columns": [
+            "changelog_id",
+            "user_id"
+          ],
+          "unique": true
+        }
+      ],
       "foreign_keys": []
     },
     {
@@ -3179,6 +3282,302 @@
         }
       ],
       "indexes": [],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_promotion_banner",
+      "comment": "首页推广位 Banner 配置表",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "配置人用户ID"
+        },
+        {
+          "name": "end_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "失效时间（NULL 不限）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "image_url",
+          "type": "VARCHAR(500)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "图片地址"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "link_type",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "none",
+          "comment": "跳转类型 none-只看不跳 external-外链 internal-站内路由"
+        },
+        {
+          "name": "link_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "跳转地址（link_type=none 时为空）"
+        },
+        {
+          "name": "open_in_new_tab",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "外链是否新标签打开 0-否 1-是"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "sort_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "轮播排序，小在前"
+        },
+        {
+          "name": "start_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "生效时间（NULL 不限）"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "draft",
+          "comment": "状态 draft-草稿 published-上线 offline-下线"
+        },
+        {
+          "name": "target_type",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "all",
+          "comment": "投放定向 all-全部 version-按产品版本 tenant-指定租户"
+        },
+        {
+          "name": "target_values",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "定向白名单：version_code 列表或 tenant_code 列表"
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "内部标题/运营备注名"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_promotion_banner_event",
+      "comment": "推广位 Banner 埋点明细表",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "banner_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "Banner ID"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "event_type",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "事件类型 view-曝光 click-点击"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发生时间"
+        },
+        {
+          "name": "tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "租户编码"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "user_agent",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "User-Agent（排查用）"
+        },
+        {
+          "name": "user_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "用户ID"
+        },
+        {
+          "name": "user_phone",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "用户手机号（冗余，便于展示）"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_banner_event",
+          "columns": [
+            "banner_id",
+            "event_type",
+            "occurred_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_tenant_event",
+          "columns": [
+            "tenant_code",
+            "occurred_at"
+          ],
+          "unique": false
+        }
+      ],
       "foreign_keys": []
     },
     {

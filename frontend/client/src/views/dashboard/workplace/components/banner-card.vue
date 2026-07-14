@@ -1,106 +1,100 @@
-<!-- 首页营销 Banner（轮播，插画为占位，后期替换设计素材） -->
+<!-- 首页营销 Banner（轮播）：后台配置 + 点击跳转 + 曝光/点击埋点；无数据时回退占位设计 -->
 <template>
-  <ele-card
-    shadow="never"
-    class="banner-card"
-    :body-style="{ padding: '0' }"
-  >
+  <ele-card shadow="never" class="banner-card" :body-style="{ padding: '0' }">
+    <!-- 有配置数据：真实图片轮播 -->
     <el-carousel
+      v-if="banners.length"
       ref="carouselRef"
-      height="216px"
+      height="212px"
       :interval="5000"
       indicator-position="none"
       arrow="never"
       class="banner-carousel"
       @change="handleChange"
     >
-      <el-carousel-item v-for="(slide, index) in slides" :key="index">
-        <div class="banner-slide">
-          <div class="banner-content">
-            <h2 class="banner-title">
-              <span class="banner-title__accent">{{ slide.accent }}</span>
-              <span class="banner-title__text">{{ slide.title }}</span>
-            </h2>
-            <p class="banner-subtitle">{{ slide.subtitle }}</p>
-            <div class="banner-features">
-              <div
-                v-for="feature in features"
-                :key="feature.title"
-                class="banner-feature"
-              >
-                <div class="banner-feature__icon">
-                  <el-icon><component :is="feature.icon" /></el-icon>
-                </div>
-                <div class="banner-feature__text">
-                  <span class="banner-feature__title">{{ feature.title }}</span>
-                  <span class="banner-feature__desc">{{ feature.desc }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- 右侧插画占位 -->
-          <div class="banner-illustration">
-            <div class="banner-badge">
-              <span class="banner-badge__title">安全 · 准时 · 专业</span>
-              <span class="banner-badge__desc">一站式汽车物流解决方案</span>
-            </div>
-            <div class="banner-illustration__art">
-              <el-icon class="banner-illustration__icon"><Van /></el-icon>
-            </div>
-          </div>
+      <el-carousel-item v-for="banner in banners" :key="banner.id">
+        <div
+          class="banner-image-slide"
+          :class="{ 'is-clickable': banner.link_type !== 'none' }"
+          @click="handleClick(banner)"
+        >
+          <img
+            class="banner-image"
+            :src="banner.image_url"
+            :alt="banner.title"
+            @error="handleImageError(banner.id)"
+          />
         </div>
       </el-carousel-item>
     </el-carousel>
-    <!-- 自定义圆点指示器（居左下，对齐设计） -->
-    <div class="banner-indicators">
+
+    <!-- 无数据 / 加载失败：回退到占位设计（保持首页美观） -->
+    <div v-else class="banner-slide">
+      <div class="banner-content">
+        <h2 class="banner-title">
+          <span class="banner-title__accent">安心托付</span>
+          <span class="banner-title__text">一站式汽车物流服务</span>
+        </h2>
+        <p class="banner-subtitle"
+          >专业汽车物流服务，覆盖全国，时效保障，安心托付</p
+        >
+        <div class="banner-features">
+          <div
+            v-for="feature in features"
+            :key="feature.title"
+            class="banner-feature"
+          >
+            <div class="banner-feature__icon">
+              <el-icon><component :is="feature.icon" /></el-icon>
+            </div>
+            <div class="banner-feature__text">
+              <span class="banner-feature__title">{{ feature.title }}</span>
+              <span class="banner-feature__desc">{{ feature.desc }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="banner-illustration">
+        <div class="banner-badge">
+          <span class="banner-badge__title">安全 · 准时 · 专业</span>
+          <span class="banner-badge__desc">一站式汽车物流解决方案</span>
+        </div>
+        <div class="banner-illustration__art">
+          <el-icon class="banner-illustration__icon"><Van /></el-icon>
+        </div>
+      </div>
+    </div>
+
+    <!-- 自定义圆点指示器（仅有多张配置时展示） -->
+    <div v-if="banners.length > 1" class="banner-indicators">
       <button
-        v-for="(slide, index) in slides"
-        :key="index"
+        v-for="(banner, index) in banners"
+        :key="banner.id"
         type="button"
         class="banner-indicator"
         :class="{ 'is-active': index === activeIndex }"
         @click="goTo(index)"
-      />
+      ></button>
     </div>
   </ele-card>
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue';
+  import { onMounted, ref } from 'vue';
+  import { useRouter } from 'vue-router';
   import type { CarouselInstance } from 'element-plus';
   import { Van, Location, Lock, Sort, Timer } from '@element-plus/icons-vue';
+  import {
+    getWorkbenchBanners,
+    reportBannerEvent,
+    type WorkbenchBanner
+  } from '@/api/home/workbench/banner';
 
   defineOptions({ name: 'BannerCard' });
 
-  interface BannerSlide {
-    accent: string;
-    title: string;
-    subtitle: string;
-  }
+  const router = useRouter();
 
-  const slides: BannerSlide[] = [
-    {
-      accent: '高效护航',
-      title: '让每一辆车安全抵达',
-      subtitle: '专业汽车物流服务，覆盖全国，时效保障，安心托付'
-    },
-    {
-      accent: '全程可视',
-      title: '运输进度实时掌控',
-      subtitle: '专业汽车物流服务，覆盖全国，时效保障，安心托付'
-    },
-    {
-      accent: '专业运力',
-      title: '覆盖全国主要城市',
-      subtitle: '专业汽车物流服务，覆盖全国，时效保障，安心托付'
-    },
-    {
-      accent: '安心托付',
-      title: '一站式汽车物流服务',
-      subtitle: '专业汽车物流服务，覆盖全国，时效保障，安心托付'
-    }
-  ];
-
+  // 回退占位的特性说明（无后台配置时展示）
   const features = [
     { icon: Location, title: '全国运输网络', desc: '覆盖300+城市' },
     { icon: Lock, title: '安全全程保障', desc: '专业保障全程守护' },
@@ -108,16 +102,80 @@
     { icon: Timer, title: '时效精准可控', desc: '进度实时反馈' }
   ];
 
+  const banners = ref<WorkbenchBanner[]>([]);
   const carouselRef = ref<CarouselInstance | null>(null);
   const activeIndex = ref(0);
 
+  // 曝光去重：同一用户对同一 banner 每日仅上报一次
+  const viewedKeys = new Set<string>();
+  const dayKey = () => new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const trackView = (banner: WorkbenchBanner) => {
+    const key = `banner_view_${banner.id}_${dayKey()}`;
+    if (viewedKeys.has(key)) return;
+    try {
+      if (localStorage.getItem(key)) {
+        viewedKeys.add(key);
+        return;
+      }
+      localStorage.setItem(key, '1');
+    } catch {
+      // localStorage 不可用时退化为内存去重
+    }
+    viewedKeys.add(key);
+    reportBannerEvent(banner.id, 'view').catch(() => {});
+  };
+
   const handleChange = (index: number) => {
     activeIndex.value = index;
+    const banner = banners.value[index];
+    if (banner) trackView(banner);
   };
 
   const goTo = (index: number) => {
     carouselRef.value?.setActiveItem(index);
   };
+
+  const isSafeExternal = (url: string) =>
+    url.startsWith('http://') || url.startsWith('https://');
+
+  const handleClick = async (banner: WorkbenchBanner) => {
+    if (banner.link_type === 'none' || !banner.link_url) return;
+    // 先上报点击（best-effort，尽量不丢），再跳转
+    try {
+      await Promise.race([
+        reportBannerEvent(banner.id, 'click'),
+        new Promise((resolve) => setTimeout(resolve, 800))
+      ]);
+    } catch {
+      // 忽略埋点失败，不阻断跳转
+    }
+    if (banner.link_type === 'internal') {
+      router.push(banner.link_url);
+      return;
+    }
+    if (banner.link_type === 'external' && isSafeExternal(banner.link_url)) {
+      if (banner.open_in_new_tab) {
+        window.open(banner.link_url, '_blank', 'noopener,noreferrer');
+      } else {
+        window.location.href = banner.link_url;
+      }
+    }
+  };
+
+  const handleImageError = (id: number) => {
+    // 图片加载失败则移除该条，避免展示破图
+    banners.value = banners.value.filter((b) => b.id !== id);
+  };
+
+  onMounted(async () => {
+    try {
+      banners.value = await getWorkbenchBanners();
+      const first = banners.value[0];
+      if (first) trackView(first);
+    } catch {
+      banners.value = [];
+    }
+  });
 </script>
 
 <style lang="scss" scoped>
@@ -129,7 +187,32 @@
     background: #fff;
   }
 
-  /* 占位图区域：高 212px，四周 2px 白色边框效果（后期整块替换设计图片） */
+  /* 真实图片轮播：与占位图保持一致的 2px 白边 */
+  .banner-carousel {
+    padding: 2px;
+    box-sizing: border-box;
+  }
+
+  .banner-image-slide {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+
+    &.is-clickable {
+      cursor: pointer;
+    }
+  }
+
+  .banner-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* 占位图区域（无后台配置时回退） */
   .banner-slide {
     position: relative;
     height: 212px;
@@ -288,7 +371,7 @@
     padding: 0;
     border: none;
     border-radius: 6px;
-    background: rgba(22, 93, 255, 0.25);
+    background: rgba(22, 93, 255, 0.45);
     cursor: pointer;
     transition:
       width 0.25s ease,

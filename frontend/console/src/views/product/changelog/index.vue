@@ -20,6 +20,15 @@
             ]"
           />
         </template>
+        <template #popup="{ row }">
+          <el-tag
+            :type="row.is_popup === 1 ? 'warning' : 'info'"
+            size="small"
+            :disable-transitions="true"
+          >
+            {{ row.is_popup === 1 ? '弹框' : '否' }}
+          </el-tag>
+        </template>
         <template #status="{ row }">
           <el-tag
             :type="row.status === 1 ? 'success' : 'info'"
@@ -72,6 +81,7 @@
     { prop: 'title', label: '更新标题', minWidth: 180 },
     { prop: 'release_date', label: '发布日期', width: 120, align: 'center' },
     { prop: 'sort_order', label: '排序', width: 80, align: 'center' },
+    { prop: 'is_popup', label: '弹框提醒', width: 90, align: 'center', slot: 'popup' },
     { prop: 'status', label: '状态', width: 90, align: 'center', slot: 'status' },
     { prop: 'created_at', label: '创建时间', width: 170, align: 'center' },
     {

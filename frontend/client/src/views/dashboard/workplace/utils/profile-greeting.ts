@@ -64,10 +64,6 @@ function pickRandomTemplate(templates: string[]): string {
   return templates[i] ?? FALLBACK_GREETING;
 }
 
-function applyNickname(template: string, displayName: string): string {
-  return template.replaceAll('{nickname}', displayName);
-}
-
 /** 展示名：昵称优先，否则手机号，否则「伙伴」 */
 export function resolveGreetingDisplayName(
   info: User | null | undefined
@@ -83,17 +79,49 @@ export function resolveGreetingDisplayName(
   return '伙伴';
 }
 
+function stripNicknameFromTemplate(template: string): string {
+  let text = template.replace(/\{nickname\}/g, '');
+  text = text.replace(/^[，,、\s]+/, '');
+  text = text.replace(/[，,、\s]+$/, '');
+  text = text.replace(/，{2,}/g, '，');
+  return text.trim();
+}
+
+export interface ProfileGreetingParts {
+  displayName: string;
+  message: string;
+}
+
+/** 问候语拆分为「用户名」与「祝福语」两段，便于两行展示 */
+export function getProfileGreetingParts(
+  info: User | null | undefined,
+  date: Date = new Date()
+): ProfileGreetingParts {
+  const displayName = resolveGreetingDisplayName(info);
+  const hour = getShanghaiHour(date);
+  const seg = findSegmentForHour(greetings.segments, hour);
+  const templates = seg?.templates;
+  if (!templates?.length) {
+    return {
+      displayName,
+      message: stripNicknameFromTemplate(FALLBACK_GREETING)
+    };
+  }
+  const raw = pickRandomTemplate(templates);
+  return {
+    displayName,
+    message: stripNicknameFromTemplate(raw)
+  };
+}
+
 /** 根据上海当前时间与词库随机一条问候语 */
 export function getProfileGreetingText(
   info: User | null | undefined,
   date: Date = new Date()
 ): string {
-  const hour = getShanghaiHour(date);
-  const seg = findSegmentForHour(greetings.segments, hour);
-  const templates = seg?.templates;
-  if (!templates?.length) {
-    return applyNickname(FALLBACK_GREETING, resolveGreetingDisplayName(info));
+  const { displayName, message } = getProfileGreetingParts(info, date);
+  if (!message) {
+    return `你好，${displayName}`;
   }
-  const raw = pickRandomTemplate(templates);
-  return applyNickname(raw, resolveGreetingDisplayName(info));
+  return `你好，${displayName}，${message}`;
 }

@@ -3,6 +3,10 @@
   <layout-tool v-if="hasAiAssistant" class="header-ai-entry-tool">
     <header-ai-entry />
   </layout-tool>
+  <!-- 版本升级说明入口 -->
+  <layout-tool>
+    <header-changelog />
+  </layout-tool>
   <!-- 消息通知：无租户切换时与右侧头像略拉开间距 -->
   <layout-tool
     :class="{
@@ -61,6 +65,7 @@
   import type { TenantOption } from '@/api/login/model';
   import HeaderUser from './header-user.vue';
   import HeaderNotice from './header-notice.vue';
+  import HeaderChangelog from './header-changelog.vue';
   import HeaderAiEntry from './header-ai-entry.vue';
   import TenantSwitch from './tenant-switch.vue';
 

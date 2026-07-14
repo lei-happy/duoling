@@ -55,6 +55,19 @@
           <el-radio :value="0">停用</el-radio>
         </el-radio-group>
       </el-form-item>
+      <el-form-item label="弹框提醒" prop="is_popup">
+        <el-switch
+          v-model="form.is_popup"
+          :active-value="1"
+          :inactive-value="0"
+          inline-prompt
+          active-text="是"
+          inactive-text="否"
+        />
+        <span class="popup-tip">
+          开启后，租户端用户登录系统将强制弹框查看本次升级说明（看过后不再弹出）
+        </span>
+      </el-form-item>
       <el-form-item label="更新内容" prop="content">
         <el-input
           :rows="8"
@@ -114,7 +127,8 @@
     content: '',
     release_date: '',
     sort_order: 0,
-    status: 1
+    status: 1,
+    is_popup: 0
   });
 
   /** 表单验证规则 */
@@ -147,7 +161,8 @@
             title: form.title,
             content: form.content,
             release_date: form.release_date,
-            sort_order: form.sort_order ?? 0
+            sort_order: form.sort_order ?? 0,
+            is_popup: form.is_popup ?? 0
           });
       saveOrUpdate()
         .then((msg) => {
@@ -172,3 +187,12 @@
     isUpdate.value = true;
   }
 </script>
+
+<style lang="scss" scoped>
+  .popup-tip {
+    margin-left: 10px;
+    font-size: 12px;
+    color: #86909c;
+    line-height: 1.4;
+  }
+</style>

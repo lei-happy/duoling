@@ -8,7 +8,7 @@ from app.modules.console.models.system.user_role import UserRole
 from app.modules.console.models.product.product_version import ProductVersion
 from app.modules.console.models.tenant.tenant_product import TenantProduct
 from app.modules.console.models.product.product_feature import ProductFeature, VersionFeature
-from app.modules.console.models.changelog.changelog import Changelog
+from app.modules.console.models.changelog.changelog import Changelog, ChangelogRead
 from app.modules.console.models.dictionary.dict_model import Dict, DictItem
 from app.modules.console.models.common.feedback import Feedback
 from app.modules.console.models.common.operation_log import OperationLog
@@ -23,6 +23,10 @@ from app.modules.console.models.ops.region_sync_job import RegionSyncJob
 from app.modules.console.models.system.platform_setting import PlatformSetting
 from app.modules.console.models.driver.sys_driver import SysDriver
 from app.modules.console.models.capacity.sys_capacity import SysCapacity
+from app.modules.console.models.promotion.banner import (
+    PromotionBanner,
+    PromotionBannerEvent,
+)
 
 # ---- AI 数字员工平台库元数据 ----
 from app.modules.ai.models.platform.ai_employee import AiEmployee
@@ -44,6 +48,7 @@ __all__ = [
     "ProductFeature",
     "VersionFeature",
     "Changelog",
+    "ChangelogRead",
     "Dict",
     "DictItem",
     "Feedback",
@@ -59,6 +64,8 @@ __all__ = [
     "PlatformSetting",
     "SysDriver",
     "SysCapacity",
+    "PromotionBanner",
+    "PromotionBannerEvent",
     # AI 数字员工
     "AiEmployee",
     "AiTool",
