@@ -959,7 +959,7 @@ class AuthService:
     # 工作台个性化配置（/auth/user-workplace-config 使用）
     # ============================================================
 
-    _WORKPLACE_QUICK_ACTIONS_MAX = 12
+    _WORKPLACE_QUICK_ACTIONS_MAX = 16
 
     @staticmethod
     def _validate_workplace_config(config: Optional[dict]) -> None:

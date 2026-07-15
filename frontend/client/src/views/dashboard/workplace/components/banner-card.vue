@@ -87,7 +87,14 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, onBeforeUnmount, onMounted, ref, nextTick } from 'vue';
+  import {
+    computed,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    nextTick,
+    watch
+  } from 'vue';
   import type { CSSProperties } from 'vue';
   import { useRouter } from 'vue-router';
   import type { CarouselInstance } from 'element-plus';
@@ -100,6 +107,11 @@
   import { BANNER_IMAGE_ASPECT_RATIO, BANNER_MARGIN } from '../layout';
 
   defineOptions({ name: 'BannerCard' });
+
+  const props = defineProps<{
+    /** 与问候区同步的顶部行高度，由父级 workplace 注入 */
+    height?: string;
+  }>();
 
   const router = useRouter();
 
@@ -119,11 +131,13 @@
   let resizeObserver: ResizeObserver | null = null;
 
   /**
-   * 卡片尺寸策略：始终按真实图片比例（6.23）确定高度，高度随列宽等比缩放，
-   * 保证任意分辨率下图片都能完整展示、edge 内容不被裁切；
-   * 无数据回退时交由 .is-empty 的 min-height 兜底，避免占位内容被压扁。
+   * 有父级注入高度时优先使用（大屏与问候区等高）；
+   * 否则有图时按 5:1 随列宽缩放；无图时交由 .is-empty 的 min-height 兜底。
    */
   const cardStyle = computed<CSSProperties>(() => {
+    if (props.height) {
+      return { height: props.height };
+    }
     if (!banners.value.length) return {};
     return { aspectRatio: String(BANNER_IMAGE_ASPECT_RATIO) };
   });
@@ -134,6 +148,11 @@
     const height = Math.max(el.offsetHeight - BANNER_MARGIN, 0);
     carouselHeight.value = `${height}px`;
   };
+
+  watch(
+    () => props.height,
+    () => nextTick(updateCarouselHeight)
+  );
 
   // 曝光去重：同一用户对同一 banner 每日仅上报一次
   const viewedKeys = new Set<string>();
@@ -225,8 +244,9 @@
     overflow: hidden;
     border-radius: 12px;
     width: 100%;
-    /* 高度策略见脚本 cardStyle：大屏由父级注入固定高度，小屏按真实图片比例自适应 */
+    /* 高度策略见脚本 cardStyle：大屏由父级注入固定高度，小屏按 5:1 比例自适应 */
     flex-shrink: 0;
+    box-sizing: border-box;
     background: #fff;
   }
 

@@ -3,14 +3,42 @@
   <ele-card
     shadow="never"
     class="quick-card"
+    :class="{ 'is-empty': !displayedItems.length }"
     :body-style="{ padding: '0 20px 14px' }"
   >
     <template #header>
       <div class="quick-header">
         <span class="quick-title">快捷操作</span>
+        <button
+          type="button"
+          class="quick-settings"
+          aria-label="管理快捷操作"
+          @click="openPicker"
+        >
+          <el-icon class="quick-settings__icon">
+            <SettingOutlined />
+          </el-icon>
+        </button>
       </div>
     </template>
-    <el-row :gutter="8" ref="wrapRef" class="quick-action-row">
+    <div
+      v-if="!displayedItems.length"
+      class="quick-action-empty"
+      role="button"
+      tabindex="0"
+      @click="openPicker"
+      @keydown.enter="openPicker"
+    >
+      <el-empty :image-size="72">
+        <template #description>
+          <p class="quick-action-empty__desc">暂无快捷操作</p>
+          <p class="quick-action-empty__tip">
+            点击添加常用操作
+          </p>
+        </template>
+      </el-empty>
+    </div>
+    <el-row v-else :gutter="8" ref="wrapRef" class="quick-action-row">
       <el-col
         v-for="item in displayedItems"
         :key="item.key"
@@ -41,22 +69,6 @@
           <div class="quick-action-item__title">{{ item.title }}</div>
         </component>
       </el-col>
-      <el-col :md="3" :sm="6" :xs="8">
-        <div
-          class="quick-action-item quick-action-manage"
-          role="button"
-          tabindex="0"
-          @click="openPicker"
-          @keydown.enter="openPicker"
-        >
-          <div class="quick-action-item__icon">
-            <el-icon class="quick-action-item__icon-inner">
-              <EditOutlined />
-            </el-icon>
-          </div>
-          <div class="quick-action-item__title">管理</div>
-        </div>
-      </el-col>
     </el-row>
     <quick-action-picker
       v-model="pickerVisible"
@@ -81,7 +93,7 @@
   import SortableJs from 'sortablejs';
   import type { ElRow } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
-  import { AppstoreOutlined, EditOutlined } from '@/components/icons';
+  import { AppstoreOutlined, SettingOutlined } from '@/components/icons';
   import QuickActionPicker from './quick-action-picker.vue';
   import { useQuickActions } from '../quick-action/use-quick-actions';
   import type { QuickActionItem } from '../quick-action/types';
@@ -89,7 +101,7 @@
   defineOptions({
     components: {
       AppstoreOutlined,
-      EditOutlined,
+      SettingOutlined,
       QuickActionPicker
     }
   });
@@ -186,34 +198,117 @@
 <style lang="scss" scoped>
   .quick-card {
     border-radius: 12px;
-    height: 190px;
-    display: flex;
-    flex-direction: column;
+    height: auto;
+    flex-shrink: 0;
 
     /* 移除标题下分割线 */
     :deep(.ele-card-header) {
       border-bottom: none;
     }
 
-    /* body 撑满并使图标+文字整体垂直居中 */
-    :deep(.ele-card-body) {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
+    /* 空态保持约 1 行快捷操作的视觉高度，避免卡片塌缩 */
+    &.is-empty {
+      min-height: 148px;
+
+      :deep(.ele-card-body) {
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+  }
+
+  .quick-action-empty {
+    width: 100%;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background: var(--el-fill-color-lighter);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--el-color-primary-light-5);
+      outline-offset: 1px;
+    }
+
+    :deep(.el-empty) {
+      padding: 8px 0 4px;
+    }
+
+    :deep(.el-empty__description) {
+      margin-top: 6px;
+    }
+
+    &__desc {
+      margin: 0;
+      font-size: 14px;
+      color: var(--el-text-color-secondary);
+      line-height: 1.4;
+    }
+
+    &__tip {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: var(--el-text-color-placeholder);
+      line-height: 1.5;
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
       justify-content: center;
+      gap: 2px;
+    }
+
+    &__gear {
+      font-size: 13px;
+      color: var(--el-text-color-secondary);
+      vertical-align: middle;
     }
   }
 
   .quick-header {
     display: flex;
     align-items: center;
+    gap: 6px;
   }
 
   .quick-title {
     font-size: 16px;
     font-weight: 600;
     color: var(--el-text-color-primary);
+  }
+
+  .quick-settings {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--el-text-color-secondary);
+    cursor: pointer;
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease;
+
+    &:hover {
+      color: var(--el-color-primary);
+      background: var(--el-fill-color-light);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--el-color-primary-light-5);
+      outline-offset: 1px;
+    }
+  }
+
+  .quick-settings__icon {
+    font-size: 16px;
   }
 
   .quick-action-row {
@@ -293,31 +388,6 @@
 
     &:active {
       transform: translateY(0);
-    }
-  }
-
-  .quick-action-manage {
-    cursor: pointer;
-    --action-accent: var(--el-text-color-placeholder);
-
-    .quick-action-item__icon {
-      background: var(--el-fill-color-light);
-      box-shadow: none;
-    }
-
-    .quick-action-item__icon-inner {
-      color: var(--el-text-color-secondary);
-    }
-
-    &:hover {
-      .quick-action-item__icon {
-        background: var(--el-fill-color);
-        box-shadow: none;
-      }
-
-      .quick-action-item__icon-inner {
-        color: var(--el-text-color-regular);
-      }
     }
   }
 

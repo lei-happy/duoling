@@ -45,8 +45,11 @@
             >建议尺寸 {{ BANNER_IMG_W }} × {{ BANNER_IMG_H }} px（宽高比
             {{
               BANNER_RATIO_LABEL
-            }}，与客户端展示区一致），重要内容居中、两侧留白；支持
-            jpg/png，≤10MB。上传后按展示区等比裁切、不变形。</div
+            }}，兼容 {{ BANNER_COMPAT_W }} × {{ BANNER_COMPAT_H }}
+            px），重要内容放在画面中部约 80%
+            高度内；支持 jpg/png/webp，建议 ≤500KB、最大
+            10MB。客户端按 5:1 缩放并与问候区等高，图片 cover
+            铺满。</div
           >
         </div>
       </el-form-item>
@@ -197,9 +200,11 @@
   } from '@/api/promotion';
   import type { Banner, BannerOption } from '@/api/promotion/model';
 
-  // 客户端展示区高度固定 216px，宽高比 5:1，推荐上传 1080×216
-  const BANNER_IMG_W = 1080;
-  const BANNER_IMG_H = 216;
+  // 客户端按 5:1 随列宽缩放，并与问候区等高；推荐 1600×320（2x），兼容 1080×216
+  const BANNER_IMG_W = 1600;
+  const BANNER_IMG_H = 320;
+  const BANNER_COMPAT_W = 1080;
+  const BANNER_COMPAT_H = 216;
   const BANNER_RATIO = BANNER_IMG_W / BANNER_IMG_H;
   const BANNER_RATIO_LABEL = '5:1';
 
@@ -394,7 +399,7 @@
     &__preview {
       width: 100%;
       max-width: 520px;
-      aspect-ratio: 1080 / 216;
+      aspect-ratio: 1600 / 320;
       border-radius: 6px;
       margin-bottom: 8px;
       display: block;

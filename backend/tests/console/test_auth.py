@@ -71,10 +71,10 @@ class TestAuthPureLogic:
             AuthService._validate_workplace_config({"quickActions": "x"})
 
     def test_workplace_config_too_many_quick_actions(self):
-        """TC-CON-AUTH-006：quickActions 超过 12 项应被拒绝（BUG-CON-002 已修复）"""
+        """TC-CON-AUTH-006：quickActions 超过 16 项应被拒绝（BUG-CON-002 已修复）"""
         with pytest.raises(BizException):
             AuthService._validate_workplace_config(
-                {"quickActions": [str(i) for i in range(13)]}
+                {"quickActions": [str(i) for i in range(17)]}
             )
 
     def test_workplace_config_empty_item_rejected(self):
@@ -189,4 +189,4 @@ class TestWorkplaceConfigApi:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] != 0
-        assert "12" in body["message"]
+        assert "16" in body["message"]

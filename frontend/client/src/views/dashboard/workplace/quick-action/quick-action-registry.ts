@@ -11,7 +11,7 @@ import type { QuickActionConfig } from './types';
 
 export const QUICK_ACTION_CONFIG_VERSION = 1;
 
-export const QUICK_ACTION_MAX = 12;
+export const QUICK_ACTION_MAX = 16;
 
 /**
  * 旧版前端硬编码 key -> 新版菜单权限码(menu_code) 映射。
