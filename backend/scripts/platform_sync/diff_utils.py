@@ -45,7 +45,22 @@ IGNORE_FIELDS = {
 
 
 def _normalize_for_compare(item: Dict[str, Any]) -> Dict[str, Any]:
+    """对比前规范化：忽略环境字段，且「缺 key」与显式 null 视为相同。"""
     return {k: v for k, v in item.items() if k not in IGNORE_FIELDS}
+
+
+def _values_equal(a: Any, b: Any) -> bool:
+    return a == b
+
+
+def _dicts_equal_for_diff(old: Dict[str, Any], new: Dict[str, Any]) -> bool:
+    keys = set(old.keys()) | set(new.keys())
+    for k in keys:
+        if k in IGNORE_FIELDS:
+            continue
+        if not _values_equal(old.get(k), new.get(k)):
+            return False
+    return True
 
 
 # ---- 通用 diff 结构 ----
@@ -84,7 +99,7 @@ def diff_list(
         if k in old_map:
             new_norm = _normalize_for_compare(r)
             old_norm = _normalize_for_compare(old_map[k])
-            if new_norm != old_norm:
+            if not _dicts_equal_for_diff(old_norm, new_norm):
                 out.modified.append((k, old_norm, new_norm))
     return out
 

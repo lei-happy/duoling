@@ -97,6 +97,7 @@ def load_client_menus_from_json(json_path: Path, app_type: str = "client") -> li
         "sort_order",
         "visible",
         "feature_code",
+        "quick_action",
     )
 
     def row_to_item(r: dict) -> dict:
@@ -138,6 +139,13 @@ def _count_active_children(conn, menu_id: int) -> int:
     return int(result.scalar() or 0)
 
 
+def _quick_action_param(menu: dict):
+    qa = menu.get("quick_action")
+    if qa is None:
+        return None
+    return json.dumps(qa, ensure_ascii=False)
+
+
 def _insert_menu_row(
     conn,
     *,
@@ -160,6 +168,7 @@ def _insert_menu_row(
         "sort_order": menu.get("sort_order", 0),
         "visible": visible,
         "feature_code": menu.get("feature_code"),
+        "quick_action": _quick_action_param(menu),
         "app_type": app_type,
     }
     if menu_id is not None:
@@ -167,9 +176,9 @@ def _insert_menu_row(
             text(
                 "INSERT INTO sys_menu "
                 "(id, parent_id, menu_name, menu_code, menu_type, path, component, "
-                "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
+                "icon, sort_order, visible, status, app_type, feature_code, quick_action, is_deleted) "
                 "VALUES (:id, :parent_id, :menu_name, :menu_code, :menu_type, :path, "
-                ":component, :icon, :sort_order, :visible, 1, :app_type, :feature_code, 0)"
+                ":component, :icon, :sort_order, :visible, 1, :app_type, :feature_code, :quick_action, 0)"
             ),
             {"id": menu_id, **params},
         )
@@ -179,9 +188,9 @@ def _insert_menu_row(
         text(
             "INSERT INTO sys_menu "
             "(parent_id, menu_name, menu_code, menu_type, path, component, "
-            "icon, sort_order, visible, status, app_type, feature_code, is_deleted) "
+            "icon, sort_order, visible, status, app_type, feature_code, quick_action, is_deleted) "
             "VALUES (:parent_id, :menu_name, :menu_code, :menu_type, :path, "
-            ":component, :icon, :sort_order, :visible, 1, :app_type, :feature_code, 0)"
+            ":component, :icon, :sort_order, :visible, 1, :app_type, :feature_code, :quick_action, 0)"
         ),
         params,
     )
@@ -266,7 +275,7 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui", app_typ
                         "menu_name = :menu_name, menu_code = :menu_code, "
                         "menu_type = :menu_type, path = :path, component = :component, "
                         "icon = :icon, sort_order = :sort_order, visible = :visible, "
-                        "feature_code = :feature_code, parent_id = :parent_id "
+                        "feature_code = :feature_code, quick_action = :quick_action, parent_id = :parent_id "
                         "WHERE id = :id"
                     ),
                     {
@@ -281,6 +290,7 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui", app_typ
                         "sort_order": menu.get("sort_order", 0),
                         "visible": visible,
                         "feature_code": menu.get("feature_code"),
+                        "quick_action": _quick_action_param(menu),
                     },
                 )
                 print(f"  更新菜单(全字段): {menu['menu_name']} (id={existing_id})")
@@ -333,7 +343,7 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui", app_typ
                             "menu_code = :menu_code, menu_type = :menu_type, "
                             "path = :path, component = :component, icon = :icon, "
                             "sort_order = :sort_order, visible = :visible, "
-                            "status = 1, feature_code = :feature_code, "
+                            "status = 1, feature_code = :feature_code, quick_action = :quick_action, "
                             "is_deleted = 0, updated_at = CURRENT_TIMESTAMP "
                             "WHERE id = :id"
                         ),
@@ -349,6 +359,7 @@ def upsert_menus(conn, menus, parent_id=0, *, mode: str = "preserve_ui", app_typ
                             "sort_order": menu.get("sort_order", 0),
                             "visible": visible,
                             "feature_code": menu.get("feature_code"),
+                            "quick_action": _quick_action_param(menu),
                         },
                     )
                     menu_id = seed_id
