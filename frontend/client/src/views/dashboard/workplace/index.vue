@@ -48,13 +48,13 @@
     name: 'DashboardWorkplace'
   });
 
-  /** Banner 卡片，用于测量宽度与同步顶部行高度 */
+  /** Banner 卡片，用于测量宽度并按 5:1 定高 */
   const bannerCardRef = ref<InstanceType<typeof BannerCard> | null>(null);
-  /** 顶部用户信息 */
+  /** 顶部用户信息（跟随 Banner 高度） */
   const profileCardRef = ref<InstanceType<typeof ProfileCard> | null>(null);
   /** 左列容器，用于测量实际高度 */
   const leftStackRef = ref<HTMLElement>();
-  /** Banner / 问候区共用高度（大屏等高） */
+  /** Banner 定高后注入两侧，保证等高且容器恒为 5:1 */
   const topRowHeight = ref<string>();
   /** 最新动态卡片高度（由左列高度精确计算，保证两列底部对齐） */
   const activitiesHeight = ref<string>();
@@ -69,12 +69,8 @@
 
   /** 观察左列：仅同步最新动态高度 */
   let stackObserver: ResizeObserver | null = null;
-  /** 观察 Banner / 问候区：同步顶部行等高 */
+  /** 观察 Banner 宽度：同步顶部行等高 */
   let topRowObserver: ResizeObserver | null = null;
-  /** 避免测量过程中 ResizeObserver 重入导致循环 */
-  let topRowSyncing = false;
-  /** 最近一次无强制高度时测得的问候区自然高度 */
-  let cachedProfileNatural = 0;
   /** 最近一次用于计算比例高度的 Banner 宽度 */
   let cachedBannerWidth = 0;
 
@@ -107,87 +103,51 @@
     }
   };
 
-  const observeTopRow = () => {
+  const observeBanner = () => {
     if (!topRowObserver) return;
     topRowObserver.disconnect();
     const bannerEl = getCardEl(bannerCardRef.value);
-    const profileEl = getCardEl(profileCardRef.value);
     if (bannerEl) topRowObserver.observe(bannerEl);
-    if (profileEl) topRowObserver.observe(profileEl);
   };
 
   /**
-   * 大屏：取 max(Banner 比例高度, 问候区自然高度) 注入两侧，保证等高；
-   * 小屏：取消强制高度，Banner 按比例、问候区按内容各自自适应。
+   * 大屏：Banner 按 5:1 定高，问候区跟随（容器恒 5:1，cover 不裁左右）；
+   * 小屏：取消强制高度，Banner 自身 aspect-ratio，问候区内容自适应。
    */
-  const syncTopRowHeight = async () => {
-    if (topRowSyncing) return;
-
+  const syncTopRowHeight = () => {
     if (window.innerWidth <= STACK_BREAKPOINT) {
       if (topRowHeight.value !== undefined) {
         topRowHeight.value = undefined;
       }
-      cachedProfileNatural = 0;
       cachedBannerWidth = 0;
       syncActivitiesHeight();
       return;
     }
 
     const bannerEl = getCardEl(bannerCardRef.value);
-    const profileEl = getCardEl(profileCardRef.value);
-    if (!bannerEl || !profileEl) return;
+    if (!bannerEl) return;
 
     const bannerWidth = bannerEl.offsetWidth;
     if (bannerWidth <= 0) return;
 
-    const aspectHeight = bannerWidth / BANNER_IMAGE_ASPECT_RATIO;
     const widthChanged = Math.abs(bannerWidth - cachedBannerWidth) > 1;
-    const needRemeasure =
-      !topRowHeight.value || widthChanged || cachedProfileNatural <= 0;
+    const target = Math.ceil(bannerWidth / BANNER_IMAGE_ASPECT_RATIO);
+    const next = `${target}px`;
 
-    if (!needRemeasure) {
-      const target = Math.ceil(
-        Math.max(aspectHeight, cachedProfileNatural)
-      );
-      const next = `${target}px`;
-      if (topRowHeight.value !== next) {
-        topRowHeight.value = next;
-        await nextTick();
-      }
+    if (!widthChanged && topRowHeight.value === next) {
       syncActivitiesHeight();
       return;
     }
 
-    topRowSyncing = true;
-    try {
-      topRowObserver?.disconnect();
-
-      if (topRowHeight.value !== undefined) {
-        topRowHeight.value = undefined;
-        await nextTick();
-      }
-
-      cachedBannerWidth = bannerWidth;
-      cachedProfileNatural = profileEl.offsetHeight;
-      const bannerNatural = Math.max(bannerEl.offsetHeight, aspectHeight);
-      const target = Math.ceil(
-        Math.max(bannerNatural, cachedProfileNatural, aspectHeight)
-      );
-      const next = `${target}px`;
+    cachedBannerWidth = bannerWidth;
+    if (topRowHeight.value !== next) {
       topRowHeight.value = next;
-      await nextTick();
-
-      syncActivitiesHeight();
-      observeTopRow();
-    } finally {
-      topRowSyncing = false;
     }
+    nextTick(syncActivitiesHeight);
   };
 
   const scheduleTopRowSync = () => {
-    nextTick(() => {
-      void syncTopRowHeight();
-    });
+    nextTick(syncTopRowHeight);
   };
 
   const scheduleActivitiesSync = () => {
@@ -198,10 +158,7 @@
     scheduleTopRowSync();
 
     stackObserver = new ResizeObserver(() => {
-      // 快捷操作等左列内容变化时，只校正最新动态高度，避免反复清空顶部行
-      if (!topRowSyncing) {
-        scheduleActivitiesSync();
-      }
+      scheduleActivitiesSync();
     });
     if (leftStackRef.value) {
       stackObserver.observe(leftStackRef.value);
@@ -210,7 +167,7 @@
     topRowObserver = new ResizeObserver(() => {
       scheduleTopRowSync();
     });
-    observeTopRow();
+    observeBanner();
 
     window.addEventListener('resize', scheduleTopRowSync);
   });
@@ -225,7 +182,6 @@
 
   /** 从其他页签返回时重新校正顶部行与右列高度 */
   onActivated(() => {
-    cachedProfileNatural = 0;
     cachedBannerWidth = 0;
     scheduleTopRowSync();
   });

@@ -131,14 +131,13 @@
   let resizeObserver: ResizeObserver | null = null;
 
   /**
-   * 有父级注入高度时优先使用（大屏与问候区等高）；
-   * 否则有图时按 5:1 随列宽缩放；无图时交由 .is-empty 的 min-height 兜底。
+   * 有父级注入高度时使用（大屏 = bannerWidth/5，与问候区等高且恒 5:1）；
+   * 否则自身按 5:1 随列宽缩放；空态另有 min-height 兜底。
    */
   const cardStyle = computed<CSSProperties>(() => {
     if (props.height) {
       return { height: props.height };
     }
-    if (!banners.value.length) return {};
     return { aspectRatio: String(BANNER_IMAGE_ASPECT_RATIO) };
   });
 

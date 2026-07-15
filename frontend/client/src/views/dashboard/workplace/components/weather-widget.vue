@@ -20,12 +20,15 @@
   .weather-widget {
     width: 100%;
     display: flex;
-    margin-left: 10px;
+    margin-left: 0;
     justify-content: flex-start;
+    overflow: visible;
   }
 
   .weather-widget-iframe {
     border: none;
     max-width: 100%;
+    height: 60px;
+    flex-shrink: 0;
   }
 </style>

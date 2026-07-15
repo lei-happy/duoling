@@ -3,7 +3,11 @@
   <ele-card
     shadow="never"
     class="profile-card"
-    :body-style="{ padding: '20px', height: '100%', boxSizing: 'border-box' }"
+    :class="{
+      'is-synced': !!height,
+      'is-compact': isCompact
+    }"
+    :body-style="bodyStyle"
     :style="cardStyle"
   >
     <div class="profile-wrapper">
@@ -19,7 +23,11 @@
 
       <!-- 头像 + 问候 -->
       <div class="profile-header">
-        <el-avatar :size="48" :src="loginUser.avatar" class="profile-avatar" />
+        <el-avatar
+          :size="isCompact ? 40 : 48"
+          :src="loginUser.avatar"
+          class="profile-avatar"
+        />
         <div class="profile-header-body">
           <div class="profile-name">你好，{{ displayName }}</div>
           <div v-if="greetingMessage" class="profile-greeting">
@@ -39,18 +47,48 @@
 
 <script lang="ts" setup>
   import { computed, ref, watch } from 'vue';
+  import type { CSSProperties } from 'vue';
   import { useUserStore } from '@/store/modules/user';
   import { getProfileGreetingParts } from '../utils/profile-greeting';
   import WeatherWidget from './weather-widget.vue';
 
+  /** 同步高度低于此值时启用更紧凑的字号/间距 */
+  const COMPACT_HEIGHT_PX = 220;
+
   const props = defineProps<{
-    /** 与 Banner 同步的顶部行高度，由父级 workplace 注入 */
+    /** 与 Banner 同步的顶部行高度，由父级 workplace 注入（Banner 5:1 定高） */
     height?: string;
   }>();
+
+  const syncedHeightPx = computed(() => {
+    if (!props.height) return 0;
+    const n = Number.parseFloat(props.height);
+    return Number.isFinite(n) ? n : 0;
+  });
+
+  const isCompact = computed(
+    () =>
+      !!props.height &&
+      syncedHeightPx.value > 0 &&
+      syncedHeightPx.value < COMPACT_HEIGHT_PX
+  );
 
   const cardStyle = computed(() =>
     props.height ? { height: props.height } : undefined
   );
+
+  /** 跟随 Banner 定高时减小 padding，优先保证天气插件 60px 完整可见 */
+  const bodyStyle = computed<CSSProperties>(() => {
+    let padding = '20px';
+    if (props.height) {
+      padding = isCompact.value ? '8px 14px 6px' : '12px 16px 8px';
+    }
+    return {
+      padding,
+      height: '100%',
+      boxSizing: 'border-box'
+    };
+  });
 
   const userStore = useUserStore();
 
@@ -95,6 +133,11 @@
     flex-direction: column;
     overflow: hidden;
     box-sizing: border-box;
+
+    /* 大屏跟随 Banner 定高时取消 min-height，避免撑破 5:1 同步高度 */
+    &.is-synced {
+      min-height: 0;
+    }
 
     :deep(.ele-card-body) {
       position: relative;
@@ -199,15 +242,35 @@
     z-index: 1;
     width: 100%;
     margin-top: auto;
-    padding-top: 20px;
+    padding-top: 12px;
+    /* 天气 iframe 固定 60px，禁止被压缩裁切 */
+    flex-shrink: 0;
+    min-height: 60px;
+  }
+
+  /* 跟随 Banner 定高：收紧上下留白，把空间留给天气 */
+  .profile-card.is-synced {
+    .profile-weather-widget {
+      padding-top: 8px;
+    }
+
+    .profile-sub {
+      margin-top: 6px;
+    }
+
+    .profile-greeting {
+      margin-top: 4px;
+    }
   }
 
   .profile-header {
     position: relative;
     z-index: 1;
     display: flex;
+    margin-top: 12px;
     align-items: flex-start;
     gap: 12px;
+    flex-shrink: 0;
 
     .profile-avatar {
       flex-shrink: 0;
@@ -238,6 +301,10 @@
     font-weight: 400;
     color: var(--el-text-color-secondary);
     line-height: 1.55;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
   }
 
   .profile-sub {
@@ -257,5 +324,36 @@
     color: var(--el-color-primary);
     background: rgba(255, 255, 255, 0.72);
     border: 1px solid rgba(22, 93, 255, 0.12);
+  }
+
+  /* 定高较矮时进一步压缩字号与间距 */
+  .profile-card.is-compact {
+    .profile-header {
+      gap: 8px;
+    }
+
+    .profile-header-body {
+      padding-top: 0;
+    }
+
+    .profile-name {
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .profile-greeting {
+      margin-top: 2px;
+      font-size: 12px;
+      line-height: 1.35;
+      -webkit-line-clamp: 1;
+    }
+
+    .profile-sub {
+      margin-top: 2px;
+    }
+
+    .profile-weather-widget {
+      padding-top: 4px;
+    }
   }
 </style>
