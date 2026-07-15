@@ -1,149 +1,64 @@
 /**
  * 工作台快捷操作 — 注册表
  *
- * 新增业务入口时只需在本文件追加 QuickActionConfig，
+ * 目录由后端下发（运营在 Console「客户端菜单」里勾选"支持快捷操作"并上传图标），
+ * 本文件仅维护运行时缓存与工具函数。
  * 详见：doc/04.开发手册/15.快捷操作接入说明.md
  */
 
+import { ref } from 'vue';
 import type { QuickActionConfig } from './types';
 
 export const QUICK_ACTION_CONFIG_VERSION = 1;
 
 export const QUICK_ACTION_MAX = 12;
 
-/** 全部可注册的快捷操作 */
-export const QUICK_ACTION_REGISTRY: QuickActionConfig[] = [
-  {
-    key: 'waybill.create',
-    title: '新建运单',
-    icon: 'PlusCircleOutlined',
-    color: '#69c0ff',
-    group: '运营调度',
-    type: 'route',
-    path: '/operation/waybill',
-    query: { action: 'create' },
-    permission: 'business:waybill:add',
-    feature: 'biz_waybill',
-    defaultVisible: true,
-    sortOrder: 10
-  },
-  {
-    key: 'task.create',
-    title: '新建配载',
-    icon: 'AppstoreAddOutlined',
-    color: '#b37feb',
-    group: '运营调度',
-    type: 'route',
-    path: '/operation/task-create',
-    permission: 'operation:task:add',
-    feature: 'biz_dispatch',
-    defaultVisible: true,
-    sortOrder: 20
-  },
-  {
-    key: 'waybill.list',
-    title: '运单管理',
-    icon: 'LogOutlined',
-    color: '#5cdbd3',
-    group: '运营调度',
-    type: 'route',
-    path: '/operation/waybill',
-    permission: 'business:waybill:list',
-    feature: 'biz_waybill',
-    defaultVisible: true,
-    sortOrder: 30
-  },
-  {
-    key: 'task.list',
-    title: '调度任务',
-    icon: 'ShoppingOutlined',
-    color: '#ff9c6e',
-    group: '运营调度',
-    type: 'route',
-    path: '/operation/task',
-    permission: 'operation:task:list',
-    feature: 'biz_dispatch',
-    defaultVisible: true,
-    sortOrder: 40
-  },
-  {
-    key: 'customer.list',
-    title: '客户管理',
-    icon: 'UserOutlined',
-    color: '#95de64',
-    group: '客商中心',
-    type: 'route',
-    path: '/partner/customer',
-    permission: 'partner:customer:list',
-    defaultVisible: true,
-    sortOrder: 50
-  },
-  {
-    key: 'vehicle.list',
-    title: '车辆管理',
-    icon: 'ControlOutlined',
-    color: '#ffc069',
-    group: '运力中心',
-    type: 'route',
-    path: '/capacity/self-capacity/vehicle',
-    permission: 'capacity:self_capacity:vehicle:list',
-    defaultVisible: true,
-    sortOrder: 60
-  },
-  {
-    key: 'contract.list',
-    title: '运价合同',
-    icon: 'CopyOutlined',
-    color: '#ffd666',
-    group: '计费中心',
-    type: 'route',
-    path: '/billing/contract',
-    permission: 'billing:contract:list',
-    defaultVisible: false,
-    sortOrder: 70
-  },
-  {
-    key: 'carrier.list',
-    title: '承运商管理',
-    icon: 'TagOutlined',
-    color: '#ff85c0',
-    group: '客商中心',
-    type: 'route',
-    path: '/partner/carrier',
-    permission: 'partner:carrier:list',
-    defaultVisible: false,
-    sortOrder: 80
-  },
-  {
-    key: 'social-capacity.list',
-    title: '社会运力',
-    icon: 'MailOutlined',
-    color: '#597ef7',
-    group: '运力中心',
-    type: 'route',
-    path: '/capacity/social-capacity/list',
-    permission: 'capacity:social_capacity:list',
-    feature: 'capacity_social_list',
-    defaultVisible: false,
-    sortOrder: 90
-  }
-];
+/**
+ * 旧版前端硬编码 key -> 新版菜单权限码(menu_code) 映射。
+ * 用于兼容历史 workplace_config，避免用户已选项丢失。
+ */
+const LEGACY_KEY_MAP: Record<string, string> = {
+  'waybill.create': 'business:waybill:add',
+  'task.create': 'operation:task:add',
+  'waybill.list': 'business:waybill:list',
+  'task.list': 'operation:task:list',
+  'customer.list': 'partner:customer:list',
+  'vehicle.list': 'capacity:self_capacity:vehicle:list',
+  'contract.list': 'billing:contract:list',
+  'carrier.list': 'partner:carrier:list',
+  'social-capacity.list': 'capacity:social_capacity:list'
+};
 
-const registryMap = new Map(
-  QUICK_ACTION_REGISTRY.map((item) => [item.key, item])
-);
+/** 将历史 key 归一化为当前 key（menu_code） */
+export const normalizeQuickActionKey = (key: string): string =>
+  LEGACY_KEY_MAP[key] ?? key;
+
+/** 运行时注册表（由接口填充） */
+const registryList = ref<QuickActionConfig[]>([]);
+const registryMap = ref(new Map<string, QuickActionConfig>());
+
+/** 写入注册表（拉取接口后调用） */
+export const setQuickActionRegistry = (list: QuickActionConfig[]): void => {
+  registryList.value = list;
+  registryMap.value = new Map(list.map((item) => [item.key, item]));
+};
+
+/** 全部注册项 */
+export const getQuickActionRegistryList = (): QuickActionConfig[] =>
+  registryList.value;
 
 /** 按 key 查找注册项 */
-export const getQuickActionConfig = (key: string): QuickActionConfig | undefined =>
-  registryMap.get(key);
+export const getQuickActionConfig = (
+  key: string
+): QuickActionConfig | undefined => registryMap.value.get(key);
 
 /** 注册表全部 key（用于校验服务端配置） */
 export const getRegistryKeys = (): string[] =>
-  QUICK_ACTION_REGISTRY.map((item) => item.key);
+  registryList.value.map((item) => item.key);
 
 /** 默认展示的 key 列表（仍须运行时权限过滤） */
 export const getDefaultQuickActionKeys = (): string[] =>
-  [...QUICK_ACTION_REGISTRY]
+  [...registryList.value]
     .filter((item) => item.defaultVisible)
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
     .map((item) => item.key);
@@ -154,10 +69,11 @@ export const groupQuickActions = (
 ): Record<string, QuickActionConfig[]> => {
   const groups: Record<string, QuickActionConfig[]> = {};
   for (const item of items) {
-    if (!groups[item.group]) {
-      groups[item.group] = [];
+    const name = item.group || '常用功能';
+    if (!groups[name]) {
+      groups[name] = [];
     }
-    groups[item.group].push(item);
+    groups[name].push(item);
   }
   return groups;
 };

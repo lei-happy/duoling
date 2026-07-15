@@ -87,6 +87,28 @@
           </el-tag>
           <span v-else style="color: var(--el-text-color-placeholder)">-</span>
         </template>
+        <template #quickAction="{ row }">
+          <div
+            v-if="row.quickActionEnabled"
+            style="display: inline-flex; align-items: center; gap: 4px"
+          >
+            <img
+              v-if="row.quickActionIcon"
+              :src="row.quickActionIcon"
+              alt=""
+              style="
+                width: 18px;
+                height: 18px;
+                border-radius: 4px;
+                object-fit: cover;
+              "
+            />
+            <el-tag size="small" type="primary" :disable-transitions="true">
+              已开启
+            </el-tag>
+          </div>
+          <span v-else style="color: var(--el-text-color-placeholder)">-</span>
+        </template>
         <template #action="{ row }">
           <btn-items
             divider
@@ -115,10 +137,7 @@
   import { proTableToolsWithExport } from '@/config/pro-table-tool-presets';
   import MenuIcon from '@/components/IconSelect/components/menu-icon.vue';
   import ClientMenuSearch from './components/client-menu-search.vue';
-  import {
-    listClientMenus,
-    removeClientMenu
-  } from '@/api/system/client-menu';
+  import { listClientMenus, removeClientMenu } from '@/api/system/client-menu';
   import type {
     ClientMenu,
     ClientMenuParam
@@ -159,6 +178,13 @@
       width: 160,
       align: 'center',
       slot: 'featureCode'
+    },
+    {
+      prop: 'quickActionEnabled',
+      label: '快捷操作',
+      width: 110,
+      align: 'center',
+      slot: 'quickAction'
     },
     {
       prop: 'sortNumber',

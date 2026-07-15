@@ -41,6 +41,7 @@ from app.modules.client.api.workbench.todo import router as workbench_todo_route
 from app.modules.client.api.workbench.activities import router as workbench_activities_router
 from app.modules.client.api.workbench.banner import router as workbench_banner_router
 from app.modules.client.api.workbench.changelog import router as workbench_changelog_router
+from app.modules.client.api.workbench.quick_action import router as workbench_quick_action_router
 from app.modules.client.api.system_config import router as system_config_router
 from app.modules.client.api.partner.customer import router as partner_customer_router
 from app.modules.client.api.partner.carrier import router as partner_carrier_router
@@ -198,6 +199,11 @@ router.include_router(
     workbench_changelog_router,
     prefix="/workbench/changelog",
     tags=["客户端-工作台版本升级说明"],
+)
+router.include_router(
+    workbench_quick_action_router,
+    prefix="/workbench/quick-action",
+    tags=["客户端-工作台快捷操作目录"],
 )
 router.include_router(system_config_router, prefix="/system/config", tags=["客户端-系统配置"])
 router.include_router(partner_customer_router, prefix="/partner/customer", tags=["客户端-合作伙伴-客户"])

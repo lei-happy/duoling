@@ -22,6 +22,7 @@
     :beforeItemEdit="beforeItemEdit"
     :locale="locale"
     :componentLang="componentLang"
+    :scene="scene"
   />
 </template>
 
@@ -89,6 +90,8 @@
       locale?: Partial<UploadLocale>;
       /** 自定义文案 */
       componentLang?: CommonUploadLocale;
+      /** 上传场景目录（与后端 ALLOWED_SCENES 一致，默认 avatar） */
+      scene?: string;
     }>(),
     {
       fileLimit: 100,

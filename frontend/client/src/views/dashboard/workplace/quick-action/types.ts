@@ -11,12 +11,12 @@ export interface WorkplaceConfig {
 }
 
 export interface QuickActionConfig {
-  /** 全局唯一，格式：域.动作，如 waybill.create */
+  /** 全局唯一，服务端为菜单权限码 menu_code，如 business:waybill:add */
   key: string;
   title: string;
-  /** 图标组件名（ele-admin-plus icons） */
-  icon: string;
-  /** 图标图片地址（设计素材，优先于 icon 渲染；暂未提供时留空用占位图标） */
+  /** 图标组件名（ele-admin-plus icons，可选；服务端配置优先用 image） */
+  icon?: string;
+  /** 图标图片地址（上传的专属图标，优先于 icon 渲染；缺省用占位图标） */
   image?: string;
   color?: string;
   /** 分组标题，用于管理弹窗 */

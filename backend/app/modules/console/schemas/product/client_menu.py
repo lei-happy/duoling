@@ -22,6 +22,15 @@ class ClientMenuOut(BaseModel):
     featureCode: Optional[str] = None
     meta: Optional[Any] = None
     createTime: Optional[str] = None
+    # 快捷操作配置（sys_menu.quick_action JSON 展开为扁平字段）
+    quickActionEnabled: bool = False
+    quickActionIcon: Optional[str] = None
+    quickActionName: Optional[str] = None
+    quickActionColor: Optional[str] = None
+    quickActionLink: Optional[str] = None
+    quickActionGroup: Optional[str] = None
+    quickActionSort: Optional[int] = None
+    quickActionDefault: bool = False
     children: Optional[List["ClientMenuOut"]] = None
 
 
@@ -38,6 +47,15 @@ class ClientMenuCreate(BaseModel):
     hide: int = 0
     featureCode: Optional[str] = None
     meta: Optional[Any] = None
+    # 快捷操作配置
+    quickActionEnabled: bool = False
+    quickActionIcon: Optional[str] = None
+    quickActionName: Optional[str] = None
+    quickActionColor: Optional[str] = None
+    quickActionLink: Optional[str] = None
+    quickActionGroup: Optional[str] = None
+    quickActionSort: Optional[int] = None
+    quickActionDefault: bool = False
 
 
 class ClientMenuUpdate(BaseModel):
@@ -54,3 +72,12 @@ class ClientMenuUpdate(BaseModel):
     hide: Optional[int] = None
     featureCode: Optional[str] = None
     meta: Optional[Any] = None
+    # 快捷操作配置
+    quickActionEnabled: Optional[bool] = None
+    quickActionIcon: Optional[str] = None
+    quickActionName: Optional[str] = None
+    quickActionColor: Optional[str] = None
+    quickActionLink: Optional[str] = None
+    quickActionGroup: Optional[str] = None
+    quickActionSort: Optional[int] = None
+    quickActionDefault: Optional[bool] = None

@@ -3,7 +3,7 @@
 """
 
 from typing import Optional
-from sqlalchemy import String, SmallInteger, BigInteger
+from sqlalchemy import String, SmallInteger, BigInteger, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.modules.console.models.common.base import PlatformModelBase
@@ -50,4 +50,8 @@ class Menu(PlatformModelBase):
     feature_code: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, index=True,
         comment="关联功能编码，用于产品版本控制菜单可见性"
+    )
+    quick_action: Mapped[Optional[dict]] = mapped_column(
+        JSON(none_as_null=True), nullable=True,
+        comment="快捷操作配置(JSON)：null=不支持；含 icon/name/color/link/group/sort/default"
     )

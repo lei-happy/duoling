@@ -18,7 +18,37 @@ from app.modules.console.schemas.product.client_menu import (
 class ClientMenuService:
 
     @staticmethod
+    def _build_quick_action(
+        enabled: Optional[bool],
+        icon: Optional[str],
+        name: Optional[str],
+        color: Optional[str],
+        link: Optional[str],
+        group: Optional[str],
+        sort: Optional[int],
+        default: Optional[bool],
+    ) -> Optional[dict]:
+        """将扁平字段组装为 quick_action JSON；enabled=False/None 时返回 None"""
+        if not enabled:
+            return None
+
+        def _clean(v: Optional[str]) -> Optional[str]:
+            v = (v or "").strip()
+            return v or None
+
+        return {
+            "icon": _clean(icon),
+            "name": _clean(name),
+            "color": _clean(color),
+            "link": _clean(link),
+            "group": _clean(group),
+            "sort": int(sort) if sort is not None else 0,
+            "default": bool(default),
+        }
+
+    @staticmethod
     def _to_out(m: Menu) -> ClientMenuOut:
+        qa = m.quick_action if isinstance(m.quick_action, dict) else None
         return ClientMenuOut(
             menuId=m.id,
             parentId=m.parent_id,
@@ -35,6 +65,14 @@ class ClientMenuService:
             createTime=(
                 m.created_at.strftime("%Y-%m-%d %H:%M:%S") if m.created_at else None
             ),
+            quickActionEnabled=qa is not None,
+            quickActionIcon=(qa or {}).get("icon"),
+            quickActionName=(qa or {}).get("name"),
+            quickActionColor=(qa or {}).get("color"),
+            quickActionLink=(qa or {}).get("link"),
+            quickActionGroup=(qa or {}).get("group"),
+            quickActionSort=(qa or {}).get("sort"),
+            quickActionDefault=bool((qa or {}).get("default", False)),
         )
 
     @staticmethod
@@ -79,6 +117,16 @@ class ClientMenuService:
             icon=data.icon,
             visible=0 if data.hide == 1 else 1,
             feature_code=data.featureCode,
+            quick_action=ClientMenuService._build_quick_action(
+                data.quickActionEnabled,
+                data.quickActionIcon,
+                data.quickActionName,
+                data.quickActionColor,
+                data.quickActionLink,
+                data.quickActionGroup,
+                data.quickActionSort,
+                data.quickActionDefault,
+            ),
             app_type="client",
             status=1,
         )
@@ -119,6 +167,19 @@ class ClientMenuService:
         if data.featureCode is not None:
             menu.feature_code = data.featureCode
 
+        # quickActionEnabled 提供时，整体重建 quick_action（表单保存会带全字段）
+        if data.quickActionEnabled is not None:
+            menu.quick_action = ClientMenuService._build_quick_action(
+                data.quickActionEnabled,
+                data.quickActionIcon,
+                data.quickActionName,
+                data.quickActionColor,
+                data.quickActionLink,
+                data.quickActionGroup,
+                data.quickActionSort,
+                data.quickActionDefault,
+            )
+
         await db.flush()
 
     @staticmethod
@@ -147,6 +208,7 @@ class ClientMenuService:
                 "status": m.status,
                 "app_type": m.app_type,
                 "feature_code": m.feature_code,
+                "quick_action": m.quick_action,
                 "id": m.id,
                 "created_at": (
                     m.created_at.strftime("%d/%m/%Y %H:%M:%S")

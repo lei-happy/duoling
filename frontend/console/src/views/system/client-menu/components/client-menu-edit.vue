@@ -197,6 +197,85 @@
           </el-form-item>
         </el-col>
       </el-row>
+      <el-divider style="margin: 8px 0 22px 0; opacity: 0.6" />
+      <el-row :gutter="16">
+        <el-col :span="24">
+          <el-form-item label="快捷操作">
+            <el-switch
+              inline-prompt
+              active-text="支持"
+              inactive-text="关闭"
+              v-model="form.quickActionEnabled"
+            />
+            <ele-tooltip
+              content="开启后，租户端用户可将该功能添加到首页工作台的快捷操作区"
+              :popper-style="{ maxWidth: '260px' }"
+            >
+              <el-icon :size="15" style="margin-left: 16px; cursor: help">
+                <QuestionCircleOutlined style="opacity: 0.6" />
+              </el-icon>
+            </ele-tooltip>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row v-if="form.quickActionEnabled" :gutter="16">
+        <el-col :sm="12" :xs="24">
+          <el-form-item label="专属图标">
+            <ImageUpload
+              v-model="form.quickActionIcon"
+              scene="quick_action"
+              :limit="1"
+              :fileLimit="2"
+            />
+          </el-form-item>
+          <el-form-item label="显示名称">
+            <el-input
+              clearable
+              :maxlength="20"
+              v-model="form.quickActionName"
+              placeholder="默认使用菜单名称"
+            />
+          </el-form-item>
+          <el-form-item label="图标底色">
+            <el-color-picker v-model="form.quickActionColor" />
+          </el-form-item>
+        </el-col>
+        <el-col :sm="12" :xs="24">
+          <el-form-item label="跳转链接">
+            <el-input
+              clearable
+              :maxlength="255"
+              v-model="form.quickActionLink"
+              placeholder="默认用路由地址，可带参数如 ?action=create"
+            />
+          </el-form-item>
+          <el-form-item label="分组名称">
+            <el-input
+              clearable
+              :maxlength="20"
+              v-model="form.quickActionGroup"
+              placeholder="默认取所属顶级菜单"
+            />
+          </el-form-item>
+          <el-form-item label="排序号">
+            <el-input-number
+              :min="0"
+              :max="9999"
+              v-model="form.quickActionSort"
+              controls-position="right"
+              class="ele-fluid"
+            />
+          </el-form-item>
+          <el-form-item label="默认展示">
+            <el-switch
+              inline-prompt
+              active-text="是"
+              inactive-text="否"
+              v-model="form.quickActionDefault"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
     </el-form>
     <template #footer>
       <btn-items
@@ -216,6 +295,7 @@
   import { QuestionCircleOutlined } from '@/components/icons';
   import { useFormData } from '@/utils/use-form-data';
   import MenuIconPreview from '@/components/IconSelect/components/menu-icon.vue';
+  import ImageUpload from '@/components/ImageUpload/index.vue';
   import ClientMenuSelect from './client-menu-select.vue';
   import { addClientMenu, updateClientMenu } from '@/api/system/client-menu';
   import { listFeatures } from '@/api/product';
@@ -253,7 +333,15 @@
     authority: '',
     sortNumber: void 0,
     hide: 0,
-    featureCode: ''
+    featureCode: '',
+    quickActionEnabled: false,
+    quickActionIcon: '',
+    quickActionName: '',
+    quickActionColor: '',
+    quickActionLink: '',
+    quickActionGroup: '',
+    quickActionSort: 0,
+    quickActionDefault: false
   });
 
   const rules = computed<FormRules>(() => {
@@ -320,8 +408,7 @@
           {
             required: true,
             type: 'string',
-            message:
-              form.openType === 1 ? '请输入内嵌地址' : '请输入组件路径',
+            message: form.openType === 1 ? '请输入内嵌地址' : '请输入组件路径',
             trigger: 'blur'
           },
           {

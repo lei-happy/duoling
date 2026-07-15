@@ -21,6 +21,22 @@ export interface ClientMenu {
   children?: ClientMenu[];
   /** 前端表单辅助字段 */
   openType?: number;
+  /** 快捷操作：是否支持设为首页快捷操作 */
+  quickActionEnabled?: boolean;
+  /** 快捷操作：专属图标 URL */
+  quickActionIcon?: string;
+  /** 快捷操作：显示名称（空则用菜单名） */
+  quickActionName?: string;
+  /** 快捷操作：图标底色 */
+  quickActionColor?: string;
+  /** 快捷操作：跳转链接（空则用路由地址，可带 query） */
+  quickActionLink?: string;
+  /** 快捷操作：管理弹窗分组 */
+  quickActionGroup?: string;
+  /** 快捷操作：排序权重 */
+  quickActionSort?: number;
+  /** 快捷操作：新用户默认展示 */
+  quickActionDefault?: boolean;
 }
 
 /**

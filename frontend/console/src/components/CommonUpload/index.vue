@@ -102,6 +102,8 @@
       locale?: Partial<UploadLocale>;
       /** 自定义文案 */
       componentLang?: CommonUploadLocale;
+      /** 上传场景目录（与后端 ALLOWED_SCENES 一致，默认 avatar） */
+      scene?: string;
     }>(),
     {
       fileLimit: 100,
@@ -193,13 +195,18 @@
     }
     item.status = 'uploading';
     item.progress = 0;
-    uploadApi(data.file, {
-      onUploadProgress: (e: AxiosProgressEvent) => {
-        if (e.total != null && item.status !== 'done') {
-          item.progress = (e.loaded / e.total) * 100;
+    uploadApi(
+      data.file,
+      {
+        onUploadProgress: (e: AxiosProgressEvent) => {
+          if (e.total != null && item.status !== 'done') {
+            item.progress = (e.loaded / e.total) * 100;
+          }
         }
-      }
-    })
+      },
+      undefined,
+      props.scene
+    )
       .then((res) => {
         item.progress = 100;
         item.status = 'done';

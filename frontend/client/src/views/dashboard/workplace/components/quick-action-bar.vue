@@ -35,7 +35,7 @@
               class="quick-action-item__img"
             />
             <el-icon v-else class="quick-action-item__icon-inner">
-              <component :is="item.icon" />
+              <AppstoreOutlined />
             </el-icon>
           </div>
           <div class="quick-action-item__title">{{ item.title }}</div>
@@ -70,37 +70,25 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+  import {
+    ref,
+    computed,
+    onMounted,
+    onBeforeUnmount,
+    watch,
+    nextTick
+  } from 'vue';
   import SortableJs from 'sortablejs';
   import type { ElRow } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
-  import {
-    PlusCircleOutlined,
-    AppstoreAddOutlined,
-    LogOutlined,
-    ShoppingOutlined,
-    UserOutlined,
-    ControlOutlined,
-    CopyOutlined,
-    TagOutlined,
-    MailOutlined,
-    EditOutlined
-  } from '@/components/icons';
+  import { AppstoreOutlined, EditOutlined } from '@/components/icons';
   import QuickActionPicker from './quick-action-picker.vue';
   import { useQuickActions } from '../quick-action/use-quick-actions';
   import type { QuickActionItem } from '../quick-action/types';
 
   defineOptions({
     components: {
-      PlusCircleOutlined,
-      AppstoreAddOutlined,
-      LogOutlined,
-      ShoppingOutlined,
-      UserOutlined,
-      ControlOutlined,
-      CopyOutlined,
-      TagOutlined,
-      MailOutlined,
+      AppstoreOutlined,
       EditOutlined,
       QuickActionPicker
     }

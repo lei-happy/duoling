@@ -2720,6 +2720,15 @@
           "comment": "路由路径"
         },
         {
+          "name": "quick_action",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "快捷操作配置(JSON)：null=不支持；含 icon/name/color/link/group/sort/default"
+        },
+        {
           "name": "sort_order",
           "type": "SMALLINT",
           "nullable": false,

@@ -7,16 +7,25 @@ import { storeToRefs } from 'pinia';
 import type { MenuItem } from 'ele-admin-plus/es/ele-pro-layout/types';
 import { useUserStore } from '@/store/modules/user';
 import { usePermission } from '@/utils/use-permission';
-import { saveWorkplaceConfig } from '@/api/home/workbench/quick-action';
+import {
+  getQuickActionRegistry,
+  saveWorkplaceConfig
+} from '@/api/home/workbench/quick-action';
 import {
   getDefaultQuickActionKeys,
   getQuickActionConfig,
+  getQuickActionRegistryList,
   getRegistryKeys,
+  normalizeQuickActionKey,
+  setQuickActionRegistry,
   QUICK_ACTION_CONFIG_VERSION,
-  QUICK_ACTION_MAX,
-  QUICK_ACTION_REGISTRY
+  QUICK_ACTION_MAX
 } from './quick-action-registry';
-import type { QuickActionConfig, QuickActionItem, WorkplaceConfig } from './types';
+import type {
+  QuickActionConfig,
+  QuickActionItem,
+  WorkplaceConfig
+} from './types';
 
 const LEGACY_CACHE_KEY = 'workplace-links';
 
@@ -68,8 +77,13 @@ function sanitizeKeys(keys: unknown): string[] {
   const registryKeys = new Set(getRegistryKeys());
   const seen = new Set<string>();
   const result: string[] = [];
-  for (const key of keys) {
-    if (typeof key !== 'string' || !registryKeys.has(key) || seen.has(key)) {
+  for (const raw of keys) {
+    if (typeof raw !== 'string') {
+      continue;
+    }
+    // 兼容历史 workplace_config 里的旧 key
+    const key = normalizeQuickActionKey(raw);
+    if (!registryKeys.has(key) || seen.has(key)) {
       continue;
     }
     seen.add(key);
@@ -111,7 +125,7 @@ export function useQuickActions() {
   };
 
   const accessibleRegistry = computed(() =>
-    QUICK_ACTION_REGISTRY.filter(isActionAccessible)
+    getQuickActionRegistryList().filter(isActionAccessible)
   );
 
   const accessibleKeySet = computed(
@@ -148,7 +162,15 @@ export function useQuickActions() {
     }
   };
 
-  const initFromUser = () => {
+  const initFromUser = async () => {
+    initialized.value = false;
+    try {
+      const registry = await getQuickActionRegistry();
+      setQuickActionRegistry(registry);
+    } catch (e) {
+      console.error('加载快捷操作目录失败', e);
+      setQuickActionRegistry([]);
+    }
     const serverKeys = parseServerConfig(userStore.info?.workplaceConfig);
     if (serverKeys.length) {
       setSelectedKeys(serverKeys, false);
@@ -159,6 +181,8 @@ export function useQuickActions() {
       });
       setSelectedKeys(defaults, false);
       if (defaults.length) {
+        // initialized 置真后再持久化，避免 setSelectedKeys 二次写入
+        initialized.value = true;
         persist();
       }
     }

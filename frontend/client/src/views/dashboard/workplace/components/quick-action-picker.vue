@@ -38,10 +38,20 @@
             :sm="12"
             :xs="24"
           >
-            <ele-card bordered :body-style="{ padding: '12px' }" class="picker-item">
+            <ele-card
+              bordered
+              :body-style="{ padding: '12px' }"
+              class="picker-item"
+            >
               <div class="picker-item-main">
-                <el-icon :style="{ color: item.color || '#69c0ff' }">
-                  <component :is="item.icon" />
+                <img
+                  v-if="item.image"
+                  :src="item.image"
+                  :alt="item.title"
+                  class="picker-item-img"
+                />
+                <el-icon v-else :style="{ color: item.color || '#69c0ff' }">
+                  <AppstoreOutlined />
                 </el-icon>
                 <span>{{ item.title }}</span>
               </div>
@@ -72,31 +82,13 @@
 
 <script lang="ts" setup>
   import { computed } from 'vue';
-  import {
-    PlusCircleOutlined,
-    AppstoreAddOutlined,
-    LogOutlined,
-    ShoppingOutlined,
-    UserOutlined,
-    ControlOutlined,
-    CopyOutlined,
-    TagOutlined,
-    MailOutlined
-  } from '@/components/icons';
+  import { AppstoreOutlined } from '@/components/icons';
   import { groupQuickActions } from '../quick-action/quick-action-registry';
   import type { QuickActionConfig } from '../quick-action/types';
 
   defineOptions({
     components: {
-      PlusCircleOutlined,
-      AppstoreAddOutlined,
-      LogOutlined,
-      ShoppingOutlined,
-      UserOutlined,
-      ControlOutlined,
-      CopyOutlined,
-      TagOutlined,
-      MailOutlined
+      AppstoreOutlined
     }
   });
 
@@ -185,6 +177,14 @@
 
     .el-icon {
       font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .picker-item-img {
+      width: 20px;
+      height: 20px;
+      object-fit: cover;
+      border-radius: 4px;
       flex-shrink: 0;
     }
 
