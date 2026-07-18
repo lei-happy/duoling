@@ -8,51 +8,64 @@
     <template #extra>
       <more-icon :hide-edit="true" @command="handleCommand" />
     </template>
-    <el-scrollbar height="100%" :view-style="{ padding: '20px 20px 0 20px' }">
+    <el-scrollbar
+      ref="scrollbarRef"
+      :view-style="{ padding: '20px 20px 0 20px' }"
+    >
       <div v-if="loading" class="activities-loading">
         <el-skeleton :rows="6" animated />
       </div>
       <el-empty v-else-if="!activities.length" description="今日暂无动态" />
-      <el-timeline
-        v-else
-        :reverse="false"
-        class="demo-timeline activities-timeline"
-      >
-        <el-timeline-item
-          v-for="{ item, parts } in activityRows"
-          :key="item.id"
-          placement="top"
-          :timestamp="item.display_time"
-          :color="scenarioColor(item.event_code)"
-          :hollow="timelineHollow(item.event_code)"
-          :style="timelineItemVars(item.event_code)"
-          :class="{
-            'activity-tl-item--node-dashed':
-              nodeKind(item.event_code) === 'hollow-dashed'
-          }"
+      <template v-else>
+        <el-timeline
+          :reverse="false"
+          class="demo-timeline activities-timeline"
         >
-          <div
-            class="activity-summary"
-            :class="{ 'activity-summary--new': newPulseIds.has(item.id) }"
+          <el-timeline-item
+            v-for="{ item, parts } in activityRows"
+            :key="item.id"
+            placement="top"
+            :timestamp="item.display_time"
+            :color="scenarioColor(item.event_code)"
+            :hollow="timelineHollow(item.event_code)"
+            :style="timelineItemVars(item.event_code)"
+            :class="{
+              'activity-tl-item--node-dashed':
+                nodeKind(item.event_code) === 'hollow-dashed'
+            }"
           >
-            <template v-if="parts.actor">
-              <span class="activity-summary__plain">{{ parts.before }}</span>
-              <span class="activity-summary__actor">{{ parts.actor }}</span>
-              <span class="activity-summary__plain">{{ parts.after }}</span>
-            </template>
-            <template v-else>{{ item.summary }}</template>
-          </div>
-        </el-timeline-item>
-      </el-timeline>
+            <div
+              class="activity-summary"
+              :class="{ 'activity-summary--new': newPulseIds.has(item.id) }"
+            >
+              <template v-if="parts.actor">
+                <span class="activity-summary__plain">{{ parts.before }}</span>
+                <span class="activity-summary__actor">{{ parts.actor }}</span>
+                <span class="activity-summary__plain">{{ parts.after }}</span>
+              </template>
+              <template v-else>{{ item.summary }}</template>
+            </div>
+          </el-timeline-item>
+        </el-timeline>
+
+        <div v-if="loadingMore" class="activities-load-more">
+          <el-skeleton :rows="2" animated />
+        </div>
+        <div v-else-if="!hasMore" class="activities-no-more">
+          <span>已加载全部动态</span>
+        </div>
+      </template>
     </el-scrollbar>
   </ele-card>
 </template>
 
 <script lang="ts" setup>
-  import { computed, onMounted, onUnmounted, ref } from 'vue';
+  import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
   import MoreIcon from './more-icon.vue';
   import type { Command } from '../model';
+  import { ACTIVITIES_PAGE_SIZE } from '../layout';
+  import type { ElScrollbarInstance } from '@/components/ele-app/el';
   import {
     getCompanyActivities,
     type CompanyActivityItem
@@ -68,14 +81,21 @@
 
   const activities = ref<CompanyActivityItem[]>([]);
   const loading = ref(false);
+  const loadingMore = ref(false);
+  const currentPage = ref(1);
+  const hasMore = ref(true);
   const newPulseIds = ref<Set<number>>(new Set());
   /** 已展示过的 id，用于检测轮询/手动刷新后的新动态 */
   const seenActivityIds = ref<Set<number>>(new Set());
+  const scrollbarRef = ref<ElScrollbarInstance>(null);
+  let scrollWrapEl: HTMLElement | null = null;
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let newPulseClearTimer: number | null = null;
 
   /** 自动刷新间隔（毫秒） */
   const POLL_MS = 30_000;
+  /** 距底部多少 px 时触发加载下一页 */
+  const SCROLL_LOAD_THRESHOLD = 80;
 
   type NodeKind = 'solid' | 'hollow' | 'hollow-dashed';
 
@@ -168,7 +188,9 @@
         arrived.add(it.id);
       }
     }
-    seenActivityIds.value = new Set(items.map((x) => x.id));
+    for (const it of items) {
+      seenActivityIds.value.add(it.id);
+    }
     if (arrived.size === 0) {
       return;
     }
@@ -179,41 +201,147 @@
     }, 1800);
   };
 
-  const loadActivities = async (silent = false) => {
-    if (!silent) {
-      loading.value = true;
+  const mergeFirstPageUpdates = (firstPageItems: CompanyActivityItem[]) => {
+    markNewItemsAfterFetch(firstPageItems);
+    const existingIds = new Set(activities.value.map((x) => x.id));
+    const prepend = firstPageItems.filter((x) => !existingIds.has(x.id));
+    if (prepend.length === 0) {
+      return;
     }
+    activities.value = [...prepend, ...activities.value];
+  };
+
+  const loadActivities = async (reset = false, silent = false) => {
+    if (reset) {
+      if (!silent) {
+        loading.value = true;
+      }
+      currentPage.value = 1;
+      hasMore.value = true;
+    } else {
+      if (loadingMore.value || !hasMore.value) {
+        return;
+      }
+      loadingMore.value = true;
+    }
+
     try {
-      const res = await getCompanyActivities({ limit: 50 });
-      const items = res.data.data?.items ?? [];
-      markNewItemsAfterFetch(items);
-      activities.value = items;
+      const res = await getCompanyActivities({
+        page: currentPage.value,
+        page_size: ACTIVITIES_PAGE_SIZE
+      });
+      const data = res.data.data;
+      const items = data?.items ?? [];
+      const totalPages = data?.pages ?? 1;
+
+      if (reset) {
+        if (silent && activities.value.length > 0) {
+          mergeFirstPageUpdates(items);
+        } else {
+          activities.value = items;
+          seenActivityIds.value = new Set(items.map((x) => x.id));
+          newPulseIds.value = new Set();
+        }
+      } else {
+        activities.value.push(...items);
+        for (const it of items) {
+          seenActivityIds.value.add(it.id);
+        }
+      }
+
+      hasMore.value = currentPage.value < totalPages;
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : '加载失败';
-      EleMessage.error(msg);
+      if (!silent) {
+        const msg = e instanceof Error ? e.message : '加载失败';
+        EleMessage.error(msg);
+      }
     } finally {
       if (!silent) {
         loading.value = false;
       }
+      loadingMore.value = false;
+      await nextTick();
+      attachScrollLoad();
     }
+  };
+
+  const loadMoreActivities = async () => {
+    if (!hasMore.value || loadingMore.value || loading.value) {
+      return;
+    }
+    currentPage.value += 1;
+    await loadActivities(false, true);
+  };
+
+  const getScrollWrap = (): HTMLElement | null => {
+    const root = scrollbarRef.value?.$el as HTMLElement | undefined;
+    return root?.querySelector('.el-scrollbar__wrap') ?? null;
+  };
+
+  const tryLoadMoreOnScroll = () => {
+    if (
+      !scrollWrapEl ||
+      loading.value ||
+      loadingMore.value ||
+      !hasMore.value
+    ) {
+      return;
+    }
+    const { scrollTop, scrollHeight, clientHeight } = scrollWrapEl;
+    if (scrollHeight - scrollTop - clientHeight <= SCROLL_LOAD_THRESHOLD) {
+      loadMoreActivities();
+    }
+  };
+
+  const fillScrollViewport = () => {
+    if (
+      !scrollWrapEl ||
+      !hasMore.value ||
+      loading.value ||
+      loadingMore.value
+    ) {
+      return;
+    }
+    if (
+      scrollWrapEl.scrollHeight <=
+      scrollWrapEl.clientHeight + SCROLL_LOAD_THRESHOLD
+    ) {
+      loadMoreActivities();
+    }
+  };
+
+  const attachScrollLoad = () => {
+    cleanupScrollLoad();
+    scrollWrapEl = getScrollWrap();
+    scrollWrapEl?.addEventListener('scroll', tryLoadMoreOnScroll, {
+      passive: true
+    });
+    fillScrollViewport();
+  };
+
+  const cleanupScrollLoad = () => {
+    scrollWrapEl?.removeEventListener('scroll', tryLoadMoreOnScroll);
+    scrollWrapEl = null;
   };
 
   const handleCommand = (command: Command) => {
     if (command === 'refresh') {
-      loadActivities(false);
+      seenActivityIds.value = new Set();
+      loadActivities(true, false);
       return;
     }
     emit('command', command);
   };
 
   onMounted(() => {
-    loadActivities(false);
+    loadActivities(true, false);
     pollTimer = setInterval(() => {
-      loadActivities(true);
+      loadActivities(true, true);
     }, POLL_MS);
   });
 
   onUnmounted(() => {
+    cleanupScrollLoad();
     if (pollTimer) {
       clearInterval(pollTimer);
       pollTimer = null;
@@ -226,9 +354,8 @@
 </script>
 
 <style lang="scss" scoped>
-  /* 卡片撑满右列高度并封顶，内部动态列表滚动（与我的待办等高） */
+  /* 高度由父级同步为与我的待办一致，内部动态列表滚动 */
   .activities-card {
-    flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -249,6 +376,7 @@
     :deep(.el-scrollbar) {
       flex: 1;
       min-height: 0;
+      height: 0;
     }
   }
 
@@ -259,6 +387,17 @@
 
   .activities-loading {
     padding: 8px 0;
+  }
+
+  .activities-load-more {
+    padding: 8px 0 16px;
+  }
+
+  .activities-no-more {
+    padding: 12px 0 16px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
   }
 
   .activity-summary {

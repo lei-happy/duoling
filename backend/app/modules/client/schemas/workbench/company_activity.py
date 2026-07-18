@@ -23,6 +23,10 @@ class CompanyActivityItem(BaseModel):
 
 class CompanyActivityListOut(BaseModel):
     items: List[CompanyActivityItem]
+    total: int
+    page: int
+    page_size: int
+    pages: int
 
 
 class CompanyActivityDemoSeedOut(BaseModel):

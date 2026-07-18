@@ -32,16 +32,27 @@ def _require_tenant(current_user: TokenData) -> str:
 
 @router.get("")
 async def list_activities(
-    limit: int = Query(50, ge=1, le=100),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     current_user: TokenData = Depends(get_current_user),
     tenant_db: AsyncSession = Depends(get_tenant_db),
     _: None = Depends(ensure_biz_company_activity_table),
 ):
-    """当日企业动态列表（最新在上）"""
+    """当日企业动态列表（最新在上，分页）"""
     _require_tenant(current_user)
-    raw = await CompanyActivityService.list_today(tenant_db, limit=limit)
-    items = [CompanyActivityItem.model_validate(x) for x in raw]
-    return success(data=CompanyActivityListOut(items=items).model_dump(mode="json"))
+    raw = await CompanyActivityService.page_today(
+        tenant_db, page=page, page_size=page_size
+    )
+    items = [CompanyActivityItem.model_validate(x) for x in raw["items"]]
+    return success(
+        data=CompanyActivityListOut(
+            items=items,
+            total=raw["total"],
+            page=raw["page"],
+            page_size=raw["page_size"],
+            pages=raw["pages"],
+        ).model_dump(mode="json")
+    )
 
 
 @router.post("/demo-seed")

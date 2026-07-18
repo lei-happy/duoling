@@ -39,7 +39,10 @@
       </div>
     </template>
 
-    <el-scrollbar :view-style="{ padding: '0px 20px 0 20px' }">
+    <el-scrollbar
+      ref="scrollbarRef"
+      :view-style="{ padding: '0px 20px 0 20px' }"
+    >
       <div v-if="loading" class="task-loading">
         <el-skeleton :rows="5" animated />
       </div>
@@ -195,7 +198,6 @@
         <!-- 加载更多指示器 -->
         <div
           v-if="hasMore && !loading"
-          ref="loadMoreTrigger"
           class="load-more-trigger"
         >
           <div v-if="loadingMore" class="loading-more">
@@ -452,6 +454,8 @@
   } from '@element-plus/icons-vue';
   import MoreIcon from './more-icon.vue';
   import type { Command } from '../model';
+  import { TODO_PAGE_SIZE } from '../layout';
+  import type { ElScrollbarInstance } from '@/components/ele-app/el';
 
   import {
     getTodoTaskList,
@@ -509,7 +513,7 @@
 
   // 分页相关状态
   const currentPage = ref(1);
-  const pageSize = ref(50);
+  const pageSize = ref(TODO_PAGE_SIZE);
   const hasMore = ref(true);
   const loadingMore = ref(false);
 
@@ -545,8 +549,10 @@
   const searchLoading = ref(false);
 
   // 滚动加载相关
-  const loadMoreTrigger = ref<HTMLElement>();
-  const observer = ref<IntersectionObserver | null>(null);
+  const scrollbarRef = ref<ElScrollbarInstance>(null);
+  let scrollWrapEl: HTMLElement | null = null;
+  /** 距底部多少 px 时触发加载下一页 */
+  const SCROLL_LOAD_THRESHOLD = 80;
 
   // 表单验证规则
   const createRules = {
@@ -618,6 +624,8 @@
     } finally {
       loading.value = false;
       loadingMore.value = false;
+      await nextTick();
+      attachScrollLoad();
     }
   };
 
@@ -1035,47 +1043,64 @@
     emit('command', cmd as Command);
   };
 
-  // 初始化滚动加载监听器
-  const initInfiniteScroll = () => {
-    if (!loadMoreTrigger.value || observer.value) return;
-
-    observer.value = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && hasMore.value && !loadingMore.value) {
-          loadMoreTasks();
-        }
-      },
-      {
-        root: null,
-        rootMargin: '20px',
-        threshold: 0.1
-      }
-    );
-
-    observer.value.observe(loadMoreTrigger.value);
+  const getScrollWrap = (): HTMLElement | null => {
+    const root = scrollbarRef.value?.$el as HTMLElement | undefined;
+    return root?.querySelector('.el-scrollbar__wrap') ?? null;
   };
 
-  // 清理观察器
-  const cleanupObserver = () => {
-    if (observer.value) {
-      observer.value.disconnect();
-      observer.value = null;
+  const tryLoadMoreOnScroll = () => {
+    if (
+      !scrollWrapEl ||
+      loading.value ||
+      loadingMore.value ||
+      !hasMore.value
+    ) {
+      return;
+    }
+    const { scrollTop, scrollHeight, clientHeight } = scrollWrapEl;
+    if (scrollHeight - scrollTop - clientHeight <= SCROLL_LOAD_THRESHOLD) {
+      loadMoreTasks();
     }
   };
 
-  // 生命周期
-  onMounted(async () => {
-    // 同时获取任务列表和统计信息
-    await Promise.all([fetchTasks(), fetchStats(), fetchAllUsers()]);
+  const attachScrollLoad = () => {
+    cleanupScrollLoad();
+    scrollWrapEl = getScrollWrap();
+    scrollWrapEl?.addEventListener('scroll', tryLoadMoreOnScroll, {
+      passive: true
+    });
+    fillScrollViewport();
+  };
 
-    // 使用 nextTick 确保DOM已渲染
-    await nextTick();
-    initInfiniteScroll();
+  /** 首屏不足一屏时继续加载，直至可滚动或无更多数据 */
+  const fillScrollViewport = () => {
+    if (
+      !scrollWrapEl ||
+      !hasMore.value ||
+      loading.value ||
+      loadingMore.value
+    ) {
+      return;
+    }
+    if (
+      scrollWrapEl.scrollHeight <=
+      scrollWrapEl.clientHeight + SCROLL_LOAD_THRESHOLD
+    ) {
+      loadMoreTasks();
+    }
+  };
+
+  const cleanupScrollLoad = () => {
+    scrollWrapEl?.removeEventListener('scroll', tryLoadMoreOnScroll);
+    scrollWrapEl = null;
+  };
+
+  onMounted(async () => {
+    await Promise.all([fetchTasks(), fetchStats(), fetchAllUsers()]);
   });
 
   onUnmounted(() => {
-    cleanupObserver();
+    cleanupScrollLoad();
   });
 </script>
 
@@ -1083,8 +1108,11 @@
   // ============ 卡片基础样式 ============
   .todo-card {
     /* 弹性填充左列，底部与右列最新动态对齐；内部列表滚动 */
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 
     :deep(.ele-card-header) {
       align-items: center;
@@ -1101,6 +1129,7 @@
     :deep(.el-scrollbar) {
       flex: 1;
       min-height: 0;
+      height: 0;
     }
   }
 

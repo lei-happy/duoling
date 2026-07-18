@@ -20,10 +20,19 @@ export type CompanyActivityItem = {
 
 export type CompanyActivityListData = {
   items: CompanyActivityItem[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
 };
 
-/** 当日企业动态列表 */
-export async function getCompanyActivities(params?: { limit?: number }) {
+export type CompanyActivityListParams = {
+  page?: number;
+  page_size?: number;
+};
+
+/** 当日企业动态列表（分页） */
+export async function getCompanyActivities(params?: CompanyActivityListParams) {
   const res = await request.get<ApiResult<CompanyActivityListData>>(
     '/workbench/activities',
     { params }

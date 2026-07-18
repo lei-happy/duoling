@@ -6,11 +6,12 @@
 
 from __future__ import annotations
 
+import math
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.client.models.user.biz_user import BizUser
@@ -44,42 +45,67 @@ class CompanyActivityService:
         return dt.strftime("%H:%M")
 
     @staticmethod
+    def _today_filter():
+        start_naive, end_naive = CompanyActivityService._shanghai_day_bounds_naive()
+        return and_(
+            BizCompanyActivity.is_deleted == 0,
+            BizCompanyActivity.occurred_at >= start_naive,
+            BizCompanyActivity.occurred_at < end_naive,
+        )
+
+    @staticmethod
+    def _row_to_item(row: BizCompanyActivity) -> Dict[str, Any]:
+        return {
+            "id": row.id,
+            "occurred_at": row.occurred_at,
+            "display_time": CompanyActivityService._format_display_time(row.occurred_at),
+            "summary": row.summary,
+            "event_code": row.event_code,
+            "actor_display_name": row.actor_display_name,
+        }
+
+    @staticmethod
     async def list_today(
         db: AsyncSession,
         *,
         limit: int = 50,
     ) -> List[Dict[str, Any]]:
-        start_naive, end_naive = CompanyActivityService._shanghai_day_bounds_naive()
+        page = await CompanyActivityService.page_today(
+            db, page=1, page_size=limit
+        )
+        return page["items"]
+
+    @staticmethod
+    async def page_today(
+        db: AsyncSession,
+        *,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> Dict[str, Any]:
+        today_filter = CompanyActivityService._today_filter()
+        count_q = select(func.count()).select_from(BizCompanyActivity).where(
+            today_filter
+        )
+        total = (await db.execute(count_q)).scalar() or 0
+        pages = max(1, math.ceil(total / page_size)) if page_size else 1
+
         q = (
             select(BizCompanyActivity)
-            .where(
-                and_(
-                    BizCompanyActivity.is_deleted == 0,
-                    BizCompanyActivity.occurred_at >= start_naive,
-                    BizCompanyActivity.occurred_at < end_naive,
-                )
-            )
+            .where(today_filter)
             .order_by(BizCompanyActivity.occurred_at.desc())
-            .limit(limit)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
         )
         result = await db.execute(q)
         rows = result.scalars().all()
-
-        items: List[Dict[str, Any]] = []
-        for row in rows:
-            items.append(
-                {
-                    "id": row.id,
-                    "occurred_at": row.occurred_at,
-                    "display_time": CompanyActivityService._format_display_time(
-                        row.occurred_at
-                    ),
-                    "summary": row.summary,
-                    "event_code": row.event_code,
-                    "actor_display_name": row.actor_display_name,
-                }
-            )
-        return items
+        items = [CompanyActivityService._row_to_item(row) for row in rows]
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "pages": pages,
+        }
 
     @staticmethod
     async def record(

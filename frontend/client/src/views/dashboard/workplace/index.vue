@@ -5,8 +5,13 @@
       <el-col :md="16" :sm="24" :xs="24" class="workplace-col">
         <div ref="leftStackRef" class="workplace-stack">
           <banner-card ref="bannerCardRef" :height="topRowHeight" />
-          <quick-action-bar />
-          <todo-card title="我的待办" class="workplace-todo" />
+          <quick-action-bar ref="quickActionBarRef" />
+          <todo-card
+            title="我的待办"
+            class="workplace-todo"
+            :class="{ 'is-region-synced': !!todoRegionHeight }"
+            :style="todoRegionStyle"
+          />
         </div>
       </el-col>
       <!-- 右列：用户问候 + 最新动态 -->
@@ -16,6 +21,7 @@
           <activities-card
             title="最新动态"
             class="workplace-activities"
+            :class="{ 'is-region-synced': !!activitiesRegionHeight }"
             :style="activitiesStyle"
           />
         </div>
@@ -41,7 +47,9 @@
   import TodoCard from './components/todo-card.vue';
   import {
     BANNER_IMAGE_ASPECT_RATIO,
-    WORKPLACE_STACK_BREAKPOINT
+    WORKPLACE_STACK_BREAKPOINT,
+    WORKPLACE_STACK_GAP,
+    getTodoRegionHeightPx
   } from './layout';
 
   defineOptions({
@@ -54,18 +62,42 @@
   const profileCardRef = ref<InstanceType<typeof ProfileCard> | null>(null);
   /** 左列容器，用于测量实际高度 */
   const leftStackRef = ref<HTMLElement>();
+  /** 快捷操作，用于与最新动态顶部对齐 */
+  const quickActionBarRef = ref<InstanceType<typeof QuickActionBar> | null>(
+    null
+  );
   /** Banner 定高后注入两侧，保证等高且容器恒为 5:1 */
   const topRowHeight = ref<string>();
-  /** 最新动态卡片高度（由左列高度精确计算，保证两列底部对齐） */
-  const activitiesHeight = ref<string>();
-  /** 右列卡片间距，与 .workplace-stack 的 gap 保持一致 */
-  const STACK_GAP = 10;
+  /** 我的待办固定高度（约 6~8 条） */
+  const todoRegionHeight = ref<string>();
+  /** 最新动态高度（顶对齐快捷操作、底对齐我的待办） */
+  const activitiesRegionHeight = ref<string>();
   /** 小屏断点，堆叠时不强制等高 */
   const STACK_BREAKPOINT = WORKPLACE_STACK_BREAKPOINT;
+  /** 卡片间距，与 .workplace-stack gap 一致 */
+  const STACK_GAP = WORKPLACE_STACK_GAP;
 
-  const activitiesStyle = computed<CSSProperties | undefined>(() =>
-    activitiesHeight.value ? { height: activitiesHeight.value } : undefined
-  );
+  const todoRegionStyle = computed<CSSProperties | undefined>(() => {
+    if (!todoRegionHeight.value) return undefined;
+    return {
+      height: todoRegionHeight.value,
+      maxHeight: todoRegionHeight.value
+    };
+  });
+
+  const activitiesStyle = computed<CSSProperties | undefined>(() => {
+    if (!activitiesRegionHeight.value) return undefined;
+    const style: CSSProperties = {
+      height: activitiesRegionHeight.value,
+      maxHeight: activitiesRegionHeight.value
+    };
+    if (activitiesTopOffset.value) {
+      style.marginTop = activitiesTopOffset.value;
+    }
+    return style;
+  });
+  /** 校正 Profile 与 Banner 高度差，使最新动态顶与快捷操作对齐 */
+  const activitiesTopOffset = ref<string>();
 
   /** 观察左列：仅同步最新动态高度 */
   let stackObserver: ResizeObserver | null = null;
@@ -79,28 +111,62 @@
   ): HTMLElement | undefined => card?.$el;
 
   /**
-   * 以左列实际高度为基准，反推最新动态卡片高度：
-   * 左列高度 = 用户问候高度 + 间距 + 最新动态高度
-   * 因此最新动态高度 = 左列高度 - 用户问候高度 - 间距
+   * 待办固定一屏 6~8 条；最新动态高度 = 快捷操作高 + 间距 + 待办高，
+   * 使动态顶对齐快捷操作、底对齐我的待办。
    */
-  const syncActivitiesHeight = () => {
+  const syncStackRegionHeight = () => {
     if (window.innerWidth <= STACK_BREAKPOINT) {
-      if (activitiesHeight.value !== undefined) {
-        activitiesHeight.value = undefined;
+      if (todoRegionHeight.value !== undefined) {
+        todoRegionHeight.value = undefined;
+      }
+      if (activitiesRegionHeight.value !== undefined) {
+        activitiesRegionHeight.value = undefined;
+      }
+      if (activitiesTopOffset.value !== undefined) {
+        activitiesTopOffset.value = undefined;
       }
       return;
     }
-    const leftEl = leftStackRef.value;
+    const quickEl = getCardEl(quickActionBarRef.value);
     const profileEl = getCardEl(profileCardRef.value);
-    if (!leftEl || !profileEl) {
-      activitiesHeight.value = undefined;
+    if (!quickEl) {
+      todoRegionHeight.value = undefined;
+      activitiesRegionHeight.value = undefined;
+      activitiesTopOffset.value = undefined;
       return;
     }
-    const height = leftEl.offsetHeight - profileEl.offsetHeight - STACK_GAP;
-    const next = height > 0 ? `${height}px` : undefined;
-    if (activitiesHeight.value !== next) {
-      activitiesHeight.value = next;
+
+    const todoHeightPx = getTodoRegionHeightPx();
+    const activitiesHeightPx =
+      quickEl.offsetHeight + STACK_GAP + todoHeightPx;
+    const nextTodoHeight = `${todoHeightPx}px`;
+    const nextActivitiesHeight = `${activitiesHeightPx}px`;
+
+    if (todoRegionHeight.value !== nextTodoHeight) {
+      todoRegionHeight.value = nextTodoHeight;
     }
+    if (activitiesRegionHeight.value !== nextActivitiesHeight) {
+      activitiesRegionHeight.value = nextActivitiesHeight;
+    }
+
+    if (profileEl) {
+      const quickTop = quickEl.getBoundingClientRect().top;
+      const naturalTop =
+        profileEl.getBoundingClientRect().bottom + STACK_GAP;
+      const offset = Math.round(quickTop - naturalTop);
+      const nextOffset = offset !== 0 ? `${offset}px` : undefined;
+      if (activitiesTopOffset.value !== nextOffset) {
+        activitiesTopOffset.value = nextOffset;
+      }
+    }
+  };
+
+  const observeActivitiesAnchors = () => {
+    if (!stackObserver) return;
+    const quickEl = getCardEl(quickActionBarRef.value);
+    const profileEl = getCardEl(profileCardRef.value);
+    if (quickEl) stackObserver.observe(quickEl);
+    if (profileEl) stackObserver.observe(profileEl);
   };
 
   const observeBanner = () => {
@@ -120,7 +186,7 @@
         topRowHeight.value = undefined;
       }
       cachedBannerWidth = 0;
-      syncActivitiesHeight();
+      syncStackRegionHeight();
       return;
     }
 
@@ -135,7 +201,7 @@
     const next = `${target}px`;
 
     if (!widthChanged && topRowHeight.value === next) {
-      syncActivitiesHeight();
+      syncStackRegionHeight();
       return;
     }
 
@@ -143,26 +209,27 @@
     if (topRowHeight.value !== next) {
       topRowHeight.value = next;
     }
-    nextTick(syncActivitiesHeight);
+    nextTick(syncStackRegionHeight);
   };
 
   const scheduleTopRowSync = () => {
     nextTick(syncTopRowHeight);
   };
 
-  const scheduleActivitiesSync = () => {
-    nextTick(syncActivitiesHeight);
+  const scheduleStackRegionSync = () => {
+    nextTick(syncStackRegionHeight);
   };
 
   onMounted(() => {
     scheduleTopRowSync();
 
     stackObserver = new ResizeObserver(() => {
-      scheduleActivitiesSync();
+      scheduleStackRegionSync();
     });
     if (leftStackRef.value) {
       stackObserver.observe(leftStackRef.value);
     }
+    nextTick(observeActivitiesAnchors);
 
     topRowObserver = new ResizeObserver(() => {
       scheduleTopRowSync();
@@ -212,21 +279,28 @@
     }
   }
 
-  /* 右列最新动态高度由 JS 依据左列实际高度精确计算并写入行内 height；
-     flex:1 1 auto 让行内 height 作为 flex-basis（打破"内容撑高整行"的循环），
-     grow/shrink + min-height:0 兜底保证底部与左列对齐、内部滚动 */
+  /* 右列最新动态：顶对齐快捷操作、底对齐我的待办，高度由 JS 写入，内部滚动 */
   .workplace-stack--right {
     .workplace-activities {
       flex: 1 1 auto;
       min-height: 0;
+      overflow: hidden;
+
+      &.is-region-synced {
+        flex: 0 0 auto;
+      }
     }
   }
 
-  /* 左列我的待办弹性填充剩余高度，使其底部与右列最新动态底部对齐，
-     内容超出时卡片内部滚动 */
+  /* 左列我的待办：高度封顶，内容超出时卡片内部滚动 */
   .workplace-stack .workplace-todo {
     flex: 1 1 auto;
     min-height: 0;
+    overflow: hidden;
+
+    &.is-region-synced {
+      flex: 0 0 auto;
+    }
   }
 
   /* 小屏下两列堆叠，右列间距补齐 */
