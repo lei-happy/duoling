@@ -5,39 +5,29 @@
       <section class="brand-panel">
         <div class="brand-grid" aria-hidden="true"></div>
 
-        <div class="brand-content">
-          <!-- 品牌 -->
-          <Motion
-            as="div"
-            class="brand-logo"
-            :initial="{ opacity: 0, y: -12 }"
-            :animate="{ opacity: 1, y: 0 }"
-            :transition="{ duration: 0.5, ease: EASE }"
-          >
-            <img class="brand-logo-img" src="@/assets/logo.svg" alt="logo" />
-            <div class="brand-logo-text">
-              <span class="brand-logo-name">{{ PROJECT_NAME }}</span>
-              <span class="brand-logo-sub">数字化经营操作系统</span>
-            </div>
-          </Motion>
+        <!-- 品牌：固定左上角，对齐常见产品官网位置 -->
+        <Motion
+          as="div"
+          class="brand-logo"
+          :initial="{ opacity: 0, y: -12 }"
+          :animate="{ opacity: 1, y: 0 }"
+          :transition="{ duration: 0.5, ease: EASE }"
+        >
+          <img class="brand-logo-img" src="@/assets/logo.svg" alt="logo" />
+          <div class="brand-logo-text">
+            <span class="brand-logo-name">{{ PROJECT_NAME }}</span>
+            <span class="brand-logo-sub">数字化经营操作系统</span>
+          </div>
+        </Motion>
 
+        <div class="brand-content">
           <div class="brand-hero">
-            <Motion
-              as="p"
-              class="eyebrow"
-              :initial="{ opacity: 0, y: 10 }"
-              :animate="{ opacity: 1, y: 0 }"
-              :transition="{ duration: 0.5, delay: 0.05, ease: EASE }"
-            >
-              <span class="eyebrow-line"></span>
-              运输 · 经营 · 决策
-            </Motion>
             <Motion
               as="h1"
               class="brand-title"
               :initial="{ opacity: 0, y: 18 }"
               :animate="{ opacity: 1, y: 0 }"
-              :transition="{ duration: 0.6, delay: 0.12, ease: EASE }"
+              :transition="{ duration: 0.6, delay: 0.08, ease: EASE }"
             >
               把运输经营装进一块看板，<br />
               让每天的决策<span class="ink-underline">有数可依</span>。
@@ -47,7 +37,7 @@
               class="brand-desc"
               :initial="{ opacity: 0, y: 18 }"
               :animate="{ opacity: 1, y: 0 }"
-              :transition="{ duration: 0.6, delay: 0.2, ease: EASE }"
+              :transition="{ duration: 0.6, delay: 0.16, ease: EASE }"
             >
               打通计划、配载、调度、在途到回单结算，收入、成本、利润与时效实时归集，异常自动预警。
             </Motion>
@@ -163,9 +153,7 @@
     <section class="form-panel">
       <div class="form-wrapper">
         <div class="form-head">
-          <p class="form-head-eyebrow">WELCOME BACK</p>
           <h2 class="form-head-title">欢迎登录</h2>
-          <p class="form-head-sub">登录后进入企业数字化经营平台</p>
         </div>
 
         <!-- 登录方式 Tab -->
@@ -298,7 +286,7 @@
 
         <div class="form-safe-tip">
           <el-icon><Lock /></el-icon>
-          <span>安全、稳定、统一的企业经营平台</span>
+          <span>安全、稳定、实时的企业经营平台</span>
         </div>
       </div>
 
@@ -1084,11 +1072,11 @@
   .brand-content {
     position: relative;
     z-index: 1;
-    width: 100%;
-    max-width: 560px;
+    width: min(780px, 100%);
     height: 100%;
     margin: 0 auto;
-    padding: clamp(30px, 5.5vh, 66px) clamp(36px, 4.6vw, 76px);
+    padding: clamp(64px, 9vh, 96px) clamp(40px, 5.5vw, 96px)
+      clamp(30px, 5.5vh, 66px);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -1097,6 +1085,10 @@
   }
 
   .brand-logo {
+    position: absolute;
+    top: clamp(22px, 3.2vh, 36px);
+    left: clamp(28px, 3.2vw, 48px);
+    z-index: 2;
     display: flex;
     align-items: center;
     gap: 11px;
@@ -1132,27 +1124,9 @@
     margin: 0;
   }
 
-  .eyebrow {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0 0 14px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    color: rgba(255, 255, 255, 0.85);
-  }
-
-  .eyebrow-line {
-    width: 20px;
-    height: 2px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.7);
-  }
-
   .brand-title {
     margin: 0 0 14px;
-    font-size: clamp(23px, 2.5vw, 32px);
+    font-size: clamp(24px, 2.2vw, 34px);
     font-weight: 700;
     line-height: 1.45;
     letter-spacing: 0.3px;
@@ -1181,7 +1155,7 @@
 
   .brand-desc {
     margin: 0;
-    max-width: 470px;
+    max-width: 36em;
     font-size: 14px;
     line-height: 1.85;
     color: rgba(255, 255, 255, 0.72);
@@ -1572,25 +1546,11 @@
     margin-bottom: 34px;
   }
 
-  .form-head-eyebrow {
-    margin: 0 0 10px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    color: var(--brand);
-  }
-
   .form-head-title {
-    margin: 0 0 8px;
+    margin: 0;
     font-size: 28px;
     font-weight: 700;
     color: #0f172a;
-  }
-
-  .form-head-sub {
-    margin: 0;
-    font-size: 14px;
-    color: #94a3b8;
   }
 
   .form-body {
@@ -1779,10 +1739,24 @@
     flex-shrink: 0;
   }
 
+  /* 超宽屏：内容区再放宽，避免大片留白 */
+  @media screen and (min-width: 1440px) {
+    .brand-content {
+      width: min(880px, 100%);
+      padding-left: clamp(56px, 6vw, 112px);
+      padding-right: clamp(56px, 6vw, 112px);
+    }
+  }
+
   /* 中等屏幕：收窄看板面板 */
   @media screen and (max-width: 1180px) {
     .brand-content {
-      padding: clamp(28px, 5vh, 52px) clamp(28px, 3.6vw, 52px);
+      padding: clamp(56px, 8vh, 80px) clamp(28px, 3.6vw, 52px)
+        clamp(28px, 5vh, 52px);
+    }
+
+    .brand-logo {
+      left: clamp(24px, 3vw, 36px);
     }
 
     .form-panel {
