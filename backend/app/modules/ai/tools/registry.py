@@ -119,9 +119,9 @@ def register_tool(
 
         @register_tool(
             code="waybill.search",
-            name="查询运单",
+            name="查询计划",
             category="waybill",
-            description="按关键词分页查询当前租户的运单",
+            description="按关键词分页查询当前租户的计划",
             params_schema=WaybillSearchParams,
             permission="biz:waybill:list",
         )

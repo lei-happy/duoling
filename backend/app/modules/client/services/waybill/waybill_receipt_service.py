@@ -1,9 +1,9 @@
-"""运单回单 Service
+"""计划回单 Service
 
-回单是 **运单维度** 的人工动作，与任务/挂接行状态机彼此独立：
-- 确认回单：运单 ``5 已签收`` → ``6 已回单``，落一条 ``biz_waybill_receipt`` 凭证；
-- 撤销回单：运单 ``6 已回单`` → ``5 已签收``，软删该运单的回单凭证；
-- 列举：返回某运单的全部有效回单凭证。
+回单是 **计划维度** 的人工动作，与任务/挂接行状态机彼此独立：
+- 确认回单：计划 ``5 已签收`` → ``6 已回单``，落一条 ``biz_waybill_receipt`` 凭证；
+- 撤销回单：计划 ``6 已回单`` → ``5 已签收``，软删该计划的回单凭证；
+- 列举：返回某计划的全部有效回单凭证。
 
 约束：
 - 仅 ``5 已签收`` 可确认回单；仅 ``6 已回单`` 可撤销回单（``7 已关闭`` 后不可撤销）。
@@ -32,7 +32,7 @@ from app.modules.client.services.state_machine.waybill_state_machine import (
 
 
 class WaybillReceiptService:
-    """运单回单服务"""
+    """计划回单服务"""
 
     @staticmethod
     async def list_receipts(
@@ -57,11 +57,11 @@ class WaybillReceiptService:
         operator_id: Optional[int] = None,
         operator_name: Optional[str] = None,
     ) -> WaybillReceiptOut:
-        """确认回单：运单 5 已签收 → 6 已回单。"""
+        """确认回单：计划 5 已签收 → 6 已回单。"""
         waybill = await WaybillReceiptService._lock_waybill(db, waybill_id)
         cur = int(waybill.status or 0)
         if cur != WAYBILL_SIGNED:
-            raise BizException("仅「已签收」的运单可以确认回单")
+            raise BizException("仅「已签收」的计划可以确认回单")
         # 状态机校验 5 → 6
         WaybillStateMachine.assert_transition(cur, WAYBILL_RECEIPTED)
 
@@ -86,11 +86,11 @@ class WaybillReceiptService:
     async def revoke(
         db: AsyncSession, waybill_id: int,
     ) -> None:
-        """撤销回单：运单 6 已回单 → 5 已签收，软删凭证。"""
+        """撤销回单：计划 6 已回单 → 5 已签收，软删凭证。"""
         waybill = await WaybillReceiptService._lock_waybill(db, waybill_id)
         cur = int(waybill.status or 0)
         if cur != WAYBILL_RECEIPTED:
-            raise BizException("仅「已回单」的运单可以撤销回单")
+            raise BizException("仅「已回单」的计划可以撤销回单")
         WaybillStateMachine.assert_transition(cur, WAYBILL_SIGNED)
 
         r = await db.execute(
@@ -114,5 +114,5 @@ class WaybillReceiptService:
         )
         waybill = r.scalar_one_or_none()
         if not waybill:
-            raise BizException("运单不存在")
+            raise BizException("计划不存在")
         return waybill

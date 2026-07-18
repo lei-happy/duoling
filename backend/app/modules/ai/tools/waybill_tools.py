@@ -1,10 +1,10 @@
 """
-运单相关工具
+计划相关工具
 
 首期：
-- waybill.search        : 查询运单（低风险）
-- waybill.get_detail    : 查询运单详情
-- waybill.batch_create  : 批量创建运单（高风险，需用户确认）
+- waybill.search        : 查询计划（低风险）
+- waybill.get_detail    : 查询计划详情
+- waybill.batch_create  : 批量创建计划（高风险，需用户确认）
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from app.modules.client.services.waybill.waybill_service import WaybillService
 class WaybillSearchParams(BaseModel):
     keyword: Optional[str] = Field(
         None,
-        description="模糊匹配运单号（客户请用 customer_id）",
+        description="模糊匹配计划号（客户请用 customer_id）",
     )
     customer_id: Optional[int] = Field(None, description="客户ID")
     status: Optional[int] = Field(
@@ -36,11 +36,11 @@ class WaybillSearchParams(BaseModel):
 
 @register_tool(
     code="waybill.search",
-    name="查询运单",
+    name="查询计划",
     category="waybill",
     description=(
-        "按运单号关键词、客户、状态分页查询当前租户的运单列表。"
-        "返回运单号、客户、起讫地、状态、运费等概要信息。"
+        "按计划号关键词、客户、状态分页查询当前租户的计划列表。"
+        "返回计划号、客户、起讫地、状态、运费等概要信息。"
     ),
     params_schema=WaybillSearchParams,
     permission="biz:waybill:list",
@@ -59,19 +59,19 @@ async def search_waybill(ctx: ToolContext, **kwargs) -> ToolResult:
     return ToolResult(
         success=True,
         data=data,
-        message=f"共找到 {data.get('total', 0)} 条运单，当前返回第 {params.page} 页",
+        message=f"共找到 {data.get('total', 0)} 条计划，当前返回第 {params.page} 页",
     )
 
 
 class WaybillDetailParams(BaseModel):
-    waybill_id: int = Field(..., description="运单ID")
+    waybill_id: int = Field(..., description="计划ID")
 
 
 @register_tool(
     code="waybill.get_detail",
-    name="查询运单详情",
+    name="查询计划详情",
     category="waybill",
-    description="按 ID 查询单条运单的详细信息",
+    description="按 ID 查询单条计划的详细信息",
     params_schema=WaybillDetailParams,
     permission="biz:waybill:list",
     risk_level="low",
@@ -87,9 +87,9 @@ async def get_waybill_detail(ctx: ToolContext, **kwargs) -> ToolResult:
 
 
 class WaybillRow(BaseModel):
-    """单条待录入的运单（与 WaybillCreate 字段对齐，但所有字段可选以适配 LLM 灵活输出）"""
+    """单条待录入的计划（与 WaybillCreate 字段对齐，但所有字段可选以适配 LLM 灵活输出）"""
 
-    waybillNo: Optional[str] = Field(None, description="运单号（不传则系统生成）")
+    waybillNo: Optional[str] = Field(None, description="计划号（不传则系统生成）")
     customerId: Optional[int] = Field(None, description="客户ID")
     customerName: Optional[str] = Field(None, description="客户名称")
     origin: Optional[str] = Field(None, description="出发地")
@@ -111,15 +111,15 @@ class WaybillRow(BaseModel):
 
 
 class WaybillBatchCreateParams(BaseModel):
-    rows: list[WaybillRow] = Field(..., description="待录入的运单列表，建议一次不超过50条")
+    rows: list[WaybillRow] = Field(..., description="待录入的计划列表，建议一次不超过50条")
 
 
 @register_tool(
     code="waybill.batch_create",
-    name="批量录入运单",
+    name="批量录入计划",
     category="waybill",
     description=(
-        "把已映射好的运单数据批量入库。"
+        "把已映射好的计划数据批量入库。"
         "调用前请先用 file.parse_excel 解析文件，并由用户确认字段映射。"
         "本工具属于高风险操作，必须经用户确认后才会执行。"
     ),
@@ -131,7 +131,7 @@ class WaybillBatchCreateParams(BaseModel):
 async def batch_create_waybill(ctx: ToolContext, **kwargs) -> ToolResult:
     params = WaybillBatchCreateParams(**kwargs)
     if not params.rows:
-        return ToolResult(success=False, error="待录入运单列表为空")
+        return ToolResult(success=False, error="待录入计划列表为空")
 
     success_count, failed_items = 0, []
     for idx, row in enumerate(params.rows):

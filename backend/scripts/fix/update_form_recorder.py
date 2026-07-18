@@ -59,14 +59,14 @@ def update_form_recorder() -> None:
             return
 
         emp.system_prompt = FORM_RECORDER_SYSTEM_PROMPT
-        emp.description = "把 Excel/CSV 表格与运单图片解析后自动录入为运单，遇缺失信息主动追问。"
+        emp.description = "把 Excel/CSV 表格与计划单图片解析后自动录入为计划，遇缺失信息主动追问。"
         emp.welcome_message = (
-            "你好，我是录单员小智。你可以直接拖入 Excel/CSV，或上传运单截图/照片，"
+            "你好，我是录单员小智。你可以直接拖入 Excel/CSV，或上传计划单截图/照片，"
             "我会帮你提取关键信息并入库；信息不全时我会主动跟你确认。"
         )
         emp.suggested_questions = [
-            "帮我录入这份运单表格",
-            "识别一下这张运单图片",
+            "帮我录入这份计划表格",
+            "识别一下这张计划图片",
             "把这份 Excel 解析一下让我看看表头",
             "刚才录单失败的几条原因是什么",
         ]

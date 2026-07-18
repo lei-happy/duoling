@@ -8,7 +8,7 @@ const partner: ModuleOverviewConfig = {
   positioning:
     '客商中心集中管理客户、承运商、供应商与经销商门店等业务伙伴档案与合作关系，是业务往来与结算的主数据源头。',
   description:
-    '在这里建立并维护各类业务伙伴的基础档案、联系人与合作状态，支持承运商邀请协同与互联客户对接，为运单、计费与结算提供准确的主数据。',
+    '在这里建立并维护各类业务伙伴的基础档案、联系人与合作状态，支持承运商邀请协同与互联客户对接，为计划、计费与结算提供准确的主数据。',
   heroIllustration: heroPartner,
   accentColor: '#e14b8a',
   moduleCards: [
@@ -38,7 +38,7 @@ const partner: ModuleOverviewConfig = {
     { title: '承运商管理', path: '/partner/carrier' }
   ],
   tips: [
-    '客户与承运商信息是运单与结算的基础，建议尽早维护完整',
+    '客户与承运商信息是计划与结算的基础，建议尽早维护完整',
     '承运商可通过「邀请激活」快速入驻协同'
   ]
 };

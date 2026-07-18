@@ -75,7 +75,7 @@ class TestBuildQuickAction:
 
     def test_sort_and_default_coercion(self):
         qa = ClientMenuService._build_quick_action(
-            True, None, "新建运单", None, "/operation/waybill?action=create", None, 30, True
+            True, None, "新建计划", None, "/operation/waybill?action=create", None, 30, True
         )
         assert qa["sort"] == 30
         assert qa["default"] is True
@@ -86,7 +86,7 @@ class TestToOutExpand:
     def _menu(self, quick_action) -> Menu:
         m = Menu(
             parent_id=0,
-            menu_name="运单管理",
+            menu_name="计划管理",
             menu_code="business:waybill:list",
             menu_type=0,
             path="/operation/waybill",
@@ -110,7 +110,7 @@ class TestToOutExpand:
             self._menu(
                 {
                     "icon": "/uploads/quick_action/a.png",
-                    "name": "运单管理",
+                    "name": "计划管理",
                     "color": "#5cdbd3",
                     "link": "/operation/waybill",
                     "group": "运营调度",
@@ -121,7 +121,7 @@ class TestToOutExpand:
         )
         assert out.quickActionEnabled is True
         assert out.quickActionIcon == "/uploads/quick_action/a.png"
-        assert out.quickActionName == "运单管理"
+        assert out.quickActionName == "计划管理"
         assert out.quickActionColor == "#5cdbd3"
         assert out.quickActionLink == "/operation/waybill"
         assert out.quickActionGroup == "运营调度"

@@ -64,6 +64,8 @@ export interface ModuleOverviewConfig {
   description?: string;
   /** Hero 主插画地址（import 得到的 URL） */
   heroIllustration?: string;
+  /** Hero 插画宽高比（如 4 表示 4:1），用于宽幅配图布局 */
+  heroAspectRatio?: number;
   /** Hero 缺省插画使用的主题图标名称（无 heroIllustration 时生效） */
   heroIcon?: string;
   /** Hero 主题强调色，用于点缀（缺省用主题主色） */

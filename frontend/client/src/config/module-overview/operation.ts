@@ -6,21 +6,22 @@ const operation: ModuleOverviewConfig = {
   key: 'operation',
   title: '运营调度',
   positioning:
-    '运营调度是货物运输的作业中枢，串联“运单受理 - 配载建单 - 派车调度 - 在途监控 - 回单签收”的全流程，让每一单货都可建、可调、可控、可交付。',
+    '运营调度是货物运输的作业中枢，串联“计划受理 - 配载建单 - 派车调度 - 在途监控 - 回单签收”的全流程，让每一单货都可建、可调、可控、可交付。',
   description:
-    '在这里集中处理来自客户的运输需求：把运单配载成运输任务，为任务分配车辆与司机，跟踪在途轨迹并完成回单签收，形成从接单到交付的作业闭环。',
+    '在这里集中处理来自客户的运输需求：把计划配载成运输任务，为任务分配车辆与司机，跟踪在途轨迹并完成回单签收，形成从接单到交付的作业闭环。',
   heroIllustration: heroOperation,
+  heroAspectRatio: 4,
   accentColor: '#3f7cff',
   workflow: [
     {
-      title: '运单受理',
-      desc: '录入或批量导入客户运单，进入运单池待配载',
+      title: '计划受理',
+      desc: '录入或批量导入客户计划，进入计划池待配载',
       icon: 'waybill',
       path: '/operation/waybill'
     },
     {
       title: '配载建单',
-      desc: '将运单手动或智能配载，生成运输任务单',
+      desc: '将计划手动或智能配载，生成运输任务单',
       icon: 'stowage',
       path: '/operation/task-create'
     },
@@ -47,7 +48,7 @@ const operation: ModuleOverviewConfig = {
     {
       path: '/operation/waybill',
       icon: 'waybill',
-      desc: '集中管理客户运单，支持新建、批量导入与运单池筛选'
+      desc: '集中管理客户计划，支持新建、批量导入与计划池筛选'
     },
     {
       path: '/operation/task',
@@ -57,7 +58,7 @@ const operation: ModuleOverviewConfig = {
     {
       path: '/operation/task-create',
       icon: 'stowage',
-      desc: '将运单手动或智能配载，一键生成运输任务'
+      desc: '将计划手动或智能配载，一键生成运输任务'
     },
     {
       path: '/operation/smart-stowage',
@@ -87,7 +88,7 @@ const operation: ModuleOverviewConfig = {
   ],
   quickActions: [
     {
-      title: '新建运单',
+      title: '新建计划',
       path: '/operation/waybill?action=create',
       icon: 'waybill',
       primary: true
@@ -97,7 +98,7 @@ const operation: ModuleOverviewConfig = {
   ],
   tips: [
     '首次使用建议先在「客商中心」维护客户与承运商信息',
-    '大批量运单可通过运单中心的「批量导入」快速录入',
+    '大批量计划可通过计划中心的「批量导入」快速录入',
     '配载完成后在「调度工作台」统一派车，效率更高'
   ]
 };

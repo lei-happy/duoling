@@ -461,7 +461,7 @@
   const datasource: DatasourceFunction = ({ pages }) => {
     const search = props.searchWhere ?? {};
     const keyword = search.keyword?.trim();
-    // 任务单号/运单号搜索：仅按 keyword 查，不受阶段/日期等限制
+    // 任务单号/计划号搜索：仅按 keyword 查，不受阶段/日期等限制
     if (keyword) {
       return fetchPage({ ...pages, keyword }).then((res) => {
         maybeAutoSwitchPool(res.list, keyword);

@@ -36,15 +36,15 @@ _IMAGE_MIME = {
 }
 
 _VISION_SYSTEM_PROMPT = (
-    "你是运单信息抽取助手。用户会给你一张图片，请判断图片中是否包含物流运单信息"
-    "（如运单号、客户/委托方、起讫地、车辆品牌车型、VIN、数量、经销商、运费等）。\n"
+    "你是运输计划单信息抽取助手。用户会给你一张图片，请判断图片中是否包含物流计划单/运单信息"
+    "（如计划号/运单号、客户/委托方、起讫地、车辆品牌车型、VIN、数量、经销商、运费等）。\n"
     "严格只输出一个 JSON 对象，不要输出多余文字，不要用 markdown 代码块包裹。JSON 结构：\n"
     "{\n"
-    '  "has_waybill": true/false,   // 图片是否包含运单信息\n'
+    '  "has_waybill": true/false,   // 图片是否包含计划单信息\n'
     '  "confidence": 0.0~1.0,        // 判断置信度\n'
-    '  "rows": [                     // 抽取到的运单行；无则为空数组\n'
+    '  "rows": [                     // 抽取到的计划行；无则为空数组\n'
     "    {\n"
-    '      "waybillNo": "运单号(可空)",\n'
+    '      "waybillNo": "计划号(可空)",\n'
     '      "customerName": "客户/委托方名称(可空)",\n'
     '      "origin": "出发地(可空)",\n'
     '      "destination": "目的地(可空)",\n'
@@ -109,7 +109,7 @@ def _extract_json(text: str) -> Optional[dict]:
 async def _vision_complete(provider, data_url: str, hint: Optional[str]) -> str:
     """单次调用视觉模型（无 tools），收集流式文本返回"""
     user_parts: list[dict[str, Any]] = []
-    text = "请识别这张图片中的运单信息并按要求输出 JSON。"
+    text = "请识别这张图片中的计划单/运单信息并按要求输出 JSON。"
     if hint:
         text += f"\n补充提示：{hint}"
     user_parts.append({"type": "text", "text": text})
@@ -132,11 +132,11 @@ async def _vision_complete(provider, data_url: str, hint: Optional[str]) -> str:
 
 @register_tool(
     code="image.extract_waybill",
-    name="识别图片运单信息",
+    name="识别图片计划信息",
     category="file",
     description=(
-        "把用户上传的运单截图/照片交给视觉大模型，判断是否包含运单信息并抽取为结构化行。"
-        "返回 has_waybill 与 rows；若识别到运单但缺少客户等关键信息，应结合 customer.search 追问用户后再入库。"
+        "把用户上传的计划单/运单截图/照片交给视觉大模型，判断是否包含计划信息并抽取为结构化行。"
+        "返回 has_waybill 与 rows；若识别到计划但缺少客户等关键信息，应结合 customer.search 追问用户后再入库。"
     ),
     params_schema=ExtractWaybillParams,
     risk_level="low",

@@ -18,7 +18,7 @@ export type TaskActionKey =
   | 'confirm-arrive' // 确认到达 (3 → 4)
   | 'confirm-sign' // 确认签收：item 级签收，全部签收后聚合驱动 task 4→5
   | 'close' // 关闭任务 (5 → 7)
-  // —— 逆向通道（参考 02.运单与任务单状态机联动设计.md §4.5）
+  // —— 逆向通道（参考 02.计划与任务单状态机联动设计.md §4.5）
   | 'revert-dispatch' // 撤回派车 (1 → 0)
   | 'revert-load' // 撤销装车 (2 → 1)
   | 'revert-depart' // 撤回出发 (3 → 2)
@@ -26,7 +26,7 @@ export type TaskActionKey =
   | 'revert-sign' // 撤销签收（5 → 4，item 级 3→2 反向聚合驱动）
   | 'force-cancel' // 强制取消（2/3/4 → 9，线下取消）
   // —— 常规辅助通道
-  | 'cancel-task' // 常规取消（-1/0/1/2 → 9，释放运单挂接 + 撤销未支付费用单）
+  | 'cancel-task' // 常规取消（-1/0/1/2 → 9，释放计划挂接 + 撤销未支付费用单）
   | 'edit' // 编辑任务单（仅 -1/0/1）
   | 'delete'; // 删除任务单（仅 -1/0/9）
 
@@ -239,7 +239,7 @@ export const getSecondaryTaskActions = (
  *
  * 说明：5 已签收 由 item 全签收聚合驱动；"撤销签收" 走 item 级
  * （修改对应 item.status 3→2，后端 _aggregate_task_status_from_items
- * 自动把 task 5→4、运单 5→4），不走任务级 revert-status 接口。
+ * 自动把 task 5→4、计划 5→4），不走任务级 revert-status 接口。
  * 已关闭(7)/已取消(9) 为终态，不放开任何逆向。
  */
 const REVERSE_BY_STATUS: Record<number, TaskActionKey[]> = {

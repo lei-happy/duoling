@@ -21,7 +21,7 @@ export function summarizeTaskBrandModels(items: TaskWaybillItem[]): string {
 }
 
 /**
- * 将任务单 + 挂接明细组装为「商品车明细」弹窗所需的 Waybill 形态（与运单列表复用 waybill-cargoes-detail）。
+ * 将任务单 + 挂接明细组装为「商品车明细」弹窗所需的 Waybill 形态（与计划列表复用 waybill-cargoes-detail）。
  */
 export function buildWaybillShapeForTaskCargoDetail(
   task: Task,
@@ -62,7 +62,7 @@ export function buildWaybillShapeForTaskCargoDetail(
     nos.length === 1
       ? nos[0]!
       : nos.length > 1
-        ? `${nos.length} 张运单`
+        ? `${nos.length} 张计划`
         : task.taskNo?.trim() || '';
 
   return {

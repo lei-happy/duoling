@@ -5,6 +5,7 @@
       :positioning="positioning"
       :description="config?.description"
       :illustration="config?.heroIllustration"
+      :aspect-ratio="config?.heroAspectRatio"
       :hero-icon="config?.heroIcon"
       :accent-color="config?.accentColor"
     />

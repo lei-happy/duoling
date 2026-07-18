@@ -94,11 +94,11 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       component: () => import('@/views/billing/carrier-contract/detail.vue'),
       meta: { title: '承运商合同详情' }
     },
-    // 运单批量导入（从运单列表进入，不在后端菜单中单独挂路由）
+    // 计划批量导入（从计划列表进入，不在后端菜单中单独挂路由）
     {
       path: '/operation/waybill/import',
       component: () => import('@/views/operation/waybill/import/index.vue'),
-      meta: { title: '运单批量导入' }
+      meta: { title: '计划批量导入' }
     },
     // 配载建单（菜单同步前可本地访问；与后端菜单 path 一致）
     {

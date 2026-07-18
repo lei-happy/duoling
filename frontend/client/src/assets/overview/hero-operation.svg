@@ -1,65 +1,109 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 256" fill="none">
   <defs>
-    <radialGradient id="opHub" cx="0.4" cy="0.35" r="0.75"><stop offset="0" stop-color="#7fb0ff" /><stop offset="1" stop-color="#3f7cff" /></radialGradient>
-    <linearGradient id="opBox" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6ea0ff" /><stop offset="1" stop-color="#3f7cff" /></linearGradient>
-    <linearGradient id="opBoxB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9cc0ff" /><stop offset="1" stop-color="#5b8dff" /></linearGradient>
-    <linearGradient id="opCard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#f2f6ff" /></linearGradient>
-    <linearGradient id="opHead" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6ea0ff" /><stop offset="1" stop-color="#3f7cff" /></linearGradient>
+    <linearGradient id="opGlassSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bcd6ff" /><stop offset="1" stop-color="#6f9dff" /></linearGradient>
+    <radialGradient id="opGlassTop" cx="0.5" cy="0.38" r="0.72"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#cfe0ff" /></radialGradient>
+    <linearGradient id="opRing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fe7ff" /><stop offset="1" stop-color="#2f9dff" /></linearGradient>
+    <linearGradient id="opCard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#eef4ff" /></linearGradient>
+    <linearGradient id="opBoxA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7aa6ff" /><stop offset="1" stop-color="#3f7cff" /></linearGradient>
+    <linearGradient id="opBoxB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a8c6ff" /><stop offset="1" stop-color="#6a97ff" /></linearGradient>
+    <linearGradient id="opCab" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b8dff" /><stop offset="1" stop-color="#3560e6" /></linearGradient>
+    <linearGradient id="opPin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6ea0ff" /><stop offset="1" stop-color="#3f7cff" /></linearGradient>
   </defs>
 
-  <g fill="#c9d8f7" opacity="0.5"><circle cx="66" cy="70" r="3" /><circle cx="92" cy="70" r="3" /><circle cx="66" cy="96" r="3" /></g>
+  <!-- ambient dots -->
+  <g fill="#c9d8f7" opacity="0.5"><circle cx="58" cy="46" r="3" /><circle cx="84" cy="46" r="3" /><circle cx="58" cy="72" r="3" /></g>
 
-  <!-- route curve (dispatch -> destination) -->
-  <path d="M104 276C196 196 250 300 360 224S520 150 556 178" stroke="#cdddff" stroke-width="9" stroke-linecap="round" />
-  <path d="M104 276C196 196 250 300 360 224S520 150 556 178" stroke="#3f7cff" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="2 13" />
-  <g fill="#3f7cff"><circle cx="230" cy="228" r="4.5" /><circle cx="446" cy="196" r="4.5" /></g>
+  <!-- ============ podiums (glass pedestals) ============ -->
+  <!-- node1 -->
+  <ellipse cx="116" cy="184" rx="60" ry="11" fill="#24386a" opacity="0.10" />
+  <ellipse cx="116" cy="172" rx="60" ry="16" fill="url(#opGlassSide)" />
+  <ellipse cx="116" cy="168" rx="60" ry="15" fill="url(#opGlassTop)" />
+  <ellipse cx="116" cy="166" rx="52" ry="12" fill="none" stroke="url(#opRing)" stroke-width="2.4" opacity="0.85" />
+  <!-- node2 -->
+  <ellipse cx="320" cy="184" rx="60" ry="11" fill="#24386a" opacity="0.10" />
+  <ellipse cx="320" cy="172" rx="60" ry="16" fill="url(#opGlassSide)" />
+  <ellipse cx="320" cy="168" rx="60" ry="15" fill="url(#opGlassTop)" />
+  <ellipse cx="320" cy="166" rx="52" ry="12" fill="none" stroke="url(#opRing)" stroke-width="2.4" opacity="0.85" />
+  <!-- node4 -->
+  <ellipse cx="704" cy="184" rx="60" ry="11" fill="#24386a" opacity="0.10" />
+  <ellipse cx="704" cy="172" rx="60" ry="16" fill="url(#opGlassSide)" />
+  <ellipse cx="704" cy="168" rx="60" ry="15" fill="url(#opGlassTop)" />
+  <ellipse cx="704" cy="166" rx="52" ry="12" fill="none" stroke="url(#opRing)" stroke-width="2.4" opacity="0.85" />
+  <!-- node5 -->
+  <ellipse cx="908" cy="184" rx="60" ry="11" fill="#24386a" opacity="0.10" />
+  <ellipse cx="908" cy="172" rx="60" ry="16" fill="url(#opGlassSide)" />
+  <ellipse cx="908" cy="168" rx="60" ry="15" fill="url(#opGlassTop)" />
+  <ellipse cx="908" cy="166" rx="52" ry="12" fill="none" stroke="url(#opRing)" stroke-width="2.4" opacity="0.85" />
+  <!-- node3 center tiered pedestal -->
+  <ellipse cx="512" cy="210" rx="120" ry="18" fill="#24386a" opacity="0.12" />
+  <ellipse cx="512" cy="196" rx="116" ry="20" fill="url(#opGlassSide)" />
+  <ellipse cx="512" cy="191" rx="116" ry="18" fill="url(#opGlassTop)" />
+  <ellipse cx="512" cy="187" rx="98" ry="15" fill="url(#opRing)" opacity="0.9" />
+  <ellipse cx="512" cy="179" rx="86" ry="16" fill="url(#opGlassSide)" />
+  <ellipse cx="512" cy="174" rx="86" ry="14" fill="url(#opGlassTop)" />
 
-  <!-- dispatch center hub -->
+  <!-- ============ connecting dotted flow ============ -->
+  <path d="M150 152 C 215 150 250 120 320 120 S 455 86 512 86 S 645 116 704 120 S 828 140 884 132" stroke="#cddcff" stroke-width="8" stroke-linecap="round" />
+  <path d="M150 152 C 215 150 250 120 320 120 S 455 86 512 86 S 645 116 704 120 S 828 140 884 132" stroke="#3f7cff" stroke-width="3.4" stroke-linecap="round" stroke-dasharray="1.5 12" />
+  <g fill="#3f7cff"><circle cx="150" cy="152" r="4" /><circle cx="320" cy="120" r="4.5" /><circle cx="704" cy="120" r="4.5" /><circle cx="884" cy="132" r="4" /></g>
+
+  <!-- ============ node1: ???? (clipboard) ============ -->
   <g>
-    <circle cx="104" cy="276" r="40" fill="#3f7cff" opacity="0.08" />
-    <circle cx="104" cy="276" r="28" fill="#3f7cff" opacity="0.14" />
-    <circle cx="104" cy="276" r="18" fill="url(#opHub)" />
-    <circle cx="104" cy="276" r="6.5" fill="#ffffff" />
-    <g stroke="#8fb6ff" stroke-width="2"><path d="M104 248v-12M132 276h12M104 304v12M76 276H64" /></g>
-    <circle cx="104" cy="230" r="4" fill="#5b8dff" /><circle cx="150" cy="276" r="4" fill="#5b8dff" /><circle cx="104" cy="322" r="4" fill="#5b8dff" />
+    <rect x="88" y="88" width="56" height="74" rx="8" fill="url(#opCard)" stroke="#e2ebfb" stroke-width="1.4" />
+    <rect x="100" y="80" width="32" height="14" rx="4" fill="url(#opBoxA)" />
+    <rect x="108" y="77" width="16" height="8" rx="3" fill="#2f63e0" />
+    <rect x="99" y="106" width="12" height="12" rx="3" fill="#dbe7ff" /><path d="M102 112l2.5 2.5 4.5-5" stroke="#3f7cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="118" y="108" width="20" height="6" rx="3" fill="#c9d8f2" />
+    <rect x="99" y="124" width="12" height="12" rx="3" fill="#dbe7ff" /><path d="M102 130l2.5 2.5 4.5-5" stroke="#3f7cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="118" y="126" width="20" height="6" rx="3" fill="#c9d8f2" />
+    <rect x="99" y="142" width="12" height="12" rx="3" fill="#eef2fb" /><rect x="118" y="144" width="16" height="6" rx="3" fill="#dbe3f2" />
   </g>
 
-  <!-- cargo consolidation / loading on pallet -->
+  <!-- ============ node2: ???? (stacked cartons) ============ -->
   <g>
-    <ellipse cx="372" cy="266" rx="72" ry="12" fill="#1b2a4a" opacity="0.1" />
-    <rect x="316" y="256" width="112" height="10" rx="3" fill="#c3d3f2" />
-    <rect x="316" y="262" width="112" height="4" fill="#a9c0ec" />
-    <!-- bottom layer -->
-    <rect x="324" y="222" width="46" height="34" rx="5" fill="url(#opBox)" />
-    <path d="M324 234h46" stroke="#2f63e0" stroke-width="3" />
-    <rect x="374" y="222" width="46" height="34" rx="5" fill="url(#opBoxB)" />
-    <path d="M374 234h46" stroke="#3f7cff" stroke-width="3" />
-    <!-- top layer -->
-    <rect x="349" y="190" width="46" height="34" rx="5" fill="url(#opBox)" />
-    <path d="M349 202h46M372 190v34" stroke="#2f63e0" stroke-width="2.6" />
-    <!-- loading up badge -->
-    <circle cx="410" cy="192" r="15" fill="#ff7a59" />
-    <path d="M410 199v-14M403 192l7-7 7 7" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <rect x="282" y="120" width="42" height="40" rx="5" fill="url(#opBoxA)" /><path d="M282 134h42" stroke="#2f63e0" stroke-width="3" /><path d="M303 120v40" stroke="#2f63e0" stroke-width="2.4" opacity="0.6" />
+    <rect x="324" y="120" width="42" height="40" rx="5" fill="url(#opBoxB)" /><path d="M324 134h42" stroke="#3f7cff" stroke-width="3" />
+    <rect x="303" y="86" width="42" height="38" rx="5" fill="url(#opBoxA)" /><path d="M303 100h42" stroke="#2f63e0" stroke-width="2.8" /><path d="M324 86v38" stroke="#2f63e0" stroke-width="2.4" opacity="0.6" />
   </g>
 
-  <!-- destination pin -->
+  <!-- ============ node3: ???? (truck + dashboards) ============ -->
   <g>
-    <ellipse cx="556" cy="182" rx="13" ry="5" fill="#1b2a4a" opacity="0.12" />
-    <path d="M556 138c-13 0-23 10-23 23 0 16 23 38 23 38s23-22 23-38c0-13-10-23-23-23z" fill="#3f7cff" />
-    <circle cx="556" cy="161" r="8" fill="#ffffff" />
+    <!-- floating dashboards behind -->
+    <rect x="398" y="30" width="104" height="56" rx="9" fill="#ffffff" stroke="#dbe6fb" stroke-width="1.4" opacity="0.97" />
+    <path d="M398 39a9 9 0 0 1 9-9h86a9 9 0 0 1 9 9v6H398z" fill="url(#opCab)" opacity="0.9" />
+    <rect x="410" y="54" width="16" height="22" rx="2" fill="#cfe0ff" /><rect x="432" y="48" width="16" height="28" rx="2" fill="#3f7cff" /><rect x="454" y="60" width="16" height="16" rx="2" fill="#cfe0ff" /><rect x="476" y="52" width="16" height="24" rx="2" fill="#7aa6ff" />
+    <rect x="512" y="30" width="104" height="56" rx="9" fill="#ffffff" stroke="#dbe6fb" stroke-width="1.4" opacity="0.97" />
+    <path d="M512 39a9 9 0 0 1 9-9h86a9 9 0 0 1 9 9v6H512z" fill="url(#opCab)" opacity="0.9" />
+    <rect x="524" y="52" width="26" height="6" rx="3" fill="#3f7cff" /><rect x="524" y="63" width="80" height="5" rx="2.5" fill="#d7e3fb" /><rect x="524" y="73" width="64" height="5" rx="2.5" fill="#e4ecfb" />
+
+    <!-- truck -->
+    <rect x="450" y="104" width="78" height="56" rx="7" fill="url(#opCard)" stroke="#3f7cff" stroke-width="2" />
+    <path d="M489 104v56" stroke="#cfe0ff" stroke-width="2" />
+    <circle cx="470" cy="126" r="13" fill="url(#opBoxA)" /><circle cx="470" cy="122" r="4" fill="#ffffff" /><path d="M463 134a7 7 0 0 1 14 0z" fill="#ffffff" />
+    <path d="M528 122H558L576 146V160H528Z" fill="url(#opCab)" />
+    <path d="M556 128H562L572 144H556Z" fill="#d4e8ff" />
+    <rect x="572" y="150" width="5" height="6" rx="1.5" fill="#ffe08a" />
+    <circle cx="474" cy="160" r="12" fill="#2b3d66" /><circle cx="474" cy="160" r="5" fill="#9fc0ff" />
+    <circle cx="558" cy="160" r="12" fill="#2b3d66" /><circle cx="558" cy="160" r="5" fill="#9fc0ff" />
   </g>
 
-  <!-- floating console: dispatch workbench -->
+  <!-- ============ node4: ???? (map + pin) ============ -->
   <g>
-    <rect x="360" y="60" width="176" height="72" rx="14" fill="url(#opCard)" stroke="#e4ebfa" stroke-width="1.5" />
-    <path d="M360 74a14 14 0 0 1 14-14h148a14 14 0 0 1 14 14v8H360z" fill="url(#opHead)" />
-    <rect x="372" y="67" width="60" height="8" rx="4" fill="#ffffff" opacity="0.9" />
-    <path d="M374 116c14-16 26 4 40-8s26-12 40-16" stroke="#3f7cff" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="2 8" fill="none" />
-    <circle cx="374" cy="116" r="4" fill="#ff7a59" />
-    <rect x="474" y="98" width="50" height="20" rx="10" fill="#3f7cff" />
-    <path d="M486 108h18M498 103l6 5-6 5" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <path d="M676 158L700 132L734 140L710 166Z" fill="#eef4ff" stroke="#c5d6f5" stroke-width="1.4" />
+    <path d="M688 148L722 156" stroke="#d5e2f8" stroke-width="1.4" />
+    <path d="M686 156Q700 142 722 150" stroke="#3f7cff" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 6" fill="none" />
+    <circle cx="686" cy="156" r="3" fill="#ff7a59" /><circle cx="722" cy="150" r="3" fill="#3f7cff" />
+    <path d="M712 82c-14.5 0-26 11.5-26 26 0 18 26 42 26 42s26-24 26-42c0-14.5-11.5-26-26-26z" fill="url(#opPin)" />
+    <circle cx="712" cy="108" r="9" fill="#ffffff" />
   </g>
 
-  <!-- paper plane -->
-  <path d="M566 300l22-30-2 37-9-13z" fill="#8fb6ff" opacity="0.9" />
+  <!-- ============ node5: ???? (signed document) ============ -->
+  <g>
+    <path d="M888 90h34l12 12v54a6 6 0 0 1-6 6h-40a6 6 0 0 1-6-6V96a6 6 0 0 1 6-6z" fill="url(#opCard)" stroke="#dbe6fb" stroke-width="1.4" />
+    <path d="M922 90v12h12z" fill="#cdddff" />
+    <rect x="894" y="108" width="30" height="5" rx="2.5" fill="#c9d8f2" />
+    <rect x="894" y="119" width="36" height="5" rx="2.5" fill="#d7e0f2" />
+    <rect x="894" y="130" width="28" height="5" rx="2.5" fill="#d7e0f2" />
+    <circle cx="916" cy="150" r="12" fill="#35c07a" /><path d="M910 150l4 4 8-9" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
 </svg>

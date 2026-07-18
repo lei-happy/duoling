@@ -1,5 +1,5 @@
 <!--
-  运单工作台 - 统一筛选栏（页面级，切换阶段卡时不重建）
+  计划工作台 - 统一筛选栏（页面级，切换阶段卡时不重建）
   ====================================
 
   - 字段由 `UNIFIED_WAYBILL_FILTER_FIELDS` 驱动（各状态池筛选项的并集）
@@ -9,7 +9,7 @@
       - **双行**：主筛 4 列铺满第 1 行，创建时间 / 品牌车型 / 操作按钮在第 2 行。
 
   字段映射（来自 waybill-pool-registry）：
-    keyword       → 运单编号
+    keyword       → 计划编号
     customer      → 客户下拉
     origin        → 出发地（关键字）
     destination   → 目的地（关键字）
@@ -34,7 +34,7 @@
           :xs="fieldCol.xs"
         >
           <floating-label
-            label="运单编号"
+            label="计划编号"
             type="input"
             v-model.trim="form.keyword"
             clearable
@@ -113,7 +113,7 @@
         >
           <floating-label
             v-model="form.createdAtRange"
-            label="运单创建时间"
+            label="计划创建时间"
             type="date"
             date-type="daterange"
             value-format="YYYY-MM-DD"
@@ -151,7 +151,7 @@
           :xs="primaryColSpan.xs"
         >
           <floating-label
-            label="请输入运单编号"
+            label="请输入计划编号"
             type="input"
             v-model.trim="form.keyword"
             clearable
@@ -236,7 +236,7 @@
         >
           <floating-label
             v-model="form.createdAtRange"
-            label="请选择运单创建时间"
+            label="请选择计划创建时间"
             type="date"
             date-type="daterange"
             value-format="YYYY-MM-DD"
@@ -325,7 +325,7 @@
     () => props.fields.length * fieldCol.lg + actionsCol.lg <= 24
   );
 
-  /** 第一行主筛选项：运单编号 / 客户 / 出发地 / 目的地 */
+  /** 第一行主筛选项：计划编号 / 客户 / 出发地 / 目的地 */
   const PRIMARY_FIELDS: WaybillFilterField[] = [
     'keyword',
     'customer',

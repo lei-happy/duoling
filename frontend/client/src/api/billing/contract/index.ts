@@ -150,7 +150,7 @@ export async function listRateVersionHistory(rateId: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 触发该运价规则的受影响运单批量重算 */
+/** 触发该运价规则的受影响计划批量重算 */
 export async function recalculateAffectedByRate(rateId: number) {
   const res = await request.post<
     ApiResult<{

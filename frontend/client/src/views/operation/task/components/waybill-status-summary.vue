@@ -1,8 +1,8 @@
 <!--
-  任务侧「关联运单状态分布」只读展示
+  任务侧「关联计划状态分布」只读展示
 
-  与任务状态机彼此独立：任务仅展示其下运单的状态分布（例如 3 张运单中
-  2 张已签收、1 张已回单），不改变任务状态，也不出现"回单"等运单专属动作。
+  与任务状态机彼此独立：任务仅展示其下计划的状态分布（例如 3 张计划中
+  2 张已签收、1 张已回单），不改变任务状态，也不出现"回单"等计划专属动作。
   数据来源：TaskOut / TaskListItemOut 的 waybillStatusSummary 字段。
 -->
 <template>
@@ -30,7 +30,7 @@
     inline?: boolean;
   }>();
 
-  /** 与运单状态机 WAYBILL_STATUS_LABELS 对齐 */
+  /** 与计划状态机 WAYBILL_STATUS_LABELS 对齐 */
   const STATUS_META: Record<number, { label: string; type: string }> = {
     0: { label: '待确认', type: 'info' },
     1: { label: '待调度', type: 'primary' },

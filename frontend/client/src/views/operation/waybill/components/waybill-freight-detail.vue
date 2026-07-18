@@ -34,7 +34,7 @@
           </el-col>
           <el-col :xs="24" :sm="12" :md="8">
             <div class="kv">
-              <span class="kv__l">运单版本</span>
+              <span class="kv__l">计划版本</span>
               <span class="kv__v">{{ result.waybillVersion }}</span>
             </div>
           </el-col>
@@ -290,7 +290,7 @@
   };
 
   const TRIGGERED_BY_MAP: Record<string, string> = {
-    waybill_changed: '运单变更',
+    waybill_changed: '计划变更',
     contract_changed: '合同变更',
     rule_changed: '运价规则变更',
     manual_recalc: '手动重算',

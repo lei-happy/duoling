@@ -1,12 +1,12 @@
 <!--
   撤销签收弹窗（item 级反向）
 
-  业务（参考《02.运单与任务单状态机联动设计.md》§4.5.2 / §4.1bis）：
+  业务（参考《02.计划与任务单状态机联动设计.md》§4.5.2 / §4.1bis）：
   - 误签收 / 客户拒签时，调度员选择已签收的挂接货物行，把 item.status 3→2（已卸车）；
     后端 ``_aggregate_task_status_from_items`` 在"非全部签收"时自动把 task 5→4，
-    并由 ``WaybillStatusAggregator`` 反向聚合运单 5→4（allow_downgrade）。
+    并由 ``WaybillStatusAggregator`` 反向聚合计划 5→4（allow_downgrade）。
   - 5→4 不走任务级 revert-status（该接口不接受 5→4），必须走 item 级撤销。
-  - 独立性防护：若关联运单已「已回单(6)」，后端会拦截并提示先撤销回单。
+  - 独立性防护：若关联计划已「已回单(6)」，后端会拦截并提示先撤销回单。
   - 原因必填，写入 item.remark（审计）。
 
   单任务：拉取该任务下 status=3 的挂接行供勾选；批量：每张任务全部已签收行一并撤销。
@@ -25,7 +25,7 @@
       type="warning"
       :closable="false"
       show-icon
-      title="撤销签收会把对应货物退回「已卸车」，任务将自动由「已签收」回退到「已到达」，运单状态联动回退。"
+      title="撤销签收会把对应货物退回「已卸车」，任务将自动由「已签收」回退到「已到达」，计划状态联动回退。"
       style="margin-bottom: 12px"
     />
 
@@ -95,7 +95,7 @@
           >
             <el-table-column type="selection" width="40" align="center" />
             <el-table-column
-              label="运单号"
+              label="计划号"
               prop="waybillNo"
               min-width="140"
               show-overflow-tooltip

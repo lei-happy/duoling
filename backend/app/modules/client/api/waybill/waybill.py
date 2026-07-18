@@ -1,5 +1,5 @@
 """
-企业端运单管理 API
+企业端计划管理 API
 """
 
 import io
@@ -96,7 +96,7 @@ async def get_waybill_workbench_stats(
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """运单工作台 KPI 聚合：各状态计数 + totals 别名（支持与列表相同的筛选条件）。"""
+    """计划工作台 KPI 聚合：各状态计数 + totals 别名（支持与列表相同的筛选条件）。"""
     stats = await WaybillService.workbench_stats(
         db,
         keyword=keyword,
@@ -117,7 +117,7 @@ async def check_waybill_no(
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """校验运单号是否可用（未被占用）。编辑时可传 excludeId 排除当前运单。"""
+    """校验计划号是否可用（未被占用）。编辑时可传 excludeId 排除当前计划。"""
     taken = await WaybillService.waybill_no_exists(db, waybillNo, excludeId)
     return success(data={"available": not taken})
 
@@ -134,7 +134,7 @@ async def get_waybill(
 
 
 @router.post("")
-@operation_log(module="运单管理", action="新增", description="新增运单")
+@operation_log(module="计划管理", action="新增", description="新增计划")
 async def create_waybill(
     request: Request,
     data: WaybillCreate,
@@ -151,7 +151,7 @@ async def create_waybill(
     )
     label = op_name or "用户"
     suffix = _waybill_summary_customer_suffix(waybill.customer_name)
-    summary = f"{label} 创建了运单「{waybill.waybill_no}」{suffix}"
+    summary = f"{label} 创建了计划「{waybill.waybill_no}」{suffix}"
     payload = {
         "waybill_id": waybill.id,
         "waybill_no": waybill.waybill_no,
@@ -173,7 +173,7 @@ async def create_waybill(
 
 
 @router.put("/{waybill_id}")
-@operation_log(module="运单管理", action="编辑", description="编辑运单")
+@operation_log(module="计划管理", action="编辑", description="编辑计划")
 async def update_waybill(
     request: Request,
     waybill_id: int,
@@ -191,7 +191,7 @@ async def update_waybill(
     )
     label = op_name or "用户"
     suffix = _waybill_summary_customer_suffix(waybill.customer_name)
-    summary = f"{label} 编辑了运单「{waybill.waybill_no}」{suffix}"
+    summary = f"{label} 编辑了计划「{waybill.waybill_no}」{suffix}"
     payload = {
         "waybill_id": waybill.id,
         "waybill_no": waybill.waybill_no,
@@ -213,7 +213,7 @@ async def update_waybill(
 
 
 @router.put("/{waybill_id}/status")
-@operation_log(module="运单管理", action="状态变更", description="变更运单状态")
+@operation_log(module="计划管理", action="状态变更", description="变更计划状态")
 async def update_waybill_status(
     request: Request,
     waybill_id: int,
@@ -233,7 +233,7 @@ async def update_waybill_status(
     )
     suffix = _waybill_summary_customer_suffix(waybill.customer_name)
     summary = (
-        f"{label} 将运单「{waybill.waybill_no}」状态变更为「{status_label}」"
+        f"{label} 将计划「{waybill.waybill_no}」状态变更为「{status_label}」"
         f"{suffix}"
     )
     payload = {
@@ -263,13 +263,13 @@ async def list_waybill_receipts(
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """列举运单的回单凭证。"""
+    """列举计划的回单凭证。"""
     receipts = await WaybillReceiptService.list_receipts(db, waybill_id)
     return success(data=[r.model_dump() for r in receipts])
 
 
 @router.post("/{waybill_id}/receipt")
-@operation_log(module="运单管理", action="确认回单", description="确认运单回单")
+@operation_log(module="计划管理", action="确认回单", description="确认计划回单")
 async def confirm_waybill_receipt(
     request: Request,
     waybill_id: int,
@@ -278,7 +278,7 @@ async def confirm_waybill_receipt(
     current_user: TokenData = Depends(get_current_user),
     _: None = Depends(ensure_biz_company_activity_table),
 ):
-    """确认回单：运单 5 已签收 → 6 已回单。"""
+    """确认回单：计划 5 已签收 → 6 已回单。"""
     _require_tenant_for_activity(current_user)
     op_name = await CompanyActivityService.actor_display_name(
         db, current_user.user_id
@@ -291,7 +291,7 @@ async def confirm_waybill_receipt(
     waybill = await WaybillService.get_waybill(db, waybill_id)
     label = op_name or "用户"
     suffix = _waybill_summary_customer_suffix(waybill.customer_name)
-    summary = f"{label} 确认运单「{waybill.waybill_no}」回单{suffix}"
+    summary = f"{label} 确认计划「{waybill.waybill_no}」回单{suffix}"
     payload = {
         "waybill_id": waybill.id,
         "waybill_no": waybill.waybill_no,
@@ -314,7 +314,7 @@ async def confirm_waybill_receipt(
 
 
 @router.delete("/{waybill_id}/receipt")
-@operation_log(module="运单管理", action="撤销回单", description="撤销运单回单")
+@operation_log(module="计划管理", action="撤销回单", description="撤销计划回单")
 async def revoke_waybill_receipt(
     request: Request,
     waybill_id: int,
@@ -322,7 +322,7 @@ async def revoke_waybill_receipt(
     current_user: TokenData = Depends(get_current_user),
     _: None = Depends(ensure_biz_company_activity_table),
 ):
-    """撤销回单：运单 6 已回单 → 5 已签收。"""
+    """撤销回单：计划 6 已回单 → 5 已签收。"""
     _require_tenant_for_activity(current_user)
     await WaybillReceiptService.revoke(db, waybill_id)
     waybill = await WaybillService.get_waybill(db, waybill_id)
@@ -331,7 +331,7 @@ async def revoke_waybill_receipt(
     )
     label = op_name or "用户"
     suffix = _waybill_summary_customer_suffix(waybill.customer_name)
-    summary = f"{label} 撤销运单「{waybill.waybill_no}」回单{suffix}"
+    summary = f"{label} 撤销计划「{waybill.waybill_no}」回单{suffix}"
     payload = {
         "waybill_id": waybill.id,
         "waybill_no": waybill.waybill_no,
@@ -353,7 +353,7 @@ async def revoke_waybill_receipt(
 
 
 @router.post("/{waybill_id}/recalculate")
-@operation_log(module="运单管理", action="重算运费", description="手动触发运费重算")
+@operation_log(module="计划管理", action="重算运费", description="手动触发运费重算")
 async def recalculate_waybill(
     request: Request,
     waybill_id: int,
@@ -373,7 +373,7 @@ async def get_waybill_freight_result(
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """获取运单的最新计算结果（含明细 + match_trace_json）"""
+    """获取计划的最新计算结果（含明细 + match_trace_json）"""
     from app.modules.client.services.billing.freight_result_service import (
         FreightResultService,
     )
@@ -382,7 +382,7 @@ async def get_waybill_freight_result(
 
 
 @router.put("/{waybill_id}/lock")
-@operation_log(module="运单管理", action="锁定", description="锁定运单（禁止重算）")
+@operation_log(module="计划管理", action="锁定", description="锁定计划（禁止重算）")
 async def lock_waybill(
     request: Request,
     waybill_id: int,
@@ -398,7 +398,7 @@ async def lock_waybill(
 
 
 @router.put("/{waybill_id}/unlock")
-@operation_log(module="运单管理", action="解锁", description="解锁运单")
+@operation_log(module="计划管理", action="解锁", description="解锁计划")
 async def unlock_waybill(
     request: Request,
     waybill_id: int,
@@ -415,14 +415,14 @@ async def unlock_waybill(
 
 
 @router.post("/import")
-@operation_log(module="运单管理", action="批量导入", description="Excel 批量导入运单")
+@operation_log(module="计划管理", action="批量导入", description="Excel 批量导入计划")
 async def import_waybills(
     request: Request,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_tenant_db),
     current_user: TokenData = Depends(get_current_user),
 ):
-    """上传 Excel 批量导入运单（同步解析，行级失败不影响其他行）。"""
+    """上传 Excel 批量导入计划（同步解析，行级失败不影响其他行）。"""
     file_bytes = await file.read()
     if not file_bytes:
         from app.common.exceptions import BizException
@@ -447,7 +447,7 @@ async def import_waybills(
 
 @router.get("/import/template")
 async def download_waybill_import_template(_=Depends(get_current_user)):
-    """下载运单批量导入 Excel 模板（表头与解析逻辑一致）。"""
+    """下载计划批量导入 Excel 模板（表头与解析逻辑一致）。"""
     from app.modules.client.services.waybill.waybill_import_service import (
         WaybillImportService,
     )
@@ -525,7 +525,7 @@ async def list_import_rows(
 
 
 @router.delete("/{waybill_id}")
-@operation_log(module="运单管理", action="删除", description="删除运单")
+@operation_log(module="计划管理", action="删除", description="删除计划")
 async def delete_waybill(
     request: Request,
     waybill_id: int,
@@ -545,7 +545,7 @@ async def delete_waybill(
     )
     label = op_name or "用户"
     suffix = _waybill_summary_customer_suffix(cust_name)
-    summary = f"{label} 删除了运单「{wb_no}」{suffix}"
+    summary = f"{label} 删除了计划「{wb_no}」{suffix}"
     payload = {"waybill_id": waybill_id, "waybill_no": wb_no}
     if cid is not None:
         payload["customer_id"] = cid

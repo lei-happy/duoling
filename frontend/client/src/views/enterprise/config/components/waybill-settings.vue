@@ -69,7 +69,7 @@
             <div class="freight-help-tip">
               <p class="freight-help-tip__title">说明</p>
               <p class="freight-help-tip__plain">
-                运费属于敏感信息。关闭后，运单列表与列表分页接口均不返回具体金额，编辑运单时亦不显示「运费信息」步骤；计算明细等仍可查看与维护运费。
+                运费属于敏感信息。关闭后，计划列表与列表分页接口均不返回具体金额，编辑计划时亦不显示「运费信息」步骤；计算明细等仍可查看与维护运费。
               </p>
             </div>
           </template>
@@ -93,7 +93,7 @@
     </div>
     <div v-if="autoConfirmItem" class="waybill-setting-row">
       <div class="waybill-setting-label">
-        运单录入自动确认：
+        计划录入自动确认：
         <ele-tooltip
           placement="top-start"
           effect="light"
@@ -104,10 +104,10 @@
             <div class="freight-help-tip">
               <p class="freight-help-tip__title">说明</p>
               <p class="freight-help-tip__plain">
-                关闭：新建或导入的运单先进入「待确认」，需要运营点击确认后再进入「待调度」。
+                关闭：新建或导入的计划先进入「待确认」，需要运营点击确认后再进入「待调度」。
               </p>
               <p class="freight-help-tip__plain">
-                开启：新建或导入的运单跳过待确认，直接进入「待调度」。仅对开关开启后录入的运单生效，已存在的待确认运单仍需手动确认。
+                开启：新建或导入的计划跳过待确认，直接进入「待调度」。仅对开关开启后录入的计划生效，已存在的待确认计划仍需手动确认。
               </p>
             </div>
           </template>

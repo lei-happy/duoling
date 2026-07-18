@@ -144,7 +144,7 @@ export interface CandidateCargo {
 /** 候选挂接列表（含全量统计） */
 export interface CandidateCargoListResult {
   items: CandidateCargo[];
-  /** 待配运单数（去重运单，对应 UI「条」） */
+  /** 待配计划数（去重计划，对应 UI「条」） */
   waybillCount: number;
   /** cargo 明细行总数（分页用） */
   lineCount: number;
@@ -213,7 +213,7 @@ export interface Task {
   remark?: string;
   createdAt?: string;
   updatedAt?: string;
-  /** 只读：关联运单状态分布（运单状态机独立于任务，仅供展示） */
+  /** 只读：关联计划状态分布（计划状态机独立于任务，仅供展示） */
   waybillStatusSummary?: WaybillStatusSummary | null;
   /** 预留：关联财务单据状态分布（财务模块接入时填充） */
   financeStatusSummary?: WaybillStatusSummary | null;
@@ -221,13 +221,13 @@ export interface Task {
   waybillItems?: TaskWaybillItem[];
 }
 
-/** 单个运单状态计数 */
+/** 单个计划状态计数 */
 export interface WaybillStatusCount {
   status: number;
   count: number;
 }
 
-/** 任务关联运单的状态分布（只读视图） */
+/** 任务关联计划的状态分布（只读视图） */
 export interface WaybillStatusSummary {
   total: number;
   items: WaybillStatusCount[];

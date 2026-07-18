@@ -1,16 +1,16 @@
 <!--
-  运单回单台账
+  计划回单台账
   ============
 
   概念（与任务状态机彼此独立）：
-  - 回单 = 运单全量签收后，把签收底单返还货主的人工动作（运单维度）。
-  - 待回单 = 运单 status=5 已签收；已回单 = 运单 status=6 已回单。
-  - 任务侧只读展示其下运单状态分布，但任务状态机不含"回单"。
+  - 回单 = 计划全量签收后，把签收底单返还货主的人工动作（计划维度）。
+  - 待回单 = 计划 status=5 已签收；已回单 = 计划 status=6 已回单。
+  - 任务侧只读展示其下计划状态分布，但任务状态机不含"回单"。
 
   能力：
   - 顶部切换「待回单 / 已回单」两个池；
-  - 待回单：确认回单（上传底单 + 回收时间）→ 运单 5→6；
-  - 已回单：查看底单凭证 / 撤销回单 → 运单 6→5。
+  - 待回单：确认回单（上传底单 + 回收时间）→ 计划 5→6；
+  - 已回单：查看底单凭证 / 撤销回单 → 计划 6→5。
 -->
 <template>
   <ele-page>
@@ -32,7 +32,7 @@
             </el-radio-group>
             <el-input
               v-model="where.keyword"
-              placeholder="运单号"
+              placeholder="计划号"
               clearable
               style="width: 220px"
               @change="reload"
@@ -161,7 +161,7 @@
     // 故用 Record<string, unknown>[] 承载后整体 cast（同 waybill-pool-registry.ts）。
     const base: Record<string, unknown>[] = [
       { type: 'index', columnKey: 'index', width: 50, align: 'center' },
-      { prop: 'waybillNo', label: '运单号', minWidth: 160 },
+      { prop: 'waybillNo', label: '计划号', minWidth: 160 },
       { prop: 'customerName', label: '客户名称', minWidth: 140 },
       { columnKey: 'route', label: '路线', minWidth: 200, slot: 'route' },
       { prop: 'quantity', label: '台数', width: 80, align: 'center' },
@@ -213,7 +213,7 @@
   // —— 撤销回单
   const handleRevoke = (row: Waybill) => {
     ElMessageBox.confirm(
-      `确定撤销运单"${row.waybillNo}"的回单吗？撤销后运单回到「已签收」。`,
+      `确定撤销计划"${row.waybillNo}"的回单吗？撤销后计划回到「已签收」。`,
       '系统提示',
       { type: 'warning', draggable: true }
     )

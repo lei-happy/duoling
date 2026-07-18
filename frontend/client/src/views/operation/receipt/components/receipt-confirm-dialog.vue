@@ -1,9 +1,9 @@
 <!--
   确认回单弹窗
 
-  业务：运单全量签收（status=5 已签收）后，把签收底单返还货主即"回单"。
-  本弹窗上传回单底单凭证 + 回收时间 + 备注，提交后运单 5 → 6 已回单。
-  仅运单维度动作，不影响任务状态机。
+  业务：计划全量签收（status=5 已签收）后，把签收底单返还货主即"回单"。
+  本弹窗上传回单底单凭证 + 回收时间 + 备注，提交后计划 5 → 6 已回单。
+  仅计划维度动作，不影响任务状态机。
 -->
 <template>
   <el-dialog
@@ -20,7 +20,7 @@
       type="info"
       :closable="false"
       style="margin-bottom: 12px"
-      :title="`运单 ${waybill.waybillNo} · ${waybill.customerName || '--'} · ${waybill.origin || '--'} → ${waybill.destination || '--'}`"
+      :title="`计划 ${waybill.waybillNo} · ${waybill.customerName || '--'} · ${waybill.origin || '--'} → ${waybill.destination || '--'}`"
     />
 
     <el-form

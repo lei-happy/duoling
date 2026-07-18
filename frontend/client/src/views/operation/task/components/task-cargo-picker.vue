@@ -2,7 +2,7 @@
   商品车配载选择器（左右布局）
 
   设计：
-  - 左侧：待选运单（按线路/客户分组；同运单合并行，可展开按 cargo 行追加台数；主按钮整单加入）
+  - 左侧：待选计划（按线路/客户分组；同计划合并行，可展开按 cargo 行追加台数；主按钮整单加入）
   - 右侧：已选商品车（车型图 + 台数标签只读；可展开查看「每一台」占位明细）
   - 列表区采用 sticky 分组头，避免嵌套 flex 内部高度塌陷
 
@@ -16,7 +16,7 @@
     <!-- ========================== 左侧：待选 ========================== -->
     <div class="cargo-picker__left">
       <div class="cargo-picker__panel-header">
-        <span class="cargo-picker__panel-title">待选运单</span>
+        <span class="cargo-picker__panel-title">待选计划</span>
         <el-tag
           size="small"
           type="info"
@@ -63,7 +63,7 @@
       <div class="cargo-picker__filter">
         <el-input
           v-model="filter.keyword"
-          placeholder="运单号 / 客户"
+          placeholder="计划号 / 客户"
           clearable
           size="small"
           style="width: 170px"
@@ -98,7 +98,7 @@
       <div v-loading="loading" class="cargo-picker__scroll">
         <el-empty
           v-if="!loading && !groupedCandidates.length"
-          description="暂无符合条件的候选运单"
+          description="暂无符合条件的候选计划"
           :image-size="80"
         />
 
@@ -218,7 +218,7 @@
                     </span>
                     <template v-if="!mergedHasPick(mw)">
                       <el-tooltip
-                        content="将该运单下本组全部车型按剩余台数一次性加入右侧"
+                        content="将该计划下本组全部车型按剩余台数一次性加入右侧"
                         placement="top"
                       >
                         <el-button
@@ -405,7 +405,7 @@
       </div>
       <div v-else class="cargo-picker__summary">
         <span class="cargo-picker__summary-hint">
-          建议优先选同线路、同车型的运单凑成一板
+          建议优先选同线路、同车型的计划凑成一板
         </span>
       </div>
 
@@ -585,7 +585,7 @@
         <div class="cargo-picker-help-dialog__header-text">
           <div class="cargo-picker-help-dialog__title">配载建单指南</div>
           <div class="cargo-picker-help-dialog__subtitle">
-            从待选运单挑选商品车，快速组成一张任务单
+            从待选计划挑选商品车，快速组成一张任务单
           </div>
         </div>
       </div>
@@ -630,7 +630,7 @@
               >配载技巧</div
             >
             <div class="cargo-picker-help-dialog__highlight-text">
-              建议优先选择<strong>同线路、同车型</strong>的运单凑成一板，减少混装与后续调度成本。
+              建议优先选择<strong>同线路、同车型</strong>的计划凑成一板，减少混装与后续调度成本。
             </div>
           </div>
         </div>
@@ -643,7 +643,7 @@
           <div class="cargo-picker-help-dialog__glossary-list">
             <div class="cargo-picker-help-dialog__glossary-item">
               <el-tag size="small" type="primary" effect="plain">单</el-tag>
-              <span>待配运单数（去重运单号）</span>
+              <span>待配计划数（去重计划号）</span>
             </div>
             <div class="cargo-picker-help-dialog__glossary-item">
               <el-tag size="small" type="success" effect="plain">台</el-tag>
@@ -651,7 +651,7 @@
             </div>
             <div class="cargo-picker-help-dialog__glossary-item">
               <el-tag size="small" type="info" effect="plain">行明细</el-tag>
-              <span>按商品车明细分页，多车型商品车时行数多于运单数</span>
+              <span>按商品车明细分页，多车型商品车时行数多于计划数</span>
             </div>
           </div>
         </div>
@@ -703,7 +703,7 @@
 
   type GroupMode = 'route' | 'customer';
 
-  /** 同分组内同一运单合并展示（底层仍为多 cargo 行） */
+  /** 同分组内同一计划合并展示（底层仍为多 cargo 行） */
   interface MergedWaybillRow {
     key: string;
     lines: CandidateCargo[];
@@ -747,8 +747,8 @@
   const helpSteps = [
     {
       icon: markRaw(Filter),
-      title: '筛选待配运单',
-      desc: '按运单号、起终点、品牌车型等条件缩小范围；支持按线路或按客户分组浏览。'
+      title: '筛选待配计划',
+      desc: '按计划号、起终点、品牌车型等条件缩小范围；支持按线路或按客户分组浏览。'
     },
     {
       icon: markRaw(Plus),
@@ -773,7 +773,7 @@
   const currentPage = ref(1);
   const groupMode = ref<GroupMode>('route');
   const collapsedGroups = ref<Set<string>>(new Set());
-  /** 左侧：合并运单行内展开（按 cargo 行追加台数） */
+  /** 左侧：合并计划行内展开（按 cargo 行追加台数） */
   const expandedMergeKeys = ref<Set<string>>(new Set());
   /** 右侧：已选行展开显示「每一台」占位明细 */
   const expandedPickedCargoIds = ref<Set<number>>(new Set());
@@ -832,14 +832,14 @@
 
   const paginationTipText = computed(
     () =>
-      `待配明细较多，当前仅展示第 ${currentPage.value} 页（每页 ${CANDIDATE_PAGE_SIZE} 行 cargo 明细）。左上角「单」为待配运单数，底部「行明细」为可翻页浏览的明细行数；同一运单多车型时，行数会多于运单数。请优先用上方筛选缩小范围，或翻页继续浏览。`
+      `待配明细较多，当前仅展示第 ${currentPage.value} 页（每页 ${CANDIDATE_PAGE_SIZE} 行 cargo 明细）。左上角「单」为待配计划数，底部「行明细」为可翻页浏览的明细行数；同一计划多车型时，行数会多于计划数。请优先用上方筛选缩小范围，或翻页继续浏览。`
   );
 
   const candidateStatsTitle = computed(() => {
     if (candidateStats.lineCount <= CANDIDATE_PAGE_SIZE) {
-      return `当前筛选条件下共 ${candidateStats.waybillCount} 个待配运单、${candidateStats.lineCount} 行 cargo 明细、${candidateStats.quantityTotal} 台商品车`;
+      return `当前筛选条件下共 ${candidateStats.waybillCount} 个待配计划、${candidateStats.lineCount} 行 cargo 明细、${candidateStats.quantityTotal} 台商品车`;
     }
-    return `共 ${candidateStats.waybillCount} 个待配运单、${candidateStats.lineCount} 行 cargo 明细、${candidateStats.quantityTotal} 台商品车；列表按每页 ${CANDIDATE_PAGE_SIZE} 行明细分页`;
+    return `共 ${candidateStats.waybillCount} 个待配计划、${candidateStats.lineCount} 行 cargo 明细、${candidateStats.quantityTotal} 台商品车；列表按每页 ${CANDIDATE_PAGE_SIZE} 行明细分页`;
   });
 
   function routeKeyOf(c: CandidateCargo): string {
@@ -874,7 +874,7 @@
     return parts.join(' · ') || '';
   }
 
-  /** 与运单货物明细弹窗一致：相对路径补前缀 */
+  /** 与计划货物明细弹窗一致：相对路径补前缀 */
   function resolveMediaUrl(p?: string | null): string {
     const s = p?.trim();
     if (!s) return '';
@@ -890,7 +890,7 @@
     return m.lines.reduce((s, c) => s + (c.remainingQuantity || 0), 0);
   }
 
-  /** 同一分组（同线路+同客户 或 同客户+同线路）内按运单号合并 */
+  /** 同一分组（同线路+同客户 或 同客户+同线路）内按计划号合并 */
   function mergeLinesByWaybill(raw: CandidateCargo[]): MergedWaybillRow[] {
     const map = new Map<number, CandidateCargo[]>();
     for (const c of raw) {
@@ -1037,7 +1037,7 @@
     return m.lines.some((c) => pickedQty(c) > 0);
   }
 
-  /** 运单合并行：扣除右侧已选后，仍可再配入的台数 */
+  /** 计划合并行：扣除右侧已选后，仍可再配入的台数 */
   function mergedRemainingTotal(m: MergedWaybillRow): number {
     return m.lines.reduce((s, c) => s + maxIncrementForLine(c), 0);
   }
@@ -1123,7 +1123,7 @@
     }
 
     groups.sort((a, b) => {
-      // 不要用 addableQuantity 排序：会随右侧已选变化，导致左侧分组/运单行「跳动」
+      // 不要用 addableQuantity 排序：会随右侧已选变化，导致左侧分组/计划行「跳动」
       const dq = b.totalQuantity - a.totalQuantity;
       if (dq !== 0) return dq;
       return String(a.title).localeCompare(String(b.title), 'zh-CN');

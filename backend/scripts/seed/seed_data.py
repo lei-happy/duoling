@@ -610,8 +610,8 @@ def seed_platform_data():
                 DictItem(dict_id=d2.id, dict_code="license_type", item_name="C1", item_value="C1", sort_order=40),
             ])
 
-            # 运单状态字典
-            d3 = Dict(dict_code="order_status", dict_name="运单状态", sort_order=20, status=1)
+            # 计划状态字典
+            d3 = Dict(dict_code="order_status", dict_name="计划状态", sort_order=20, status=1)
             session.add(d3)
             session.flush()
             session.add_all([

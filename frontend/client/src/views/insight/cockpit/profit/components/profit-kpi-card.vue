@@ -232,7 +232,7 @@
     revenue: {
       title: '收入',
       tooltip:
-        '当天 0 点至接口返回时刻的运单收入合计（取运费计算引擎结果 biz_waybill_freight_result，无结果时回退运单应收运费）；主数字单位为万元；迷你图为近 30 天每日收入。',
+        '当天 0 点至接口返回时刻的计划收入合计（取运费计算引擎结果 biz_waybill_freight_result，无结果时回退计划应收运费）；主数字单位为万元；迷你图为近 30 天每日收入。',
       kind: 'amount',
       color: '#165dff',
       chartType: 'line'
@@ -240,7 +240,7 @@
     cost: {
       title: '成本',
       tooltip:
-        '当天 0 点至今的运输成本合计（取任务成本引擎结果 biz_task_cost_result，按台数分摊到运单）；单位为万元；迷你图为近 30 天每日成本。',
+        '当天 0 点至今的运输成本合计（取任务成本引擎结果 biz_task_cost_result，按台数分摊到计划）；单位为万元；迷你图为近 30 天每日成本。',
       kind: 'amount',
       color: '#ff7d00',
       chartType: 'bar'
@@ -248,7 +248,7 @@
     grossProfit: {
       title: '毛利',
       tooltip:
-        '毛利 = 收入 − 分摊成本；单位为万元；迷你图为近 30 天每日毛利。未挂接任务（无成本）的运单成本按 0 计，可能拉高毛利。',
+        '毛利 = 收入 − 分摊成本；单位为万元；迷你图为近 30 天每日毛利。未挂接任务（无成本）的计划成本按 0 计，可能拉高毛利。',
       kind: 'amount',
       color: '#00b42a',
       chartType: 'line'

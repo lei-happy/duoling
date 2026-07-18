@@ -49,13 +49,13 @@ export interface ProfitMarginMetric {
 export interface ProfitKpiSummary {
   /** 收入（引擎结果口径） */
   revenue: ProfitKpiMetric;
-  /** 成本（分摊到运单） */
+  /** 成本（分摊到计划） */
   cost: ProfitKpiMetric;
   /** 毛利 = 收入 - 成本 */
   grossProfit: ProfitKpiMetric;
   /** 毛利率 = 毛利 / 收入 */
   grossMargin: ProfitMarginMetric;
-  /** 成本覆盖率 = 有成本运单收入 / 总收入（null 表示无收入） */
+  /** 成本覆盖率 = 有成本计划收入 / 总收入（null 表示无收入） */
   costCoverageRate: number | null;
 }
 

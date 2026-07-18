@@ -2,13 +2,13 @@
   确认签收弹窗（item 级签收）
 
   说明：
-  - 签收语义已下沉到「任务-运单挂接行（TaskWaybillItem）」维度，由调度员勾选具体
+  - 签收语义已下沉到「任务-计划挂接行（TaskWaybillItem）」维度，由调度员勾选具体
     item 触发 ``updateTaskWaybillItem(status=3)``；后端 ``_aggregate_task_status_from_items``
     在 item 全部签收后自动把 task.status 4→5。
   - 单任务场景：拉取该任务下的所有 item 让用户逐行勾选/批量签收；
   - 批量任务场景：仅做"对每张任务下所有未签收 item 一键签收"，不展示明细。
 
-  详见《02.运单与任务单状态机联动设计.md》。
+  详见《02.计划与任务单状态机联动设计.md》。
 -->
 <template>
   <el-dialog
@@ -100,7 +100,7 @@
           >
             <el-table-column type="selection" width="40" align="center" />
             <el-table-column
-              label="运单号"
+              label="计划号"
               prop="waybillNo"
               min-width="140"
               show-overflow-tooltip

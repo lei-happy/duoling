@@ -1,5 +1,5 @@
 <!--
-  运单工作台 - 按 pool 配置的列表壳层
+  计划工作台 - 按 pool 配置的列表壳层
   ====================================
 
   Props:
@@ -42,7 +42,7 @@
             :items="[
               {
                 preset: 'add',
-                title: '新增运单',
+                title: '新增计划',
                 onClick: () => emit('openEdit')
               }
             ]"
@@ -76,7 +76,7 @@
               text
               size="small"
               class="waybill-no-cell__copy"
-              title="复制运单号"
+              title="复制计划号"
               @click.stop="copyWaybillNo(row.waybillNo)"
             >
               <el-icon :size="14"><DocumentCopy /></el-icon>
@@ -313,7 +313,7 @@
   const buildQuery = (pages?: Record<string, unknown>): WaybillParam => {
     const search = props.searchWhere ?? {};
     const keyword = search.keyword?.trim();
-    // 运单号唯一：有 keyword 时仅按单号查，不受阶段/日期等其它条件限制
+    // 计划号唯一：有 keyword 时仅按单号查，不受阶段/日期等其它条件限制
     if (keyword) {
       return { keyword, ...(pages as WaybillParam | undefined) };
     }
@@ -459,7 +459,7 @@
   };
 
   const copyWaybillNo = (no?: string) =>
-    copyTextWithFeedback(no, '无可复制的单号', '已复制运单号');
+    copyTextWithFeedback(no, '无可复制的单号', '已复制计划号');
   const copyCustomerName = (name?: string) =>
     copyTextWithFeedback(name, '无可复制的客户名称', '已复制客户名称');
   const copyOrigin = (v?: string | null) =>
@@ -583,12 +583,12 @@
   /**
    * 「确认」语义说明：
    * - 历史：status=0 草稿 → status=1 待调度（原 confirmWaybill 行为）
-   * - 新设计：状态机已废弃 0 草稿，所有运单创建即 status=1，"确认"按钮仅在
+   * - 新设计：状态机已废弃 0 草稿，所有计划创建即 status=1，"确认"按钮仅在
    *   存在遗留 0 数据时显示，对仍然存在的 0 数据沿用 0→1 推进。
    */
   const confirmWaybill = (row: Waybill) => {
     ElMessageBox.confirm(
-      `确认运单「${row.waybillNo}」？确认后将变为「待调度」状态。`,
+      `确认计划「${row.waybillNo}」？确认后将变为「待调度」状态。`,
       '系统提示',
       { type: 'warning', draggable: true }
     )
@@ -617,13 +617,13 @@
     );
     if (!pending.length) {
       EleMessage.warning({
-        message: '当前所选运单中无待确认（status=0）记录',
+        message: '当前所选计划中无待确认（status=0）记录',
         plain: true
       });
       return;
     }
     ElMessageBox.confirm(
-      `将确认 ${pending.length} 条运单，状态将变为「待调度」，是否继续？`,
+      `将确认 ${pending.length} 条计划，状态将变为「待调度」，是否继续？`,
       '批量确认',
       { type: 'warning', draggable: true }
     )
@@ -639,7 +639,7 @@
             const fail = results.length - ok;
             if (fail === 0) {
               EleMessage.success({
-                message: `已成功确认 ${ok} 条运单`,
+                message: `已成功确认 ${ok} 条计划`,
                 plain: true
               });
             } else {
@@ -680,8 +680,8 @@
   const lockRow = (row: Waybill) => {
     if (!row.id) return;
     ElMessageBox.confirm(
-      '锁定后该运单将不再被自动重算，确定继续？',
-      '锁定运单',
+      '锁定后该计划将不再被自动重算，确定继续？',
+      '锁定计划',
       { type: 'warning' }
     )
       .then(() => lockWaybill(row.id!))
@@ -705,7 +705,7 @@
   };
 
   const remove = (row: Waybill) => {
-    ElMessageBox.confirm(`确定要删除运单"${row.waybillNo}"吗?`, '系统提示', {
+    ElMessageBox.confirm(`确定要删除计划"${row.waybillNo}"吗?`, '系统提示', {
       type: 'warning',
       draggable: true
     })

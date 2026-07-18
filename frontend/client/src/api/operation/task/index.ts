@@ -168,7 +168,7 @@ export async function cancelTask(id: number, reason?: string) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 撤销至上一态（专项接口；见 02.运单与任务单状态机联动设计.md §4.5） */
+/** 撤销至上一态（专项接口；见 02.计划与任务单状态机联动设计.md §4.5） */
 export async function revertTaskStatus(
   id: number,
   data: { targetStatus: number; reason: string }

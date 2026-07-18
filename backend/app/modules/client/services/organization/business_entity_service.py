@@ -333,7 +333,7 @@ class BusinessEntityService:
             (TaskFinanceDoc, "费用单"),
             (Customer, "客户"),
             (Carrier, "承运商"),
-            (Waybill, "运单"),
+            (Waybill, "计划"),
         ]
         for model, label in checks:
             hit = (

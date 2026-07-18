@@ -2,7 +2,7 @@
 
 /** 一键生成配载方案入参 */
 export interface SmartStowageGeneratePayload {
-  /** 运单号/客户关键字 */
+  /** 计划号/客户关键字 */
   keyword?: string;
   customerId?: number;
   /** 起点关键字 */

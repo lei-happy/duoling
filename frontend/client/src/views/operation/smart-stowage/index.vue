@@ -171,7 +171,7 @@
                 >
                 <li
                   >{{ plan.customerCount }} 家客户 ·
-                  {{ plan.waybillCount }} 张运单</li
+                  {{ plan.waybillCount }} 张计划</li
                 >
                 <li class="stowage-plan-card__score"
                   >评分 {{ plan.score.toFixed(3) }}</li
@@ -196,7 +196,7 @@
                 >
                   <el-table-column
                     prop="waybillNo"
-                    label="运单号"
+                    label="计划号"
                     width="130"
                   />
                   <el-table-column

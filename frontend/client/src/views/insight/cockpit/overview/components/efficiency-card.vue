@@ -1,7 +1,7 @@
-<!-- 经营驾驶舱 - 运单状态分布（环形 + 运费计算状态堆叠条） -->
+<!-- 经营驾驶舱 - 计划状态分布（环形 + 运费计算状态堆叠条） -->
 <template>
   <ele-card
-    header="运单状态分布"
+    header="计划状态分布"
     :header-style="{ paddingTop: 0, paddingBottom: 0 }"
     :body-style="{ padding: 0 }"
     class="eff-card"
@@ -43,7 +43,7 @@
                 <div class="eff-calc-head-left">
                 <span class="eff-calc-head-title">运费计算状态</span>
                 <ele-tooltip
-                  content="统计所选时间内，每张运单的「运费有没有被系统自动算出来、算得是否正常」。"
+                  content="统计所选时间内，每张计划的「运费有没有被系统自动算出来、算得是否正常」。"
                   placement="top"
                   :offset="6"
                 >
@@ -88,7 +88,7 @@
             <div v-else-if="data.totalCount > 0" class="eff-calc-empty">
               暂无计算状态分布
             </div>
-            <div v-else class="eff-calc-empty">本期无运单</div>
+            <div v-else class="eff-calc-empty">本期无计划</div>
             <div v-if="calcBarSegments.length" class="eff-calc-legend">
               <span
                 v-for="seg in calcBarSegments"

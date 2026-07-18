@@ -1,4 +1,4 @@
-<!-- 运单列表：商品车明细（只读，含车系图与客户/线路摘要） -->
+<!-- 计划列表：商品车明细（只读，含车系图与客户/线路摘要） -->
 <template>
   <el-dialog
     :model-value="visible"
@@ -23,7 +23,7 @@
             link
             class="wcd-header__copy"
             :icon="DocumentCopy"
-            aria-label="复制运单号"
+            aria-label="复制计划号"
             @click.stop="copyWaybillNo"
           />
         </div>
@@ -137,18 +137,18 @@
 
   const waybillNo = computed(() => props.waybill?.waybillNo?.trim() || '');
 
-  /** 汇总类副标题不展示复制（如「N 张运单」「任务 xxx」） */
+  /** 汇总类副标题不展示复制（如「N 张计划」「任务 xxx」） */
   const canCopyWaybillNo = computed(() => {
     const t = waybillNo.value;
     if (!t) return false;
-    if (t.includes('张运单') || t.startsWith('任务')) return false;
+    if (t.includes('张计划') || t.startsWith('任务')) return false;
     return true;
   });
 
   const copyWaybillNo = async () => {
     const t = waybillNo.value;
     if (!t) {
-      EleMessage.warning({ message: '无可复制的运单号', plain: true });
+      EleMessage.warning({ message: '无可复制的计划号', plain: true });
       return;
     }
     try {
@@ -164,7 +164,7 @@
         document.execCommand('copy');
         document.body.removeChild(ta);
       }
-      EleMessage.success({ message: '已复制运单号', plain: true });
+      EleMessage.success({ message: '已复制计划号', plain: true });
     } catch {
       EleMessage.error({ message: '复制失败', plain: true });
     }

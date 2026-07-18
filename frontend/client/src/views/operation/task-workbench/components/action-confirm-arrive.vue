@@ -86,7 +86,7 @@
             @selection-change="onItemSelection"
           >
             <el-table-column type="selection" width="44" />
-            <el-table-column label="运单号" prop="waybillNo" min-width="140" />
+            <el-table-column label="计划号" prop="waybillNo" min-width="140" />
             <el-table-column label="品牌" prop="vehicleBrand" width="110" />
             <el-table-column label="车型" prop="vehicleModel" min-width="140" />
             <el-table-column

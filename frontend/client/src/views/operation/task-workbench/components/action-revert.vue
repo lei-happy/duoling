@@ -5,7 +5,7 @@
   调用方通过 ``actionKey`` 传入具体动作语义；本组件统一调 POST /revert-status。
 
   作业语义：调度员发现上一步操作有误时撤回到上一态；后端会同步反向推 Item，
-  并触发运单状态聚合（允许 downgrade）。原因必填，写入任务单备注（审计）。
+  并触发计划状态聚合（允许 downgrade）。原因必填，写入任务单备注（审计）。
 -->
 <template>
   <el-dialog
@@ -111,7 +111,7 @@
     const from = cfg.value.revertFrom;
     const to = cfg.value.revertTo;
     if (from === undefined || to === undefined) return '';
-    return `将把任务从「${STATUS_LABELS[from]}」回退到「${STATUS_LABELS[to]}」；运单状态会自动联动回退。`;
+    return `将把任务从「${STATUS_LABELS[from]}」回退到「${STATUS_LABELS[to]}」；计划状态会自动联动回退。`;
   });
 
   const onOpen = () => {

@@ -1,6 +1,6 @@
 import type { PageParam } from '@/api';
 
-/** 运单货物明细（一单多车型） */
+/** 计划货物明细（一单多车型） */
 export interface WaybillCargoLine {
   id?: number;
   vehicleBrand?: string;
@@ -55,11 +55,11 @@ export interface Waybill {
   lastResultId?: number | null;
   /** 是否存在未取消/未完结的任务挂接（用于禁用编辑/删除按钮） */
   hasActiveTaskItems?: boolean | null;
-  /** 已分配到任务单的总台数（运单聚合视图） */
+  /** 已分配到任务单的总台数（计划聚合视图） */
   allocatedQuantity?: number | null;
 }
 
-/** 运单工作台 KPI：与后端 WaybillService.workbench_stats 输出对齐 */
+/** 计划工作台 KPI：与后端 WaybillService.workbench_stats 输出对齐 */
 export interface WaybillWorkbenchStats {
   statusCounts: Record<number, number>;
   totals: {
@@ -74,7 +74,7 @@ export interface WaybillWorkbenchStats {
   };
 }
 
-/** 运单回单凭证（签收底单返还货主） */
+/** 计划回单凭证（签收底单返还货主） */
 export interface WaybillReceipt {
   id: number;
   waybillId: number;
@@ -88,7 +88,7 @@ export interface WaybillReceipt {
   createdAt: string;
 }
 
-/** 确认回单入参（运单 5 已签收 → 6 已回单） */
+/** 确认回单入参（计划 5 已签收 → 6 已回单） */
 export interface WaybillReceiptConfirmPayload {
   fileUrls: string[];
   fileType?: number;
@@ -97,7 +97,7 @@ export interface WaybillReceiptConfirmPayload {
 }
 
 export interface WaybillParam extends PageParam {
-  /** 关键词：仅模糊匹配运单号（客户请用 customerId） */
+  /** 关键词：仅模糊匹配计划号（客户请用 customerId） */
   keyword?: string;
   customerId?: number;
   status?: number;

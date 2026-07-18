@@ -1,5 +1,5 @@
 """
-企业端运价费率 API（更新/删除/重算受影响运单/版本历史/冲突预校验）
+企业端运价费率 API（更新/删除/重算受影响计划/版本历史/冲突预校验）
 列表和新增通过合同嵌套路由 /billing/contract/{contract_id}/rate 访问
 """
 
@@ -62,8 +62,8 @@ async def delete_rate(
 
 
 @router.post("/{rate_id}/recalculate-affected")
-@operation_log(module="运价费率", action="重算受影响运单",
-               description="对该运价规则触发受影响运单批量重算")
+@operation_log(module="运价费率", action="重算受影响计划",
+               description="对该运价规则触发受影响计划批量重算")
 async def recalculate_affected(
     request: Request,
     rate_id: int,

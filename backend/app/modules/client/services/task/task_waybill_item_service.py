@@ -2,7 +2,7 @@
 任务单货物挂接 Service
 
 核心职责：
-1. 候选运单 cargo 行查询（剩余可分配台数 > 0）
+1. 候选计划 cargo 行查询（剩余可分配台数 > 0）
 2. 挂接 / 批量挂接 / 取消挂接 / 状态推进
 3. cargo.allocated_quantity 的原子维护
 4. 任务单 total_quantity / waybill_count 冗余聚合
@@ -135,7 +135,7 @@ class TaskWaybillItemService:
         destination_keyword: Optional[str] = None,
         model_keyword: Optional[str] = None,
     ) -> Tuple[int, int, int]:
-        """统计待配运单数、cargo 明细行数、剩余可配总台数（不受 list limit 影响）。"""
+        """统计待配计划数、cargo 明细行数、剩余可配总台数（不受 list limit 影响）。"""
         remaining, conds = TaskWaybillItemService._candidate_cargo_where(
             keyword=keyword,
             customer_id=customer_id,
@@ -157,7 +157,7 @@ class TaskWaybillItemService:
         waybill_count = int(row.waybill_count or 0)
         cargo_line_count = int(row.cargo_line_count or 0)
         quantity_total = int(row.quantity_total or 0)
-        # 明细行数 >= 运单数；若异常则纠正字段顺序（兼容部分驱动返回列序不一致）
+        # 明细行数 >= 计划数；若异常则纠正字段顺序（兼容部分驱动返回列序不一致）
         if waybill_count > cargo_line_count:
             waybill_count, cargo_line_count = cargo_line_count, waybill_count
         return waybill_count, cargo_line_count, quantity_total
@@ -173,9 +173,9 @@ class TaskWaybillItemService:
         offset: int = 0,
         limit: int = 200,
     ) -> CandidateCargoListOut:
-        """挂接器左栏：返回剩余台数 > 0 的运单 cargo 行候选。
+        """挂接器左栏：返回剩余台数 > 0 的计划 cargo 行候选。
 
-        新语义（参考《02.运单与任务单状态机联动设计.md》§4.2）：
+        新语义（参考《02.计划与任务单状态机联动设计.md》§4.2）：
 
         - 1 待调度：完全可发运；
         - 2 调度中：仍可挂接（cargo.remaining_quantity > 0，支持拆单分批）；
@@ -276,13 +276,13 @@ class TaskWaybillItemService:
         )
         cargo = res.scalar_one_or_none()
         if not cargo:
-            raise BizException(f"运单货物行不存在 (cargo_id={cargo_id})")
+            raise BizException(f"计划货物行不存在 (cargo_id={cargo_id})")
         new_allocated = int(cargo.allocated_quantity or 0) + delta
         if new_allocated < 0:
             new_allocated = 0
         if new_allocated > int(cargo.quantity):
             raise BizException(
-                f"运单 {cargo.waybill_id} 货物行可分配台数不足："
+                f"计划 {cargo.waybill_id} 货物行可分配台数不足："
                 f"原台数 {cargo.quantity} / 已分配 {cargo.allocated_quantity or 0} / "
                 f"本次新增 {delta}"
             )
@@ -296,7 +296,7 @@ class TaskWaybillItemService:
         task: Task,
         in_data: TaskWaybillItemIn,
     ) -> TaskWaybillItem:
-        """从入参构建 TaskWaybillItem，含运单/货物冗余快照填充"""
+        """从入参构建 TaskWaybillItem，含计划/货物冗余快照填充"""
         wb_res = await db.execute(
             select(Waybill).where(
                 Waybill.id == in_data.waybillId,
@@ -305,7 +305,7 @@ class TaskWaybillItemService:
         )
         wb = wb_res.scalar_one_or_none()
         if not wb:
-            raise BizException(f"运单不存在 (id={in_data.waybillId})")
+            raise BizException(f"计划不存在 (id={in_data.waybillId})")
 
         cg_res = await db.execute(
             select(WaybillCargo).where(
@@ -315,9 +315,9 @@ class TaskWaybillItemService:
         )
         cargo = cg_res.scalar_one_or_none()
         if not cargo:
-            raise BizException(f"运单货物行不存在 (id={in_data.waybillCargoId})")
+            raise BizException(f"计划货物行不存在 (id={in_data.waybillCargoId})")
         if cargo.waybill_id != wb.id:
-            raise BizException("货物行不属于该运单")
+            raise BizException("货物行不属于该计划")
 
         return TaskWaybillItem(
             task_id=task.id,
@@ -378,7 +378,7 @@ class TaskWaybillItemService:
             affected_wb.add(int(old.waybill_id))
         await db.flush()
         new_rows = await TaskWaybillItemService.add_items(db, task, items_in)
-        # 替换可能让原本挂接的运单回退到待调度
+        # 替换可能让原本挂接的计划回退到待调度
         await WaybillStatusAggregator.recompute_many(
             db, affected_wb, allow_downgrade=True,
         )
@@ -414,7 +414,7 @@ class TaskWaybillItemService:
         task = task_res.scalar_one_or_none()
         if task is not None:
             await TaskWaybillItemService._refresh_task_aggregates(db, task)
-        # 取消挂接可能让运单回退
+        # 取消挂接可能让计划回退
         await WaybillStatusAggregator.recompute(
             db, waybill_id, allow_downgrade=True,
         )
@@ -439,15 +439,15 @@ class TaskWaybillItemService:
         old_status = int(item.status)
         new_status = int(data.status)
 
-        # 独立性防护：运单已进入「已回单(6)」后，底单已交付货主，
-        # 禁止 item 级"撤销签收"（3→2）直接回退，必须先在运单侧撤销回单。
+        # 独立性防护：计划已进入「已回单(6)」后，底单已交付货主，
+        # 禁止 item 级"撤销签收"（3→2）直接回退，必须先在计划侧撤销回单。
         if old_status == ITEM_SIGNED and new_status < ITEM_SIGNED:
             wb_r = await db.execute(
                 select(Waybill.status).where(Waybill.id == item.waybill_id)
             )
             wb_status = wb_r.scalar_one_or_none()
             if wb_status is not None and int(wb_status) >= WAYBILL_RECEIPTED:
-                raise BizException("运单已回单，请先在运单侧撤销回单后再撤销签收")
+                raise BizException("计划已回单，请先在计划侧撤销回单后再撤销签收")
 
         await TaskWaybillItemService._switch_item_status(
             db, item, new_status,
@@ -480,7 +480,7 @@ class TaskWaybillItemService:
                 db, task,
             )
 
-        # 单条 item 变更后聚合运单状态（含可能的回退）
+        # 单条 item 变更后聚合计划状态（含可能的回退）
         await WaybillStatusAggregator.recompute(
             db, int(item.waybill_id),
             allow_downgrade=(new_status < old_status),
@@ -629,7 +629,7 @@ class TaskWaybillItemService:
 
         - 只升不降（max progress）：如已超过推导目标则保持
         - ``only_unfinished=True`` 时跳过 status == 9 (已取消) 的 item
-        - 返回受影响的运单 id 列表
+        - 返回受影响的计划 id 列表
 
         本方法不调用 aggregator；调用方应在 propagate 完后调用
         ``WaybillStatusAggregator.aggregate_by_task(task.id)`` 完成聚合。
@@ -666,7 +666,7 @@ class TaskWaybillItemService:
 
         - 只降不升：如当前 item.status 已低于推导目标，保持不变
         - 时间字段不清除（保留历史事实，参考设计文档 §4.5）
-        - 返回受影响的运单 id 列表
+        - 返回受影响的计划 id 列表
         """
         target = ItemStateMachine.derive_from_task(int(task.status))
         if target is None:
@@ -742,7 +742,7 @@ class TaskWaybillItemService:
     ) -> None:
         """取消任务单时调用：释放所有未签收挂接占用的台数并软删
 
-        软删后调用 aggregator 让对应运单回退到合理状态（待调度 / 调度中）。
+        软删后调用 aggregator 让对应计划回退到合理状态（待调度 / 调度中）。
         """
         items = await TaskWaybillItemService.list_items_of_task(db, task.id)
         affected_wb: set[int] = set()

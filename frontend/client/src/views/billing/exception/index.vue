@@ -42,10 +42,10 @@
             <el-option label="已忽略" value="ignored" />
           </el-select>
         </el-form-item>
-        <el-form-item label="运单ID">
+        <el-form-item label="计划ID">
           <el-input
             v-model.number="searchModel.waybillId"
-            placeholder="输入运单ID"
+            placeholder="输入计划ID"
             clearable
             style="width: 160px"
           />
@@ -161,7 +161,7 @@
     { value: 'RULE_NOT_FOUND', label: '未匹配运价' },
     { value: 'RULE_CONFLICT', label: '规则冲突' },
     { value: 'INVALID_QTY', label: '台数无效' },
-    { value: 'WAYBILL_LOCKED', label: '运单锁定' },
+    { value: 'WAYBILL_LOCKED', label: '计划锁定' },
     { value: 'IMPORT_VALIDATE_FAILED', label: '导入校验失败' }
   ];
 
@@ -224,7 +224,7 @@
       slot: 'exceptionType'
     },
     { prop: 'exceptionMessage', label: '异常描述', minWidth: 280 },
-    { prop: 'waybillId', label: '运单ID', width: 100 },
+    { prop: 'waybillId', label: '计划ID', width: 100 },
     { prop: 'batchId', label: '批次ID', width: 100 },
     {
       prop: 'status',
@@ -346,7 +346,7 @@
     if (!selectedIds.value.length) return;
     try {
       await ElMessageBox.confirm(
-        `确认对选中的 ${selectedIds.value.length} 条异常关联的运单批量重算？`,
+        `确认对选中的 ${selectedIds.value.length} 条异常关联的计划批量重算？`,
         '系统提示',
         { type: 'info' }
       );

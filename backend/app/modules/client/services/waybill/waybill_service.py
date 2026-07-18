@@ -1,5 +1,5 @@
 """
-运单服务（租户库）
+计划服务（租户库）
 """
 
 import random
@@ -38,7 +38,7 @@ from app.modules.client.services.billing.freight_calc_task_service import (
 )
 
 
-# 运单"计费敏感字段"（Schema 字段名）：变更时触发重算
+# 计划"计费敏感字段"（Schema 字段名）：变更时触发重算
 WAYBILL_BILLING_SENSITIVE_FIELDS = {
     "customerId", "originCode", "originRegionId",
     "destinationCode", "destinationRegionId",
@@ -64,13 +64,13 @@ class WaybillService:
     def _raise_biz_if_duplicate_waybill_no(exc: IntegrityError) -> None:
         msg = str(getattr(exc, "orig", None) or exc).lower()
         if "waybill_no" in msg:
-            raise BizException("运单编号已存在，请更换其他编号") from exc
+            raise BizException("计划编号已存在，请更换其他编号") from exc
         raise exc
 
     @staticmethod
     def _generate_waybill_no() -> str:
         now = datetime.now()
-        return f"YD{now.strftime('%Y%m%d%H%M%S')}{random.randint(1000, 9999)}"
+        return f"JH{now.strftime('%Y%m%d%H%M%S')}{random.randint(1000, 9999)}"
 
     @staticmethod
     def _vin_len_ok(v: Optional[str]) -> bool:
@@ -183,7 +183,7 @@ class WaybillService:
 
     @staticmethod
     async def _series_image_lookup_map(db: AsyncSession) -> dict[str, Optional[str]]:
-        """品牌中文名 + 车系名 → 车系图（与运单货物行匹配）。"""
+        """品牌中文名 + 车系名 → 车系图（与计划货物行匹配）。"""
         result = await db.execute(
             select(
                 BizVehicleBrand.brand_name_cn,
@@ -253,7 +253,7 @@ class WaybillService:
     async def _hydrate_waybill_create_region_ids(
         db: AsyncSession, data: WaybillCreate,
     ) -> WaybillCreate:
-        """创建运单时 origin/destination_region_id 为空则用编码或名称补全。"""
+        """创建计划时 origin/destination_region_id 为空则用编码或名称补全。"""
         update: dict = {}
         if data.originRegionId is None and (data.originCode or data.origin):
             oc = (data.originCode or "").strip() or None
@@ -279,7 +279,7 @@ class WaybillService:
 
     @staticmethod
     async def _hydrate_waybill_row_region_ids(db: AsyncSession, waybill: Waybill) -> None:
-        """已落库运单若 region_id 为空，用当前编码/名称补全（编辑、导入、历史数据自愈）。"""
+        """已落库计划若 region_id 为空，用当前编码/名称补全（编辑、导入、历史数据自愈）。"""
         if waybill.origin_region_id is None and (waybill.origin_code or waybill.origin):
             oc = (waybill.origin_code or "").strip() or None
             r = await StandardizeService.resolve_region(
@@ -343,7 +343,7 @@ class WaybillService:
                     first_contract_id = hit.contractId
                     first_rate_id = hit.rateId
             elif calc_mode == "auto_required":
-                raise BizException("存在货物行未匹配到运价，无法保存运单")
+                raise BizException("存在货物行未匹配到运价，无法保存计划")
 
         if not any_hit:
             return None, None, None
@@ -491,7 +491,7 @@ class WaybillService:
         created_at_start: Optional[date] = None,
         created_at_end: Optional[date] = None,
     ) -> dict:
-        """运单工作台 KPI 聚合：按 status 0~7 计数（可选叠加与列表相同的筛选条件）。
+        """计划工作台 KPI 聚合：按 status 0~7 计数（可选叠加与列表相同的筛选条件）。
 
         8 个卡片：
             0 待确认 / 1 待调度 / 2 调度中 / 3 运输中 / 4 待签收 / 5 已签收 / 6 已回单 / 7 已关闭
@@ -591,7 +591,7 @@ class WaybillService:
         waybill_no: str,
         exclude_waybill_id: Optional[int] = None,
     ) -> bool:
-        """是否存在相同运单号（未删除）。排除指定 id 用于编辑场景。"""
+        """是否存在相同计划号（未删除）。排除指定 id 用于编辑场景。"""
         raw = (waybill_no or "").strip()
         if not raw:
             return False
@@ -614,7 +614,7 @@ class WaybillService:
         )
         waybill = result.scalar_one_or_none()
         if not waybill:
-            raise BizException("运单不存在")
+            raise BizException("计划不存在")
         return waybill
 
     @staticmethod
@@ -657,9 +657,9 @@ class WaybillService:
                 freight_amount = Decimal(str(data.freightAmount))
                 freight_source = 1
             elif calc_mode == "auto_required":
-                raise BizException("未匹配到运价，无法创建运单")
+                raise BizException("未匹配到运价，无法创建计划")
 
-        # 仅在创建时读一次开关：开关后续切换不回溯历史运单（保留存量 status=0 的手动确认入口）
+        # 仅在创建时读一次开关：开关后续切换不回溯历史计划（保留存量 status=0 的手动确认入口）
         auto_confirm_raw = await SystemConfigService.get_by_key(
             db, "waybill.auto_confirm_on_create"
         )
@@ -745,10 +745,10 @@ class WaybillService:
         )
         waybill = result.scalar_one_or_none()
         if not waybill:
-            raise BizException("运单不存在")
+            raise BizException("计划不存在")
 
         if waybill.is_locked == 1:
-            raise BizException("运单已锁定（已结算/已开票），不允许修改")
+            raise BizException("计划已锁定（已结算/已开票），不允许修改")
 
         # 计费敏感字段变更判定
         billing_field_changed = False
@@ -855,7 +855,7 @@ class WaybillService:
         """手动触发重算：写一条高优先级 task。返回 task.id。"""
         waybill = await WaybillService.get_waybill(db, waybill_id)
         if waybill.is_locked == 1:
-            raise BizException("运单已锁定，禁止自动重算；请先解锁")
+            raise BizException("计划已锁定，禁止自动重算；请先解锁")
         waybill.calc_status = "pending"
         await db.flush()
         task = await FreightCalcTaskService.enqueue_waybill_recalc(
@@ -870,7 +870,7 @@ class WaybillService:
     async def update_status(
         db: AsyncSession, waybill_id: int, data: WaybillStatusUpdate
     ) -> Waybill:
-        """运营兜底入口：手动调整运单状态。
+        """运营兜底入口：手动调整计划状态。
 
         约束：
         - 必须通过 ``WaybillStateMachine.assert_transition`` 校验
@@ -887,7 +887,7 @@ class WaybillService:
         )
         waybill = result.scalar_one_or_none()
         if not waybill:
-            raise BizException("运单不存在")
+            raise BizException("计划不存在")
 
         old = int(waybill.status or 0)
         new = int(data.status)
@@ -899,7 +899,7 @@ class WaybillService:
 
     @staticmethod
     async def delete_waybill(db: AsyncSession, waybill_id: int) -> None:
-        """删除运单：仅允许待调度/草稿/已关闭，且不能存在活跃挂接。"""
+        """删除计划：仅允许待调度/草稿/已关闭，且不能存在活跃挂接。"""
         from app.modules.client.services.waybill.waybill_status_aggregator import (
             WaybillStatusAggregator,
         )
@@ -911,12 +911,12 @@ class WaybillService:
         )
         waybill = result.scalar_one_or_none()
         if not waybill:
-            raise BizException("运单不存在")
+            raise BizException("计划不存在")
         if waybill.status not in (0, 1, 7):
-            raise BizException("仅草稿、待调度或已关闭的运单可以删除")
+            raise BizException("仅草稿、待调度或已关闭的计划可以删除")
         if await WaybillStatusAggregator.has_active_task_items(db, waybill_id):
             raise BizException(
-                "存在已挂接到任务单的活跃货物（含未签收 / 未取消），不允许删除运单。"
+                "存在已挂接到任务单的活跃货物（含未签收 / 未取消），不允许删除计划。"
                 "请先取消相关任务单的挂接。"
             )
         waybill.is_deleted = 1

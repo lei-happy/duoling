@@ -134,7 +134,7 @@ class _BatchRecalcPayload(BaseModel):
 
 
 @exception_router.post("/batch-recalc")
-@operation_log(module="计费引擎", action="批量重算异常", description="批量对异常关联运单重算")
+@operation_log(module="计费引擎", action="批量重算异常", description="批量对异常关联计划重算")
 async def batch_recalc_exceptions(
     request: Request,
     payload: _BatchRecalcPayload,

@@ -35,11 +35,11 @@ from app.modules.ai.models.platform.ai_tool import AiTool  # noqa: E402
 # ============ 录单员小智：Prompt / 配置 / 工具（供 seed 与更新脚本共用）============
 
 FORM_RECORDER_SYSTEM_PROMPT = (
-    "你是「录单员小智」，专门帮助用户把 Excel/CSV 表格与运单图片，解析并录入为系统中的运单。\n"
-    "你的唯一目标：又快又准地把运单录进系统，遇到不确定信息必须主动追问，绝不臆造。\n"
+    "你是「录单员小智」，专门帮助用户把 Excel/CSV 表格与计划单图片，解析并录入为系统中的计划。\n"
+    "你的唯一目标：又快又准地把计划录进系统，遇到不确定信息必须主动追问，绝不臆造。\n"
     "\n"
-    "【运单目标字段字典】（file.map_columns 的目标字段名、waybill.batch_create 的行字段名）：\n"
-    "- waybillNo 运单号（不填则系统自动生成）\n"
+    "【计划目标字段字典】（file.map_columns 的目标字段名、waybill.batch_create 的行字段名）：\n"
+    "- waybillNo 计划号（不填则系统自动生成）\n"
     "- customerId 客户ID / customerName 客户名称（customerId 优先，见下方客户澄清规则）\n"
     "- origin 出发地 / destination 目的地\n"
     "- vehicleBrand 车辆品牌 / vehicleModel 车型 / vin 车架号 / quantity 数量\n"
@@ -57,11 +57,11 @@ FORM_RECORDER_SYSTEM_PROMPT = (
     "\n"
     "【图片录单流程】\n"
     "1. 看到 type=image 的附件，用其 fileId 调用 image.extract_waybill 识别；\n"
-    "2. 若返回 has_waybill=false，直接告诉用户「这张图片里没有识别到运单信息」，不要继续入库；\n"
-    "3. 若识别到运单，把 rows 视为待录入数据，按【澄清规则】核对后调用 waybill.batch_create 入库。\n"
+    "2. 若返回 has_waybill=false，直接告诉用户「这张图片里没有识别到计划信息」，不要继续入库；\n"
+    "3. 若识别到计划，把 rows 视为待录入数据，按【澄清规则】核对后调用 waybill.batch_create 入库。\n"
     "\n"
     "【澄清规则（重要）】\n"
-    "- 客户信息缺失或无法唯一确定时，必须停下来追问用户「这批运单是哪个客户的」，不要瞎填、不要跳过；\n"
+    "- 客户信息缺失或无法唯一确定时，必须停下来追问用户「这批计划是哪个客户的」，不要瞎填、不要跳过；\n"
     "- 用户给出客户后，调用 customer.search 反查确认，拿到真实 customerId 再回填（Excel 用 constant_fields，图片直接写进每行 customerId）；\n"
     "- 若 customer.search 命中多个，列出候选让用户选定其一；命中 0 个，提示用户核对名称或先在系统创建客户；\n"
     "- 其它明显缺失/矛盾的关键信息（如起讫地、车架号）也应一并向用户确认后再入库。\n"
@@ -95,15 +95,15 @@ PRESET_EMPLOYEES = [
         "code": "form_recorder_default",
         "name": "录单员小智",
         "employee_type": "form_recorder",
-        "description": "把 Excel/CSV 表格与运单图片解析后自动录入为运单，遇缺失信息主动追问。",
+        "description": "把 Excel/CSV 表格与计划单图片解析后自动录入为计划，遇缺失信息主动追问。",
         "system_prompt": FORM_RECORDER_SYSTEM_PROMPT,
         "welcome_message": (
-            "你好，我是录单员小智。你可以直接拖入 Excel/CSV，或上传运单截图/照片，"
+            "你好，我是录单员小智。你可以直接拖入 Excel/CSV，或上传计划单截图/照片，"
             "我会帮你提取关键信息并入库；信息不全时我会主动跟你确认。"
         ),
         "suggested_questions": [
-            "帮我录入这份运单表格",
-            "识别一下这张运单图片",
+            "帮我录入这份计划表格",
+            "识别一下这张计划图片",
             "把这份 Excel 解析一下让我看看表头",
             "刚才录单失败的几条原因是什么",
         ],
@@ -125,11 +125,11 @@ PRESET_EMPLOYEES = [
             "4. 表格化呈现，必要时建议用户进入对应业务页面继续操作。"
         ),
         "welcome_message": (
-            "你好，我是数据分析员小数。可以问我「本月运单数量」「车辆使用率」等业务问题。"
+            "你好，我是数据分析员小数。可以问我「本月计划数量」「车辆使用率」等业务问题。"
         ),
         "suggested_questions": [
-            "查一下本月新增的运单",
-            "客户 XX 最近一周的运单数",
+            "查一下本月新增的计划",
+            "客户 XX 最近一周的计划数",
             "在用车辆有多少",
         ],
         "model_config": {

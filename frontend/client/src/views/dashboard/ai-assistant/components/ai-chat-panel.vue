@@ -94,7 +94,7 @@
         :placeholder="
           !currentEmployee
             ? '请先在左侧选择数字员工'
-            : '描述你的需求…（支持上传 Excel/CSV 或运单截图/照片）'
+            : '描述你的需求…（支持上传 Excel/CSV 或计划截图/照片）'
         "
         @send="handleSend"
       />

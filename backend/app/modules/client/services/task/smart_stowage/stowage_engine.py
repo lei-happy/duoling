@@ -225,7 +225,7 @@ class SmartStowageEngine:
 
         line = f"{origin or '未知'}→{destination or '未知'}"
         reason = (
-            f"同线 {line} 聚合 {customer_count} 家客户 {waybill_count} 张运单共 "
+            f"同线 {line} 聚合 {customer_count} 家客户 {waybill_count} 张计划共 "
             f"{vehicle_count} 台，车位利用率 {load_rate:.0f}%"
         )
 

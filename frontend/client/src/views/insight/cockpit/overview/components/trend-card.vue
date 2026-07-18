@@ -1,4 +1,4 @@
-<!-- 经营驾驶舱 - 运单运费/单量趋势 + 按日联动的客户排行 -->
+<!-- 经营驾驶舱 - 计划运费/单量趋势 + 按日联动的客户排行 -->
 <template>
   <ele-card
     :header-style="{ paddingTop: 0, paddingBottom: 0 }"
@@ -11,8 +11,8 @@
         size="large"
         v-model="metric"
         :items="[
-          { name: 'revenue', label: '运单运费趋势' },
-          { name: 'waybill', label: '运单量趋势' }
+          { name: 'revenue', label: '计划运费趋势' },
+          { name: 'waybill', label: '计划量趋势' }
         ]"
       />
     </template>
@@ -283,7 +283,7 @@
             return String(val ?? '');
           }
         },
-        legend: { ...legendTop, data: ['运单运费', '运单数'] },
+        legend: { ...legendTop, data: ['计划运费', '计划数'] },
         color: [REV_BAR_LIGHT, REV_LINE_DEEP],
         xAxis: [
           {
@@ -305,11 +305,11 @@
                   : `${val}`
             }
           },
-          { type: 'value', name: '运单数', alignTicks: true }
+          { type: 'value', name: '计划数', alignTicks: true }
         ],
         series: [
           {
-            name: '运单运费',
+            name: '计划运费',
             type: 'bar',
             yAxisIndex: 0,
             barMaxWidth: 36,
@@ -321,7 +321,7 @@
             )
           },
           {
-            name: '运单数',
+            name: '计划数',
             type: 'line',
             yAxisIndex: 1,
             smooth: true,
@@ -338,7 +338,7 @@
       Object.assign(trendOption, {
         grid: baseGrid,
         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-        legend: { ...legendTop, data: ['运单数', '发运台数'] },
+        legend: { ...legendTop, data: ['计划数', '发运台数'] },
         color: [WAY_BAR_LIGHT, WAY_LINE_DEEP],
         xAxis: [
           {
@@ -350,12 +350,12 @@
           }
         ],
         yAxis: [
-          { type: 'value', name: '运单数' },
+          { type: 'value', name: '计划数' },
           { type: 'value', name: '发运台数', alignTicks: true }
         ],
         series: [
           {
-            name: '运单数',
+            name: '计划数',
             type: 'bar',
             yAxisIndex: 0,
             barMaxWidth: 36,

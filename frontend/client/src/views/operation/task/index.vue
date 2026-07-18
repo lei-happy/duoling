@@ -280,13 +280,13 @@
     },
     {
       prop: 'waybillCount',
-      label: '运单数',
+      label: '计划数',
       width: 80,
       align: 'center'
     },
     {
       columnKey: 'waybillStatusSummary',
-      label: '运单状态',
+      label: '计划状态',
       minWidth: 180,
       align: 'center',
       slot: 'waybillStatusSummary'

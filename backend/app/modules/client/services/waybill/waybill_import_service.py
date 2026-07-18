@@ -1,5 +1,5 @@
 """
-运单批量导入服务（Phase 6）
+计划批量导入服务（Phase 6）
 
 工作流：
   1) 接口接收 Excel 文件 → 解析 → 写 biz_waybill_import_batch + biz_waybill_import_row(raw_data_json)
@@ -8,7 +8,7 @@
   4) 行级失败写 validate_status='failed' + validate_message；批次更新统计
 
 Excel 列约定（按表头中文匹配，大小写不敏感、去空格）：
-  - 运单编号 (可空，自动生成)
+  - 计划编号 (可空，自动生成)
   - 客户名称（必填；后台按名称匹配 biz_customer.id，勿填客户ID）
   - 出发地 / 目的地（必填其一或组合；逐级用 / 分隔，如「广东省/广州市/天河区」；
     后台用 StandardizeService 解析区划编码与 region_id，勿填编码/区域ID）
@@ -51,7 +51,8 @@ from app.modules.client.services.waybill.waybill_service import WaybillService
 
 # Excel 表头映射（中文 → 标准 key）
 HEADER_MAP: dict[str, str] = {
-    "运单编号": "waybillNo",
+    "计划编号": "waybillNo",
+    "运单编号": "waybillNo",  # 兼容旧 Excel 模板
     "客户名称": "customerName",
     "客户id": "customerId",
     "客户ID": "customerId",
@@ -81,7 +82,7 @@ HEADER_MAP: dict[str, str] = {
 
 # 下载模板用表头顺序（须与 HEADER_MAP 中文键一致，便于解析首行识别列）
 IMPORT_TEMPLATE_HEADERS: tuple[str, ...] = (
-    "运单编号",
+    "计划编号",
     "客户名称",
     "出发地",
     "目的地",
@@ -341,7 +342,7 @@ class WaybillImportService:
 
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.title = "运单导入"
+        ws.title = "计划导入"
         headers = list(IMPORT_TEMPLATE_HEADERS)
         ws.append(headers)
         # 空行便于用户从第 3 行起填；解析时会跳过全空行

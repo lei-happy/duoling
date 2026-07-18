@@ -55,7 +55,7 @@
       </el-table-column>
       <el-table-column
         prop="waybillCount"
-        label="运单"
+        label="计划"
         width="90"
         align="right"
       />

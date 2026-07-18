@@ -59,7 +59,7 @@ export interface WorkbenchPool {
   allowBatchPrimary?: boolean;
   /** 操作列宽度（行内链接数量不同） */
   actionColumnWidth?: number;
-  /** 台数是否可点，打开与运单列表一致的商品车明细（拉取挂接明细） */
+  /** 台数是否可点，打开与计划列表一致的商品车明细（拉取挂接明细） */
   quantityOpenCargoDetail?: boolean;
   /** 工具栏筛选布局：待派车为增强筛选项 */
   toolbarPreset?: WorkbenchToolbarPreset;
@@ -73,7 +73,7 @@ const COL: Record<WorkbenchColumnId, string> = {
   plateNumber: '承运车辆',
   route: '运输线路',
   carrierResource: '司机 / 车牌 / 承运商',
-  waybillCount: '运单数',
+  waybillCount: '计划数',
   totalQuantity: '台数',
   plannedLoadTime: '计划装车',
   plannedArriveTime: '计划到货',

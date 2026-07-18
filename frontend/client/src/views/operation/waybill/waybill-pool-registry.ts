@@ -1,5 +1,5 @@
 /**
- * 运单工作台 — 按「状态池」注册列表形态
+ * 计划工作台 — 按「状态池」注册列表形态
  *
  * 每个池独立配置：筛选项、行内动作、列顺序、默认排序、是否允许批量主动作。
  * 新增状态或改表头时只改本文件 + waybill-pool 中对应 slot（若有新列类型）。
@@ -10,7 +10,7 @@
  *
  * 4 待签收 / 5 已签收 文案为 2026-05 调整后，与 task.status 解耦后强调"客户视角的票据流转"：
  *   - 4 待签收 = 全量货物已到达，等客户签收
- *   - 5 已签收 = 全量货物已签收，运单对客户层面已闭环
+ *   - 5 已签收 = 全量货物已签收，计划对客户层面已闭环
  *   - 6 已回单 = 签收底单返还货主（人工动作，回单台账在「回单签收」页操作）
  *   - 7 已关闭 = 终态（原 6 后移）
  */
@@ -36,7 +36,7 @@ export const UNIFIED_WAYBILL_FILTER_FIELDS: WaybillFilterField[] = [
   'createdRange'
 ];
 
-/** 运单 status → 工作台 pool key（用于按运单号跨状态搜索后自动切换阶段卡） */
+/** 计划 status → 工作台 pool key（用于按计划号跨状态搜索后自动切换阶段卡） */
 export const WAYBILL_STATUS_TO_POOL_KEY: Record<number, string> = {
   0: 'pending-confirm',
   1: 'pending-dispatch',
@@ -107,7 +107,7 @@ export interface WaybillPool {
 
 const COL: Record<WaybillColumnId, string> = {
   selection: '',
-  waybillNo: '运单编号',
+  waybillNo: '计划编号',
   customerName: '客户名称',
   origin: '出发地',
   destination: '目的地',

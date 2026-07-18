@@ -168,7 +168,7 @@
     {
       columnKey: 'waybillId',
       prop: 'waybillId',
-      label: '运单 ID',
+      label: '计划 ID',
       width: 108,
       align: 'center',
       slot: 'waybillId'

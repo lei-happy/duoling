@@ -1,11 +1,11 @@
 <!--
-  运单工作台（重构后）
+  计划工作台（重构后）
   ====================
 
   布局：
-    1. 顶部 统一筛选栏（运单号 / 客户 / 线路 / 创建时间等，切换阶段时不重建）
+    1. 顶部 统一筛选栏（计划号 / 客户 / 线路 / 创建时间等，切换阶段时不重建）
     2. 中部 8 张状态卡（待确认 / 待调度 / 调度中 / 运输中 / 待签收 / 已签收 / 已回单 / 已关闭）
-       输入运单号搜索时跨状态匹配并自动切到对应阶段
+       输入计划号搜索时跨状态匹配并自动切到对应阶段
     3. 下部 按 pool 配置的列表 + 行内动作 + 工具栏（新增 / 批量确认 / 批量导入）
 
   本组件负责"壳"：
@@ -109,7 +109,7 @@
     searchWhere.value = where;
   };
 
-  /** 与列表查询对齐：有运单号时仅传 keyword，否则传全部筛选（不含 status） */
+  /** 与列表查询对齐：有计划号时仅传 keyword，否则传全部筛选（不含 status） */
   const buildStatsParams = (): WaybillParam => {
     const search = searchWhere.value;
     const keyword = search.keyword?.trim();
@@ -118,7 +118,7 @@
     return rest;
   };
 
-  /** 按运单号跨状态命中后，自动切换到运单所在阶段（列/行内动作与状态对齐） */
+  /** 按计划号跨状态命中后，自动切换到计划所在阶段（列/行内动作与状态对齐） */
   const onAutoSwitchPool = (poolKey: string) => {
     if (poolKey === activeKey.value) return;
     activeKey.value = poolKey;
@@ -146,12 +146,12 @@
   };
 
   // ============================================
-  // 系统配置（运单分组）—— 列表运费列、新建自动确认
+  // 系统配置（计划分组）—— 列表运费列、新建自动确认
   // ============================================
   const listShowFreightAmount = ref(false);
   const autoConfirmOnCreate = ref(false);
 
-  /** 开关打开 + 当前待确认运单数为 0 时，隐藏「待确认」状态卡 */
+  /** 开关打开 + 当前待确认计划数为 0 时，隐藏「待确认」状态卡 */
   const pendingConfirmHidden = computed(
     () =>
       autoConfirmOnCreate.value && (stats.value?.totals?.pendingConfirm ?? 0) === 0

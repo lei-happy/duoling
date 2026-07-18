@@ -19,7 +19,7 @@ export interface AttentionMetricConfig {
 export const ATTENTION_METRICS_REGISTRY: AttentionMetricConfig[] = [
   {
     key: 'waybill.pending_confirm',
-    label: '待确认运单',
+    label: '待确认计划',
     icon: 'DocumentChecked',
     tagType: 'warning',
     permission: 'business:waybill:list',

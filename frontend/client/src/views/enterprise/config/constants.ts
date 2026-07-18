@@ -1,6 +1,6 @@
 /** 左侧菜单分组文案 */
 export const GROUP_LABELS: Record<string, string> = {
-  waybill: '运单设置',
+  waybill: '计划设置',
   task: '任务单设置',
   security: '水印设置',
   default: '其它'

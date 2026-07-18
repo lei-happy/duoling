@@ -1,6 +1,6 @@
 """运营调度 · 任务单调度（租户库，事务回滚不落库）集成测试
 
-验证任务单创建、挂接运单明细与分页查询等调度核心链路。
+验证任务单创建、挂接计划明细与分页查询等调度核心链路。
 
 对应需求：doc/02.需求文档/02.企业端/06.运营调度模块/**
 对应代码：backend/app/modules/client/services/task/task_service.py
@@ -33,7 +33,7 @@ async def _seed_dispatchable_waybill(session, quantity: int = 3):
         CustomerCreate(customerName=f"调度客户_{unique_suffix()}"),
     )
     waybill = Waybill(
-        waybill_no=f"YD{unique_suffix()}",
+        waybill_no=f"JH{unique_suffix()}",
         customer_id=customer.id,
         customer_name=customer.customer_name,
         origin="测试出发地",

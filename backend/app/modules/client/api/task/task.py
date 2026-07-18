@@ -76,7 +76,7 @@ async def _task_detail_dump(
     segments=None,
     waybill_items=None,
 ):
-    """聚合 dispatch orders + waybillItems，并为挂接行补齐车系图（与运单列表一致）。"""
+    """聚合 dispatch orders + waybillItems，并为挂接行补齐车系图（与计划列表一致）。"""
     segs = (
         segments
         if segments is not None
@@ -474,7 +474,7 @@ async def revert_task_status(
 ):
     """专项撤销：把任务单回退到上一态。
 
-    - 合法路径见《02.运单与任务单状态机联动设计.md》§4.5 反向跳转矩阵：
+    - 合法路径见《02.计划与任务单状态机联动设计.md》§4.5 反向跳转矩阵：
       1→0 / 2→1 / 3→2 / 4→3 / 5→4
     - 联动：Item 反向同步、Waybill 聚合允许 downgrade
     """
@@ -536,7 +536,7 @@ async def list_waybill_items(
 
 
 @router.post("/{task_id}/waybill-items")
-@operation_log(module="运输任务单", action="挂接货物", description="批量挂接运单货物")
+@operation_log(module="运输任务单", action="挂接货物", description="批量挂接计划货物")
 async def add_waybill_items(
     request: Request,
     task_id: int,

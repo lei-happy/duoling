@@ -159,7 +159,7 @@
           const p = Array.isArray(params) ? params[0] : params;
           const it = sorted[p.dataIndex];
           if (!it) return p.name;
-          return `${it.brandName}<br/>台数：${it.vehicleQuantity}<br/>运单数：${it.waybillCount}`;
+          return `${it.brandName}<br/>台数：${it.vehicleQuantity}<br/>计划数：${it.waybillCount}`;
         }
       },
       grid: { left: 12, right: 36, top: 16, bottom: 12, containLabel: true },

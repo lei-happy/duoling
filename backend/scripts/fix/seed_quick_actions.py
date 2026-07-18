@@ -32,7 +32,7 @@ from app.core.config import get_settings
 # menu_code -> quick_action 配置（对齐原 quick-action-registry.ts）
 DEFAULTS: Dict[str, Dict[str, Any]] = {
     "business:waybill:add": {
-        "name": "新建运单", "color": "#69c0ff", "group": "运营调度",
+        "name": "新建计划", "color": "#69c0ff", "group": "运营调度",
         "link": "/operation/waybill?action=create", "sort": 10, "default": True,
     },
     "operation:task:add": {
@@ -40,7 +40,7 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
         "link": "/operation/task-create", "sort": 20, "default": True,
     },
     "business:waybill:list": {
-        "name": "运单管理", "color": "#5cdbd3", "group": "运营调度",
+        "name": "计划管理", "color": "#5cdbd3", "group": "运营调度",
         "link": "/operation/waybill", "sort": 30, "default": True,
     },
     "operation:task:list": {

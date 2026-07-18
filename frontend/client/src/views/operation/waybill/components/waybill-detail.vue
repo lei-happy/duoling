@@ -1,8 +1,8 @@
 <!--
-  运单详情抽屉（精简版）
+  计划详情抽屉（精简版）
 
   展示：
-  - 头部：运单号、状态标签（新语义化）、客户、起终地
+  - 头部：计划号、状态标签（新语义化）、客户、起终地
   - 基本信息：起终地 / 计划装车/送达 / 经销商 / 计费金额 / 备注
   - 货物明细：cargo 列表
   - 挂接概要：hasActiveTaskItems / allocatedQuantity（按 cargo 求和）→ 给出操作建议
@@ -12,7 +12,7 @@
 <template>
   <el-drawer
     :model-value="visible"
-    title="运单详情"
+    title="计划详情"
     direction="rtl"
     size="780px"
     :destroy-on-close="true"
@@ -113,7 +113,7 @@
           type="info"
           :closable="false"
           show-icon
-          title="存在活跃任务挂接时，运单核心字段不可编辑"
+          title="存在活跃任务挂接时，计划核心字段不可编辑"
           description="如需更改装车量/起终地等关键字段，请先在「任务台账」找到关联任务进行取消挂接。"
           style="margin-top: 12px"
         />

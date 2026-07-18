@@ -20,7 +20,7 @@ export async function pageWaybills(params: WaybillParam) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 运单工作台 KPI：按状态聚合（可选与列表相同的筛选条件） */
+/** 计划工作台 KPI：按状态聚合（可选与列表相同的筛选条件） */
 export async function getWaybillWorkbenchStats(params?: WaybillParam) {
   const res = await request.get<ApiResult<WaybillWorkbenchStats>>(
     '/business/waybill/workbench-stats',
@@ -40,7 +40,7 @@ export async function getWaybill(id: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 运单号是否可用（未被占用）；编辑传 excludeId 排除当前单 */
+/** 计划号是否可用（未被占用）；编辑传 excludeId 排除当前单 */
 export async function checkWaybillNoAvailable(
   waybillNo: string,
   excludeId?: number
@@ -87,7 +87,7 @@ export async function updateWaybillStatus(id: number, status: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 列举运单回单凭证 */
+/** 列举计划回单凭证 */
 export async function listWaybillReceipts(id: number) {
   const res = await request.get<ApiResult<WaybillReceipt[]>>(
     `/business/waybill/${id}/receipts`
@@ -98,7 +98,7 @@ export async function listWaybillReceipts(id: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 确认回单：运单 5 已签收 → 6 已回单 */
+/** 确认回单：计划 5 已签收 → 6 已回单 */
 export async function confirmWaybillReceipt(
   id: number,
   data: WaybillReceiptConfirmPayload
@@ -113,7 +113,7 @@ export async function confirmWaybillReceipt(
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 撤销回单：运单 6 已回单 → 5 已签收 */
+/** 撤销回单：计划 6 已回单 → 5 已签收 */
 export async function revokeWaybillReceipt(id: number) {
   const res = await request.delete<ApiResult<Waybill>>(
     `/business/waybill/${id}/receipt`
@@ -145,7 +145,7 @@ export async function recalculateWaybill(id: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 获取运单当前活跃的计算结果 + 明细 + match_trace */
+/** 获取计划当前活跃的计算结果 + 明细 + match_trace */
 export async function getWaybillFreightResult(id: number) {
   const res = await request.get<ApiResult<unknown>>(
     `/business/waybill/${id}/freight-result`
@@ -156,7 +156,7 @@ export async function getWaybillFreightResult(id: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 锁定运单（禁止重算） */
+/** 锁定计划（禁止重算） */
 export async function lockWaybill(id: number) {
   const res = await request.put<ApiResult<unknown>>(
     `/business/waybill/${id}/lock`
@@ -167,7 +167,7 @@ export async function lockWaybill(id: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 解锁运单 */
+/** 解锁计划 */
 export async function unlockWaybill(id: number) {
   const res = await request.put<ApiResult<unknown>>(
     `/business/waybill/${id}/unlock`
@@ -234,7 +234,7 @@ export interface ImportRowItem {
   createdAt?: string;
 }
 
-/** 下载运单批量导入 Excel 模板（表头与后端解析一致） */
+/** 下载计划批量导入 Excel 模板（表头与后端解析一致） */
 export async function downloadWaybillImportTemplate(): Promise<void> {
   const res = await request.get('/business/waybill/import/template', {
     responseType: 'blob'
@@ -255,10 +255,10 @@ export async function downloadWaybillImportTemplate(): Promise<void> {
     throw new Error(msg);
   }
   const buf = await blob.arrayBuffer();
-  download(buf, '运单批量导入模板.xlsx');
+  download(buf, '计划批量导入模板.xlsx');
 }
 
-/** 上传 Excel 批量导入运单 */
+/** 上传 Excel 批量导入计划 */
 export async function importWaybillExcel(file: File) {
   const fd = new FormData();
   fd.append('file', file);

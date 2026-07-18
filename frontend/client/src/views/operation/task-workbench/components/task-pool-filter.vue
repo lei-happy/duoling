@@ -1,7 +1,7 @@
 <!--
   调度工作台 - 统一筛选栏（页面级，切换阶段卡时不重建）
 
-  字段并集：任务单号/运单号/任务名称、出发地、目的地、承运方式、承运商、时间维度+区间
+  字段并集：任务单号/计划号/任务名称、出发地、目的地、承运方式、承运商、时间维度+区间
 -->
 <template>
   <ele-card search-form class="wb-filter-card">
@@ -14,7 +14,7 @@
       <el-row :gutter="10" class="wb-filter__row">
         <el-col :lg="6" :md="6" :sm="12" :xs="24">
           <floating-label
-            label="请输入任务单号/运单号/任务名称"
+            label="请输入任务单号/计划号/任务名称"
             type="input"
             v-model.trim="form.keyword"
             clearable

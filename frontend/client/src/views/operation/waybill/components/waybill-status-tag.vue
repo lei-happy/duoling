@@ -1,5 +1,5 @@
 <!--
-  运单状态标签
+  计划状态标签
 
   与后端 ``WAYBILL_STATUS_LABELS`` 对齐（见
   backend/app/modules/client/services/state_machine/waybill_state_machine.py）：
@@ -14,7 +14,7 @@
   | 6    | 已回单 | success|
   | 7    | 已关闭 | danger |
 
-  说明：2026-05 文案调整为"客户视角的票据流转"，强调签收是运单维度的核心动作；
+  说明：2026-05 文案调整为"客户视角的票据流转"，强调签收是计划维度的核心动作；
   2026-06 新增 6 已回单（签收底单返还货主），原 6 已关闭后移为 7。
 -->
 <template>

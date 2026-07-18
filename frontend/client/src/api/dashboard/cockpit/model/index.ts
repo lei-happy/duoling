@@ -36,9 +36,9 @@ export interface KpiMetric {
 
 /** KPI 总览 */
 export interface KpiSummary {
-  /** 运单应收运费合计（结算口径，非扣成本后的收入） */
+  /** 计划应收运费合计（结算口径，非扣成本后的收入） */
   revenue: KpiMetric;
-  /** 总运单数 */
+  /** 总计划数 */
   waybillCount: KpiMetric;
   /** 总发运台数 */
   vehicleQuantity: KpiMetric;
@@ -50,9 +50,9 @@ export interface KpiSummary {
 export interface RevenueTrendPoint {
   /** 时间桶（如 '2026-05-01' 或 '2026-05'） */
   date: string;
-  /** 运单应收运费（元，结算口径） */
+  /** 计划应收运费（元，结算口径） */
   revenue: number;
-  /** 运单数 */
+  /** 计划数 */
   waybillCount: number;
   /** 发运台数 */
   vehicleQuantity: number;
@@ -79,7 +79,7 @@ export interface CustomerRankItem {
 export interface CustomerRankParam extends CockpitDateRangeParam {
   /** 返回条数上限，最大 5000（服务端约束） */
   limit?: number;
-  /** 排序：revenue 按运单运费；vehicle_quantity 按商品车台数 */
+  /** 排序：revenue 按计划运费；vehicle_quantity 按商品车台数 */
   sort_by?: 'revenue' | 'vehicle_quantity';
   /**
    * 按客户类型筛选（与类型分布一致，NULL 为 -1 未知）；不传表示全部
@@ -140,13 +140,13 @@ export interface VehicleBrandRankParam extends CockpitDateRangeParam {
 
 /** 运营效率响应 */
 export interface OperationEfficiency {
-  /** 运单状态分布 */
+  /** 计划状态分布 */
   statusDist: Array<{
     status: number;
     label: string;
     count: number;
   }>;
-  /** 按运单 calc_status 的分布（待计算/已计算/计算异常等） */
+  /** 按计划 calc_status 的分布（待计算/已计算/计算异常等） */
   calcStatusDist: Array<{
     calcStatus: string;
     label: string;
@@ -156,7 +156,7 @@ export interface OperationEfficiency {
   calcExceptionRate: number;
   /** 计算异常单数（calc_status === exception） */
   calcExceptionCount: number;
-  /** 锁定运单数 */
+  /** 锁定计划数 */
   lockedCount: number;
   /** 本期总单数 */
   totalCount: number;

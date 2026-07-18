@@ -168,17 +168,17 @@
           </el-descriptions-item>
         </el-descriptions>
 
-        <!-- 关联单据状态（只读：运单/财务单据状态机独立于任务） -->
+        <!-- 关联单据状态（只读：计划/财务单据状态机独立于任务） -->
         <el-divider content-position="left">关联单据状态</el-divider>
         <el-descriptions :column="1" border size="small">
-          <el-descriptions-item label="运单状态分布">
+          <el-descriptions-item label="计划状态分布">
             <waybill-status-summary :summary="task.waybillStatusSummary" />
             <span
               v-if="(task.waybillStatusSummary?.total ?? 0) > 0"
               class="ele-text-secondary"
               style="margin-left: 8px"
             >
-              共 {{ task.waybillStatusSummary?.total }} 张运单
+              共 {{ task.waybillStatusSummary?.total }} 张计划
             </span>
           </el-descriptions-item>
           <el-descriptions-item label="财务单据状态">
@@ -347,7 +347,7 @@
           <el-tab-pane name="cargoes" :label="`挂接货物 (${items.length})`">
             <el-table :data="items" border size="small">
               <el-table-column
-                label="运单号"
+                label="计划号"
                 prop="waybillNo"
                 min-width="140"
               />

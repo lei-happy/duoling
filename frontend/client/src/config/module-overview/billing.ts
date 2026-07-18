@@ -8,7 +8,7 @@ const billing: ModuleOverviewConfig = {
   positioning:
     '计费中心维护运价合同、成本政策与费用模板，配置计费规则与运输线路，是运费收入与承运成本自动核算的规则中枢。',
   description:
-    '在这里沉淀计费规则：维护运输线路与里程，签订客户运价合同与承运商合同，配置成本核算政策与费用模板，让运单产生的收入与成本可自动计算。',
+    '在这里沉淀计费规则：维护运输线路与里程，签订客户运价合同与承运商合同，配置成本核算政策与费用模板，让计划产生的收入与成本可自动计算。',
   heroIllustration: heroBilling,
   accentColor: '#f08c00',
   moduleCards: [

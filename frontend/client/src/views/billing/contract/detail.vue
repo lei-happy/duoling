@@ -256,8 +256,8 @@
   const recalcAffected = (row: FreightRate) => {
     if (!row?.id) return;
     ElMessageBox.confirm(
-      '将查找受该运价规则影响的运单并入队批量重算，确定继续？',
-      '重算受影响运单',
+      '将查找受该运价规则影响的计划并入队批量重算，确定继续？',
+      '重算受影响计划',
       { type: 'warning' }
     )
       .then(async () => {

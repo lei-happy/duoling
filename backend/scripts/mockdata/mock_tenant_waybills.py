@@ -1,5 +1,5 @@
 """
-批量生成「运单 + 货物明细」Mock 数据（biz_waybill + biz_waybill_cargo）
+批量生成「计划 + 货物明细」Mock 数据（biz_waybill + biz_waybill_cargo）
 
 与前端 business/waybill 新建表单字段对齐；以下维度**均从当前租户库随机抽取**：
 - 客户：biz_customer（未删除、状态正常）
@@ -170,7 +170,7 @@ def _new_waybill_no(
     session: Session, rng: random.Random, seq: int, ref: datetime
 ) -> str:
     for _ in range(80):
-        wn = f"YD{ref.strftime('%Y%m%d%H%M%S')}{rng.randint(1000, 9999)}{seq % 10000}"
+        wn = f"JH{ref.strftime('%Y%m%d%H%M%S')}{rng.randint(1000, 9999)}{seq % 10000}"
         wn = wn[:50]
         taken = session.execute(
             select(Waybill.id).where(Waybill.waybill_no == wn, Waybill.is_deleted == 0)
@@ -178,7 +178,7 @@ def _new_waybill_no(
         if not taken:
             return wn
         seq += 17
-    raise RuntimeError("无法生成唯一运单号")
+    raise RuntimeError("无法生成唯一计划号")
 
 
 def generate_waybills(
@@ -208,7 +208,7 @@ def generate_waybills(
     if len(region_codes) < 2:
         missing.append("行政区(biz_region)至少2条")
     if missing:
-        raise RuntimeError("以下主数据为空或不足，无法生成运单：" + "、".join(missing))
+        raise RuntimeError("以下主数据为空或不足，无法生成计划：" + "、".join(missing))
 
     waybills_n = 0
     cargoes_n = 0
@@ -316,10 +316,10 @@ def generate_waybills(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="租户库批量插入运单 Mock（主数据从库内随机选取）"
+        description="租户库批量插入计划 Mock（主数据从库内随机选取）"
     )
     parser.add_argument("--tenant-code", required=True, help="租户编码")
-    parser.add_argument("--count", type=int, default=15, help="运单条数")
+    parser.add_argument("--count", type=int, default=15, help="计划条数")
     parser.add_argument("--seed", type=int, default=None, help="随机种子")
     parser.add_argument("--dry-run", action="store_true", help="仅打印摘要，不写库")
     parser.add_argument(
@@ -385,7 +385,7 @@ def main() -> None:
         else f"当天 {w_start.strftime('%Y-%m-%d')}"
     )
     print(
-        f"[OK] 租户 {args.tenant_code}：{action} {nw} 张运单，{nc} 条货物明细。"
+        f"[OK] 租户 {args.tenant_code}：{action} {nw} 张计划，{nc} 条货物明细。"
         f" 计划下发时间窗口：{win_desc}。"
     )
 

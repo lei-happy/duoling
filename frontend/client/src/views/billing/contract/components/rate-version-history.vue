@@ -70,7 +70,7 @@
       />
       <el-table-column
         prop="affectedWaybillCount"
-        label="影响运单数"
+        label="影响计划数"
         width="100"
         align="center"
       />

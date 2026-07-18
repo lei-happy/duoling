@@ -297,7 +297,7 @@ router.include_router(
     tags=["客户端-承运运费引擎-异常"],
     dependencies=[Depends(require_feature("billing_carrier_freight"))],
 )
-router.include_router(waybill_router, prefix="/business/waybill", tags=["客户端-运单管理V2"])
+router.include_router(waybill_router, prefix="/business/waybill", tags=["客户端-计划管理V2"])
 router.include_router(task_router, prefix="/business/task", tags=["客户端-运输任务单"])
 router.include_router(
     task_finance_router,

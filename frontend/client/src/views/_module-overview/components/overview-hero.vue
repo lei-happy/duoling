@@ -1,5 +1,9 @@
 <template>
-  <div class="overview-hero" :style="accentVars">
+  <div
+    class="overview-hero"
+    :class="{ 'overview-hero--wide': isWideArt }"
+    :style="accentVars"
+  >
     <div class="overview-hero__text">
       <div class="overview-hero__eyebrow">模块总览</div>
       <h2 class="overview-hero__title">{{ title }}</h2>
@@ -7,7 +11,12 @@
       <p v-if="description" class="overview-hero__desc">{{ description }}</p>
     </div>
     <div class="overview-hero__art">
-      <img v-if="illustration" :src="illustration" :alt="title" />
+      <img
+        v-if="illustration"
+        :src="illustration"
+        :alt="title"
+        :style="imgStyle"
+      />
       <div v-else class="overview-hero__motif">
         <span
           class="overview-hero__motif-dot overview-hero__motif-dot--a"
@@ -33,13 +42,24 @@
     positioning?: string;
     description?: string;
     illustration?: string;
+    /** 插画宽高比，如 4 表示 4:1 */
+    aspectRatio?: number;
     heroIcon?: string;
     accentColor?: string;
   }>();
 
+  const isWideArt = computed(
+    () => typeof props.aspectRatio === 'number' && props.aspectRatio >= 3
+  );
+
   const accentVars = computed<CSSProperties>(() => ({
     '--overview-accent': props.accentColor || 'var(--el-color-primary)'
   }));
+
+  const imgStyle = computed<CSSProperties | undefined>(() => {
+    if (!props.aspectRatio) return undefined;
+    return { aspectRatio: `${props.aspectRatio} / 1` };
+  });
 </script>
 
 <style lang="scss" scoped>
@@ -70,6 +90,10 @@
     flex: 0 1 auto;
     min-width: 0;
     max-width: 460px;
+  }
+
+  .overview-hero--wide .overview-hero__text {
+    max-width: 400px;
   }
 
   .overview-hero__eyebrow {
@@ -119,6 +143,17 @@
       max-width: 360px;
       height: auto;
       display: block;
+      object-fit: contain;
+      object-position: center;
+    }
+  }
+
+  .overview-hero--wide .overview-hero__art {
+    justify-content: flex-end;
+
+    img {
+      max-width: min(100%, 640px);
+      max-height: 160px;
     }
   }
 
@@ -175,6 +210,16 @@
       width: 100%;
       max-width: 420px;
       justify-content: center;
+    }
+
+    .overview-hero--wide .overview-hero__art {
+      max-width: 100%;
+      justify-content: center;
+
+      img {
+        max-width: 100%;
+        max-height: none;
+      }
     }
   }
 </style>

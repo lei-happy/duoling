@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    :title="isEdit ? '编辑运单' : '新增运单'"
+    :title="isEdit ? '编辑计划' : '新增计划'"
     :model-value="visible"
     width="880px"
     draggable
@@ -65,7 +65,7 @@
               <el-col :xs="24" :sm="12">
                 <el-form-item prop="waybillNo">
                   <floating-label
-                    label="运单编号（唯一）"
+                    label="计划编号（唯一）"
                     type="input"
                     v-model.trim="form.waybillNo"
                     clearable
@@ -682,7 +682,7 @@
   const rules = reactive<FormRules>({
     customerId: [{ required: true, message: '请选择客户', trigger: 'change' }],
     waybillNo: [
-      { required: true, message: '请输入运单编号', trigger: 'blur' },
+      { required: true, message: '请输入计划编号', trigger: 'blur' },
       {
         validator: (_rule, value, callback) => {
           const v = String(value ?? '').trim();
@@ -693,7 +693,7 @@
           const excludeId = isEdit.value ? form.id : undefined;
           checkWaybillNoAvailable(v, excludeId)
             .then((available) => {
-              if (!available) callback(new Error('运单编号已存在'));
+              if (!available) callback(new Error('计划编号已存在'));
               else callback();
             })
             .catch(() => callback());

@@ -85,7 +85,7 @@ class TestFreightContractMatch:
         )
 
         waybill = Waybill(
-            waybill_no=f"YDTEST{unique_suffix()}",
+            waybill_no=f"JHTEST{unique_suffix()}",
             customer_id=customer.id,
             origin=origin.name,
             origin_code=origin.code,
