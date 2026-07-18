@@ -19,6 +19,7 @@
     "@zhitu/shared-types": "workspace:*",
     "@zhitu/shared-utils": "workspace:*",
     "gsap": "^3.15.0",
+    "motion-v": "^2.3.0",
     "pinyin-pro": "^3.28.1"
   },
   "devDependencies": {

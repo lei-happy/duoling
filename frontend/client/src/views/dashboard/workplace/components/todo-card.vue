@@ -27,7 +27,7 @@
             :class="{ 'is-active': activeStatus === item.value }"
             @click="switchStatus(item.value)"
           >
-            {{ item.label }}
+            <span class="todo-tab-label">{{ item.label }}</span>
             <span class="status-count">({{ getStatusCount(item.value) }})</span>
           </button>
         </div>
@@ -1184,9 +1184,8 @@
     z-index: 10;
   }
 
-  // 文字下划线 tab
+  // 文字下划线 tab（下划线相对 label 居中，不含数量）
   .todo-tab {
-    position: relative;
     padding: 0 0 6px;
     border: none;
     background: none;
@@ -1204,11 +1203,11 @@
       color: var(--el-color-primary);
       font-weight: 600;
 
-      &::after {
+      .todo-tab-label::after {
         content: '';
         position: absolute;
         left: 50%;
-        bottom: 0;
+        bottom: -6px;
         transform: translateX(-50%);
         width: 20px;
         height: 2px;
@@ -1216,6 +1215,11 @@
         background: var(--el-color-primary);
       }
     }
+  }
+
+  .todo-tab-label {
+    position: relative;
+    display: inline-block;
   }
 
   .status-count {
