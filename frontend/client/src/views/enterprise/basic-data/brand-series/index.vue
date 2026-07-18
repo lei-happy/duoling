@@ -27,47 +27,62 @@
         <ele-loading
           :loading="sideLoading"
           :spinner-style="{ background: 'none' }"
-          :style="{ flex: '1 1 60px', overflow: 'auto' }"
+          :style="{ flex: '1 1 60px', overflow: 'hidden', minHeight: 0 }"
         >
-          <div class="brand-side-list">
-            <div
-              v-for="b in brandOptions"
-              :key="b.brandId"
-              :class="[
-                'brand-side-item',
-                { 'is-active': b.brandId === currentBrandId }
-              ]"
-              @click="selectBrand(b)"
-            >
-              <div class="brand-side-item__main">
-                <div class="brand-side-item__logo-wrap">
-                  <div v-if="brandLogoUrl(b)" class="brand-side-logo-box">
-                    <el-image
-                      :src="brandLogoUrl(b)"
-                      fit="contain"
-                      class="brand-side-logo-el"
-                      :preview-src-list="[brandLogoUrl(b)]"
-                      preview-teleported
-                    />
+          <div
+            ref="sideScrollRef"
+            class="brand-side-scroll"
+            @scroll.passive="onSideScroll"
+          >
+            <div class="brand-side-list">
+              <div
+                v-for="b in brandOptions"
+                :key="b.brandId"
+                :class="[
+                  'brand-side-item',
+                  { 'is-active': b.brandId === currentBrandId }
+                ]"
+                @click="selectBrand(b)"
+              >
+                <div class="brand-side-item__main">
+                  <div class="brand-side-item__logo-wrap">
+                    <div v-if="brandLogoUrl(b)" class="brand-side-logo-box">
+                      <el-image
+                        :src="brandLogoUrl(b)"
+                        fit="contain"
+                        class="brand-side-logo-el"
+                        :preview-src-list="[brandLogoUrl(b)]"
+                        preview-teleported
+                      />
+                    </div>
+                    <div v-else class="brand-side-logo-box brand-side-logo--ph">
+                      {{ brandNameInitial(b.brandNameCn) }}
+                    </div>
                   </div>
-                  <div v-else class="brand-side-logo-box brand-side-logo--ph">
-                    {{ brandNameInitial(b.brandNameCn) }}
-                  </div>
+                  <span
+                    class="brand-side-item__name"
+                    :title="`${b.brandNameCn}[${brandSeriesCount(b)}]`"
+                  >
+                    {{ b.brandNameCn }}[{{ brandSeriesCount(b) }}]
+                  </span>
                 </div>
-                <span
-                  class="brand-side-item__name"
-                  :title="`${b.brandNameCn}[${brandSeriesCount(b)}]`"
-                >
-                  {{ b.brandNameCn }}[{{ brandSeriesCount(b) }}]
-                </span>
+                <span class="brand-side-item__id">#{{ b.brandId }}</span>
               </div>
-              <span class="brand-side-item__id">#{{ b.brandId }}</span>
-            </div>
-            <div
-              v-if="!brandOptions.length && !sideLoading"
-              class="brand-side-empty"
-            >
-              暂无品牌数据
+              <div v-if="sideLoadingMore" class="brand-side-footer">
+                加载中...
+              </div>
+              <div
+                v-else-if="!sideHasMore && brandOptions.length"
+                class="brand-side-footer"
+              >
+                已加载全部
+              </div>
+              <div
+                v-if="!brandOptions.length && !sideLoading"
+                class="brand-side-empty"
+              >
+                暂无品牌数据
+              </div>
             </div>
           </div>
         </ele-loading>
@@ -164,7 +179,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, watch } from 'vue';
+  import { nextTick, onUnmounted, ref, watch } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
@@ -180,7 +195,7 @@
   } from '@/components/icons';
   import SeriesSearch from './components/series-search.vue';
   import {
-    listVehicleBrandOptions,
+    pageVehicleBrandOptions,
     removeVehicleBrand,
     getVehicleBrand
   } from '@/api/basic-data/vehicle-brand';
@@ -197,6 +212,10 @@
   const PERM_ADD = 'basic_data:vehicle_brand_series:add';
   const PERM_EDIT = 'basic_data:vehicle_brand_series:edit';
   const PERM_DEL = 'basic_data:vehicle_brand_series:delete';
+  /** 侧栏每页条数 */
+  const SIDE_PAGE_SIZE = 50;
+  /** 距底部多少 px 时触发加载下一页 */
+  const SCROLL_LOAD_THRESHOLD = 80;
 
   const { hasPermission } = usePermission();
 
@@ -230,42 +249,121 @@
 
   const collapse = ref(false);
   const sideLoading = ref(true);
+  const sideLoadingMore = ref(false);
+  const sideHasMore = ref(true);
+  const sidePage = ref(1);
   const sideKeyword = ref('');
   const brandOptions = ref<VehicleBrandOption[]>([]);
   const currentBrandId = ref<number | null>(null);
   const currentBrandName = ref('');
   const seriesKeyword = ref('');
+  const sideScrollRef = ref<HTMLElement | null>(null);
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
 
   let keywordTimer: ReturnType<typeof setTimeout> | null = null;
+  let sideLoadSeq = 0;
 
-  const loadBrandOptions = (autoSelectFirst = false) => {
-    sideLoading.value = true;
+  const syncSelectionAfterLoad = (autoSelectFirst: boolean) => {
+    // 分页场景下当前品牌可能尚未加载到列表，不能仅因「不在当前页」就清空选中
+    if (
+      autoSelectFirst &&
+      brandOptions.value.length &&
+      currentBrandId.value == null
+    ) {
+      selectBrand(brandOptions.value[0]);
+    }
+  };
+
+  /** 首屏不足一屏时继续加载，直至可滚动或无更多数据 */
+  const fillSideScrollViewport = () => {
+    const el = sideScrollRef.value;
+    if (
+      !el ||
+      !sideHasMore.value ||
+      sideLoading.value ||
+      sideLoadingMore.value
+    ) {
+      return;
+    }
+    if (el.scrollHeight <= el.clientHeight + SCROLL_LOAD_THRESHOLD) {
+      loadBrandOptions(false);
+    }
+  };
+
+  /**
+   * 加载品牌列表
+   * @param reset true=重新从第一页加载；false=追加下一页
+   * @param autoSelectFirst 首屏无选中时自动选第一条
+   */
+  const loadBrandOptions = async (
+    reset = true,
+    autoSelectFirst = false
+  ) => {
+    if (reset) {
+      sideLoading.value = true;
+      sidePage.value = 1;
+      sideHasMore.value = true;
+    } else {
+      if (sideLoadingMore.value || !sideHasMore.value || sideLoading.value) {
+        return;
+      }
+      sideLoadingMore.value = true;
+    }
+
+    const seq = ++sideLoadSeq;
+    const page = sidePage.value;
     const kw = sideKeyword.value?.trim();
-    listVehicleBrandOptions({ keyword: kw || undefined, limit: 3000 })
-      .then((data) => {
-        sideLoading.value = false;
-        brandOptions.value = data ?? [];
-        if (
-          currentBrandId.value != null &&
-          !brandOptions.value.some((b) => b.brandId === currentBrandId.value)
-        ) {
-          currentBrandId.value = null;
-          currentBrandName.value = '';
-          reloadSeries(1);
-        } else if (
-          autoSelectFirst &&
-          brandOptions.value.length &&
-          currentBrandId.value == null
-        ) {
-          selectBrand(brandOptions.value[0]);
-        }
-      })
-      .catch((e) => {
-        sideLoading.value = false;
-        EleMessage.error({ message: e.message, plain: true });
+
+    try {
+      const data = await pageVehicleBrandOptions({
+        page,
+        limit: SIDE_PAGE_SIZE,
+        keyword: kw || undefined
       });
+      if (seq !== sideLoadSeq) return;
+
+      const list = data.list ?? [];
+      const count = data.count ?? 0;
+      if (reset) {
+        brandOptions.value = list;
+      } else {
+        const exist = new Set(brandOptions.value.map((b) => b.brandId));
+        brandOptions.value.push(...list.filter((b) => !exist.has(b.brandId)));
+      }
+      sideHasMore.value = brandOptions.value.length < count;
+      if (sideHasMore.value) {
+        sidePage.value = page + 1;
+      }
+      syncSelectionAfterLoad(autoSelectFirst);
+    } catch (e: unknown) {
+      if (seq !== sideLoadSeq) return;
+      const msg = e instanceof Error ? e.message : '加载失败';
+      EleMessage.error({ message: msg, plain: true });
+    } finally {
+      if (seq === sideLoadSeq) {
+        sideLoading.value = false;
+        sideLoadingMore.value = false;
+        await nextTick();
+        fillSideScrollViewport();
+      }
+    }
+  };
+
+  const onSideScroll = () => {
+    const el = sideScrollRef.value;
+    if (
+      !el ||
+      sideLoading.value ||
+      sideLoadingMore.value ||
+      !sideHasMore.value
+    ) {
+      return;
+    }
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    if (scrollHeight - scrollTop - clientHeight <= SCROLL_LOAD_THRESHOLD) {
+      loadBrandOptions(false);
+    }
   };
 
   watch(sideKeyword, () => {
@@ -273,8 +371,23 @@
       clearTimeout(keywordTimer);
     }
     keywordTimer = setTimeout(() => {
-      loadBrandOptions();
+      const kw = sideKeyword.value?.trim();
+      // 全局搜索：有关键词时重置选中并自动选中首条匹配；清空关键词则保留当前选中
+      if (kw) {
+        currentBrandId.value = null;
+        currentBrandName.value = '';
+        reloadSeries(1);
+        loadBrandOptions(true, true);
+      } else {
+        loadBrandOptions(true, currentBrandId.value == null);
+      }
     }, 300);
+  });
+
+  onUnmounted(() => {
+    if (keywordTimer) {
+      clearTimeout(keywordTimer);
+    }
   });
 
   const selectBrand = (b: VehicleBrandOption) => {
@@ -337,7 +450,7 @@
       componentProps: {
         data: null,
         onDone: () => {
-          loadBrandOptions(true);
+          loadBrandOptions(true, true);
         }
       }
     });
@@ -358,7 +471,7 @@
           componentProps: {
             data,
             onDone: () => {
-              loadBrandOptions();
+              loadBrandOptions(true);
             }
           }
         });
@@ -387,7 +500,7 @@
             EleMessage.success({ message: msg, plain: true });
             currentBrandId.value = null;
             currentBrandName.value = '';
-            loadBrandOptions(true);
+            loadBrandOptions(true, true);
             reloadSeries(1);
           })
           .catch((e) => {
@@ -412,7 +525,7 @@
         data: row ?? null,
         onDone: () => {
           reloadSeries(1);
-          loadBrandOptions();
+          loadBrandOptions(true);
         }
       }
     });
@@ -434,7 +547,7 @@
             loading.close();
             EleMessage.success({ message: msg, plain: true });
             reloadSeries(1);
-            loadBrandOptions();
+            loadBrandOptions(true);
           })
           .catch((e) => {
             loading.close();
@@ -444,12 +557,22 @@
       .catch(() => {});
   };
 
-  loadBrandOptions(true);
+  loadBrandOptions(true, true);
 </script>
 
 <style scoped>
+  .brand-side-scroll {
+    height: 100%;
+    overflow: auto;
+  }
   .brand-side-list {
     padding: 8px 12px 12px;
+  }
+  .brand-side-footer {
+    padding: 10px 8px 4px;
+    text-align: center;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
   }
   .brand-side-item {
     display: flex;

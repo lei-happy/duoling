@@ -37,11 +37,7 @@ class TenantVehicleBrandService:
         )
 
     @staticmethod
-    async def list_brand_options(
-        db: AsyncSession,
-        keyword: Optional[str] = None,
-        limit: int = 2000,
-    ) -> list:
+    def _brand_options_base_stmt(keyword: Optional[str] = None):
         series_cnt = (
             select(
                 BizVehicleSeries.brand_id.label("bid"),
@@ -56,23 +52,68 @@ class TenantVehicleBrandService:
                 func.coalesce(series_cnt.c.series_cnt, 0).label("series_count"),
             )
             .outerjoin(series_cnt, BizVehicleBrand.brand_id == series_cnt.c.bid)
-            .order_by(BizVehicleBrand.brand_name_cn)
         )
         if keyword:
             kw = keyword.strip()
             if kw:
                 stmt = stmt.where(BizVehicleBrand.brand_name_cn.contains(kw))
-        stmt = stmt.limit(min(limit, 5000))
+        return stmt
+
+    @staticmethod
+    def _serialize_brand_option(brand: BizVehicleBrand, series_count) -> dict:
+        return {
+            "brandId": brand.brand_id,
+            "brandNameCn": brand.brand_name_cn,
+            "brandLogo": brand.brand_logo,
+            "seriesCount": int(series_count or 0),
+        }
+
+    @staticmethod
+    async def list_brand_options(
+        db: AsyncSession,
+        keyword: Optional[str] = None,
+        limit: int = 2000,
+    ) -> list:
+        stmt = (
+            TenantVehicleBrandService._brand_options_base_stmt(keyword)
+            .order_by(BizVehicleBrand.brand_name_cn)
+            .limit(min(limit, 5000))
+        )
         result = await db.execute(stmt)
         return [
-            {
-                "brandId": brand.brand_id,
-                "brandNameCn": brand.brand_name_cn,
-                "brandLogo": brand.brand_logo,
-                "seriesCount": int(series_count or 0),
-            }
+            TenantVehicleBrandService._serialize_brand_option(brand, series_count)
             for brand, series_count in result.all()
         ]
+
+    @staticmethod
+    async def page_brand_options(
+        db: AsyncSession,
+        page: int = 1,
+        limit: int = 50,
+        keyword: Optional[str] = None,
+    ) -> dict:
+        """分页品牌选项（含车系数量），供侧栏滚动加载。"""
+        count_stmt = select(func.count()).select_from(BizVehicleBrand)
+        if keyword:
+            kw = keyword.strip()
+            if kw:
+                count_stmt = count_stmt.where(
+                    BizVehicleBrand.brand_name_cn.contains(kw)
+                )
+        total = (await db.execute(count_stmt)).scalar() or 0
+
+        stmt = (
+            TenantVehicleBrandService._brand_options_base_stmt(keyword)
+            .order_by(BizVehicleBrand.brand_name_cn)
+            .offset((page - 1) * limit)
+            .limit(limit)
+        )
+        result = await db.execute(stmt)
+        items = [
+            TenantVehicleBrandService._serialize_brand_option(brand, series_count)
+            for brand, series_count in result.all()
+        ]
+        return {"list": items, "count": total}
 
     @staticmethod
     async def get_brand(db: AsyncSession, brand_id: int) -> VehicleBrandOut:

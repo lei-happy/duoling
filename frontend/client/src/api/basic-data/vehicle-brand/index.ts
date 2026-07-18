@@ -30,6 +30,23 @@ export async function listVehicleBrandOptions(params?: {
   return Promise.reject(new Error(res.data.message));
 }
 
+/** 分页品牌选项（含车系数量），供侧栏滚动加载 */
+export async function pageVehicleBrandOptions(params?: {
+  page?: number;
+  limit?: number;
+  keyword?: string;
+}) {
+  const res = await request.get<
+    ApiResult<{ list: VehicleBrandOption[]; count: number }>
+  >('/basic-data/vehicle-brand/options', {
+    params: { page: 1, limit: 50, ...params }
+  });
+  if (res.data.code === 0) {
+    return res.data.data ?? { list: [], count: 0 };
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
 export async function getVehicleBrand(brandId: number) {
   const res = await request.get<ApiResult<VehicleBrand>>(
     `/basic-data/vehicle-brand/${brandId}`

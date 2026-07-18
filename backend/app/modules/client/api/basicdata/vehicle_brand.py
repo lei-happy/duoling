@@ -40,10 +40,17 @@ async def page_brands(
 @router.get("/options")
 async def list_brand_options(
     keyword: Optional[str] = Query(None),
+    page: Optional[int] = Query(None, ge=1, description="页码；传入则返回分页结构"),
     limit: int = Query(2000, ge=1, le=5000),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
+    # 传 page 时走分页（侧栏滚动加载）；不传则保持原扁平列表（下拉等场景）
+    if page is not None:
+        data = await TenantVehicleBrandService.page_brand_options(
+            db, page=page, limit=min(limit, 200), keyword=keyword
+        )
+        return success(data=data)
     data = await TenantVehicleBrandService.list_brand_options(
         db, keyword=keyword, limit=limit
     )
