@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" fill="none">
+  <defs>
+    <linearGradient id="lgTerm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a4457" /><stop offset="1" stop-color="#2b3444" /></linearGradient>
+    <linearGradient id="lgShield" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d8794" /><stop offset="1" stop-color="#495057" /></linearGradient>
+    <linearGradient id="lgCard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#eef0f3" /></linearGradient>
+  </defs>
+
+  <g fill="#d0d4da" opacity="0.6"><circle cx="66" cy="72" r="3" /><circle cx="92" cy="72" r="3" /><circle cx="66" cy="98" r="3" /></g>
+
+  <!-- terminal window -->
+  <ellipse cx="300" cy="312" rx="210" ry="16" fill="#000000" opacity="0.05" />
+  <rect x="96" y="78" width="400" height="216" rx="16" fill="url(#lgTerm)" />
+  <path d="M96 94a16 16 0 0 1 16-16h368a16 16 0 0 1 16 16v14H96z" fill="#222b3a" />
+  <circle cx="116" cy="93" r="4" fill="#ff6b5b" /><circle cx="132" cy="93" r="4" fill="#ffc24d" /><circle cx="148" cy="93" r="4" fill="#4fd08a" />
+  <rect x="200" y="88" width="120" height="10" rx="5" fill="#3c4658" />
+
+  <!-- log rows -->
+  <g font-family="monospace">
+    <rect x="118" y="126" width="18" height="10" rx="3" fill="#4fd08a" /><rect x="146" y="127" width="150" height="8" rx="4" fill="#586479" /><rect x="304" y="127" width="70" height="8" rx="4" fill="#3f4a5e" />
+    <rect x="118" y="150" width="18" height="10" rx="3" fill="#5aa9ff" /><rect x="146" y="151" width="200" height="8" rx="4" fill="#586479" /><rect x="354" y="151" width="52" height="8" rx="4" fill="#3f4a5e" />
+    <rect x="118" y="174" width="18" height="10" rx="3" fill="#ffc24d" /><rect x="146" y="175" width="120" height="8" rx="4" fill="#586479" /><rect x="274" y="175" width="90" height="8" rx="4" fill="#3f4a5e" />
+    <rect x="118" y="198" width="18" height="10" rx="3" fill="#ff6b5b" /><rect x="146" y="199" width="170" height="8" rx="4" fill="#6a7690" /><rect x="324" y="199" width="60" height="8" rx="4" fill="#3f4a5e" />
+    <rect x="118" y="222" width="18" height="10" rx="3" fill="#4fd08a" /><rect x="146" y="223" width="140" height="8" rx="4" fill="#586479" />
+    <rect x="118" y="246" width="18" height="10" rx="3" fill="#5aa9ff" /><rect x="146" y="247" width="190" height="8" rx="4" fill="#586479" />
+  </g>
+  <!-- cursor -->
+  <rect x="146" y="268" width="10" height="12" rx="2" fill="#4fd08a" opacity="0.9" />
+
+  <!-- scanning magnifier over logs -->
+  <g>
+    <circle cx="360" cy="196" r="34" fill="#ffffff" opacity="0.14" />
+    <circle cx="360" cy="196" r="26" fill="none" stroke="#cfd4dc" stroke-width="6" />
+    <path d="M380 216l20 20" stroke="#cfd4dc" stroke-width="9" stroke-linecap="round" />
+    <path d="M350 196l7 7 12-14" stroke="#4fd08a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  </g>
+
+  <!-- floating card: security shield -->
+  <g>
+    <rect x="440" y="80" width="146" height="80" rx="16" fill="url(#lgCard)" stroke="#e3e6eb" stroke-width="1.5" />
+    <path d="M480 96l22 8v16c0 15-11 24-22 29-11-5-22-14-22-29v-16z" fill="url(#lgShield)" />
+    <path d="M470 120l7 7 12-14" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="516" y="104" width="54" height="9" rx="4.5" fill="#495057" opacity="0.85" /><rect x="516" y="120" width="42" height="7" rx="3.5" fill="#d5d9e0" /><rect x="516" y="133" width="50" height="7" rx="3.5" fill="#e6e9ee" />
+  </g>
+
+  <!-- floating card: clock -->
+  <g>
+    <rect x="64" y="196" width="112" height="52" rx="14" fill="url(#lgCard)" stroke="#e3e6eb" stroke-width="1.5" />
+    <circle cx="90" cy="222" r="16" fill="url(#lgShield)" /><path d="M90 213v9l6 4" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <rect x="116" y="212" width="50" height="9" rx="4.5" fill="#495057" opacity="0.8" /><rect x="116" y="227" width="34" height="7" rx="3.5" fill="#d5d9e0" />
+  </g>
+
+  <!-- paper plane -->
+  <path d="M566 58l40-16-16 40-8-16z" fill="#9aa2ad" />
+  <path d="M566 58l24-8-8 16z" fill="#495057" />
+</svg>

@@ -1,6 +1,21 @@
 /** 布局样式 */
 @use 'ele-admin-plus/es/style/util.scss' as *;
 
+/* 品牌定制：暗色顶栏背景色（覆盖组件库默认的 #001529） */
+.ele-admin-layout.ele-pro-layout {
+  --ele-header-dark-bg: #081629;
+}
+
+/* 品牌定制：左侧菜单相关背景色（垂直菜单，排除顶栏水平菜单） */
+.ele-menu:not(.el-menu--horizontal) {
+  /* 选中项背景 */
+  --ele-menu-item-active-bg: #e8f3ff;
+  /* 悬停背景（与选中态一致） */
+  --ele-menu-item-hover-bg: #e8f3ff;
+  /* 展开子菜单容器背景（移除默认灰色底） */
+  --ele-menu-child-bg: transparent;
+}
+
 /* 全局页脚 */
 .ele-footer {
   padding: 16px 0;

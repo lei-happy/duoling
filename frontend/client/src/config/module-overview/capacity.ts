@@ -1,4 +1,5 @@
 import type { ModuleOverviewConfig } from './types';
+import heroCapacity from '@/assets/overview/hero-capacity.svg';
 
 /** 运力中心总览配置 */
 const capacity: ModuleOverviewConfig = {
@@ -8,34 +9,8 @@ const capacity: ModuleOverviewConfig = {
     '运力中心统一纳管自有、承运商与社会三类运力，维护车辆、司机、挂车档案及证照合规，为运营调度提供稳定可用的运力底座。',
   description:
     '在这里登记并审核各类运力资源，完善车辆与人员档案，持续监控证照到期与合规状态，确保调度环节始终有合规、可用的运力。',
-  heroIcon: 'dispatch',
+  heroIllustration: heroCapacity,
   accentColor: '#7048e8',
-  workflow: [
-    {
-      title: '运力接入',
-      desc: '登记自有、承运商或社会运力资源',
-      icon: 'dispatch',
-      path: '/capacity/self-capacity/list'
-    },
-    {
-      title: '资质审核',
-      desc: '审核运力准入资质与合作条件',
-      icon: 'approval',
-      path: '/capacity/social-capacity/capacity-approval'
-    },
-    {
-      title: '档案维护',
-      desc: '完善车辆、司机、挂车等档案信息',
-      icon: 'vehicle',
-      path: '/capacity/self-capacity/vehicle'
-    },
-    {
-      title: '证照监控',
-      desc: '跟踪证照到期提醒与合规状态',
-      icon: 'shield',
-      path: '/capacity/compliance'
-    }
-  ],
   moduleCards: [
     {
       path: '/capacity/self-capacity',

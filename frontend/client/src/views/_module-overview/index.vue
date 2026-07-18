@@ -7,8 +7,6 @@
       :illustration="config?.heroIllustration"
       :hero-icon="config?.heroIcon"
       :accent-color="config?.accentColor"
-      :quick-actions="config?.quickActions"
-      @navigate="navigate"
     />
 
     <section v-if="workflow?.length" class="overview-section">
@@ -63,7 +61,7 @@
     if (metaKey) {
       return metaKey;
     }
-    return route.path.replace(/^\//, '').replace(/\/overview$/, '');
+    return route.path.replace(/^\//, '').replace(/\/overview(-home)?$/, '');
   });
 
   /** 当前模块在菜单中的一级节点 */

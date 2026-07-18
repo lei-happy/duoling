@@ -1,4 +1,5 @@
 import type { ModuleOverviewConfig } from './types';
+import heroInsight from '@/assets/overview/hero-insight.svg';
 
 /** 数据洞察总览配置 */
 const insight: ModuleOverviewConfig = {
@@ -8,34 +9,8 @@ const insight: ModuleOverviewConfig = {
     '数据洞察汇聚运营、运力与财务数据，通过经营驾驶舱、运营看板、数据报表与智能预测，帮助管理者掌握全局并辅助决策。',
   description:
     '在这里从不同视角洞察经营：老板视角的驾驶舱、运营核心指标看板、多维数据报表，以及基于历史数据的业务趋势预测。',
-  heroIcon: 'chart',
+  heroIllustration: heroInsight,
   accentColor: '#1098ad',
-  workflow: [
-    {
-      title: '经营驾驶舱',
-      desc: '老板视角的经营与利润总览',
-      icon: 'cockpit',
-      path: '/insight/cockpit'
-    },
-    {
-      title: '运营看板',
-      desc: '掌握运营核心指标',
-      icon: 'board',
-      path: '/insight/overview'
-    },
-    {
-      title: '数据报表',
-      desc: '多维数据报表与分析',
-      icon: 'report',
-      path: '/insight/report'
-    },
-    {
-      title: '智能预测',
-      desc: '预测业务趋势辅助决策',
-      icon: 'forecast',
-      path: '/insight/prediction'
-    }
-  ],
   moduleCards: [
     {
       path: '/insight/cockpit',

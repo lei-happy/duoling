@@ -5,22 +5,6 @@
       <h2 class="overview-hero__title">{{ title }}</h2>
       <p class="overview-hero__positioning">{{ positioning }}</p>
       <p v-if="description" class="overview-hero__desc">{{ description }}</p>
-      <div v-if="quickActions?.length" class="overview-hero__actions">
-        <el-button
-          v-for="action in quickActions"
-          :key="action.path"
-          :type="action.primary ? 'primary' : 'default'"
-          round
-          @click="emit('navigate', action.path)"
-        >
-          <overview-icon
-            v-if="action.icon"
-            :name="action.icon"
-            style="margin-right: 6px; font-size: 15px"
-          />
-          {{ action.title }}
-        </el-button>
-      </div>
     </div>
     <div class="overview-hero__art">
       <img v-if="illustration" :src="illustration" :alt="title" />
@@ -40,7 +24,6 @@
 <script lang="ts" setup>
   import { computed } from 'vue';
   import type { CSSProperties } from 'vue';
-  import type { OverviewQuickAction } from '@/config/module-overview/types';
   import OverviewIcon from './overview-icon.vue';
 
   defineOptions({ name: 'OverviewHero' });
@@ -52,11 +35,6 @@
     illustration?: string;
     heroIcon?: string;
     accentColor?: string;
-    quickActions?: OverviewQuickAction[];
-  }>();
-
-  const emit = defineEmits<{
-    (e: 'navigate', path: string): void;
   }>();
 
   const accentVars = computed<CSSProperties>(() => ({
@@ -70,30 +48,28 @@
     display: flex;
     align-items: center;
     gap: 24px;
-    padding: 28px 32px 28px 36px;
-    border-radius: 12px;
+    min-height: 148px;
+    padding: 20px 28px;
+    border-radius: 14px;
     overflow: hidden;
     background: linear-gradient(
-      120deg,
-      var(--el-color-primary-light-9),
-      var(--el-bg-color)
+      118deg,
+      color-mix(in srgb, var(--overview-accent) 20%, #ffffff) 0%,
+      color-mix(in srgb, var(--overview-accent) 8%, #ffffff) 40%,
+      var(--el-bg-color) 100%
     );
-    border: 1px solid var(--el-border-color-lighter);
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: var(--overview-accent);
-    }
+    border: 1px solid
+      color-mix(
+        in srgb,
+        var(--overview-accent) 16%,
+        var(--el-border-color-lighter)
+      );
   }
 
   .overview-hero__text {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-width: 0;
+    max-width: 460px;
   }
 
   .overview-hero__eyebrow {
@@ -103,49 +79,44 @@
     padding: 0 10px;
     border-radius: 10px;
     color: var(--overview-accent);
-    background: var(--el-color-primary-light-9);
+    background: color-mix(in srgb, var(--overview-accent) 14%, #ffffff);
     margin-bottom: 12px;
   }
 
   .overview-hero__title {
-    margin: 0 0 10px;
-    font-size: 24px;
+    margin: 0 0 8px;
+    font-size: 22px;
     font-weight: 600;
     color: var(--el-text-color-primary);
   }
 
   .overview-hero__positioning {
     margin: 0;
-    font-size: 14px;
-    line-height: 1.7;
+    font-size: 13px;
+    line-height: 1.6;
     color: var(--el-text-color-regular);
     max-width: 720px;
   }
 
   .overview-hero__desc {
-    margin: 10px 0 0;
+    margin: 8px 0 0;
     font-size: 13px;
-    line-height: 1.7;
+    line-height: 1.6;
     color: var(--el-text-color-secondary);
     max-width: 720px;
   }
 
-  .overview-hero__actions {
-    margin-top: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
   .overview-hero__art {
-    flex: 0 0 auto;
-    width: 300px;
-    max-width: 38%;
+    flex: 1 1 auto;
+    align-self: center;
+    min-width: 0;
     display: flex;
     justify-content: center;
+    align-items: center;
 
     img {
       width: 100%;
+      max-width: 360px;
       height: auto;
       display: block;
     }
@@ -201,8 +172,9 @@
     }
 
     .overview-hero__art {
-      width: 200px;
-      max-width: 60%;
+      width: 100%;
+      max-width: 420px;
+      justify-content: center;
     }
   }
 </style>

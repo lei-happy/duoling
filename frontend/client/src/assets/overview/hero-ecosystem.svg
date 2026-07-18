@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" fill="none">
+  <defs>
+    <linearGradient id="ecPod" x1="320" y1="230" x2="320" y2="300" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffd8bd" /><stop offset="1" stop-color="#f7a366" /></linearGradient>
+    <radialGradient id="ecHub" cx="0.4" cy="0.35" r="0.75"><stop offset="0" stop-color="#ffb37d" /><stop offset="1" stop-color="#e8590c" /></radialGradient>
+    <linearGradient id="ecCard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#fdefe6" /></linearGradient>
+    <linearGradient id="ecRoof" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff9a52" /><stop offset="1" stop-color="#e8590c" /></linearGradient>
+  </defs>
+
+  <g fill="#f6cbaa" opacity="0.5"><circle cx="66" cy="72" r="3" /><circle cx="92" cy="72" r="3" /><circle cx="66" cy="98" r="3" /></g>
+
+  <!-- beams from hub to pavilions -->
+  <g stroke="#f6c2a0" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="2 9">
+    <path d="M320 214L156 150M320 214L484 148M320 214L470 268" />
+  </g>
+
+  <!-- central podium -->
+  <ellipse cx="320" cy="292" rx="120" ry="24" fill="#000000" opacity="0.05" />
+  <path d="M228 262a92 26 0 0 0 184 0v16a92 26 0 0 1-184 0z" fill="#e88a4f" />
+  <ellipse cx="320" cy="262" rx="92" ry="26" fill="url(#ecPod)" />
+  <ellipse cx="320" cy="262" rx="64" ry="18" fill="#ffffff" opacity="0.45" />
+  <!-- hub -->
+  <ellipse cx="320" cy="236" rx="34" ry="10" fill="#e8590c" opacity="0.25" />
+  <circle cx="320" cy="214" r="30" fill="url(#ecHub)" />
+  <circle cx="320" cy="214" r="30" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="3 6" opacity="0.55" />
+  <path d="M320 200l12 7v14l-12 7-12-7v-14z" fill="#ffffff" opacity="0.9" />
+  <circle cx="320" cy="214" r="5" fill="#e8590c" />
+
+  <!-- pavilion: cargo hall (left) -->
+  <g>
+    <rect x="98" y="118" width="116" height="64" rx="14" fill="url(#ecCard)" stroke="#f6ddca" stroke-width="1.5" />
+    <path d="M118 150h32v22h-32z" fill="#ffb37d" /><path d="M114 150h40l-6-12h-28z" fill="url(#ecRoof)" />
+    <rect x="160" y="132" width="44" height="8" rx="4" fill="#e8590c" opacity="0.8" /><rect x="160" y="148" width="34" height="7" rx="3.5" fill="#f4cdb0" /><rect x="160" y="161" width="40" height="7" rx="3.5" fill="#f8ddca" />
+  </g>
+  <!-- pavilion: capacity hall (right-top) -->
+  <g>
+    <rect x="426" y="112" width="116" height="64" rx="14" fill="url(#ecCard)" stroke="#f6ddca" stroke-width="1.5" />
+    <rect x="446" y="140" width="24" height="18" rx="3" fill="#ffb37d" /><path d="M470 144h9l7 7v7h-16z" fill="url(#ecRoof)" />
+    <circle cx="453" cy="160" r="3.4" fill="#8a3c14" /><circle cx="478" cy="160" r="3.4" fill="#8a3c14" />
+    <rect x="446" y="122" width="44" height="8" rx="4" fill="#e8590c" opacity="0.8" /><rect x="498" y="140" width="36" height="7" rx="3.5" fill="#f4cdb0" /><rect x="498" y="153" width="28" height="7" rx="3.5" fill="#f8ddca" />
+  </g>
+  <!-- pavilion: service hall (right-bottom) -->
+  <g>
+    <rect x="440" y="238" width="120" height="60" rx="14" fill="url(#ecCard)" stroke="#f6ddca" stroke-width="1.5" />
+    <path d="M456 268v-4a12 12 0 0 1 24 0v4" stroke="#e8590c" stroke-width="3" fill="none" stroke-linecap="round" />
+    <rect x="452" y="266" width="8" height="14" rx="3" fill="#ff9a52" /><rect x="476" y="266" width="8" height="14" rx="3" fill="#ff9a52" />
+    <rect x="494" y="250" width="52" height="8" rx="4" fill="#e8590c" opacity="0.8" /><rect x="494" y="266" width="40" height="7" rx="3.5" fill="#f4cdb0" /><rect x="494" y="279" width="46" height="7" rx="3.5" fill="#f8ddca" />
+  </g>
+
+  <!-- floating badge: transactions -->
+  <g>
+    <rect x="70" y="242" width="118" height="52" rx="14" fill="url(#ecCard)" stroke="#f6ddca" stroke-width="1.5" />
+    <rect x="84" y="256" width="24" height="24" rx="7" fill="url(#ecHub)" />
+    <path d="M90 268l6 6 8-10" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="116" y="256" width="56" height="9" rx="4.5" fill="#e8590c" opacity="0.8" /><rect x="116" y="271" width="38" height="7" rx="3.5" fill="#f4cdb0" />
+  </g>
+
+  <!-- paper plane -->
+  <path d="M566 60l40-16-16 40-8-16z" fill="#ffb884" />
+  <path d="M566 60l24-8-8 16z" fill="#e8590c" />
+</svg>

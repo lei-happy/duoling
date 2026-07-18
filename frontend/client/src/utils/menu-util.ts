@@ -8,6 +8,12 @@ const USER_MENUS: Menu[] | null = null;
 const OVERVIEW_COMPONENT = '/_module-overview';
 /** 总览子路由的路径后缀 */
 const OVERVIEW_PATH_SUFFIX = '/overview';
+/**
+ * 总览路径与既有业务子路由同名时的兜底后缀。
+ * 例如数据洞察已存在 `/insight/overview`（运营看板），总览改用 `/insight/overview-home`，
+ * 避免同名导致总览路由被业务页覆盖而不显示。
+ */
+const OVERVIEW_PATH_FALLBACK_SUFFIX = '/overview-home';
 /** 不注入总览入口的一级模块（首页本身即工作台，无需总览） */
 const OVERVIEW_EXCLUDED_PATHS = new Set<string>(['/dashboard']);
 
@@ -152,20 +158,30 @@ function injectModuleOverview(menus?: MenuItem[]): MenuItem[] | undefined {
     if (!children?.length) {
       return;
     }
-    const overviewPath = `${path}${OVERVIEW_PATH_SUFFIX}`;
     const moduleKey = path.replace(/^\//, '');
-    if (!children.some((child) => child.path === overviewPath)) {
-      children.unshift({
-        path: overviewPath,
-        component: OVERVIEW_COMPONENT,
-        meta: {
-          title: '总览',
-          icon: 'overview',
-          hide: false,
-          overviewModule: moduleKey
-        }
-      });
+    // 幂等：若已注入过总览（按 overviewModule 标识），仅纠正重定向后返回
+    const injected = children.find(
+      (child) => child.meta?.overviewModule === moduleKey
+    );
+    if (injected?.path) {
+      top.redirect = injected.path;
+      return;
     }
+    // 与既有业务子路由同名（如 /insight/overview 运营看板）时启用兜底后缀，避免路由被覆盖
+    const preferredPath = `${path}${OVERVIEW_PATH_SUFFIX}`;
+    const overviewPath = children.some((child) => child.path === preferredPath)
+      ? `${path}${OVERVIEW_PATH_FALLBACK_SUFFIX}`
+      : preferredPath;
+    children.unshift({
+      path: overviewPath,
+      component: OVERVIEW_COMPONENT,
+      meta: {
+        title: '总览',
+        icon: 'overview',
+        hide: false,
+        overviewModule: moduleKey
+      }
+    });
     // 覆写模块默认重定向，使点击顶部一级菜单默认落地总览页
     top.redirect = overviewPath;
   });

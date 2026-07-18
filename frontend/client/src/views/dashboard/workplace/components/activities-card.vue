@@ -34,10 +34,7 @@
                 nodeKind(item.event_code) === 'hollow-dashed'
             }"
           >
-            <div
-              class="activity-summary"
-              :class="{ 'activity-summary--new': newPulseIds.has(item.id) }"
-            >
+            <div class="activity-summary">
               <template v-if="parts.actor">
                 <span class="activity-summary__plain">{{ parts.before }}</span>
                 <span class="activity-summary__actor">{{ parts.actor }}</span>
@@ -84,16 +81,9 @@
   const loadingMore = ref(false);
   const currentPage = ref(1);
   const hasMore = ref(true);
-  const newPulseIds = ref<Set<number>>(new Set());
-  /** 已展示过的 id，用于检测轮询/手动刷新后的新动态 */
-  const seenActivityIds = ref<Set<number>>(new Set());
   const scrollbarRef = ref<ElScrollbarInstance>(null);
   let scrollWrapEl: HTMLElement | null = null;
-  let pollTimer: ReturnType<typeof setInterval> | null = null;
-  let newPulseClearTimer: number | null = null;
 
-  /** 自动刷新间隔（毫秒） */
-  const POLL_MS = 30_000;
   /** 距底部多少 px 时触发加载下一页 */
   const SCROLL_LOAD_THRESHOLD = 80;
 
@@ -173,44 +163,6 @@
     }))
   );
 
-  const markNewItemsAfterFetch = (items: CompanyActivityItem[]) => {
-    if (newPulseClearTimer) {
-      clearTimeout(newPulseClearTimer);
-      newPulseClearTimer = null;
-    }
-    if (seenActivityIds.value.size === 0) {
-      seenActivityIds.value = new Set(items.map((x) => x.id));
-      return;
-    }
-    const arrived = new Set<number>();
-    for (const it of items) {
-      if (!seenActivityIds.value.has(it.id)) {
-        arrived.add(it.id);
-      }
-    }
-    for (const it of items) {
-      seenActivityIds.value.add(it.id);
-    }
-    if (arrived.size === 0) {
-      return;
-    }
-    newPulseIds.value = arrived;
-    newPulseClearTimer = window.setTimeout(() => {
-      newPulseIds.value = new Set();
-      newPulseClearTimer = null;
-    }, 1800);
-  };
-
-  const mergeFirstPageUpdates = (firstPageItems: CompanyActivityItem[]) => {
-    markNewItemsAfterFetch(firstPageItems);
-    const existingIds = new Set(activities.value.map((x) => x.id));
-    const prepend = firstPageItems.filter((x) => !existingIds.has(x.id));
-    if (prepend.length === 0) {
-      return;
-    }
-    activities.value = [...prepend, ...activities.value];
-  };
-
   const loadActivities = async (reset = false, silent = false) => {
     if (reset) {
       if (!silent) {
@@ -235,18 +187,9 @@
       const totalPages = data?.pages ?? 1;
 
       if (reset) {
-        if (silent && activities.value.length > 0) {
-          mergeFirstPageUpdates(items);
-        } else {
-          activities.value = items;
-          seenActivityIds.value = new Set(items.map((x) => x.id));
-          newPulseIds.value = new Set();
-        }
+        activities.value = items;
       } else {
         activities.value.push(...items);
-        for (const it of items) {
-          seenActivityIds.value.add(it.id);
-        }
       }
 
       hasMore.value = currentPage.value < totalPages;
@@ -293,30 +236,12 @@
     }
   };
 
-  const fillScrollViewport = () => {
-    if (
-      !scrollWrapEl ||
-      !hasMore.value ||
-      loading.value ||
-      loadingMore.value
-    ) {
-      return;
-    }
-    if (
-      scrollWrapEl.scrollHeight <=
-      scrollWrapEl.clientHeight + SCROLL_LOAD_THRESHOLD
-    ) {
-      loadMoreActivities();
-    }
-  };
-
   const attachScrollLoad = () => {
     cleanupScrollLoad();
     scrollWrapEl = getScrollWrap();
     scrollWrapEl?.addEventListener('scroll', tryLoadMoreOnScroll, {
       passive: true
     });
-    fillScrollViewport();
   };
 
   const cleanupScrollLoad = () => {
@@ -326,7 +251,6 @@
 
   const handleCommand = (command: Command) => {
     if (command === 'refresh') {
-      seenActivityIds.value = new Set();
       loadActivities(true, false);
       return;
     }
@@ -335,21 +259,10 @@
 
   onMounted(() => {
     loadActivities(true, false);
-    pollTimer = setInterval(() => {
-      loadActivities(true, true);
-    }, POLL_MS);
   });
 
   onUnmounted(() => {
     cleanupScrollLoad();
-    if (pollTimer) {
-      clearInterval(pollTimer);
-      pollTimer = null;
-    }
-    if (newPulseClearTimer) {
-      clearTimeout(newPulseClearTimer);
-      newPulseClearTimer = null;
-    }
   });
 </script>
 
@@ -412,29 +325,6 @@
   .activity-summary__actor {
     font-weight: 600;
     color: var(--el-color-primary);
-  }
-
-  .activity-summary--new {
-    position: relative;
-    margin-left: -6px;
-    padding-left: 8px;
-    border-radius: 6px;
-    animation: activity-row-highlight 1.6s ease-out 1;
-  }
-
-  @keyframes activity-row-highlight {
-    0% {
-      background-color: var(--el-color-primary-light-9);
-      box-shadow: inset 3px 0 0 var(--el-color-primary);
-    }
-    55% {
-      background-color: var(--el-color-primary-light-9);
-      box-shadow: inset 3px 0 0 var(--el-color-primary-light-5);
-    }
-    100% {
-      background-color: transparent;
-      box-shadow: inset 3px 0 0 transparent;
-    }
   }
 
   /* 时间轴：同场景同色竖线 + 节点与线居中对齐 + 空心遮挡竖线 */

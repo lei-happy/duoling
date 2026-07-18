@@ -174,7 +174,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { markRaw, onMounted } from 'vue';
+  import { markRaw, onMounted, onBeforeUnmount } from 'vue';
   import { useRouter } from 'vue-router';
   import { storeToRefs } from 'pinia';
   import { useI18n } from 'vue-i18n';
@@ -242,7 +242,8 @@
     loadWatermarkConfig();
   });
 
-  const { push, resolve } = useRouter();
+  const router = useRouter();
+  const { push, resolve } = router;
   const { t, locale } = useI18n();
   const {
     addPageTab,
@@ -255,6 +256,24 @@
     setPageTabs,
     setPageTab
   } = usePageTab();
+
+  // 离开「模块总览」页时自动关闭其页签，避免多次切换一级菜单后
+  // 页签区堆积一排「总览」。总览作为一次性入口，最多保留当前一个。
+  const removeOverviewTabRef = router.afterEach((to, from) => {
+    if (!from.meta?.overviewModule) {
+      return;
+    }
+    if (from.path === to.path || to.path.includes(REDIRECT_PATH)) {
+      return;
+    }
+    const activeKey = to.meta?.tabUnique === false ? to.fullPath : to.path;
+    removePageTab({ key: from.path, active: activeKey }, false);
+  });
+
+  onBeforeUnmount(() => {
+    removeOverviewTabRef?.();
+  });
+
   const { mobileDevice } = useMobileDevice();
   const userStore = useUserStore();
   const tabStore = useTabStore();

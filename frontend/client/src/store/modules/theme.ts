@@ -23,7 +23,6 @@ import {
   changeResponsive,
   cacheSkinBg,
   storeWallpaperFile,
-  getCacheSkinConfig,
   getSkinConfig,
   releaseSkinBgCache,
   SKIN_THEME_CONFIG_EXCLUDES,
@@ -82,6 +81,14 @@ export interface ThemeState {
 export type ThemeStateProp = keyof ThemeState;
 
 /**
+ * 仍从本地缓存恢复的主题属性
+ * 租户端已关闭自定义主题功能，主题外观固定为品牌配置，
+ * 因此仅恢复与品牌外观无关的运行时状态（如侧栏折叠），
+ * 其余属性一律使用品牌默认值（DEFAULT_STATE）。
+ */
+const THEME_CACHE_RESTORE_PROPS: ThemeStateProp[] = ['collapse'];
+
+/**
  * 默认值
  */
 const DEFAULT_STATE: ThemeState = {
@@ -95,13 +102,13 @@ const DEFAULT_STATE: ThemeState = {
   expanded: false,
   /** 是否需要页签栏 */
   tabBar: true,
-  /** 布局类型 */
-  layout: 'default',
+  /** 布局类型（品牌固定为混合菜单） */
+  layout: 'mix',
   /** 侧栏布局类型 */
   sidebarLayout: 'default',
-  /** 顶栏风格 */
-  headerStyle: 'light',
-  /** 侧栏风格 */
+  /** 顶栏风格（品牌固定为暗色顶栏） */
+  headerStyle: 'dark',
+  /** 侧栏风格（品牌固定为亮色侧栏） */
   sidebarStyle: 'light',
   /** 双侧栏二级风格 */
   mixSidebarStyle: 'light',
@@ -115,8 +122,8 @@ const DEFAULT_STATE: ThemeState = {
   fixedBody: true,
   /** 内容区是否撑满 */
   fluid: true,
-  /** 图标是否置于顶栏 */
-  logoInHeader: false,
+  /** 图标是否置于顶栏（品牌固定为置于顶栏） */
+  logoInHeader: true,
   /** 侧栏菜单是否彩色图标 */
   colorfulIcon: false,
   /** 侧栏排他展开 */
@@ -143,28 +150,28 @@ const DEFAULT_STATE: ThemeState = {
   sidebarMenuProps: null,
   /** 双侧栏一级菜单属性 */
   sideboxMenuProps: null,
-  /** 路由切换动画 */
-  transitionName: 'slide-right',
+  /** 路由切换动画（品牌固定为淡入淡出） */
+  transitionName: 'fade',
   /** 是否色弱模式 */
   weakMode: false,
   /** 是否暗黑模式 */
   darkMode: false,
-  /** 主题色 */
-  color: null,
+  /** 主题色（品牌统一主色，企业不允许自定义） */
+  color: '#0065FF',
   /** 内容区宽度 */
   contentWidth: null,
   /** 是否开启圆角主题 */
   roundedTheme: true,
-  /** 菜单触发模式 */
-  menuItemTrigger: 'click',
+  /** 菜单触发模式（品牌固定为 route，即混合菜单按路由分割） */
+  menuItemTrigger: 'route',
   /** 是否开启全局页脚 */
   footer: true,
-  /** 页签是否显示图标 */
-  tabIcon: true,
-  /** 皮肤背景配置 */
+  /** 页签是否显示图标（品牌固定为关闭） */
+  tabIcon: false,
+  /** 皮肤背景配置（品牌固定为经典主题，无背景） */
   skinConfig: null,
-  /** 常用布局名称 */
-  layoutName: null,
+  /** 常用布局名称（品牌固定为常规布局） */
+  layoutName: 'default',
   /** 是否开启响应式 */
   responsive: true
 };
@@ -175,14 +182,12 @@ const DEFAULT_STATE: ThemeState = {
 export const useThemeStore = defineStore('theme', {
   state: (): ThemeState => {
     const state: ThemeState = cloneDeep(DEFAULT_STATE);
-    // 读取本地缓存
+    // 自定义主题已关闭，仅从本地缓存恢复与外观无关的运行时状态
     const cache = getCacheSetting();
-    Object.keys(state).forEach((key) => {
-      if (key !== 'skinConfig') {
-        const value = cache[key];
-        if (typeof value !== 'undefined') {
-          state[key] = value;
-        }
+    THEME_CACHE_RESTORE_PROPS.forEach((key) => {
+      const value = cache[key];
+      if (typeof value !== 'undefined') {
+        state[key] = value;
       }
     });
     return state;
@@ -336,18 +341,10 @@ export const useThemeStore = defineStore('theme', {
       if (this.roundedTheme) {
         changeRoundedTheme(true);
       }
-      // 读取缓存的皮肤背景
-      getCacheSkinConfig(this.skinConfig)
-        .then((skin) => {
-          this.skinConfig = skin;
-          // 恢复主题色、暗黑模式、皮肤背景
-          if (this.color || this.darkMode || this.skinConfig) {
-            changeTheme(this.color, this.darkMode, this.skinConfig);
-          }
-        })
-        .catch((e) => {
-          console.error(e);
-        });
+      // 租户端已关闭自定义主题，皮肤背景固定为经典主题（无背景）
+      this.skinConfig = null;
+      // 恢复品牌主题色
+      changeTheme(this.color, this.darkMode, this.skinConfig);
     },
     /**
      * 获取布局对应的主题配置

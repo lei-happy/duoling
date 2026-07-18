@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" fill="none">
+  <defs>
+    <linearGradient id="ptCore" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f472a8" /><stop offset="1" stop-color="#e14b8a" /></linearGradient>
+    <linearGradient id="ptCard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#fdeef5" /></linearGradient>
+    <radialGradient id="ptHalo" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#e14b8a" stop-opacity="0.14" /><stop offset="1" stop-color="#e14b8a" stop-opacity="0" /></radialGradient>
+  </defs>
+
+  <!-- halo -->
+  <circle cx="300" cy="188" r="150" fill="url(#ptHalo)" />
+  <circle cx="300" cy="188" r="132" fill="none" stroke="#f6cfe0" stroke-width="1.4" stroke-dasharray="2 10" />
+  <circle cx="300" cy="188" r="92" fill="none" stroke="#f8dbe8" stroke-width="1.4" stroke-dasharray="2 9" />
+
+  <!-- connection lines -->
+  <g stroke="#f2a9c8" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 8">
+    <path d="M300 188L150 108M300 188L470 116M300 188L152 262M300 188L456 258M300 188L300 60" />
+  </g>
+
+  <!-- node: storefront (top-left) -->
+  <g>
+    <circle cx="150" cy="108" r="30" fill="#ffffff" stroke="#f6d5e4" stroke-width="1.5" />
+    <rect x="136" y="102" width="28" height="18" rx="3" fill="#f472a8" />
+    <path d="M132 102h36l-6-11h-24z" fill="#e14b8a" />
+    <rect x="146" y="108" width="8" height="12" rx="1.5" fill="#fdeef5" />
+  </g>
+  <!-- node: carrier (top-right) -->
+  <g>
+    <circle cx="470" cy="116" r="30" fill="#ffffff" stroke="#f6d5e4" stroke-width="1.5" />
+    <rect x="456" y="106" width="28" height="20" rx="4" fill="#f472a8" />
+    <path d="M460 116h20M460 121h14" stroke="#fdeef5" stroke-width="2.4" stroke-linecap="round" />
+    <circle cx="463" cy="111" r="2.4" fill="#fdeef5" />
+  </g>
+  <!-- node: supplier box (bottom-left) -->
+  <g>
+    <circle cx="152" cy="262" r="28" fill="#ffffff" stroke="#f6d5e4" stroke-width="1.5" />
+    <rect x="139" y="250" width="26" height="24" rx="3" fill="#4fb3ff" opacity="0.9" />
+    <path d="M152 250v24M139 262h26" stroke="#2f8fe0" stroke-width="2" />
+  </g>
+  <!-- node: dealer avatar (bottom-right) -->
+  <g>
+    <circle cx="456" cy="258" r="28" fill="#ffffff" stroke="#f6d5e4" stroke-width="1.5" />
+    <circle cx="456" cy="251" r="8" fill="#ffb020" />
+    <path d="M444 270c1-7 6-10 12-10s11 3 12 10z" fill="#ffcf6b" />
+  </g>
+  <!-- node: invite (top) -->
+  <g>
+    <circle cx="300" cy="60" r="24" fill="#ffffff" stroke="#f6d5e4" stroke-width="1.5" />
+    <path d="M300 52v16M292 60h16" stroke="#e14b8a" stroke-width="3" stroke-linecap="round" />
+  </g>
+
+  <!-- central CRM card -->
+  <g>
+    <ellipse cx="300" cy="232" rx="70" ry="10" fill="#5a1236" opacity="0.12" />
+    <rect x="234" y="150" width="132" height="82" rx="16" fill="url(#ptCard)" stroke="#f3d0e0" stroke-width="1.5" />
+    <path d="M234 166a16 16 0 0 1 16-16h100a16 16 0 0 1 16 16v10H234z" fill="url(#ptCore)" />
+    <circle cx="266" cy="192" r="16" fill="#e14b8a" />
+    <circle cx="266" cy="187" r="6" fill="#fdeef5" />
+    <path d="M255 204c1-8 6-11 11-11s10 3 11 11z" fill="#fdeef5" />
+    <rect x="292" y="184" width="60" height="9" rx="4.5" fill="#e14b8a" opacity="0.85" />
+    <rect x="292" y="200" width="46" height="7" rx="3.5" fill="#f6cfe0" />
+    <rect x="292" y="213" width="54" height="7" rx="3.5" fill="#fce3ee" />
+  </g>
+
+  <!-- floating badge: partner total -->
+  <g>
+    <rect x="470" y="200" width="122" height="52" rx="14" fill="url(#ptCard)" stroke="#f3d0e0" stroke-width="1.5" />
+    <rect x="484" y="214" width="24" height="24" rx="8" fill="url(#ptCore)" />
+    <circle cx="496" cy="221" r="3.6" fill="#fdeef5" />
+    <path d="M489 234c0-4 3-6 7-6s7 2 7 6z" fill="#fdeef5" />
+    <rect x="518" y="214" width="58" height="9" rx="4.5" fill="#e14b8a" opacity="0.8" />
+    <rect x="518" y="229" width="40" height="7" rx="3.5" fill="#f8d9e6" />
+  </g>
+
+  <!-- paper plane -->
+  <path d="M566 66l40-16-16 40-8-16z" fill="#f6a0c4" />
+  <path d="M566 66l24-8-8 16z" fill="#e14b8a" />
+</svg>

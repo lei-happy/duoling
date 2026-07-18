@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" fill="none">
+  <defs>
+    <linearGradient id="cpUniform" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9b7cff" /><stop offset="1" stop-color="#6f47e6" /></linearGradient>
+    <linearGradient id="cpCap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a6bff" /><stop offset="1" stop-color="#5f38d6" /></linearGradient>
+    <linearGradient id="cpHead" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a98cff" /><stop offset="1" stop-color="#7048e8" /></linearGradient>
+    <linearGradient id="cpCard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#f4f1fe" /></linearGradient>
+  </defs>
+
+  <g fill="#d3c6f5" opacity="0.5"><circle cx="66" cy="70" r="3" /><circle cx="92" cy="70" r="3" /><circle cx="66" cy="96" r="3" /></g>
+
+  <!-- soft backdrop circle behind driver -->
+  <circle cx="168" cy="196" r="118" fill="#7048e8" opacity="0.06" />
+  <circle cx="168" cy="196" r="118" fill="none" stroke="#d8ccf7" stroke-width="1.4" stroke-dasharray="2 10" />
+
+  <!-- driver figure (bust) -->
+  <g>
+    <ellipse cx="168" cy="316" rx="78" ry="13" fill="#1b1440" opacity="0.08" />
+    <!-- torso / uniform -->
+    <path d="M104 322c0-52 24-78 64-78s64 26 64 78z" fill="url(#cpUniform)" />
+    <!-- collar -->
+    <path d="M150 250l18 20 18-20-6-8h-24z" fill="#efeafb" />
+    <path d="M168 270l-8 30h16z" fill="#e2d8fb" />
+    <!-- lanyard + badge -->
+    <path d="M156 254l12 40M180 254l-12 40" stroke="#c9b8f5" stroke-width="2.4" />
+    <rect x="158" y="292" width="20" height="26" rx="4" fill="#ffffff" stroke="#e2d8fb" stroke-width="1.4" />
+    <rect x="162" y="298" width="12" height="4" rx="2" fill="#a98cff" />
+    <rect x="162" y="306" width="12" height="3" rx="1.5" fill="#d8cffb" />
+    <!-- neck -->
+    <rect x="156" y="214" width="24" height="30" rx="10" fill="#f6c89e" />
+    <!-- head -->
+    <circle cx="168" cy="192" r="34" fill="#ffd6ad" />
+    <!-- ears -->
+    <circle cx="135" cy="194" r="6" fill="#f6c89e" /><circle cx="201" cy="194" r="6" fill="#f6c89e" />
+    <!-- cap dome + brim -->
+    <path d="M134 178c2-24 66-24 68 0z" fill="url(#cpCap)" />
+    <path d="M132 178h72v5a4 4 0 0 1-4 4h-64a4 4 0 0 1-4-4z" fill="#5f38d6" />
+    <path d="M168 158c-20 0-33 8-34 20 22-8 46-8 68 0-1-12-14-20-34-20z" fill="#8a6bff" />
+    <circle cx="168" cy="160" r="4" fill="#c9b8f5" />
+    <!-- face hint -->
+    <circle cx="156" cy="192" r="2.6" fill="#5c4a36" /><circle cx="182" cy="192" r="2.6" fill="#5c4a36" />
+    <path d="M160 204c5 4 13 4 18 0" stroke="#d99a6a" stroke-width="2.2" stroke-linecap="round" fill="none" />
+  </g>
+
+  <!-- capacity structure panel -->
+  <g>
+    <rect x="316" y="86" width="272" height="192" rx="18" fill="url(#cpCard)" stroke="#e8e3fa" stroke-width="1.5" />
+    <path d="M316 104a18 18 0 0 1 18-18h236a18 18 0 0 1 18 18v14H316z" fill="url(#cpHead)" />
+    <rect x="334" y="96" width="96" height="10" rx="5" fill="#ffffff" opacity="0.9" />
+
+    <!-- donut: capacity type structure -->
+    <g>
+      <circle cx="386" cy="196" r="42" fill="none" stroke="#ece7fc" stroke-width="18" />
+      <circle cx="386" cy="196" r="42" fill="none" stroke="#5f38d6" stroke-width="18" stroke-dasharray="145 119" transform="rotate(-90 386 196)" />
+      <circle cx="386" cy="196" r="42" fill="none" stroke="#8a6bff" stroke-width="18" stroke-dasharray="79 185" transform="rotate(108 386 196)" />
+      <circle cx="386" cy="196" r="42" fill="none" stroke="#c1abf3" stroke-width="18" stroke-dasharray="40 224" transform="rotate(216 386 196)" />
+      <circle cx="386" cy="196" r="24" fill="#ffffff" />
+      <path d="M386 186v20M377 196h18" stroke="#7048e8" stroke-width="3" stroke-linecap="round" />
+    </g>
+
+    <!-- legend: self / carrier / social -->
+    <g>
+      <circle cx="470" cy="150" r="6" fill="#5f38d6" />
+      <rect x="484" y="146" width="52" height="8" rx="4" fill="#d8cffb" /><rect x="544" y="146" width="26" height="8" rx="4" fill="#7048e8" opacity="0.7" />
+      <circle cx="470" cy="182" r="6" fill="#8a6bff" />
+      <rect x="484" y="178" width="44" height="8" rx="4" fill="#d8cffb" /><rect x="544" y="178" width="26" height="8" rx="4" fill="#7048e8" opacity="0.55" />
+      <circle cx="470" cy="214" r="6" fill="#c1abf3" />
+      <rect x="484" y="210" width="48" height="8" rx="4" fill="#d8cffb" /><rect x="544" y="210" width="26" height="8" rx="4" fill="#7048e8" opacity="0.4" />
+    </g>
+    <rect x="470" y="240" width="104" height="8" rx="4" fill="#ece6fc" />
+  </g>
+
+  <!-- floating chip: total capacity -->
+  <g>
+    <rect x="300" y="250" width="120" height="52" rx="14" fill="url(#cpCard)" stroke="#e8e3fa" stroke-width="1.5" />
+    <rect x="314" y="264" width="24" height="24" rx="7" fill="url(#cpHead)" />
+    <path d="M326 269v14M319 276h14" stroke="#efeafb" stroke-width="2.2" stroke-linecap="round" />
+    <rect x="346" y="264" width="58" height="9" rx="4.5" fill="#7048e8" opacity="0.8" />
+    <rect x="346" y="279" width="40" height="7" rx="3.5" fill="#ddd2fb" />
+  </g>
+
+  <!-- paper plane -->
+  <path d="M566 60l40-16-16 40-8-16z" fill="#b49dff" />
+  <path d="M566 60l24-8-8 16z" fill="#7048e8" />
+</svg>

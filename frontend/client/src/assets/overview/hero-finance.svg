@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" fill="none">
+  <defs>
+    <linearGradient id="fnHead" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#22c58a" /><stop offset="1" stop-color="#099268" /></linearGradient>
+    <linearGradient id="fnBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fd39b" /><stop offset="1" stop-color="#099268" /></linearGradient>
+    <linearGradient id="fnCoin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fd39b" /><stop offset="1" stop-color="#0a8a63" /></linearGradient>
+    <linearGradient id="fnCard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#e9f7f0" /></linearGradient>
+  </defs>
+
+  <g fill="#c5ebdb" opacity="0.5"><circle cx="70" cy="80" r="3" /><circle cx="96" cy="80" r="3" /><circle cx="70" cy="106" r="3" /></g>
+
+  <!-- reconciliation board -->
+  <g>
+    <ellipse cx="240" cy="300" rx="150" ry="16" fill="#000000" opacity="0.04" />
+    <rect x="96" y="86" width="290" height="192" rx="18" fill="url(#fnCard)" stroke="#d8f0e6" stroke-width="1.5" />
+    <path d="M96 104a18 18 0 0 1 18-18h254a18 18 0 0 1 18 18v14H96z" fill="url(#fnHead)" />
+    <rect x="114" y="96" width="90" height="10" rx="5" fill="#ffffff" opacity="0.9" />
+    <!-- axis -->
+    <path d="M128 250h234M128 132v118" stroke="#d7ece3" stroke-width="1.6" />
+    <!-- receivable vs payable grouped bars -->
+    <g>
+      <rect x="150" y="176" width="26" height="74" rx="5" fill="url(#fnBar)" />
+      <rect x="182" y="200" width="26" height="50" rx="5" fill="#a8e6cd" />
+      <rect x="238" y="158" width="26" height="92" rx="5" fill="url(#fnBar)" />
+      <rect x="270" y="192" width="26" height="58" rx="5" fill="#a8e6cd" />
+      <rect x="326" y="200" width="26" height="50" rx="5" fill="url(#fnBar)" />
+    </g>
+    <!-- net trend -->
+    <path d="M163 168l45 12 43-22 45 6 26-8" stroke="#ff7a59" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <circle cx="163" cy="168" r="4" fill="#ff7a59" /><circle cx="365" cy="156" r="4" fill="#ff7a59" />
+    <!-- legend -->
+    <rect x="150" y="262" width="12" height="8" rx="3" fill="#099268" /><rect x="238" y="262" width="12" height="8" rx="3" fill="#a8e6cd" />
+  </g>
+
+  <!-- coin stack -->
+  <g>
+    <ellipse cx="472" cy="292" rx="48" ry="14" fill="url(#fnCoin)" />
+    <rect x="424" y="266" width="96" height="26" fill="url(#fnCoin)" /><ellipse cx="472" cy="266" rx="48" ry="14" fill="#57d8ae" />
+    <rect x="424" y="244" width="96" height="22" fill="url(#fnCoin)" /><ellipse cx="472" cy="244" rx="48" ry="14" fill="#6fdcb4" />
+    <ellipse cx="472" cy="224" rx="48" ry="14" fill="#57d8ae" />
+    <path d="M472 213l6 6 6-6M472 219v11M466 224h12" stroke="#0a7a58" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  </g>
+
+  <!-- floating card: wallet / net -->
+  <g>
+    <rect x="428" y="92" width="158" height="64" rx="16" fill="url(#fnCard)" stroke="#d8f0e6" stroke-width="1.5" />
+    <rect x="446" y="108" width="34" height="30" rx="7" fill="url(#fnBar)" />
+    <circle cx="474" cy="123" r="5" fill="#e9f7f0" /><rect x="470" y="120" width="12" height="6" rx="3" fill="#e9f7f0" />
+    <rect x="490" y="106" width="82" height="9" rx="4.5" fill="#099268" opacity="0.85" />
+    <rect x="490" y="122" width="60" height="7" rx="3.5" fill="#c6ecdd" />
+    <path d="M490 138l7-7 5 4 6-8" stroke="#0a8a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <path d="M506 127h4v4" stroke="#0a8a63" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- paper plane -->
+  <path d="M566 60l40-16-16 40-8-16z" fill="#6fdcb4" />
+  <path d="M566 60l24-8-8 16z" fill="#099268" />
+</svg>

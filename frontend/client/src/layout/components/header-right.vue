@@ -37,27 +37,14 @@
       @update:modelValue="updateDarkMode"
     />
   </layout-tool>
-  <!-- 主题设置 -->
-  <layout-tool @click="openSetting" style="position: relative">
-    <el-icon>
-      <MoreOutlined />
-    </el-icon>
-    <!-- <div v-if="showTip" class="ele-theme-setting-tip">
-      <IconOutline />
-      <div>
-        <div>试试切换布局或主题~</div>
-        <IconOutline :width="152" :height="34" />
-      </div>
-    </div> -->
-  </layout-tool>
+  <!-- 主题设置入口已隐藏：租户端已关闭自定义主题功能 -->
 </template>
 
 <script lang="ts" setup>
   import { computed, ref, onMounted } from 'vue';
-  import { useI18n } from 'vue-i18n';
   import { storeToRefs } from 'pinia';
-  import { LayoutTool, useModal } from 'ele-admin-plus';
-  import { MoreOutlined, MoonOutlined, SunOutlined } from '@/components/icons';
+  import { LayoutTool } from 'ele-admin-plus';
+  import { MoonOutlined, SunOutlined } from '@/components/icons';
   import { doWithTransition } from '@/utils/common';
   import { useThemeStore } from '@/store/modules/theme';
   import { useUserStore } from '@/store/modules/user';
@@ -68,8 +55,6 @@
   import HeaderChangelog from './header-changelog.vue';
   import HeaderAiEntry from './header-ai-entry.vue';
   import TenantSwitch from './tenant-switch.vue';
-
-  const { openModal } = useModal();
 
   /** 当前用户可选企业列表（用于判断是否展示顶栏切换入口） */
   const tenantList = ref<TenantOption[]>([]);
@@ -91,26 +76,6 @@
     (userStore.features ?? []).includes('ai_assistant')
   );
 
-  const { t } = useI18n();
-
-  /** 打开主题设置抽屉 */
-  const openSetting = () => {
-    showTip.value = false;
-    openModal({
-      modalId: 'theme-setting-drawer',
-      type: 'drawer',
-      asyncComponent: () => import('./setting-drawer.vue'),
-      props: {
-        size: 268,
-        title: t('layout.setting.title'),
-        zIndex: 199999,
-        bodyStyle: { padding: 0, height: '100%' },
-        modalClass: 'ele-setting-drawer'
-      },
-      keepAlive: true
-    });
-  };
-
   /** 暗黑主题切换开关 */
   const darkSwitchRef = ref<any>(null);
 
@@ -122,9 +87,6 @@
       weakMode.value ? isDark : !isDark
     );
   };
-
-  /** 显示主题配置提示 */
-  const showTip = ref(true);
 </script>
 
 <style scoped>

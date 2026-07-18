@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" fill="none">
+  <defs>
+    <linearGradient id="etBld" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9c82f2" /><stop offset="1" stop-color="#5f3dc4" /></linearGradient>
+    <linearGradient id="etNode" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a98cff" /><stop offset="1" stop-color="#7351e0" /></linearGradient>
+    <linearGradient id="etCard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#efeafb" /></linearGradient>
+  </defs>
+
+  <g fill="#d3c6f5" opacity="0.5"><circle cx="66" cy="72" r="3" /><circle cx="92" cy="72" r="3" /><circle cx="66" cy="98" r="3" /></g>
+  <ellipse cx="230" cy="312" rx="180" ry="16" fill="#000000" opacity="0.04" />
+
+  <!-- org tree connectors -->
+  <g stroke="#cdbcf2" stroke-width="2.4" stroke-linecap="round">
+    <path d="M180 152v22M96 210v-16h168v16M96 194v-4M264 194v-4M180 210v-16" />
+  </g>
+
+  <!-- root: HQ building -->
+  <g>
+    <rect x="140" y="96" width="80" height="60" rx="10" fill="url(#etBld)" />
+    <rect x="140" y="96" width="80" height="14" rx="10" fill="#4e2eb0" />
+    <g fill="#ded4fb"><rect x="152" y="120" width="14" height="12" rx="2.5" /><rect x="173" y="120" width="14" height="12" rx="2.5" /><rect x="194" y="120" width="14" height="12" rx="2.5" /><rect x="152" y="138" width="14" height="10" rx="2.5" /><rect x="194" y="138" width="14" height="10" rx="2.5" /></g>
+    <rect x="173" y="138" width="14" height="18" rx="2.5" fill="#ded4fb" />
+  </g>
+
+  <!-- dept nodes -->
+  <g>
+    <rect x="60" y="210" width="72" height="34" rx="9" fill="url(#etCard)" stroke="#d9ccf5" stroke-width="1.4" />
+    <circle cx="78" cy="227" r="8" fill="#9c82f2" /><circle cx="78" cy="224" r="3" fill="#efeafb" /><path d="M72 233c1-4 3-5 6-5s5 1 6 5z" fill="#efeafb" />
+    <rect x="92" y="220" width="32" height="6" rx="3" fill="#d3c6f3" /><rect x="92" y="230" width="24" height="6" rx="3" fill="#e5ddf7" />
+  </g>
+  <g>
+    <rect x="144" y="210" width="72" height="34" rx="9" fill="url(#etCard)" stroke="#d9ccf5" stroke-width="1.4" />
+    <circle cx="162" cy="227" r="8" fill="#a98cff" /><circle cx="162" cy="224" r="3" fill="#efeafb" /><path d="M156 233c1-4 3-5 6-5s5 1 6 5z" fill="#efeafb" />
+    <rect x="176" y="220" width="32" height="6" rx="3" fill="#d3c6f3" /><rect x="176" y="230" width="24" height="6" rx="3" fill="#e5ddf7" />
+  </g>
+  <g>
+    <rect x="228" y="210" width="72" height="34" rx="9" fill="url(#etCard)" stroke="#d9ccf5" stroke-width="1.4" />
+    <circle cx="246" cy="227" r="8" fill="#8a6bff" /><circle cx="246" cy="224" r="3" fill="#efeafb" /><path d="M240 233c1-4 3-5 6-5s5 1 6 5z" fill="#efeafb" />
+    <rect x="260" y="220" width="32" height="6" rx="3" fill="#d3c6f3" /><rect x="260" y="230" width="24" height="6" rx="3" fill="#e5ddf7" />
+  </g>
+
+  <!-- settings panel: gear + toggles -->
+  <g>
+    <rect x="356" y="88" width="212" height="184" rx="18" fill="url(#etCard)" stroke="#e6ddfa" stroke-width="1.5" />
+    <rect x="356" y="88" width="212" height="18" rx="18" fill="url(#etBld)" />
+    <rect x="374" y="92" width="80" height="10" rx="5" fill="#ffffff" opacity="0.85" />
+
+    <!-- gear -->
+    <g transform="translate(410 168)">
+      <g fill="url(#etNode)">
+        <rect x="-7" y="-38" width="14" height="16" rx="4" /><rect x="-7" y="22" width="14" height="16" rx="4" />
+        <rect x="-38" y="-7" width="16" height="14" rx="4" /><rect x="22" y="-7" width="16" height="14" rx="4" />
+        <rect x="-7" y="-38" width="14" height="16" rx="4" transform="rotate(45)" /><rect x="-7" y="-38" width="14" height="16" rx="4" transform="rotate(-45)" />
+        <rect x="-7" y="22" width="14" height="16" rx="4" transform="rotate(45)" /><rect x="-7" y="22" width="14" height="16" rx="4" transform="rotate(-45)" />
+      </g>
+      <circle cx="0" cy="0" r="26" fill="url(#etNode)" /><circle cx="0" cy="0" r="12" fill="#efeafb" />
+    </g>
+
+    <!-- toggles -->
+    <g>
+      <rect x="462" y="132" width="42" height="20" rx="10" fill="#7351e0" /><circle cx="494" cy="142" r="7" fill="#ffffff" />
+      <rect x="512" y="132" width="44" height="8" rx="4" fill="#d3c6f3" /><rect x="512" y="144" width="30" height="6" rx="3" fill="#e5ddf7" />
+    </g>
+    <g>
+      <rect x="462" y="164" width="42" height="20" rx="10" fill="#d9ccf5" /><circle cx="472" cy="174" r="7" fill="#ffffff" />
+      <rect x="512" y="164" width="40" height="8" rx="4" fill="#d3c6f3" /><rect x="512" y="176" width="34" height="6" rx="3" fill="#e5ddf7" />
+    </g>
+    <g>
+      <rect x="462" y="196" width="42" height="20" rx="10" fill="#7351e0" /><circle cx="494" cy="206" r="7" fill="#ffffff" />
+      <rect x="512" y="196" width="46" height="8" rx="4" fill="#d3c6f3" /><rect x="512" y="208" width="28" height="6" rx="3" fill="#e5ddf7" />
+    </g>
+    <g>
+      <rect x="462" y="228" width="42" height="20" rx="10" fill="#d9ccf5" /><circle cx="472" cy="238" r="7" fill="#ffffff" />
+      <rect x="512" y="228" width="38" height="8" rx="4" fill="#d3c6f3" /><rect x="512" y="240" width="32" height="6" rx="3" fill="#e5ddf7" />
+    </g>
+  </g>
+
+  <!-- paper plane -->
+  <path d="M584 300l22-30-2 37-9-13z" fill="#a992f2" opacity="0.9" />
+
+  <!-- floating badge: roles -->
+  <g>
+    <rect x="60" y="266" width="118" height="46" rx="13" fill="url(#etCard)" stroke="#e6ddfa" stroke-width="1.5" />
+    <rect x="74" y="278" width="22" height="22" rx="7" fill="url(#etNode)" /><path d="M79 289l4 4 6-7" stroke="#efeafb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="104" y="278" width="56" height="8" rx="4" fill="#d3c6f3" /><rect x="104" y="292" width="38" height="6" rx="3" fill="#e5ddf7" />
+  </g>
+</svg>
