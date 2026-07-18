@@ -59,8 +59,8 @@
     "status": 1
   },
   {
-    "feature_code": "base_organization",
-    "feature_name": "组织架构",
+    "feature_code": "base_business_entity",
+    "feature_name": "经营主体",
     "module": "enterprise",
     "description": null,
     "required_tables": null,
@@ -68,8 +68,8 @@
     "status": 1
   },
   {
-    "feature_code": "base_business_entity",
-    "feature_name": "经营主体",
+    "feature_code": "base_organization",
+    "feature_name": "组织架构",
     "module": "enterprise",
     "description": null,
     "required_tables": null,
@@ -193,7 +193,7 @@
   },
   {
     "feature_code": "biz_order",
-    "feature_name": "运单管理",
+    "feature_name": "计划管理",
     "module": "biz",
     "description": null,
     "required_tables": [
@@ -213,7 +213,7 @@
   },
   {
     "feature_code": "biz_waybill",
-    "feature_name": "运单管理",
+    "feature_name": "计划管理",
     "module": "operation",
     "description": null,
     "required_tables": [
@@ -558,23 +558,6 @@
     "status": 1
   },
   {
-    "feature_code": "billing_cost_rule",
-    "feature_name": "成本政策",
-    "module": "billing",
-    "description": "任务支出成本自动计算引擎（成本政策/费用规则/成本结果/异常）",
-    "required_tables": [
-      "biz_cost_policy",
-      "biz_cost_rule",
-      "biz_task_cost_result",
-      "biz_task_cost_result_item",
-      "biz_cost_calc_exception",
-      "biz_cost_calc_task",
-      "biz_cost_rule_change_log"
-    ],
-    "sort_order": 62,
-    "status": 1
-  },
-  {
     "feature_code": "billing_carrier_freight",
     "feature_name": "承运商合同",
     "module": "billing",
@@ -587,6 +570,23 @@
       "biz_carrier_freight_calc_task",
       "biz_carrier_freight_calc_exception",
       "biz_carrier_rate_change_log"
+    ],
+    "sort_order": 62,
+    "status": 1
+  },
+  {
+    "feature_code": "billing_cost_rule",
+    "feature_name": "成本政策",
+    "module": "billing",
+    "description": "任务支出成本自动计算引擎（成本政策/费用规则/成本结果/异常）",
+    "required_tables": [
+      "biz_cost_policy",
+      "biz_cost_rule",
+      "biz_task_cost_result",
+      "biz_task_cost_result_item",
+      "biz_cost_calc_exception",
+      "biz_cost_calc_task",
+      "biz_cost_rule_change_log"
     ],
     "sort_order": 62,
     "status": 1
