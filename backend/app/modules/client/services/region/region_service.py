@@ -250,12 +250,21 @@ class RegionService:
 
         code = await RegionService._generate_code(db)
 
+        # 排序号由系统自动追加到同级末尾，无需前端填写
+        max_sort_result = await db.execute(
+            select(func.max(BizRegion.sort_order)).where(
+                BizRegion.parent_code == data.parentCode,
+                BizRegion.is_deleted == 0,
+            )
+        )
+        sort_order = (max_sort_result.scalar() or 0) + 1
+
         region = BizRegion(
             code=code,
             name=data.name,
             parent_code=data.parentCode,
             level=level,
-            sort_order=data.sortOrder,
+            sort_order=sort_order,
             status=data.status,
             source=1,
             created_by=user_id,

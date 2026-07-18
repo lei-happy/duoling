@@ -113,12 +113,16 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       meta: { title: '智能配载' }
     },
     // 审批流程画布配置（从审批流程配置列表进入，独立页，不在后端菜单中单独挂路由）
+    // meta.active 指向列表菜单，保证侧栏仍高亮「审批配置」而非回退到首页工作台
     {
       path: '/enterprise/approval-config/flow/:id',
       name: 'EnterpriseApprovalFlowDesign',
       component: () =>
         import('@/views/enterprise/approval-config/flow-design/index.vue'),
-      meta: { title: '审批流程配置' }
+      meta: {
+        title: '审批流程配置',
+        active: '/enterprise/approval-config'
+      }
     }
   ];
   const layoutRoutes: RouteRecordRaw[] = [

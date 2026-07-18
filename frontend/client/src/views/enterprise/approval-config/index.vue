@@ -7,6 +7,7 @@
         row-key="id"
         :columns="columns"
         :datasource="datasource"
+        :pagination="{ pageSize: 20 }"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
         cache-key="ApprovalFlowTable"

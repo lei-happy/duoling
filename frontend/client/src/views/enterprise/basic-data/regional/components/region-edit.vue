@@ -1,7 +1,7 @@
 <template>
   <ele-modal
     form
-    :width="460"
+    :width="720"
     :title="isUpdate ? '修改地区' : '添加地区'"
     :loading="loading"
     v-bind="modalProps"
@@ -13,55 +13,39 @@
       label-width="0"
       @submit.prevent=""
     >
-      <el-form-item>
-        <floating-label
-          label="上级地区"
-          type="input"
-          :model-value="currentParentName"
-          disabled
-        />
-      </el-form-item>
-      <el-form-item prop="name">
-        <floating-label
-          label="请输入地区名称"
-          type="input"
-          v-model.trim="form.name"
-          :maxlength="50"
-          clearable
-        />
-      </el-form-item>
       <el-row :gutter="12">
         <el-col :span="12">
-          <el-form-item prop="longitude">
+          <el-form-item>
             <floating-label
-              label="经度"
+              label="上级地区"
               type="input"
-              v-model="form.longitude"
-              clearable
+              :model-value="currentParentName"
+              disabled
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item prop="latitude">
+          <el-form-item prop="name">
             <floating-label
-              label="纬度"
+              label="请输入地区名称"
               type="input"
-              v-model="form.latitude"
+              v-model.trim="form.name"
+              :maxlength="50"
               clearable
             />
           </el-form-item>
         </el-col>
       </el-row>
-      <el-form-item prop="sortOrder">
-        <floating-label label="排序号" type="input-number">
-          <el-input-number
-            v-model="form.sortOrder"
-            :min="0"
-            :max="9999"
-            controls-position="right"
-            style="width: 100%"
-          />
-        </floating-label>
+      <el-form-item prop="longitude" class="is-map-coord">
+        <region-coord-map
+          :longitude="form.longitude"
+          :latitude="form.latitude"
+          :suggestion-city="mapSuggestionCity"
+          @change="handleMapChange"
+        />
+        <div v-if="hasCoord" class="coord-text">
+          经度 {{ form.longitude }}，纬度 {{ form.latitude }}
+        </div>
       </el-form-item>
       <el-form-item prop="status">
         <el-radio-group v-model="form.status">
@@ -89,11 +73,14 @@
   import { useFormData } from '@/utils/use-form-data';
   import { addRegion, updateRegion } from '@/api/basic-data/region';
   import type { Region } from '@/api/basic-data/region/model';
+  import RegionCoordMap from './region-coord-map.vue';
 
   const props = defineProps<{
     data?: Region | null;
     parentCode?: string;
     parentName?: string;
+    /** 上级地区完整路径，如 北京市/市辖区 */
+    parentPath?: string;
   }>();
 
   const emit = defineEmits<{
@@ -111,30 +98,49 @@
     name: '',
     longitude: '' as string | number,
     latitude: '' as string | number,
-    sortOrder: 0,
     status: 1
   });
 
-  const validateCoord = (
+  const hasCoord = computed(() => {
+    return (
+      form.longitude !== '' &&
+      form.longitude != null &&
+      form.latitude !== '' &&
+      form.latitude != null
+    );
+  });
+
+  const validateCoords = (
     _rule: any,
-    value: string | number,
-    callback: (err?: Error) => void,
-    min: number,
-    max: number,
-    label: string
+    _value: unknown,
+    callback: (err?: Error) => void
   ) => {
-    if (value === '' || value == null) {
-      callback();
+    const lngRaw = form.longitude;
+    const latRaw = form.latitude;
+    if (
+      lngRaw === '' ||
+      lngRaw == null ||
+      latRaw === '' ||
+      latRaw == null
+    ) {
+      callback(new Error('请在地图上点选位置'));
       return;
     }
-    const num = Number(value);
-    if (isNaN(num)) {
-      callback(new Error(`${label}必须为数字`));
-    } else if (num < min || num > max) {
-      callback(new Error(`${label}范围: ${min} ~ ${max}`));
-    } else {
-      callback();
+    const lng = Number(lngRaw);
+    const lat = Number(latRaw);
+    if (isNaN(lng) || isNaN(lat)) {
+      callback(new Error('经纬度必须为数字'));
+      return;
     }
+    if (lng < -180 || lng > 180) {
+      callback(new Error('经度范围: -180 ~ 180'));
+      return;
+    }
+    if (lat < -90 || lat > 90) {
+      callback(new Error('纬度范围: -90 ~ 90'));
+      return;
+    }
+    callback();
   };
 
   const rules = reactive<FormRules>({
@@ -148,35 +154,37 @@
     ],
     longitude: [
       {
-        validator: (_r: any, v: any, cb: any) =>
-          validateCoord(_r, v, cb, -180, 180, '经度'),
-        trigger: 'blur'
-      }
-    ],
-    latitude: [
-      {
-        validator: (_r: any, v: any, cb: any) =>
-          validateCoord(_r, v, cb, -90, 90, '纬度'),
-        trigger: 'blur'
+        validator: validateCoords,
+        trigger: 'change'
       }
     ]
   });
 
   const currentParentName = computed(() => {
-    if (isUpdate.value && props.data) {
-      return props.parentName || props.data.parentCode || '—';
-    }
-    return props.parentName || '—';
+    return props.parentPath || props.parentName || '—';
   });
+
+  const mapSuggestionCity = computed(() => {
+    const path = props.parentPath?.trim();
+    if (path) {
+      const parts = path.split('/').filter(Boolean);
+      return parts[parts.length - 1] || '全国';
+    }
+    return props.parentName?.trim() || '全国';
+  });
+
+  const handleMapChange = (payload: { lng: number; lat: number }) => {
+    form.longitude = payload.lng;
+    form.latitude = payload.lat;
+    formRef.value?.validateField?.('longitude');
+  };
 
   const handleCancel = () => {
     closeModal();
   };
 
-  const toNum = (v: string | number | null | undefined): number | undefined => {
-    if (v === '' || v == null) return undefined;
-    const n = Number(v);
-    return isNaN(n) ? undefined : n;
+  const toNum = (v: string | number | null | undefined): number => {
+    return Number(v);
   };
 
   const handleSave = () => {
@@ -190,7 +198,6 @@
       const promise = isUpdate.value
         ? updateRegion(form.regionId!, {
             name: form.name,
-            sortOrder: form.sortOrder,
             status: form.status,
             longitude: lng,
             latitude: lat
@@ -198,7 +205,6 @@
         : addRegion({
             name: form.name,
             parentCode: props.parentCode,
-            sortOrder: form.sortOrder,
             status: form.status,
             longitude: lng,
             latitude: lat
@@ -224,9 +230,21 @@
       name: props.data.name ?? '',
       longitude: props.data.longitude ?? '',
       latitude: props.data.latitude ?? '',
-      sortOrder: props.data.sortOrder ?? 0,
       status: props.data.status ?? 1
     });
     isUpdate.value = true;
   }
 </script>
+
+<style scoped>
+  .coord-text {
+    margin-top: 8px;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .is-map-coord :deep(.el-form-item__error) {
+    padding-top: 4px;
+  }
+</style>

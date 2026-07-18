@@ -308,18 +308,42 @@
     treeRef.value?.filter?.(value);
   });
 
+  /** 从导航树拼出节点完整路径，如 北京市/市辖区 */
+  const findNavPathNames = (
+    nodes: RegionNavNode[],
+    code: string,
+    trail: string[] = []
+  ): string[] | null => {
+    for (const node of nodes) {
+      const next = [...trail, node.name];
+      if (node.code === code) return next;
+      if (node.children?.length) {
+        const found = findNavPathNames(node.children, code, next);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const getParentPath = (code?: string) => {
+    if (!code) return '';
+    const names = findNavPathNames(navTree.value, code);
+    return names?.join('/') || '';
+  };
+
   /** 打开编辑弹窗 */
   const openEdit = (row?: Region) => {
+    const parentCode = currentNode.value?.code;
     openModal({
       custom: true,
       asyncComponent: () => import('./components/region-edit.vue'),
       componentProps: {
         data: row,
-        parentCode: currentNode.value?.code,
+        parentCode,
         parentName: currentNode.value?.name,
+        parentPath: getParentPath(parentCode),
         onDone: () => {
-          const parentCode = currentNode.value?.code;
-          queryNavTree(parentCode);
+          queryNavTree(currentNode.value?.code);
         }
       }
     });

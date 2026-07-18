@@ -13,7 +13,15 @@
         cache-key="SystemBusinessEntityTable"
       >
         <template #toolbar>
-          <btn-items :items="[{ preset: 'add', onClick: () => openEdit() }]" />
+          <btn-items
+            :items="[
+              {
+                preset: 'add',
+                permission: PERM_ADD,
+                onClick: () => openEdit()
+              }
+            ]"
+          />
         </template>
         <template #isDefault="{ row }">
           <el-tag
@@ -29,7 +37,7 @@
         <template #status="{ row }">
           <el-tag
             size="small"
-            :type="row.status === 1 ? 'primary' : 'info'"
+            :type="row.status === 1 ? 'primary' : 'danger'"
             :disable-transitions="true"
           >
             {{ row.status === 1 ? '正常' : '停用' }}
@@ -39,19 +47,7 @@
           <btn-items
             divider
             type="link"
-            :items="[
-              { preset: 'edit', onClick: () => openEdit(row) },
-              {
-                text: '设为默认',
-                hidden: row.isDefault === 1 || row.status !== 1,
-                onClick: () => setDefault(row)
-              },
-              {
-                text: row.status === 1 ? '停用' : '启用',
-                onClick: () => toggleStatus(row)
-              },
-              { preset: 'del', onClick: () => remove(row) }
-            ]"
+            :items="actionItems(row)"
           />
         </template>
       </ele-pro-table>
@@ -81,6 +77,12 @@
   } from '@/api/system/business-entity/model';
 
   defineOptions({ name: 'SystemBusinessEntity' });
+
+  const PERM_ADD = 'system:business-entity:add';
+  const PERM_EDIT = 'system:business-entity:edit';
+  const PERM_DEL = 'system:business-entity:delete';
+  const PERM_DEFAULT = 'system:business-entity:default';
+  const PERM_STATUS = 'system:business-entity:status';
 
   const { openModal } = useModal();
 
@@ -128,13 +130,39 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 240,
+      width: 280,
       align: 'center',
       slot: 'action',
       hideInPrint: true,
       hideInExport: true
     }
   ]);
+
+  const actionItems = (row: BusinessEntity) => [
+    {
+      preset: 'edit',
+      permission: PERM_EDIT,
+      onClick: () => openEdit(row)
+    },
+    {
+      title: '设为默认',
+      permission: PERM_DEFAULT,
+      vIf: () => row.isDefault !== 1 && row.status === 1,
+      onClick: () => setDefault(row)
+    },
+    {
+      title: row.status === 1 ? '停用' : '启用',
+      permission: PERM_STATUS,
+      vIf: () => !(row.status === 1 && row.isDefault === 1),
+      onClick: () => toggleStatus(row)
+    },
+    {
+      preset: 'del',
+      permission: PERM_DEL,
+      vIf: () => row.isDefault !== 1,
+      onClick: () => remove(row)
+    }
+  ];
 
   const datasource: DatasourceFunction = ({ pages, where, orders }) => {
     return pageBusinessEntities({ ...where, ...orders, ...pages });
@@ -166,8 +194,7 @@
       });
   };
 
-  const toggleStatus = (row: BusinessEntity) => {
-    const next = row.status === 1 ? 0 : 1;
+  const doToggleStatus = (row: BusinessEntity, next: number) => {
     const loading = EleMessage.loading({ message: '请求中..', plain: true });
     toggleBusinessEntityStatus(row.id as number, next)
       .then(() => {
@@ -182,6 +209,24 @@
         loading.close();
         EleMessage.error({ message: e.message, plain: true });
       });
+  };
+
+  const toggleStatus = (row: BusinessEntity) => {
+    const next = row.status === 1 ? 0 : 1;
+    if (next === 1) {
+      doToggleStatus(row, next);
+      return;
+    }
+    ElMessageBox.confirm(
+      `确定要停用“${row.entityName}”吗?`,
+      '系统提示',
+      {
+        type: 'warning',
+        draggable: true
+      }
+    )
+      .then(() => doToggleStatus(row, next))
+      .catch(() => {});
   };
 
   const remove = (row: BusinessEntity) => {

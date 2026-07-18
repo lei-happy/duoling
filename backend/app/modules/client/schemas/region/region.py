@@ -12,7 +12,6 @@ class RegionCreate(BaseModel):
 
     name: str
     parentCode: Optional[str] = None
-    sortOrder: int = 0
     status: int = 1
     longitude: Optional[float] = None
     latitude: Optional[float] = None
