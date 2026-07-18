@@ -86,6 +86,7 @@
     "partner_customer",
     "partner_inbound",
     "partner_manage",
+    "partner_supplier",
     "resource_customer",
     "resource_manage",
     "resource_route",
