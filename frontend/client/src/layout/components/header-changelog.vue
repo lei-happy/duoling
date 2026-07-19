@@ -1,6 +1,10 @@
 <!-- 顶栏版本升级说明入口：图标点击查看历史更新；关键版本首次登录强制弹框，看过后不再弹 -->
 <template>
-  <layout-tool @click="openDrawer">
+  <!-- 外层 hover 由 header-right 的 layout-tool 提供，此处勿再套一层，否则会出现双重高亮 -->
+  <div
+    style="display: flex; align-items: center; height: 100%"
+    @click="openDrawer"
+  >
     <el-badge
       :value="unreadCount"
       :hidden="!unreadCount"
@@ -10,7 +14,7 @@
         <Promotion />
       </el-icon>
     </el-badge>
-  </layout-tool>
+  </div>
 
   <!-- 历史更新列表抽屉 -->
   <el-drawer
@@ -97,7 +101,6 @@
 
 <script lang="ts" setup>
   import { computed, onMounted, ref } from 'vue';
-  import { LayoutTool } from 'ele-admin-plus';
   import { Promotion } from '@element-plus/icons-vue';
   import gfm from '@bytemd/plugin-gfm';
   import 'github-markdown-css/github-markdown-light.css';
