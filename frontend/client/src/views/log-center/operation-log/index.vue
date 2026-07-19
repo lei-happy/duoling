@@ -7,9 +7,11 @@
         row-key="id"
         :columns="columns"
         :datasource="datasource"
+        :pagination="{ pageSize: 20 }"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
         :default-sort="{ prop: 'createdAt', order: 'descending' }"
+        :where="defaultWhere"
         cache-key="SystemOperationRecordTable"
       >
         <template #status="{ row }">
@@ -43,7 +45,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue';
+  import { reactive, ref } from 'vue';
   import { useModal } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
@@ -56,7 +58,10 @@
     OperationRecord,
     OperationRecordParam
   } from '@/api/logcenter/operation-record/model';
-  import { formatDateTime } from '@/utils/date-util';
+  import {
+    formatDateTime,
+    getLast7DaysDateTimeRange
+  } from '@/utils/date-util';
 
   defineOptions({ name: 'SystemOperationRecord' });
 
@@ -70,6 +75,15 @@
   const { openModal } = useModal();
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
+
+  /** 默认近 7 天，避免首次进入拉取全量 */
+  const defaultTimeRange = getLast7DaysDateTimeRange();
+  const defaultWhere = reactive<OperationRecordParam>({
+    username: '',
+    module: '',
+    createTimeStart: defaultTimeRange[0],
+    createTimeEnd: defaultTimeRange[1]
+  });
 
   const columns = ref<Columns>([
     {

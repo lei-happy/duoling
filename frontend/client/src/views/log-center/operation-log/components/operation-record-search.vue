@@ -3,7 +3,7 @@
   <ele-card search-form>
     <el-form label-width="0" @keyup.enter="search" @submit.prevent="">
       <el-row :gutter="8">
-        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+        <el-col :lg="4" :md="6" :sm="12" :xs="24">
           <floating-label
             label="请输入操作用户"
             type="input"
@@ -11,7 +11,7 @@
             clearable
           />
         </el-col>
-        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+        <el-col :lg="4" :md="6" :sm="12" :xs="24">
           <floating-label
             label="请输入操作模块"
             type="input"
@@ -19,7 +19,7 @@
             clearable
           />
         </el-col>
-        <el-col :lg="8" :md="12" :sm="12" :xs="24">
+        <el-col :lg="6" :md="12" :sm="12" :xs="24">
           <floating-label
             label="操作时间"
             type="date"
@@ -54,7 +54,10 @@
   import { ref } from 'vue';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { useFormData } from '@/utils/use-form-data';
-  import { DATE_TIME_FORMAT } from '@/utils/date-util';
+  import {
+    DATE_TIME_FORMAT,
+    getLast7DaysDateTimeRange
+  } from '@/utils/date-util';
   import type { OperationRecordParam } from '@/api/logcenter/operation-record/model';
 
   const emit = defineEmits<{
@@ -67,8 +70,8 @@
     module: ''
   });
 
-  /** 日期范围 */
-  const dateRange = ref<[string, string]>(['', '']);
+  /** 日期范围：默认近 7 天 */
+  const dateRange = ref<[string, string]>(getLast7DaysDateTimeRange());
 
   /** 搜索 */
   const search = () => {
@@ -79,7 +82,7 @@
   /**  重置 */
   const reset = () => {
     resetFields();
-    dateRange.value = ['', ''];
+    dateRange.value = getLast7DaysDateTimeRange();
     search();
   };
 </script>

@@ -10,6 +10,7 @@
         row-key="id"
         :columns="columns"
         :datasource="datasource"
+        :pagination="{ pageSize: 20 }"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
         :export-config="{ fileName: '登录日志数据' }"
@@ -82,13 +83,17 @@
     listLoginRecords
   } from '@/api/logcenter/login-record';
   import type { LoginRecordParam } from '@/api/logcenter/login-record/model';
+  import { getLast7DaysDateRange } from '@/utils/date-util';
 
   defineOptions({ name: 'SystemLoginRecord' });
 
-  /** 默认搜索条件 */
-  const defaultWhere = reactive({
+  /** 默认近 7 天，避免首次进入拉取全量 */
+  const defaultDateRange = getLast7DaysDateRange();
+  const defaultWhere = reactive<LoginRecordParam>({
     username: '',
-    nickname: ''
+    nickname: '',
+    createTimeStart: `${defaultDateRange[0]} 00:00:00`,
+    createTimeEnd: `${defaultDateRange[1]} 23:59:59`
   });
 
   /** 表格实例 */

@@ -38,6 +38,13 @@ export function getLast7DaysDateTimeRange(): [string, string] {
   return [start.format(DATE_TIME_FORMAT), end.format(DATE_TIME_FORMAT)];
 }
 
+/** 含今天在内涵盖 7 个自然日：自 (今天−6) 至当日，日期字符串 YYYY-MM-DD（用于 daterange） */
+export function getLast7DaysDateRange(): [string, string] {
+  const end = dayjs().format(DATE_FORMAT);
+  const start = dayjs().subtract(6, 'day').format(DATE_FORMAT);
+  return [start, end];
+}
+
 /** 含今天在内涵盖 3 个自然日：自 (今天−2) 至当日，日期字符串 YYYY-MM-DD（用于 daterange） */
 export function getLast3DaysDateRange(): [string, string] {
   const end = dayjs().format('YYYY-MM-DD');
