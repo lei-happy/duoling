@@ -7,6 +7,10 @@
   <layout-tool>
     <header-changelog />
   </layout-tool>
+  <!-- 意见反馈入口 -->
+  <layout-tool>
+    <header-feedback />
+  </layout-tool>
   <!-- 消息通知：无租户切换时与右侧头像略拉开间距 -->
   <layout-tool
     :class="{
@@ -53,6 +57,7 @@
   import HeaderUser from './header-user.vue';
   import HeaderNotice from './header-notice.vue';
   import HeaderChangelog from './header-changelog.vue';
+  import HeaderFeedback from './header-feedback.vue';
   import HeaderAiEntry from './header-ai-entry.vue';
   import TenantSwitch from './tenant-switch.vue';
 

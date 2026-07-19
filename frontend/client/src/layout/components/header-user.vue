@@ -32,6 +32,7 @@
   import { useRouter } from 'vue-router';
   import { useI18n } from 'vue-i18n';
   import { useModal } from 'ele-admin-plus';
+  import { ChatDotRound } from '@element-plus/icons-vue';
   import {
     ArrowDown,
     UserOutlined,
@@ -69,6 +70,11 @@
         divided: userStore.isAdmin
       },
       {
+        title: t('layout.header.feedback'),
+        command: 'feedback',
+        icon: ChatDotRound
+      },
+      {
         title: t('layout.header.password'),
         command: 'password',
         icon: LockOutlined,
@@ -88,6 +94,8 @@
   const handleUserDropClick = (command: string) => {
     if (command === 'profile') {
       push('/user/profile');
+    } else if (command === 'feedback') {
+      push('/user/feedback');
     } else if (command === 'enterprise') {
       push('/enterprise/manage');
     } else if (command === 'logout') {

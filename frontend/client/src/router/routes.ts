@@ -16,6 +16,7 @@ const modules = import.meta.glob('/src/views/**/index.vue');
 const STATIC_LAYOUT_MENU_PATHS = [
   { path: '/enterprise/manage' },
   { path: '/user/profile' },
+  { path: '/user/feedback' },
   { path: '/user/message' },
   { path: '/operation/waybill/import' },
   { path: '/operation/task-create' }
@@ -72,13 +73,19 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
     {
       path: '/user/profile',
       component: () => import('@/views/user/profile/index.vue'),
-      meta: { title: '个人中心' }
+      meta: { title: '个人中心', hideSidebar: true }
+    },
+    // 意见反馈（静态路由，不依赖后端菜单）
+    {
+      path: '/user/feedback',
+      component: () => import('@/views/user/feedback/index.vue'),
+      meta: { title: '意见反馈', hideSidebar: true }
     },
     // 消息中心（静态路由，不依赖后端菜单；与顶栏通知「查看更多」等入口一致）
     {
       path: '/user/message',
       component: () => import('@/views/user/message/index.vue'),
-      meta: { title: '消息中心' }
+      meta: { title: '消息中心', hideSidebar: true }
     },
     // 运价合同详情（独立页，不在后端菜单中注册）
     {

@@ -594,7 +594,7 @@
     )
       .then(() => {
         const loading = EleMessage.loading({
-          message: '请求中..',
+          message: '正在确认计划，请稍候…',
           plain: true
         });
         updateWaybillStatus(row.id!, 1)
@@ -629,7 +629,7 @@
     )
       .then(() => {
         const loading = EleMessage.loading({
-          message: '请求中..',
+          message: '正在确认计划，请稍候…',
           plain: true
         });
         Promise.allSettled(pending.map((r) => updateWaybillStatus(r.id!, 1)))

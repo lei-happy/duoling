@@ -1,8 +1,6 @@
 ---
-description: 
 alwaysApply: true
 ---
-
 ---
 description: Git commit message rules for this project
 alwaysApply: true

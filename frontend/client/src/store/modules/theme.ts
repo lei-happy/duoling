@@ -164,8 +164,8 @@ const DEFAULT_STATE: ThemeState = {
   roundedTheme: true,
   /** 菜单触发模式（品牌固定为 route，即混合菜单按路由分割） */
   menuItemTrigger: 'route',
-  /** 是否开启全局页脚 */
-  footer: true,
+  /** 是否开启全局页脚（品牌固定为关闭） */
+  footer: false,
   /** 页签是否显示图标（品牌固定为关闭） */
   tabIcon: false,
   /** 皮肤背景配置（品牌固定为经典主题，无背景） */

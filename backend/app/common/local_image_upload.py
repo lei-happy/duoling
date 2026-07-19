@@ -28,6 +28,7 @@ ALLOWED_SCENES = {
     "task_receipt",  # 任务回单/签收凭证（driver 端回单上传）
     "banner",  # 首页推广位 Banner 图片
     "quick_action",  # 工作台快捷操作专属图标
+    "feedback",  # 意见反馈截图
 }
 
 

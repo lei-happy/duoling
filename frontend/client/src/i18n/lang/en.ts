@@ -6,6 +6,7 @@ export const en: Locale = {
     header: {
       enterprise: 'Enterprise',
       profile: 'Profile',
+      feedback: 'Feedback',
       password: 'Password',
       logout: 'SignOut'
     },

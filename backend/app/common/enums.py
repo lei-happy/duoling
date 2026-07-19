@@ -48,3 +48,11 @@ class FeedbackStatusEnum(IntEnum):
     PROCESSING = 1  # 处理中
     RESOLVED = 2    # 已解决
     CLOSED = 3      # 已关闭
+
+
+class FeedbackTypeEnum(IntEnum):
+    """意见反馈类型"""
+    SUGGESTION = 0  # 建议
+    BUG = 1         # 缺陷
+    COMPLAINT = 2   # 投诉
+    OTHER = 3       # 其他

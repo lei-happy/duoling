@@ -6,6 +6,7 @@ export const zh_TW: Locale = {
     header: {
       enterprise: '企業管理',
       profile: '個人中心',
+      feedback: '意見反饋',
       password: '修改密碼',
       logout: '安全登出'
     },

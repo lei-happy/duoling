@@ -2483,6 +2483,15 @@
       "table_tier": null,
       "columns": [
         {
+          "name": "contact_phone",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "联系电话"
+        },
+        {
           "name": "content",
           "type": "TEXT",
           "nullable": false,
@@ -2507,7 +2516,25 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "反馈类型 0-建议 1-bug 2-投诉 3-其他"
+          "comment": "反馈类型 0-建议 1-缺陷 2-投诉 3-其他"
+        },
+        {
+          "name": "handler_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理人平台用户ID"
+        },
+        {
+          "name": "handler_name",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理人姓名快照"
         },
         {
           "name": "id",
@@ -2535,6 +2562,15 @@
           "autoincrement": null,
           "server_default": "0",
           "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "replied_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近回复时间"
         },
         {
           "name": "reply",
@@ -2589,6 +2625,15 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "反馈用户ID"
+        },
+        {
+          "name": "user_name",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交时昵称快照"
         }
       ],
       "primary_key": [

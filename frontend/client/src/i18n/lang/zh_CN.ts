@@ -4,6 +4,7 @@ export const zh_CN = {
     header: {
       enterprise: '企业管理',
       profile: '个人中心',
+      feedback: '意见反馈',
       password: '修改密码',
       logout: '退出登录'
     },
