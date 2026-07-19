@@ -220,9 +220,9 @@ class CapacityService:
             **extras,
         )
 
-    # 运力运营状态 1-可接单 2-运输中 3-休假 4-停运 5-维修保养
+    # 运力运营状态 1-空闲 2-运输中 3-休假 4-停运 5-维修保养
     OPERATION_STATUS_LABELS = {
-        1: "可接单",
+        1: "空闲",
         2: "运输中",
         3: "休假",
         4: "停运",
@@ -436,6 +436,56 @@ class CapacityService:
             "count": total,
             "page": page,
             "page_size": page_size,
+        }
+
+    @staticmethod
+    async def list_stats(
+        db: AsyncSession,
+        keyword: Optional[str] = None,
+        enterprise_id: Optional[int] = None,
+    ) -> dict:
+        """运力列表 KPI：按运营状态分组计数（不含 operationStatus 自身筛选）。"""
+        query = (
+            select(Capacity.operation_status, func.count())
+            .outerjoin(
+                Vehicle,
+                and_(Vehicle.id == Capacity.vehicle_id, Vehicle.is_deleted == 0),
+            )
+            .outerjoin(
+                Trailer,
+                and_(Trailer.id == Vehicle.trailer_id, Trailer.is_deleted == 0),
+            )
+            .where(
+                Capacity.is_deleted == 0,
+                Capacity.status == 1,
+            )
+        )
+
+        if keyword:
+            kw = f"%{keyword}%"
+            query = query.where(
+                or_(
+                    Capacity.driver_name.like(kw),
+                    Capacity.driver_phone.like(kw),
+                    Capacity.plate_number.like(kw),
+                    Trailer.plate_number.like(kw),
+                )
+            )
+
+        if enterprise_id is not None:
+            query = query.where(Capacity.enterprise_id == enterprise_id)
+
+        result = await db.execute(query.group_by(Capacity.operation_status))
+        counts = {int(s): int(c) for s, c in result.all() if s is not None}
+        total = sum(counts.values())
+
+        return {
+            "total": total,
+            "available": counts.get(1, 0),
+            "inTransit": counts.get(2, 0),
+            "resting": counts.get(3, 0),
+            "stopped": counts.get(4, 0),
+            "maintenance": counts.get(5, 0),
         }
 
     @staticmethod

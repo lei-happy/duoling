@@ -3,6 +3,7 @@
 
 负责司机与车辆的绑定关系（上车/下车）：
   - GET    /              分页查询
+  - GET    /stats         运营状态 KPI 统计
   - POST   /bind          上车（绑定）
   - PUT    /{id}/unbind   下车（解绑）
 """
@@ -53,6 +54,20 @@ async def _sync_to_platform(tenant_code: str, capacity_out):
             )
     except Exception as e:
         logger.warning(f"平台运力同步失败: {e}")
+
+
+@router.get("/stats")
+async def capacity_list_stats(
+    keyword: Optional[str] = None,
+    enterpriseId: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    """运力列表 KPI：按运营状态分组计数"""
+    data = await CapacityService.list_stats(
+        db, keyword=keyword, enterprise_id=enterpriseId,
+    )
+    return success(data=data)
 
 
 @router.get("")

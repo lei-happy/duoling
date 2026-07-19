@@ -44,3 +44,13 @@ export interface CapacityUnbindData {
 export interface CapacityStatusUpdateData {
   operationStatus: number;
 }
+
+/** 运力列表 KPI：运营状态分组计数 */
+export interface CapacityListStats {
+  total: number;
+  available: number;
+  inTransit: number;
+  resting: number;
+  stopped: number;
+  maintenance: number;
+}

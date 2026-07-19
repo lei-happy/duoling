@@ -1,64 +1,65 @@
 <template>
   <ele-page>
-    <capacity-search @search="onSearch" />
-    <ele-card :body-style="{ paddingTop: '8px' }">
-      <div class="capacity-list-toolbar">
-        <btn-items
-          :items="[
-            {
-              preset: 'add',
-              title: '新建运力',
-              onClick: () => openBind()
-            }
-          ]"
+    <MotionConfig :reduced-motion="'user'">
+      <LayoutGroup id="capacity-list">
+        <capacity-search @search="onSearch" />
+
+        <capacity-stats-cards
+          class="capacity-list-stats"
+          :stats="stats"
+          :active-card-key="activeCardKey"
+          @select-card="onSelectCard"
         />
-      </div>
 
-      <el-tabs
-        v-model="activeTab"
-        class="capacity-list-tabs"
-        @tab-change="onTabChange"
-      >
-        <el-tab-pane label="全部" name="all" />
-        <el-tab-pane label="可接单" name="1" />
-        <el-tab-pane label="运输中" name="2" />
-        <el-tab-pane label="休假" name="3" />
-        <el-tab-pane label="停运" name="4" />
-        <el-tab-pane label="维修保养中" name="5" />
-      </el-tabs>
+        <ele-card :body-style="{ paddingTop: '8px' }">
+          <div class="capacity-list-toolbar">
+            <btn-items
+              :items="[
+                {
+                  preset: 'add',
+                  title: '新建运力',
+                  onClick: () => openBind()
+                }
+              ]"
+            />
+          </div>
 
-      <div v-loading="loading" class="capacity-list-body">
-        <div v-if="list.length" class="capacity-card-grid">
-          <capacity-card
-            v-for="item in list"
-            :key="item.id"
-            :item="item"
-            @unbind="handleUnbind"
-            @change-status="handleChangeStatus"
-            @detail="handleDetail"
-          />
-        </div>
-        <el-empty v-else-if="!loading" description="暂无运力数据" />
-      </div>
+          <div v-loading="loading" class="capacity-list-body">
+            <div v-if="list.length" class="capacity-card-grid">
+              <capacity-card
+                v-for="item in list"
+                :key="item.id"
+                :item="item"
+                :expanded="detailTarget?.id === item.id"
+                @unbind="handleUnbind"
+                @change-status="handleChangeStatus"
+                @detail="handleDetail"
+              />
+            </div>
+            <el-empty v-else-if="!loading" description="暂无运力数据" />
+          </div>
 
-      <div v-if="total > 0" class="capacity-list-pagination">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="pageSize"
-          :total="total"
-          :page-sizes="[18, 36, 54]"
-          layout="total, sizes, prev, pager, next, jumper"
-          background
-          @current-change="loadData"
-          @size-change="onPageSizeChange"
-        />
-      </div>
-    </ele-card>
+          <div v-if="total > 0" class="capacity-list-pagination">
+            <el-pagination
+              v-model:current-page="page"
+              v-model:page-size="pageSize"
+              :total="total"
+              :page-sizes="[18, 36, 54]"
+              layout="total, sizes, prev, pager, next, jumper"
+              background
+              @current-change="loadData"
+              @size-change="onPageSizeChange"
+            />
+          </div>
+        </ele-card>
+
+        <flip-modal ref="flipModalRef" width="800px" @closed="onDetailClosed">
+          <capacity-detail :data="detailTarget" />
+        </flip-modal>
+      </LayoutGroup>
+    </MotionConfig>
 
     <capacity-bind v-model:visible="bindVisible" @done="reload" />
-    <flip-modal ref="flipModalRef" width="800px" @closed="onDetailClosed">
-      <capacity-detail :data="detailTarget" />
-    </flip-modal>
 
     <el-dialog
       v-model="unbindVisible"
@@ -120,7 +121,11 @@
   import { WarningFilled } from '@element-plus/icons-vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import { MotionConfig, LayoutGroup } from 'motion-v';
   import CapacitySearch from './components/capacity-search.vue';
+  import CapacityStatsCards, {
+    type CapacityStatsCardKey
+  } from './components/capacity-stats-cards.vue';
   import CapacityBind from './components/capacity-bind.vue';
   import CapacityCard from './components/capacity-card.vue';
   import CapacityDetail from './components/capacity-detail.vue';
@@ -128,12 +133,14 @@
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
   import {
     pageCapacities,
+    getCapacityListStats,
     unbindCapacity,
     updateCapacityOperationStatus
   } from '@/api/capacity/self-capacity/list';
   import type {
     Capacity,
-    CapacityParam
+    CapacityParam,
+    CapacityListStats
   } from '@/api/capacity/self-capacity/list/model';
 
   defineOptions({ name: 'CapacityList' });
@@ -144,7 +151,8 @@
   const total = ref(0);
   const page = ref(1);
   const pageSize = ref(18);
-  const activeTab = ref('all');
+  const activeCardKey = ref<CapacityStatsCardKey>('all');
+  const stats = ref<CapacityListStats | null>(null);
 
   const where = reactive<
     Pick<CapacityParam, 'keyword' | 'operationStatus' | 'enterpriseId'>
@@ -153,6 +161,19 @@
     operationStatus: undefined,
     enterpriseId: undefined
   });
+
+  const loadStats = async () => {
+    try {
+      stats.value =
+        (await getCapacityListStats({
+          keyword: where.keyword,
+          enterpriseId: where.enterpriseId
+        })) ?? null;
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      EleMessage.error({ message, plain: true });
+    }
+  };
 
   const loadData = async () => {
     loading.value = true;
@@ -175,20 +196,25 @@
     }
   };
 
+  const reload = async () => {
+    await Promise.all([loadData(), loadStats()]);
+  };
+
   const onSearch = (
     payload: Pick<CapacityParam, 'keyword' | 'enterpriseId'>
   ) => {
     where.keyword = payload.keyword ?? '';
     where.enterpriseId = payload.enterpriseId;
     page.value = 1;
-    loadData();
+    reload();
   };
 
-  const onTabChange = (name: string | number) => {
-    if (name === 'all') {
+  const onSelectCard = (key: CapacityStatsCardKey) => {
+    activeCardKey.value = key;
+    if (key === 'all') {
       where.operationStatus = undefined;
     } else {
-      where.operationStatus = Number(name);
+      where.operationStatus = Number(key);
     }
     page.value = 1;
     loadData();
@@ -199,10 +225,6 @@
     loadData();
   };
 
-  const reload = () => {
-    loadData();
-  };
-
   const openBind = () => {
     bindVisible.value = true;
   };
@@ -210,9 +232,10 @@
   const flipModalRef = ref<InstanceType<typeof FlipModal> | null>(null);
   const detailTarget = ref<Capacity | null>(null);
 
-  const handleDetail = (item: Capacity, el: HTMLElement) => {
+  const handleDetail = (item: Capacity) => {
+    if (item.id == null) return;
     detailTarget.value = item;
-    flipModalRef.value?.open(el);
+    flipModalRef.value?.open(item.id);
   };
 
   const onDetailClosed = () => {
@@ -235,8 +258,30 @@
     unbindVisible.value = true;
   };
 
+  const confirmUnbind = async () => {
+    const row = unbindTarget.value;
+    const id = row?.id;
+    if (id == null) return;
+    if (!unbindRemark.value) {
+      EleMessage.warning({ message: '请填写下车备注', plain: true });
+      return;
+    }
+    unbindLoading.value = true;
+    try {
+      const msg = await unbindCapacity(id, { remark: unbindRemark.value });
+      EleMessage.success({ message: msg, plain: true });
+      unbindVisible.value = false;
+      reload();
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      EleMessage.error({ message, plain: true });
+    } finally {
+      unbindLoading.value = false;
+    }
+  };
+
   const STATUS_ACTION_LABEL: Record<number, string> = {
-    1: '恢复可接单',
+    1: '置为空闲',
     3: '置为休假',
     4: '置为停运'
   };
@@ -277,28 +322,19 @@
   };
 
   onMounted(() => {
-    loadData();
+    reload();
   });
 </script>
 
 <style scoped>
+  .capacity-list-stats {
+    margin-bottom: 12px;
+  }
+
   .capacity-list-toolbar {
     display: flex;
     justify-content: flex-start;
-    margin-bottom: 4px;
-  }
-
-  .capacity-list-tabs {
-    margin-bottom: 16px;
-  }
-
-  .capacity-list-tabs :deep(.el-tabs__nav-wrap::after) {
-    height: 1px;
-    background-color: var(--el-border-color-extra-light);
-  }
-
-  .capacity-list-tabs :deep(.el-tabs__item) {
-    font-size: 15px;
+    margin-bottom: 12px;
   }
 
   .capacity-list-body {

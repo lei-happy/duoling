@@ -5,10 +5,23 @@ import type {
   CapacityParam,
   CapacityBindData,
   CapacityUnbindData,
-  CapacityStatusUpdateData
+  CapacityStatusUpdateData,
+  CapacityListStats
 } from './model';
 
 const BASE = '/capacity/self_capacity/list';
+
+export async function getCapacityListStats(
+  params?: Pick<CapacityParam, 'keyword' | 'enterpriseId'>
+) {
+  const res = await request.get<ApiResult<CapacityListStats>>(`${BASE}/stats`, {
+    params
+  });
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
 
 export async function pageCapacities(params: CapacityParam) {
   const res = await request.get<ApiResult<PageResult<Capacity>>>(BASE, {

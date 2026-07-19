@@ -1,31 +1,72 @@
 <template>
   <teleport to="body">
-    <div v-if="visible" class="flip-modal" :style="{ zIndex }">
-      <div ref="overlayRef" class="flip-modal__mask" @click="onMaskClick"></div>
-      <div ref="panelRef" class="flip-modal__panel" :style="panelStyle">
-        <button
-          v-if="showClose"
-          type="button"
-          class="flip-modal__close"
-          aria-label="关闭"
-          @click="close"
+    <AnimatePresence :on-exit-complete="onExitComplete">
+      <Motion
+        v-if="visible"
+        :key="layoutId || 'flip-modal'"
+        as="div"
+        class="flip-modal"
+        :style="{ zIndex }"
+        :initial="{ opacity: 1 }"
+        :animate="{ opacity: 1 }"
+        :exit="{ opacity: 1 }"
+      >
+        <Motion
+          as="div"
+          class="flip-modal__mask"
+          :initial="{ opacity: 0 }"
+          :animate="{ opacity: 1 }"
+          :exit="{ opacity: 0 }"
+          :transition="maskTransition"
+          @click="onMaskClick"
+        />
+        <Motion
+          as="div"
+          class="flip-modal__panel"
+          :layout-id="layoutId || undefined"
+          :style="panelStyle"
+          :transition="layoutTransition"
+          :crossfade="true"
         >
-          <el-icon :size="18"><Close /></el-icon>
-        </button>
-        <div ref="contentRef" class="flip-modal__content">
-          <slot />
-        </div>
-      </div>
-    </div>
+          <button
+            v-if="showClose"
+            type="button"
+            class="flip-modal__close"
+            aria-label="关闭"
+            @click="close"
+          >
+            <el-icon :size="18"><Close /></el-icon>
+          </button>
+          <Motion
+            as="div"
+            class="flip-modal__content"
+            :variants="contentVariants"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+          >
+            <slot />
+          </Motion>
+        </Motion>
+      </Motion>
+    </AnimatePresence>
   </teleport>
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, watch, onBeforeUnmount, type CSSProperties } from 'vue';
+  import {
+    ref,
+    computed,
+    watch,
+    onBeforeUnmount,
+    type CSSProperties
+  } from 'vue';
   import { Close } from '@element-plus/icons-vue';
-  import { useFlipModal } from '@/utils/use-flip-modal';
+  import { Motion, AnimatePresence } from 'motion-v';
 
   defineOptions({ name: 'FlipModal' });
+
+  const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
   const props = withDefaults(
     defineProps<{
@@ -33,12 +74,6 @@
       width?: string;
       /** 面板最大高度 */
       maxHeight?: string;
-      /** 动画时长（秒） */
-      duration?: number;
-      /** 缓动 */
-      ease?: string;
-      /** 透视距离 */
-      perspective?: number;
       /** 点击遮罩是否关闭 */
       closeOnClickMask?: boolean;
       /** 是否监听 ESC 关闭 */
@@ -51,9 +86,6 @@
     {
       width: '800px',
       maxHeight: '86vh',
-      duration: 0.55,
-      ease: 'power3.inOut',
-      perspective: 1600,
       closeOnClickMask: true,
       closeOnPressEscape: true,
       showClose: true,
@@ -66,34 +98,69 @@
     (e: 'closed'): void;
   }>();
 
-  const panelRef = ref<HTMLElement | null>(null);
-  const overlayRef = ref<HTMLElement | null>(null);
-  const contentRef = ref<HTMLElement | null>(null);
+  const visible = ref(false);
+  const layoutId = ref<string>('');
 
-  const { visible, isAnimating, open, close } = useFlipModal({
-    panelRef,
-    overlayRef,
-    contentRef,
-    duration: props.duration,
-    ease: props.ease,
-    perspective: props.perspective,
-    onOpened: () => emit('opened'),
-    onClosed: () => emit('closed')
-  });
+  const layoutTransition = {
+    type: 'spring' as const,
+    bounce: 0,
+    duration: 0.32
+  };
+
+  const maskTransition = computed(() => ({
+    duration: visible.value ? 0.18 : 0.14,
+    ease: EASE_OUT
+  }));
+
+  const contentVariants = {
+    hidden: {
+      opacity: 0,
+      y: 6,
+      transition: { duration: 0.14, ease: EASE_OUT }
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.2, delay: 0.12, ease: EASE_OUT }
+    }
+  };
 
   const panelStyle = computed<CSSProperties>(() => ({
     width: props.width,
     maxHeight: props.maxHeight
   }));
 
+  const lockScroll = (lock: boolean) => {
+    if (typeof document === 'undefined') return;
+    document.body.style.overflow = lock ? 'hidden' : '';
+  };
+
+  const open = (id: string | number) => {
+    layoutId.value = `capacity-shell-${id}`;
+    visible.value = true;
+    lockScroll(true);
+    emit('opened');
+  };
+
+  const close = () => {
+    if (!visible.value) return;
+    visible.value = false;
+  };
+
+  const onExitComplete = () => {
+    lockScroll(false);
+    layoutId.value = '';
+    emit('closed');
+  };
+
   const onMaskClick = () => {
-    if (props.closeOnClickMask && !isAnimating.value) {
+    if (props.closeOnClickMask) {
       close();
     }
   };
 
   const onKeydown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && props.closeOnPressEscape && !isAnimating.value) {
+    if (e.key === 'Escape' && props.closeOnPressEscape && visible.value) {
       close();
     }
   };
@@ -108,9 +175,10 @@
 
   onBeforeUnmount(() => {
     window.removeEventListener('keydown', onKeydown);
+    lockScroll(false);
   });
 
-  defineExpose({ open, close, visible, isAnimating });
+  defineExpose({ open, close, visible, layoutId });
 </script>
 
 <style scoped>
@@ -126,11 +194,11 @@
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
-    opacity: 0;
   }
 
   .flip-modal__panel {
     position: relative;
+    z-index: 1;
     box-sizing: border-box;
     max-width: 92vw;
     display: flex;
@@ -139,17 +207,12 @@
     background: var(--el-bg-color);
     border-radius: 12px;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.24);
-    opacity: 0;
-    transform-origin: center center;
-    backface-visibility: hidden;
-    will-change: transform, opacity;
   }
 
   .flip-modal__content {
     flex: 1;
     min-height: 0;
     overflow: auto;
-    opacity: 0;
   }
 
   .flip-modal__close {
@@ -168,11 +231,18 @@
     background: transparent;
     color: var(--el-text-color-secondary);
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+      background 0.16s cubic-bezier(0.23, 1, 0.32, 1),
+      color 0.16s cubic-bezier(0.23, 1, 0.32, 1),
+      transform 0.16s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .flip-modal__close:hover {
     background: var(--el-fill-color);
     color: var(--el-text-color-primary);
+  }
+
+  .flip-modal__close:active {
+    transform: scale(0.97);
   }
 </style>

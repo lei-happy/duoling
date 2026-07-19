@@ -57,14 +57,15 @@
 
   .capacity-detail__header {
     flex-shrink: 0;
-    padding: 18px 48px 14px 24px;
+    padding: 20px 48px 16px 24px;
     border-bottom: 1px solid var(--el-border-color-extra-light);
   }
 
   .capacity-detail__title {
     margin: 0;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
+    letter-spacing: 0.01em;
     color: var(--el-text-color-primary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -74,7 +75,7 @@
   .capacity-detail__body {
     flex: 1;
     min-height: 300px;
-    padding: 16px 24px 24px;
+    padding: 18px 24px 24px;
     overflow: auto;
   }
 </style>
