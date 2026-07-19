@@ -42,69 +42,11 @@
       @done="onSubmitted"
     />
 
-    <el-drawer
+    <feedback-detail-dialog
       v-model="detailVisible"
-      title="反馈详情"
-      size="520px"
-      destroy-on-close
-    >
-      <template v-if="detail">
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="类型">
-            {{ typeLabel(detail.feedback_type) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag
-              :type="statusTagType(detail.status)"
-              size="small"
-              :disable-transitions="true"
-            >
-              {{ statusLabel(detail.status) }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item v-if="isAdmin" label="提交人">
-            {{ detail.user_name || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="标题">
-            {{ detail.title }}
-          </el-descriptions-item>
-          <el-descriptions-item label="详细说明">
-            <div class="feedback-content">{{ detail.content }}</div>
-          </el-descriptions-item>
-          <el-descriptions-item
-            v-if="detail.images?.length"
-            label="截图"
-          >
-            <div class="feedback-images">
-              <el-image
-                v-for="(url, idx) in detail.images"
-                :key="url + idx"
-                :src="resolveUploadUrl(url)"
-                fit="cover"
-                :preview-src-list="detail.images.map(resolveUploadUrl)"
-                :initial-index="idx"
-                class="feedback-images__item"
-              />
-            </div>
-          </el-descriptions-item>
-          <el-descriptions-item label="提交时间">
-            {{ detail.created_at || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="官方回复">
-            <div v-if="detail.reply" class="feedback-content">
-              {{ detail.reply }}
-            </div>
-            <span v-else class="ele-text-secondary">暂无回复</span>
-          </el-descriptions-item>
-          <el-descriptions-item v-if="detail.replied_at" label="回复时间">
-            {{ detail.replied_at }}
-          </el-descriptions-item>
-          <el-descriptions-item v-if="detail.handler_name" label="处理人">
-            {{ detail.handler_name }}
-          </el-descriptions-item>
-        </el-descriptions>
-      </template>
-    </el-drawer>
+      :detail="detail"
+      :show-submitter="isAdmin"
+    />
   </ele-page>
 </template>
 
@@ -118,10 +60,10 @@
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import FeedbackSearch from './components/feedback-search.vue';
   import FeedbackSubmitDialog from './components/feedback-submit-dialog.vue';
+  import FeedbackDetailDialog from './components/feedback-detail-dialog.vue';
   import { getFeedback, pageFeedbacks } from '@/api/feedback';
   import type { Feedback, FeedbackParam } from '@/api/feedback/model';
   import { useUserStore } from '@/store/modules/user';
-  import { resolveUploadUrl } from '@/utils/upload-url';
 
   defineOptions({ name: 'UserFeedback' });
 
@@ -220,21 +162,3 @@
     }
   };
 </script>
-
-<style scoped>
-  .feedback-content {
-    white-space: pre-wrap;
-    word-break: break-word;
-    line-height: 1.6;
-  }
-  .feedback-images {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .feedback-images__item {
-    width: 72px;
-    height: 72px;
-    border-radius: 4px;
-  }
-</style>
