@@ -95,6 +95,8 @@ class CostFactContext:
     capacity_id: Optional[int] = None
     driver_id: Optional[int] = None
     enterprise_id: Optional[int] = None
+    # 当前运力(司机)所属的启用状态运力分组ID集合（capacity_group 条件按需预加载）
+    capacity_group_ids: set = field(default_factory=set)
 
     # ---- 按需加载的富事实（可空）----
     dispatch_orders: list = field(default_factory=list)   # list[TaskDispatchOrder]

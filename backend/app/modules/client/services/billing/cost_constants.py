@@ -94,6 +94,7 @@ SCOPE_SCORE = {
 CONDITION_SCORE = {
     "carrier": 6_500,        # 指定承运商（强特异）
     "capacity": 6_000,       # 指定运力
+    "capacity_group": 5_800,  # 指定运力分组（弱于单条运力、强于单个司机属性）
     "driver": 5_500,         # 指定司机
     "dispatch_route": 4_500,  # 调令起终点
     "text_contains": 4_000,  # 地名包含

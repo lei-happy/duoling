@@ -396,6 +396,18 @@
     "status": 1
   },
   {
+    "feature_code": "capacity_self_group",
+    "feature_name": "自有运力-运力分组",
+    "module": "capacity",
+    "description": null,
+    "required_tables": [
+      "biz_capacity_group",
+      "biz_capacity_group_member"
+    ],
+    "sort_order": 47,
+    "status": 1
+  },
+  {
     "feature_code": "fleet_maintenance",
     "feature_name": "车辆维保",
     "module": "capacity",

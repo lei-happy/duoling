@@ -8,6 +8,10 @@ from app.modules.client.models.capacity.self_capacity.capacity import (
     Capacity,
     CapacityLog,
 )
+from app.modules.client.models.capacity.self_capacity.capacity_group import (
+    CapacityGroup,
+    CapacityGroupMember,
+)
 from app.modules.client.models.capacity.self_capacity.driver import (
     Driver,
     DriverLicense,
@@ -23,6 +27,8 @@ __all__ = [
     "TrailerExt",
     "Capacity",
     "CapacityLog",
+    "CapacityGroup",
+    "CapacityGroupMember",
     "Driver",
     "DriverLicense",
     "DriverOperation",

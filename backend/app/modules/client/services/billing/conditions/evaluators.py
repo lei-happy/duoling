@@ -423,6 +423,53 @@ class DriverEvaluator(_ScalarEqEvaluator):
 
 
 @register
+class CapacityGroupEvaluator(ConditionEvaluator):
+    """指定运力分组：判断当前运力(司机)是否在某分组集合内。
+
+    命中依赖 ctx.capacity_group_ids（编排层按当前 driver_id 预加载的启用分组ID集合）。
+    op=eq 时命中「属于该分组」；op=in 时命中「属于给定任一分组」。
+    """
+    key = "capacity_group"
+    label = "指定运力分组"
+    value_type = "capacity_group"
+    option_source = "capacity_group"
+    operators = ["eq", "in"]
+
+    @staticmethod
+    def _to_int(v: Any) -> Optional[int]:
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return None
+
+    def evaluate(self, node: dict, ctx: Any) -> Optional[ConditionMatch]:
+        value = _pick(node, "value")
+        op = _pick(node, "op") or "eq"
+        if value is None:
+            return ConditionMatch()  # 未指定分组=不约束
+        group_ids = getattr(ctx, "capacity_group_ids", None) or set()
+        if not group_ids:
+            return None
+
+        if op == "in":
+            raw = value if isinstance(value, (list, tuple, set)) else [value]
+            targets = {i for i in (self._to_int(v) for v in raw) if i is not None}
+            hit_id = next((g for g in targets if g in group_ids), None)
+        else:
+            target = self._to_int(value)
+            hit_id = target if (target is not None and target in group_ids) else None
+
+        if hit_id is None:
+            return None
+        return ConditionMatch(
+            score_delta=CONDITION_SCORE["capacity_group"],
+            facts={"capacity_group_matched": hit_id},
+            trace=[{"type": self.key, "op": op, "value": value,
+                    "matched_group": hit_id}],
+        )
+
+
+@register
 class EnterpriseEvaluator(_ScalarEqEvaluator):
     key = "enterprise"
     label = "经营主体"

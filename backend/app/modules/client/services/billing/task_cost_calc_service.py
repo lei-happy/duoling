@@ -40,6 +40,9 @@ from app.modules.client.models.task.task import Task
 from app.modules.client.models.task.task_dispatch_order import TaskDispatchOrder
 from app.modules.client.models.task.task_waybill_item import TaskWaybillItem
 from app.modules.client.services.billing.conditions import collect_leaf_types
+from app.modules.client.services.capacity.self_capacity.capacity_group_service import (
+    CapacityGroupService,
+)
 from app.modules.client.services.billing.cost_constants import (
     COST_ENGINE_VERSION,
     ERR_AREA_NOT_RECOGNIZED,
@@ -487,6 +490,12 @@ class TaskCostCalcService:
                 db, driver_id,
             )
 
+        capacity_group_ids: set[int] = set()
+        if "capacity_group" in needed_types:
+            capacity_group_ids = (
+                await CapacityGroupService.get_group_ids_for_driver(db, driver_id)
+            )
+
         transport_vehicle = vehicle_ext = None
         need_vehicle = "vehicle_attr" in needed_types
         has_ton_rule = any(r.pricing_method == PM_PER_TON_KM for r in rules)
@@ -517,6 +526,7 @@ class TaskCostCalcService:
             capacity_id=task.capacity_id,
             driver_id=driver_id,
             enterprise_id=getattr(task, "enterprise_id", None),
+            capacity_group_ids=capacity_group_ids,
             dispatch_orders=dispatch_orders,
             driver=driver_obj,
             driver_operation=driver_op,

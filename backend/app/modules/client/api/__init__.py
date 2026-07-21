@@ -20,6 +20,7 @@ from app.modules.client.api.capacity.self_capacity.trailer import router as self
 from app.modules.client.api.capacity.self_capacity.driver import router as self_driver_router
 from app.modules.client.api.capacity.self_capacity.list import router as self_capacity_list_router
 from app.modules.client.api.capacity.self_capacity.log import router as self_capacity_log_router
+from app.modules.client.api.capacity.self_capacity.group import router as self_capacity_group_router
 from app.modules.client.api.capacity.carrier_capacity.list import router as carrier_capacity_list_router
 from app.modules.client.api.capacity.carrier_capacity.approval import router as carrier_capacity_approval_router
 from app.modules.client.api.capacity.social_capacity.list import router as social_capacity_list_router
@@ -112,6 +113,12 @@ router.include_router(
     prefix="/capacity/self_capacity/log",
     tags=["客户端-自有运力-变更记录"],
     dependencies=[Depends(require_feature("capacity_self_log"))],
+)
+router.include_router(
+    self_capacity_group_router,
+    prefix="/capacity/self_capacity/group",
+    tags=["客户端-自有运力-运力分组"],
+    dependencies=[Depends(require_feature("capacity_self_group"))],
 )
 router.include_router(
     self_vehicle_router,

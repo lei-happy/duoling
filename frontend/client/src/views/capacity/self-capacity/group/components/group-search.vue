@@ -1,0 +1,79 @@
+<!-- 运力分组搜索 -->
+<template>
+  <ele-card search-form>
+    <el-form label-width="0" @keyup.enter="search" @submit.prevent="">
+      <el-row :gutter="8">
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+          <floating-label
+            label="请输入分组名称/编码"
+            type="input"
+            v-model.trim="form.keyword"
+            clearable
+          />
+        </el-col>
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+          <floating-label
+            v-model="form.status"
+            label="请选择状态"
+            type="select"
+            clearable
+          >
+            <el-option label="启用" :value="1" />
+            <el-option label="停用" :value="0" />
+          </floating-label>
+        </el-col>
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+          <business-entity-select
+            v-model="form.enterpriseId"
+            placeholder="请选择经营主体"
+            clearable
+          />
+        </el-col>
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
+          <el-form-item label-width="0px">
+            <btn-items
+              :wrap="false"
+              :items="[
+                { preset: 'search', onClick: () => search() },
+                { preset: 'reset', onClick: () => reset() }
+              ]"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+  </ele-card>
+</template>
+
+<script lang="ts" setup>
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
+  import BusinessEntitySelect from '@/components/BusinessEntitySelect/index.vue';
+  import { useFormData } from '@/utils/use-form-data';
+  import type { CapacityGroupParam } from '@/api/capacity/self-capacity/group/model';
+
+  const emit = defineEmits<{
+    (
+      e: 'search',
+      where: Pick<CapacityGroupParam, 'keyword' | 'status' | 'enterpriseId'>
+    ): void;
+  }>();
+
+  const [form, resetFields] = useFormData<{
+    keyword: string;
+    status: number | undefined;
+    enterpriseId: number | undefined;
+  }>({
+    keyword: '',
+    status: void 0,
+    enterpriseId: void 0
+  });
+
+  const search = () => {
+    emit('search', { ...form });
+  };
+
+  const reset = () => {
+    resetFields();
+    search();
+  };
+</script>

@@ -224,6 +224,7 @@
     'vehicle_series',
     'carrier',
     'capacity',
+    'capacity_group',
     'driver',
     'enterprise',
     'carrier_type'
