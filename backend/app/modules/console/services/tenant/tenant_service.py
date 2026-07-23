@@ -478,6 +478,18 @@ class TenantService:
                         '{"kind":"vehicle_first"},{"kind":"carrier_driver_plate"}]}',
                     ),
                     SystemConfig(
+                        config_key="finance.task_doc_stage_rules",
+                        config_value='{"enforce":false,"rules":{"1":[-1,0,1,2,3,4,5,7,9],'
+                        '"2":[-1,0,1,2,3,4,5,7,9],"3":[-1,0,1,2,3,4,5,7,9],'
+                        '"4":[-1,0,1,2,3,4,5,7,9]}}',
+                        config_group="finance",
+                        description="费用单发起节点规则 JSON：enforce 是否强制拦截；rules 为「单据类型→允许发起的任务节点集合」",
+                        value_type="json",
+                        default_value='{"enforce":false,"rules":{"1":[-1,0,1,2,3,4,5,7,9],'
+                        '"2":[-1,0,1,2,3,4,5,7,9],"3":[-1,0,1,2,3,4,5,7,9],'
+                        '"4":[-1,0,1,2,3,4,5,7,9]}}',
+                    ),
+                    SystemConfig(
                         config_key="system.watermark_enabled",
                         config_value="false",
                         config_group="security",

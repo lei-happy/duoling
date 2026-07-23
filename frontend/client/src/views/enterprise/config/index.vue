@@ -68,6 +68,7 @@
   import { useMobile } from '@/utils/use-mobile';
   import GenericGroupSettings from './components/generic-group-settings.vue';
   import TaskSettings from './components/task-settings.vue';
+  import FinanceSettings from './components/finance-settings.vue';
   import WaybillSettings from './components/waybill-settings.vue';
   import WatermarkSettings from './components/watermark-settings.vue';
   import {
@@ -89,6 +90,7 @@
   const groupPanels: Record<string, Component> = {
     waybill: WaybillSettings,
     task: TaskSettings,
+    finance: FinanceSettings,
     security: WatermarkSettings
   };
 

@@ -92,15 +92,24 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <el-button
-              type="success"
-              size="small"
-              :icon="Plus"
-              v-permission="'operation:task-finance:add'"
-              @click="openFinanceEdit(null)"
+            <el-tooltip
+              :disabled="canCreateFinance"
+              content="当前任务节点暂不支持发起费用单，可在「系统设置 · 财务设置」调整发起节点"
+              placement="top"
             >
-              新建费用单
-            </el-button>
+              <span>
+                <el-button
+                  type="success"
+                  size="small"
+                  :icon="Plus"
+                  :disabled="!canCreateFinance"
+                  v-permission="'operation:task-finance:add'"
+                  @click="openFinanceEdit(null)"
+                >
+                  新建费用单
+                </el-button>
+              </span>
+            </el-tooltip>
           </div>
         </div>
 
@@ -793,6 +802,7 @@
   } from '../task-actions';
   import type { TaskActionConfig, TaskActionKey } from '../task-actions';
   import FinanceEdit from '../../task-finance/components/finance-edit.vue';
+  import { getCreatableDocTypes } from '@/api/operation/task-finance';
   import ActionAssignCarrier from '../../task-workbench/components/action-assign-carrier.vue';
   import ActionDispatch from '../../task-workbench/components/action-dispatch.vue';
   import ActionPlanRoute from '../../task-workbench/components/action-plan-route.vue';
@@ -933,18 +943,20 @@
   const load = async (id: number) => {
     loading.value = true;
     try {
-      const [t, segs, its, fins, recs] = await Promise.all([
+      const [t, segs, its, fins, recs, creatable] = await Promise.all([
         getTask(id),
         listTaskSegments(id),
         listTaskWaybillItems(id),
         listTaskFinanceSummary(id),
-        listLoadingRecords(id).catch(() => [] as TaskLoadingRecord[])
+        listLoadingRecords(id).catch(() => [] as TaskLoadingRecord[]),
+        getCreatableDocTypes(id).catch(() => null)
       ]);
       task.value = t;
       segments.value = segs;
       items.value = its;
       financeDocs.value = fins;
       loadingRecords.value = recs;
+      creatableFinanceTypes.value = creatable?.docTypes ?? null;
       loadCostResult(id);
       if (t?.carrierType === CARRIER_TYPE.CARRIER) {
         loadCarrierFreightResult(id);
@@ -1105,6 +1117,16 @@
   // ============================================
   const financeEditVisible = ref(false);
   const editingFinanceId = ref<number | null>(null);
+  // 当前任务节点可发起的费用单类型（null=未取到，按不限制处理）
+  const creatableFinanceTypes = ref<number[] | null>(null);
+  // 新建弹框当前仅支持预付/补款/结算（承包单由承包结算配置维护）
+  const CREATE_SUPPORTED_DOC_TYPES = [1, 2, 3];
+  const canCreateFinance = computed(() => {
+    if (creatableFinanceTypes.value === null) return true;
+    return creatableFinanceTypes.value.some((t) =>
+      CREATE_SUPPORTED_DOC_TYPES.includes(t)
+    );
+  });
 
   const openFinanceEdit = (row: TaskFinanceSummaryItem | null) => {
     editingFinanceId.value = row?.id ?? null;

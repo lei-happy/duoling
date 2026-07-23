@@ -79,8 +79,8 @@
     v-model:visible="financeVisible"
     :task="singleTask"
     :doc-id="null"
-    :init-doc-type="3"
-    :init-is-final="1"
+    :init-doc-type="financeInitDocType"
+    :init-is-final="financeInitIsFinal"
     @done="emit('done')"
   />
 </template>
@@ -117,6 +117,15 @@
   const financeVisible = defineModel<boolean>('financeVisible', {
     default: false
   });
+  // 费用单创建预填类型：生成结算单=3/1；新建预付单=1/0；不传则由弹框按节点过滤
+  const financeInitDocType = defineModel<number | undefined>(
+    'financeInitDocType',
+    { default: undefined }
+  );
+  const financeInitIsFinal = defineModel<number | undefined>(
+    'financeInitIsFinal',
+    { default: undefined }
+  );
   // 任务单编辑抽屉（沿用 task/components/task-edit.vue），编辑 status -1/0/1 任务
   const editVisible = defineModel<boolean>('editVisible', { default: false });
   // 当 actionDialog='revert' 时，调用方需同步设置具体的 revert 动作 key

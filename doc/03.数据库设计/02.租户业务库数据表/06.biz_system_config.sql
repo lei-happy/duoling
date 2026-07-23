@@ -19,6 +19,7 @@ CREATE TABLE `biz_system_config` (
 INSERT INTO `biz_system_config` (`config_key`, `config_value`, `config_group`, `description`, `value_type`, `default_value`) VALUES
 ('waybill.freight_calc_mode', 'auto_preferred', 'waybill', '运费计算模式：auto_required-强制自动计费 auto_preferred-优先自动允许手动 manual_only-仅手动', 'enum', 'auto_preferred'),
 ('waybill.list_show_freight_amount', 'false', 'waybill', '运单列表是否展示运费金额（敏感信息，默认关闭）', 'boolean', 'false'),
+('finance.task_doc_stage_rules', '{"enforce":false,"rules":{"1":[-1,0,1,2,3,4,5,7,9],"2":[-1,0,1,2,3,4,5,7,9],"3":[-1,0,1,2,3,4,5,7,9],"4":[-1,0,1,2,3,4,5,7,9]}}', 'finance', '费用单发起节点规则 JSON：enforce 是否强制拦截；rules 为「单据类型→允许发起的任务节点集合」', 'json', '{"enforce":false,"rules":{"1":[-1,0,1,2,3,4,5,7,9],"2":[-1,0,1,2,3,4,5,7,9],"3":[-1,0,1,2,3,4,5,7,9],"4":[-1,0,1,2,3,4,5,7,9]}}'),
 ('system.watermark_enabled', 'false', 'security', '是否启用页面水印（默认关闭）', 'boolean', 'false'),
 ('system.watermark_content', '{nickname} {phoneLast4} {date}', 'security', '页面水印文本模板，支持 {nickname} {phoneLast4} {date} 等变量', 'string', '{nickname} {phoneLast4} {date}'),
 ('system.watermark_style', '{"fontSize":14,"color":"rgba(0, 0, 0, 0.12)","rotate":-22,"gap":[200,160],"zIndex":9999}', 'security', '页面水印样式 JSON：fontSize/color/rotate/gap/zIndex', 'json', '{"fontSize":14,"color":"rgba(0, 0, 0, 0.12)","rotate":-22,"gap":[200,160],"zIndex":9999}');

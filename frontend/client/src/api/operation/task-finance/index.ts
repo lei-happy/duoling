@@ -29,6 +29,21 @@ export async function listFinanceDocsByTask(taskId: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
+/** 某任务当前节点可发起的费用单类型（入口显隐 / 下拉过滤） */
+export interface CreatableDocTypes {
+  taskStatus: number;
+  enforce: boolean;
+  docTypes: number[];
+}
+
+export async function getCreatableDocTypes(taskId: number) {
+  const res = await request.get<ApiResult<CreatableDocTypes>>(
+    `/business/task-finance/by-task/${taskId}/creatable-doc-types`
+  );
+  if (res.data.code === 0) return res.data.data;
+  return Promise.reject(new Error(res.data.message));
+}
+
 export async function addFinanceDoc(
   taskId: number,
   data: TaskFinanceDocCreatePayload

@@ -1,12 +1,12 @@
 <template>
-  <el-drawer
-    :model-value="visible"
+  <component
+    :is="containerComp"
+    :model-value="innerVisible"
     :title="dialogTitle"
-    direction="rtl"
-    size="900px"
+    v-bind="containerProps"
     :destroy-on-close="true"
     :close-on-click-modal="false"
-    @update:model-value="(v: boolean) => emit('update:visible', v)"
+    @update:model-value="onContainerVisible"
     @open="onOpen"
   >
     <el-form
@@ -30,7 +30,7 @@
           <el-form-item label="单据类型" prop="docType">
             <el-select v-model="form.docType" :disabled="docId !== null">
               <el-option
-                v-for="o in FIN_DOC_TYPE_OPTIONS"
+                v-for="o in docTypeOptions"
                 :key="o.value"
                 :value="o.value"
                 :label="o.label"
@@ -153,13 +153,13 @@
       :docs="[doc]"
       @done="onActionDone"
     />
-  </el-drawer>
+  </component>
 </template>
 
 <script lang="ts" setup>
   import { computed, reactive, ref, watch } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
-  import { ElMessageBox } from 'element-plus';
+  import { ElDialog, ElDrawer, ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import FinanceItemTable from './finance-item-table.vue';
   import PayeePicker from './payee-picker.vue';
@@ -169,6 +169,7 @@
     addFinanceDoc,
     approveFinanceDoc,
     cancelFinanceDoc,
+    getCreatableDocTypes,
     getFinanceDoc,
     submitFinanceDoc,
     updateFinanceDoc
@@ -224,6 +225,10 @@
   });
 
   const doc = ref<TaskFinanceDoc | null>(null);
+  // 容器内部可见性：待数据就绪后再挂载，确保「弹框/抽屉」类型一次性确定，避免切换闪烁
+  const innerVisible = ref(false);
+  // 新建时当前任务节点可发起的单据类型（null 表示未取到，按不过滤处理）
+  const creatableTypes = ref<number[] | null>(null);
 
   const defaultPayee = (): PayeeFormData => {
     const ct = props.task?.carrierType || 1;
@@ -275,6 +280,31 @@
     return `费用单 ${doc.value.docNo}`;
   });
 
+  // 新建 / 草稿 / 待审批 → 可编辑，用居中弹框；
+  // 已审批 / 已支付 / 已撤销 → 只读详情，用右侧抽屉（内容更长，滑出更合适）
+  const useDialog = computed(() => {
+    if (!doc.value) return true;
+    return doc.value.status === 0 || doc.value.status === 1;
+  });
+  const containerComp = computed(() => (useDialog.value ? ElDialog : ElDrawer));
+  const containerProps = computed(() =>
+    useDialog.value
+      ? { width: '900px', top: '6vh', appendToBody: true }
+      : { direction: 'rtl' as const, size: '900px' }
+  );
+
+  // 新建时按当前任务节点过滤可选单据类型（编辑/详情态不过滤，且下拉已禁用）
+  const docTypeOptions = computed(() => {
+    if (doc.value || !creatableTypes.value) return [...FIN_DOC_TYPE_OPTIONS];
+    const allow = new Set(creatableTypes.value);
+    const filtered = FIN_DOC_TYPE_OPTIONS.filter((o) => allow.has(o.value));
+    return filtered.length ? filtered : [...FIN_DOC_TYPE_OPTIONS];
+  });
+
+  const onContainerVisible = (v: boolean) => {
+    if (!v) emit('update:visible', false);
+  };
+
   const rules: FormRules = {
     docType: [{ required: true }],
     plannedAmount: [{ required: true, message: '请填写计划金额' }]
@@ -283,13 +313,37 @@
   watch(
     () => props.visible,
     async (v) => {
-      if (!v) return;
+      if (!v) {
+        innerVisible.value = false;
+        return;
+      }
       Object.assign(form, defaultForm());
       Object.assign(payee, defaultPayee());
       doc.value = null;
+      creatableTypes.value = null;
       if (props.docId) {
         await loadDetail(props.docId);
+      } else if (props.task?.id) {
+        // 新建：拉取当前节点可发起的单据类型
+        try {
+          const res = await getCreatableDocTypes(props.task.id);
+          creatableTypes.value = res?.docTypes ?? null;
+          // 未显式预填类型时，若当前类型不可发起则回退到首个可选项
+          const allow = new Set(creatableTypes.value ?? []);
+          const opts = FIN_DOC_TYPE_OPTIONS.filter((o) => allow.has(o.value));
+          if (
+            props.initDocType == null &&
+            opts.length &&
+            !allow.has(form.docType)
+          ) {
+            form.docType = opts[0].value;
+          }
+        } catch {
+          creatableTypes.value = null;
+        }
       }
+      // 数据/容器类型确定后再挂载容器
+      innerVisible.value = true;
     }
   );
 

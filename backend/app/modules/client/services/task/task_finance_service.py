@@ -344,6 +344,52 @@ class TaskFinanceService:
         return await FinanceDocEventWriter.list_by_doc(db, _DOC_KIND, doc_id)
 
     # ------------------------------------------------------------------
+    # 发起节点规则（租户级配置）
+    # ------------------------------------------------------------------
+    @staticmethod
+    async def _load_stage_rules(db: AsyncSession):
+        """读取租户「费用单发起节点规则」配置，返回 ``(enforce, rules)``。"""
+        from app.modules.client.services.finance.base.finance_stage_rules import (
+            STAGE_RULES_CONFIG_KEY,
+            parse_stage_rules,
+        )
+        from app.modules.client.services.system_config_service import (
+            SystemConfigService,
+        )
+
+        raw = await SystemConfigService.get_by_key(db, STAGE_RULES_CONFIG_KEY)
+        return parse_stage_rules(raw)
+
+    @staticmethod
+    async def _assert_creatable_at_stage(
+        db: AsyncSession, task: Task, doc_type: int
+    ) -> None:
+        """校验当前任务节点是否允许发起该类费用单（enforce=True 才硬拦截）。"""
+        from app.modules.client.services.finance.base.finance_stage_rules import (
+            assert_stage_allowed,
+        )
+
+        enforce, rules = await TaskFinanceService._load_stage_rules(db)
+        assert_stage_allowed(doc_type, int(task.status or 0), enforce, rules)
+
+    @staticmethod
+    async def creatable_doc_types(db: AsyncSession, task_id: int) -> dict:
+        """返回某任务当前节点可发起的单据类型集合，供前端入口显隐 / 下拉过滤。"""
+        from app.modules.client.services.finance.base.finance_stage_rules import (
+            creatable_doc_types,
+        )
+        from app.modules.client.services.task.task_service import TaskService
+
+        task = await TaskService.get_or_404(db, task_id)
+        enforce, rules = await TaskFinanceService._load_stage_rules(db)
+        status = int(task.status or 0)
+        return {
+            "taskStatus": status,
+            "enforce": enforce,
+            "docTypes": creatable_doc_types(status, rules),
+        }
+
+    # ------------------------------------------------------------------
     # CRUD
     # ------------------------------------------------------------------
     @staticmethod
@@ -361,6 +407,9 @@ class TaskFinanceService:
             raise BizException("非法 docType")
         if data.isFinal == 1 and data.docType != DocType.SETTLE:
             raise BizException("仅结算单 (docType=3) 可标记为最终结算")
+
+        # 发起节点校验：按租户配置判断当前任务节点是否允许发起该类费用单
+        await TaskFinanceService._assert_creatable_at_stage(db, task, data.docType)
 
         # 校验金额合理性
         if data.plannedAmount <= 0:

@@ -12,13 +12,28 @@
       @submit.prevent=""
     >
       <el-row :gutter="10" class="wb-filter__row">
-        <el-col :lg="6" :md="6" :sm="12" :xs="24">
+        <el-col :lg="4" :md="6" :sm="12" :xs="24">
           <floating-label
-            label="请输入任务单号/计划号/任务名称"
+            label="请输入任务单号"
             type="input"
             v-model.trim="form.keyword"
             clearable
           />
+        </el-col>
+        <el-col :lg="4" :md="6" :sm="12" :xs="24">
+          <floating-label
+            v-model="form.carrierType"
+            label="请选择承运方式"
+            type="select"
+            clearable
+          >
+            <el-option
+              v-for="o in CARRIER_TYPE_OPTIONS"
+              :key="o.value"
+              :value="o.value"
+              :label="o.label"
+            />
+          </floating-label>
         </el-col>
         <el-col :lg="6" :md="6" :sm="12" :xs="24">
           <floating-label
@@ -36,21 +51,7 @@
             clearable
           />
         </el-col>
-        <el-col :lg="6" :md="6" :sm="12" :xs="24">
-          <floating-label
-            v-model="form.carrierType"
-            label="请选择承运方式"
-            type="select"
-            clearable
-          >
-            <el-option
-              v-for="o in CARRIER_TYPE_OPTIONS"
-              :key="o.value"
-              :value="o.value"
-              :label="o.label"
-            />
-          </floating-label>
-        </el-col>
+
       </el-row>
       <el-row :gutter="10" class="wb-filter__row wb-filter__row--second">
         <el-col

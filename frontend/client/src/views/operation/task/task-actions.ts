@@ -27,6 +27,7 @@ export type TaskActionKey =
   | 'force-cancel' // 强制取消（2/3/4 → 9，线下取消）
   // —— 常规辅助通道
   | 'cancel-task' // 常规取消（-1/0/1/2 → 9，释放计划挂接 + 撤销未支付费用单）
+  | 'create-finance' // 新建费用单（快捷发起，按节点配置过滤类型）
   | 'edit' // 编辑任务单（仅 -1/0/1）
   | 'delete'; // 删除任务单（仅 -1/0/9）
 
@@ -51,6 +52,8 @@ export interface TaskActionConfig {
   confirm?: boolean;
   /** 是否需要跳转打开费用单创建（生成结算单） */
   openSettlement?: boolean;
+  /** 是否需要打开费用单创建（不预设类型，由节点配置过滤，通常落到预付单） */
+  openFinance?: boolean;
   /** 逆向跳转目标态（revert-* 才有） */
   revertTo?: number;
   /** 逆向动作能从哪个状态进入（用于运行时校验） */
@@ -175,6 +178,13 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     permission: 'operation:task:cancel',
     dialog: 'cancel-task'
   },
+  'create-finance': {
+    key: 'create-finance',
+    label: '新建费用单',
+    buttonType: 'success',
+    permission: 'operation:task-finance:add',
+    openFinance: true
+  },
   edit: {
     key: 'edit',
     label: '编辑',
@@ -257,6 +267,28 @@ export const getReverseTaskActions = (
   const keys = REVERSE_BY_STATUS[status] ?? [];
   return keys.map((k) => TASK_ACTION_CONFIGS[k]);
 };
+
+/**
+ * 可就近发起费用单的任务节点（派车后到关闭前；排除待分配/已取消）。
+ * 具体在某节点能发起哪类单据，仍由租户「费用单发起节点配置」决定。
+ */
+export const FINANCE_ENTRY_STATUSES: number[] = [
+  TASK_STATUS.PENDING_DISPATCH,
+  TASK_STATUS.DISPATCHED,
+  TASK_STATUS.LOADED,
+  TASK_STATUS.ON_WAY,
+  TASK_STATUS.ARRIVED,
+  TASK_STATUS.SIGNED,
+  TASK_STATUS.CLOSED
+];
+
+/** 当前节点是否展示「新建费用单」快捷入口 */
+export const shouldShowCreateFinance = (
+  status: number | null | undefined
+): boolean =>
+  status !== null &&
+  status !== undefined &&
+  FINANCE_ENTRY_STATUSES.includes(status);
 
 /**
  * 行操作聚合：把"详情 + 主按钮 + 更多下拉"所需的全部信息打包给 UI 层。

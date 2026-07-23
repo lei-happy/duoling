@@ -47,6 +47,8 @@
     <workbench-action-modals
       v-model:action-dialog="openActionDialog"
       v-model:finance-visible="financeEditVisible"
+      v-model:finance-init-doc-type="financeInitDocType"
+      v-model:finance-init-is-final="financeInitIsFinal"
       v-model:edit-visible="editVisible"
       v-model:revert-action-key="revertActionKey"
       :targets="actionTargets"
@@ -82,6 +84,8 @@
   } from '@/api/operation/task/model';
   import type { TaskActionConfig, TaskActionKey } from '../task/task-actions';
   import { CARRIER_TYPE } from '../task/status-config';
+  import { getCreatableDocTypes } from '@/api/operation/task-finance';
+  import { usePermission } from '@/utils/use-permission';
 
   type WorkbenchListSubset = 'all' | 'normal' | 'alert';
 
@@ -215,8 +219,11 @@
     null
   );
   const financeEditVisible = ref(false);
+  const financeInitDocType = ref<number | undefined>(undefined);
+  const financeInitIsFinal = ref<number | undefined>(undefined);
   const editVisible = ref(false);
   const revertActionKey = ref<TaskActionKey | null>(null);
+  const { hasPermission } = usePermission();
 
   /** 单任务派车 / 生成结算单要求单选 */
   const actionSingleTask = computed<Task | null>(() =>
@@ -273,6 +280,14 @@
       return;
     }
     if (act.openSettlement) {
+      financeInitDocType.value = 3;
+      financeInitIsFinal.value = 1;
+      financeEditVisible.value = true;
+      return;
+    }
+    if (act.openFinance) {
+      financeInitDocType.value = undefined;
+      financeInitIsFinal.value = undefined;
       financeEditVisible.value = true;
       return;
     }
@@ -370,7 +385,40 @@
     await refreshWorkbench();
   };
 
-  /** 派车成功后：若自有车且尚未规划路线，引导继续规划 */
+  /**
+   * 派车成功后：优先引导创建预付单；否则对自有车未规划路线的任务引导规划。
+   */
+  const maybePromptPrepay = async (t: Task | null): Promise<boolean> => {
+    if (!t?.id) return false;
+    if (!hasPermission('operation:task-finance:add')) return false;
+    let creatable: number[] = [];
+    try {
+      const res = await getCreatableDocTypes(t.id);
+      creatable = res?.docTypes ?? [];
+    } catch {
+      return false;
+    }
+    if (!creatable.includes(1)) return false;
+    try {
+      await ElMessageBox.confirm(
+        `运力已派完，是否立即为任务单「${t.taskNo}」创建预付单？`,
+        '创建预付单',
+        {
+          type: 'info',
+          confirmButtonText: '立即创建',
+          cancelButtonText: '暂不创建'
+        }
+      );
+    } catch {
+      return false;
+    }
+    actionTargets.value = [t];
+    financeInitDocType.value = 1;
+    financeInitIsFinal.value = 0;
+    financeEditVisible.value = true;
+    return true;
+  };
+
   const onDispatchDone = async () => {
     const t = actionSingleTask.value;
     if (!t?.id) {
@@ -384,6 +432,9 @@
       updated = null;
     }
     await reloadAll();
+    if (await maybePromptPrepay(updated)) {
+      return;
+    }
     if (
       updated &&
       updated.carrierType === CARRIER_TYPE.SELF &&

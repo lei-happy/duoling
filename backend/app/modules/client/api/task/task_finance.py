@@ -148,6 +148,17 @@ async def batch_action(
     return success(data=result)
 
 
+@router.get("/by-task/{task_id}/creatable-doc-types")
+async def creatable_doc_types_of_task(
+    task_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """返回该任务当前节点可发起的费用单类型（供入口显隐 / 下拉过滤）。"""
+    data = await TaskFinanceService.creatable_doc_types(db, task_id)
+    return success(data=data)
+
+
 @router.get("/by-task/{task_id}")
 async def list_docs_of_task(
     task_id: int,

@@ -180,14 +180,14 @@
       @done="reload"
     />
 
-    <!-- 生成结算单 → 直接打开费用单创建 -->
+    <!-- 费用单创建：新建费用单（预付等，按节点过滤）/ 生成结算单 -->
     <finance-edit
       v-if="actionTask"
       v-model:visible="financeEditVisible"
       :task="actionTask"
       :doc-id="null"
-      :init-doc-type="3"
-      :init-is-final="1"
+      :init-doc-type="financeInitDocType"
+      :init-is-final="financeInitIsFinal"
       @done="reload"
     />
   </ele-page>
@@ -231,12 +231,19 @@
     CARRIER_TYPE_MAP,
     TASK_STATUS_MAP
   } from './status-config';
-  import { getTaskRowActions } from './task-actions';
+  import {
+    getTaskRowActions,
+    shouldShowCreateFinance,
+    TASK_ACTION_CONFIGS
+  } from './task-actions';
   import type { TaskActionConfig, TaskActionKey } from './task-actions';
+  import { getCreatableDocTypes } from '@/api/operation/task-finance';
+  import { usePermission } from '@/utils/use-permission';
 
   defineOptions({ name: 'OperationTask' });
 
   const router = useRouter();
+  const { hasPermission } = usePermission();
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const selections = ref<Task[]>([]);
@@ -388,15 +395,22 @@
     'cancel-task': false
   });
   const financeEditVisible = ref(false);
+  const financeInitDocType = ref<number | undefined>(undefined);
+  const financeInitIsFinal = ref<number | undefined>(undefined);
   const revertActionKey = ref<TaskActionKey | null>(null);
 
   /** 行内主按钮（详情 + 主按钮 + 更多 的"主按钮"） */
   const getRowPrimary = (row: Task): TaskActionConfig | null =>
     getTaskRowActions(row).primary;
 
-  /** 行内「更多」下拉项 */
-  const getRowMore = (row: Task): TaskActionConfig[] =>
-    getTaskRowActions(row).more;
+  /** 行内「更多」下拉项：追加「新建费用单」快捷入口（置顶，便于就近发起） */
+  const getRowMore = (row: Task): TaskActionConfig[] => {
+    const more = getTaskRowActions(row).more;
+    if (shouldShowCreateFinance(row.status)) {
+      return [TASK_ACTION_CONFIGS['create-finance'], ...more];
+    }
+    return more;
+  };
 
   /** 规划路线追加「·未规划」尾巴；其它直接用 label */
   const buildMoreLabel = (row: Task, act: TaskActionConfig): string => {
@@ -406,7 +420,42 @@
     return act.label;
   };
 
-  /** 派车成功后：若自有车且尚未规划路线，引导继续规划 */
+  /**
+   * 派车成功后：优先引导创建预付单（贴合"派完车即预付"动线）；
+   * 若未触发预付引导，再对自有车未规划路线的任务引导规划。
+   */
+  const maybePromptPrepay = async (t: Task | null): Promise<boolean> => {
+    if (!t?.id) return false;
+    if (!hasPermission('operation:task-finance:add')) return false;
+    let creatable: number[] = [];
+    try {
+      const res = await getCreatableDocTypes(t.id);
+      creatable = res?.docTypes ?? [];
+    } catch {
+      return false;
+    }
+    // 预付单(1)在当前节点不可发起则不打扰
+    if (!creatable.includes(1)) return false;
+    try {
+      await ElMessageBox.confirm(
+        `运力已派完，是否立即为任务单「${t.taskNo}」创建预付单？`,
+        '创建预付单',
+        {
+          type: 'info',
+          confirmButtonText: '立即创建',
+          cancelButtonText: '暂不创建'
+        }
+      );
+    } catch {
+      return false;
+    }
+    actionTask.value = t;
+    financeInitDocType.value = 1;
+    financeInitIsFinal.value = 0;
+    financeEditVisible.value = true;
+    return true;
+  };
+
   const onDispatchDone = async () => {
     const t = actionTask.value;
     if (!t?.id) {
@@ -415,11 +464,14 @@
     }
     let updated: Task | null = null;
     try {
-      updated = await getTask(t.id);
+      updated = (await getTask(t.id)) ?? null;
     } catch {
       updated = null;
     }
     reload();
+    if (await maybePromptPrepay(updated)) {
+      return;
+    }
     if (
       updated &&
       updated.carrierType === CARRIER_TYPE.SELF &&
@@ -463,6 +515,15 @@
       return;
     }
     if (act.openSettlement) {
+      financeInitDocType.value = 3;
+      financeInitIsFinal.value = 1;
+      financeEditVisible.value = true;
+      return;
+    }
+    if (act.openFinance) {
+      // 不预设类型：由弹框按当前节点配置过滤，通常落到预付单
+      financeInitDocType.value = undefined;
+      financeInitIsFinal.value = undefined;
       financeEditVisible.value = true;
       return;
     }

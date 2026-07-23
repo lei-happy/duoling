@@ -20,6 +20,7 @@
 | 06 | [审批中心](./06.审批中心.md) | approval（flow、center） |
 | 07 | [工作台与洞察](./07.工作台与洞察.md) | workbench（activities、todo）、insight（cockpit、profit） |
 | 08 | [AI 数字人](./08.AI数字人.md) | ai/client（chat、session、employee、file）+ security 脱敏 |
+| 13 | [任务费用单发起节点](./13.任务费用单发起节点.md) | task_finance 发起节点配置（finance_stage_rules、system_config 懒补齐） |
 
 缺陷统一登记：[缺陷记录.md](./缺陷记录.md)（不改 `00.缺陷台账/README.md`）。
 
@@ -63,6 +64,8 @@ python -m pytest tests/client -v
 | `test_billing_freight_match.py` | 集成(租户库) | 合同+费率创建后 preview 命中（TC-CLI-BILLING-101） |
 | `test_task_dispatch.py` | 集成(租户库) | 任务创建+运单挂接、候选 cargo、单号唯一 |
 | `test_ai_employee.py` | 集成(平台库) | 启用数字员工列表、按 code 查询、工具绑定 |
+| `test_task_finance_stage_rules.py` | 纯逻辑 | 费用单发起节点规则解析/判定/校验（TC-CLI-FINSTAGE-001~018） |
+| `test_task_finance_stage_service.py` | 集成(租户库) | 发起节点 create_doc 硬拦截、creatable、懒补齐幂等（TC-CLI-FINSTAGE-101~106） |
 
 ## 四、执行结果概览
 
