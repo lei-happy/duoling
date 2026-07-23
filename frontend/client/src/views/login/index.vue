@@ -505,7 +505,7 @@
       } else {
         activeStop.value += 1;
       }
-    }, 1400);
+    }, 3000);
     timers.push(timer);
   };
 
@@ -1221,7 +1221,7 @@
     left: 6px;
     width: 0;
     background: #fff;
-    transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: width 1.8s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .chain-rail-done.no-anim {
@@ -1241,7 +1241,7 @@
     box-shadow:
       0 0 0 4px rgba(255, 255, 255, 0.22),
       0 0 12px rgba(255, 255, 255, 0.65);
-    transition: left 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: left 1.8s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .chain-stops {
