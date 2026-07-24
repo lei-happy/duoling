@@ -53,6 +53,9 @@ Thumbs.db
 # ---- 日志 ----
 logs/
 *.log
+# 例外：开放平台「调用记录」是前端源码目录，并非运行日志，需纳入版本管理
+!frontend/client/src/views/open-platform/logs/
+!frontend/client/src/views/open-platform/logs/**
 
 # ---- 缓存 ----
 .cache/
