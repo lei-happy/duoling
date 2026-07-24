@@ -9,6 +9,7 @@ import insight from './insight';
 import ecosystem from './ecosystem';
 import logCenter from './log-center';
 import enterprise from './enterprise';
+import openPlatform from './open-platform';
 
 /**
  * 各一级模块的总览配置注册表。
@@ -24,7 +25,8 @@ const configs: Record<string, ModuleOverviewConfig> = {
   insight,
   ecosystem,
   'log-center': logCenter,
-  enterprise
+  enterprise,
+  'open-platform': openPlatform
 };
 
 /**

@@ -10367,6 +10367,226 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_open_call_log",
+      "comment": "开放平台调用审计",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "app_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调用方应用 open_app.id"
+        },
+        {
+          "name": "capability_code",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "",
+          "comment": "能力码"
+        },
+        {
+          "name": "channel",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "api / mcp"
+        },
+        {
+          "name": "client_ip",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "",
+          "comment": "来源 IP"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "credential_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调用方凭证 open_credential.id"
+        },
+        {
+          "name": "error_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "",
+          "comment": "错误码"
+        },
+        {
+          "name": "http_status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "HTTP 状态码"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "latency_ms",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "耗时毫秒"
+        },
+        {
+          "name": "method",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "",
+          "comment": "HTTP 方法"
+        },
+        {
+          "name": "params_masked",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "脱敏入参"
+        },
+        {
+          "name": "path",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "",
+          "comment": "请求路径"
+        },
+        {
+          "name": "request_id",
+          "type": "VARCHAR(48)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "全局请求号"
+        },
+        {
+          "name": "result_summary",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "",
+          "comment": "结果摘要"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "success / failed / denied"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "user_agent",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "",
+          "comment": "UA"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "ix_ocl_app",
+          "columns": [
+            "app_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_ocl_cap",
+          "columns": [
+            "capability_code"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_ocl_created",
+          "columns": [
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_ocl_reqid",
+          "columns": [
+            "request_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_ocl_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_operation_log",
       "comment": "操作日志表",
       "table_tier": "core",

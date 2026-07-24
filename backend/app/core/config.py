@@ -65,6 +65,15 @@ class Settings(BaseSettings):
     # ---- 跨域 ----
     CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:5174"]
 
+    # ---- 开放平台（数据面） ----
+    # 对外暴露的开放平台入口根地址（生成 MCP 配置 / 文档示例用）。末尾不带斜杠。
+    # 生产环境应指向独立子域，如 https://openapi.zhitu.com
+    OPEN_PLATFORM_BASE_URL: str = "http://localhost:8000"
+    # 单凭证每分钟调用上限（<=0 表示不限）
+    OPEN_RATE_LIMIT_PER_MIN: int = 600
+    # 签名时间戳允许偏移（秒）
+    OPEN_TIMESTAMP_WINDOW_SEC: int = 300
+
     # ---- 前端站点根 URL ----
     # 用于拼接外发邀请链接（如承运商邀请激活落地页 `${FRONTEND_BASE_URL}/invite-landing/{code}`）。
     # 开发环境通常配 `http://192.168.x.x:5174`，生产环境配域名（如 `https://app.zhitu.com`）。

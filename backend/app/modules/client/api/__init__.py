@@ -88,6 +88,7 @@ from app.modules.client.api.insight.cockpit import router as insight_cockpit_rou
 from app.modules.client.api.insight.profit import router as insight_profit_router
 from app.modules.client.api.approval import router as approval_router
 from app.modules.ai.api.client import router as ai_client_router
+from app.modules.open_platform.management.api import router as open_platform_router
 
 router = APIRouter()
 
@@ -331,3 +332,9 @@ router.include_router(
 )
 router.include_router(approval_router, prefix="/approval", tags=["客户端-审批中心"])
 router.include_router(ai_client_router, prefix="/ai", tags=["客户端-AI数字员工"])
+router.include_router(
+    open_platform_router,
+    prefix="/open-platform",
+    tags=["客户端-开放平台"],
+    dependencies=[Depends(require_feature("open_platform"))],
+)

@@ -81,7 +81,12 @@ const SUBMENU_ICON_BY_PATH: Record<string, string> = {
   '/enterprise/approval-config': 'sub-approval-config',
   '/enterprise/basic-data': 'sub-basic-data',
   '/enterprise/business-entity': 'sub-business-entity',
-  '/enterprise/config': 'sub-sys-config'
+  '/enterprise/config': 'sub-sys-config',
+  // 开放平台
+  '/open-platform/apps': 'sub-open-apps',
+  '/open-platform/capabilities': 'sub-open-capability',
+  '/open-platform/docs': 'sub-open-docs',
+  '/open-platform/logs': 'sub-open-logs'
 };
 
 /**

@@ -763,5 +763,16 @@
     "required_tables": null,
     "sort_order": 102,
     "status": 1
+  },
+  {
+    "feature_code": "open_platform",
+    "feature_name": "开放平台",
+    "module": "open_platform",
+    "description": "对外 API 接口与远程 MCP 服务：接入应用、密钥、能力目录、MCP 配置、调用审计",
+    "required_tables": [
+      "biz_open_call_log"
+    ],
+    "sort_order": 110,
+    "status": 1
   }
 ]

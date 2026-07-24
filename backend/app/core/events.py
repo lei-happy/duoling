@@ -62,6 +62,12 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"审批中心回调注册失败（不影响其他服务）：{e!r}")
 
+    # 开放平台：1) 平台库 open_* 表自动建；2) 反射 @register_capability 同步到 open_capability
+    try:
+        await _bootstrap_open_platform()
+    except Exception as e:
+        logger.warning(f"开放平台模块启动初始化失败（不影响其他服务）：{e!r}")
+
     logger.info("智途(ZhiTu)后端服务启动完成")
 
     yield
@@ -132,6 +138,49 @@ def _register_approval_callbacks() -> None:
     )
 
     register_social_capacity()
+
+
+async def _bootstrap_open_platform() -> None:
+    """开放平台模块启动初始化
+
+    1) 自动创建平台库 open_* 元数据表（不存在则建，便于本地/首启免手动迁移）
+    2) 加载内置 @register_capability 能力，upsert 到 open_capability 表
+    """
+    from sqlalchemy import inspect as sa_inspect
+
+    from app.core.database import PlatformBase
+
+    # 触发模型与能力注册
+    import app.modules.open_platform.models.platform  # noqa: F401
+    from app.modules.open_platform import capabilities as _caps  # noqa: F401
+    from app.modules.open_platform.services.capability_service import CapabilityService
+
+    engine = db_manager.platform_engine
+    open_tables = [
+        t for t in PlatformBase.metadata.sorted_tables if t.name.startswith("open_")
+    ]
+    if open_tables:
+        async with engine.connect() as conn:
+            existing = await conn.run_sync(
+                lambda sync_conn: sa_inspect(sync_conn).get_table_names()
+            )
+        missing = [t for t in open_tables if t.name not in existing]
+        if missing:
+            async with engine.begin() as conn:
+                await conn.run_sync(
+                    lambda sync_conn: PlatformBase.metadata.create_all(
+                        sync_conn, tables=missing
+                    )
+                )
+            logger.info(f"[开放平台] 平台库 open_* 表已自动创建: {[t.name for t in missing]}")
+
+    factory = db_manager._platform_session_factory  # noqa: SLF001
+    if factory is None:
+        return
+    async with factory() as session:
+        n = await CapabilityService.sync_to_db(session)
+        await session.commit()
+    logger.info(f"[开放平台] 能力目录同步完成：{n} 项能力")
 
 
 async def _bootstrap_ai_module() -> None:

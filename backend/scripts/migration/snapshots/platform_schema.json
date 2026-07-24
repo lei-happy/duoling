@@ -1257,6 +1257,575 @@
       "foreign_keys": []
     },
     {
+      "name": "open_app",
+      "comment": "开放平台接入应用",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "description",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "",
+          "comment": "用途备注"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "应用名称（用户填，如“我们的 ERP”）"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "enabled",
+          "comment": "enabled 启用 / disabled 停用"
+        },
+        {
+          "name": "tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属租户"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "ix_open_app_tenant",
+          "columns": [
+            "tenant_code"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "open_capability",
+      "comment": "开放平台能力目录",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "category",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "",
+          "comment": "分类"
+        },
+        {
+          "name": "channels",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支持通道 ['api','mcp']"
+        },
+        {
+          "name": "code",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": "auto",
+          "server_default": null,
+          "comment": "能力码，如 waybill.query"
+        },
+        {
+          "name": "description",
+          "type": "VARCHAR(512)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "",
+          "comment": "说明"
+        },
+        {
+          "name": "input_schema",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "入参 JSON Schema"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "业务名称"
+        },
+        {
+          "name": "output_fields",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "对外可见字段白名单"
+        },
+        {
+          "name": "read_only",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否只读 1-是 0-否"
+        },
+        {
+          "name": "risk_level",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "low",
+          "comment": "low / high"
+        },
+        {
+          "name": "sensitive_fields",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "脱敏字段"
+        },
+        {
+          "name": "sort_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "展示排序"
+        },
+        {
+          "name": "stability",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "stable",
+          "comment": "beta / stable / deprecated / offline"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "enabled",
+          "comment": "enabled / disabled"
+        },
+        {
+          "name": "version",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "v1",
+          "comment": "契约版本"
+        }
+      ],
+      "primary_key": [
+        "code"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "ix_open_cap_category",
+          "columns": [
+            "category"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_open_cap_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "open_credential",
+      "comment": "开放平台接入凭证",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "access_key",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "AppKey(ak_) 或 MCP(mcp_) 公开标识"
+        },
+        {
+          "name": "app_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属应用 open_app.id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "cred_type",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "api / mcp"
+        },
+        {
+          "name": "expires_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "到期时间，NULL=长期有效"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "ip_whitelist",
+          "type": "VARCHAR(512)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "",
+          "comment": "来源 IP 白名单（逗号分隔），空=不限"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_used_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近调用时间"
+        },
+        {
+          "name": "scope",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "授权能力码白名单，如 ['waybill.query']"
+        },
+        {
+          "name": "secret_store",
+          "type": "VARCHAR(256)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证机密：API=可解密密文（供 HMAC 校验）/ MCP=Token 哈希；永不存明文原样"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "enabled",
+          "comment": "enabled 启用 / disabled 停用 / revoked 已吊销"
+        },
+        {
+          "name": "tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "冗余租户，便于数据面单表定位租户"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "ix_open_cred_app",
+          "columns": [
+            "app_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_open_cred_tenant",
+          "columns": [
+            "tenant_code"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_open_cred_ak",
+          "columns": [
+            "access_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "open_mcp_config",
+      "comment": "开放平台 MCP 配置",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "app_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属应用 open_app.id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "credential_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "绑定的 MCP 凭证 open_credential.id"
+        },
+        {
+          "name": "display_name",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "用户自定义连接名称（可改，不影响连接）"
+        },
+        {
+          "name": "enabled_capabilities",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "暴露为 MCP Tool 的能力码"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "server_slug",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "URL 路径片段（唯一），如 7f3a9c2e"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "enabled",
+          "comment": "enabled 启用 / disabled 停用"
+        },
+        {
+          "name": "tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "冗余租户，便于数据面定位"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "ix_open_mcp_app",
+          "columns": [
+            "app_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "ix_open_mcp_tenant",
+          "columns": [
+            "tenant_code"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_open_mcp_slug",
+          "columns": [
+            "server_slug"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "open_register_task",
       "comment": "官网企业注册异步任务",
       "table_tier": null,

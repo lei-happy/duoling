@@ -64,6 +64,8 @@ class TenantMiddleware:
         "/api/driver/auth/sms-login",
         "/api/driver/auth/refresh",
         "/api/open/",
+        "/openapi/v1/",
+        "/mcp/",
         "/docs",
         "/redoc",
         "/openapi.json",

@@ -26,3 +26,8 @@ def import_all_models() -> None:
         import app.modules.open.models  # noqa: F401
     except Exception:
         pass
+    # 开放平台（含 platform/* 与 tenant/*）
+    try:
+        import app.modules.open_platform.models  # noqa: F401
+    except Exception:
+        pass

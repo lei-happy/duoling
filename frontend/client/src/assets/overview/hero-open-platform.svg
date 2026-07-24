@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" fill="none">
+  <defs>
+    <linearGradient id="opHub" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b8cff" /><stop offset="1" stop-color="#3b5bdb" /></linearGradient>
+    <linearGradient id="opCard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#eef2ff" /></linearGradient>
+    <linearGradient id="opAI" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2ed3c0" /><stop offset="1" stop-color="#12b8a6" /></linearGradient>
+    <linearGradient id="opKey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc879" /><stop offset="1" stop-color="#f59f00" /></linearGradient>
+  </defs>
+
+  <!-- backdrop dots + ground shadow -->
+  <g fill="#c7d4ff" opacity="0.55">
+    <circle cx="66" cy="72" r="3" /><circle cx="92" cy="72" r="3" /><circle cx="66" cy="98" r="3" /><circle cx="92" cy="98" r="3" />
+  </g>
+  <ellipse cx="320" cy="322" rx="250" ry="20" fill="#000000" opacity="0.03" />
+
+  <!-- connection lines from hub to nodes -->
+  <g stroke="#9db6ff" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="2 8" opacity="0.85">
+    <path d="M320 180 L128 108" />
+    <path d="M320 180 L132 250" />
+    <path d="M320 180 L512 104" />
+    <path d="M320 180 L516 250" />
+  </g>
+
+  <!-- node: external system (ERP window, top-left) -->
+  <g>
+    <rect x="60" y="74" width="128" height="86" rx="12" fill="url(#opCard)" stroke="#d7e0ff" stroke-width="1.5" />
+    <path d="M60 86a12 12 0 0 1 12-12h104a12 12 0 0 1 12 12v10H60z" fill="#3b5bdb" opacity="0.9" />
+    <g fill="#ffffff" opacity="0.9"><circle cx="74" cy="85" r="2.4" /><circle cx="84" cy="85" r="2.4" /><circle cx="94" cy="85" r="2.4" /></g>
+    <g fill="#c3cffb"><rect x="74" y="108" width="60" height="8" rx="4" /><rect x="74" y="124" width="100" height="7" rx="3.5" /><rect x="74" y="138" width="72" height="7" rx="3.5" /></g>
+  </g>
+
+  <!-- node: API key (bottom-left) -->
+  <g>
+    <rect x="66" y="220" width="120" height="62" rx="12" fill="url(#opCard)" stroke="#d7e0ff" stroke-width="1.5" />
+    <circle cx="98" cy="251" r="12" fill="none" stroke="url(#opKey)" stroke-width="4" />
+    <path d="M108 251h34M132 251v10M142 251v8" stroke="url(#opKey)" stroke-width="4" stroke-linecap="round" />
+    <g fill="#c3cffb"><rect x="70" y="266" width="70" height="6" rx="3" /></g>
+  </g>
+
+  <!-- node: AI tool (chat + spark, top-right) -->
+  <g>
+    <rect x="452" y="70" width="126" height="80" rx="14" fill="url(#opCard)" stroke="#cdeee9" stroke-width="1.5" />
+    <path d="M472 92h86a8 8 0 0 1 8 8v18a8 8 0 0 1-8 8h-52l-14 12v-12h-20a8 8 0 0 1-8-8v-18a8 8 0 0 1 8-8z" fill="url(#opAI)" opacity="0.92" />
+    <path d="M498 100l2.4 5.4 5.4 2.4-5.4 2.4-2.4 5.4-2.4-5.4-5.4-2.4 5.4-2.4z" fill="#ffffff" />
+    <g fill="#ffffff" opacity="0.85"><rect x="512" y="104" width="42" height="6" rx="3" /><rect x="512" y="115" width="30" height="6" rx="3" /></g>
+  </g>
+
+  <!-- node: AI tool 2 (bottom-right, code) -->
+  <g>
+    <rect x="456" y="222" width="120" height="62" rx="12" fill="url(#opCard)" stroke="#cdeee9" stroke-width="1.5" />
+    <path d="M486 240l-10 13 10 13" stroke="#12b8a6" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M508 240l10 13-10 13" stroke="#12b8a6" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M499 236l-6 34" stroke="#8fe3d8" stroke-width="3.2" stroke-linecap="round" />
+  </g>
+
+  <!-- central hub: open platform -->
+  <g>
+    <circle cx="320" cy="180" r="66" fill="#3b5bdb" opacity="0.08" />
+    <circle cx="320" cy="180" r="52" fill="url(#opHub)" />
+    <circle cx="320" cy="180" r="52" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.35" />
+    <!-- plug / gateway glyph -->
+    <path d="M312 156v10M328 156v10" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" />
+    <path d="M305 166h30v9a15 15 0 0 1-30 0z" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linejoin="round" />
+    <path d="M320 190v14" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" />
+    <circle cx="320" cy="208" r="4" fill="#ffffff" />
+  </g>
+
+  <!-- shield badge (secure), tucked at hub's lower-right -->
+  <g>
+    <path d="M360 206l20 5.6v14.6c0 13.6-9 21.8-20 26.2-11-4.4-20-12.6-20-26.2v-14.6z" fill="url(#opCard)" stroke="#d7e0ff" stroke-width="1.5" />
+    <path d="M351 226.5l6 6 11-11.5" stroke="#3b5bdb" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

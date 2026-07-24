@@ -71,6 +71,17 @@ python -m scripts.migration.platform_migrate --status
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+主应用已同进程挂载开放平台控制面（`/api/client/open-platform/*`）与数据面
+（`/openapi/v1/*`、`/mcp/{slug}`），本地开发一条命令即可。
+
+如需模拟线上「数据面单独起」（独立进程，避免与业务接口抢资源），再开一个终端启动：
+
+```bash
+uvicorn app.open_main:app --reload --port 8100
+```
+
+生产环境由 `deploy/docker` 的 `openapi` 容器承载 `app.open_main:app`，经 `api.zhitu.me` 反代。
+
 ### 6. 访问 API 文档
 
 - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)

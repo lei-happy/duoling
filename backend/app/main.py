@@ -19,6 +19,8 @@ from app.modules.console.api import router as console_router
 from app.modules.client.api import router as client_router
 from app.modules.driver.api import router as driver_router
 from app.modules.open.api import router as open_router
+from app.modules.open_platform.dataplane.rest import router as openapi_rest_router
+from app.modules.open_platform.dataplane.mcp import router as openapi_mcp_router
 
 
 def create_app() -> FastAPI:
@@ -55,6 +57,10 @@ def create_app() -> FastAPI:
     app.include_router(client_router, prefix="/api/client", tags=["客户端"])
     app.include_router(driver_router, prefix="/api/driver", tags=["司机端"])
     app.include_router(open_router, prefix="/api/open", tags=["开放接口"])
+
+    # ---- 开放平台数据面（本地开发同进程挂载；生产由独立进程 app/open_main.py 承载） ----
+    app.include_router(openapi_rest_router, prefix="/openapi/v1", tags=["开放平台-REST"])
+    app.include_router(openapi_mcp_router, prefix="/mcp", tags=["开放平台-MCP"])
 
     # ---- 静态资源（上传文件） ----
     uploads_dir = Path(__file__).resolve().parent.parent / "uploads"

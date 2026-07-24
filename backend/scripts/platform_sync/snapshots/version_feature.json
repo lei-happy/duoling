@@ -17,6 +17,7 @@
     "capacity_self_log",
     "capacity_self_trailer",
     "capacity_self_vehicle",
+    "open_platform",
     "partner_inbound"
   ],
   "pro": [
@@ -84,6 +85,7 @@
     "fleet_compliance",
     "fleet_maintenance",
     "log_center",
+    "open_platform",
     "partner_carrier",
     "partner_customer",
     "partner_inbound",
@@ -135,6 +137,7 @@
     "capacity_social_list",
     "finance_payable",
     "fleet_compliance",
+    "open_platform",
     "partner_carrier",
     "partner_customer",
     "partner_inbound"
@@ -167,6 +170,7 @@
     "capacity_social_approval",
     "capacity_social_list",
     "fleet_compliance",
-    "log_center"
+    "log_center",
+    "open_platform"
   ]
 }
