@@ -5484,6 +5484,15 @@
           "comment": "状态 0-草稿 1-待审核 2-审核未通过 3-展示中 4-已锁定 5-履约中 6-已完成 7-已下架 9-已取消"
         },
         {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "进入审核队列的时间（队列排序与 SLA 基准，不能用 created_at 替代）"
+        },
+        {
           "name": "title",
           "type": "VARCHAR(120)",
           "nullable": false,
@@ -5644,7 +5653,7 @@
           "name": "idx_eco_post_audit",
           "columns": [
             "audit_status",
-            "created_at"
+            "submitted_at"
           ],
           "unique": false
         },
@@ -5717,7 +5726,7 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "动作 1-提交 2-通过 3-驳回 4-重新提交 5-主动下架 6-到期下架 7-强制下架 8-源单失效下架 9-成交下架 10-重新上架 11-免审直通 12-抽检通过 13-抽检不通过 14-编辑"
+          "comment": "动作 1-提交 2-通过 3-驳回 4-重新提交 5-主动下架 6-到期下架 7-强制下架 8-源单失效下架 9-成交下架 10-重新上架 11-免审直通 12-抽检通过 13-抽检不通过 14-编辑 15-延长展示"
         },
         {
           "name": "changed_fields",
@@ -5825,7 +5834,7 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "原因编码（驳回原因/下架原因）"
+          "comment": "原因编码（驳回/强制下架原因，见 constants.PostRejectReason）"
         },
         {
           "name": "to_status",
@@ -6830,6 +6839,24 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "操作人（人工授予时）"
+        },
+        {
+          "name": "whitelist_revoke_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近被移出白名单的原因"
+        },
+        {
+          "name": "whitelist_revoked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近被移出白名单的时间"
         },
         {
           "name": "whitelist_source",
