@@ -93,10 +93,7 @@
           v-if="item.vehicleTypeLabel || item.ratingLevel"
           class="sc-card__vehicle-tags"
         >
-          <span
-            v-if="item.ratingLevel"
-            class="sc-card__rating"
-          >
+          <span v-if="item.ratingLevel" class="sc-card__rating">
             {{ ratingLabel }}级
           </span>
           <dict-data

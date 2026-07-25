@@ -137,8 +137,7 @@
     }
 
     const todoHeightPx = getTodoRegionHeightPx();
-    const activitiesHeightPx =
-      quickEl.offsetHeight + STACK_GAP + todoHeightPx;
+    const activitiesHeightPx = quickEl.offsetHeight + STACK_GAP + todoHeightPx;
     const nextTodoHeight = `${todoHeightPx}px`;
     const nextActivitiesHeight = `${activitiesHeightPx}px`;
 
@@ -151,8 +150,7 @@
 
     if (profileEl) {
       const quickTop = quickEl.getBoundingClientRect().top;
-      const naturalTop =
-        profileEl.getBoundingClientRect().bottom + STACK_GAP;
+      const naturalTop = profileEl.getBoundingClientRect().bottom + STACK_GAP;
       const offset = Math.round(quickTop - naturalTop);
       const nextOffset = offset !== 0 ? `${offset}px` : undefined;
       if (activitiesTopOffset.value !== nextOffset) {

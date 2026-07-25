@@ -112,10 +112,7 @@
       @done="reload"
     />
 
-    <driver-fund-account
-      v-model:visible="fundVisible"
-      :driver="fundDriver"
-    />
+    <driver-fund-account v-model:visible="fundVisible" :driver="fundDriver" />
 
     <el-dialog
       v-model="hrStatusVisible"

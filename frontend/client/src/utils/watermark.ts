@@ -88,9 +88,14 @@ export function resolveWatermarkContent(
     datetime: formatDateTime(now, true)
   };
 
-  return source.split('\n').map((line) =>
-    line.replace(/\{(\w+)\}/g, (match, key: string) => variables[key] ?? match)
-  );
+  return source
+    .split('\n')
+    .map((line) =>
+      line.replace(
+        /\{(\w+)\}/g,
+        (match, key: string) => variables[key] ?? match
+      )
+    );
 }
 
 export function parseWatermarkStyle(json?: string): WatermarkStyleConfig {
@@ -165,7 +170,10 @@ export function buildWatermarkFont(
 ): WatermarkFontStyle {
   let color = style.color;
   if (darkMode && color.includes('0, 0, 0')) {
-    color = color.replace(/rgba?\(\s*0\s*,\s*0\s*,\s*0\s*,/i, 'rgba(255, 255, 255,');
+    color = color.replace(
+      /rgba?\(\s*0\s*,\s*0\s*,\s*0\s*,/i,
+      'rgba(255, 255, 255,'
+    );
   }
   return {
     color,
@@ -205,7 +213,8 @@ export function createWatermarkPattern(
   const textWidth = Math.ceil(
     Math.max(...lines.map((line) => ctx.measureText(line).width))
   );
-  const textHeight = font.fontSize * lines.length + (lines.length - 1) * lineGap;
+  const textHeight =
+    font.fontSize * lines.length + (lines.length - 1) * lineGap;
   const angle = (Math.PI / 180) * rotate;
   const absCos = Math.abs(Math.cos(angle));
   const absSin = Math.abs(Math.sin(angle));

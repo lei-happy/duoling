@@ -32,9 +32,7 @@
       <el-empty :image-size="72">
         <template #description>
           <p class="quick-action-empty__desc">暂无快捷操作</p>
-          <p class="quick-action-empty__tip">
-            点击添加常用操作
-          </p>
+          <p class="quick-action-empty__tip"> 点击添加常用操作 </p>
         </template>
       </el-empty>
     </div>

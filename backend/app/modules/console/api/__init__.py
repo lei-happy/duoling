@@ -34,6 +34,13 @@ from app.modules.console.api.ops import autohome_sync_router, dealer_sync_router
 from app.modules.console.api.system.open_register_policy import (
     router as open_register_policy_router,
 )
+from app.modules.console.api.system.sensitive_word import (
+    router as sensitive_word_router,
+)
+from app.modules.console.api.ecosystem import (
+    eco_audit_router,
+    eco_whitelist_router,
+)
 from app.modules.console.api.driver import router as driver_router
 from app.modules.console.api.capacity import router as capacity_router
 from app.modules.console.api.doc_center import router as doc_center_router
@@ -58,6 +65,9 @@ router.include_router(feedback_router, prefix="/feedback", tags=["管理后台-�
 router.include_router(dict_router, prefix="/system/dictionary", tags=["数据字典"])
 router.include_router(dict_data_router, prefix="/system/dictionary-data", tags=["字典数据"])
 router.include_router(client_menu_router, prefix="/system/client-menu", tags=["客户端菜单管理"])
+router.include_router(
+    sensitive_word_router, prefix="/system/sensitive-word", tags=["敏感词库"]
+)
 router.include_router(sms_code_router, prefix="/system/sms-code", tags=["短信验证码"])
 router.include_router(log_center_router, prefix="/log-center", tags=["日志中心"])
 router.include_router(region_router, prefix="/basic-data/region", tags=["管理后台-地区数据"])
@@ -88,6 +98,14 @@ router.include_router(
     open_register_policy_router,
     prefix="/system/open-register-policy",
     tags=["管理后台-自助注册策略"],
+)
+router.include_router(
+    eco_audit_router, prefix="/ecosystem/posts", tags=["管理后台-服务平台审核"]
+)
+router.include_router(
+    eco_whitelist_router,
+    prefix="/ecosystem/audit-whitelist",
+    tags=["管理后台-服务平台免审白名单"],
 )
 router.include_router(driver_router, prefix="/driver", tags=["管理后台-平台司机"])
 router.include_router(capacity_router, prefix="/capacity", tags=["管理后台-平台运力"])

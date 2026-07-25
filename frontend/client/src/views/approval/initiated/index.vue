@@ -44,7 +44,10 @@
   import InitiatedSearch from '../components/initiated-search.vue';
   import ApprovalDetailDrawer from '../components/approval-detail-drawer.vue';
   import { listInitiated } from '@/api/approval';
-  import type { ApprovalListItem, ApprovalListParam } from '@/api/approval/model';
+  import type {
+    ApprovalListItem,
+    ApprovalListParam
+  } from '@/api/approval/model';
   import { formatDateTime } from '@/utils/date-util';
   import {
     instanceStatusLabel as statusLabel,

@@ -1,9 +1,6 @@
 import request from '@/utils/request';
 import type { ApiResult } from '@/api';
-import type {
-  TaskLoadingRecord,
-  TaskLoadingRecordPayload
-} from './model';
+import type { TaskLoadingRecord, TaskLoadingRecordPayload } from './model';
 
 /** 列出某任务的全部装卸事件 */
 export async function listLoadingRecords(taskId: number) {

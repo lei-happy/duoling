@@ -33,7 +33,9 @@ export async function approvalStats() {
 }
 
 export async function getApprovalDetail(id: number) {
-  const res = await request.get<ApiResult<SocialCapacityDetail>>(`${BASE}/${id}`);
+  const res = await request.get<ApiResult<SocialCapacityDetail>>(
+    `${BASE}/${id}`
+  );
   if (res.data.code === 0) {
     return res.data.data;
   }

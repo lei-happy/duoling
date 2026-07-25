@@ -3047,6 +3047,4113 @@
       "foreign_keys": []
     },
     {
+      "name": "sys_eco_block_rule",
+      "comment": "服务平台屏蔽名单",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "blocked_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被屏蔽方租户"
+        },
+        {
+          "name": "blocked_tenant_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被屏蔽方企业名（快照）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人 user_id"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注（仅设置方可见）"
+        },
+        {
+          "name": "tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "设置方租户"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_eco_block",
+          "columns": [
+            "tenant_code",
+            "blocked_tenant_code"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_block_blocked",
+          "columns": [
+            "blocked_tenant_code",
+            "tenant_code"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_capacity_post",
+      "comment": "服务平台运力挂牌扩展",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "can_invoice",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否可开票 0-否 1-是"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "departure_ready_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "可出发时间（车在途时填预计到达当前地时间）"
+        },
+        {
+          "name": "driver_display",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "司机对外展示串，如「王师傅」"
+        },
+        {
+          "name": "driver_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "司机姓名（原值，永不对外返回）"
+        },
+        {
+          "name": "driver_order_count",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "司机历史完成单数（统计快照）"
+        },
+        {
+          "name": "driver_years",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驾龄（年）"
+        },
+        {
+          "name": "good_at_categories",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "擅长货物类别数组"
+        },
+        {
+          "name": "has_insurance",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否有承运保险 0-否 1-是"
+        },
+        {
+          "name": "has_trailer",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否带挂 0-否 1-是"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "invoice_type",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "票种"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "pickup_radius",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "可接受取货半径（公里）"
+        },
+        {
+          "name": "plate_masked",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车牌号（打码值，认证层展示）"
+        },
+        {
+          "name": "plate_number",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车牌号（原值，按层级脱敏后对外）"
+        },
+        {
+          "name": "plate_public",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否完全公开车牌 0-否 1-是"
+        },
+        {
+          "name": "post_granularity",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "挂牌粒度 1-指定车辆 2-车队打包"
+        },
+        {
+          "name": "post_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌ID（sys_eco_post.id）"
+        },
+        {
+          "name": "rated_load",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "核定载重（吨）"
+        },
+        {
+          "name": "service_promise",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "服务承诺（需过敏感内容拦截）"
+        },
+        {
+          "name": "settle_require",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "结算要求 1-现结 2-月结可接受 3-需预付"
+        },
+        {
+          "name": "slot_count",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "轿运车位数"
+        },
+        {
+          "name": "trailer_plate_number",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂车车牌"
+        },
+        {
+          "name": "truck_length",
+          "type": "NUMERIC(5, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车长（米）"
+        },
+        {
+          "name": "truck_quantity",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "车辆数量，指定车辆时为 1"
+        },
+        {
+          "name": "truck_type",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车辆类型"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_eco_capacity_post",
+          "columns": [
+            "post_id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_capacity_slot",
+          "columns": [
+            "truck_type",
+            "slot_count"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_cargo_post",
+      "comment": "服务平台货源挂牌扩展",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "allow_split",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否接受分批承运 0-否 1-是"
+        },
+        {
+          "name": "arrive_time",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "期望到达时间"
+        },
+        {
+          "name": "cargo_category",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "货物类别 1-商品车 2-普货 3-其他"
+        },
+        {
+          "name": "cargo_items",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "商品车明细 [{brand,series,quantity}]，不含 VIN"
+        },
+        {
+          "name": "cargo_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "普货货物名称"
+        },
+        {
+          "name": "cargo_volume",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "普货体积（立方）"
+        },
+        {
+          "name": "cargo_weight",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "普货重量（吨）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "freq_desc",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预计货量频次，如「每周 3~5 车」"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "other_requirements",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "其他要求（需过敏感内容拦截）"
+        },
+        {
+          "name": "package_type",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "普货包装方式"
+        },
+        {
+          "name": "post_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌ID（sys_eco_post.id）"
+        },
+        {
+          "name": "prepay_ratio",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预付比例（%）"
+        },
+        {
+          "name": "reference_mileage",
+          "type": "NUMERIC(10, 1)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "参考里程（公里）"
+        },
+        {
+          "name": "require_insurance",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否需要承运方投保 0-否 1-是"
+        },
+        {
+          "name": "require_slot_max",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "需要轿运车位数上限"
+        },
+        {
+          "name": "require_slot_min",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "需要轿运车位数下限"
+        },
+        {
+          "name": "require_truck_types",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "需要车型编码数组"
+        },
+        {
+          "name": "segment_count",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "分段数量"
+        },
+        {
+          "name": "settle_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "结算方式 1-现结 2-月结 3-预付"
+        },
+        {
+          "name": "time_negotiable",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "时间是否可协商 0-否 1-是"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "vehicle_condition",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车辆状态 1-新车 2-二手车 3-试驾车"
+        },
+        {
+          "name": "via_points",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "途经点数组"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_eco_cargo_post",
+          "columns": [
+            "post_id"
+          ]
+        }
+      ],
+      "indexes": [],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_deal",
+      "comment": "服务平台成交单",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "auto_completed",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否系统自动完成（送达 +7 天）0-否 1-是"
+        },
+        {
+          "name": "carrier_link_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 sys_carrier_link.id"
+        },
+        {
+          "name": "carrier_linked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否已建立承运商关系 0-否 1-是"
+        },
+        {
+          "name": "carrier_side",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运角色 1-挂牌方承运(运力大厅) 2-合作方承运(货源大厅)"
+        },
+        {
+          "name": "completed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "完成时间"
+        },
+        {
+          "name": "confirm_deadline",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承接方确认截止时间（选定 +24h）"
+        },
+        {
+          "name": "confirmed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "确认成交时间"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "current_milestone",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "当前履约节点 0-未开始 1-已安排车辆 2-已装车 3-运输中 4-已送达 5-已完成"
+        },
+        {
+          "name": "deal_no",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "成交编号"
+        },
+        {
+          "name": "deal_price",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "成交价"
+        },
+        {
+          "name": "deal_quantity",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "本次成交量"
+        },
+        {
+          "name": "driver_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运司机姓名（仅成交双方可见）"
+        },
+        {
+          "name": "driver_phone",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运司机电话（司机手机号进入平台库的唯一入口，仅成交双方可见）"
+        },
+        {
+          "name": "from_city",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "起点市（快照）"
+        },
+        {
+          "name": "from_name",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "起点展示串"
+        },
+        {
+          "name": "from_province",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "起点省（快照）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "intent_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被选定的意向ID（sys_eco_intent.id）"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "load_time",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "约定装车时间"
+        },
+        {
+          "name": "owner_contact_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌方联系人"
+        },
+        {
+          "name": "owner_contact_phone",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌方联系电话"
+        },
+        {
+          "name": "owner_evaluated",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "挂牌方是否已评价 0-否 1-是"
+        },
+        {
+          "name": "owner_task_backfilled",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "发布方是否已把承运方回填到自己的任务单 0-否 1-是"
+        },
+        {
+          "name": "owner_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌方租户"
+        },
+        {
+          "name": "owner_tenant_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌方企业名（快照）"
+        },
+        {
+          "name": "partner_contact_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "合作方联系人"
+        },
+        {
+          "name": "partner_contact_phone",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "合作方联系电话"
+        },
+        {
+          "name": "partner_evaluated",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "合作方是否已评价 0-否 1-是"
+        },
+        {
+          "name": "partner_task_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承接方任务单ID（二期运单直通预留，一期留空）"
+        },
+        {
+          "name": "partner_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "合作方租户"
+        },
+        {
+          "name": "partner_tenant_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "合作方企业名（快照）"
+        },
+        {
+          "name": "plate_number",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运车牌"
+        },
+        {
+          "name": "post_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌ID（sys_eco_post.id）"
+        },
+        {
+          "name": "post_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌类型（冗余）"
+        },
+        {
+          "name": "prepay_ratio",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预付比例（%）"
+        },
+        {
+          "name": "price_include_tax",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否含税 0-否 1-是"
+        },
+        {
+          "name": "price_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计价方式 1-包车 2-按台 3-按公里 4-面议"
+        },
+        {
+          "name": "quantity_unit",
+          "type": "VARCHAR(10)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "台",
+          "comment": "计量单位"
+        },
+        {
+          "name": "settle_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "结算方式 1-现结 2-月结 3-预付"
+        },
+        {
+          "name": "started_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开始履约时间"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-待确认 1-已成交 2-履约中 3-已完成 4-已终止"
+        },
+        {
+          "name": "terminate_by",
+          "type": "VARCHAR(32)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "终止发起方租户编码"
+        },
+        {
+          "name": "terminate_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "终止原因"
+        },
+        {
+          "name": "terminated_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "终止时间"
+        },
+        {
+          "name": "to_city",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "终点市（快照）"
+        },
+        {
+          "name": "to_name",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "终点展示串"
+        },
+        {
+          "name": "to_province",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "终点省（快照）"
+        },
+        {
+          "name": "trailer_plate_number",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运挂车车牌"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "deal_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_deal_deadline",
+          "columns": [
+            "status",
+            "confirm_deadline"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_deal_owner",
+          "columns": [
+            "owner_tenant_code",
+            "status",
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_deal_partner",
+          "columns": [
+            "partner_tenant_code",
+            "status",
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_deal_post",
+          "columns": [
+            "post_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_deal_route",
+          "columns": [
+            "from_province",
+            "to_province",
+            "status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_deal_milestone",
+      "comment": "服务平台履约节点上报",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "attachments",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "附件URL数组（装车照/回单）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "deal_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "成交单ID（sys_eco_deal.id）"
+        },
+        {
+          "name": "eta",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "预计到达时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "location",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "当前位置"
+        },
+        {
+          "name": "milestone_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "节点 1-已安排车辆 2-已装车 3-运输中 4-已送达 5-确认完成"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "节点发生时间"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reporter_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "上报人姓名"
+        },
+        {
+          "name": "reporter_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "上报方租户"
+        },
+        {
+          "name": "reporter_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "上报人 user_id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_eco_milestone_deal",
+          "columns": [
+            "deal_id",
+            "occurred_at"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_evaluation",
+      "comment": "服务平台合作互评",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "content",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "文字评价"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "deal_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "成交单ID（sys_eco_deal.id）"
+        },
+        {
+          "name": "from_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "评价方租户"
+        },
+        {
+          "name": "from_tenant_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "评价方企业名（快照）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_default",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否超时默认好评 0-否 1-是"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "post_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌ID（冗余）"
+        },
+        {
+          "name": "replied_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "回复时间"
+        },
+        {
+          "name": "reply",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被评方回复（仅一次）"
+        },
+        {
+          "name": "role",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "评价角色 1-货主评承运 2-承运评货主"
+        },
+        {
+          "name": "score",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "评分 1~5"
+        },
+        {
+          "name": "tags",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "评价标签数组"
+        },
+        {
+          "name": "to_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被评价方租户"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_eco_eval",
+          "columns": [
+            "deal_id",
+            "from_tenant_code"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_eval_to",
+          "columns": [
+            "to_tenant_code",
+            "created_at"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_intent",
+      "comment": "服务平台合作意向",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "accept_quantity",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "可承接量"
+        },
+        {
+          "name": "available_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "可配合时间止"
+        },
+        {
+          "name": "available_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "可配合时间起"
+        },
+        {
+          "name": "capability_desc",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能力描述（货源侧=可安排车型数量；运力侧=货物描述）"
+        },
+        {
+          "name": "contact_name",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发起方联系人"
+        },
+        {
+          "name": "contact_phone",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发起方联系电话"
+        },
+        {
+          "name": "contact_unlocked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "联系方式是否已双向解锁 0-否 1-是"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "decline_reason",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "婉拒原因 1-价格不合适 2-时间对不上 3-车型不匹配 4-已选其他 9-其他"
+        },
+        {
+          "name": "decline_remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "婉拒补充说明"
+        },
+        {
+          "name": "declined_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "婉拒时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "initiator_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发起人姓名"
+        },
+        {
+          "name": "initiator_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发起方租户"
+        },
+        {
+          "name": "initiator_tenant_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发起方企业全称（快照）"
+        },
+        {
+          "name": "initiator_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发起人 user_id"
+        },
+        {
+          "name": "intent_no",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "意向编号"
+        },
+        {
+          "name": "invalid_reason",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "失效原因 1-挂牌被他人成交 2-挂牌已下架 3-挂牌已过期"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_message_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最后留言时间"
+        },
+        {
+          "name": "message",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "首次附言（需过敏感内容拦截）"
+        },
+        {
+          "name": "offer_price",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "报价"
+        },
+        {
+          "name": "owner_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌归属租户（冗余，避免查「我收到的」时 join 主表）"
+        },
+        {
+          "name": "post_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌ID（sys_eco_post.id）"
+        },
+        {
+          "name": "post_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌类型（冗余）"
+        },
+        {
+          "name": "price_include_tax",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否含税 0-否 1-是"
+        },
+        {
+          "name": "price_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计价方式 1-包车 2-按台 3-按公里 4-面议"
+        },
+        {
+          "name": "ref_post_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联发起方自己的挂牌ID（两个大厅互引，可省一轮沟通）"
+        },
+        {
+          "name": "responded_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "响应时间（用于响应速度统计）"
+        },
+        {
+          "name": "selected_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被选定时间"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-待响应 1-洽谈中 2-已选定 3-已婉拒 4-已撤回 5-已失效"
+        },
+        {
+          "name": "unlocked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "解锁时间"
+        },
+        {
+          "name": "unread_initiator",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "发起方未读留言数"
+        },
+        {
+          "name": "unread_owner",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "挂牌方未读留言数"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "withdrawn_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤回时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "intent_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_intent_dup",
+          "columns": [
+            "post_id",
+            "initiator_tenant_code",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_intent_initiator",
+          "columns": [
+            "initiator_tenant_code",
+            "status",
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_intent_owner",
+          "columns": [
+            "owner_tenant_code",
+            "status",
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_intent_post",
+          "columns": [
+            "post_id",
+            "status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_intent_message",
+      "comment": "服务平台洽谈留言",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "attachments",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "附件URL数组"
+        },
+        {
+          "name": "content",
+          "type": "VARCHAR(1000)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "留言内容"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "intent_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "意向ID（sys_eco_intent.id）"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_read",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "对方是否已读 0-否 1-是"
+        },
+        {
+          "name": "read_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "已读时间"
+        },
+        {
+          "name": "sender_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发送人姓名"
+        },
+        {
+          "name": "sender_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发送方租户"
+        },
+        {
+          "name": "sender_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发送人 user_id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_eco_msg_intent",
+          "columns": [
+            "intent_id",
+            "created_at"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_post",
+      "comment": "服务平台挂牌主表",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "any_direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否接受任意流向 0-否 1-是（仅运力）"
+        },
+        {
+          "name": "apply_block_rule",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否应用租户级屏蔽名单 0-否 1-是"
+        },
+        {
+          "name": "audit_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审核时间"
+        },
+        {
+          "name": "audit_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审核人（平台 user_id）"
+        },
+        {
+          "name": "audit_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "驳回原因（原样展示给租户）"
+        },
+        {
+          "name": "audit_status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "审核状态 0-未提交 1-待审 2-通过 3-驳回 4-免审直通待抽检 5-抽检通过"
+        },
+        {
+          "name": "contact_backup",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备用联系方式"
+        },
+        {
+          "name": "contact_name",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "联系人姓名"
+        },
+        {
+          "name": "contact_phone",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "联系人手机"
+        },
+        {
+          "name": "contact_visibility",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "3",
+          "comment": "联系方式可见起始层级 2-认证层 3-洽谈层"
+        },
+        {
+          "name": "cooperation_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "合作类型 1-单次 2-长期"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "deal_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "成交数（冗余，分批时可大于1）"
+        },
+        {
+          "name": "delist_reason",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "下架原因 1-主动 2-到期 3-平台强制 4-源单失效 5-成交自动"
+        },
+        {
+          "name": "delist_remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "下架说明"
+        },
+        {
+          "name": "extra_block_tenants",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "本条挂牌额外屏蔽的租户编码数组"
+        },
+        {
+          "name": "from_city",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出发地市"
+        },
+        {
+          "name": "from_district",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出发地区县"
+        },
+        {
+          "name": "from_name",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出发地展示串"
+        },
+        {
+          "name": "from_province",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出发地省"
+        },
+        {
+          "name": "from_region_code",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出发地行政区划代码（sys_regions.code）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "intent_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "有效意向数（冗余）"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_top",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否运营置顶 0-否 1-是"
+        },
+        {
+          "name": "keep_listed_after_deal",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "成交后是否继续展示 0-否 1-是（长期运力挂牌）"
+        },
+        {
+          "name": "last_active_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最后活跃时间（用于热度排序）"
+        },
+        {
+          "name": "listed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "首次上架时间"
+        },
+        {
+          "name": "owner_masked_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "归属企业脱敏名（快照）"
+        },
+        {
+          "name": "owner_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "归属租户编码"
+        },
+        {
+          "name": "owner_tenant_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "归属企业全称（快照）"
+        },
+        {
+          "name": "post_no",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌编号（对外展示）"
+        },
+        {
+          "name": "post_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌类型 1-货源 2-运力 3-服务(预留)"
+        },
+        {
+          "name": "precheck_flags",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "自动预检命中的可疑标记数组"
+        },
+        {
+          "name": "price_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "价格，面议时为空"
+        },
+        {
+          "name": "price_include_tax",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否含税 0-否 1-是"
+        },
+        {
+          "name": "price_negotiable",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "价格是否可议 0-否 1-是"
+        },
+        {
+          "name": "price_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "4",
+          "comment": "计价方式 1-包车 2-按台 3-按公里 4-面议"
+        },
+        {
+          "name": "publisher_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发布人姓名（快照）"
+        },
+        {
+          "name": "publisher_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发布人 user_id"
+        },
+        {
+          "name": "quantity_unit",
+          "type": "VARCHAR(10)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "台",
+          "comment": "计量单位"
+        },
+        {
+          "name": "remaining_quantity",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "剩余可承接量，分批时递减；为空表示不分批"
+        },
+        {
+          "name": "source_changed",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "源单是否已变更待更新 0-否 1-是"
+        },
+        {
+          "name": "source_changed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "源单变更标记时间"
+        },
+        {
+          "name": "source_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "源单在租户库的主键ID"
+        },
+        {
+          "name": "source_snapshot_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "源单快照时间"
+        },
+        {
+          "name": "source_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "3",
+          "comment": "来源 1-系统单据 2-批量来源 3-手工"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-草稿 1-待审核 2-审核未通过 3-展示中 4-已锁定 5-履约中 6-已完成 7-已下架 9-已取消"
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(120)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "标题"
+        },
+        {
+          "name": "to_city",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主目的地市"
+        },
+        {
+          "name": "to_district",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主目的地区县"
+        },
+        {
+          "name": "to_name",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主目的地展示串"
+        },
+        {
+          "name": "to_province",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主目的地省（任意流向时为空）"
+        },
+        {
+          "name": "to_region_code",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主目的地行政区划代码（sys_regions.code）"
+        },
+        {
+          "name": "top_until",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "置顶截止时间"
+        },
+        {
+          "name": "total_quantity",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "数量（货源总台数/运力可载台数）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "valid_from",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "生效时间"
+        },
+        {
+          "name": "valid_until",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "失效时间"
+        },
+        {
+          "name": "view_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "详情浏览次数（冗余）"
+        },
+        {
+          "name": "viewer_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "浏览企业数（去重冗余）"
+        },
+        {
+          "name": "visibility_level",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "企业全称可见起始层级 1-匿名层 2-认证层"
+        },
+        {
+          "name": "window_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "时间窗结束（装车止/可用止），长期可用为空"
+        },
+        {
+          "name": "window_start",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "时间窗开始（装车起/可用起）"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "post_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_post_audit",
+          "columns": [
+            "audit_status",
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_post_changed",
+          "columns": [
+            "source_changed",
+            "source_changed_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_post_expire",
+          "columns": [
+            "status",
+            "valid_until"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_post_hall_from",
+          "columns": [
+            "post_type",
+            "status",
+            "from_province",
+            "from_city",
+            "window_start"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_post_hall_new",
+          "columns": [
+            "post_type",
+            "status",
+            "listed_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_post_owner",
+          "columns": [
+            "owner_tenant_code",
+            "status",
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_post_source",
+          "columns": [
+            "owner_tenant_code",
+            "source_type",
+            "source_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_post_audit",
+      "comment": "服务平台挂牌流转审计",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "action",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "动作 1-提交 2-通过 3-驳回 4-重新提交 5-主动下架 6-到期下架 7-强制下架 8-源单失效下架 9-成交下架 10-重新上架 11-免审直通 12-抽检通过 13-抽检不通过 14-编辑"
+        },
+        {
+          "name": "changed_fields",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "编辑动作时记录变更字段名与新旧值"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "from_status",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变更前状态"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "operator_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人ID（系统操作时为空）"
+        },
+        {
+          "name": "operator_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人姓名"
+        },
+        {
+          "name": "operator_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人所属租户（运营操作时为空）"
+        },
+        {
+          "name": "operator_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人类型 1-租户用户 2-平台运营 3-系统"
+        },
+        {
+          "name": "post_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌ID（sys_eco_post.id）"
+        },
+        {
+          "name": "reason",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "原因说明"
+        },
+        {
+          "name": "reason_code",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "原因编码（驳回原因/下架原因）"
+        },
+        {
+          "name": "to_status",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变更后状态"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_eco_post_audit_op",
+          "columns": [
+            "operator_type",
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_post_audit_post",
+          "columns": [
+            "post_id",
+            "created_at"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_post_dest",
+      "comment": "服务平台挂牌目的地/期望流向",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "city",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目的地市，为空表示整省"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "post_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌ID（sys_eco_post.id）"
+        },
+        {
+          "name": "post_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌类型（冗余，便于按大厅统计）"
+        },
+        {
+          "name": "province",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目的地省"
+        },
+        {
+          "name": "region_code",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "行政区划代码（sys_regions.code）"
+        },
+        {
+          "name": "sort_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "顺序，0 为主目的地"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_eco_dest",
+          "columns": [
+            "post_id",
+            "province",
+            "city"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_dest_lookup",
+          "columns": [
+            "province",
+            "city",
+            "post_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_post_view",
+      "comment": "服务平台挂牌浏览统计",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "first_viewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "首次浏览时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_viewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最后浏览时间"
+        },
+        {
+          "name": "owner_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌归属租户（冗余，发布方查询用）"
+        },
+        {
+          "name": "post_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌ID（sys_eco_post.id）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "view_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "当日浏览次数"
+        },
+        {
+          "name": "view_date",
+          "type": "DATE",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "统计日期"
+        },
+        {
+          "name": "viewer_city",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "查看方所在市"
+        },
+        {
+          "name": "viewer_province",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "查看方所在省（聚合展示用，不暴露具体企业）"
+        },
+        {
+          "name": "viewer_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "查看方租户"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_eco_view",
+          "columns": [
+            "post_id",
+            "viewer_tenant_code",
+            "view_date"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_view_owner",
+          "columns": [
+            "owner_tenant_code",
+            "view_date"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_view_post",
+          "columns": [
+            "post_id",
+            "view_date"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_report",
+      "comment": "服务平台违规举报",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "attachments",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证附件URL数组"
+        },
+        {
+          "name": "content",
+          "type": "VARCHAR(1000)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "举报说明"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "deal_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联成交单ID"
+        },
+        {
+          "name": "handle_action",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处置动作 1-无 2-强制下架 3-警告 4-限制权限 5-关闭大厅能力"
+        },
+        {
+          "name": "handle_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理时间"
+        },
+        {
+          "name": "handle_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理人（平台 user_id）"
+        },
+        {
+          "name": "handle_result",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理结论"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "post_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联挂牌ID"
+        },
+        {
+          "name": "report_no",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "举报编号"
+        },
+        {
+          "name": "report_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "类型 1-信息虚假 2-联系不上 3-恶意压价 4-骗取信息 5-爽约 6-违法违规 9-其他"
+        },
+        {
+          "name": "reported_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被举报方租户"
+        },
+        {
+          "name": "reporter_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "举报人姓名"
+        },
+        {
+          "name": "reporter_tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "举报方租户"
+        },
+        {
+          "name": "reporter_user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "举报人 user_id"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-待处理 1-处理中 2-成立 3-不成立 4-证据不足"
+        },
+        {
+          "name": "target_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "举报对象 1-挂牌 2-成交 3-企业"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "report_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_report_reported",
+          "columns": [
+            "reported_tenant_code",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_report_reporter",
+          "columns": [
+            "reporter_tenant_code",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_report_status",
+          "columns": [
+            "status",
+            "created_at"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_subscription",
+      "comment": "服务平台订阅提醒",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "enabled",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否启用 0-否 1-是"
+        },
+        {
+          "name": "filter_json",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "其余筛选条件原样保存"
+        },
+        {
+          "name": "from_cities",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出发地市数组"
+        },
+        {
+          "name": "from_provinces",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出发地省数组"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_matched_post_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最后命中的挂牌ID（增量扫描游标）"
+        },
+        {
+          "name": "last_notified_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最后通知时间"
+        },
+        {
+          "name": "matched_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计命中数"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "订阅名称"
+        },
+        {
+          "name": "notify_channel",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "通知渠道 1-待办 2-待办+短信"
+        },
+        {
+          "name": "post_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "订阅类型 1-货源 2-运力"
+        },
+        {
+          "name": "tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "租户编码"
+        },
+        {
+          "name": "to_cities",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目的地市数组"
+        },
+        {
+          "name": "to_provinces",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目的地省数组"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "user_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_eco_sub_scan",
+          "columns": [
+            "enabled",
+            "post_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_sub_tenant",
+          "columns": [
+            "tenant_code",
+            "enabled"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_tenant_credit",
+      "comment": "服务平台租户信誉统计",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "audit_whitelist",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否免审白名单 0-否 1-是"
+        },
+        {
+          "name": "avg_respond_minutes",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "平均响应时长（分钟），用于展示「通常 2 小时内回复」"
+        },
+        {
+          "name": "avg_score",
+          "type": "NUMERIC(3, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "平均评分，评价数不足 3 时不对外展示"
+        },
+        {
+          "name": "breach_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "爽约次数"
+        },
+        {
+          "name": "complete_rate",
+          "type": "NUMERIC(5, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "履约完成率（%），成交数不足 5 时不对外展示"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "deal_completed_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计完成数"
+        },
+        {
+          "name": "deal_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计成交数"
+        },
+        {
+          "name": "deal_terminated_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计终止数"
+        },
+        {
+          "name": "eval_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "收到评价数"
+        },
+        {
+          "name": "eval_score_sum",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "评分累计和（支持原子递增）"
+        },
+        {
+          "name": "force_delist_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "被强制下架次数"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "intent_received_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计收到意向数"
+        },
+        {
+          "name": "intent_responded_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计已响应意向数"
+        },
+        {
+          "name": "intent_restricted_until",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "意向权限暂停至"
+        },
+        {
+          "name": "intent_sent_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计发出意向数"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_breach_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近爽约时间"
+        },
+        {
+          "name": "last_calc_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最后全量校准时间"
+        },
+        {
+          "name": "listed_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计成功上架数"
+        },
+        {
+          "name": "publish_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计发布挂牌数"
+        },
+        {
+          "name": "publish_restricted_until",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发布权限暂停至"
+        },
+        {
+          "name": "report_valid_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "被举报成立次数"
+        },
+        {
+          "name": "tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "租户编码"
+        },
+        {
+          "name": "top_tags",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "高频好评标签（前 3 个）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "whitelist_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "进入白名单时间"
+        },
+        {
+          "name": "whitelist_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人（人工授予时）"
+        },
+        {
+          "name": "whitelist_source",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "来源 1-自动 2-人工"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_eco_credit_tenant",
+          "columns": [
+            "tenant_code"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_credit_whitelist",
+          "columns": [
+            "audit_whitelist"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_eco_tenant_profile",
+      "comment": "服务平台企业名片",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "contact_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "默认联系人"
+        },
+        {
+          "name": "contact_phone",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "默认联系电话"
+        },
+        {
+          "name": "contact_wechat",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "默认微信"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "default_contact_visibility",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "3",
+          "comment": "默认联系方式可见层级"
+        },
+        {
+          "name": "default_valid_days",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "7",
+          "comment": "默认展示天数"
+        },
+        {
+          "name": "default_visibility_level",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "默认企业名可见层级"
+        },
+        {
+          "name": "disabled_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关闭原因"
+        },
+        {
+          "name": "disabled_until",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关闭截止时间"
+        },
+        {
+          "name": "display_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "对外展示企业名，默认取 tenant_name"
+        },
+        {
+          "name": "fleet_desc",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车队描述"
+        },
+        {
+          "name": "fleet_size",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车队规模（台）"
+        },
+        {
+          "name": "good_at_categories",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "擅长货物类别数组"
+        },
+        {
+          "name": "hall_enabled",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "大厅能力是否开启 0-关闭 1-开启（运营可关停违规租户）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "intro",
+          "type": "VARCHAR(1000)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "企业简介"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "license_verified",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "营业执照是否已核验 0-否 1-是（决定可见层级 L1/L2）"
+        },
+        {
+          "name": "license_verified_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "执照核验时间"
+        },
+        {
+          "name": "license_verified_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "执照核验人（平台 user_id）"
+        },
+        {
+          "name": "main_routes",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主营线路 [{fromProvince,fromCity,toProvince,toCity}]"
+        },
+        {
+          "name": "masked_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "脱敏企业名（固化存储；出现在每张大厅卡片上，实时计算太贵）"
+        },
+        {
+          "name": "realname_verified",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否实名（注册手机号已验证）0-否 1-是"
+        },
+        {
+          "name": "tenant_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "租户编码（1:1 于 sys_tenant）"
+        },
+        {
+          "name": "transport_license_file",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "许可证附件URL"
+        },
+        {
+          "name": "transport_license_no",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "道路运输经营许可证号"
+        },
+        {
+          "name": "transport_license_verified",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "许可证是否已核验 0-否 1-是"
+        },
+        {
+          "name": "transport_license_verified_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "许可证核验时间"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_eco_profile_tenant",
+          "columns": [
+            "tenant_code"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_profile_verified",
+          "columns": [
+            "license_verified",
+            "hall_enabled"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "sys_feedback",
       "comment": "意见反馈表",
       "table_tier": null,
@@ -4567,6 +8674,144 @@
           "name": "ix_sys_role_menu_role_id",
           "columns": [
             "role_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "sys_sensitive_word",
+      "comment": "敏感词库",
+      "table_tier": null,
+      "columns": [
+        {
+          "name": "action",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "命中处置 1-硬拦截 2-转人工审核"
+        },
+        {
+          "name": "category",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "9",
+          "comment": "分类 1-政治 2-色情低俗 3-违禁品 4-竞品导流 5-诈骗 9-其他"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "hit_count",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "累计命中次数"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_hit_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近命中时间"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "scope",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "all",
+          "comment": "适用范围 all-全平台 ecosystem-服务平台"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-启用"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "word",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "敏感词"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_sw_load",
+          "columns": [
+            "status",
+            "scope",
+            "is_deleted"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_sw_word",
+          "columns": [
+            "word"
           ],
           "unique": false
         }

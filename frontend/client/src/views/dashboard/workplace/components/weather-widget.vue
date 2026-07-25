@@ -8,7 +8,7 @@
       src="https://i.tianqi.com/?c=code&a=getcode&id=14&icon=1"
       frameborder="0"
       title="天气预报"
-    />
+    ></iframe>
   </div>
 </template>
 

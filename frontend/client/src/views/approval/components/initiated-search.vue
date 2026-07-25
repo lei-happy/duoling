@@ -49,10 +49,7 @@
   import { INSTANCE_STATUS_OPTIONS } from '../constants';
 
   const emit = defineEmits<{
-    (
-      e: 'search',
-      where: Pick<ApprovalListParam, 'keyword' | 'status'>
-    ): void;
+    (e: 'search', where: Pick<ApprovalListParam, 'keyword' | 'status'>): void;
   }>();
 
   const [form, resetFields] = useFormData<{

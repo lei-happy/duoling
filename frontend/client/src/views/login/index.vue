@@ -109,10 +109,9 @@
               <div v-for="(m, i) in metrics" :key="m.label" class="metric">
                 <div class="metric-label">{{ m.label }}</div>
                 <div class="metric-value">
-                  <span
-                    :ref="(el) => setMetricRef(el, i)"
-                    class="metric-num"
-                    >{{ m.value }}</span
+                  <span :ref="(el) => setMetricRef(el, i)" class="metric-num">{{
+                    m.value
+                  }}</span
                   ><span class="metric-unit">{{ m.unit }}</span>
                 </div>
                 <div class="metric-delta" :class="m.trend">
@@ -135,7 +134,8 @@
               <div class="alert-swap-inner" :key="alertIndex">
                 <div class="alert-body">
                   <span class="alert-text">
-                    <b>{{ currentAlert.lead }}</b>{{ currentAlert.text }}
+                    <b>{{ currentAlert.lead }}</b
+                    >{{ currentAlert.text }}
                   </span>
                   <span class="alert-sub">{{ currentAlert.sub }}</span>
                 </div>
@@ -172,115 +172,115 @@
 
         <div class="form-body">
           <transition name="slide-fade" mode="out-in">
-          <!-- 密码登录表单 -->
-          <el-form
-            v-if="loginMode === 'password'"
-            key="password"
-            ref="formRef"
-            size="large"
-            :model="form"
-            :rules="rules"
-            @keyup.enter="submit"
-            @submit.prevent=""
-          >
-            <el-form-item prop="phone">
-              <el-input
-                clearable
-                v-model="form.phone"
-                placeholder="请输入手机号"
-                :prefix-icon="MobileOutlined"
-              />
-            </el-form-item>
-            <el-form-item prop="password">
-              <el-input
-                show-password
-                v-model="form.password"
-                :placeholder="t('login.password')"
-                :prefix-icon="LockOutlined"
-              />
-            </el-form-item>
-            <el-form-item>
-              <div
-                style="
-                  display: flex;
-                  justify-content: space-between;
-                  width: 100%;
-                "
-              >
-                <el-checkbox v-model="form.remember">
-                  {{ t('login.remember') }}
-                </el-checkbox>
-                <a
-                  class="forgot-pwd-link"
-                  @click.prevent="showForgotPwdDialog = true"
-                >
-                  忘记密码？
-                </a>
-              </div>
-            </el-form-item>
-            <el-form-item>
-              <el-button
-                size="large"
-                type="primary"
-                :loading="loading"
-                style="width: 100%"
-                @click="submit"
-              >
-                {{ t('login.login') }}
-              </el-button>
-            </el-form-item>
-          </el-form>
-
-          <!-- 验证码登录表单 -->
-          <el-form
-            v-else
-            key="sms"
-            ref="smsFormRef"
-            size="large"
-            :model="smsForm"
-            :rules="smsRules"
-            @keyup.enter="submitSms"
-            @submit.prevent=""
-          >
-            <el-form-item prop="phone">
-              <el-input
-                clearable
-                v-model="smsForm.phone"
-                placeholder="请输入手机号"
-                :prefix-icon="MobileOutlined"
-              />
-            </el-form-item>
-            <el-form-item prop="code">
-              <div style="display: flex; gap: 10px; width: 100%">
+            <!-- 密码登录表单 -->
+            <el-form
+              v-if="loginMode === 'password'"
+              key="password"
+              ref="formRef"
+              size="large"
+              :model="form"
+              :rules="rules"
+              @keyup.enter="submit"
+              @submit.prevent=""
+            >
+              <el-form-item prop="phone">
                 <el-input
-                  v-model="smsForm.code"
-                  placeholder="请输入验证码"
-                  :prefix-icon="MessageOutlined"
-                  style="flex: 1"
+                  clearable
+                  v-model="form.phone"
+                  placeholder="请输入手机号"
+                  :prefix-icon="MobileOutlined"
                 />
+              </el-form-item>
+              <el-form-item prop="password">
+                <el-input
+                  show-password
+                  v-model="form.password"
+                  :placeholder="t('login.password')"
+                  :prefix-icon="LockOutlined"
+                />
+              </el-form-item>
+              <el-form-item>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    width: 100%;
+                  "
+                >
+                  <el-checkbox v-model="form.remember">
+                    {{ t('login.remember') }}
+                  </el-checkbox>
+                  <a
+                    class="forgot-pwd-link"
+                    @click.prevent="showForgotPwdDialog = true"
+                  >
+                    忘记密码？
+                  </a>
+                </div>
+              </el-form-item>
+              <el-form-item>
                 <el-button
                   size="large"
-                  :disabled="smsCooldown > 0"
-                  @click="handleSendCode(1)"
+                  type="primary"
+                  :loading="loading"
+                  style="width: 100%"
+                  @click="submit"
                 >
-                  {{ smsCooldown > 0 ? `${smsCooldown}s` : '获取验证码' }}
+                  {{ t('login.login') }}
                 </el-button>
-              </div>
-            </el-form-item>
-            <!-- 占位行：与密码登录的"记住密码"行等高，保证切换时按钮不位移 -->
-            <el-form-item class="form-row-placeholder" />
-            <el-form-item>
-              <el-button
-                size="large"
-                type="primary"
-                :loading="loading"
-                style="width: 100%"
-                @click="submitSms"
-              >
-                {{ t('login.login') }}
-              </el-button>
-            </el-form-item>
-          </el-form>
+              </el-form-item>
+            </el-form>
+
+            <!-- 验证码登录表单 -->
+            <el-form
+              v-else
+              key="sms"
+              ref="smsFormRef"
+              size="large"
+              :model="smsForm"
+              :rules="smsRules"
+              @keyup.enter="submitSms"
+              @submit.prevent=""
+            >
+              <el-form-item prop="phone">
+                <el-input
+                  clearable
+                  v-model="smsForm.phone"
+                  placeholder="请输入手机号"
+                  :prefix-icon="MobileOutlined"
+                />
+              </el-form-item>
+              <el-form-item prop="code">
+                <div style="display: flex; gap: 10px; width: 100%">
+                  <el-input
+                    v-model="smsForm.code"
+                    placeholder="请输入验证码"
+                    :prefix-icon="MessageOutlined"
+                    style="flex: 1"
+                  />
+                  <el-button
+                    size="large"
+                    :disabled="smsCooldown > 0"
+                    @click="handleSendCode(1)"
+                  >
+                    {{ smsCooldown > 0 ? `${smsCooldown}s` : '获取验证码' }}
+                  </el-button>
+                </div>
+              </el-form-item>
+              <!-- 占位行：与密码登录的"记住密码"行等高，保证切换时按钮不位移 -->
+              <el-form-item class="form-row-placeholder" />
+              <el-form-item>
+                <el-button
+                  size="large"
+                  type="primary"
+                  :loading="loading"
+                  style="width: 100%"
+                  @click="submitSms"
+                >
+                  {{ t('login.login') }}
+                </el-button>
+              </el-form-item>
+            </el-form>
           </transition>
         </div>
 
@@ -570,8 +570,7 @@
   };
 
   const rand = (min: number, max: number) => min + Math.random() * (max - min);
-  const roundTo = (n: number, d: number) =>
-    Math.round(n * 10 ** d) / 10 ** d;
+  const roundTo = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d;
 
   const bumpMetric = (i: number) => {
     const counter = counters[i];
@@ -1679,7 +1678,6 @@
     &:hover {
       text-decoration: underline;
     }
-
   }
 
   .tenant-list {

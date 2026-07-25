@@ -9,12 +9,24 @@
       <el-tabs v-model="activeTab">
         <el-tab-pane label="运力信息" name="info">
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="驾驶员姓名">{{ data?.driverName || '—' }}</el-descriptions-item>
-            <el-descriptions-item label="手机号">{{ data?.driverPhone || '—' }}</el-descriptions-item>
-            <el-descriptions-item label="所属部门">{{ data?.departmentName || '—' }}</el-descriptions-item>
-            <el-descriptions-item label="绑定时间">{{ data?.boundAt || '—' }}</el-descriptions-item>
-            <el-descriptions-item label="主车牌">{{ data?.plateNumber || '—' }}</el-descriptions-item>
-            <el-descriptions-item label="挂车牌">{{ data?.trailerPlateNumber || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="驾驶员姓名">{{
+              data?.driverName || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="手机号">{{
+              data?.driverPhone || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="所属部门">{{
+              data?.departmentName || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="绑定时间">{{
+              data?.boundAt || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="主车牌">{{
+              data?.plateNumber || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item label="挂车牌">{{
+              data?.trailerPlateNumber || '—'
+            }}</el-descriptions-item>
           </el-descriptions>
         </el-tab-pane>
         <el-tab-pane label="车辆历史" name="vehicle">

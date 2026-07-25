@@ -1,13 +1,14 @@
 <!-- 我的待办 -->
 <template>
-  <ele-card
-    :body-style="{ padding: '6px 0' }"
-    class="todo-card"
-  >
+  <ele-card :body-style="{ padding: '6px 0' }" class="todo-card">
     <template #header>
       <div class="card-header">
         <span class="card-title">{{ title }}</span>
-        <button type="button" class="create-link" @click="showCreateForm = true">
+        <button
+          type="button"
+          class="create-link"
+          @click="showCreateForm = true"
+        >
           <el-icon><CirclePlus /></el-icon>
           <span>创建待办</span>
         </button>
@@ -196,10 +197,7 @@
         </div>
 
         <!-- 加载更多指示器 -->
-        <div
-          v-if="hasMore && !loading"
-          class="load-more-trigger"
-        >
+        <div v-if="hasMore && !loading" class="load-more-trigger">
           <div v-if="loadingMore" class="loading-more">
             <el-skeleton :rows="2" animated />
           </div>
@@ -1049,12 +1047,7 @@
   };
 
   const tryLoadMoreOnScroll = () => {
-    if (
-      !scrollWrapEl ||
-      loading.value ||
-      loadingMore.value ||
-      !hasMore.value
-    ) {
+    if (!scrollWrapEl || loading.value || loadingMore.value || !hasMore.value) {
       return;
     }
     const { scrollTop, scrollHeight, clientHeight } = scrollWrapEl;
@@ -1074,12 +1067,7 @@
 
   /** 首屏不足一屏时继续加载，直至可滚动或无更多数据 */
   const fillScrollViewport = () => {
-    if (
-      !scrollWrapEl ||
-      !hasMore.value ||
-      loading.value ||
-      loadingMore.value
-    ) {
+    if (!scrollWrapEl || !hasMore.value || loading.value || loadingMore.value) {
       return;
     }
     if (

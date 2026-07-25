@@ -149,7 +149,10 @@
     return { list: res?.list ?? [], count: res?.count ?? 0 };
   };
 
-  const onSearch = (payload: { keyword: string; bizType: string | undefined }) => {
+  const onSearch = (payload: {
+    keyword: string;
+    bizType: string | undefined;
+  }) => {
     where.keyword = payload.keyword ?? '';
     where.bizType = payload.bizType;
     tableRef.value?.reload?.({ page: 1 });
@@ -202,9 +205,13 @@
   };
 
   const onEnable = (row: FlowOut) => {
-    ElMessageBox.confirm('确认重新启用该流程？启用后将恢复匹配新审批。', '提示', {
-      type: 'warning'
-    })
+    ElMessageBox.confirm(
+      '确认重新启用该流程？启用后将恢复匹配新审批。',
+      '提示',
+      {
+        type: 'warning'
+      }
+    )
       .then(async () => {
         await enableFlow(row.id);
         EleMessage.success({ message: '已启用', plain: true });

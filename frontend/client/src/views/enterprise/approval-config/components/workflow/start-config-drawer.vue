@@ -18,10 +18,18 @@
       </el-form-item>
 
       <el-form-item v-if="initiatorType === 'user'" label="选择成员">
-        <user-select v-model="userIds" multiple placeholder="选择可发起的成员" />
+        <user-select
+          v-model="userIds"
+          multiple
+          placeholder="选择可发起的成员"
+        />
       </el-form-item>
       <el-form-item v-else-if="initiatorType === 'role'" label="选择角色">
-        <role-select v-model="roleIds" multiple placeholder="选择可发起的角色" />
+        <role-select
+          v-model="roleIds"
+          multiple
+          placeholder="选择可发起的角色"
+        />
       </el-form-item>
       <el-form-item v-else-if="initiatorType === 'dept'" label="选择部门">
         <department-select

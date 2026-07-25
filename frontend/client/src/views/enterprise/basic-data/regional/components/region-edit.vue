@@ -117,12 +117,7 @@
   ) => {
     const lngRaw = form.longitude;
     const latRaw = form.latitude;
-    if (
-      lngRaw === '' ||
-      lngRaw == null ||
-      latRaw === '' ||
-      latRaw == null
-    ) {
+    if (lngRaw === '' || lngRaw == null || latRaw === '' || latRaw == null) {
       callback(new Error('请在地图上点选位置'));
       return;
     }

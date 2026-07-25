@@ -2,7 +2,7 @@
   <placeholder-page
     title="服务大厅"
     feature-code="ecosystem_service_hall"
-    version="生态版"
+    version="专业版"
   />
 </template>
 

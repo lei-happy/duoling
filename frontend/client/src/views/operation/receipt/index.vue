@@ -165,8 +165,19 @@
       { prop: 'customerName', label: '客户名称', minWidth: 140 },
       { columnKey: 'route', label: '路线', minWidth: 200, slot: 'route' },
       { prop: 'quantity', label: '台数', width: 80, align: 'center' },
-      { prop: 'freightAmount', label: '运费金额', minWidth: 100, align: 'right' },
-      { prop: 'status', label: '状态', width: 90, align: 'center', slot: 'status' }
+      {
+        prop: 'freightAmount',
+        label: '运费金额',
+        minWidth: 100,
+        align: 'right'
+      },
+      {
+        prop: 'status',
+        label: '状态',
+        width: 90,
+        align: 'center',
+        slot: 'status'
+      }
     ];
     if (poolKey.value === 'done') {
       base.push({
@@ -218,7 +229,10 @@
       { type: 'warning', draggable: true }
     )
       .then(async () => {
-        const loading = EleMessage.loading({ message: '请求中..', plain: true });
+        const loading = EleMessage.loading({
+          message: '请求中..',
+          plain: true
+        });
         try {
           await revokeWaybillReceipt(row.id!);
           loading.close();

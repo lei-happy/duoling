@@ -10,14 +10,16 @@
     @open="onOpen"
   >
     <div v-if="row" class="sc-status">
-      <p class="sc-status__tip">
-        状态变更需经运力审批，审批通过后才会生效。
-      </p>
+      <p class="sc-status__tip"> 状态变更需经运力审批，审批通过后才会生效。 </p>
       <p class="sc-status__line">
         当前启用状态：<strong>{{ statusLabel(row.status) }}</strong>
       </p>
       <p class="sc-status__line">目标状态</p>
-      <el-select v-model="targetStatus" placeholder="请选择" class="sc-status__select">
+      <el-select
+        v-model="targetStatus"
+        placeholder="请选择"
+        class="sc-status__select"
+      >
         <el-option
           v-for="opt in targetOptions"
           :key="opt.value"
@@ -36,7 +38,9 @@
     </div>
     <template #footer>
       <el-button @click="updateVisible(false)">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="confirm">提交审批</el-button>
+      <el-button type="primary" :loading="saving" @click="confirm"
+        >提交审批</el-button
+      >
     </template>
   </el-dialog>
 </template>
@@ -123,9 +127,13 @@
     }
     if (targetStatus.value === 3 && !remark.value) {
       try {
-        await ElMessageBox.confirm('加入黑名单未填写原因，是否继续？', '系统提示', {
-          type: 'warning'
-        });
+        await ElMessageBox.confirm(
+          '加入黑名单未填写原因，是否继续？',
+          '系统提示',
+          {
+            type: 'warning'
+          }
+        );
       } catch {
         return;
       }

@@ -378,9 +378,7 @@ export function initiatorSummary(node: CanvasNode): string {
   const cfg = node.initiatorConfig || {};
   if (type === 'all') return '所有人';
   if (type === 'user') {
-    return cfg.user_ids?.length
-      ? memberSummary(cfg)
-      : '请设置指定成员';
+    return cfg.user_ids?.length ? memberSummary(cfg) : '请设置指定成员';
   }
   if (type === 'role') {
     return cfg.role_ids?.length
@@ -474,10 +472,7 @@ export function validateTree(root: CanvasNode): string[] {
         !cfg.dept_id
       )
         errors.push(`「${name}」未选择目标部门`);
-      else if (
-        node.approverType === 5 &&
-        (!cfg.level || Number(cfg.level) < 1)
-      )
+      else if (node.approverType === 5 && (!cfg.level || Number(cfg.level) < 1))
         errors.push(`「${name}」未设置上级层级`);
       else if (node.approverType === 6 || node.approverType === 7)
         errors.push(`「${name}」使用了已停用的审批人类型，请重新选择`);

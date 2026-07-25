@@ -48,7 +48,10 @@
   import ApprovalDetailDrawer from '../components/approval-detail-drawer.vue';
   import ApprovalActionModal from '../components/approval-action-modal.vue';
   import { listPending } from '@/api/approval';
-  import type { ApprovalListItem, ApprovalListParam } from '@/api/approval/model';
+  import type {
+    ApprovalListItem,
+    ApprovalListParam
+  } from '@/api/approval/model';
   import { formatDateTime } from '@/utils/date-util';
   import {
     instanceStatusLabel as statusLabel,

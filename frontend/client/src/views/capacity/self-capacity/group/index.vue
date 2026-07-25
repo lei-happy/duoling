@@ -23,7 +23,7 @@
             <span
               class="group-name-dot"
               :style="{ background: row.color || 'var(--el-color-primary)' }"
-            />
+            ></span>
             {{ row.groupName }}
           </span>
         </template>
@@ -126,7 +126,13 @@
       align: 'center',
       slot: 'memberCount'
     },
-    { prop: 'status', label: '状态', width: 90, align: 'center', slot: 'status' },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 90,
+      align: 'center',
+      slot: 'status'
+    },
     { prop: 'remark', label: '备注', minWidth: 140, align: 'center' },
     {
       prop: 'createdAt',
@@ -151,7 +157,11 @@
     const p = page ?? (Number(pages?.page) || 1);
     const l = limit ?? (Number(pages?.limit) || 10);
     const res = await pageCapacityGroups({ ...where, page: p, limit: l });
-    const raw = res as { list?: CapacityGroup[]; count?: number; total?: number };
+    const raw = res as {
+      list?: CapacityGroup[];
+      count?: number;
+      total?: number;
+    };
     return {
       list: raw?.list ?? [],
       count: raw?.count ?? raw?.total ?? 0

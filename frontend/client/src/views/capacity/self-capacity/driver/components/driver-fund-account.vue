@@ -203,7 +203,8 @@
       <div class="fund-account__effect">
         本次将使余额
         <strong :class="postDelta >= 0 ? 'is-positive' : 'is-negative'">
-          {{ postDelta >= 0 ? '增加' : '减少' }} {{ formatMoney(postAmountAbs) }}
+          {{ postDelta >= 0 ? '增加' : '减少' }}
+          {{ formatMoney(postAmountAbs) }}
         </strong>
       </div>
       <template #footer>
@@ -385,7 +386,9 @@
       postForm.bizType === FUND_BIZ_TYPE.ADJUST &&
       postForm.remark.trim().length < MANUAL_REMARK_MIN_LEN
     ) {
-      ElMessage.warning(`人工调整必须填写不少于 ${MANUAL_REMARK_MIN_LEN} 字的备注`);
+      ElMessage.warning(
+        `人工调整必须填写不少于 ${MANUAL_REMARK_MIN_LEN} 字的备注`
+      );
       return;
     }
     posting.value = true;

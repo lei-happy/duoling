@@ -39,7 +39,9 @@
           <el-tab-pane label="基础信息" name="basic">
             <div class="sc-detail-tab-pane">
               <el-descriptions :column="2" border size="small">
-                <el-descriptions-item label="社会运力编号">{{ detail.socialCode }}</el-descriptions-item>
+                <el-descriptions-item label="社会运力编号">{{
+                  detail.socialCode
+                }}</el-descriptions-item>
                 <el-descriptions-item label="来源">
                   <dict-data
                     type="text"
@@ -47,9 +49,15 @@
                     :model-value="detail.source"
                   />
                 </el-descriptions-item>
-                <el-descriptions-item label="来源备注">{{ detail.sourceRemark || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="来源备注">{{
+                  detail.sourceRemark || '—'
+                }}</el-descriptions-item>
                 <el-descriptions-item label="评级">
-                  {{ detail.ratingLevel ? ratingLabel(detail.ratingLevel) : '未评级' }}
+                  {{
+                    detail.ratingLevel
+                      ? ratingLabel(detail.ratingLevel)
+                      : '未评级'
+                  }}
                 </el-descriptions-item>
                 <el-descriptions-item label="累计承运">
                   {{ detail.orderCount ?? 0 }} 次
@@ -80,24 +88,48 @@
                   <dict-data
                     type="text"
                     :code="dictCodeVehicleType"
-                    :model-value="detail.vehicle?.vehicleType || detail.vehicleTypeLabel"
+                    :model-value="
+                      detail.vehicle?.vehicleType || detail.vehicleTypeLabel
+                    "
                   />
                 </el-descriptions-item>
-                <el-descriptions-item label="颜色">{{ detail.vehicle?.color || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="颜色">{{
+                  detail.vehicle?.color || '—'
+                }}</el-descriptions-item>
                 <el-descriptions-item label="品牌型号">
-                  {{ [detail.vehicle?.brand, detail.vehicle?.model].filter(Boolean).join(' / ') || '—' }}
+                  {{
+                    [detail.vehicle?.brand, detail.vehicle?.model]
+                      .filter(Boolean)
+                      .join(' / ') || '—'
+                  }}
                 </el-descriptions-item>
-                <el-descriptions-item label="VIN">{{ detail.vehicle?.vin || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="发动机号">{{ detail.vehicle?.engineNo || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="轴数">{{ detail.vehicle?.axleCount ?? '—' }}</el-descriptions-item>
+                <el-descriptions-item label="VIN">{{
+                  detail.vehicle?.vin || '—'
+                }}</el-descriptions-item>
+                <el-descriptions-item label="发动机号">{{
+                  detail.vehicle?.engineNo || '—'
+                }}</el-descriptions-item>
+                <el-descriptions-item label="轴数">{{
+                  detail.vehicle?.axleCount ?? '—'
+                }}</el-descriptions-item>
                 <el-descriptions-item label="核定载重">
-                  {{ detail.vehicle?.loadCapacity ? `${detail.vehicle.loadCapacity} 吨` : '—' }}
+                  {{
+                    detail.vehicle?.loadCapacity
+                      ? `${detail.vehicle.loadCapacity} 吨`
+                      : '—'
+                  }}
                 </el-descriptions-item>
                 <el-descriptions-item label="核定容积">
-                  {{ detail.vehicle?.volumeCapacity ? `${detail.vehicle.volumeCapacity} m³` : '—' }}
+                  {{
+                    detail.vehicle?.volumeCapacity
+                      ? `${detail.vehicle.volumeCapacity} m³`
+                      : '—'
+                  }}
                 </el-descriptions-item>
                 <el-descriptions-item label="车长">
-                  {{ detail.vehicle?.length ? `${detail.vehicle.length} m` : '—' }}
+                  {{
+                    detail.vehicle?.length ? `${detail.vehicle.length} m` : '—'
+                  }}
                 </el-descriptions-item>
                 <el-descriptions-item label="注册日期">
                   {{ formatDate(detail.vehicle?.registrationDate, '—') }}
@@ -108,7 +140,9 @@
                 <el-descriptions-item label="保险到期">
                   {{ formatDate(detail.vehicle?.insuranceExpire, '—') }}
                 </el-descriptions-item>
-                <el-descriptions-item label="道路运输证号">{{ detail.vehicle?.transportLicenseNo || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="道路运输证号">{{
+                  detail.vehicle?.transportLicenseNo || '—'
+                }}</el-descriptions-item>
                 <el-descriptions-item label="道路运输证有效期">
                   {{ formatDate(detail.vehicle?.transportLicenseExpire, '—') }}
                 </el-descriptions-item>
@@ -117,7 +151,8 @@
                   label="挂车信息"
                   :span="2"
                 >
-                  {{ detail.vehicle.trailerPlate }} / {{ detail.vehicle.trailerType }} /
+                  {{ detail.vehicle.trailerPlate }} /
+                  {{ detail.vehicle.trailerType }} /
                   {{ detail.vehicle.trailerLoadCapacity }} 吨
                 </el-descriptions-item>
               </el-descriptions>
@@ -128,14 +163,18 @@
                   :key="doc.key"
                   class="sc-detail-doc-gallery__card"
                 >
-                  <div class="sc-detail-doc-gallery__title">{{ doc.title }}</div>
+                  <div class="sc-detail-doc-gallery__title">{{
+                    doc.title
+                  }}</div>
                   <div class="sc-detail-doc-gallery__frame">
                     <el-image
                       v-if="detail.vehicle?.[doc.field]"
                       :src="resolveUploadUrl(detail.vehicle[doc.field])"
                       fit="cover"
                       class="sc-detail-doc-gallery__image"
-                      :preview-src-list="[resolveUploadUrl(detail.vehicle[doc.field])]"
+                      :preview-src-list="[
+                        resolveUploadUrl(detail.vehicle[doc.field])
+                      ]"
                     />
                     <div v-else class="sc-detail-doc-gallery__empty">暂无</div>
                   </div>
@@ -155,24 +194,48 @@
                 />
               </div>
               <el-descriptions :column="2" border size="small">
-                <el-descriptions-item label="姓名">{{ detail.driver?.name || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="手机号">{{ detail.driver?.phone || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="身份证号">{{ detail.driver?.idCard || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="姓名">{{
+                  detail.driver?.name || '—'
+                }}</el-descriptions-item>
+                <el-descriptions-item label="手机号">{{
+                  detail.driver?.phone || '—'
+                }}</el-descriptions-item>
+                <el-descriptions-item label="身份证号">{{
+                  detail.driver?.idCard || '—'
+                }}</el-descriptions-item>
                 <el-descriptions-item label="性别">
-                  {{ detail.driver?.gender === 1 ? '男' : detail.driver?.gender === 2 ? '女' : '—' }}
+                  {{
+                    detail.driver?.gender === 1
+                      ? '男'
+                      : detail.driver?.gender === 2
+                        ? '女'
+                        : '—'
+                  }}
                 </el-descriptions-item>
-                <el-descriptions-item label="驾照类型">{{ detail.driver?.licenseType || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="驾照号码">{{ detail.driver?.licenseNo || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="驾照类型">{{
+                  detail.driver?.licenseType || '—'
+                }}</el-descriptions-item>
+                <el-descriptions-item label="驾照号码">{{
+                  detail.driver?.licenseNo || '—'
+                }}</el-descriptions-item>
                 <el-descriptions-item label="驾照有效期">
                   {{ formatDate(detail.driver?.licenseExpire, '—') }}
                 </el-descriptions-item>
-                <el-descriptions-item label="从业资格证号">{{ detail.driver?.qualificationNo || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="从业资格证号">{{
+                  detail.driver?.qualificationNo || '—'
+                }}</el-descriptions-item>
                 <el-descriptions-item label="从业资格证有效期">
                   {{ formatDate(detail.driver?.qualificationExpire, '—') }}
                 </el-descriptions-item>
-                <el-descriptions-item label="紧急联系人">{{ detail.driver?.emergencyContact || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="紧急联系电话">{{ detail.driver?.emergencyPhone || '—' }}</el-descriptions-item>
-                <el-descriptions-item label="居住地址" :span="2">{{ detail.driver?.homeAddress || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="紧急联系人">{{
+                  detail.driver?.emergencyContact || '—'
+                }}</el-descriptions-item>
+                <el-descriptions-item label="紧急联系电话">{{
+                  detail.driver?.emergencyPhone || '—'
+                }}</el-descriptions-item>
+                <el-descriptions-item label="居住地址" :span="2">{{
+                  detail.driver?.homeAddress || '—'
+                }}</el-descriptions-item>
               </el-descriptions>
               <div class="sc-detail-section-title">证件照片</div>
               <div class="sc-detail-doc-gallery">
@@ -181,14 +244,18 @@
                   :key="doc.key"
                   class="sc-detail-doc-gallery__card"
                 >
-                  <div class="sc-detail-doc-gallery__title">{{ doc.title }}</div>
+                  <div class="sc-detail-doc-gallery__title">{{
+                    doc.title
+                  }}</div>
                   <div class="sc-detail-doc-gallery__frame">
                     <el-image
                       v-if="detail.driver?.[doc.field]"
                       :src="resolveUploadUrl(detail.driver[doc.field])"
                       fit="cover"
                       class="sc-detail-doc-gallery__image"
-                      :preview-src-list="[resolveUploadUrl(detail.driver[doc.field])]"
+                      :preview-src-list="[
+                        resolveUploadUrl(detail.driver[doc.field])
+                      ]"
                     />
                     <div v-else class="sc-detail-doc-gallery__empty">暂无</div>
                   </div>
@@ -213,19 +280,40 @@
               >
                 <el-table-column label="默认" width="70" align="center">
                   <template #default="{ row }">
-                    <el-tag v-if="row.isDefault === 1" size="small" type="success">默认</el-tag>
+                    <el-tag
+                      v-if="row.isDefault === 1"
+                      size="small"
+                      type="success"
+                      >默认</el-tag
+                    >
                     <span v-else>—</span>
                   </template>
                 </el-table-column>
                 <el-table-column label="账户类型" width="100">
-                  <template #default="{ row }">{{ accountTypeLabel(row.accountType) }}</template>
+                  <template #default="{ row }">{{
+                    accountTypeLabel(row.accountType)
+                  }}</template>
                 </el-table-column>
-                <el-table-column prop="accountName" label="户名" min-width="120" />
-                <el-table-column prop="accountNo" label="账号" min-width="140" />
-                <el-table-column prop="bankName" label="开户行" min-width="120" />
+                <el-table-column
+                  prop="accountName"
+                  label="户名"
+                  min-width="120"
+                />
+                <el-table-column
+                  prop="accountNo"
+                  label="账号"
+                  min-width="140"
+                />
+                <el-table-column
+                  prop="bankName"
+                  label="开户行"
+                  min-width="120"
+                />
                 <el-table-column label="状态" width="80" align="center">
                   <template #default="{ row }">
-                    <el-tag v-if="row.status === 1" size="small" type="success">启用</el-tag>
+                    <el-tag v-if="row.status === 1" size="small" type="success"
+                      >启用</el-tag
+                    >
                     <el-tag v-else size="small" type="info">停用</el-tag>
                   </template>
                 </el-table-column>
@@ -319,9 +407,21 @@
     title: string;
     field: VehiclePhotoField;
   }> = [
-    { key: 'vehicleLicense', title: '行驶证主页', field: 'vehicleLicensePhoto' },
-    { key: 'vehicleLicenseBack', title: '行驶证副页', field: 'vehicleLicenseBackPhoto' },
-    { key: 'transportLicense', title: '道路运输证', field: 'transportLicensePhoto' },
+    {
+      key: 'vehicleLicense',
+      title: '行驶证主页',
+      field: 'vehicleLicensePhoto'
+    },
+    {
+      key: 'vehicleLicenseBack',
+      title: '行驶证副页',
+      field: 'vehicleLicenseBackPhoto'
+    },
+    {
+      key: 'transportLicense',
+      title: '道路运输证',
+      field: 'transportLicensePhoto'
+    },
     { key: 'vehicle', title: '车辆外观照', field: 'vehiclePhoto' }
   ];
 
@@ -404,7 +504,15 @@
     s === 1 ? 'success' : s === 2 ? 'warning' : s === 3 ? 'danger' : 'info';
 
   const ratingLabel = (level?: number) =>
-    level === 1 ? 'A' : level === 2 ? 'B' : level === 3 ? 'C' : level === 4 ? 'D' : '—';
+    level === 1
+      ? 'A'
+      : level === 2
+        ? 'B'
+        : level === 3
+          ? 'C'
+          : level === 4
+            ? 'D'
+            : '—';
 
   const accountTypeLabel = (t?: number) =>
     t === 1

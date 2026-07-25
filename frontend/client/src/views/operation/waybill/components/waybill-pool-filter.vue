@@ -14,6 +14,7 @@
     origin        → 出发地（关键字）
     destination   → 目的地（关键字）
     vehicle       → 品牌/车型
+    vin           → VIN / 车架号
     createdRange  → 创建时间区间
 -->
 <template>
@@ -105,6 +106,20 @@
           />
         </el-col>
         <el-col
+          v-if="has('vin')"
+          :lg="fieldCol.lg"
+          :md="fieldCol.md"
+          :sm="fieldCol.sm"
+          :xs="fieldCol.xs"
+        >
+          <floating-label
+            label="VIN / 车架号"
+            type="input"
+            v-model.trim="form.vinKeyword"
+            clearable
+          />
+        </el-col>
+        <el-col
           v-if="has('createdRange')"
           :lg="fieldCol.lg"
           :md="fieldCol.md"
@@ -142,128 +157,142 @@
         </el-col>
       </el-row>
       <template v-else>
-      <el-row v-if="hasPrimaryRow" :gutter="10" class="wb-filter__row">
-        <el-col
-          v-if="has('keyword')"
-          :lg="primaryColSpan.lg"
-          :md="primaryColSpan.md"
-          :sm="primaryColSpan.sm"
-          :xs="primaryColSpan.xs"
-        >
-          <floating-label
-            label="请输入计划编号"
-            type="input"
-            v-model.trim="form.keyword"
-            clearable
-          />
-        </el-col>
-        <el-col
-          v-if="has('customer')"
-          :lg="primaryColSpan.lg"
-          :md="primaryColSpan.md"
-          :sm="primaryColSpan.sm"
-          :xs="primaryColSpan.xs"
-        >
-          <floating-label
-            v-model="form.customerId"
-            label="请选择客户"
-            type="select"
-            filterable
-            clearable
+        <el-row v-if="hasPrimaryRow" :gutter="10" class="wb-filter__row">
+          <el-col
+            v-if="has('keyword')"
+            :lg="primaryColSpan.lg"
+            :md="primaryColSpan.md"
+            :sm="primaryColSpan.sm"
+            :xs="primaryColSpan.xs"
           >
-            <el-option
-              v-for="item in customerOptions"
-              :key="item.id"
-              :label="item.customerName"
-              :value="item.id"
+            <floating-label
+              label="请输入计划编号"
+              type="input"
+              v-model.trim="form.keyword"
+              clearable
             />
-          </floating-label>
-        </el-col>
-        <el-col
-          v-if="has('origin')"
-          :lg="primaryColSpan.lg"
-          :md="primaryColSpan.md"
-          :sm="primaryColSpan.sm"
-          :xs="primaryColSpan.xs"
-        >
-          <floating-label
-            label="请输入出发地"
-            type="input"
-            v-model.trim="form.originKeyword"
-            clearable
-          />
-        </el-col>
-        <el-col
-          v-if="has('destination')"
-          :lg="primaryColSpan.lg"
-          :md="primaryColSpan.md"
-          :sm="primaryColSpan.sm"
-          :xs="primaryColSpan.xs"
-        >
-          <floating-label
-            label="请输入目的地"
-            type="input"
-            v-model.trim="form.destinationKeyword"
-            clearable
-          />
-        </el-col>
-      </el-row>
-      <el-row
-        :gutter="10"
-        class="wb-filter__row"
-        :class="{ 'wb-filter__row--second': hasPrimaryRow }"
-      >
-        <el-col
-          v-if="has('vehicle')"
-          :lg="fieldCol.lg"
-          :md="fieldCol.md"
-          :sm="fieldCol.sm"
-          :xs="fieldCol.xs"
-        >
-          <floating-label
-            label="请输入品牌/车型"
-            type="input"
-            v-model.trim="form.vehicleKeyword"
-            clearable
-          />
-        </el-col>
-        <el-col
-          v-if="has('createdRange')"
-          :lg="fieldCol.lg"
-          :md="fieldCol.md"
-          :sm="fieldCol.sm"
-          :xs="fieldCol.xs"
-        >
-          <floating-label
-            v-model="form.createdAtRange"
-            label="请选择计划创建时间"
-            type="date"
-            date-type="daterange"
-            value-format="YYYY-MM-DD"
-            format="YYYY-MM-DD"
-            unlink-panels
-            start-placeholder="开始"
-            end-placeholder="结束"
-          />
-        </el-col>
-        <el-col
-          :lg="actionsCol.lg"
-          :md="actionsCol.md"
-          :sm="actionsCol.sm"
-          :xs="actionsCol.xs"
-          class="wb-filter__col-actions"
-        >
-          <el-form-item label-width="0px">
-            <btn-items
-              :wrap="false"
-              :items="[
-                { preset: 'search', onClick: () => emitSearch() },
-                { preset: 'reset', onClick: () => onReset() }
-              ]"
+          </el-col>
+          <el-col
+            v-if="has('customer')"
+            :lg="primaryColSpan.lg"
+            :md="primaryColSpan.md"
+            :sm="primaryColSpan.sm"
+            :xs="primaryColSpan.xs"
+          >
+            <floating-label
+              v-model="form.customerId"
+              label="请选择客户"
+              type="select"
+              filterable
+              clearable
+            >
+              <el-option
+                v-for="item in customerOptions"
+                :key="item.id"
+                :label="item.customerName"
+                :value="item.id"
+              />
+            </floating-label>
+          </el-col>
+          <el-col
+            v-if="has('origin')"
+            :lg="primaryColSpan.lg"
+            :md="primaryColSpan.md"
+            :sm="primaryColSpan.sm"
+            :xs="primaryColSpan.xs"
+          >
+            <floating-label
+              label="请输入出发地"
+              type="input"
+              v-model.trim="form.originKeyword"
+              clearable
             />
-          </el-form-item>
-        </el-col>
-      </el-row>
+          </el-col>
+          <el-col
+            v-if="has('destination')"
+            :lg="primaryColSpan.lg"
+            :md="primaryColSpan.md"
+            :sm="primaryColSpan.sm"
+            :xs="primaryColSpan.xs"
+          >
+            <floating-label
+              label="请输入目的地"
+              type="input"
+              v-model.trim="form.destinationKeyword"
+              clearable
+            />
+          </el-col>
+        </el-row>
+        <el-row
+          :gutter="10"
+          class="wb-filter__row"
+          :class="{ 'wb-filter__row--second': hasPrimaryRow }"
+        >
+          <el-col
+            v-if="has('vehicle')"
+            :lg="fieldCol.lg"
+            :md="fieldCol.md"
+            :sm="fieldCol.sm"
+            :xs="fieldCol.xs"
+          >
+            <floating-label
+              label="请输入品牌/车型"
+              type="input"
+              v-model.trim="form.vehicleKeyword"
+              clearable
+            />
+          </el-col>
+          <el-col
+            v-if="has('vin')"
+            :lg="fieldCol.lg"
+            :md="fieldCol.md"
+            :sm="fieldCol.sm"
+            :xs="fieldCol.xs"
+          >
+            <floating-label
+              label="请输入 VIN / 车架号"
+              type="input"
+              v-model.trim="form.vinKeyword"
+              clearable
+            />
+          </el-col>
+          <el-col
+            v-if="has('createdRange')"
+            :lg="fieldCol.lg"
+            :md="fieldCol.md"
+            :sm="fieldCol.sm"
+            :xs="fieldCol.xs"
+          >
+            <floating-label
+              v-model="form.createdAtRange"
+              label="请选择计划创建时间"
+              type="date"
+              date-type="daterange"
+              value-format="YYYY-MM-DD"
+              format="YYYY-MM-DD"
+              unlink-panels
+              start-placeholder="开始"
+              end-placeholder="结束"
+            />
+          </el-col>
+          <el-col
+            :lg="actionsCol.lg"
+            :md="actionsCol.md"
+            :sm="actionsCol.sm"
+            :xs="actionsCol.xs"
+            class="wb-filter__col-actions"
+          >
+            <el-form-item label-width="0px">
+              <btn-items
+                :wrap="false"
+                :items="[
+                  { preset: 'search', onClick: () => emitSearch() },
+                  { preset: 'reset', onClick: () => onReset() }
+                ]"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </template>
     </el-form>
   </ele-card>
@@ -295,6 +324,7 @@
     originKeyword: string;
     destinationKeyword: string;
     vehicleKeyword: string;
+    vinKeyword: string;
     createdAtRange: [string, string] | null;
   };
 
@@ -307,6 +337,7 @@
     originKeyword: '',
     destinationKeyword: '',
     vehicleKeyword: '',
+    vinKeyword: '',
     createdAtRange: props.fields.includes('createdRange')
       ? ([...getLast3DaysDateRange()] as [string, string])
       : null
@@ -376,6 +407,9 @@
     }
     if (has('vehicle') && form.vehicleKeyword) {
       payload.vehicleKeyword = form.vehicleKeyword;
+    }
+    if (has('vin') && form.vinKeyword) {
+      payload.vinKeyword = form.vinKeyword;
     }
     if (has('createdRange')) {
       const range = form.createdAtRange;

@@ -64,7 +64,10 @@
       </el-form-item>
 
       <div class="feedback-dialog__secondary">
-        <el-form-item label="截图（可选）" class="feedback-dialog__item--photos">
+        <el-form-item
+          label="截图（可选）"
+          class="feedback-dialog__item--photos"
+        >
           <div class="feedback-photos">
             <div
               v-for="(url, idx) in form.images"

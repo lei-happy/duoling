@@ -136,7 +136,12 @@
       return false;
     }
     try {
-      const res = await uploadFile(file, undefined, file.name, 'waybill_receipt');
+      const res = await uploadFile(
+        file,
+        undefined,
+        file.name,
+        'waybill_receipt'
+      );
       if (res?.url) {
         form.fileUrls.push(res.url);
         EleMessage.success({ message: '上传成功', plain: true });

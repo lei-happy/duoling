@@ -58,7 +58,9 @@
     (e: 'reset'): void;
   }>();
 
-  const [form, resetFields] = useFormData<Pick<SocialCapacityParam, 'keyword' | 'source'>>({
+  const [form, resetFields] = useFormData<
+    Pick<SocialCapacityParam, 'keyword' | 'source'>
+  >({
     keyword: '',
     source: void 0
   });

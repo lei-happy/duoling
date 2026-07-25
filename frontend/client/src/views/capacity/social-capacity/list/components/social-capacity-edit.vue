@@ -11,7 +11,9 @@
     @open="onOpen"
   >
     <div v-if="isEdit && form.socialCode" class="sc-edit-badges">
-      <span>编号：<strong>{{ form.socialCode }}</strong></span>
+      <span
+        >编号：<strong>{{ form.socialCode }}</strong></span
+      >
       <el-tag size="small" :type="approvalTagType(form.approvalStatus)">
         {{ approvalLabel(form.approvalStatus) }}
       </el-tag>
@@ -586,11 +588,7 @@
         </el-tab-pane>
 
         <!-- ==== 结算账户 ==== -->
-        <el-tab-pane
-          label="结算账户"
-          name="account"
-          :disabled="!isEdit"
-        >
+        <el-tab-pane label="结算账户" name="account" :disabled="!isEdit">
           <div class="sc-tab-pane">
             <social-capacity-account
               v-if="isEdit && form.id"
@@ -625,12 +623,7 @@
       >
         撤回审核
       </el-button>
-      <el-button
-        v-if="canSave"
-        :loading="saving"
-        type="primary"
-        @click="save"
-      >
+      <el-button v-if="canSave" :loading="saving" type="primary" @click="save">
         保存
       </el-button>
     </template>
@@ -879,8 +872,8 @@
 
   const isEdit = computed(() => !!form.id);
   const isApproving = computed(() => form.approvalStatus === 1);
-  const canSave = computed(
-    () => !isApproving.value && form.approvalStatus !== undefined
+  const canSave = computed(() =>
+    !isApproving.value && form.approvalStatus !== undefined
       ? form.approvalStatus !== 1
       : true
   );
@@ -917,7 +910,9 @@
           : s === 3
             ? '已驳回'
             : '—';
-  const approvalTagType = (s?: number): 'info' | 'primary' | 'success' | 'danger' =>
+  const approvalTagType = (
+    s?: number
+  ): 'info' | 'primary' | 'success' | 'danger' =>
     s === 1 ? 'primary' : s === 2 ? 'success' : s === 3 ? 'danger' : 'info';
 
   const statusLabel = (s?: number) =>
@@ -930,7 +925,9 @@
           : s === 3
             ? '黑名单'
             : '—';
-  const statusTagType = (s?: number): 'info' | 'success' | 'warning' | 'danger' =>
+  const statusTagType = (
+    s?: number
+  ): 'info' | 'success' | 'warning' | 'danger' =>
     s === 1 ? 'success' : s === 2 ? 'warning' : s === 3 ? 'danger' : 'info';
 
   const handleVehiclePhotoUpload = async (
@@ -1284,8 +1281,7 @@
     box-shadow: 0 0 0 2px var(--el-bg-color);
   }
 
-  .sc-edit-dialog
-    :deep(.sc-tab-pane > .el-row > .el-col > .el-form-item) {
+  .sc-edit-dialog :deep(.sc-tab-pane > .el-row > .el-col > .el-form-item) {
     margin-bottom: 14px;
   }
 

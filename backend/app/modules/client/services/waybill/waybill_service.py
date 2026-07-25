@@ -7,7 +7,7 @@ from typing import Optional
 from datetime import date, datetime, time
 from decimal import Decimal
 
-from sqlalchemy import select, func, update
+from sqlalchemy import select, func, update, exists
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -350,6 +350,20 @@ class WaybillService:
         return total, first_contract_id, first_rate_id
 
     @staticmethod
+    def _apply_vin_keyword_filter(stmt, vin_keyword: Optional[str]):
+        """按货物明细 VIN 模糊匹配（入库已规范化为大写字母数字）。"""
+        vk = normalize_waybill_vin(vin_keyword)
+        if not vk:
+            return stmt
+        return stmt.where(
+            exists().where(
+                WaybillCargo.waybill_id == Waybill.id,
+                WaybillCargo.is_deleted == 0,
+                WaybillCargo.vin.contains(vk),
+            )
+        )
+
+    @staticmethod
     async def page_waybills(
         db: AsyncSession,
         page: int = 1,
@@ -360,6 +374,7 @@ class WaybillService:
         origin_keyword: Optional[str] = None,
         destination_keyword: Optional[str] = None,
         vehicle_keyword: Optional[str] = None,
+        vin_keyword: Optional[str] = None,
         created_at_start: Optional[date] = None,
         created_at_end: Optional[date] = None,
     ) -> dict:
@@ -391,6 +406,7 @@ class WaybillService:
         if created_at_end is not None:
             end_dt = datetime.combine(created_at_end, time.max)
             base = base.where(Waybill.created_at <= end_dt)
+        base = WaybillService._apply_vin_keyword_filter(base, vin_keyword)
 
         if use_pinyin_filters:
             stmt = base.order_by(Waybill.created_at.desc(), Waybill.id.desc())
@@ -464,6 +480,7 @@ class WaybillService:
         *,
         keyword: Optional[str] = None,
         customer_id: Optional[int] = None,
+        vin_keyword: Optional[str] = None,
         created_at_start: Optional[date] = None,
         created_at_end: Optional[date] = None,
     ):
@@ -478,7 +495,7 @@ class WaybillService:
         if created_at_end is not None:
             end_dt = datetime.combine(created_at_end, time.max)
             stmt = stmt.where(Waybill.created_at <= end_dt)
-        return stmt
+        return WaybillService._apply_vin_keyword_filter(stmt, vin_keyword)
 
     @staticmethod
     async def workbench_stats(
@@ -488,6 +505,7 @@ class WaybillService:
         origin_keyword: Optional[str] = None,
         destination_keyword: Optional[str] = None,
         vehicle_keyword: Optional[str] = None,
+        vin_keyword: Optional[str] = None,
         created_at_start: Optional[date] = None,
         created_at_end: Optional[date] = None,
     ) -> dict:
@@ -509,6 +527,7 @@ class WaybillService:
             base,
             keyword=keyword,
             customer_id=customer_id,
+            vin_keyword=vin_keyword,
             created_at_start=created_at_start,
             created_at_end=created_at_end,
         )

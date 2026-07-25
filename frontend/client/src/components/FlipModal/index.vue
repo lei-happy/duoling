@@ -45,7 +45,7 @@
             animate="visible"
             exit="hidden"
           >
-            <slot />
+            <slot></slot>
           </Motion>
         </Motion>
       </Motion>

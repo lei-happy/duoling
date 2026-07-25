@@ -1,12 +1,66 @@
+<!--
+  运力大厅
+
+  与货源大厅对称：浏览与「我发布的」共用 `eco-hall-view`，这里只接运力的发布弹层。
+  支持 `?capacityId=` 从运力列表直接发布。
+-->
 <template>
-  <placeholder-page
-    title="运力大厅"
-    feature-code="ecosystem_capacity_hall"
-    version="生态版"
+  <eco-hall-view
+    ref="hallRef"
+    :post-type="PostType.CAPACITY"
+    @publish="openPublish"
+    @edit="openEdit"
+  />
+
+  <capacity-publish
+    v-model:visible="publishVisible"
+    :source-capacity-id="sourceCapacityId"
+    :post="editing"
+    @done="onDone"
   />
 </template>
 
 <script lang="ts" setup>
-  import PlaceholderPage from '@/components/PlaceholderPage/index.vue';
+  import { onMounted, ref } from 'vue';
+  import { useRoute, useRouter } from 'vue-router';
+  import type { EcoPost } from '@/api/ecosystem/hall/model';
+  import { PostType } from '@/config/ecosystem/enums';
+  import EcoHallView from '@/views/ecosystem/components/eco-hall-view.vue';
+  import CapacityPublish from './components/capacity-publish.vue';
+
   defineOptions({ name: 'EcosystemCapacityHall' });
+
+  const route = useRoute();
+  const router = useRouter();
+
+  const hallRef = ref<InstanceType<typeof EcoHallView> | null>(null);
+  const publishVisible = ref(false);
+  const sourceCapacityId = ref<number | null>(null);
+  const editing = ref<EcoPost | null>(null);
+
+  const openPublish = () => {
+    editing.value = null;
+    sourceCapacityId.value = null;
+    publishVisible.value = true;
+  };
+
+  const openEdit = (post: EcoPost) => {
+    sourceCapacityId.value = null;
+    editing.value = post;
+    publishVisible.value = true;
+  };
+
+  const onDone = () => {
+    hallRef.value?.reload?.();
+    hallRef.value?.switchToMine?.();
+  };
+
+  onMounted(() => {
+    const capacityId = Number(route.query.capacityId);
+    if (capacityId > 0) {
+      sourceCapacityId.value = capacityId;
+      publishVisible.value = true;
+      router.replace({ query: {} });
+    }
+  });
 </script>

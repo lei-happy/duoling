@@ -202,7 +202,8 @@
       icon: createMarkerIcon('origin'),
       offset: new AMapNS.Pixel(MARKER_ICON_OFFSET.x, MARKER_ICON_OFFSET.y),
       label: {
-        content: '<span class="route-map-label route-map-label-origin">起</span>',
+        content:
+          '<span class="route-map-label route-map-label-origin">起</span>',
         direction: 'top',
         offset: new AMapNS.Pixel(0, -2)
       }

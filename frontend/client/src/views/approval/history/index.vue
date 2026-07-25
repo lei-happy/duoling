@@ -44,7 +44,10 @@
   import HistorySearch from '../components/history-search.vue';
   import ApprovalDetailDrawer from '../components/approval-detail-drawer.vue';
   import { listHistory } from '@/api/approval';
-  import type { ApprovalListItem, ApprovalListParam } from '@/api/approval/model';
+  import type {
+    ApprovalListItem,
+    ApprovalListParam
+  } from '@/api/approval/model';
   import { formatDateTime } from '@/utils/date-util';
   import {
     instanceStatusLabel as statusLabel,

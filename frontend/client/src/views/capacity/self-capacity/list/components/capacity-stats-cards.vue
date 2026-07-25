@@ -36,13 +36,7 @@
   import { computed } from 'vue';
   import type { CapacityListStats } from '@/api/capacity/self-capacity/list/model';
 
-  export type CapacityStatsCardKey =
-    | 'all'
-    | '1'
-    | '2'
-    | '3'
-    | '4'
-    | '5';
+  export type CapacityStatsCardKey = 'all' | '1' | '2' | '3' | '4' | '5';
 
   const props = defineProps<{
     stats: CapacityListStats | null;

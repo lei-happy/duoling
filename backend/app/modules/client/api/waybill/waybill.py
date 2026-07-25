@@ -63,6 +63,7 @@ async def page_waybills(
     originKeyword: Optional[str] = None,
     destinationKeyword: Optional[str] = None,
     vehicleKeyword: Optional[str] = None,
+    vinKeyword: Optional[str] = Query(None, description="VIN 模糊（匹配货物明细）"),
     createdAtStart: Optional[date] = Query(None, description="创建日期起（含当日 0 点）"),
     createdAtEnd: Optional[date] = Query(None, description="创建日期止（含当日结束）"),
     db: AsyncSession = Depends(get_tenant_db),
@@ -78,6 +79,7 @@ async def page_waybills(
         origin_keyword=originKeyword,
         destination_keyword=destinationKeyword,
         vehicle_keyword=vehicleKeyword,
+        vin_keyword=vinKeyword,
         created_at_start=createdAtStart,
         created_at_end=createdAtEnd,
     )
@@ -91,6 +93,7 @@ async def get_waybill_workbench_stats(
     originKeyword: Optional[str] = None,
     destinationKeyword: Optional[str] = None,
     vehicleKeyword: Optional[str] = None,
+    vinKeyword: Optional[str] = Query(None, description="VIN 模糊（匹配货物明细）"),
     createdAtStart: Optional[date] = Query(None, description="创建日期起（含当日 0 点）"),
     createdAtEnd: Optional[date] = Query(None, description="创建日期止（含当日结束）"),
     db: AsyncSession = Depends(get_tenant_db),
@@ -104,6 +107,7 @@ async def get_waybill_workbench_stats(
         origin_keyword=originKeyword,
         destination_keyword=destinationKeyword,
         vehicle_keyword=vehicleKeyword,
+        vin_keyword=vinKeyword,
         created_at_start=createdAtStart,
         created_at_end=createdAtEnd,
     )

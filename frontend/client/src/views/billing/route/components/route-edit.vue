@@ -160,7 +160,9 @@
             </template>
 
             <template v-else-if="showSavedMetricsHint">
-              <div class="route-amap-suggest-metrics route-amap-suggest-metrics--saved">
+              <div
+                class="route-amap-suggest-metrics route-amap-suggest-metrics--saved"
+              >
                 <div v-if="form.distance != null" class="route-amap-metric">
                   <span class="route-amap-metric-label">里程</span>
                   <span class="route-amap-metric-value">
@@ -168,7 +170,10 @@
                     <small>km</small>
                   </span>
                 </div>
-                <div v-if="form.estimatedHours != null" class="route-amap-metric">
+                <div
+                  v-if="form.estimatedHours != null"
+                  class="route-amap-metric"
+                >
                   <span class="route-amap-metric-label">预计时长</span>
                   <span class="route-amap-metric-value">
                     {{ form.estimatedHours }}
@@ -332,11 +337,7 @@
   );
 
   const amapSuggestNote = computed(() => {
-    if (
-      drivingMetrics.value ||
-      metricsLoading.value ||
-      metricsError.value
-    ) {
+    if (drivingMetrics.value || metricsLoading.value || metricsError.value) {
       return (
         '里程与路线轨迹来自高德驾车导航（高速优先）。预计时长按普通重卡估算' +
         '（私家车导航用时 × 1.30），已考虑货车限速与法规强制休息，仅供参考；' +
@@ -349,9 +350,7 @@
         '可更新里程、路线轨迹及重卡校正后的预计时长。'
       );
     }
-    return (
-      '选择起终点后将自动获取里程、路线轨迹，以及按重卡规则校正后的预计时长建议。'
-    );
+    return '选择起终点后将自动获取里程、路线轨迹，以及按重卡规则校正后的预计时长建议。';
   });
 
   const suggestTitle = computed(() => {
@@ -368,10 +367,7 @@
       drivingMetrics.value?.destination ?? mapPreview.value?.destination ?? null
   );
   const mapPolylinePath = computed(
-    () =>
-      drivingMetrics.value?.polylinePath ??
-      savedPolyline.value ??
-      null
+    () => drivingMetrics.value?.polylinePath ?? savedPolyline.value ?? null
   );
 
   const rules = computed<FormRules>(() => {
@@ -487,8 +483,7 @@
       drivingMetrics.value = data;
     } catch (e: unknown) {
       if (reqId !== metricsRequestId) return;
-      metricsError.value =
-        e instanceof Error ? e.message : '获取高德建议失败';
+      metricsError.value = e instanceof Error ? e.message : '获取高德建议失败';
     } finally {
       if (reqId === metricsRequestId) {
         metricsLoading.value = false;
@@ -621,8 +616,7 @@
           destinationRegionId: form.destinationRegionId
         };
         const stored = props.data?.polylinePath;
-        savedPolyline.value =
-          stored && stored.length >= 2 ? stored : null;
+        savedPolyline.value = stored && stored.length >= 2 ? stored : null;
         await hydrateMapPreviewFromRegions();
       } else {
         Object.keys(form).forEach((k) => {

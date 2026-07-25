@@ -58,10 +58,7 @@
     OperationRecord,
     OperationRecordParam
   } from '@/api/logcenter/operation-record/model';
-  import {
-    formatDateTime,
-    getLast7DaysDateTimeRange
-  } from '@/utils/date-util';
+  import { formatDateTime, getLast7DaysDateTimeRange } from '@/utils/date-util';
 
   defineOptions({ name: 'SystemOperationRecord' });
 

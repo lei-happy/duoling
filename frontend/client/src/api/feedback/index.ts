@@ -1,10 +1,6 @@
 import request from '@/utils/request';
 import type { ApiResult } from '@/api';
-import type {
-  Feedback,
-  FeedbackCreateParam,
-  FeedbackParam
-} from './model';
+import type { Feedback, FeedbackCreateParam, FeedbackParam } from './model';
 
 interface FeedbackPageResult {
   list: Feedback[];

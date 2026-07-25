@@ -42,7 +42,9 @@
         <template #default="{ row }">
           <div class="member-driver">
             <span>{{ row.driverName }}</span>
-            <span class="member-driver__phone">{{ row.driverPhone || '—' }}</span>
+            <span class="member-driver__phone">{{
+              row.driverPhone || '—'
+            }}</span>
           </div>
         </template>
       </el-table-column>
@@ -189,7 +191,11 @@
         page: page.value,
         limit: limit.value
       });
-      const raw = res as { list?: CapacityGroupMember[]; count?: number; total?: number };
+      const raw = res as {
+        list?: CapacityGroupMember[];
+        count?: number;
+        total?: number;
+      };
       members.value = raw?.list ?? [];
       total.value = raw?.count ?? raw?.total ?? 0;
     } catch (e: any) {
@@ -230,13 +236,14 @@
       '系统提示',
       { type: 'warning', draggable: true }
     )
-      .then(() =>
-        doRemove({ memberIds: selection.value.map((m) => m.id) })
-      )
+      .then(() => doRemove({ memberIds: selection.value.map((m) => m.id) }))
       .catch(() => {});
   };
 
-  const doRemove = async (payload: { memberIds?: number[]; driverIds?: number[] }) => {
+  const doRemove = async (payload: {
+    memberIds?: number[];
+    driverIds?: number[];
+  }) => {
     if (!props.group?.id) return;
     try {
       const msg = await removeGroupMembers(props.group.id, payload);

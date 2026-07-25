@@ -17,10 +17,7 @@
       </div>
       <el-empty v-else-if="!activities.length" description="今日暂无动态" />
       <template v-else>
-        <el-timeline
-          :reverse="false"
-          class="demo-timeline activities-timeline"
-        >
+        <el-timeline :reverse="false" class="demo-timeline activities-timeline">
           <el-timeline-item
             v-for="{ item, parts } in activityRows"
             :key="item.id"
@@ -222,12 +219,7 @@
   };
 
   const tryLoadMoreOnScroll = () => {
-    if (
-      !scrollWrapEl ||
-      loading.value ||
-      loadingMore.value ||
-      !hasMore.value
-    ) {
+    if (!scrollWrapEl || loading.value || loadingMore.value || !hasMore.value) {
       return;
     }
     const { scrollTop, scrollHeight, clientHeight } = scrollWrapEl;

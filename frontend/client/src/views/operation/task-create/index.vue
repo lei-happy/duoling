@@ -23,7 +23,11 @@
           popper-class="task-create-page__remark-popper"
         >
           <template #reference>
-            <el-button link type="primary" class="task-create-page__remark-trigger">
+            <el-button
+              link
+              type="primary"
+              class="task-create-page__remark-trigger"
+            >
               <el-icon><EditPen /></el-icon>
               {{ remarkFilled ? '编辑备注' : '添加备注（选填）' }}
             </el-button>
@@ -69,7 +73,10 @@
   import { EleMessage } from 'ele-admin-plus';
   import TaskCargoPicker from '../task/components/task-cargo-picker.vue';
   import { addTask } from '@/api/operation/task';
-  import type { TaskSegment, TaskWaybillItem } from '@/api/operation/task/model';
+  import type {
+    TaskSegment,
+    TaskWaybillItem
+  } from '@/api/operation/task/model';
   import {
     buildWaybillItemsPayload,
     validateCargoTab

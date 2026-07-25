@@ -21,11 +21,32 @@ from app.modules.console.models.todo.sys_todo_task import SysTodoTask
 from app.modules.console.models.ops.autohome_sync_job import AutohomeSyncJob
 from app.modules.console.models.ops.region_sync_job import RegionSyncJob
 from app.modules.console.models.system.platform_setting import PlatformSetting
+from app.modules.console.models.system.sensitive_word import SensitiveWord
 from app.modules.console.models.driver.sys_driver import SysDriver
 from app.modules.console.models.capacity.sys_capacity import SysCapacity
 from app.modules.console.models.promotion.banner import (
     PromotionBanner,
     PromotionBannerEvent,
+)
+
+# ---- 服务平台（生态）撮合内核 ----
+from app.modules.console.models.ecosystem import (
+    SysEcoPost,
+    SysEcoPostDest,
+    SysEcoCargoPost,
+    SysEcoCapacityPost,
+    SysEcoPostAudit,
+    SysEcoPostView,
+    SysEcoIntent,
+    SysEcoIntentMessage,
+    SysEcoDeal,
+    SysEcoDealMilestone,
+    SysEcoEvaluation,
+    SysEcoTenantProfile,
+    SysEcoTenantCredit,
+    SysEcoBlockRule,
+    SysEcoSubscription,
+    SysEcoReport,
 )
 
 # ---- AI 数字员工平台库元数据 ----
@@ -62,10 +83,28 @@ __all__ = [
     "AutohomeSyncJob",
     "RegionSyncJob",
     "PlatformSetting",
+    "SensitiveWord",
     "SysDriver",
     "SysCapacity",
     "PromotionBanner",
     "PromotionBannerEvent",
+    # 服务平台（生态）
+    "SysEcoPost",
+    "SysEcoPostDest",
+    "SysEcoCargoPost",
+    "SysEcoCapacityPost",
+    "SysEcoPostAudit",
+    "SysEcoPostView",
+    "SysEcoIntent",
+    "SysEcoIntentMessage",
+    "SysEcoDeal",
+    "SysEcoDealMilestone",
+    "SysEcoEvaluation",
+    "SysEcoTenantProfile",
+    "SysEcoTenantCredit",
+    "SysEcoBlockRule",
+    "SysEcoSubscription",
+    "SysEcoReport",
     # AI 数字员工
     "AiEmployee",
     "AiTool",

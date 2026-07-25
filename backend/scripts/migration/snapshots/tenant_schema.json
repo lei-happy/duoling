@@ -9135,6 +9135,197 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_eco_post_ref",
+      "comment": "服务平台发布关联",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "deal_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "成交数镜像"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "intent_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "意向数镜像"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_sync_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最后同步成功时间"
+        },
+        {
+          "name": "partner_tenant_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "成交对方企业名镜像（任务单角标展示用）"
+        },
+        {
+          "name": "post_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "平台库挂牌ID（sys_eco_post.id）"
+        },
+        {
+          "name": "post_no",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌编号（镜像，便于展示免跨库）"
+        },
+        {
+          "name": "post_status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "挂牌状态镜像"
+        },
+        {
+          "name": "post_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "挂牌类型 1-货源 2-运力"
+        },
+        {
+          "name": "source_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "源单主键ID（手工发布时为空）"
+        },
+        {
+          "name": "source_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "来源 1-任务单 2-运输计划 3-运力档案 4-手工"
+        },
+        {
+          "name": "sync_error",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最后一次同步失败原因"
+        },
+        {
+          "name": "sync_pending",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否有待同步到平台库的变更 0-否 1-是"
+        },
+        {
+          "name": "sync_retry_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "同步重试次数"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_eco_ref_post",
+          "columns": [
+            "post_id"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_eco_ref_source",
+          "columns": [
+            "source_type",
+            "source_id",
+            "post_status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_eco_ref_sync",
+          "columns": [
+            "sync_pending",
+            "sync_retry_count"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_finance_doc_event",
       "comment": "财务单据审计事件表",
       "table_tier": "business",

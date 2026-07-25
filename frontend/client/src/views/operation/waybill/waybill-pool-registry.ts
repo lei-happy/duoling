@@ -24,6 +24,7 @@ export type WaybillFilterField =
   | 'origin'
   | 'destination'
   | 'vehicle'
+  | 'vin'
   | 'createdRange';
 
 /** 工作台统一筛选项（各状态池字段的并集，避免切换阶段时筛选栏重建/丢失条件） */
@@ -33,6 +34,7 @@ export const UNIFIED_WAYBILL_FILTER_FIELDS: WaybillFilterField[] = [
   'origin',
   'destination',
   'vehicle',
+  'vin',
   'createdRange'
 ];
 
@@ -96,13 +98,63 @@ export interface WaybillPool {
   columns: WaybillColumnId[];
   /** 表头覆盖（未写的用默认文案） */
   columnLabels?: Partial<Record<WaybillColumnId, string>>;
-  /** 行内菜单（首项作为主按钮，其余进"更多"下拉） */
+  /**
+   * 行内动作顺序（对齐菜单按钮 sort_order + 业务优先级）。
+   * 组装规则见开发手册「17.列表操作列按钮规范」：过滤后 ≤2 平铺，≥3 为首项 + 更多。
+   */
   rowActions: WaybillRowActionKey[];
   defaultSort: { prop: string; order: 'ascending' | 'descending' };
   /** 是否展示「批量确认」工具栏按钮（仅 1 待调度=true） */
   allowBatchConfirm?: boolean;
-  /** 操作列宽度（不同 pool 行内链接数不同） */
+  /**
+   * 操作列 minWidth 覆盖值（一般不必填）。
+   * 默认按 rowActions 估算外显文案宽度，见 `resolveActionColumnMinWidth`。
+   */
   actionColumnWidth?: number;
+}
+
+/** 与 waybill-pool buildAction 文案对齐，供操作列宽度估算 */
+const ACTION_TITLE: Record<WaybillRowActionKey, string> = {
+  edit: '修改',
+  confirm: '确认',
+  detail: '详情',
+  'freight-detail': '计算明细',
+  recalc: '重算',
+  lock: '锁定',
+  unlock: '解锁',
+  remove: '删除'
+};
+
+/** 带图标的 link 占用宽度（偏保守，避免裁切「更多」箭头） */
+function estimateActionLinkWidth(title: string): number {
+  return 20 + title.length * 14 + 12;
+}
+
+/**
+ * 操作列 minWidth：按「过滤前最坏外显」估算（≤2 平铺 / ≥3 首项+更多）。
+ * fixed 右列无法真正内容自适应，须给足下限。
+ */
+export function resolveActionColumnMinWidth(pool: WaybillPool): number {
+  if (pool.actionColumnWidth != null) return pool.actionColumnWidth;
+  const keys = pool.rowActions;
+  const pad = 28;
+  const divider = 17;
+  const moreW = 68; // 「更多」+ 下拉箭头
+  if (keys.length === 0) return 72;
+  if (keys.length === 1) {
+    return Math.max(80, estimateActionLinkWidth(ACTION_TITLE[keys[0]!]) + pad);
+  }
+  if (keys.length === 2) {
+    return (
+      estimateActionLinkWidth(ACTION_TITLE[keys[0]!]) +
+      divider +
+      estimateActionLinkWidth(ACTION_TITLE[keys[1]!]) +
+      pad
+    );
+  }
+  return (
+    estimateActionLinkWidth(ACTION_TITLE[keys[0]!]) + divider + moreW + pad
+  );
 }
 
 const COL: Record<WaybillColumnId, string> = {
@@ -113,7 +165,7 @@ const COL: Record<WaybillColumnId, string> = {
   destination: '目的地',
   vehicleInfo: '品牌/车型',
   quantity: '台数',
-  allocatedQuantity: '已分配',
+  allocatedQuantity: '已调度',
   freightAmount: '运费金额',
   calcStatus: '计算状态',
   isLocked: '锁定',
@@ -149,6 +201,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'createdAt',
       'action'
     ],
+    // edit / remove 对齐菜单 business:waybill:edit|delete；其余暂无独立权限点
     rowActions: [
       'edit',
       'confirm',
@@ -160,8 +213,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'remove'
     ],
     defaultSort: { prop: 'createdAt', order: 'descending' },
-    allowBatchConfirm: true,
-    actionColumnWidth: 132
+    allowBatchConfirm: true
   },
   {
     key: 'pending-dispatch',
@@ -188,6 +240,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'createdAt',
       'action'
     ],
+    // edit 对齐菜单 business:waybill:edit；remove 靠后对齐 delete
     rowActions: [
       'edit',
       'detail',
@@ -197,8 +250,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'unlock',
       'remove'
     ],
-    defaultSort: { prop: 'createdAt', order: 'descending' },
-    actionColumnWidth: 132
+    defaultSort: { prop: 'createdAt', order: 'descending' }
   },
   {
     key: 'scheduling',
@@ -220,9 +272,9 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'createdAt',
       'action'
     ],
+    // 无编辑：detail 靠前，保证外显「详情 + 更多」
     rowActions: ['detail', 'freight-detail', 'recalc', 'lock', 'unlock'],
-    defaultSort: { prop: 'createdAt', order: 'descending' },
-    actionColumnWidth: 132
+    defaultSort: { prop: 'createdAt', order: 'descending' }
   },
   {
     key: 'in-transit',
@@ -244,8 +296,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'action'
     ],
     rowActions: ['detail', 'freight-detail'],
-    defaultSort: { prop: 'createdAt', order: 'descending' },
-    actionColumnWidth: 132
+    defaultSort: { prop: 'createdAt', order: 'descending' }
   },
   {
     key: 'delivered',
@@ -272,8 +323,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'action'
     ],
     rowActions: ['detail', 'freight-detail'],
-    defaultSort: { prop: 'createdAt', order: 'descending' },
-    actionColumnWidth: 132
+    defaultSort: { prop: 'createdAt', order: 'descending' }
   },
   {
     key: 'completed',
@@ -300,8 +350,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'action'
     ],
     rowActions: ['detail', 'freight-detail'],
-    defaultSort: { prop: 'createdAt', order: 'descending' },
-    actionColumnWidth: 132
+    defaultSort: { prop: 'createdAt', order: 'descending' }
   },
   {
     key: 'receipted',
@@ -328,8 +377,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'action'
     ],
     rowActions: ['detail', 'freight-detail'],
-    defaultSort: { prop: 'createdAt', order: 'descending' },
-    actionColumnWidth: 132
+    defaultSort: { prop: 'createdAt', order: 'descending' }
   },
   {
     key: 'closed',
@@ -347,8 +395,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'action'
     ],
     rowActions: ['detail'],
-    defaultSort: { prop: 'createdAt', order: 'descending' },
-    actionColumnWidth: 92
+    defaultSort: { prop: 'createdAt', order: 'descending' }
   }
 ];
 
@@ -363,7 +410,7 @@ export const getWaybillPool = (key: string): WaybillPool | undefined =>
  */
 export function buildWaybillTableColumns(pool: WaybillPool): Columns {
   const L = { ...COL, ...pool.columnLabels };
-  const actionW = pool.actionColumnWidth ?? 132;
+  const actionMinW = resolveActionColumnMinWidth(pool);
   // ele-admin-plus 的 Column 类型对 type/prop/columnKey 等运行时合法字段未导出，
   // 临时用 Record<string, unknown>[] 承载（同 task-workbench/workbench-pool-registry.ts 现状）。
   const cols: Record<string, unknown>[] = [];
@@ -371,7 +418,12 @@ export function buildWaybillTableColumns(pool: WaybillPool): Columns {
   for (const id of pool.columns) {
     switch (id) {
       case 'selection':
-        cols.push({ type: 'selection', width: 48, align: 'center' });
+        cols.push({
+          type: 'selection',
+          width: 48,
+          align: 'center',
+          resizable: false
+        });
         break;
       case 'waybillNo':
         cols.push({
@@ -481,10 +533,13 @@ export function buildWaybillTableColumns(pool: WaybillPool): Columns {
         cols.push({
           columnKey: 'action',
           label: L.action,
-          width: actionW,
+          // fixed 右列无法内容自适应：用估算 minWidth，禁止用过小的固定 width
+          minWidth: actionMinW,
+          width: actionMinW,
           align: 'center',
           slot: 'action',
           fixed: 'right',
+          resizable: false,
           hideInPrint: true,
           hideInExport: true
         });

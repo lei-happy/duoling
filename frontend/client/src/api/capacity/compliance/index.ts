@@ -21,7 +21,9 @@ export async function pageComplianceAlerts(params: ComplianceAlertParam) {
 
 /** 合规看板汇总 */
 export async function getComplianceSummary() {
-  const res = await request.get<ApiResult<ComplianceSummary>>(`${BASE}/summary`);
+  const res = await request.get<ApiResult<ComplianceSummary>>(
+    `${BASE}/summary`
+  );
   if (res.data.code === 0) {
     return res.data.data;
   }

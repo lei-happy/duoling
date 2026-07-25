@@ -4,19 +4,15 @@
     :key="patternKey"
     class="system-watermark__layer is-fixed"
     :style="overlayStyle"
-  />
-  <div
-    v-else-if="!fixed"
-    class="system-watermark"
-    :style="hostStyle"
-  >
-    <slot />
+  ></div>
+  <div v-else-if="!fixed" class="system-watermark" :style="hostStyle">
+    <slot></slot>
     <div
       v-if="visible && overlayStyle"
       :key="patternKey"
       class="system-watermark__layer"
       :style="overlayStyle"
-    />
+    ></div>
   </div>
 </template>
 

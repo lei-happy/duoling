@@ -26,6 +26,16 @@ const ecosystem: ModuleOverviewConfig = {
       path: '/ecosystem/service-hall',
       icon: 'service',
       desc: '获取平台增值服务'
+    },
+    {
+      path: '/ecosystem/deals',
+      icon: 'deal',
+      desc: '跟进合作意向与成交'
+    },
+    {
+      path: '/ecosystem/profile',
+      icon: 'profile',
+      desc: '维护对外展示的企业信息'
     }
   ],
   quickActions: [

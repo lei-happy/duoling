@@ -44,11 +44,7 @@
           </el-tag>
         </template>
         <template #action="{ row }">
-          <btn-items
-            divider
-            type="link"
-            :items="actionItems(row)"
-          />
+          <btn-items divider type="link" :items="actionItems(row)" />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -217,14 +213,10 @@
       doToggleStatus(row, next);
       return;
     }
-    ElMessageBox.confirm(
-      `确定要停用“${row.entityName}”吗?`,
-      '系统提示',
-      {
-        type: 'warning',
-        draggable: true
-      }
-    )
+    ElMessageBox.confirm(`确定要停用“${row.entityName}”吗?`, '系统提示', {
+      type: 'warning',
+      draggable: true
+    })
       .then(() => doToggleStatus(row, next))
       .catch(() => {});
   };

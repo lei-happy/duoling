@@ -73,7 +73,9 @@
         <el-tag type="primary" :disable-transitions="true">
           {{ currentPopup.version }}
         </el-tag>
-        <span class="changelog-popup__date">{{ currentPopup.release_date }}</span>
+        <span class="changelog-popup__date">{{
+          currentPopup.release_date
+        }}</span>
       </div>
       <h3 class="changelog-popup__title">{{ currentPopup.title }}</h3>
       <byte-md-viewer
@@ -149,7 +151,9 @@
   const popupList = ref<WorkbenchChangelog[]>([]);
   const popupIndex = ref(0);
 
-  const currentPopup = computed(() => popupList.value[popupIndex.value] || null);
+  const currentPopup = computed(
+    () => popupList.value[popupIndex.value] || null
+  );
   const isLastPopup = computed(
     () => popupIndex.value >= popupList.value.length - 1
   );

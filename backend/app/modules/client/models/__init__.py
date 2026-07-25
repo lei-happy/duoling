@@ -128,6 +128,7 @@ from app.modules.client.models.finance import FinanceDocEvent
 from app.modules.client.models.capacity.self_capacity.driver.driver_settlement_config import (
     DriverSettlementConfig,
 )
+from app.modules.client.models.ecosystem import BizEcoPostRef
 
 # ---- Tier 2: Business - AI 数字员工（biz_ai_*） ----
 from app.modules.ai.models.tenant.biz_ai_session import BizAiSession
@@ -229,6 +230,7 @@ __all__ = [
     "CarrierCapacityDriver",
     "BizComplianceAlert",
     "BizCompanyActivity",
+    "BizEcoPostRef",
     # AI 数字员工（biz_ai_*）
     "BizAiSession",
     "BizAiMessage",

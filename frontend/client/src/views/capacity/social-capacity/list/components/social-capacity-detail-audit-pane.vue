@@ -14,7 +14,9 @@
       <div class="sc-detail__audit">
         <strong>{{ actionLabelForAudit(a) }}</strong>
         <span v-if="a.operatorName"> · {{ a.operatorName }}</span>
-        <div v-if="a.remark" class="sc-detail__audit-remark">{{ a.remark }}</div>
+        <div v-if="a.remark" class="sc-detail__audit-remark">{{
+          a.remark
+        }}</div>
         <div
           v-if="a.action === 1 && auditRequestType(a) === 'status_change'"
           class="sc-detail__audit-changes"
@@ -45,7 +47,10 @@
         >
           本次无字段变更
         </div>
-        <div v-else-if="auditChanges(a).length" class="sc-detail__audit-changes">
+        <div
+          v-else-if="auditChanges(a).length"
+          class="sc-detail__audit-changes"
+        >
           <div class="sc-detail__audit-changes-title">变更项</div>
           <div
             v-for="c in auditChanges(a)"
@@ -88,11 +93,13 @@
     7: '移出黑名单',
     8: '撤回审核'
   };
-  const actionLabel = (a?: number) => (a ? ACTION_LABEL[a] ?? '—' : '—');
+  const actionLabel = (a?: number) => (a ? (ACTION_LABEL[a] ?? '—') : '—');
 
-  const auditRequestType = (a: SocialCapacityAudit) => a.attachment?.requestType;
+  const auditRequestType = (a: SocialCapacityAudit) =>
+    a.attachment?.requestType;
 
-  const auditStatusChange = (a: SocialCapacityAudit) => a.attachment?.statusChange;
+  const auditStatusChange = (a: SocialCapacityAudit) =>
+    a.attachment?.statusChange;
 
   const actionLabelForAudit = (a: SocialCapacityAudit) => {
     if (a.action === 1 && auditRequestType(a) === 'status_change') {

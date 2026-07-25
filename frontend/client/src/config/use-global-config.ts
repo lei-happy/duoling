@@ -9,6 +9,8 @@ import { proTableToolsDefault } from './pro-table-tool-presets';
 export function useGlobalConfig() {
   /** 高级表格全局配置 */
   const tableConfig = ref<TableGlobalConfig>({
+    // 统一开启边框：Element Plus 需 border 才支持拖拽调整列宽
+    border: true,
     response: {
       dataName: 'list',
       countName: 'count'

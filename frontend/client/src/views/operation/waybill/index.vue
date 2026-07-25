@@ -80,8 +80,15 @@
   import WaybillDetail from './components/waybill-detail.vue';
   import { listConfigsByGroup } from '@/api/system/config';
   import { getWaybillWorkbenchStats } from '@/api/waybill';
-  import type { Waybill, WaybillParam, WaybillWorkbenchStats } from '@/api/waybill/model';
-  import { UNIFIED_WAYBILL_FILTER_FIELDS, WAYBILL_POOLS } from './waybill-pool-registry';
+  import type {
+    Waybill,
+    WaybillParam,
+    WaybillWorkbenchStats
+  } from '@/api/waybill/model';
+  import {
+    UNIFIED_WAYBILL_FILTER_FIELDS,
+    WAYBILL_POOLS
+  } from './waybill-pool-registry';
 
   defineOptions({ name: 'Waybill' });
 
@@ -109,11 +116,13 @@
     searchWhere.value = where;
   };
 
-  /** 与列表查询对齐：有计划号时仅传 keyword，否则传全部筛选（不含 status） */
+  /** 与列表查询对齐：有计划号/VIN 时仅传对应条件，否则传全部筛选（不含 status） */
   const buildStatsParams = (): WaybillParam => {
     const search = searchWhere.value;
     const keyword = search.keyword?.trim();
     if (keyword) return { keyword };
+    const vinKeyword = search.vinKeyword?.trim();
+    if (vinKeyword) return { vinKeyword };
     const { status: _s, ...rest } = { ...search };
     return rest;
   };
@@ -131,7 +140,8 @@
 
   const loadStats = async () => {
     try {
-      stats.value = (await getWaybillWorkbenchStats(buildStatsParams())) ?? null;
+      stats.value =
+        (await getWaybillWorkbenchStats(buildStatsParams())) ?? null;
     } catch (e: unknown) {
       const msg = (e as { message?: string }).message;
       if (msg) EleMessage.error({ message: msg, plain: true });
@@ -154,7 +164,8 @@
   /** 开关打开 + 当前待确认计划数为 0 时，隐藏「待确认」状态卡 */
   const pendingConfirmHidden = computed(
     () =>
-      autoConfirmOnCreate.value && (stats.value?.totals?.pendingConfirm ?? 0) === 0
+      autoConfirmOnCreate.value &&
+      (stats.value?.totals?.pendingConfirm ?? 0) === 0
   );
 
   /** 隐藏后若当前激活的是 pending-confirm，自动切到下一张卡（待调度） */

@@ -376,10 +376,8 @@
     scrollbar-gutter: stable;
   }
 
-  .flow-edit-dialog
-    :deep(.floating-label-wrapper.is-focused .floating-label),
-  .flow-edit-dialog
-    :deep(.floating-label-wrapper.has-value .floating-label) {
+  .flow-edit-dialog :deep(.floating-label-wrapper.is-focused .floating-label),
+  .flow-edit-dialog :deep(.floating-label-wrapper.has-value .floating-label) {
     transform: translateY(-62%);
     padding: 2px 6px;
     z-index: 4;
@@ -387,8 +385,7 @@
     box-shadow: 0 0 0 2px var(--el-bg-color);
   }
 
-  .flow-edit-dialog
-    :deep(.flow-tab-pane > .el-row > .el-col > .el-form-item) {
+  .flow-edit-dialog :deep(.flow-tab-pane > .el-row > .el-col > .el-form-item) {
     margin-bottom: 14px;
   }
 

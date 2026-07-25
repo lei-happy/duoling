@@ -63,7 +63,10 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="资格证号">
-            <el-input v-model="form.driver.qualificationNo" placeholder="请输入" />
+            <el-input
+              v-model="form.driver.qualificationNo"
+              placeholder="请输入"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -237,7 +240,10 @@
     };
     if (d.carrierId) {
       carrierOptions.value = [
-        { id: d.carrierId, carrierName: d.carrierName ?? `承运商#${d.carrierId}` }
+        {
+          id: d.carrierId,
+          carrierName: d.carrierName ?? `承运商#${d.carrierId}`
+        }
       ];
     }
   };

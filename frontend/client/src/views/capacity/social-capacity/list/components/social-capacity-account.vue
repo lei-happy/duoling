@@ -17,12 +17,16 @@
     >
       <el-table-column label="默认" width="80" align="center">
         <template #default="{ row }">
-          <el-tag v-if="row.isDefault === 1" type="success" size="small">默认</el-tag>
+          <el-tag v-if="row.isDefault === 1" type="success" size="small"
+            >默认</el-tag
+          >
           <span v-else>—</span>
         </template>
       </el-table-column>
       <el-table-column label="账户类型" width="100">
-        <template #default="{ row }">{{ accountTypeLabel(row.accountType) }}</template>
+        <template #default="{ row }">{{
+          accountTypeLabel(row.accountType)
+        }}</template>
       </el-table-column>
       <el-table-column prop="accountLabel" label="标签" width="120" />
       <el-table-column prop="accountName" label="户名" min-width="120" />
@@ -30,7 +34,9 @@
       <el-table-column prop="bankName" label="开户行" min-width="120" />
       <el-table-column label="状态" width="80" align="center">
         <template #default="{ row }">
-          <el-tag v-if="row.status === 1" type="success" size="small">启用</el-tag>
+          <el-tag v-if="row.status === 1" type="success" size="small"
+            >启用</el-tag
+          >
           <el-tag v-else type="info" size="small">停用</el-tag>
         </template>
       </el-table-column>
@@ -80,7 +86,11 @@
         @submit.prevent=""
       >
         <el-form-item label="账户类型" prop="accountType">
-          <el-select v-model="formData.accountType" placeholder="请选择" style="width: 100%">
+          <el-select
+            v-model="formData.accountType"
+            placeholder="请选择"
+            style="width: 100%"
+          >
             <el-option label="银行卡" :value="1" />
             <el-option label="支付宝" :value="2" />
             <el-option label="微信" :value="3" />
@@ -88,20 +98,35 @@
           </el-select>
         </el-form-item>
         <el-form-item label="账户标签">
-          <el-input v-model.trim="formData.accountLabel" placeholder="如：主账户 / 油卡" />
+          <el-input
+            v-model.trim="formData.accountLabel"
+            placeholder="如：主账户 / 油卡"
+          />
         </el-form-item>
         <el-form-item label="户名" prop="accountName">
-          <el-input v-model.trim="formData.accountName" placeholder="请输入户名" />
+          <el-input
+            v-model.trim="formData.accountName"
+            placeholder="请输入户名"
+          />
         </el-form-item>
         <el-form-item label="账号" prop="accountNo">
-          <el-input v-model.trim="formData.accountNo" placeholder="账号 / 手机号" />
+          <el-input
+            v-model.trim="formData.accountNo"
+            placeholder="账号 / 手机号"
+          />
         </el-form-item>
         <template v-if="formData.accountType === 1">
           <el-form-item label="开户行">
-            <el-input v-model.trim="formData.bankName" placeholder="请输入开户行" />
+            <el-input
+              v-model.trim="formData.bankName"
+              placeholder="请输入开户行"
+            />
           </el-form-item>
           <el-form-item label="开户支行">
-            <el-input v-model.trim="formData.bankBranch" placeholder="请输入开户支行" />
+            <el-input
+              v-model.trim="formData.bankBranch"
+              placeholder="请输入开户支行"
+            />
           </el-form-item>
         </template>
         <el-form-item label="持卡人身份证">
@@ -128,7 +153,9 @@
       </el-form>
       <template #footer>
         <el-button @click="formVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="save"
+          >保存</el-button
+        >
       </template>
     </el-dialog>
   </div>
@@ -165,7 +192,10 @@
     try {
       accounts.value = (await listAccounts(props.socialCapacityId)) || [];
     } catch (e: any) {
-      EleMessage.error({ message: e?.message ?? '加载结算账户失败', plain: true });
+      EleMessage.error({
+        message: e?.message ?? '加载结算账户失败',
+        plain: true
+      });
     } finally {
       loading.value = false;
     }
@@ -198,7 +228,9 @@
   });
 
   const rules: FormRules = {
-    accountType: [{ required: true, message: '请选择账户类型', trigger: 'change' }],
+    accountType: [
+      { required: true, message: '请选择账户类型', trigger: 'change' }
+    ],
     accountName: [{ required: true, message: '请输入户名', trigger: 'blur' }],
     accountNo: [{ required: true, message: '请输入账号', trigger: 'blur' }]
   };

@@ -351,7 +351,8 @@
           @current-change="onCandidatePageChange"
         >
           <span class="cargo-picker__page-total">
-            共 {{ candidateStats.lineCount }} 行明细
+            共 {{ candidateStats.quantityTotal }} 台 ·
+            {{ candidateStats.lineCount }} 条待配明细
           </span>
         </el-pagination>
       </div>
@@ -650,8 +651,10 @@
               <span>待配商品车总台数</span>
             </div>
             <div class="cargo-picker-help-dialog__glossary-item">
-              <el-tag size="small" type="info" effect="plain">行明细</el-tag>
-              <span>按商品车明细分页，多车型商品车时行数多于计划数</span>
+              <el-tag size="small" type="info" effect="plain">待配明细</el-tag>
+              <span
+                >底部分页单位；同一计划多车型会拆成多条，台数才是商品车总数</span
+              >
             </div>
           </div>
         </div>
@@ -832,14 +835,14 @@
 
   const paginationTipText = computed(
     () =>
-      `待配明细较多，当前仅展示第 ${currentPage.value} 页（每页 ${CANDIDATE_PAGE_SIZE} 行 cargo 明细）。左上角「单」为待配计划数，底部「行明细」为可翻页浏览的明细行数；同一计划多车型时，行数会多于计划数。请优先用上方筛选缩小范围，或翻页继续浏览。`
+      `待配商品车较多，当前仅展示第 ${currentPage.value} 页。左上角是待配计划数与总台数；底部分页按「待配明细」翻页（同一计划多车型会拆成多条），台数才是商品车总数。可先用上方筛选缩小范围，或翻页继续浏览。`
   );
 
   const candidateStatsTitle = computed(() => {
     if (candidateStats.lineCount <= CANDIDATE_PAGE_SIZE) {
-      return `当前筛选条件下共 ${candidateStats.waybillCount} 个待配计划、${candidateStats.lineCount} 行 cargo 明细、${candidateStats.quantityTotal} 台商品车`;
+      return `当前筛选条件下共 ${candidateStats.waybillCount} 个待配计划、${candidateStats.quantityTotal} 台商品车（${candidateStats.lineCount} 条待配明细）`;
     }
-    return `共 ${candidateStats.waybillCount} 个待配计划、${candidateStats.lineCount} 行 cargo 明细、${candidateStats.quantityTotal} 台商品车；列表按每页 ${CANDIDATE_PAGE_SIZE} 行明细分页`;
+    return `共 ${candidateStats.waybillCount} 个待配计划、${candidateStats.quantityTotal} 台商品车；列表按每页 ${CANDIDATE_PAGE_SIZE} 条待配明细分页`;
   });
 
   function routeKeyOf(c: CandidateCargo): string {

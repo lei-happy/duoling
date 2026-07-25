@@ -8,7 +8,10 @@
       </div>
     </div>
 
-    <div v-if="contentItem" class="watermark-setting-row watermark-setting-row--top">
+    <div
+      v-if="contentItem"
+      class="watermark-setting-row watermark-setting-row--top"
+    >
       <div class="watermark-setting-label">水印内容：</div>
       <div class="watermark-setting-body watermark-setting-body--column">
         <el-input
@@ -112,13 +115,13 @@
           :height="220"
         >
           <div class="watermark-preview__mock">
-            <div class="watermark-preview__mock-toolbar" />
+            <div class="watermark-preview__mock-toolbar"></div>
             <div class="watermark-preview__mock-table">
               <div
                 v-for="row in 4"
                 :key="row"
                 class="watermark-preview__mock-row"
-              />
+              ></div>
             </div>
           </div>
         </SystemWatermarkOverlay>
@@ -138,7 +141,9 @@
         <el-button :disabled="!isDirty || saving" @click="resetDraft">
           重置
         </el-button>
-        <span v-if="isDirty" class="watermark-preview__dirty">有未保存的修改</span>
+        <span v-if="isDirty" class="watermark-preview__dirty"
+          >有未保存的修改</span
+        >
       </div>
     </div>
   </div>
@@ -154,7 +159,10 @@
   import { useUserStore } from '@/store/modules/user';
   import { useThemeStore } from '@/store/modules/theme';
   import SystemWatermarkOverlay from '@/components/SystemWatermarkOverlay/index.vue';
-  import { refreshWatermarkConfig, applyWatermarkConfigValues } from '@/utils/use-watermark-config';
+  import {
+    refreshWatermarkConfig,
+    applyWatermarkConfigValues
+  } from '@/utils/use-watermark-config';
   import {
     buildWatermarkFont,
     DEFAULT_WATERMARK_CONTENT,

@@ -35,7 +35,10 @@ export const ATTENTION_METRICS_REGISTRY: AttentionMetricConfig[] = [
     permission: 'operation:task:list',
     feature: 'biz_dispatch',
     sortOrder: 20,
-    route: { path: '/operation/task-workbench', query: { tab: 'pending-dispatch' } }
+    route: {
+      path: '/operation/task-workbench',
+      query: { tab: 'pending-dispatch' }
+    }
   },
   {
     key: 'approval.pending',
@@ -43,6 +46,9 @@ export const ATTENTION_METRICS_REGISTRY: AttentionMetricConfig[] = [
     icon: 'Select',
     tagType: 'success',
     sortOrder: 30,
-    route: { path: '/operation/task-finance-workbench', query: { tab: 'pending-review' } }
+    route: {
+      path: '/operation/task-finance-workbench',
+      query: { tab: 'pending-review' }
+    }
   }
 ];

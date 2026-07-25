@@ -47,14 +47,8 @@
             <el-radio value="dept_id">指定部门</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item
-          v-if="deptLeaderRef === 'dept_id'"
-          label="选择部门"
-        >
-          <department-select
-            v-model="deptLeaderId"
-            placeholder="请选择部门"
-          />
+        <el-form-item v-if="deptLeaderRef === 'dept_id'" label="选择部门">
+          <department-select v-model="deptLeaderId" placeholder="请选择部门" />
         </el-form-item>
         <p class="wf-rule-tip">
           取对应部门在「组织架构」中配置的负责人；请确保部门已设置负责人。

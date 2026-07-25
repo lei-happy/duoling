@@ -18,6 +18,7 @@
     - 所有 cell slot（waybillNo / customerName / origin / destination / vehicleInfo /
       quantity / allocatedQuantity / calcStatus / isLocked / status / createdAt / action）
       集中在本文件，与 registry.buildWaybillTableColumns 的 slot 名一一对应
+    - 操作列遵循开发手册「17.列表操作列按钮规范」：权限过滤后 ≤2 平铺、≥3 首项+更多
     - 行内可变操作（确认 / 重算 / 锁定 / 解锁 / 删除）由本组件直接调用 API，
       成功后 emit syncStats 由父级刷新统计与列表
 -->
@@ -34,7 +35,7 @@
         :highlight-current-row="true"
         v-model:selections="selections"
         :default-sort="pool.defaultSort"
-        :cache-key="`WaybillPool-${pool.key}`"
+        :cache-key="`WaybillPool-${pool.key}-a3`"
         @done="onTableDone"
       >
         <template #toolbar>
@@ -173,36 +174,27 @@
         </template>
 
         <template #calcStatus="{ row }">
-          <el-tag :type="calcStatusType(row.calcStatus)" size="small">
+          <el-tag
+            :type="calcStatusType(row.calcStatus)"
+            size="small"
+            effect="light"
+          >
             {{ calcStatusText(row.calcStatus) }}
           </el-tag>
         </template>
 
         <template #isLocked="{ row }">
           <el-tag
-            :type="isWaybillLocked(row) ? 'warning' : 'info'"
+            :type="isWaybillLocked(row) ? 'danger' : 'success'"
             size="small"
+            effect="light"
           >
-            {{ isWaybillLocked(row) ? '已锁' : '正常' }}
+            {{ isWaybillLocked(row) ? '已锁定' : '未锁定' }}
           </el-tag>
         </template>
 
         <template #status="{ row }">
           <waybill-status-tag :status="row.status" />
-          <el-tooltip
-            v-if="row.hasActiveTaskItems"
-            content="存在活跃任务挂接，编辑/删除受限"
-            placement="top"
-          >
-            <el-tag
-              type="warning"
-              size="small"
-              effect="plain"
-              style="margin-left: 4px"
-            >
-              挂接中
-            </el-tag>
-          </el-tooltip>
         </template>
 
         <template #createdAt="{ row }">
@@ -232,11 +224,12 @@
   import { ElMessageBox } from 'element-plus';
   import {
     CircleCheck,
-    Document,
     DocumentCopy,
     Lock,
     RefreshRight,
-    Unlock
+    Tickets,
+    Unlock,
+    View
   } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
@@ -259,7 +252,8 @@
   } from '@/api/waybill';
   import type { Waybill, WaybillParam } from '@/api/waybill/model';
   import { formatDateTime } from '@/utils/date-util';
-  import { DeleteOutlined } from '@/components/icons';
+  import { usePermission } from '@/utils/use-permission';
+  import { DeleteOutlined, EditOutlined } from '@/components/icons';
   import {
     WAYBILL_POOLS,
     WAYBILL_STATUS_TO_POOL_KEY,
@@ -270,6 +264,8 @@
     WaybillPool,
     WaybillRowActionKey
   } from '../waybill-pool-registry';
+
+  const { hasPermission, hasAnyPermission } = usePermission();
 
   /** 提交重新计算后的提示（避免「worker」等技术用语） */
   const FREIGHT_RECALC_SUBMIT_MSG =
@@ -305,17 +301,19 @@
   const columns = computed<Columns>(() => {
     const all = buildWaybillTableColumns(pool.value);
     if (props.listShowFreightAmount) return all;
-    return all.filter(
-      (c) => (c as { prop?: string }).prop !== 'freightAmount'
-    );
+    return all.filter((c) => (c as { prop?: string }).prop !== 'freightAmount');
   });
 
   const buildQuery = (pages?: Record<string, unknown>): WaybillParam => {
     const search = props.searchWhere ?? {};
     const keyword = search.keyword?.trim();
-    // 计划号唯一：有 keyword 时仅按单号查，不受阶段/日期等其它条件限制
+    const vinKeyword = search.vinKeyword?.trim();
+    // 计划号 / VIN：跨状态直查，不受阶段卡、日期等其它条件限制
     if (keyword) {
       return { keyword, ...(pages as WaybillParam | undefined) };
+    }
+    if (vinKeyword) {
+      return { vinKeyword, ...(pages as WaybillParam | undefined) };
     }
     return {
       ...search,
@@ -328,8 +326,9 @@
     const merged = buildQuery(pages);
     return pageWaybills(merged).then((res) => {
       const list = res?.list ?? [];
-      const keyword = merged.keyword?.trim();
-      if (keyword && list.length > 0) {
+      const crossLookup =
+        !!merged.keyword?.trim() || !!merged.vinKeyword?.trim();
+      if (crossLookup && list.length > 0) {
         const targetPool = WAYBILL_STATUS_TO_POOL_KEY[list[0]!.status ?? -1];
         if (targetPool && targetPool !== props.poolKey) {
           emit('autoSwitchPool', targetPool);
@@ -392,10 +391,10 @@
 
   const calcStatusType = (s?: string) => {
     if (s === 'calculated') return 'success';
-    if (s === 'pending') return 'info';
+    if (s === 'pending') return 'warning';
     if (s === 'calculating') return 'primary';
     if (s === 'exception') return 'danger';
-    if (s === 'locked') return 'warning';
+    if (s === 'locked') return 'info';
     return 'info';
   };
 
@@ -472,16 +471,42 @@
   // ========================================================
 
   /**
-   * 注册表 key → 渲染规则（visible/disabled/label/icon/onClick）
+   * 注册表 key → 按钮项（permission / icon / onClick）
    *
-   * 集中维护可避免 actionItems 内逻辑散落。各动作之"是否显示"严格依据当前行状态判断，
-   * 即便 pool 的 rowActions 数组里包含某 key，行不满足条件时也不会渲染。
+   * 行状态不满足时返回 null（不进入槽位）。有菜单按钮权限的动作挂 permission，
+   * 由 BtnItems 再过滤；组装规则见开发手册「17.列表操作列按钮规范」。
    */
   const buildAction = (
     key: WaybillRowActionKey,
     row: Waybill
   ): ButtonDropdownItem | null => {
     switch (key) {
+      case 'edit':
+        // 仅 status 0/1 展示入口；已排进任务时点击友好提示（不静默禁用）
+        if (row.status !== 0 && row.status !== 1) return null;
+        return {
+          title: '修改',
+          icon: EditOutlined,
+          permission: 'business:waybill:edit',
+          onClick: () => {
+            if (row.hasActiveTaskItems) {
+              EleMessage.warning({
+                message:
+                  '这批车已排进任务，暂不能改计划；如需调整，请先到任务里取消关联',
+                plain: true
+              });
+              return;
+            }
+            if (!canEditWaybill(row)) {
+              EleMessage.warning({
+                message: '当前状态不可修改',
+                plain: true
+              });
+              return;
+            }
+            emit('openEdit', row);
+          }
+        };
       case 'confirm':
         // 草稿 → 待调度（仅遗留 status=0 数据时显示）
         if (row.status !== 0) return null;
@@ -493,13 +518,13 @@
       case 'detail':
         return {
           title: '详情',
-          icon: Document,
+          icon: View,
           onClick: () => emit('openDetail', row)
         };
       case 'freight-detail':
         return {
           title: '计算明细',
-          icon: Document,
+          icon: Tickets,
           onClick: () => emit('openFreightDetail', row)
         };
       case 'recalc':
@@ -528,6 +553,7 @@
         return {
           title: '删除',
           icon: DeleteOutlined,
+          permission: 'business:waybill:delete',
           divided: true,
           danger: true,
           onClick: () => remove(row)
@@ -537,43 +563,35 @@
     }
   };
 
+  /** 与 BtnItems 一致：有权限字段时先过滤，再占外显槽，避免无权限首项被挡后只剩「更多」 */
+  const passActionPermission = (it: ButtonDropdownItem) => {
+    if (it.permission) return hasPermission(it.permission);
+    if (it.anyPermission) return hasAnyPermission(it.anyPermission);
+    return true;
+  };
+
+  /** 槽位算法：可见 ≤2 平铺；≥3 为首项 + 更多（更多悬停展开） */
   const actionItems = (row: Waybill): ButtonItem[] => {
-    const items: ButtonItem[] = [];
-    const dropdown: ButtonDropdownItem[] = [];
-
-    /** 修改按钮：仅 pool 包含 'edit' 时展示为顶层主按钮 */
-    if (pool.value.rowActions.includes('edit')) {
-      items.push({
-        preset: 'edit',
-        title: '修改',
-        type: 'link',
-        props: { disabled: !canEditWaybill(row) },
-        onClick: () => {
-          if (canEditWaybill(row)) emit('openEdit', row);
-        }
-      });
-    }
-
+    const visible: ButtonDropdownItem[] = [];
     for (const k of pool.value.rowActions) {
-      if (k === 'edit') continue;
       const it = buildAction(k, row);
-      if (it) dropdown.push(it);
+      if (it && passActionPermission(it)) visible.push(it);
     }
 
-    if (dropdown.length === 1) {
-      // 仅一个下拉项时直接平铺为顶层链接，避免点"更多"再点的二次操作
-      const only = dropdown[0]!;
-      items.push({
-        title: only.title,
-        type: 'link',
-        icon: only.icon,
-        onClick: only.onClick
-      });
-    } else if (dropdown.length > 1) {
-      items.push({ preset: 'more', dropdownItems: dropdown });
+    if (visible.length === 0) return [];
+
+    if (visible.length <= 2) {
+      return visible.map((it) => ({
+        ...it,
+        type: 'link' as const
+      }));
     }
 
-    return items;
+    const [primary, ...rest] = visible;
+    return [
+      { ...primary!, type: 'link' },
+      { preset: 'more', dropdownItems: rest }
+    ];
   };
 
   // ========================================================
@@ -767,8 +785,15 @@
   }
 
   .waybill-actions {
-    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
     white-space: nowrap;
+  }
+
+  .waybill-actions :deep(.ele-buttons) {
+    flex-wrap: nowrap;
   }
 
   .waybill-alloc {

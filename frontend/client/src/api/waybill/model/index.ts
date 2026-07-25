@@ -107,6 +107,8 @@ export interface WaybillParam extends PageParam {
   destinationKeyword?: string;
   /** 品牌或车型模糊 */
   vehicleKeyword?: string;
+  /** VIN / 车架号模糊（匹配货物明细） */
+  vinKeyword?: string;
   /** 创建日期起 YYYY-MM-DD（含当日 0 点） */
   createdAtStart?: string;
   /** 创建日期止 YYYY-MM-DD（含当日结束） */

@@ -153,7 +153,7 @@ class WaybillStatusUpdate(BaseModel):
 
 
 def _cargo_summary_from_lines(cargo_models: list) -> str:
-    """用于列表展示的摘要文案"""
+    """用于列表展示的摘要文案（仅品牌/车型×台数，不含 VIN）"""
     if not cargo_models:
         return ""
     rows = sorted(cargo_models, key=lambda x: (x.sort_order, x.id))
@@ -162,11 +162,7 @@ def _cargo_summary_from_lines(cargo_models: list) -> str:
         brand = (r.vehicle_brand or "").strip()
         model = (r.vehicle_model or "").strip()
         mid = "/".join(x for x in (brand, model) if x) or "—"
-        vn = normalize_waybill_vin(getattr(r, "vin", None))
-        if vn:
-            parts.append(f"{mid}×{r.quantity}({vn})")
-        else:
-            parts.append(f"{mid}×{r.quantity}")
+        parts.append(f"{mid}×{r.quantity}")
     return "；".join(parts)
 
 

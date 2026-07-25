@@ -474,6 +474,23 @@ sync_tenant_dicts() {
     log_info "租户字典数据已同步"
 }
 
+# 敏感词库初始词表（平台库 sys_sensitive_word，幂等：已存在的词跳过不覆盖）
+# 上线后由运营在「生态运营 → 敏感词库」自行增删，本步骤只负责首次铺底。
+# 跳过而非覆盖是刻意的：运营可能已停用某个误伤词，覆盖会让调整反复失效。
+sync_sensitive_words() {
+    log_info "下发敏感词库初始词表（幂等）..."
+    cd "$DEPLOY_DIR"
+    set +e
+    docker compose exec -T backend python scripts/seed/seed_sensitive_words.py
+    local rc=$?
+    set -e
+    if [ "$rc" -eq 0 ]; then
+        log_info "[OK] 敏感词库已同步"
+    else
+        log_warn "敏感词库下发返回 $rc（可忽略，可稍后手动补跑）"
+    fi
+}
+
 # 审批中心默认流程模板（草稿态，幂等；依赖 biz_approval_flow 表已存在）
 # 必须在 sync_tenant_business_schema 之后：表由 runner Phase1 按 approval_manage.required_tables 创建
 sync_approval_flow_seed() {
@@ -663,6 +680,7 @@ sync_platform_data() {
 
     sync_approval_flow_seed
     sync_tenant_dicts
+    sync_sensitive_words
     set -e
 
     if [ "$meta_rc" -ne 0 ]; then

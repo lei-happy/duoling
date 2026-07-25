@@ -10,7 +10,10 @@
 -->
 <template>
   <ele-page>
-    <ele-card :body-style="{ paddingBottom: '4px' }" class="completed-page__filter">
+    <ele-card
+      :body-style="{ paddingBottom: '4px' }"
+      class="completed-page__filter"
+    >
       <el-form :model="where" inline @submit.prevent>
         <el-form-item label="关键字">
           <el-input

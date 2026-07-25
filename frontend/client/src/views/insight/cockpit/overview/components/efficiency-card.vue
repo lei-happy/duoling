@@ -36,73 +36,73 @@
           />
         </div>
         <div class="eff-footer">
-          <div class="eff-divider" role="separator" />
+          <div class="eff-divider" role="separator"></div>
           <div class="eff-metrics">
             <div class="eff-calc-block">
               <div class="eff-calc-strip-head">
                 <div class="eff-calc-head-left">
-                <span class="eff-calc-head-title">运费计算状态</span>
-                <ele-tooltip
-                  content="统计所选时间内，每张计划的「运费有没有被系统自动算出来、算得是否正常」。"
-                  placement="top"
-                  :offset="6"
-                >
-                  <el-icon class="eff-tip">
-                    <QuestionCircleOutlined />
-                  </el-icon>
-                </ele-tooltip>
-              </div>
-              <div v-if="data.totalCount > 0" class="eff-calc-head-right">
-                <span class="eff-calc-head-meta">
-                  计算异常
-                  <span
-                    class="eff-calc-ex-pct"
-                    :style="{ color: colorForCalcStatus('exception') }"
+                  <span class="eff-calc-head-title">运费计算状态</span>
+                  <ele-tooltip
+                    content="统计所选时间内，每张计划的「运费有没有被系统自动算出来、算得是否正常」。"
+                    placement="top"
+                    :offset="6"
                   >
-                    {{ calcExceptionPctText }}%
+                    <el-icon class="eff-tip">
+                      <QuestionCircleOutlined />
+                    </el-icon>
+                  </ele-tooltip>
+                </div>
+                <div v-if="data.totalCount > 0" class="eff-calc-head-right">
+                  <span class="eff-calc-head-meta">
+                    计算异常
+                    <span
+                      class="eff-calc-ex-pct"
+                      :style="{ color: colorForCalcStatus('exception') }"
+                    >
+                      {{ calcExceptionPctText }}%
+                    </span>
                   </span>
-                </span>
-                <span class="eff-calc-head-meta eff-calc-head-total">
-                  · 共 {{ data.totalCount }} 单
+                  <span class="eff-calc-head-meta eff-calc-head-total">
+                    · 共 {{ data.totalCount }} 单
+                  </span>
+                </div>
+              </div>
+              <div
+                v-if="data.totalCount > 0 && calcBarSegments.length"
+                class="eff-calc-track"
+                role="img"
+                :aria-label="calcBarAriaLabel"
+              >
+                <div
+                  v-for="seg in calcBarSegments"
+                  :key="seg.calcStatus"
+                  class="eff-calc-seg"
+                  :style="{
+                    flex: `0 0 ${seg.pct.toFixed(4)}%`,
+                    minWidth: seg.count ? '3px' : '0',
+                    backgroundColor: seg.color
+                  }"
+                  :title="`${seg.label} ${seg.count} 单（${seg.pct.toFixed(1)}%）`"
+                ></div>
+              </div>
+              <div v-else-if="data.totalCount > 0" class="eff-calc-empty">
+                暂无计算状态分布
+              </div>
+              <div v-else class="eff-calc-empty">本期无计划</div>
+              <div v-if="calcBarSegments.length" class="eff-calc-legend">
+                <span
+                  v-for="seg in calcBarSegments"
+                  :key="'lg-' + seg.calcStatus"
+                  class="eff-calc-legend-item"
+                >
+                  <i
+                    class="eff-calc-legend-dot"
+                    :style="{ backgroundColor: seg.color }"
+                  ></i>
+                  <span>{{ seg.label }}</span>
+                  <span class="eff-calc-legend-num">{{ seg.count }}</span>
                 </span>
               </div>
-            </div>
-            <div
-              v-if="data.totalCount > 0 && calcBarSegments.length"
-              class="eff-calc-track"
-              role="img"
-              :aria-label="calcBarAriaLabel"
-            >
-              <div
-                v-for="seg in calcBarSegments"
-                :key="seg.calcStatus"
-                class="eff-calc-seg"
-                :style="{
-                  flex: `0 0 ${seg.pct.toFixed(4)}%`,
-                  minWidth: seg.count ? '3px' : '0',
-                  backgroundColor: seg.color
-                }"
-                :title="`${seg.label} ${seg.count} 单（${seg.pct.toFixed(1)}%）`"
-              ></div>
-            </div>
-            <div v-else-if="data.totalCount > 0" class="eff-calc-empty">
-              暂无计算状态分布
-            </div>
-            <div v-else class="eff-calc-empty">本期无计划</div>
-            <div v-if="calcBarSegments.length" class="eff-calc-legend">
-              <span
-                v-for="seg in calcBarSegments"
-                :key="'lg-' + seg.calcStatus"
-                class="eff-calc-legend-item"
-              >
-                <i
-                  class="eff-calc-legend-dot"
-                  :style="{ backgroundColor: seg.color }"
-                ></i>
-                <span>{{ seg.label }}</span>
-                <span class="eff-calc-legend-num">{{ seg.count }}</span>
-              </span>
-            </div>
             </div>
           </div>
         </div>

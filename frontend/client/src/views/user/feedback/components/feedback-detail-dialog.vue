@@ -62,7 +62,10 @@
           <span class="feedback-panel__badge feedback-panel__badge--official">
             官方回复
           </span>
-          <span v-if="detail.reply && detail.replied_at" class="feedback-panel__time">
+          <span
+            v-if="detail.reply && detail.replied_at"
+            class="feedback-panel__time"
+          >
             {{ formatDateTime(detail.replied_at) }}
           </span>
         </div>

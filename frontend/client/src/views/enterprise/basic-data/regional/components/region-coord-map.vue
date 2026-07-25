@@ -31,13 +31,7 @@
 </template>
 
 <script lang="ts" setup>
-  import {
-    ref,
-    watch,
-    nextTick,
-    onMounted,
-    onBeforeUnmount
-  } from 'vue';
+  import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
   import AMapLoader from '@amap/amap-jsapi-loader';
   import { Search } from '@element-plus/icons-vue';
 
@@ -193,7 +187,10 @@
     });
   };
 
-  const handleSearch = (keyword: string, callback: (data: SuggestItem[]) => void) => {
+  const handleSearch = (
+    keyword: string,
+    callback: (data: SuggestItem[]) => void
+  ) => {
     if (!keyword || lastSuggestion === keyword) {
       callback(suggestionData);
       return;

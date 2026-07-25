@@ -296,10 +296,7 @@
    * @param reset true=重新从第一页加载；false=追加下一页
    * @param autoSelectFirst 首屏无选中时自动选第一条
    */
-  const loadBrandOptions = async (
-    reset = true,
-    autoSelectFirst = false
-  ) => {
+  const loadBrandOptions = async (reset = true, autoSelectFirst = false) => {
     if (reset) {
       sideLoading.value = true;
       sidePage.value = 1;

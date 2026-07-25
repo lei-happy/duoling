@@ -87,6 +87,12 @@ from app.modules.client.api.task import (
 from app.modules.client.api.insight.cockpit import router as insight_cockpit_router
 from app.modules.client.api.insight.profit import router as insight_profit_router
 from app.modules.client.api.approval import router as approval_router
+from app.modules.client.api.ecosystem import (
+    capacity_hall_router,
+    cargo_hall_router,
+    eco_my_posts_router,
+    eco_publish_router,
+)
 from app.modules.ai.api.client import router as ai_client_router
 from app.modules.open_platform.management.api import router as open_platform_router
 
@@ -331,6 +337,35 @@ router.include_router(
     tags=["客户端-数据洞察-利润总览"],
 )
 router.include_router(approval_router, prefix="/approval", tags=["客户端-审批中心"])
+# 服务平台：两个大厅各自门控（版本可以只开其中一个），
+# 发布与挂牌管理的门控落在端点上（发货源 / 发运力是两个 feature）
+router.include_router(
+    cargo_hall_router,
+    prefix="/ecosystem/cargo-hall",
+    tags=["客户端-服务平台-货源大厅"],
+    dependencies=[Depends(require_feature("ecosystem_cargo_hall"))],
+)
+router.include_router(
+    capacity_hall_router,
+    prefix="/ecosystem/capacity-hall",
+    tags=["客户端-服务平台-运力大厅"],
+    dependencies=[Depends(require_feature("ecosystem_capacity_hall"))],
+)
+router.include_router(
+    eco_publish_router,
+    prefix="/ecosystem/publish",
+    tags=["客户端-服务平台-发布挂牌"],
+)
+router.include_router(
+    eco_my_posts_router,
+    prefix="/ecosystem/my-posts",
+    tags=["客户端-服务平台-我发布的"],
+    dependencies=[
+        Depends(
+            require_feature("ecosystem_cargo_publish", "ecosystem_capacity_publish")
+        )
+    ],
+)
 router.include_router(ai_client_router, prefix="/ai", tags=["客户端-AI数字员工"])
 router.include_router(
     open_platform_router,

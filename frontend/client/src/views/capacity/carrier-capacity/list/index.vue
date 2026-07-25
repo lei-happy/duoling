@@ -108,7 +108,13 @@
       minWidth: 100,
       formatter: (row) => row.vehicleTypeLabel ?? '-'
     },
-    { prop: 'status', label: '状态', width: 90, align: 'center', slot: 'status' },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 90,
+      align: 'center',
+      slot: 'status'
+    },
     {
       prop: 'createdAt',
       label: '建档时间',

@@ -101,7 +101,10 @@
     SocialCapacityApprovalParam,
     SocialCapacityApprovalStats
   } from '@/api/capacity/social-capacity/approval/model';
-  import { DICT_CODE_VEHICLE_TYPE, DICT_CODE_SOCIAL_CAPACITY_SOURCE } from '@/constants/dict-codes';
+  import {
+    DICT_CODE_VEHICLE_TYPE,
+    DICT_CODE_SOCIAL_CAPACITY_SOURCE
+  } from '@/constants/dict-codes';
   import { formatDateTime } from '@/utils/date-util';
 
   defineOptions({ name: 'CapacitySocialApproval' });
@@ -217,7 +220,11 @@
       filter.approvalStatus = undefined;
     }
     const res = await pageApprovals(filter);
-    const raw = res as { list?: SocialCapacityListItem[]; count?: number; total?: number };
+    const raw = res as {
+      list?: SocialCapacityListItem[];
+      count?: number;
+      total?: number;
+    };
     return {
       list: raw?.list ?? [],
       count: raw?.count ?? raw?.total ?? 0
@@ -253,7 +260,10 @@
     detailVisible.value = true;
   };
 
-  const openAction = (mode: 'approve' | 'reject', row: SocialCapacityListItem) => {
+  const openAction = (
+    mode: 'approve' | 'reject',
+    row: SocialCapacityListItem
+  ) => {
     actionMode.value = mode;
     actionRow.value = row;
     actionVisible.value = true;

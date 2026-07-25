@@ -94,7 +94,16 @@
                 class="wcd-card__line wcd-card__line--vin"
                 :title="row.vin"
               >
-                VIN {{ row.vin }}
+                <span class="wcd-card__vin-text">VIN {{ row.vin }}</span>
+                <el-button
+                  type="primary"
+                  link
+                  class="wcd-card__vin-copy"
+                  :icon="DocumentCopy"
+                  title="复制 VIN"
+                  aria-label="复制 VIN"
+                  @click.stop="copyVin(row.vin)"
+                />
               </div>
             </div>
           </li>
@@ -145,10 +154,14 @@
     return true;
   });
 
-  const copyWaybillNo = async () => {
-    const t = waybillNo.value;
+  const copyText = async (
+    raw: string | undefined | null,
+    emptyTip: string,
+    successTip: string
+  ) => {
+    const t = raw?.trim();
     if (!t) {
-      EleMessage.warning({ message: '无可复制的计划号', plain: true });
+      EleMessage.warning({ message: emptyTip, plain: true });
       return;
     }
     try {
@@ -164,11 +177,17 @@
         document.execCommand('copy');
         document.body.removeChild(ta);
       }
-      EleMessage.success({ message: '已复制计划号', plain: true });
+      EleMessage.success({ message: successTip, plain: true });
     } catch {
-      EleMessage.error({ message: '复制失败', plain: true });
+      EleMessage.error({ message: '复制失败，请重试', plain: true });
     }
   };
+
+  const copyWaybillNo = () =>
+    copyText(waybillNo.value, '无可复制的计划号', '已复制计划号');
+
+  const copyVin = (vin?: string | null) =>
+    copyText(vin, '无可复制的 VIN', '已复制 VIN');
 
   const customerDisplay = computed(() => {
     const n = props.waybill?.customerName?.trim();
@@ -478,12 +497,26 @@
   }
 
   .wcd-card__line--vin {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    max-width: 100%;
     font-size: 12px;
     font-family: ui-monospace, monospace;
     color: var(--el-text-color-regular);
+  }
+
+  .wcd-card__vin-text {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
+  }
+
+  .wcd-card__vin-copy {
+    flex-shrink: 0;
+    padding: 2px 4px;
+    min-height: auto;
   }
 
   .wcd-empty {

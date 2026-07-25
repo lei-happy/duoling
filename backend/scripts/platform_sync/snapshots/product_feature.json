@@ -396,18 +396,6 @@
     "status": 1
   },
   {
-    "feature_code": "capacity_self_group",
-    "feature_name": "自有运力-运力分组",
-    "module": "capacity",
-    "description": null,
-    "required_tables": [
-      "biz_capacity_group",
-      "biz_capacity_group_member"
-    ],
-    "sort_order": 47,
-    "status": 1
-  },
-  {
     "feature_code": "fleet_maintenance",
     "feature_name": "车辆维保",
     "module": "capacity",
@@ -422,6 +410,18 @@
     "module": "capacity",
     "description": null,
     "required_tables": null,
+    "sort_order": 47,
+    "status": 1
+  },
+  {
+    "feature_code": "capacity_self_group",
+    "feature_name": "自有运力-运力分组",
+    "module": "capacity",
+    "description": null,
+    "required_tables": [
+      "biz_capacity_group",
+      "biz_capacity_group_member"
+    ],
     "sort_order": 47,
     "status": 1
   },
@@ -739,18 +739,18 @@
   },
   {
     "feature_code": "ecosystem_cargo_hall",
-    "feature_name": "货源大厅",
+    "feature_name": "货源大厅（浏览）",
     "module": "ecosystem",
-    "description": null,
+    "description": "浏览同行发布的货源信息。全版本开放，保证市场信息密度",
     "required_tables": null,
     "sort_order": 100,
     "status": 1
   },
   {
     "feature_code": "ecosystem_capacity_hall",
-    "feature_name": "运力大厅",
+    "feature_name": "运力大厅（浏览）",
     "module": "ecosystem",
-    "description": null,
+    "description": "浏览同行发布的空闲运力信息。全版本开放",
     "required_tables": null,
     "sort_order": 101,
     "status": 1
@@ -762,6 +762,46 @@
     "description": null,
     "required_tables": null,
     "sort_order": 102,
+    "status": 1
+  },
+  {
+    "feature_code": "ecosystem_cargo_publish",
+    "feature_name": "发布货源",
+    "module": "ecosystem",
+    "description": "把配载好但缺车的任务发布到货源大厅，等同行来接。标准版及以上开放",
+    "required_tables": [
+      "biz_eco_post_ref"
+    ],
+    "sort_order": 103,
+    "status": 1
+  },
+  {
+    "feature_code": "ecosystem_capacity_publish",
+    "feature_name": "发布运力",
+    "module": "ecosystem",
+    "description": "把空闲车辆发布到运力大厅，等同行来找。标准版及以上开放",
+    "required_tables": [
+      "biz_eco_post_ref"
+    ],
+    "sort_order": 104,
+    "status": 1
+  },
+  {
+    "feature_code": "ecosystem_intent",
+    "feature_name": "主动联系同行",
+    "module": "ecosystem",
+    "description": "主动向同行发起合作意向并查看对方联系方式。仅专业版开放，是服务平台唯一的付费能力",
+    "required_tables": null,
+    "sort_order": 105,
+    "status": 1
+  },
+  {
+    "feature_code": "ecosystem_deal",
+    "feature_name": "我的合作",
+    "module": "ecosystem",
+    "description": "响应收到的合作意向、成交、履约与评价。全版本开放——被同行找上门时必须能完整成交",
+    "required_tables": null,
+    "sort_order": 106,
     "status": 1
   },
   {

@@ -10,10 +10,7 @@
   栅格固定 7 列、永远单行——窄桌面上单卡会被压缩，但相比换行更易扫读。
 -->
 <template>
-  <div
-    class="wb-cards"
-    :style="{ '--wb-cards-count': cards.length }"
-  >
+  <div class="wb-cards" :style="{ '--wb-cards-count': cards.length }">
     <button
       v-for="card in cards"
       :key="card.key"

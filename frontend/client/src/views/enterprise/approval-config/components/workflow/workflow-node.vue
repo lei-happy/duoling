@@ -197,7 +197,11 @@
 
   const showArrow = computed(() => {
     if (readonly.value) return false;
-    return node.value?.type === 'start' || node.value?.type === 'approval' || node.value?.type === 'cc';
+    return (
+      node.value?.type === 'start' ||
+      node.value?.type === 'approval' ||
+      node.value?.type === 'cc'
+    );
   });
 
   const showError = computed(() => {

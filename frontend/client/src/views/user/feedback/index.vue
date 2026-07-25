@@ -37,10 +37,7 @@
       </ele-pro-table>
     </ele-card>
 
-    <feedback-submit-dialog
-      v-model="submitVisible"
-      @done="onSubmitted"
-    />
+    <feedback-submit-dialog v-model="submitVisible" @done="onSubmitted" />
 
     <feedback-detail-dialog
       v-model="detailVisible"

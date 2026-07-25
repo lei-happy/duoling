@@ -31,7 +31,7 @@
               <div class="version-dot">
                 <span>{{ row.version }}</span>
               </div>
-              <div v-if="index < logs.length - 1" class="version-line" />
+              <div v-if="index < logs.length - 1" class="version-line"></div>
             </div>
 
             <div class="version-card">
@@ -61,7 +61,10 @@
                   <span class="meta-chip">
                     {{ formatDateTime(row.createdAt) }}
                   </span>
-                  <el-icon class="expand-icon" :class="{ open: expandedId === row.id }">
+                  <el-icon
+                    class="expand-icon"
+                    :class="{ open: expandedId === row.id }"
+                  >
                     <ArrowDown />
                   </el-icon>
                 </div>
@@ -100,7 +103,7 @@
                         <div
                           v-if="stepIndex < stepsOf(row).length - 1"
                           class="flow-arrow"
-                        />
+                        ></div>
                       </template>
                     </div>
                     <div v-else class="flow-empty">该版本未配置流程节点</div>
@@ -230,7 +233,10 @@
     const snap = parseSnapshot(row);
     if (!snap) return [];
     return [
-      { label: '流程名称', value: String(snap.flowName || props.flowName || '—') },
+      {
+        label: '流程名称',
+        value: String(snap.flowName || props.flowName || '—')
+      },
       { label: '审批场景', value: bizTypeLabel(snap.bizType) },
       { label: '优先级', value: String(snap.priority ?? '—') },
       { label: '默认流程', value: yesNo(snap.isDefault) },
