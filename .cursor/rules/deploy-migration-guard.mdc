@@ -1,0 +1,77 @@
+---
+description: 本地建表/迁移/菜单变更须对齐 deploy.sh，避免线上部署失败
+alwaysApply: true
+---
+
+# 线上部署迁移对齐（deploy.sh）
+
+本地开发若涉及**数据表结构**、**迁移文件**或**系统菜单/功能/版本元数据**，合并前必须确保 `deploy/deploy.sh update` 能完整、幂等地跑通对应环节。
+
+详细子规范：[database-migration.mdc](mdc:.cursor/rules/database-migration.mdc)、[backend/scripts/migration/README.md](mdc:backend/scripts/migration/README.md)、[backend/scripts/platform_sync/README.md](mdc:backend/scripts/platform_sync/README.md)。
+
+## deploy.sh update 顺序（不可打乱）
+
+```
+drift 检查 → 平台库 alembic → 平台元数据 sync → 租户 runner → seed
+```
+
+| 环节 | 工具 | 缺什么会失败 |
+|------|------|--------------|
+| Drift | `scripts.migration.check` | ORM 改了但 snapshot 未刷新 |
+| 平台 schema | `scripts.migration.platform_migrate` | 缺 `backend/migrations/versions/*.py` |
+| 平台元数据 | `scripts.platform_sync sync` | 缺 `platform_sync/snapshots/*.json` 或未 export |
+| 租户 schema | `scripts.migration.runner` | 缺 `scripts/migration/versions/*.py` 或 `required_tables` 未配 |
+
+## 三类变更交付清单
+
+### A. 建表 / 改列（ORM）
+
+改 `backend/app/modules/**/models/**` 后**同一轮**完成：
+
+1. `cd backend && python -m scripts.migration.check`（有 drift 才继续 2–4）
+2. autogen：`autogen tenant`（biz_*）或 `autogen platform`（sys_* / ai_* / open_*）
+3. 人工 review 迁移（NOT NULL 回填、类型截断、删列/重命名）
+4. 本地验证：`python -m scripts.dev.dev_migrate` 或 `platform_migrate` + `runner --dry-run`
+5. 一并提交：ORM、迁移文件、`scripts/migration/snapshots/*.json`
+
+**新增整表**：还要在 dev console 把表名写入对应 feature 的 `required_tables`，再 `platform_sync export`（runner Phase1 据此补表）。
+
+### B. 系统菜单 / 功能 / 版本
+
+事实源 = `backend/scripts/platform_sync/snapshots/*.json`（prod 靠 deploy 读仓库，不会读本地 console）。
+
+1. 在 dev console 配菜单 / feature / 版本关联
+2. `cd backend && python -m scripts.platform_sync export`
+3. 确认 export 校验通过（feature_code 存在、主键唯一）
+4. 一并提交 snapshots/ 变更
+5. 前端路由、总览页（如 `module-overview`、`routes.ts`）须与菜单 path/component 一致，**但不能替代 export**
+
+新模块若同时有新表：先完成 A，再 export。
+
+### C. 合并前自检（Agent 必做）
+
+```bash
+cd backend
+python -m scripts.migration.check          # 退出码须为 0
+# 有本地 DB 时追加：
+python -m scripts.migration.runner --dry-run
+python -m scripts.migration.platform_migrate --status
+```
+
+涉及菜单时确认 `git diff` 含对应 `platform_sync/snapshots/*.json`。
+
+## 禁止
+
+- 只改本地 console / 只改前端路由，不 export snapshot
+- 只改 ORM 不 autogen、不更新 migration snapshot
+- 把 `--skip-drift-check` / `--skip-sync` 当常规发版手段
+- 修改已合并 master 的历史 migration 文件
+
+## 应急排查（prod）
+
+```bash
+bash deploy/deploy.sh db-check
+bash deploy/deploy.sh db-platform-migrate --status
+bash deploy/deploy.sh db-migrate --dry-run
+bash deploy/deploy.sh db-sync --auto
+```

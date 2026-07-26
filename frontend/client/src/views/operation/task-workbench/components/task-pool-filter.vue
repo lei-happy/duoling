@@ -158,8 +158,10 @@
     defineProps<{
       /** 当前阶段卡 key，用于重置时恢复默认时间维度 */
       poolKey?: string;
+      /** 路由带入的任务单号，初始化筛选栏 */
+      initialKeyword?: string;
     }>(),
-    { poolKey: 'pending-assign' }
+    { poolKey: 'pending-assign', initialKeyword: '' }
   );
 
   const emit = defineEmits<{
@@ -260,6 +262,10 @@
   };
 
   onMounted(() => {
+    const kw = props.initialKeyword?.trim();
+    if (kw) {
+      form.keyword = kw;
+    }
     emitSearch();
   });
 </script>

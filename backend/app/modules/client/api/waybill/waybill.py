@@ -36,6 +36,9 @@ from app.modules.client.services.state_machine.waybill_state_machine import (
 from app.modules.client.services.waybill.waybill_receipt_service import (
     WaybillReceiptService,
 )
+from app.modules.client.services.task.task_waybill_item_service import (
+    TaskWaybillItemService,
+)
 from app.modules.client.services.waybill.waybill_service import WaybillService
 
 router = APIRouter()
@@ -270,6 +273,19 @@ async def list_waybill_receipts(
     """列举计划的回单凭证。"""
     receipts = await WaybillReceiptService.list_receipts(db, waybill_id)
     return success(data=[r.model_dump() for r in receipts])
+
+
+@router.get("/{waybill_id}/linked-tasks")
+async def list_waybill_linked_tasks(
+    waybill_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    """列举计划当前活跃的任务挂接（按任务聚合，只读）。"""
+    data = await TaskWaybillItemService.list_linked_tasks_for_waybill(
+        db, waybill_id,
+    )
+    return success(data=data.model_dump())
 
 
 @router.post("/{waybill_id}/receipt")

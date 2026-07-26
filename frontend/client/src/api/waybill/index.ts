@@ -6,7 +6,8 @@ import type {
   WaybillParam,
   WaybillWorkbenchStats,
   WaybillReceipt,
-  WaybillReceiptConfirmPayload
+  WaybillReceiptConfirmPayload,
+  WaybillLinkedTasks
 } from './model';
 
 export async function pageWaybills(params: WaybillParam) {
@@ -34,6 +35,17 @@ export async function getWaybillWorkbenchStats(params?: WaybillParam) {
 
 export async function getWaybill(id: number) {
   const res = await request.get<ApiResult<Waybill>>(`/business/waybill/${id}`);
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 列举计划当前活跃的任务挂接（按任务聚合） */
+export async function listWaybillLinkedTasks(waybillId: number) {
+  const res = await request.get<ApiResult<WaybillLinkedTasks>>(
+    `/business/waybill/${waybillId}/linked-tasks`
+  );
   if (res.data.code === 0) {
     return res.data.data;
   }

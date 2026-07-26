@@ -42,6 +42,7 @@
       @open-edit="openEdit"
       @open-detail="openDetail"
       @open-cargo-detail="openCargoDetail"
+      @open-task-items-detail="openTaskItemsDetail"
       @open-freight-detail="openFreightDetail"
       @open-import="goImportPage"
     />
@@ -54,6 +55,10 @@
     <waybill-cargoes-detail
       v-model:visible="cargoDetailVisible"
       :waybill="cargoDetailWaybill"
+    />
+    <waybill-task-items-detail
+      v-model:visible="taskItemsDetailVisible"
+      :waybill="taskItemsDetailWaybill"
     />
     <waybill-freight-detail
       v-model:visible="freightDetailVisible"
@@ -76,6 +81,7 @@
   import WaybillPool from './components/waybill-pool.vue';
   import WaybillEdit from './components/waybill-edit.vue';
   import WaybillCargoesDetail from './components/waybill-cargoes-detail.vue';
+  import WaybillTaskItemsDetail from './components/waybill-task-items-detail.vue';
   import WaybillFreightDetail from './components/waybill-freight-detail.vue';
   import WaybillDetail from './components/waybill-detail.vue';
   import { listConfigsByGroup } from '@/api/system/config';
@@ -209,6 +215,8 @@
   const editData = ref<Waybill | null>(null);
   const cargoDetailVisible = ref(false);
   const cargoDetailWaybill = ref<Waybill | null>(null);
+  const taskItemsDetailVisible = ref(false);
+  const taskItemsDetailWaybill = ref<Waybill | null>(null);
   const freightDetailVisible = ref(false);
   const freightDetailWaybillId = ref<number | null>(null);
   const detailVisible = ref(false);
@@ -227,6 +235,11 @@
   const openCargoDetail = (row: Waybill) => {
     cargoDetailWaybill.value = row;
     cargoDetailVisible.value = true;
+  };
+
+  const openTaskItemsDetail = (row: Waybill) => {
+    taskItemsDetailWaybill.value = row;
+    taskItemsDetailVisible.value = true;
   };
 
   const openFreightDetail = (row: Waybill) => {

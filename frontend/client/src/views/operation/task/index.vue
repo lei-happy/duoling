@@ -12,13 +12,13 @@
         :highlight-current-row="true"
         v-model:selections="selections"
         :default-sort="{ prop: 'createdAt', order: 'descending' }"
-        cache-key="OperationTaskTable"
+        cache-key="OperationTaskTableV2"
       >
         <template #toolbar>
           <el-text type="info" size="small">
             新建配载请前往
             <el-link type="primary" :underline="false" @click="goTaskCreate">
-              「配载建单」
+              「手动配载」
             </el-link>
             ；常用作业请前往
             <el-link type="primary" :underline="false" @click="goWorkbench">
@@ -37,17 +37,26 @@
           </el-tag>
         </template>
 
-        <template #route="{ row }">
-          <div class="route-cell">
-            <span>{{ row.origin || '--' }}</span>
-            <el-icon style="margin: 0 6px"><Right /></el-icon>
-            <span>{{ row.destination || '--' }}</span>
+        <template #origin="{ row }">
+          <span class="route-cell-text" :title="row.origin?.trim() || undefined">
+            {{ row.origin || '--' }}
+          </span>
+        </template>
+
+        <template #destination="{ row }">
+          <div class="destination-cell">
+            <span
+              class="route-cell-text"
+              :title="row.destination?.trim() || undefined"
+            >
+              {{ row.destination || '--' }}
+            </span>
             <el-tag
               v-if="(row.segmentCount || 0) > 1"
               size="small"
               type="info"
               effect="plain"
-              style="margin-left: 6px"
+              class="destination-cell__tag"
             >
               {{ row.segmentCount }} 段
             </el-tag>
@@ -86,40 +95,12 @@
         </template>
 
         <template #action="{ row }">
-          <el-link type="primary" :underline="false" @click="openDetail(row)">
-            详情
-          </el-link>
-          <template v-if="getRowPrimary(row)">
-            <el-divider direction="vertical" />
-            <el-link
-              :type="getRowPrimary(row)!.buttonType as any"
-              :underline="false"
-              v-permission="getRowPrimary(row)!.permission"
-              @click="triggerAction(row, getRowPrimary(row)!)"
-            >
-              {{ getRowPrimary(row)!.label }}
-            </el-link>
-          </template>
-          <template v-if="getRowMore(row).length">
-            <el-divider direction="vertical" />
-            <el-dropdown trigger="click">
-              <el-link type="info" :underline="false">
-                更多<el-icon style="margin-left: 2px"><ArrowDown /></el-icon>
-              </el-link>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item
-                    v-for="act in getRowMore(row)"
-                    :key="act.key"
-                    v-permission="act.permission"
-                    @click="triggerAction(row, act)"
-                  >
-                    {{ buildMoreLabel(row, act) }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
+          <btn-items
+            divider
+            type="link"
+            :wrap="false"
+            :items="actionItems(row)"
+          />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -169,6 +150,11 @@
       :action-key="revertActionKey"
       @done="reload"
     />
+    <action-revert-sign
+      v-model:visible="actionVisible['revert-sign']"
+      :tasks="actionTask ? [actionTask] : []"
+      @done="reload"
+    />
     <action-force-cancel
       v-model:visible="actionVisible['force-cancel']"
       :tasks="actionTask ? [actionTask] : []"
@@ -203,7 +189,7 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import { ArrowDown, Right } from '@element-plus/icons-vue';
+  import type { ButtonItem } from 'ele-admin-plus/es/ele-buttons/types';
   import TaskEdit from './components/task-edit.vue';
   import TaskDetail from './components/task-detail.vue';
   import TaskSearch from './components/task-search.vue';
@@ -215,6 +201,7 @@
   import ActionConfirmArrive from '../task-workbench/components/action-confirm-arrive.vue';
   import ActionConfirmSign from '../task-workbench/components/action-confirm-sign.vue';
   import ActionRevert from '../task-workbench/components/action-revert.vue';
+  import ActionRevertSign from '../task-workbench/components/action-revert-sign.vue';
   import ActionForceCancel from '../task-workbench/components/action-force-cancel.vue';
   import ActionCancelTask from '../task-workbench/components/action-cancel-task.vue';
   import FinanceEdit from '../task-finance/components/finance-edit.vue';
@@ -232,9 +219,8 @@
     TASK_STATUS_MAP
   } from './status-config';
   import {
-    getTaskRowActions,
-    shouldShowCreateFinance,
-    TASK_ACTION_CONFIGS
+    buildTaskListActionItems,
+    resolveTaskListActionColumnMinWidth
   } from './task-actions';
   import type { TaskActionConfig, TaskActionKey } from './task-actions';
   import { getCreatableDocTypes } from '@/api/operation/task-finance';
@@ -257,9 +243,10 @@
     return Number(v).toFixed(2);
   };
 
+  const actionColumnMinWidth = resolveTaskListActionColumnMinWidth();
+
   const columns = computed<Columns>(() => [
     { prop: 'taskNo', label: '任务单号', minWidth: 160 },
-    { prop: 'taskName', label: '任务名称', minWidth: 140 },
     {
       prop: 'carrierType',
       label: '承运方式',
@@ -268,10 +255,16 @@
       slot: 'carrierType'
     },
     {
-      columnKey: 'route',
-      label: '运输线路',
-      minWidth: 260,
-      slot: 'route'
+      prop: 'origin',
+      label: '出发地',
+      minWidth: 140,
+      slot: 'origin'
+    },
+    {
+      prop: 'destination',
+      label: '目的地',
+      minWidth: 160,
+      slot: 'destination'
     },
     {
       columnKey: 'carrierResource',
@@ -329,7 +322,8 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 200,
+      width: actionColumnMinWidth,
+      minWidth: actionColumnMinWidth,
       align: 'center',
       fixed: 'right',
       slot: 'action'
@@ -391,6 +385,7 @@
     'confirm-arrive': false,
     'confirm-sign': false,
     revert: false,
+    'revert-sign': false,
     'force-cancel': false,
     'cancel-task': false
   });
@@ -399,26 +394,13 @@
   const financeInitIsFinal = ref<number | undefined>(undefined);
   const revertActionKey = ref<TaskActionKey | null>(null);
 
-  /** 行内主按钮（详情 + 主按钮 + 更多 的"主按钮"） */
-  const getRowPrimary = (row: Task): TaskActionConfig | null =>
-    getTaskRowActions(row).primary;
-
-  /** 行内「更多」下拉项：追加「新建费用单」快捷入口（置顶，便于就近发起） */
-  const getRowMore = (row: Task): TaskActionConfig[] => {
-    const more = getTaskRowActions(row).more;
-    if (shouldShowCreateFinance(row.status)) {
-      return [TASK_ACTION_CONFIGS['create-finance'], ...more];
-    }
-    return more;
-  };
-
-  /** 规划路线追加「·未规划」尾巴；其它直接用 label */
-  const buildMoreLabel = (row: Task, act: TaskActionConfig): string => {
-    if (act.key === 'plan-route' && (row.segmentCount ?? 0) === 0) {
-      return `${act.label}·未规划`;
-    }
-    return act.label;
-  };
+  /** 操作列：btn-items + 悬停「更多」，见开发手册 17 */
+  const actionItems = (row: Task): ButtonItem[] =>
+    buildTaskListActionItems(row, {
+      hasPermission,
+      onDetail: () => openDetail(row),
+      onAction: (act) => triggerAction(row, act)
+    });
 
   /**
    * 派车成功后：优先引导创建预付单（贴合"派完车即预付"动线）；
@@ -580,10 +562,23 @@
 </script>
 
 <style lang="scss" scoped>
-  .route-cell {
-    display: flex;
+  .route-cell-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .destination-cell {
+    display: inline-flex;
     align-items: center;
-    gap: 4px;
-    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 100%;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  .destination-cell__tag {
+    flex-shrink: 0;
   }
 </style>

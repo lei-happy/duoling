@@ -29,6 +29,7 @@ const SUBMENU_ICON_BY_PATH: Record<string, string> = {
   // 运营调度
   '/operation/waybill': 'sub-waybill',
   '/operation/task': 'sub-task',
+  '/operation/stowage': 'sub-task-create',
   '/operation/task-create': 'sub-task-create',
   '/operation/smart-stowage': 'sub-smart-stowage',
   '/operation/task-workbench': 'sub-task-workbench',

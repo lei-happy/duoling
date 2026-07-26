@@ -107,11 +107,11 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       component: () => import('@/views/operation/waybill/import/index.vue'),
       meta: { title: '计划批量导入' }
     },
-    // 配载建单（菜单同步前可本地访问；与后端菜单 path 一致）
+    // 手动配载（原配载建单页；菜单同步前可本地访问；与后端菜单 path 一致）
     {
       path: '/operation/task-create',
       component: () => import('@/views/operation/task-create/index.vue'),
-      meta: { title: '配载建单' }
+      meta: { title: '手动配载' }
     },
     // 智能配载（专业版功能；菜单同步前可本地访问，页面内按 feature 门控）
     {

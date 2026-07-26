@@ -164,7 +164,13 @@
         </template>
 
         <template #allocatedQuantity="{ row }">
-          <span class="waybill-alloc">
+          <span
+            class="waybill-alloc"
+            :class="{
+              'waybill-alloc--clickable': (row.allocatedQuantity ?? 0) > 0
+            }"
+            @click.stop="onAllocatedClick(row)"
+          >
             <span class="waybill-alloc__num">{{
               row.allocatedQuantity ?? 0
             }}</span>
@@ -286,6 +292,7 @@
     (e: 'openEdit', row?: Waybill): void;
     (e: 'openDetail', row: Waybill): void;
     (e: 'openCargoDetail', row: Waybill): void;
+    (e: 'openTaskItemsDetail', row: Waybill): void;
     (e: 'openFreightDetail', row: Waybill): void;
     (e: 'openImport'): void;
   }>();
@@ -411,6 +418,26 @@
 
   const isWaybillLocked = (row: Waybill) => Number(row.isLocked) === 1;
 
+  const onAllocatedClick = (row: Waybill) => {
+    if ((row.allocatedQuantity ?? 0) <= 0) return;
+    emit('openTaskItemsDetail', row);
+  };
+
+  const promptViewLinkedTasks = (row: Waybill) => {
+    ElMessageBox.confirm(
+      '这批车已排进任务，暂不能改计划。如需调整，请先到任务里取消关联。',
+      '暂不能修改',
+      {
+        type: 'warning',
+        confirmButtonText: '查看关联任务',
+        cancelButtonText: '知道了',
+        draggable: true
+      }
+    )
+      .then(() => emit('openTaskItemsDetail', row))
+      .catch(() => {});
+  };
+
   /**
    * 是否允许编辑核心字段：
    * - 状态必须 ≤ 1（待调度）
@@ -490,11 +517,7 @@
           permission: 'business:waybill:edit',
           onClick: () => {
             if (row.hasActiveTaskItems) {
-              EleMessage.warning({
-                message:
-                  '这批车已排进任务，暂不能改计划；如需调整，请先到任务里取消关联',
-                plain: true
-              });
+              promptViewLinkedTasks(row);
               return;
             }
             if (!canEditWaybill(row)) {
@@ -801,6 +824,16 @@
     align-items: baseline;
     gap: 2px;
     font-variant-numeric: tabular-nums;
+  }
+
+  .waybill-alloc--clickable {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .waybill-alloc--clickable:hover .waybill-alloc__num {
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
   .waybill-alloc__num {

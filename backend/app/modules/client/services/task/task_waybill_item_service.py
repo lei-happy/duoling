@@ -25,6 +25,11 @@ from app.modules.client.schemas.task.task_waybill_item import (
     TaskWaybillItemIn,
     TaskWaybillItemStatusUpdate,
 )
+from app.modules.client.schemas.waybill.waybill_task_link import (
+    WaybillLinkedTaskItemOut,
+    WaybillLinkedTaskOut,
+    WaybillLinkedTasksOut,
+)
 from app.modules.client.schemas.waybill.waybill import waybill_brand_model_key
 from app.modules.client.services.state_machine.item_state_machine import (
     ITEM_SIGNED,
@@ -718,6 +723,66 @@ class TaskWaybillItemService:
             ).order_by(TaskWaybillItem.id.asc())
         )
         return list(res.scalars().all())
+
+    @staticmethod
+    async def list_linked_tasks_for_waybill(
+        db: AsyncSession, waybill_id: int,
+    ) -> WaybillLinkedTasksOut:
+        """按计划 ID 查询活跃任务挂接，按任务聚合（供计划列表「已调度」弹框）。"""
+        wb_res = await db.execute(
+            select(Waybill).where(
+                Waybill.id == waybill_id,
+                Waybill.is_deleted == 0,
+            )
+        )
+        waybill = wb_res.scalar_one_or_none()
+        if waybill is None:
+            raise BizException("计划不存在或已删除")
+
+        res = await db.execute(
+            select(TaskWaybillItem, Task)
+            .join(Task, Task.id == TaskWaybillItem.task_id)
+            .where(
+                TaskWaybillItem.waybill_id == waybill_id,
+                TaskWaybillItem.is_deleted == 0,
+                TaskWaybillItem.status != 9,
+                Task.is_deleted == 0,
+            )
+            .order_by(TaskWaybillItem.task_id.asc(), TaskWaybillItem.id.asc())
+        )
+        rows = res.all()
+
+        grouped: dict[int, WaybillLinkedTaskOut] = {}
+        for item, task in rows:
+            task_id = int(task.id)
+            line = WaybillLinkedTaskItemOut(
+                id=int(item.id),
+                quantity=int(item.quantity or 0),
+                vehicleBrand=item.vehicle_brand,
+                vehicleModel=item.vehicle_model,
+                itemStatus=int(item.status or 0),
+            )
+            if task_id not in grouped:
+                grouped[task_id] = WaybillLinkedTaskOut(
+                    taskId=task_id,
+                    taskNo=task.task_no,
+                    taskStatus=int(task.status or 0),
+                    mainDriverName=task.main_driver_name,
+                    mainDriverPhone=task.main_driver_phone,
+                    plateNumber=task.plate_number,
+                    allocatedQuantity=int(item.quantity or 0),
+                    items=[line],
+                )
+            else:
+                entry = grouped[task_id]
+                entry.allocatedQuantity += int(item.quantity or 0)
+                entry.items.append(line)
+
+        return WaybillLinkedTasksOut(
+            waybillId=int(waybill.id),
+            waybillNo=waybill.waybill_no,
+            tasks=list(grouped.values()),
+        )
 
     @staticmethod
     async def _refresh_task_aggregates(db: AsyncSession, task: Task) -> None:

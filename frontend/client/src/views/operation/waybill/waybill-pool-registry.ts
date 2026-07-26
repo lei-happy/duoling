@@ -233,6 +233,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'destination',
       'vehicleInfo',
       'quantity',
+      'allocatedQuantity',
       'freightAmount',
       'calcStatus',
       'isLocked',

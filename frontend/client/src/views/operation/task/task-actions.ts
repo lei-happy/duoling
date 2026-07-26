@@ -7,6 +7,31 @@
  * 每个 status 在每个时点最多对应 1 个"主动作"。
  */
 
+import type { Component } from 'vue';
+import type {
+  ButtonDropdownItem,
+  ButtonItem
+} from 'ele-admin-plus/es/ele-buttons/types';
+import {
+  ArrowLeft,
+  Back,
+  Box,
+  CircleCheck,
+  CircleClose,
+  Close,
+  DArrowLeft,
+  Location,
+  MapLocation,
+  Promotion,
+  RefreshLeft,
+  SwitchButton,
+  User,
+  Van,
+  View,
+  Wallet,
+  Warning
+} from '@element-plus/icons-vue';
+import { DeleteOutlined, EditOutlined } from '@/components/icons';
 import { CARRIER_TYPE, TASK_STATUS } from './status-config';
 
 export type TaskActionKey =
@@ -36,6 +61,8 @@ export interface TaskActionConfig {
   label: string;
   buttonType: 'primary' | 'success' | 'warning' | 'info' | 'danger';
   permission: string;
+  /** 操作列 / 下拉图标 */
+  icon: Component;
   /** 需要打开弹窗时填，对应 action-*.vue 组件名 */
   dialog?:
     | 'assign-carrier'
@@ -66,6 +93,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '分配承运',
     buttonType: 'primary',
     permission: 'operation:task:dispatch',
+    icon: User,
     dialog: 'assign-carrier'
   },
   dispatch: {
@@ -73,6 +101,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '派车',
     buttonType: 'primary',
     permission: 'operation:task:dispatch',
+    icon: Van,
     dialog: 'dispatch'
   },
   'plan-route': {
@@ -80,6 +109,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '规划路线',
     buttonType: 'primary',
     permission: 'operation:task:plan-route',
+    icon: MapLocation,
     dialog: 'plan-route'
   },
   'confirm-load': {
@@ -87,6 +117,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '确认装车',
     buttonType: 'warning',
     permission: 'operation:task:confirm-load',
+    icon: Box,
     dialog: 'confirm-load'
   },
   depart: {
@@ -94,6 +125,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '标记出发',
     buttonType: 'warning',
     permission: 'operation:task:confirm-depart',
+    icon: Promotion,
     confirm: true
   },
   'confirm-arrive': {
@@ -101,6 +133,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '确认到达',
     buttonType: 'success',
     permission: 'operation:task:confirm-arrive',
+    icon: Location,
     dialog: 'confirm-arrive'
   },
   'confirm-sign': {
@@ -108,6 +141,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '确认签收',
     buttonType: 'success',
     permission: 'operation:task:confirm-sign',
+    icon: CircleCheck,
     dialog: 'confirm-sign'
   },
   close: {
@@ -115,6 +149,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '关闭任务',
     buttonType: 'info',
     permission: 'operation:task:close',
+    icon: SwitchButton,
     confirm: true
   },
   // —— 逆向通道 —— //
@@ -123,6 +158,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '撤回派车',
     buttonType: 'warning',
     permission: 'operation:task:revert-dispatch',
+    icon: RefreshLeft,
     dialog: 'revert',
     revertFrom: 1,
     revertTo: 0
@@ -132,6 +168,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '撤销装车',
     buttonType: 'warning',
     permission: 'operation:task:revert-load',
+    icon: DArrowLeft,
     dialog: 'revert',
     revertFrom: 2,
     revertTo: 1
@@ -141,6 +178,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '撤回出发',
     buttonType: 'warning',
     permission: 'operation:task:revert-depart',
+    icon: Back,
     dialog: 'revert',
     revertFrom: 3,
     revertTo: 2
@@ -150,6 +188,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '撤回到达',
     buttonType: 'warning',
     permission: 'operation:task:revert-arrive',
+    icon: CircleClose,
     dialog: 'revert',
     revertFrom: 4,
     revertTo: 3
@@ -159,6 +198,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '撤销签收',
     buttonType: 'warning',
     permission: 'operation:task:revert-sign',
+    icon: ArrowLeft,
     dialog: 'revert-sign',
     revertFrom: 5,
     revertTo: 4
@@ -168,6 +208,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '强制取消',
     buttonType: 'danger',
     permission: 'operation:task:force-cancel',
+    icon: Warning,
     dialog: 'force-cancel'
   },
   // —— 常规辅助通道 —— //
@@ -176,6 +217,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '取消任务',
     buttonType: 'warning',
     permission: 'operation:task:cancel',
+    icon: Close,
     dialog: 'cancel-task'
   },
   'create-finance': {
@@ -183,19 +225,22 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
     label: '新建费用单',
     buttonType: 'success',
     permission: 'operation:task-finance:add',
+    icon: Wallet,
     openFinance: true
   },
   edit: {
     key: 'edit',
     label: '编辑',
     buttonType: 'info',
-    permission: 'operation:task:edit'
+    permission: 'operation:task:edit',
+    icon: EditOutlined
   },
   delete: {
     key: 'delete',
     label: '删除',
     buttonType: 'danger',
     permission: 'operation:task:delete',
+    icon: DeleteOutlined,
     confirm: true
   }
 };
@@ -378,3 +423,145 @@ export const shouldShowPlanRoute = (task: {
   if (task.carrierType === CARRIER_TYPE.SELF) return true;
   return (task.segmentCount ?? 0) === 0;
 };
+
+// ============================================================
+// 任务单列表操作列（对齐开发手册 17.列表操作列按钮规范）
+// ============================================================
+
+/** 列表专用：详情为只读虚拟项，不进入 TaskActionKey */
+export type TaskListActionKey = TaskActionKey | 'detail';
+
+export interface TaskListActionCandidate {
+  key: TaskListActionKey;
+  title: string;
+  icon: Component;
+  permission?: string;
+  danger?: boolean;
+  divided?: boolean;
+  /** 业务动作配置；详情为 null */
+  action: TaskActionConfig | null;
+}
+
+/** 规划路线追加「·未规划」尾巴 */
+export const resolveTaskActionTitle = (
+  row: { segmentCount?: number | null },
+  act: TaskActionConfig
+): string => {
+  if (act.key === 'plan-route' && (row.segmentCount ?? 0) === 0) {
+    return `${act.label}·未规划`;
+  }
+  return act.label;
+};
+
+/**
+ * 列表行候选动作（配置顺序）：
+ * 主动作 → 详情 → 编辑 → 规划路线 → 新建费用单 → 逆向 → 取消 → 删除
+ */
+export const collectTaskListActions = (row: {
+  status?: number | null;
+  carrierType?: number | null;
+  segmentCount?: number | null;
+}): TaskListActionCandidate[] => {
+  const { primary, more } = getTaskRowActions(row);
+  const items: TaskListActionCandidate[] = [];
+
+  const pushAct = (act: TaskActionConfig) => {
+    items.push({
+      key: act.key,
+      title: resolveTaskActionTitle(row, act),
+      icon: act.icon,
+      permission: act.permission,
+      danger: act.key === 'delete' || act.key === 'force-cancel',
+      divided: act.key === 'delete',
+      action: act
+    });
+  };
+
+  if (primary) pushAct(primary);
+
+  items.push({
+    key: 'detail',
+    title: '详情',
+    icon: View,
+    action: null
+  });
+
+  const edit = more.find((a) => a.key === 'edit');
+  const planRoute = more.find((a) => a.key === 'plan-route');
+  const rest = more.filter((a) => a.key !== 'edit' && a.key !== 'plan-route');
+
+  if (edit) pushAct(edit);
+  if (planRoute) pushAct(planRoute);
+  if (shouldShowCreateFinance(row.status)) {
+    pushAct(TASK_ACTION_CONFIGS['create-finance']);
+  }
+  for (const act of rest) pushAct(act);
+
+  return items;
+};
+
+export interface BuildTaskListActionItemsContext {
+  hasPermission: (code: string) => boolean;
+  onDetail: () => void;
+  onAction: (act: TaskActionConfig) => void;
+}
+
+/** 槽位算法：可见 ≤2 平铺；≥3 为首项 + 更多（更多悬停展开） */
+export const buildTaskListActionItems = (
+  row: {
+    status?: number | null;
+    carrierType?: number | null;
+    segmentCount?: number | null;
+  },
+  ctx: BuildTaskListActionItemsContext
+): ButtonItem[] => {
+  const visible: ButtonDropdownItem[] = [];
+  for (const c of collectTaskListActions(row)) {
+    if (c.permission && !ctx.hasPermission(c.permission)) continue;
+    visible.push({
+      title: c.title,
+      icon: c.icon,
+      permission: c.permission,
+      danger: c.danger,
+      divided: c.divided,
+      onClick: () => {
+        if (c.key === 'detail' || !c.action) {
+          ctx.onDetail();
+          return;
+        }
+        ctx.onAction(c.action);
+      }
+    });
+  }
+
+  if (visible.length === 0) return [];
+  if (visible.length <= 2) {
+    return visible.map((it) => ({
+      ...it,
+      type: 'link' as const
+    })) as ButtonItem[];
+  }
+  const [primary, ...rest] = visible;
+  return [
+    { ...primary!, type: 'link' as const },
+    { preset: 'more' as const, dropdownItems: rest }
+  ] as ButtonItem[];
+};
+
+/** 带图标的 link 占用宽度（偏保守，避免裁切「更多」箭头） */
+function estimateActionLinkWidth(title: string): number {
+  return 20 + title.length * 14 + 12;
+}
+
+/**
+ * 操作列 minWidth：按「过滤前最坏外显」估算。
+ * 最坏：四字主动作（分配承运/确认装车…）+「更多」；或「规划路线·未规划」平铺场景。
+ */
+export function resolveTaskListActionColumnMinWidth(): number {
+  const pad = 28;
+  const divider = 17;
+  const moreW = 68;
+  // 最长外显文案：规划路线·未规划（7）出现在更多内；外显首项最长为四字
+  const primaryW = estimateActionLinkWidth('分配承运');
+  return primaryW + divider + moreW + pad;
+}

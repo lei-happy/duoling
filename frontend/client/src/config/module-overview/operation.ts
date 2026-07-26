@@ -51,19 +51,9 @@ const operation: ModuleOverviewConfig = {
       desc: '集中管理客户计划，支持新建、批量导入与计划池筛选'
     },
     {
-      path: '/operation/task',
-      icon: 'task',
-      desc: '查看全部调度任务单及其状态流转'
-    },
-    {
-      path: '/operation/task-create',
+      path: '/operation/stowage',
       icon: 'stowage',
-      desc: '将计划手动或智能配载，一键生成运输任务'
-    },
-    {
-      path: '/operation/smart-stowage',
-      icon: 'smart',
-      desc: '基于算法自动优化装载方案与运输线路'
+      desc: '手动或智能配载，把计划生成运输任务单'
     },
     {
       path: '/operation/task-workbench',
@@ -84,6 +74,11 @@ const operation: ModuleOverviewConfig = {
       path: '/operation/completed-task',
       icon: 'completed',
       desc: '归档已完成任务，衔接后续费用结算'
+    },
+    {
+      path: '/operation/task',
+      icon: 'task',
+      desc: '查看全部调度任务单及其状态流转'
     }
   ],
   quickActions: [

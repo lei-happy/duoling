@@ -30,7 +30,7 @@
               :transition="{ duration: 0.6, delay: 0.08, ease: EASE }"
             >
               把运输经营装进一块看板，<br />
-              让每天的决策<span class="ink-underline">有数可依</span>。
+              让每天的决策<span class="hero-accent">有数可依</span>。
             </Motion>
             <Motion
               as="p"
@@ -1080,7 +1080,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: clamp(18px, 2.8vh, 34px);
+    gap: clamp(22px, 3vh, 38px);
   }
 
   .brand-logo {
@@ -1121,42 +1121,39 @@
 
   .brand-hero {
     margin: 0;
+    max-width: 34em;
   }
 
   .brand-title {
-    margin: 0 0 14px;
+    margin: 0 0 16px;
     font-size: clamp(24px, 2.2vw, 34px);
     font-weight: 700;
-    line-height: 1.45;
-    letter-spacing: 0.3px;
+    line-height: 1.52;
+    letter-spacing: 0.06em;
     color: #fff;
+    text-wrap: balance;
   }
 
-  /* 记忆点：亮色墨线下划，强调「有数可依」 */
-  .ink-underline {
-    position: relative;
-    white-space: nowrap;
-    color: #aecdff;
-    z-index: 0;
-  }
-
-  .ink-underline::after {
-    content: '';
-    position: absolute;
-    left: -2px;
-    right: -2px;
-    bottom: 3px;
-    height: 8px;
-    z-index: -1;
-    background: rgba(174, 205, 255, 0.28);
-    border-radius: 2px;
+  /* 记忆点：品牌浅底 + 主题色字，强调「有数可依」 */
+  .hero-accent {
+    display: inline;
+    padding: 1px 8px 2px;
+    margin: 0 1px;
+    border-radius: 5px;
+    background: var(--el-color-primary-light-9);
+    color: var(--brand-strong);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
   }
 
   .brand-desc {
     margin: 0;
-    max-width: 36em;
+    max-width: 100%;
     font-size: 14px;
-    line-height: 1.85;
+    line-height: 1.9;
+    letter-spacing: 0.04em;
     color: rgba(255, 255, 255, 0.72);
   }
 
@@ -1172,11 +1169,12 @@
     font-size: 13px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.92);
-    letter-spacing: 0.5px;
+    letter-spacing: 0.06em;
   }
 
   .block-note {
     font-size: 12px;
+    letter-spacing: 0.03em;
     color: rgba(255, 255, 255, 0.55);
   }
 
@@ -1295,6 +1293,7 @@
 
   .stop-label {
     font-size: 12px;
+    letter-spacing: 0.03em;
     color: rgba(255, 255, 255, 0.55);
   }
 
@@ -1339,6 +1338,7 @@
 
   .metric-label {
     font-size: 12px;
+    letter-spacing: 0.03em;
     color: rgba(255, 255, 255, 0.6);
   }
 

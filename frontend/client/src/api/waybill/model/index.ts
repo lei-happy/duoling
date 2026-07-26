@@ -59,6 +59,34 @@ export interface Waybill {
   allocatedQuantity?: number | null;
 }
 
+/** 计划在某任务下的挂接明细行 */
+export interface WaybillLinkedTaskItem {
+  id: number;
+  quantity: number;
+  vehicleBrand?: string | null;
+  vehicleModel?: string | null;
+  itemStatus: number;
+}
+
+/** 计划关联的单个任务（按任务聚合） */
+export interface WaybillLinkedTask {
+  taskId: number;
+  taskNo: string;
+  taskStatus: number;
+  mainDriverName?: string | null;
+  mainDriverPhone?: string | null;
+  plateNumber?: string | null;
+  allocatedQuantity: number;
+  items: WaybillLinkedTaskItem[];
+}
+
+/** 计划关联任务列表 */
+export interface WaybillLinkedTasks {
+  waybillId: number;
+  waybillNo: string;
+  tasks: WaybillLinkedTask[];
+}
+
 /** 计划工作台 KPI：与后端 WaybillService.workbench_stats 输出对齐 */
 export interface WaybillWorkbenchStats {
   statusCounts: Record<number, number>;

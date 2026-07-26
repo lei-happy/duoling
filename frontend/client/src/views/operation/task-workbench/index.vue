@@ -12,6 +12,7 @@
     <task-pool-filter
       class="workbench-page__filter"
       :pool-key="activeTab"
+      :initial-keyword="initialKeywordFromRoute"
       @search="onSearch"
       @reset="onFilterReset"
     />
@@ -92,6 +93,11 @@
   defineOptions({ name: 'OperationTaskWorkbench' });
 
   const route = useRoute();
+
+  const initialKeywordFromRoute = computed(() => {
+    const kw = route.query.keyword;
+    return typeof kw === 'string' ? kw.trim() : '';
+  });
 
   const resolveInitialTab = (): string => {
     const tab = route.query.tab;
