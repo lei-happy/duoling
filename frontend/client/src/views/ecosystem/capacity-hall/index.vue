@@ -5,19 +5,23 @@
   支持 `?capacityId=` 从运力列表直接发布。
 -->
 <template>
-  <eco-hall-view
-    ref="hallRef"
-    :post-type="PostType.CAPACITY"
-    @publish="openPublish"
-    @edit="openEdit"
-  />
+  <!-- 单根节点：配合 RouterLayout 的 transition mode="out-in"，避免 SPA 切换白屏 -->
+  <div class="eco-hall-page">
+    <eco-hall-view
+      :key="PostType.CAPACITY"
+      ref="hallRef"
+      :post-type="PostType.CAPACITY"
+      @publish="openPublish"
+      @edit="openEdit"
+    />
 
-  <capacity-publish
-    v-model:visible="publishVisible"
-    :source-capacity-id="sourceCapacityId"
-    :post="editing"
-    @done="onDone"
-  />
+    <capacity-publish
+      v-model:visible="publishVisible"
+      :source-capacity-id="sourceCapacityId"
+      :post="editing"
+      @done="onDone"
+    />
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -64,3 +68,9 @@
     }
   });
 </script>
+
+<style lang="scss" scoped>
+  .eco-hall-page {
+    height: 100%;
+  }
+</style>

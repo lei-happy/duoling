@@ -36,7 +36,7 @@
         </div>
       </div>
       <div v-if="loading" class="ai-entry-popover__loading">
-        <el-icon class="is-loading"><loading /></el-icon>
+        <el-icon class="is-loading"><Loading /></el-icon>
         <span>加载中…</span>
       </div>
       <div v-else-if="!employees.length" class="ai-entry-popover__empty">

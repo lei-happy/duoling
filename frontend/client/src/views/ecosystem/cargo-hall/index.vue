@@ -8,19 +8,23 @@
   源单，用户不用再从一堆任务里把刚看的那一单找回来。
 -->
 <template>
-  <eco-hall-view
-    ref="hallRef"
-    :post-type="PostType.CARGO"
-    @publish="openPublish"
-    @edit="openEdit"
-  />
+  <!-- 单根节点：配合 RouterLayout 的 transition mode="out-in"，避免 SPA 切换白屏 -->
+  <div class="eco-hall-page">
+    <eco-hall-view
+      :key="PostType.CARGO"
+      ref="hallRef"
+      :post-type="PostType.CARGO"
+      @publish="openPublish"
+      @edit="openEdit"
+    />
 
-  <cargo-publish
-    v-model:visible="publishVisible"
-    :source-task-id="sourceTaskId"
-    :post="editing"
-    @done="onDone"
-  />
+    <cargo-publish
+      v-model:visible="publishVisible"
+      :source-task-id="sourceTaskId"
+      :post="editing"
+      @done="onDone"
+    />
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -69,3 +73,9 @@
     }
   });
 </script>
+
+<style lang="scss" scoped>
+  .eco-hall-page {
+    height: 100%;
+  }
+</style>
