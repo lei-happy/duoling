@@ -47,8 +47,11 @@
   margin: 48rpx 24rpx;
 }
 
-.btn-ghost {
+.logout-wrap .btn-ghost {
   background: #fff;
   color: #dc2626;
   border-color: #fecaca;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

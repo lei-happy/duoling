@@ -16,7 +16,6 @@
 
 .action-btn {
   height: 96rpx;
-  line-height: 96rpx;
   border-radius: 48rpx;
   font-size: 32rpx;
   font-weight: 600;
@@ -24,10 +23,10 @@
   border: none;
   margin: 0;
   padding: 0;
-}
-
-.action-btn::after {
-  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
 }
 
 .action-btn.full {

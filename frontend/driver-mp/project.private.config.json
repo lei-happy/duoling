@@ -13,11 +13,13 @@
     "useApiHook": true,
     "useStaticServer": false,
     "useLanDebug": false,
-    "showES6CompileOption": false,
+    "showES6CompileOption": true,
     "checkInvalidKey": true,
     "ignoreDevUnusedFiles": true,
     "bigPackageSizeSupport": false,
-    "useIsolateContext": true
+    "useIsolateContext": true,
+    "es6": true,
+    "enhance": false
   },
   "libVersion": "3.7.12",
   "condition": {}

@@ -11,13 +11,38 @@
 ## 快速开始
 
 1. 安装并打开微信开发者工具
-2. 「导入项目」→ 选择 `frontend/driver-mp`
-3. AppID 可先用测试号；正式环境替换 `project.config.json` 中的 `appid`
-4. 开发阶段建议保持 `project.private.config.json` 里 `urlCheck: false`（不校验合法域名）
-5. 修改 [`config/env.js`](config/env.js) 中的 `API_BASE`：
+2. （可选）在本目录执行 `npm install`，安装 `tslib`（避免部分工具版本真机调试缺依赖）
+3. 「导入项目」→ 选择 `frontend/driver-mp`
+4. AppID 可先用测试号；正式环境替换 `project.config.json` 中的 `appid`
+5. 开发阶段建议保持 `project.private.config.json` 里 `urlCheck: false`（不校验合法域名）
+6. 修改 [`config/env.js`](config/env.js) 中的 `API_BASE`：
    - 模拟器可用 `http://localhost:8000/api/driver`
    - 真机请改为电脑局域网 IP，例如 `http://192.168.1.8:8000/api/driver`
-6. 确保后端已启动（默认 `http://localhost:8000`）
+7. 确保后端已启动（默认 `http://localhost:8000`）
+
+## 常见问题
+
+### 真机调试报 `Cannot find module 'tslib'`
+
+**根因（已核实）**：微信开发者工具 `2.01.2510260` 安装目录里的编译器一加载就会 `require('tslib')`，但  
+`C:\Program Files (x86)\Tencent\微信web开发者工具\code\package.nw\node_modules\`  
+下**缺少 `tslib` 包**。这是工具安装不完整/损坏，不是小程序业务代码问题。关「增强编译」、清缓存都解决不了。
+
+**推荐修复（补装到工具目录，需管理员权限）**：
+
+1. 先在本目录执行：`npm install`
+2. **右键以管理员身份运行** [`scripts/fix-devtools-tslib.bat`](scripts/fix-devtools-tslib.bat)  
+   （或管理员 PowerShell 执行 `scripts/fix-devtools-tslib.ps1`）
+3. **完全退出**微信开发者工具（托盘图标也退出）后重新打开
+4. 再点真机调试
+
+手动复制也可以：把 `frontend/driver-mp/node_modules/tslib` 整个文件夹复制到上述 `node_modules` 下。
+
+**临时绕过**：用顶部「预览」扫码真机看效果（不走同一条真机调试编译链路）。
+
+### 按钮文字不居中
+
+微信原生 `button` 自带默认 padding，与 `line-height = height` 叠加会导致文字偏下。全局已用 `flex` 居中重置，若仍异常请清缓存后重编译。
 
 ## 目录结构
 

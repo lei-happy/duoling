@@ -106,7 +106,6 @@
 
 .sign-btn {
   height: 64rpx;
-  line-height: 64rpx;
   padding: 0 28rpx;
   margin: 0;
   background: #16a34a;
@@ -114,10 +113,10 @@
   font-size: 26rpx;
   border-radius: 32rpx;
   border: none;
-}
-
-.sign-btn::after {
-  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
 }
 
 .segment-row {

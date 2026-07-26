@@ -25,10 +25,28 @@ page {
 
 view,
 text,
-button,
 input,
 textarea {
   box-sizing: border-box;
+}
+
+/**
+ * 微信原生 button 自带较大 padding，再用 line-height=height 会导致文字偏下/偏右。
+ * 统一用 flex 居中，并清掉默认内边距与边框伪元素。
+ */
+button {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+  font-weight: inherit;
+}
+
+button::after {
+  border: none;
 }
 
 .page {
@@ -66,7 +84,6 @@ textarea {
 /* 大触控主按钮 */
 .btn-primary {
   height: 96rpx;
-  line-height: 96rpx;
   background: var(--brand-primary);
   color: #fff;
   border-radius: 48rpx;
@@ -75,13 +92,8 @@ textarea {
   border: none;
 }
 
-.btn-primary::after {
-  border: none;
-}
-
 .btn-danger {
   height: 96rpx;
-  line-height: 96rpx;
   background: var(--brand-danger);
   color: #fff;
   border-radius: 48rpx;
@@ -90,13 +102,8 @@ textarea {
   border: none;
 }
 
-.btn-danger::after {
-  border: none;
-}
-
 .btn-ghost {
   height: 96rpx;
-  line-height: 96rpx;
   background: #fff;
   color: var(--brand-primary);
   border-radius: 48rpx;
@@ -105,13 +112,8 @@ textarea {
   border: 2rpx solid var(--brand-primary);
 }
 
-.btn-ghost::after {
-  border: none;
-}
-
 .btn-block {
   width: 100%;
-  display: block;
 }
 
 .btn-primary[disabled],

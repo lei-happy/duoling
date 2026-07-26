@@ -1,12 +1,17 @@
 # Mock 数据脚本说明
 
-本目录下的脚本用于向**指定租户的业务库**批量写入测试数据。脚本通过 `get_settings().tenant_db_url_sync(tenant_code)` 连接数据库，需与主应用使用相同的 **`.env` / 环境变量**（含租户库连接配置）。
+本目录脚本分两类：
+
+1. **`mock_tenant_*`**：写入**指定租户业务库**（`tenant_db_url_sync`）。
+2. **`mock_eco_*`**：写入**平台库**服务平台挂牌（`platform_db_url_sync`），供货源/运力大厅联调。
+
+均需与主应用使用相同的 **`.env` / 环境变量**。
 
 ## 执行前提
 
 - 在 **`backend` 目录**下执行（脚本通过 `parents[2]` 将 `backend` 加入 `sys.path`）。
-- 已配置好可连上目标租户库的 Python 环境与依赖（与运行 FastAPI 后端一致）。
-- `--tenant-code` 为平台侧租户编码，用于解析对应租户库。
+- 已配置好可连上目标库的 Python 环境与依赖（与运行 FastAPI 后端一致）。
+- `--tenant-code` 为平台侧租户编码：租户库脚本用它解析库名；大厅脚本用它作为主发布方，并从 `sys_tenant` 读取企业名。
 
 ## 通用用法
 
@@ -42,6 +47,8 @@ python scripts/mockdata/mock_tenant_customers.py --help
 | `mock_tenant_vehicles.py` | `biz_vehicle`、`biz_vehicle_ext` | 自有运力车辆及扩展信息；可关联已有挂车 `trailer_id`；车辆类型优先读字典 `vehicle_type`。 |
 | `mock_tenant_trailers.py` | `biz_trailer`、`biz_trailer_ext` | 自有运力挂车及扩展信息；号牌格式与车辆脚本区分（挂车为「…挂」后缀）；挂车类型优先读字典 `trailer_type`。 |
 | `mock_tenant_social_capacities.py` | `biz_social_capacity`、`biz_social_capacity_vehicle`、`biz_social_capacity_driver`、`biz_social_capacity_account` | 社会运力（驾驶员+车辆+证照+结算账户）；号牌规则与车辆/挂车 mock 一致；`--accounts` 控制结算账户条数（默认 1，范围 1~4）；审核/启用状态组合多样化。 |
+| `mock_eco_cargo_hall.py` | `sys_eco_post`、`sys_eco_cargo_post`、`sys_eco_post_dest`，以及发布方 `sys_eco_tenant_profile` / `sys_eco_tenant_credit` | **平台库**货源大厅挂牌（`status=3` 展示中）；约 1/3 归主租户（「我发布的」），其余归其它企业（大厅列表可见）。共用模块见 `eco_hall_common.py`。 |
+| `mock_eco_capacity_hall.py` | `sys_eco_post`、`sys_eco_capacity_post`、`sys_eco_post_dest`，以及发布方名片/信誉 | **平台库**运力大厅挂牌；部分为任意流向（`any_direction=1`）；同样区分主租户与其它发布方。 |
 
 ## 依赖关系提示（建议顺序）
 
@@ -52,3 +59,16 @@ python scripts/mockdata/mock_tenant_customers.py --help
 - **车辆**（`mock_tenant_vehicles.py`）：若需挂车关联，宜先有挂车数据（`mock_tenant_trailers.py`）。
 
 客户、承运商、驾驶员、挂车、车辆、社会运力等脚本以**单表或固定关联**为主，一般可独立执行；仍建议先在测试环境用 `--dry-run` 验证输出再正式写入。
+
+### 服务平台大厅（`mock_eco_*`）
+
+- 需平台库已建好 `sys_eco_*` 表，且 `sys_tenant` 中存在 `--tenant-code`。
+- 大厅列表会**排除当前登录租户自己的挂牌**，因此脚本会额外使用其它真实租户或合成 `mock_eco_*` 企业作为发布方。
+- 不创建租户侧任务单 / 运力档案，也不写 `biz_eco_post_ref`；只用于大厅浏览与「我发布的」联调。
+- 建议先 `--dry-run`，再正式写入：
+
+```bash
+python scripts/mockdata/mock_eco_cargo_hall.py --tenant-code <编码> --count 20 --dry-run
+python scripts/mockdata/mock_eco_cargo_hall.py --tenant-code <编码> --count 20
+python scripts/mockdata/mock_eco_capacity_hall.py --tenant-code <编码> --count 20
+```

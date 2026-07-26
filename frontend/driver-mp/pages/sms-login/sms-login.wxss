@@ -33,7 +33,7 @@
 .code-btn {
   flex-shrink: 0;
   height: 96rpx;
-  line-height: 96rpx;
+  min-width: 200rpx;
   padding: 0 28rpx;
   margin: 0;
   background: #eff6ff;
@@ -42,10 +42,10 @@
   font-weight: 600;
   border-radius: 20rpx;
   border: none;
-}
-
-.code-btn::after {
-  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
 }
 
 .code-btn[disabled] {
