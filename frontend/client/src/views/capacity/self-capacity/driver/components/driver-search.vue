@@ -1,9 +1,14 @@
-<!-- 搜索表单 -->
+<!-- 搜索表单（多行模式，对齐开发手册 06） -->
 <template>
-  <ele-card search-form>
-    <el-form label-width="0" @keyup.enter="search" @submit.prevent="">
-      <el-row :gutter="8">
-        <el-col :lg="5" :md="8" :sm="12" :xs="24">
+  <ele-card search-form class="driver-search-card">
+    <el-form
+      class="driver-search-bar"
+      label-width="0"
+      @keyup.enter="search"
+      @submit.prevent=""
+    >
+      <el-row :gutter="10" class="driver-search-bar__row">
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <floating-label
             label="姓名/手机号/编号"
             type="input"
@@ -11,7 +16,7 @@
             clearable
           />
         </el-col>
-        <el-col :lg="5" :md="8" :sm="12" :xs="24">
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <floating-label
             v-model="form.status"
             label="人事状态"
@@ -23,7 +28,7 @@
             <el-option label="离职" :value="2" />
           </floating-label>
         </el-col>
-        <el-col :lg="5" :md="8" :sm="12" :xs="24">
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <floating-label
             v-model="form.operationStatus"
             label="运营状态"
@@ -36,7 +41,7 @@
             <el-option label="停运" :value="4" />
           </floating-label>
         </el-col>
-        <el-col :lg="5" :md="8" :sm="12" :xs="24">
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <dict-select-hint-wrap dict-name="自有驾驶员类型">
             <floating-label
               v-model="form.driverType"
@@ -53,14 +58,25 @@
             </floating-label>
           </dict-select-hint-wrap>
         </el-col>
-        <el-col :lg="5" :md="8" :sm="12" :xs="24">
+      </el-row>
+      <el-row
+        :gutter="10"
+        class="driver-search-bar__row driver-search-bar__row--second"
+      >
+        <el-col :lg="6" :md="8" :sm="12" :xs="24">
           <business-entity-select
             v-model="form.enterpriseId"
             placeholder="请选择经营主体"
             clearable
           />
         </el-col>
-        <el-col :lg="4" :md="8" :sm="12" :xs="24">
+        <el-col
+          :lg="8"
+          :md="12"
+          :sm="12"
+          :xs="24"
+          class="driver-search-bar__col-actions"
+        >
           <el-form-item label-width="0px">
             <btn-items
               :wrap="false"
@@ -108,3 +124,27 @@
     search();
   };
 </script>
+
+<style scoped>
+  .driver-search-bar__row--second {
+    margin-top: 12px;
+    padding-top: 2px;
+  }
+
+  .driver-search-bar__col-actions :deep(.el-form-item) {
+    margin-bottom: 0;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .driver-search-bar__col-actions :deep(.el-form-item__content) {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+  }
+</style>
+
+<style>
+  .driver-search-card.driver-search-card {
+    padding-bottom: 6px;
+  }
+</style>

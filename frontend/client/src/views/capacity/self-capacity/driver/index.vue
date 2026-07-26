@@ -7,10 +7,12 @@
         row-key="id"
         :columns="columns"
         :datasource="datasource"
+        :pagination="{ pageSize: 20 }"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
+        v-model:selections="selections"
         :default-sort="{ prop: 'createdAt', order: 'descending' }"
-        cache-key="ResourceDriverTable"
+        cache-key="ResourceDriverTableV3"
       >
         <template #toolbar>
           <btn-items
@@ -18,6 +20,16 @@
               { preset: 'add', title: '新增驾驶员', onClick: () => openEdit() }
             ]"
           />
+          <el-button
+            v-if="canOpenLogin"
+            type="primary"
+            plain
+            class="ele-btn-icon"
+            :disabled="selections.length === 0"
+            @click="onBatchOpenLogin"
+          >
+            批量开通登录 ({{ selections.length }})
+          </el-button>
         </template>
         <template #driverType="{ row }">
           <dict-data
@@ -62,17 +74,35 @@
           <span v-else>—</span>
         </template>
         <template #loginAccount="{ row }">
-          <el-tag
-            v-if="row.userId"
-            type="success"
-            size="small"
-            :disable-transitions="true"
-          >
-            已开通
-          </el-tag>
-          <el-tag v-else type="info" size="small" :disable-transitions="true">
-            未开通
-          </el-tag>
+          <template v-if="row.userId">
+            <el-tag type="success" size="small" :disable-transitions="true">
+              已开通
+            </el-tag>
+          </template>
+          <template v-else>
+            <span class="driver-login-cell">
+              <el-tag type="info" size="small" :disable-transitions="true">
+                未开通
+              </el-tag>
+              <el-tooltip
+                v-if="canOpenLogin && !row.phone"
+                content="请先完善手机号"
+                placement="top"
+              >
+                <el-link type="primary" :underline="false" disabled>
+                  开通
+                </el-link>
+              </el-tooltip>
+              <el-link
+                v-else-if="canOpenLogin"
+                type="primary"
+                :underline="false"
+                @click="openLoginAccount(row)"
+              >
+                开通
+              </el-link>
+            </span>
+          </template>
         </template>
         <template #status="{ row }">
           <el-tag
@@ -102,7 +132,12 @@
           <span v-else>—</span>
         </template>
         <template #action="{ row }">
-          <btn-items divider type="link" :items="actionItems(row)" />
+          <btn-items
+            divider
+            type="link"
+            :wrap="false"
+            :items="actionItems(row)"
+          />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -155,12 +190,12 @@
   import { ref, computed } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
-  import { DeleteOutlined } from '@/components/icons';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import type { ButtonItem } from 'ele-admin-plus/es/ele-buttons/types';
   import DriverEdit from './components/driver-edit.vue';
   import DriverFundAccount from './components/driver-fund-account.vue';
   import DriverSearch from './components/driver-search.vue';
@@ -170,7 +205,9 @@
     getDriver,
     removeDriver,
     updateDriverStatus,
-    resetDriverPassword
+    resetDriverPassword,
+    openDriverLoginAccount,
+    batchOpenDriverLoginAccount
   } from '@/api/capacity/self-capacity/driver';
   import type {
     Driver,
@@ -178,12 +215,22 @@
   } from '@/api/capacity/self-capacity/driver/model';
   import { formatDateTime } from '@/utils/date-util';
   import { DICT_CODE_SELF_CAPACITY_DRIVER_TYPE } from '@/constants/dict-codes';
+  import { usePermission } from '@/utils/use-permission';
+  import {
+    buildDriverActionItems,
+    resolveDriverActionColumnMinWidth
+  } from './driver-actions';
 
   defineOptions({ name: 'ResourceDriver' });
 
   const dictCodeSelfCapacityDriverType = DICT_CODE_SELF_CAPACITY_DRIVER_TYPE;
+  const { hasPermission } = usePermission();
+  const canOpenLogin = computed(() =>
+    hasPermission('capacity:self_capacity:driver:edit')
+  );
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
+  const selections = ref<Driver[]>([]);
   const editVisible = ref(false);
   const editData = ref<Driver | null>(null);
   const fundVisible = ref(false);
@@ -237,7 +284,16 @@
     return [];
   });
 
+  const actionColMinWidth = resolveDriverActionColumnMinWidth();
+
   const columns = ref<Columns>([
+    {
+      type: 'selection',
+      columnKey: 'selection',
+      width: 48,
+      align: 'center',
+      fixed: 'left'
+    },
     { prop: 'driverCode', label: '驾驶员编号', minWidth: 120 },
     { prop: 'name', label: '姓名', minWidth: 90 },
     { prop: 'phone', label: '手机号', minWidth: 120 },
@@ -260,7 +316,7 @@
     {
       columnKey: 'loginAccount',
       label: '登录账号',
-      width: 90,
+      minWidth: 120,
       align: 'center',
       slot: 'loginAccount'
     },
@@ -282,7 +338,8 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 160,
+      width: actionColMinWidth,
+      minWidth: actionColMinWidth,
       align: 'center',
       slot: 'action',
       hideInPrint: true,
@@ -363,7 +420,7 @@
     } catch (e: any) {
       hrStatusVisible.value = false;
       EleMessage.error({
-        message: e?.message ?? '加载驾驶员信息失败',
+        message: e?.message ?? '加载驾驶员信息失败，请重试',
         plain: true
       });
     } finally {
@@ -406,42 +463,131 @@
     }
     try {
       await updateDriverStatus(row.id!, target);
-      EleMessage.success({ message: '状态修改成功', plain: true });
+      EleMessage.success({ message: '已成功调整人事状态', plain: true });
       hrStatusVisible.value = false;
       reload();
     } catch (e: any) {
-      EleMessage.error({ message: e.message, plain: true });
+      EleMessage.error({
+        message: e?.message || '调整人事状态失败，请稍后重试',
+        plain: true
+      });
     }
   };
 
-  const actionItems = (row: Driver) => [
-    { preset: 'edit', onClick: () => openEdit(row) },
-    {
-      preset: 'more',
-      dropdownItems: [
-        {
-          title: '资金账户',
-          permission: 'capacity:self_capacity:driver:fund-account',
-          onClick: () => openFundAccount(row)
-        },
-        {
-          title: '调整人事状态',
-          onClick: () => openHrStatusDialog(row)
-        },
-        {
-          title: '重置登录密码',
-          onClick: () => resetPassword(row)
-        },
-        {
-          title: '删除',
-          divided: true,
-          danger: true,
-          icon: DeleteOutlined,
-          onClick: () => remove(row)
-        }
-      ]
+  const actionItems = (row: Driver): ButtonItem[] =>
+    buildDriverActionItems(row, {
+      hasPermission,
+      onEdit: openEdit,
+      onFundAccount: openFundAccount,
+      onHrStatus: openHrStatusDialog,
+      onResetPassword: resetPassword,
+      onRemove: remove
+    });
+
+  const openLoginAccount = (row: Driver) => {
+    if (!row?.id) return;
+    if (!row.phone) {
+      EleMessage.warning({ message: '请先完善手机号', plain: true });
+      return;
     }
-  ];
+    ElMessageBox.confirm(
+      `确定为驾驶员「${row.name}」开通 H5 登录账号吗？开通后默认密码为 123456，司机首次登录需强制改密。`,
+      '开通登录账号',
+      { type: 'info', draggable: true }
+    )
+      .then(() => {
+        const loading = EleMessage.loading({
+          message: '正在开通登录账号，请稍候…',
+          plain: true
+        });
+        openDriverLoginAccount(row.id!)
+          .then((res) => {
+            loading.close();
+            const opened = res.data?.loginAccount?.opened ?? !!res.data?.userId;
+            const conflict = res.data?.loginAccount?.conflict;
+            if (opened && !conflict) {
+              EleMessage.success({
+                message: res.message || '已为该驾驶员开通 H5 登录账号',
+                plain: true
+              });
+              reload();
+              return;
+            }
+            EleMessage.warning({
+              message: res.message || '开通未完成，请稍后重试',
+              plain: true
+            });
+            if (opened) reload();
+          })
+          .catch((e) => {
+            loading.close();
+            EleMessage.error({
+              message: e?.message || '开通失败，请稍后重试',
+              plain: true
+            });
+          });
+      })
+      .catch(() => {});
+  };
+
+  const onBatchOpenLogin = () => {
+    if (!selections.value.length) {
+      EleMessage.warning({ message: '请先勾选需要开通登录的驾驶员', plain: true });
+      return;
+    }
+    const pending = selections.value.filter((r) => r.id != null && !r.userId);
+    if (!pending.length) {
+      EleMessage.warning({
+        message: '所选驾驶员均已开通登录，无需重复操作',
+        plain: true
+      });
+      return;
+    }
+    const noPhone = pending.filter((r) => !(r.phone || '').trim()).length;
+    const tipExtra =
+      noPhone > 0
+        ? `其中 ${noPhone} 人尚未填写手机号，开通时会失败并在结果中提示。`
+        : '';
+    ElMessageBox.confirm(
+      `将为 ${pending.length} 名未开通驾驶员开通 H5 登录账号（默认密码 123456，首次登录需改密）。${tipExtra}是否继续？`,
+      '批量开通登录',
+      { type: 'info', draggable: true }
+    )
+      .then(() => {
+        const loading = EleMessage.loading({
+          message: '正在批量开通登录账号，请稍候…',
+          plain: true
+        });
+        batchOpenDriverLoginAccount(pending.map((r) => r.id!))
+          .then((res) => {
+            loading.close();
+            const data = res.data;
+            const hasIssue =
+              (data?.conflict ?? 0) > 0 || (data?.failed ?? 0) > 0;
+            if (hasIssue) {
+              EleMessage.warning({
+                message: res.message || '部分开通未完成，请刷新后核对',
+                plain: true
+              });
+            } else {
+              EleMessage.success({
+                message: res.message || `已成功开通 ${data?.opened ?? 0} 个登录账号`,
+                plain: true
+              });
+            }
+            selections.value = [];
+            reload();
+          })
+          .catch((e) => {
+            loading.close();
+            EleMessage.error({
+              message: e?.message || '批量开通失败，请稍后重试',
+              plain: true
+            });
+          });
+      })
+      .catch(() => {});
+  };
 
   const resetPassword = (row: Driver) => {
     ElMessageBox.confirm(
@@ -451,7 +597,7 @@
     )
       .then(() => {
         const loading = EleMessage.loading({
-          message: '请求中..',
+          message: '正在重置登录密码，请稍候…',
           plain: true
         });
         resetDriverPassword(row.id!)
@@ -461,31 +607,40 @@
           })
           .catch((e) => {
             loading.close();
-            EleMessage.error({ message: e.message, plain: true });
+            EleMessage.error({
+              message: e?.message || '重置登录密码失败，请稍后重试',
+              plain: true
+            });
           });
       })
       .catch(() => {});
   };
 
   const remove = (row: Driver) => {
-    ElMessageBox.confirm(`确定要删除驾驶员"${row.name}"吗?`, '系统提示', {
+    ElMessageBox.confirm(`确定要删除驾驶员「${row.name}」吗？`, '系统提示', {
       type: 'warning',
       draggable: true
     })
       .then(() => {
         const loading = EleMessage.loading({
-          message: '请求中..',
+          message: '正在删除驾驶员，请稍候…',
           plain: true
         });
         removeDriver(row.id!)
           .then((msg) => {
             loading.close();
-            EleMessage.success({ message: msg, plain: true });
+            EleMessage.success({
+              message: msg || '已成功删除驾驶员',
+              plain: true
+            });
             reload();
           })
           .catch((e) => {
             loading.close();
-            EleMessage.error({ message: e.message, plain: true });
+            EleMessage.error({
+              message: e?.message || '删除失败，请稍后重试',
+              plain: true
+            });
           });
       })
       .catch(() => {});
@@ -502,5 +657,11 @@
   }
   .driver-hr-dialog__select {
     width: 100%;
+  }
+  .driver-login-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
   }
 </style>

@@ -8,6 +8,21 @@ export interface ApiResponse<T = unknown> {
   data?: T;
 }
 
+/** 登录/选企业相关接口：401 应展示后端业务文案，而非「登录已过期」 */
+const AUTH_LOGIN_URLS = ['/auth/login', '/auth/sms-login', '/auth/switch-tenant'];
+
+const AUTH_PAGE_PATHS = ['/login', '/sms-login', '/tenant-select'];
+
+function isAuthLoginRequest(url?: string): boolean {
+  if (!url) return false;
+  return AUTH_LOGIN_URLS.some((p) => url.includes(p));
+}
+
+function isOnAuthPage(): boolean {
+  const path = window.location.pathname || '';
+  return AUTH_PAGE_PATHS.some((p) => path === p || path.endsWith(p));
+}
+
 const request: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api/driver',
   timeout: 20000
@@ -32,7 +47,7 @@ request.interceptors.response.use(
     const body = resp.data;
     if (body && typeof body === 'object' && 'code' in body) {
       if (body.code === 0) return body as unknown as AxiosResponse;
-      const msg = body.message || '请求失败';
+      const msg = body.message || '操作失败，请稍后重试';
       showFailToast(msg);
       return Promise.reject(new Error(msg));
     }
@@ -41,19 +56,26 @@ request.interceptors.response.use(
   (error) => {
     const status = error?.response?.status;
     const body = error?.response?.data;
-    const msg = body?.message || error?.message || '网络异常';
+    const msg = body?.message || error?.message || '加载失败，请重试';
+    const reqUrl = error?.config?.url as string | undefined;
+    const authLoginFail = isAuthLoginRequest(reqUrl) || isOnAuthPage();
 
     if (status === 401) {
-      removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-      removeItem(STORAGE_KEYS.USER_INFO);
-      removeItem(STORAGE_KEYS.TENANT_CODE);
-      showToast('登录已过期，请重新登录');
-      if (window.location.pathname !== '/login') {
-        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
-        window.location.href = `/login?redirect=${redirect}`;
+      if (authLoginFail) {
+        // 登录/选企业失败：展示后端真实原因，不清会话、不整页跳转
+        showFailToast(msg || '登录失败，请重试');
+      } else {
+        removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        removeItem(STORAGE_KEYS.USER_INFO);
+        removeItem(STORAGE_KEYS.TENANT_CODE);
+        showToast('登录已过期，请重新登录');
+        if (window.location.pathname !== '/login') {
+          const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+          window.location.href = `/login?redirect=${redirect}`;
+        }
       }
     } else if (status === 403) {
-      showFailToast('无权限访问');
+      showFailToast(authLoginFail ? msg || '无权限访问' : '无权限访问');
     } else {
       showFailToast(msg);
     }

@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { showToast } from 'vant';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/store/user';
@@ -74,8 +74,13 @@ async function onSubmit() {
       oldPassword: oldPassword.value,
       newPassword: newPassword.value
     });
-    showToast({ message: '密码修改成功', type: 'success' });
-    await router.replace('/home');
+    // 再清一次，防止守卫仍读到旧的强制改密标记
+    user.clearForceChangePwd();
+    showToast({ message: '密码已修改，正在进入首页…', type: 'success' });
+    await nextTick();
+    await router.replace({ name: 'Home' });
+  } catch {
+    // 错误文案由 request 拦截器展示
   } finally {
     submitting.value = false;
   }

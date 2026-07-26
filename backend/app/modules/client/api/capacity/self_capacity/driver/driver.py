@@ -17,6 +17,7 @@ from app.common.operation_log import operation_log
 from app.modules.client.schemas.capacity.self_capacity.driver import (
     DriverCreate, DriverUpdate, DriverOut,
     DriverStatusUpdate, DriverOperationStatusUpdate,
+    DriverBatchOpenLoginRequest,
 )
 from app.modules.client.services.capacity.self_capacity.driver import DriverService
 from app.modules.client.services.capacity.self_capacity.driver.driver_account_sync import (
@@ -252,6 +253,142 @@ async def update_operation_status(
     return success(data=driver.model_dump())
 
 
+@router.post("/batch-open-login-account")
+@operation_log(module="驾驶员管理", action="批量开通登录账号", description="批量开通驾驶员H5登录账号")
+async def batch_open_login_account(
+    request: Request,
+    body: DriverBatchOpenLoginRequest,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """批量开通 H5 登录账号；已开通跳过，冲突/无手机号计入失败明细。"""
+    ids = list(dict.fromkeys(int(i) for i in body.ids))
+    summary = {
+        "total": len(ids),
+        "opened": 0,
+        "skipped": 0,
+        "conflict": 0,
+        "failed": 0,
+        "items": [],
+    }
+    if not current_user.tenant_code:
+        return success(
+            data=summary,
+            message="批量开通失败，请稍后重试；若持续出现请联系管理员",
+        )
+
+    for driver_id in ids:
+        item = {
+            "id": driver_id,
+            "name": "",
+            "status": "failed",
+            "message": "",
+        }
+        try:
+            driver = await DriverService.get_driver(db, driver_id)
+            item["name"] = driver.name or ""
+            if driver.userId:
+                item["status"] = "skipped"
+                item["message"] = "已开通，已跳过"
+                summary["skipped"] += 1
+                summary["items"].append(item)
+                continue
+
+            phone = (driver.phone or "").strip()
+            if not phone:
+                item["status"] = "failed"
+                item["message"] = "请先填写驾驶员手机号后再开通登录"
+                summary["failed"] += 1
+                summary["items"].append(item)
+                continue
+
+            result = await _sync_login_account(
+                current_user.tenant_code, db, driver_id
+            )
+            if result and result.conflict:
+                item["status"] = "conflict"
+                item["message"] = (
+                    result.message
+                    or "该手机号无法开通驾驶员登录，请更换手机号后重试"
+                )
+                summary["conflict"] += 1
+            elif result and result.opened:
+                item["status"] = "opened"
+                item["message"] = "已开通"
+                summary["opened"] += 1
+            else:
+                msg = (result.message if result else "") or "开通失败，请稍后重试"
+                if "手机号为空" in msg:
+                    msg = "请先填写驾驶员手机号后再开通登录"
+                item["status"] = "failed"
+                item["message"] = msg
+                summary["failed"] += 1
+        except Exception as e:
+            logger.warning(f"批量开通登录账号失败 driver_id={driver_id}: {e}")
+            item["status"] = "failed"
+            item["message"] = "开通失败，请稍后重试"
+            summary["failed"] += 1
+        summary["items"].append(item)
+
+    opened = summary["opened"]
+    skipped = summary["skipped"]
+    conflict = summary["conflict"]
+    failed = summary["failed"]
+    if opened == 0 and skipped == summary["total"]:
+        msg = "所选驾驶员均已开通登录，无需重复操作"
+    elif conflict == 0 and failed == 0:
+        if skipped:
+            msg = f"已成功开通 {opened} 个登录账号，另有 {skipped} 个已开通已跳过"
+        else:
+            msg = f"已成功开通 {opened} 个登录账号"
+    else:
+        parts = [f"成功开通 {opened} 个"]
+        if skipped:
+            parts.append(f"跳过已开通 {skipped} 个")
+        if conflict:
+            parts.append(f"冲突 {conflict} 个")
+        if failed:
+            parts.append(f"失败 {failed} 个")
+        msg = "，".join(parts) + "，请在列表中核对"
+    return success(data=summary, message=msg)
+
+
+@router.post("/{driver_id}/open-login-account")
+@operation_log(module="驾驶员管理", action="开通登录账号", description="开通驾驶员H5登录账号")
+async def open_login_account(
+    request: Request,
+    driver_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """手动为存量/未开通驾驶员开通 H5 登录账号。"""
+    driver = await DriverService.get_driver(db, driver_id)
+    data_out = driver.model_dump()
+    if not current_user.tenant_code:
+        return success(
+            data=_attach_account(data_out, None),
+            message="开通失败，请稍后重试；若持续出现请联系管理员",
+        )
+
+    result = await _sync_login_account(current_user.tenant_code, db, driver_id)
+    data_out = _attach_account(data_out, result)
+    if result and result.user_id:
+        data_out["userId"] = result.user_id
+
+    if result and result.conflict:
+        return success(
+            data=data_out,
+            message=result.message or "该手机号无法开通驾驶员登录，请更换手机号后重试",
+        )
+    if not result or not result.opened:
+        msg = (result.message if result else "") or "开通失败，请稍后重试"
+        if "手机号为空" in msg:
+            msg = "请先填写驾驶员手机号后再开通登录"
+        return success(data=data_out, message=msg)
+
+    return success(data=data_out, message="已为该驾驶员开通 H5 登录账号")
+
+
 @router.post("/{driver_id}/reset-password")
 @operation_log(module="驾驶员管理", action="重置密码", description="重置驾驶员登录密码")
 async def reset_login_password(
@@ -273,6 +410,6 @@ async def reset_login_password(
     if not result or not result.opened:
         return success(
             data={"reset": False},
-            message=(result.message if result else "重置失败"),
+            message=(result.message if result else "重置失败，请稍后重试"),
         )
     return success(data={"reset": True}, message=result.message)

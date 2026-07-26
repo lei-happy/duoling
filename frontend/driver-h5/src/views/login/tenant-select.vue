@@ -32,34 +32,36 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { showLoadingToast, closeToast } from 'vant';
+import { showLoadingToast, closeToast, showFailToast } from 'vant';
 import { useTenantStore } from '@/store/tenant';
 import { useUserStore } from '@/store/user';
 import { useAuth } from '@/composables/useAuth';
-import { loginByPassword, loginBySms, type LoginResponseData } from '@/api/auth';
-import type { TenantOption } from '@/api/auth';
+import {
+  loginByPassword,
+  loginBySms,
+  loadPendingLogin,
+  clearPendingLogin,
+  type LoginResponseData,
+  type TenantOption
+} from '@/api/auth';
 
 const route = useRoute();
 const router = useRouter();
 const tenantStore = useTenantStore();
 const userStore = useUserStore();
-const { switchTo } = useAuth();
+const { switchTo, afterLogin } = useAuth();
 
 const tenants = computed(() => tenantStore.tenants);
 const canBack = computed(() => !userStore.isLoggedIn || !!userStore.currentTenantCode);
 
 const phoneQuery = ref('');
-const passwordQuery = ref('');
-const smsCode = ref('');
 
 onMounted(async () => {
   phoneQuery.value = (route.query.phone as string) || '';
-  passwordQuery.value = (route.query.password as string) || '';
-  smsCode.value = (route.query.code as string) || '';
 
   // 已登录场景（从"我的→切换企业"过来）：直接拉远端列表
   if (userStore.isLoggedIn && userStore.currentTenantCode) {
-    showLoadingToast({ message: '加载企业列表', forbidClick: true });
+    showLoadingToast({ message: '正在加载企业列表，请稍候…', forbidClick: true });
     try {
       await tenantStore.fetchTenants();
     } finally {
@@ -75,7 +77,7 @@ function onBack() {
 async function onPick(t: TenantOption) {
   // 已登录：调用 switch-tenant
   if (userStore.isLoggedIn && userStore.currentTenantCode) {
-    showLoadingToast({ message: '切换中', forbidClick: true });
+    showLoadingToast({ message: '正在切换企业，请稍候…', forbidClick: true });
     try {
       await switchTo(t);
     } finally {
@@ -84,27 +86,36 @@ async function onPick(t: TenantOption) {
     return;
   }
 
-  // 未登录（多企业第一步）：用 phone+password 或 phone+code 再次登录并指定 tenantCode
-  showLoadingToast({ message: '登录中', forbidClick: true });
+  // 未登录（多企业第一步）：从 sessionStorage 取凭证再登录
+  const pending = loadPendingLogin();
+  const phone = pending?.phone || phoneQuery.value;
+  showLoadingToast({ message: '正在登录，请稍候…', forbidClick: true });
   try {
-    let result: unknown;
-    if (passwordQuery.value) {
-      result = await loginByPassword({
-        phone: phoneQuery.value,
-        password: passwordQuery.value,
+    let result: LoginResponseData;
+    if (pending?.password) {
+      result = (await loginByPassword({
+        phone,
+        password: pending.password,
         tenantCode: t.tenantCode
-      });
-    } else if (smsCode.value) {
-      result = await loginBySms({
-        phone: phoneQuery.value,
-        code: smsCode.value,
+      })) as LoginResponseData;
+    } else if (pending?.code) {
+      result = (await loginBySms({
+        phone,
+        code: pending.code,
         tenantCode: t.tenantCode
-      });
+      })) as LoginResponseData;
     } else {
-      throw new Error('登录信息已失效，请返回重新登录');
+      showFailToast('登录信息已失效，请返回重新登录');
+      await router.replace({ name: 'Login' });
+      return;
     }
-    userStore.setLoginResult(result as LoginResponseData);
-    await router.replace('/home');
+    if (!result.accessToken) {
+      showFailToast('登录失败，请返回重新登录');
+      return;
+    }
+    clearPendingLogin();
+    userStore.setLoginResult(result);
+    await afterLogin();
   } finally {
     closeToast();
   }

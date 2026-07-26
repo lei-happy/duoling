@@ -51,8 +51,10 @@ class DriverAuthService:
         )
         user = result.scalar_one_or_none()
         if not user:
-            logger.warning(f"驾驶员登录失败：手机号 {phone} 不存在")
-            raise AuthException("手机号或密码错误")
+            await DriverAuthService._raise_unknown_phone(
+                db, phone, fallback="手机号或密码错误"
+            )
+            return  # pragma: no cover — _raise_unknown_phone always raises
 
         if not verify_password(request.password, user.password):
             logger.warning(f"驾驶员登录失败：用户 {phone}(id={user.id}) 密码校验不通过")
@@ -87,7 +89,10 @@ class DriverAuthService:
         )
         user = result.scalar_one_or_none()
         if not user:
-            raise AuthException("该手机号未注册")
+            await DriverAuthService._raise_unknown_phone(
+                db, phone.strip(), fallback="账号不存在，请联系企业管理员开通"
+            )
+            return  # pragma: no cover
 
         resp = await DriverAuthService._resolve_tenants_and_login(
             db, user, tenant_code
@@ -104,25 +109,112 @@ class DriverAuthService:
     # ============================================================
 
     @staticmethod
+    async def _raise_unknown_phone(
+        db: AsyncSession, phone: str, *, fallback: str
+    ) -> None:
+        """手机号无可用 sys_user 时的诊断：有驾驶员档案但未开通 / 完全不存在。"""
+        from app.modules.console.models.driver.sys_driver import SysDriver
+
+        sd_res = await db.execute(
+            select(SysDriver.id)
+            .where(SysDriver.phone == phone, SysDriver.is_deleted == 0)
+            .limit(1)
+        )
+        if sd_res.scalar_one_or_none() is not None:
+            logger.warning(f"驾驶员登录失败：手机号 {phone} 有档案但未开通登录账号")
+            raise AuthException("账号不存在，请联系企业管理员开通")
+
+        logger.warning(f"驾驶员登录失败：手机号 {phone} 不存在")
+        raise AuthException(fallback)
+
+    @staticmethod
+    async def _load_driver_status(
+        user: User, tenant_code: str
+    ) -> Optional[int]:
+        """读取租户库 biz_driver.status；失败时返回 None。"""
+        from app.core.database import db_manager
+        from app.modules.client.models.capacity.self_capacity.driver.driver import (
+            Driver,
+        )
+
+        try:
+            async for tenant_db in db_manager.get_tenant_session(tenant_code):
+                stmt = select(Driver).where(
+                    Driver.user_id == user.id,
+                    Driver.is_deleted == 0,
+                )
+                res = await tenant_db.execute(stmt)
+                drv = res.scalar_one_or_none()
+                if drv is None and user.phone:
+                    stmt = select(Driver).where(
+                        Driver.phone == user.phone,
+                        Driver.is_deleted == 0,
+                    )
+                    res = await tenant_db.execute(stmt)
+                    drv = res.scalar_one_or_none()
+                return int(drv.status) if drv is not None else None
+        except Exception as e:
+            logger.warning(
+                f"诊断驾驶员状态失败 tenant={tenant_code} user={user.id}: {e}"
+            )
+            return None
+
+    @staticmethod
+    async def _diagnose_inactive(
+        db: AsyncSession, user: User, inactive_uts: list[UserTenant]
+    ) -> str:
+        """全部驾驶员关联均停用时，按人事状态拼出可读文案。"""
+        messages: list[str] = []
+        for ut in inactive_uts:
+            t_res = await db.execute(
+                select(Tenant).where(
+                    Tenant.tenant_code == ut.tenant_code,
+                    Tenant.is_deleted == 0,
+                )
+            )
+            tenant = t_res.scalar_one_or_none()
+            tenant_name = tenant.tenant_name if tenant else ut.tenant_code
+
+            driver_status = await DriverAuthService._load_driver_status(
+                user, ut.tenant_code
+            )
+            if driver_status == 2:
+                messages.append(f"当前账号在{tenant_name}已离职")
+            elif driver_status == 0:
+                messages.append(f"当前账号在{tenant_name}已被冻结")
+            else:
+                messages.append(
+                    f"当前账号在{tenant_name}暂不可用，请联系企业管理员"
+                )
+
+        if len(messages) == 1:
+            return messages[0]
+        return "您的驾驶员账号已停用，请联系企业管理员"
+
+    @staticmethod
     async def _resolve_tenants_and_login(
         db: AsyncSession, user: User, tenant_code: Optional[str]
     ) -> Union[LoginResponse, MultiTenantResponse]:
-        ut_query = select(UserTenant).where(
+        # 含 status=0 的全部驾驶员关联，用于诊断离职/冻结
+        all_ut_query = select(UserTenant).where(
             UserTenant.user_id == user.id,
-            UserTenant.user_type == DRIVER_USER_TYPE,  # 强制 user_type=3
-            UserTenant.status == 1,
+            UserTenant.user_type == DRIVER_USER_TYPE,
             UserTenant.is_deleted == 0,
         )
         if tenant_code:
-            ut_query = ut_query.where(UserTenant.tenant_code == tenant_code)
+            all_ut_query = all_ut_query.where(UserTenant.tenant_code == tenant_code)
 
-        ut_result = await db.execute(ut_query)
-        user_tenants = list(ut_result.scalars().all())
-        if not user_tenants:
-            raise AuthException("您还未被任何企业开通为驾驶员，请联系企业管理员")
+        all_ut_result = await db.execute(all_ut_query)
+        all_user_tenants = list(all_ut_result.scalars().all())
+
+        if not all_user_tenants:
+            raise AuthException("账号不存在，请联系企业管理员开通")
+
+        active_uts = [ut for ut in all_user_tenants if int(ut.status or 0) == 1]
+        inactive_uts = [ut for ut in all_user_tenants if int(ut.status or 0) != 1]
 
         active_pairs: list[tuple[UserTenant, Tenant]] = []
-        for ut in user_tenants:
+        for ut in active_uts:
             t_res = await db.execute(
                 select(Tenant).where(
                     Tenant.tenant_code == ut.tenant_code,
@@ -137,6 +229,11 @@ class DriverAuthService:
             active_pairs.append((ut, tenant))
 
         if not active_pairs:
+            if inactive_uts:
+                msg = await DriverAuthService._diagnose_inactive(
+                    db, user, inactive_uts
+                )
+                raise AuthException(msg)
             raise AuthException("您所属的企业暂未开通或已过期，请联系企业管理员")
 
         if len(active_pairs) == 1:

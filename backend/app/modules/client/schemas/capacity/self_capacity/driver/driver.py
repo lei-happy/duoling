@@ -6,9 +6,9 @@
 账户信息通过独立接口管理。
 """
 
-from typing import Optional, Any
+from typing import Optional, Any, List
 from datetime import date, datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DriverCreate(BaseModel):
@@ -82,6 +82,11 @@ class DriverStatusUpdate(BaseModel):
 class DriverOperationStatusUpdate(BaseModel):
     """运营状态变更"""
     operationStatus: int
+
+
+class DriverBatchOpenLoginRequest(BaseModel):
+    """批量开通 H5 登录账号"""
+    ids: List[int] = Field(min_length=1, max_length=100)
 
 
 class DriverOut(BaseModel):

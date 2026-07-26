@@ -74,6 +74,59 @@ export async function resetDriverPassword(id: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
+/** 手动开通驾驶员 H5 登录账号 */
+export async function openDriverLoginAccount(id: number) {
+  const res = await request.post<
+    ApiResult<{
+      userId?: number;
+      loginAccount?: {
+        opened?: boolean;
+        userId?: number;
+        conflict?: boolean;
+        message?: string;
+      };
+    }>
+  >(`${BASE}/${id}/open-login-account`);
+  if (res.data.code === 0) {
+    return {
+      message: res.data.message as string,
+      data: res.data.data
+    };
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export type BatchOpenLoginItem = {
+  id: number;
+  name?: string;
+  status: 'opened' | 'skipped' | 'conflict' | 'failed';
+  message?: string;
+};
+
+export type BatchOpenLoginResult = {
+  total: number;
+  opened: number;
+  skipped: number;
+  conflict: number;
+  failed: number;
+  items: BatchOpenLoginItem[];
+};
+
+/** 批量开通驾驶员 H5 登录账号 */
+export async function batchOpenDriverLoginAccount(ids: number[]) {
+  const res = await request.post<ApiResult<BatchOpenLoginResult>>(
+    `${BASE}/batch-open-login-account`,
+    { ids }
+  );
+  if (res.data.code === 0) {
+    return {
+      message: res.data.message as string,
+      data: res.data.data as BatchOpenLoginResult
+    };
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
 export async function updateOperationStatus(
   id: number,
   operationStatus: number

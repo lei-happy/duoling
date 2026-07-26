@@ -20,7 +20,9 @@ export const useUserStore = defineStore('user', () => {
   const realName = computed(() => userInfo.value?.realName || userInfo.value?.phone || '司机');
   const permissions = computed(() => userInfo.value?.permissions || []);
   const roles = computed(() => userInfo.value?.roles || []);
-  const needForceChangePwd = computed(() => userInfo.value?.forceChangePwd === 1);
+  const needForceChangePwd = computed(
+    () => Number(userInfo.value?.forceChangePwd ?? 0) === 1
+  );
 
   function setLoginResult(data: LoginResponseData) {
     accessToken.value = data.accessToken;
@@ -32,6 +34,13 @@ export const useUserStore = defineStore('user', () => {
     if (data.user.tenantCode) {
       setItem(STORAGE_KEYS.TENANT_CODE, data.user.tenantCode);
     }
+  }
+
+  /** 改密成功后清除强制改密标记（整对象替换，确保路由守卫能立刻读到） */
+  function clearForceChangePwd() {
+    if (!userInfo.value) return;
+    userInfo.value = { ...userInfo.value, forceChangePwd: 0 };
+    setItem(STORAGE_KEYS.USER_INFO, userInfo.value);
   }
 
   async function fetchUserInfo() {
@@ -59,10 +68,7 @@ export const useUserStore = defineStore('user', () => {
 
   async function doChangePassword(payload: { oldPassword: string; newPassword: string }) {
     await apiChangePassword(payload);
-    if (userInfo.value) {
-      userInfo.value.forceChangePwd = 0;
-      setItem(STORAGE_KEYS.USER_INFO, userInfo.value);
-    }
+    clearForceChangePwd();
   }
 
   function clearTokenOnly() {
@@ -83,6 +89,7 @@ export const useUserStore = defineStore('user', () => {
     roles,
     needForceChangePwd,
     setLoginResult,
+    clearForceChangePwd,
     fetchUserInfo,
     logout,
     hasPermission,

@@ -28,24 +28,124 @@ export interface TenantOption {
 
 export interface MultiTenantData {
   tenants: TenantOption[];
+  needSelectTenant?: boolean;
 }
 
 export type LoginResultUnion = LoginResponseData | MultiTenantData;
 
-export function loginByPassword(payload: {
+/** 多企业第一步登录后暂存凭证（sessionStorage，避免密码进 URL） */
+export const PENDING_LOGIN_KEY = 'zt_driver_pending_login';
+
+export interface PendingLoginCreds {
+  phone: string;
+  password?: string;
+  code?: string;
+}
+
+export function savePendingLogin(creds: PendingLoginCreds): void {
+  try {
+    sessionStorage.setItem(PENDING_LOGIN_KEY, JSON.stringify(creds));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadPendingLogin(): PendingLoginCreds | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_LOGIN_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PendingLoginCreds;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingLogin(): void {
+  try {
+    sessionStorage.removeItem(PENDING_LOGIN_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function pickStr(obj: Record<string, unknown>, camel: string, snake: string): string {
+  const v = obj[camel] ?? obj[snake];
+  return typeof v === 'string' ? v : v != null ? String(v) : '';
+}
+
+function pickNum(obj: Record<string, unknown>, camel: string, snake: string): number {
+  const v = obj[camel] ?? obj[snake];
+  return typeof v === 'number' ? v : Number(v) || 0;
+}
+
+/** 将登录/刷新/切换企业响应统一为前端 camelCase，兼容后端 snake_case */
+export function normalizeLoginResponse(raw: unknown): LoginResultUnion {
+  const data = (raw ?? {}) as Record<string, unknown>;
+
+  // 多企业选择
+  if (Array.isArray(data.tenants)) {
+    const tenants = (data.tenants as Record<string, unknown>[]).map((t) => ({
+      tenantCode: pickStr(t, 'tenantCode', 'tenant_code'),
+      tenantName: pickStr(t, 'tenantName', 'tenant_name')
+    }));
+    return {
+      needSelectTenant: data.needSelectTenant !== false,
+      tenants
+    };
+  }
+
+  const userRaw = (data.user ?? {}) as Record<string, unknown>;
+  const roles = userRaw.roles;
+  const user: DriverUserInfo = {
+    userId: pickNum(userRaw, 'userId', 'user_id'),
+    phone: pickStr(userRaw, 'phone', 'phone'),
+    realName: pickStr(userRaw, 'realName', 'real_name') || undefined,
+    avatar: pickStr(userRaw, 'avatar', 'avatar') || undefined,
+    tenantCode: pickStr(userRaw, 'tenantCode', 'tenant_code') || undefined,
+    tenantName: pickStr(userRaw, 'tenantName', 'tenant_name') || undefined,
+    forceChangePwd: pickNum(userRaw, 'forceChangePwd', 'force_change_pwd'),
+    roles: Array.isArray(roles) ? (roles as string[]) : [],
+    permissions: Array.isArray(userRaw.permissions) ? (userRaw.permissions as string[]) : []
+  };
+
+  return {
+    accessToken: pickStr(data, 'accessToken', 'access_token'),
+    refreshToken: pickStr(data, 'refreshToken', 'refresh_token'),
+    user
+  };
+}
+
+export async function loginByPassword(payload: {
   phone: string;
   password: string;
   tenantCode?: string;
 }) {
-  return post<LoginResultUnion>('/auth/login', payload);
+  const raw = await post<unknown>('/auth/login', {
+    phone: payload.phone,
+    password: payload.password,
+    tenant_code: payload.tenantCode
+  });
+  return normalizeLoginResponse(raw);
 }
 
-export function loginBySms(payload: { phone: string; code: string; tenantCode?: string }) {
-  return post<LoginResultUnion>('/auth/sms-login', payload);
+export async function loginBySms(payload: {
+  phone: string;
+  code: string;
+  tenantCode?: string;
+}) {
+  const raw = await post<unknown>('/auth/sms-login', {
+    phone: payload.phone,
+    code: payload.code,
+    tenant_code: payload.tenantCode
+  });
+  return normalizeLoginResponse(raw);
 }
 
-export function refreshToken(payload: { refreshToken: string }) {
-  return post<LoginResponseData>('/auth/refresh', payload);
+export async function refreshToken(payload: { refreshToken: string }) {
+  const raw = await post<unknown>('/auth/refresh', {
+    refresh_token: payload.refreshToken
+  });
+  return normalizeLoginResponse(raw) as LoginResponseData;
 }
 
 export function getUserInfo() {
@@ -56,8 +156,11 @@ export function getUserTenants() {
   return get<TenantOption[]>('/auth/user-tenants');
 }
 
-export function switchTenant(payload: { tenantCode: string }) {
-  return post<LoginResponseData>('/auth/switch-tenant', payload);
+export async function switchTenant(payload: { tenantCode: string }) {
+  const raw = await post<unknown>('/auth/switch-tenant', {
+    tenant_code: payload.tenantCode
+  });
+  return normalizeLoginResponse(raw) as LoginResponseData;
 }
 
 export function changePassword(payload: { oldPassword: string; newPassword: string }) {

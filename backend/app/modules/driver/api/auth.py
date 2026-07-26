@@ -10,6 +10,8 @@
 - ``PUT  /auth/password``      修改密码（复用 AuthService.change_password）
 """
 
+from typing import Any, Dict, Union
+
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +25,10 @@ from app.core.security import TokenData
 from app.modules.console.schemas.auth.auth import (
     ChangePasswordRequest,
     LoginRequest,
+    LoginResponse,
+    MultiTenantResponse,
     RefreshTokenRequest,
+    RefreshTokenResponse,
     SmsLoginRequest,
     SwitchTenantRequest,
 )
@@ -32,6 +37,36 @@ from app.modules.driver.services.driver_auth_service import DriverAuthService
 from app.modules.driver.services.driver_context import get_current_driver
 
 router = APIRouter()
+
+
+def _dump_login_camel(
+    result: Union[LoginResponse, MultiTenantResponse, RefreshTokenResponse],
+) -> Dict[str, Any]:
+    """将登录相关响应序列化为 camelCase，对齐 H5 / 需求文档约定。"""
+    if isinstance(result, MultiTenantResponse):
+        # TenantOption 字段本身已是 camelCase
+        return result.model_dump()
+
+    data = result.model_dump()
+    out: Dict[str, Any] = {
+        "accessToken": data.get("access_token"),
+        "refreshToken": data.get("refresh_token"),
+        "tokenType": data.get("token_type", "Bearer"),
+        "expiresIn": data.get("expires_in"),
+    }
+    user = data.get("user")
+    if isinstance(user, dict):
+        out["user"] = {
+            "userId": user.get("user_id"),
+            "phone": user.get("phone"),
+            "realName": user.get("real_name"),
+            "avatar": user.get("avatar"),
+            "userType": user.get("user_type"),
+            "tenantCode": user.get("tenant_code"),
+            "roles": user.get("roles") or [],
+            "forceChangePwd": user.get("force_change_pwd", 0),
+        }
+    return out
 
 
 @router.post("/login", summary="驾驶员密码登录")
@@ -45,7 +80,7 @@ async def driver_login(
     - 多企业：返回 needSelectTenant + tenants 列表
     """
     result = await DriverAuthService.driver_login(db, payload)
-    return success(data=result.model_dump())
+    return success(data=_dump_login_camel(result))
 
 
 @router.post("/sms-login", summary="驾驶员验证码登录")
@@ -56,7 +91,7 @@ async def driver_sms_login(
     result = await DriverAuthService.driver_sms_login(
         db, payload.phone, payload.code, payload.tenant_code
     )
-    return success(data=result.model_dump())
+    return success(data=_dump_login_camel(result))
 
 
 @router.post("/refresh", summary="刷新 Token")
@@ -65,7 +100,7 @@ async def driver_refresh_token(
     db: AsyncSession = Depends(get_platform_db),
 ):
     result = await AuthService.refresh_token(db, payload)
-    return success(data=result.model_dump())
+    return success(data=_dump_login_camel(result))
 
 
 @router.get("/user-tenants", summary="可登录企业列表")
@@ -86,7 +121,7 @@ async def switch_tenant(
     result = await DriverAuthService.switch_tenant(
         db, current_user.user_id, payload
     )
-    return success(data=result.model_dump())
+    return success(data=_dump_login_camel(result))
 
 
 @router.put("/password", summary="修改密码")

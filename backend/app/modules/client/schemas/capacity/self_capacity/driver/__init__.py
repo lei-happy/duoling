@@ -1,6 +1,6 @@
 from app.modules.client.schemas.capacity.self_capacity.driver.driver import (
     DriverCreate, DriverUpdate, DriverOut, DriverStatusUpdate,
-    DriverOperationStatusUpdate,
+    DriverOperationStatusUpdate, DriverBatchOpenLoginRequest,
 )
 from app.modules.client.schemas.capacity.self_capacity.driver.driver_license import (
     DriverLicenseOut,
@@ -25,6 +25,7 @@ __all__ = [
     "DriverOut",
     "DriverStatusUpdate",
     "DriverOperationStatusUpdate",
+    "DriverBatchOpenLoginRequest",
     "DriverLicenseOut",
     "DriverOperationOut",
     "DriverAccountCreate",
