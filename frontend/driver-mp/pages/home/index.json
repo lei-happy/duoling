@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "工作台",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "task-card": "/components/task-card/task-card",
+    "section-header": "/components/section-header/section-header",
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

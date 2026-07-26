@@ -1,0 +1,46 @@
+.tip-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  margin-bottom: 12rpx;
+}
+
+.tip-desc {
+  font-size: 26rpx;
+  color: #64748b;
+}
+
+.tenant-list {
+  padding: 0 24rpx;
+}
+
+.tenant-item {
+  position: relative;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 36rpx 28rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.04);
+}
+
+.tenant-name {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #0f172a;
+  padding-right: 100rpx;
+}
+
+.tenant-code {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #94a3b8;
+}
+
+.go {
+  position: absolute;
+  right: 28rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #1d4ed8;
+  font-size: 28rpx;
+  font-weight: 600;
+}

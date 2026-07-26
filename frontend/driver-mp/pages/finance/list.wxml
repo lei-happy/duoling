@@ -1,0 +1,64 @@
+<view class="page">
+  <view class="summary">
+    <view class="summary-title">本月累计收入</view>
+    <view class="summary-amount">¥ {{totalIncomeText}}</view>
+    <view class="summary-row">
+      <view class="cell">
+        <view class="cell-label">预付</view>
+        <view class="cell-val">¥{{prepaidText}}</view>
+      </view>
+      <view class="cell">
+        <view class="cell-label">补款</view>
+        <view class="cell-val">¥{{supplementText}}</view>
+      </view>
+      <view class="cell">
+        <view class="cell-label">结算</view>
+        <view class="cell-val">¥{{settledText}}</view>
+      </view>
+    </view>
+    <view class="fund-entry" bindtap="goFundAccount">
+      <text>我的资金账户（往来账）</text>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+
+  <scroll-view class="tabs" scroll-x enable-flex>
+    <view
+      wx:for="{{tabs}}"
+      wx:key="name"
+      class="tab {{docType === item.name ? 'active' : ''}}"
+      data-name="{{item.name}}"
+      bindtap="onTab"
+    >{{item.title}}</view>
+  </scroll-view>
+
+  <empty-state wx:if="{{!loading && !list.length}}" text="暂无费用单" hint="有费用单据时会显示在这里" />
+
+  <view
+    class="finance-card"
+    wx:for="{{list}}"
+    wx:key="id"
+    data-id="{{item.id}}"
+    bindtap="goDetail"
+  >
+    <view class="row-1">
+      <text class="doc-no">{{item.docNo}}</text>
+      <status-tag label="{{item.statusLabel}}" level="{{item.statusLevel}}" />
+    </view>
+    <view class="row-2">
+      <text class="type-tag">{{item.typeLabel}}</text>
+      <text class="task-no">关联任务：{{item.taskNo || item.taskId}}</text>
+    </view>
+    <view class="row-3">
+      <view class="amount">
+        <text class="amount-label">实付</text>
+        <text class="amount-val">¥{{item.amountText}}</text>
+      </view>
+      <text class="time">{{item.timeText}}</text>
+    </view>
+  </view>
+
+  <view class="footer-tip" wx:if="{{list.length}}">
+    {{finished ? '没有更多了' : (loadingMore ? '加载中…' : '上拉加载更多')}}
+  </view>
+</view>

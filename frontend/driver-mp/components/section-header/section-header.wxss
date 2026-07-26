@@ -1,0 +1,19 @@
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 24rpx 8rpx;
+  margin-top: 8rpx;
+}
+
+.title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.more {
+  font-size: 26rpx;
+  color: #1d4ed8;
+  padding: 12rpx 0 12rpx 24rpx;
+}

@@ -1,0 +1,61 @@
+<view class="page home">
+  <view class="hero">
+    <view class="hero-row">
+      <view class="hello-block">
+        <view class="hello">您好，{{realName}}</view>
+        <view class="tenant" bindtap="goSwitchTenant">
+          <text class="tenant-name">{{tenantName}}</text>
+          <text class="switch">切换</text>
+        </view>
+      </view>
+      <view class="avatar">{{avatarText}}</view>
+    </view>
+
+    <view class="kpi-row">
+      <view class="kpi" data-status="1" bindtap="goTask">
+        <view class="kpi-value">{{kpi.waitLoad}}</view>
+        <view class="kpi-label">待装车</view>
+      </view>
+      <view class="kpi" data-status="3" bindtap="goTask">
+        <view class="kpi-value">{{kpi.inTransit}}</view>
+        <view class="kpi-label">在途</view>
+      </view>
+      <view class="kpi" data-status="4" bindtap="goTask">
+        <view class="kpi-value">{{kpi.waitSign}}</view>
+        <view class="kpi-label">待签收</view>
+      </view>
+      <view class="kpi" bindtap="goFinance">
+        <view class="kpi-value money">¥{{monthlyIncomeText}}</view>
+        <view class="kpi-label">本月收入</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="quick card">
+    <view class="entry" data-status="" bindtap="goTask">
+      <view class="entry-icon blue">任</view>
+      <text>我的任务</text>
+    </view>
+    <view class="entry" bindtap="goFinance">
+      <view class="entry-icon green">收</view>
+      <text>我的收入</text>
+    </view>
+    <view class="entry" bindtap="goSummary">
+      <view class="entry-icon orange">账</view>
+      <text>收款账户</text>
+    </view>
+    <view class="entry" bindtap="goProfile">
+      <view class="entry-icon gray">我</view>
+      <text>个人中心</text>
+    </view>
+  </view>
+
+  <section-header title="近期任务" more="全部" bind:more="goTaskAll" />
+  <empty-state wx:if="{{!loading && !recent.length}}" text="暂无任务" hint="有新任务时会显示在这里" />
+  <task-card
+    wx:for="{{recent}}"
+    wx:key="id"
+    task="{{item}}"
+    bind:tap="onTaskTap"
+  />
+</view>

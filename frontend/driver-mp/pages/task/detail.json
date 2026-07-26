@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "任务详情",
+  "usingComponents": {
+    "status-tag": "/components/status-tag/status-tag",
+    "bottom-action-bar": "/components/bottom-action-bar/bottom-action-bar",
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

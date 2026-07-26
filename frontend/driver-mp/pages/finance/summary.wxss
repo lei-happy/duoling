@@ -1,0 +1,77 @@
+.head .label {
+  font-size: 26rpx;
+  color: #64748b;
+}
+
+.head .amount {
+  margin-top: 8rpx;
+  font-size: 52rpx;
+  font-weight: 700;
+}
+
+.head .row {
+  display: flex;
+  margin-top: 28rpx;
+  gap: 24rpx;
+}
+
+.head .row > view {
+  flex: 1;
+}
+
+.sub-label {
+  font-size: 22rpx;
+  color: #94a3b8;
+}
+
+.sub-val {
+  margin-top: 6rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.month-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid #e2e8f0;
+  font-size: 28rpx;
+}
+
+.month-row:last-child {
+  border-bottom: none;
+}
+
+.month-amt {
+  font-weight: 600;
+}
+
+.account {
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #e2e8f0;
+}
+
+.account:last-child {
+  border-bottom: none;
+}
+
+.acc-type {
+  font-size: 22rpx;
+  color: #1d4ed8;
+  background: #eff6ff;
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.acc-name {
+  margin-top: 12rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.acc-no {
+  margin-top: 6rpx;
+  font-size: 26rpx;
+  color: #64748b;
+}

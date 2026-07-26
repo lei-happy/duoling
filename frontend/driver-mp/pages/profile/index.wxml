@@ -1,0 +1,49 @@
+<view class="page profile">
+  <view class="user-card">
+    <view class="user-row">
+      <view class="avatar">{{avatarText}}</view>
+      <view class="user-info">
+        <view class="name">{{realName}}</view>
+        <view class="phone">{{phoneMasked}}</view>
+      </view>
+    </view>
+    <view class="tenant">当前企业：{{tenantName}}</view>
+  </view>
+
+  <view class="cell-list">
+    <view class="cell" bindtap="goInfo">
+      <text class="cell-title">个人信息</text>
+      <text class="cell-arrow"></text>
+    </view>
+    <view class="cell" bindtap="goSwitchTenant">
+      <text class="cell-title">切换企业</text>
+      <text class="cell-arrow"></text>
+    </view>
+    <view class="cell" bindtap="goChangePassword">
+      <text class="cell-title">修改密码</text>
+      <text class="cell-arrow"></text>
+    </view>
+  </view>
+
+  <view class="cell-list">
+    <view class="cell" bindtap="goSummary">
+      <text class="cell-title">收入汇总</text>
+      <text class="cell-arrow"></text>
+    </view>
+    <view class="cell" bindtap="goSummary">
+      <text class="cell-title">收款账户</text>
+      <text class="cell-arrow"></text>
+    </view>
+  </view>
+
+  <view class="cell-list">
+    <view class="cell" bindtap="onAbout">
+      <text class="cell-title">关于</text>
+      <text class="cell-arrow"></text>
+    </view>
+  </view>
+
+  <view class="logout-wrap">
+    <button class="btn-ghost btn-block" bindtap="onLogout">退出登录</button>
+  </view>
+</view>

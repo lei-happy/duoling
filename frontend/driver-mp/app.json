@@ -1,0 +1,62 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/task/list",
+    "pages/finance/list",
+    "pages/profile/index",
+    "pages/login/login",
+    "pages/sms-login/sms-login",
+    "pages/tenant-select/tenant-select",
+    "pages/task/detail",
+    "pages/task/receipt",
+    "pages/finance/detail",
+    "pages/finance/summary",
+    "pages/finance/fund-account",
+    "pages/profile/info",
+    "pages/profile/switch-tenant",
+    "pages/profile/change-password"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#1d4ed8",
+    "navigationBarTitleText": "智途司机",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f4f6fb",
+    "backgroundTextStyle": "dark",
+    "handleWebviewPreload": "auto"
+  },
+  "tabBar": {
+    "color": "#94a3b8",
+    "selectedColor": "#1d4ed8",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "工作台",
+        "iconPath": "assets/icons/home.png",
+        "selectedIconPath": "assets/icons/home-active.png"
+      },
+      {
+        "pagePath": "pages/task/list",
+        "text": "任务",
+        "iconPath": "assets/icons/task.png",
+        "selectedIconPath": "assets/icons/task-active.png"
+      },
+      {
+        "pagePath": "pages/finance/list",
+        "text": "收入",
+        "iconPath": "assets/icons/finance.png",
+        "selectedIconPath": "assets/icons/finance-active.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的",
+        "iconPath": "assets/icons/profile.png",
+        "selectedIconPath": "assets/icons/profile-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

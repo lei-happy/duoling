@@ -1,0 +1,48 @@
+.tabs {
+  height: 96rpx;
+  width: 100%;
+  white-space: nowrap;
+  background: #fff;
+  padding: 16rpx 12rpx;
+  border-bottom: 1rpx solid #e2e8f0;
+  box-sizing: border-box;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 64rpx;
+  padding: 0 28rpx;
+  margin: 0 8rpx;
+  border-radius: 999rpx;
+  font-size: 26rpx;
+  color: #64748b;
+  background: #f1f5f9;
+}
+
+.tab.active {
+  background: #1d4ed8;
+  color: #fff;
+  font-weight: 600;
+}
+
+.search {
+  margin-top: 16rpx;
+  padding: 12rpx 20rpx;
+}
+
+.search-input {
+  height: 72rpx;
+  padding: 0 24rpx;
+  background: #f8fafc;
+  border-radius: 36rpx;
+  font-size: 28rpx;
+}
+
+.footer-tip {
+  text-align: center;
+  padding: 24rpx;
+  font-size: 24rpx;
+  color: #94a3b8;
+}

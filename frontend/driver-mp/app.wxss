@@ -1,0 +1,197 @@
+/** 智途驾驶员小程序全局样式 */
+page {
+  --brand-primary: #1d4ed8;
+  --brand-primary-light: #3b82f6;
+  --brand-success: #16a34a;
+  --brand-warning: #f59e0b;
+  --brand-danger: #dc2626;
+  --brand-info: #0ea5e9;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --bg-page: #f4f6fb;
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+  --radius-sm: 12rpx;
+  --radius-md: 20rpx;
+  --radius-lg: 28rpx;
+
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: 28rpx;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+view,
+text,
+button,
+input,
+textarea {
+  box-sizing: border-box;
+}
+
+.page {
+  min-height: 100vh;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+.page-with-action {
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  margin: 24rpx;
+  padding: 28rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20rpx;
+}
+
+.meta {
+  font-size: 24rpx;
+  color: var(--text-muted);
+}
+
+.muted {
+  color: var(--text-secondary);
+}
+
+/* 大触控主按钮 */
+.btn-primary {
+  height: 96rpx;
+  line-height: 96rpx;
+  background: var(--brand-primary);
+  color: #fff;
+  border-radius: 48rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none;
+}
+
+.btn-primary::after {
+  border: none;
+}
+
+.btn-danger {
+  height: 96rpx;
+  line-height: 96rpx;
+  background: var(--brand-danger);
+  color: #fff;
+  border-radius: 48rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none;
+}
+
+.btn-danger::after {
+  border: none;
+}
+
+.btn-ghost {
+  height: 96rpx;
+  line-height: 96rpx;
+  background: #fff;
+  color: var(--brand-primary);
+  border-radius: 48rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: 2rpx solid var(--brand-primary);
+}
+
+.btn-ghost::after {
+  border: none;
+}
+
+.btn-block {
+  width: 100%;
+  display: block;
+}
+
+.btn-primary[disabled],
+.btn-danger[disabled] {
+  opacity: 0.5;
+}
+
+/* 表单 */
+.form-group {
+  margin-bottom: 28rpx;
+}
+
+.form-label {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  margin-bottom: 12rpx;
+}
+
+.form-input {
+  height: 96rpx;
+  padding: 0 28rpx;
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  border: 2rpx solid var(--border-color);
+  font-size: 30rpx;
+}
+
+.form-textarea {
+  min-height: 160rpx;
+  padding: 24rpx 28rpx;
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  border: 2rpx solid var(--border-color);
+  font-size: 28rpx;
+  width: 100%;
+}
+
+.cell-list {
+  background: #fff;
+  border-radius: var(--radius-md);
+  margin: 24rpx;
+  overflow: hidden;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 104rpx;
+  padding: 24rpx 28rpx;
+  border-bottom: 1rpx solid var(--border-color);
+}
+
+.cell:last-child {
+  border-bottom: none;
+}
+
+.cell-title {
+  font-size: 30rpx;
+  color: var(--text-primary);
+}
+
+.cell-value {
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  max-width: 60%;
+  text-align: right;
+}
+
+.cell-arrow::after {
+  content: '';
+  display: inline-block;
+  width: 14rpx;
+  height: 14rpx;
+  border-top: 3rpx solid #cbd5e1;
+  border-right: 3rpx solid #cbd5e1;
+  transform: rotate(45deg);
+  margin-left: 12rpx;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}

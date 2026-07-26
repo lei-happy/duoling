@@ -1,0 +1,39 @@
+<view class="page login-page">
+  <view class="hero">
+    <view class="brand">智途司机</view>
+    <view class="slogan">任务进度一手掌握</view>
+  </view>
+
+  <view class="form card">
+    <view class="form-group">
+      <view class="form-label">手机号</view>
+      <input
+        class="form-input"
+        type="number"
+        maxlength="11"
+        placeholder="请输入手机号"
+        value="{{phone}}"
+        bindinput="onPhone"
+      />
+    </view>
+    <view class="form-group">
+      <view class="form-label">密码</view>
+      <input
+        class="form-input"
+        password
+        placeholder="请输入密码"
+        value="{{password}}"
+        bindinput="onPassword"
+      />
+    </view>
+
+    <button class="btn-primary btn-block" loading="{{loading}}" disabled="{{loading}}" bindtap="onSubmit">
+      登录
+    </button>
+
+    <view class="links">
+      <text class="link" bindtap="goSms">验证码登录</text>
+      <text class="hint">忘记密码？请用验证码登录后修改</text>
+    </view>
+  </view>
+</view>

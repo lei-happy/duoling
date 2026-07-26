@@ -1,0 +1,39 @@
+<view class="page">
+  <view class="card head">
+    <view class="label">累计收入</view>
+    <view class="amount">¥{{totalIncomeText}}</view>
+    <view class="row">
+      <view>
+        <view class="sub-label">预付</view>
+        <view class="sub-val">¥{{prepaidText}}</view>
+      </view>
+      <view>
+        <view class="sub-label">补款</view>
+        <view class="sub-val">¥{{supplementText}}</view>
+      </view>
+      <view>
+        <view class="sub-label">结算</view>
+        <view class="sub-val">¥{{settledText}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">按月收入</view>
+    <empty-state wx:if="{{!byMonth.length}}" text="暂无月度数据" />
+    <view class="month-row" wx:for="{{byMonth}}" wx:key="month">
+      <text>{{item.month}}</text>
+      <text class="month-amt">¥{{item.amountText}}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">收款账户</view>
+    <empty-state wx:if="{{!accounts.length}}" text="暂无收款账户" hint="由企业侧维护，此处仅供查看" />
+    <view class="account" wx:for="{{accounts}}" wx:key="id">
+      <view class="acc-type">{{item.typeLabel}}</view>
+      <view class="acc-name">{{item.accountName}}</view>
+      <view class="acc-no">{{item.accountNoMasked}}</view>
+    </view>
+  </view>
+</view>

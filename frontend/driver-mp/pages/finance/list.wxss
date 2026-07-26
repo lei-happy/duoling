@@ -1,0 +1,144 @@
+.summary {
+  margin: 24rpx;
+  padding: 32rpx 28rpx 0;
+  background: linear-gradient(145deg, #1d4ed8, #3b82f6);
+  border-radius: 24rpx;
+  color: #fff;
+}
+
+.summary-title {
+  font-size: 26rpx;
+  opacity: 0.9;
+}
+
+.summary-amount {
+  margin-top: 8rpx;
+  font-size: 52rpx;
+  font-weight: 700;
+}
+
+.summary-row {
+  display: flex;
+  margin-top: 28rpx;
+  padding-bottom: 24rpx;
+}
+
+.summary-row .cell {
+  flex: 1;
+}
+
+.cell-label {
+  font-size: 22rpx;
+  opacity: 0.8;
+}
+
+.cell-val {
+  margin-top: 6rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.fund-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.2);
+  font-size: 26rpx;
+}
+
+.arrow {
+  font-size: 36rpx;
+  opacity: 0.85;
+}
+
+.tabs {
+  height: 88rpx;
+  width: 100%;
+  white-space: nowrap;
+  padding: 8rpx 12rpx 16rpx;
+  box-sizing: border-box;
+}
+
+.tab {
+  display: inline-flex;
+  height: 64rpx;
+  padding: 0 28rpx;
+  margin: 0 8rpx;
+  align-items: center;
+  border-radius: 999rpx;
+  background: #fff;
+  color: #64748b;
+  font-size: 26rpx;
+}
+
+.tab.active {
+  background: #1d4ed8;
+  color: #fff;
+  font-weight: 600;
+}
+
+.finance-card {
+  margin: 0 24rpx 20rpx;
+  padding: 28rpx;
+  background: #fff;
+  border-radius: 20rpx;
+}
+
+.row-1,
+.row-2,
+.row-3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.row-1 {
+  margin-bottom: 12rpx;
+}
+
+.doc-no {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.row-2 {
+  margin-bottom: 16rpx;
+}
+
+.type-tag {
+  font-size: 22rpx;
+  color: #1d4ed8;
+  background: #eff6ff;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.task-no {
+  font-size: 24rpx;
+  color: #94a3b8;
+}
+
+.amount-label {
+  font-size: 24rpx;
+  color: #94a3b8;
+  margin-right: 8rpx;
+}
+
+.amount-val {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.time {
+  font-size: 24rpx;
+  color: #94a3b8;
+}
+
+.footer-tip {
+  text-align: center;
+  padding: 24rpx;
+  font-size: 24rpx;
+  color: #94a3b8;
+}

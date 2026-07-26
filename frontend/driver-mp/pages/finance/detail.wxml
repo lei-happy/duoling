@@ -1,0 +1,45 @@
+<view class="page" wx:if="{{doc}}">
+  <view class="card head">
+    <view class="row">
+      <text class="doc-no">{{doc.docNo}}</text>
+      <status-tag label="{{statusLabel}}" level="{{statusLevel}}" />
+    </view>
+    <view class="amount">¥{{amountText}}</view>
+    <view class="meta">{{typeLabel}} · {{payMethodText}}</view>
+  </view>
+
+  <view class="cell-list">
+    <view class="cell">
+      <text class="cell-title">关联任务</text>
+      <text class="cell-value">{{doc.taskNo || doc.taskId || '-'}}</text>
+    </view>
+    <view class="cell">
+      <text class="cell-title">计划金额</text>
+      <text class="cell-value">¥{{plannedText}}</text>
+    </view>
+    <view class="cell">
+      <text class="cell-title">实付金额</text>
+      <text class="cell-value">¥{{actualText}}</text>
+    </view>
+    <view class="cell">
+      <text class="cell-title">计划付款</text>
+      <text class="cell-value">{{plannedPayText}}</text>
+    </view>
+    <view class="cell">
+      <text class="cell-title">实际付款</text>
+      <text class="cell-value">{{actualPayText}}</text>
+    </view>
+    <view class="cell" wx:if="{{doc.remark}}">
+      <text class="cell-title">备注</text>
+      <text class="cell-value">{{doc.remark}}</text>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{doc.items && doc.items.length}}">
+    <view class="section-title">费用明细</view>
+    <view class="item" wx:for="{{doc.items}}" wx:key="id">
+      <view class="item-name">{{item.itemName || item.itemType}}</view>
+      <view class="item-amt">¥{{item.amountText}}</view>
+    </view>
+  </view>
+</view>

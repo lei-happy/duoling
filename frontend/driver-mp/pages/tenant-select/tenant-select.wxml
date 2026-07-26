@@ -1,0 +1,22 @@
+<view class="page">
+  <view class="tip card">
+    <view class="tip-title">请选择要进入的企业</view>
+    <view class="tip-desc">同一手机号可能关联多家企业，请确认后进入</view>
+  </view>
+
+  <view class="tenant-list">
+    <view
+      class="tenant-item"
+      wx:for="{{tenants}}"
+      wx:key="tenantCode"
+      data-code="{{item.tenantCode}}"
+      bindtap="onSelect"
+    >
+      <view class="tenant-name">{{item.tenantName || item.tenantCode}}</view>
+      <view class="tenant-code">{{item.tenantCode}}</view>
+      <view class="go">进入</view>
+    </view>
+  </view>
+
+  <empty-state wx:if="{{!tenants.length && !loading}}" text="暂无可选企业" hint="请联系企业管理员开通驾驶员账号" />
+</view>

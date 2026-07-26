@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "资金账户",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

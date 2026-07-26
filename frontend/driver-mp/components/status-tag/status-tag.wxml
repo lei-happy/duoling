@@ -1,0 +1,1 @@
+<view class="tag tag-{{level}}">{{label}}</view>

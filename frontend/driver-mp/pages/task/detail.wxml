@@ -1,0 +1,156 @@
+<view class="page page-with-action" wx:if="{{task}}">
+  <!-- 状态大条 -->
+  <view class="status-banner level-{{statusInfo.level}}">
+    <view class="status-label">{{statusInfo.label}}</view>
+    <view class="task-name">{{task.taskName || task.taskNo}}</view>
+    <view class="task-no">{{task.taskNo}}</view>
+  </view>
+
+  <view class="card route-card">
+    <view class="route-line">
+      <view class="dot from"></view>
+      <view class="route-text">
+        <view class="loc">{{task.origin || '-'}}</view>
+        <view class="time">计划装车：{{plannedLoadText}}</view>
+      </view>
+    </view>
+    <view class="route-line">
+      <view class="dot to"></view>
+      <view class="route-text">
+        <view class="loc">{{task.destination || '-'}}</view>
+        <view class="time">计划到达：{{plannedArriveText}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">货物明细（{{itemCount}} 行 / {{task.totalQuantity || 0}} 台）</view>
+    <view class="item-row" wx:for="{{itemsView}}" wx:key="id">
+      <view class="item-main">
+        <view class="item-line">
+          <text class="brand">{{item.brandText}}</text>
+          <status-tag label="{{item.statusLabel}}" level="{{item.statusLevel}}" />
+        </view>
+        <view class="item-line meta">{{item.metaText}}</view>
+        <view class="item-line meta" wx:if="{{item.dealerName}}">{{item.dealerName}}</view>
+      </view>
+      <button
+        wx:if="{{task.status === 4 && item.status < 3}}"
+        class="sign-btn"
+        loading="{{acting}}"
+        data-id="{{item.id}}"
+        bindtap="onSignItem"
+      >签收</button>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{task.segments && task.segments.length > 1}}">
+    <view class="section-title">运输分段</view>
+    <view class="segment-row" wx:for="{{task.segments}}" wx:key="id">
+      <view class="seg-no">{{item.segmentNo}}</view>
+      <view class="seg-info">
+        <view>{{item.fromLocation}} → {{item.toLocation}}</view>
+        <view class="meta">装车 / 到达见计划时间</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{task.status >= 3}}">
+    <view class="section-title">回单凭证</view>
+    <view class="cell link" bindtap="goReceipt">
+      <text class="cell-title">上传 / 查看回单</text>
+      <text class="cell-arrow"></text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">承运资源</view>
+    <view class="cell">
+      <text class="cell-title">主驾</text>
+      <text class="cell-value">{{task.mainDriverName || '-'}}</text>
+    </view>
+    <view class="cell">
+      <text class="cell-title">车牌</text>
+      <text class="cell-value">{{task.plateNumber || '-'}}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">财务概览</view>
+    <view class="finance-row">
+      <view>
+        <view class="label">已预付</view>
+        <view class="amount">¥{{prepaidText}}</view>
+      </view>
+      <view>
+        <view class="label">已结算</view>
+        <view class="amount">¥{{settledText}}</view>
+      </view>
+    </view>
+    <view class="cell link" bindtap="goFinance">
+      <text class="cell-title">查看费用单</text>
+      <text class="cell-arrow"></text>
+    </view>
+  </view>
+
+  <bottom-action-bar
+    actions="{{actions}}"
+    loading="{{acting}}"
+    current-key="{{currentAction}}"
+    bind:action="onAction"
+  />
+</view>
+
+<view class="loading-wrap" wx:else>
+  <text>正在加载任务，请稍候…</text>
+</view>
+
+<!-- 确认弹层 -->
+<view class="mask" wx:if="{{confirmVisible}}" catchtouchmove="noop">
+  <view class="dialog">
+    <view class="dialog-title">{{confirmTitle}}</view>
+    <view class="dialog-msg">{{confirmMessage}}</view>
+
+    <view class="photo-block" wx:if="{{needPhotos}}">
+      <view class="form-label">{{photoLabel}}（选填，最多 9 张）</view>
+      <view class="photo-grid">
+        <view class="photo-item" wx:for="{{photos}}" wx:key="*this">
+          <image src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="previewPhoto" />
+          <view class="photo-del" data-index="{{index}}" catchtap="removePhoto">×</view>
+        </view>
+        <view class="photo-add" wx:if="{{photos.length < 9}}" bindtap="choosePhoto">+</view>
+      </view>
+    </view>
+
+    <textarea
+      class="form-textarea"
+      placeholder="备注（选填）"
+      value="{{confirmRemark}}"
+      maxlength="255"
+      bindinput="onConfirmRemark"
+    />
+    <view class="dialog-actions">
+      <button class="btn-ghost" bindtap="closeConfirm">取消</button>
+      <button class="btn-primary" loading="{{acting}}" bindtap="submitConfirm">确认</button>
+    </view>
+  </view>
+</view>
+
+<!-- 拒单弹层 -->
+<view class="mask" wx:if="{{rejectVisible}}" catchtouchmove="noop">
+  <view class="dialog">
+    <view class="dialog-title">拒绝调令</view>
+    <view class="dialog-msg">拒单后该任务将退回企业调度台重新派车</view>
+    <textarea
+      class="form-textarea"
+      placeholder="请填写拒单原因（必填）"
+      value="{{rejectReason}}"
+      maxlength="255"
+      bindinput="onRejectReason"
+    />
+    <view class="dialog-actions">
+      <button class="btn-ghost" bindtap="closeReject">取消</button>
+      <button class="btn-danger" loading="{{acting}}" bindtap="submitReject">确认拒绝</button>
+    </view>
+  </view>
+</view>

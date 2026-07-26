@@ -1,0 +1,19 @@
+<view class="task-card" bindtap="onTap">
+  <view class="status-bar status-{{statusInfo.level}}"></view>
+  <view class="body">
+    <view class="row-top">
+      <text class="task-no">{{task.taskNo}}</text>
+      <status-tag label="{{statusInfo.label}}" level="{{statusInfo.level}}" />
+    </view>
+    <view class="route">
+      <text class="loc">{{task.origin || '-'}}</text>
+      <text class="arrow">→</text>
+      <text class="loc">{{task.destination || '-'}}</text>
+    </view>
+    <view class="row-meta">
+      <text wx:if="{{task.plateNumber}}">{{task.plateNumber}}</text>
+      <text wx:if="{{task.waybillCount}}">{{task.waybillCount}} 票</text>
+      <text wx:if="{{loadTime}}">装车 {{loadTime}}</text>
+    </view>
+  </view>
+</view>

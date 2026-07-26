@@ -1,0 +1,22 @@
+.empty {
+  padding: 80rpx 40rpx;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 64rpx;
+  line-height: 1;
+  margin-bottom: 20rpx;
+  opacity: 0.45;
+}
+
+.empty-text {
+  font-size: 30rpx;
+  color: #64748b;
+}
+
+.empty-hint {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #94a3b8;
+}

@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "切换企业",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}
+

@@ -1,0 +1,49 @@
+<view class="page page-with-action">
+  <view class="card">
+    <view class="section-title">回单图片（最多 9 张）</view>
+    <view class="photo-grid">
+      <view class="photo-item" wx:for="{{photos}}" wx:key="*this">
+        <image src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="preview" />
+        <view class="photo-del" data-index="{{index}}" catchtap="removePhoto">×</view>
+      </view>
+      <view class="photo-add" wx:if="{{photos.length < 9}}" bindtap="choosePhoto">+</view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">备注</view>
+    <textarea
+      class="form-textarea"
+      placeholder="备注（选填）"
+      maxlength="255"
+      value="{{remark}}"
+      bindinput="onRemark"
+    />
+  </view>
+
+  <view class="card" wx:if="{{receipts.length}}">
+    <view class="section-title">已上传回单（{{receipts.length}}）</view>
+    <view class="history" wx:for="{{receipts}}" wx:key="id">
+      <view class="history-imgs">
+        <image
+          wx:for="{{item.displayUrls}}"
+          wx:for-item="u"
+          wx:key="*this"
+          src="{{u}}"
+          mode="aspectFill"
+          data-urls="{{item.displayUrls}}"
+          data-current="{{u}}"
+          bindtap="previewHistory"
+        />
+      </view>
+      <view class="del-link" data-id="{{item.id}}" bindtap="onDelete">删除</view>
+    </view>
+  </view>
+
+  <bottom-action-bar
+    actions="{{submitActions}}"
+    loading="{{submitting}}"
+    current-key="submit"
+    bind:action="onSubmit"
+  />
+</view>

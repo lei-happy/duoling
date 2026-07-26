@@ -1,0 +1,42 @@
+<view class="page">
+  <view class="card balance-card">
+    <view class="label">可用余额</view>
+    <view class="balance">¥{{balanceText}}</view>
+    <view class="stats">
+      <view>
+        <view class="sub-label">累计入账</view>
+        <view class="sub-val">¥{{totalInText}}</view>
+      </view>
+      <view>
+        <view class="sub-label">累计出账</view>
+        <view class="sub-val">¥{{totalOutText}}</view>
+      </view>
+      <view>
+        <view class="sub-label">冻结</view>
+        <view class="sub-val">¥{{frozenText}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section-pad">
+    <view class="section-title">流水记录</view>
+  </view>
+
+  <empty-state wx:if="{{!loading && !list.length}}" text="暂无流水" />
+
+  <view class="txn card" wx:for="{{list}}" wx:key="id">
+    <view class="txn-top">
+      <text class="txn-type">{{item.bizLabel}}</text>
+      <text class="txn-delta {{item.direction === 1 ? 'in' : 'out'}}">{{item.deltaText}}</text>
+    </view>
+    <view class="txn-meta">
+      <text>{{item.timeText}}</text>
+      <text>余额 ¥{{item.balanceText}}</text>
+    </view>
+    <view class="txn-remark" wx:if="{{item.remark}}">{{item.remark}}</view>
+  </view>
+
+  <view class="footer-tip" wx:if="{{list.length}}">
+    {{finished ? '没有更多了' : (loadingMore ? '加载中…' : '上拉加载更多')}}
+  </view>
+</view>

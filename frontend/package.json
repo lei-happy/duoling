@@ -2,7 +2,7 @@
   "name": "zhitu-frontend",
   "version": "0.1.0",
   "private": true,
-  "description": "智途(ZhiTu) - 前端 Monorepo",
+  "description": "智途(ZhiTu) - 前端 Monorepo（驾驶员微信小程序见 frontend/driver-mp，用微信开发者工具打开）",
   "scripts": {
     "dev:console": "pnpm --filter zhitu-console dev",
     "dev:client": "pnpm --filter zhitu-client dev",

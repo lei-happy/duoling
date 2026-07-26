@@ -1,0 +1,35 @@
+<view class="page">
+  <scroll-view class="tabs" scroll-x enable-flex>
+    <view
+      wx:for="{{tabs}}"
+      wx:key="label"
+      class="tab {{activeStatus === item.value ? 'active' : ''}}"
+      data-value="{{item.value}}"
+      bindtap="onTab"
+    >{{item.label}}</view>
+  </scroll-view>
+
+  <view class="search card">
+    <input
+      class="search-input"
+      placeholder="搜索任务号 / 起终点"
+      value="{{keyword}}"
+      confirm-type="search"
+      bindinput="onKeyword"
+      bindconfirm="onSearch"
+    />
+  </view>
+
+  <empty-state wx:if="{{!loading && !list.length}}" text="暂无相关任务" hint="下拉可刷新，或切换上方状态查看" />
+
+  <task-card
+    wx:for="{{list}}"
+    wx:key="id"
+    task="{{item}}"
+    bind:tap="onTaskTap"
+  />
+
+  <view class="footer-tip" wx:if="{{list.length}}">
+    {{finished ? '没有更多了' : (loadingMore ? '加载中…' : '上拉加载更多')}}
+  </view>
+</view>

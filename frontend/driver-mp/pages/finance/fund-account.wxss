@@ -1,0 +1,88 @@
+.balance-card {
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  color: #fff;
+}
+
+.balance-card .label {
+  font-size: 26rpx;
+  opacity: 0.8;
+}
+
+.balance {
+  margin-top: 8rpx;
+  font-size: 56rpx;
+  font-weight: 700;
+}
+
+.stats {
+  display: flex;
+  margin-top: 28rpx;
+}
+
+.stats > view {
+  flex: 1;
+}
+
+.sub-label {
+  font-size: 22rpx;
+  opacity: 0.7;
+}
+
+.sub-val {
+  margin-top: 6rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.section-pad {
+  padding: 8rpx 24rpx 0;
+}
+
+.txn {
+  margin-top: 0;
+}
+
+.txn-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.txn-type {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.txn-delta {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.txn-delta.in {
+  color: #16a34a;
+}
+
+.txn-delta.out {
+  color: #dc2626;
+}
+
+.txn-meta {
+  margin-top: 10rpx;
+  display: flex;
+  justify-content: space-between;
+  font-size: 24rpx;
+  color: #94a3b8;
+}
+
+.txn-remark {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #64748b;
+}
+
+.footer-tip {
+  text-align: center;
+  padding: 24rpx;
+  font-size: 24rpx;
+  color: #94a3b8;
+}
