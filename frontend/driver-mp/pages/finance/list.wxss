@@ -1,17 +1,28 @@
+.tabs-panel-hidden {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
 .summary {
   margin: 24rpx;
-  padding: 32rpx 28rpx 0;
+  padding: 32rpx 8rpx 8rpx;
   background: linear-gradient(145deg, #1d4ed8, #3b82f6);
   border-radius: 24rpx;
   color: #fff;
+  overflow: hidden;
 }
 
 .summary-title {
+  padding: 0 20rpx;
   font-size: 26rpx;
   opacity: 0.9;
 }
 
 .summary-amount {
+  padding: 0 20rpx;
   margin-top: 8rpx;
   font-size: 52rpx;
   font-weight: 700;
@@ -20,62 +31,29 @@
 .summary-row {
   display: flex;
   margin-top: 28rpx;
-  padding-bottom: 24rpx;
+  padding: 0 20rpx 24rpx;
 }
 
-.summary-row .cell {
+.kpi {
   flex: 1;
 }
 
-.cell-label {
+.kpi-label {
   font-size: 22rpx;
   opacity: 0.8;
 }
 
-.cell-val {
+.kpi-val {
   margin-top: 6rpx;
   font-size: 28rpx;
   font-weight: 600;
 }
 
 .fund-entry {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24rpx 0;
+  --td-cell-bg-color: transparent;
+  --td-cell-title-color: #ffffff;
+  --td-cell-right-icon-color: rgba(255, 255, 255, 0.85);
   border-top: 1rpx solid rgba(255, 255, 255, 0.2);
-  font-size: 26rpx;
-}
-
-.arrow {
-  font-size: 36rpx;
-  opacity: 0.85;
-}
-
-.tabs {
-  height: 88rpx;
-  width: 100%;
-  white-space: nowrap;
-  padding: 8rpx 12rpx 16rpx;
-  box-sizing: border-box;
-}
-
-.tab {
-  display: inline-flex;
-  height: 64rpx;
-  padding: 0 28rpx;
-  margin: 0 8rpx;
-  align-items: center;
-  border-radius: 999rpx;
-  background: #fff;
-  color: #64748b;
-  font-size: 26rpx;
-}
-
-.tab.active {
-  background: #1d4ed8;
-  color: #fff;
-  font-weight: 600;
 }
 
 .finance-card {
@@ -104,14 +82,7 @@
 
 .row-2 {
   margin-bottom: 16rpx;
-}
-
-.type-tag {
-  font-size: 22rpx;
-  color: #1d4ed8;
-  background: #eff6ff;
-  padding: 4rpx 12rpx;
-  border-radius: 8rpx;
+  gap: 16rpx;
 }
 
 .task-no {
@@ -136,9 +107,16 @@
   color: #94a3b8;
 }
 
+.loading-wrap,
 .footer-tip {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 24rpx;
   font-size: 24rpx;
   color: #94a3b8;
+}
+
+.loading-wrap {
+  padding: 64rpx 0;
 }

@@ -1,23 +1,25 @@
 <view class="page page-with-action">
   <view class="card">
     <view class="section-title">回单图片（最多 9 张）</view>
-    <view class="photo-grid">
-      <view class="photo-item" wx:for="{{photos}}" wx:key="*this">
-        <image src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="preview" />
-        <view class="photo-del" data-index="{{index}}" catchtap="removePhoto">×</view>
-      </view>
-      <view class="photo-add" wx:if="{{photos.length < 9}}" bindtap="choosePhoto">+</view>
-    </view>
+    <t-upload
+      files="{{fileList}}"
+      media-type="{{mediaType}}"
+      max="{{9}}"
+      request-method="{{uploadReceiptPhotos}}"
+      bind:success="onUploadSuccess"
+      bind:remove="onUploadRemove"
+      bind:fail="onUploadFail"
+    />
   </view>
 
   <view class="card">
     <view class="section-title">备注</view>
-    <textarea
-      class="form-textarea"
+    <t-textarea
       placeholder="备注（选填）"
-      maxlength="255"
+      maxlength="{{255}}"
       value="{{remark}}"
-      bindinput="onRemark"
+      indicator
+      bind:change="onRemark"
     />
   </view>
 
@@ -25,18 +27,25 @@
     <view class="section-title">已上传回单（{{receipts.length}}）</view>
     <view class="history" wx:for="{{receipts}}" wx:key="id">
       <view class="history-imgs">
-        <image
+        <view
+          class="history-img-wrap"
           wx:for="{{item.displayUrls}}"
           wx:for-item="u"
           wx:key="*this"
-          src="{{u}}"
-          mode="aspectFill"
           data-urls="{{item.displayUrls}}"
           data-current="{{u}}"
           bindtap="previewHistory"
-        />
+        >
+          <t-image src="{{u}}" mode="aspectFill" shape="round" class="history-img" />
+        </view>
       </view>
-      <view class="del-link" data-id="{{item.id}}" bindtap="onDelete">删除</view>
+      <t-button
+        theme="danger"
+        variant="text"
+        size="small"
+        data-id="{{item.id}}"
+        bind:tap="onDelete"
+      >删除</t-button>
     </view>
   </view>
 

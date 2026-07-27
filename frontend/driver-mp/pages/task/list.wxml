@@ -1,26 +1,40 @@
 <view class="page">
-  <scroll-view class="tabs" scroll-x enable-flex>
-    <view
+  <t-tabs
+    value="{{activeStatus}}"
+    theme="tag"
+    space-evenly="{{false}}"
+    swipeable="{{false}}"
+    t-class-content="tabs-panel-hidden"
+    bind:change="onTabsChange"
+  >
+    <t-tab-panel
       wx:for="{{tabs}}"
-      wx:key="label"
-      class="tab {{activeStatus === item.value ? 'active' : ''}}"
-      data-value="{{item.value}}"
-      bindtap="onTab"
-    >{{item.label}}</view>
-  </scroll-view>
+      wx:key="value"
+      label="{{item.label}}"
+      value="{{item.value}}"
+    />
+  </t-tabs>
 
-  <view class="search card">
-    <input
-      class="search-input"
-      placeholder="搜索任务号 / 起终点"
+  <view class="search-wrap">
+    <t-search
       value="{{keyword}}"
-      confirm-type="search"
-      bindinput="onKeyword"
-      bindconfirm="onSearch"
+      placeholder="搜索任务号 / 起终点"
+      shape="round"
+      bind:change="onKeyword"
+      bind:submit="onSearch"
+      bind:clear="onClearKeyword"
     />
   </view>
 
-  <empty-state wx:if="{{!loading && !list.length}}" text="暂无相关任务" hint="下拉可刷新，或切换上方状态查看" />
+  <view class="loading-wrap" wx:if="{{loading && !list.length}}">
+    <t-loading theme="circular" size="40rpx" text="正在加载任务，请稍候…" />
+  </view>
+
+  <empty-state
+    wx:if="{{!loading && !list.length}}"
+    text="暂无相关任务"
+    hint="下拉可刷新，或切换上方状态查看"
+  />
 
   <task-card
     wx:for="{{list}}"
@@ -30,6 +44,7 @@
   />
 
   <view class="footer-tip" wx:if="{{list.length}}">
-    {{finished ? '没有更多了' : (loadingMore ? '加载中…' : '上拉加载更多')}}
+    <t-loading wx:if="{{loadingMore}}" theme="circular" size="32rpx" text="加载中…" />
+    <text wx:else>{{finished ? '没有更多了' : '上拉加载更多'}}</text>
   </view>
 </view>

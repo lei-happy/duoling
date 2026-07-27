@@ -1,4 +1,4 @@
 <view class="section-header">
   <text class="title">{{title}}</text>
-  <view wx:if="{{more}}" class="more" bindtap="onMore">{{more}} ›</view>
+  <view wx:if="{{more}}" class="more" bindtap="onMore">{{more}}</view>
 </view>

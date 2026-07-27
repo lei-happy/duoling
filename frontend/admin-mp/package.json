@@ -1,0 +1,13 @@
+{
+  "name": "zhitu-admin-mp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "智途管理员微信小程序（租户端：老板/财务/调度）",
+  "scripts": {
+    "build:npm": "node scripts/build-npm.js"
+  },
+  "dependencies": {
+    "tdesign-miniprogram": "^1.15.3",
+    "tslib": "^2.8.1"
+  }
+}

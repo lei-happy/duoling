@@ -18,22 +18,30 @@
     </view>
   </view>
 
-  <view class="card">
+  <view class="section-pad">
     <view class="section-title">按月收入</view>
-    <empty-state wx:if="{{!byMonth.length}}" text="暂无月度数据" />
-    <view class="month-row" wx:for="{{byMonth}}" wx:key="month">
-      <text>{{item.month}}</text>
-      <text class="month-amt">¥{{item.amountText}}</text>
-    </view>
   </view>
+  <empty-state wx:if="{{!byMonth.length}}" text="暂无月度数据" />
+  <t-cell-group wx:else>
+    <t-cell
+      wx:for="{{byMonth}}"
+      wx:key="month"
+      title="{{item.month}}"
+      note="¥{{item.amountText}}"
+    />
+  </t-cell-group>
 
-  <view class="card">
+  <view class="section-pad">
     <view class="section-title">收款账户</view>
-    <empty-state wx:if="{{!accounts.length}}" text="暂无收款账户" hint="由企业侧维护，此处仅供查看" />
-    <view class="account" wx:for="{{accounts}}" wx:key="id">
-      <view class="acc-type">{{item.typeLabel}}</view>
-      <view class="acc-name">{{item.accountName}}</view>
-      <view class="acc-no">{{item.accountNoMasked}}</view>
-    </view>
   </view>
+  <empty-state wx:if="{{!accounts.length}}" text="暂无收款账户" hint="由企业侧维护，此处仅供查看" />
+  <t-cell-group wx:else>
+    <t-cell
+      wx:for="{{accounts}}"
+      wx:key="id"
+      title="{{item.accountName}}"
+      description="{{item.accountNoMasked}}"
+      note="{{item.typeLabel}}"
+    />
+  </t-cell-group>
 </view>

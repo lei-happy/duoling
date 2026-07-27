@@ -22,21 +22,24 @@
     <view class="section-title">流水记录</view>
   </view>
 
-  <empty-state wx:if="{{!loading && !list.length}}" text="暂无流水" />
-
-  <view class="txn card" wx:for="{{list}}" wx:key="id">
-    <view class="txn-top">
-      <text class="txn-type">{{item.bizLabel}}</text>
-      <text class="txn-delta {{item.direction === 1 ? 'in' : 'out'}}">{{item.deltaText}}</text>
-    </view>
-    <view class="txn-meta">
-      <text>{{item.timeText}}</text>
-      <text>余额 ¥{{item.balanceText}}</text>
-    </view>
-    <view class="txn-remark" wx:if="{{item.remark}}">{{item.remark}}</view>
+  <view class="loading-wrap" wx:if="{{loading && !list.length}}">
+    <t-loading theme="circular" size="40rpx" text="正在加载，请稍候…" />
   </view>
 
+  <empty-state wx:if="{{!loading && !list.length}}" text="暂无流水" />
+
+  <t-cell-group wx:if="{{list.length}}">
+    <t-cell
+      wx:for="{{list}}"
+      wx:key="id"
+      title="{{item.bizLabel}}"
+      description="{{item.timeText}} · 余额 ¥{{item.balanceText}}"
+      note="{{item.deltaText}}"
+    />
+  </t-cell-group>
+
   <view class="footer-tip" wx:if="{{list.length}}">
-    {{finished ? '没有更多了' : (loadingMore ? '加载中…' : '上拉加载更多')}}
+    <t-loading wx:if="{{loadingMore}}" theme="circular" size="32rpx" text="加载中…" />
+    <text wx:else>{{finished ? '没有更多了' : '上拉加载更多'}}</text>
   </view>
 </view>

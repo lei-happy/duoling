@@ -2,10 +2,20 @@ const { ensureAuth } = require('../../utils/auth');
 const { listMyTasks } = require('../../api/task');
 const { VISIBLE_STATUS_TABS } = require('../../utils/constants');
 
+/** t-tabs 的 value 避免空串，全部用 all */
+const TABS = VISIBLE_STATUS_TABS.map((t) => ({
+  label: t.label,
+  value: t.value === '' ? 'all' : String(t.value)
+}));
+
+function toApiStatus(tabValue) {
+  return !tabValue || tabValue === 'all' ? '' : String(tabValue);
+}
+
 Page({
   data: {
-    tabs: VISIBLE_STATUS_TABS,
-    activeStatus: '',
+    tabs: TABS,
+    activeStatus: 'all',
     keyword: '',
     list: [],
     page: 1,
@@ -22,8 +32,9 @@ Page({
     if (app && app.globalData.taskStatusFilter !== undefined && app.globalData.taskStatusFilter !== null) {
       const filter = String(app.globalData.taskStatusFilter);
       app.globalData.taskStatusFilter = '';
-      if (filter !== this.data.activeStatus) {
-        this.setData({ activeStatus: filter });
+      const next = filter === '' ? 'all' : filter;
+      if (next !== this.data.activeStatus) {
+        this.setData({ activeStatus: next });
       }
     }
     this.reload();
@@ -37,15 +48,22 @@ Page({
     this.loadMore();
   },
 
-  onTab(e) {
-    const value = e.currentTarget.dataset.value;
-    if (value === this.data.activeStatus) return;
-    this.setData({ activeStatus: value == null ? '' : String(value) });
+  onTabsChange(e) {
+    const value = e.detail && e.detail.value;
+    const next = value == null || value === '' ? 'all' : String(value);
+    if (next === this.data.activeStatus) return;
+    this.setData({ activeStatus: next });
     this.reload();
   },
 
   onKeyword(e) {
-    this.setData({ keyword: e.detail.value || '' });
+    const value = typeof e.detail === 'string' ? e.detail : (e.detail && e.detail.value) || '';
+    this.setData({ keyword: value });
+  },
+
+  onClearKeyword() {
+    this.setData({ keyword: '' });
+    this.reload();
   },
 
   onSearch() {
@@ -71,8 +89,9 @@ Page({
         page: this.data.page,
         pageSize: this.data.pageSize
       };
-      if (this.data.activeStatus !== '') {
-        params.status = Number(this.data.activeStatus);
+      const status = toApiStatus(this.data.activeStatus);
+      if (status !== '') {
+        params.status = Number(status);
       }
       if (this.data.keyword) {
         params.keyword = this.data.keyword;

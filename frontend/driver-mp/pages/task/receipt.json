@@ -1,7 +1,6 @@
 {
   "navigationBarTitleText": "上传回单",
   "usingComponents": {
-    "empty-state": "/components/empty-state/empty-state",
     "bottom-action-bar": "/components/bottom-action-bar/bottom-action-bar"
   }
 }

@@ -5,31 +5,37 @@
   </view>
 
   <view class="form card">
-    <view class="form-group">
-      <view class="form-label">手机号</view>
-      <input
-        class="form-input"
-        type="number"
-        maxlength="11"
-        placeholder="请输入手机号"
-        value="{{phone}}"
-        bindinput="onPhone"
-      />
-    </view>
-    <view class="form-group">
-      <view class="form-label">密码</view>
-      <input
-        class="form-input"
-        password
-        placeholder="请输入密码"
-        value="{{password}}"
-        bindinput="onPassword"
-      />
-    </view>
+    <t-input
+      label="手机号"
+      type="number"
+      maxlength="{{11}}"
+      placeholder="请输入手机号"
+      value="{{phone}}"
+      layout="vertical"
+      clearable
+      bind:change="onPhone"
+    />
+    <t-input
+      label="密码"
+      type="password"
+      placeholder="请输入密码"
+      value="{{password}}"
+      layout="vertical"
+      clearable
+      bind:change="onPassword"
+    />
 
-    <button class="btn-primary btn-block" loading="{{loading}}" disabled="{{loading}}" bindtap="onSubmit">
-      登录
-    </button>
+    <view class="form-actions">
+      <t-button
+        theme="primary"
+        size="large"
+        shape="round"
+        block
+        loading="{{loading}}"
+        disabled="{{loading}}"
+        bind:tap="onSubmit"
+      >登录</t-button>
+    </view>
 
     <view class="links">
       <text class="link" bindtap="goSms">验证码登录</text>

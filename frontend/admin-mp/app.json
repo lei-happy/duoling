@@ -1,0 +1,47 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/profile/index",
+    "pages/login/login"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#0052d9",
+    "navigationBarTitleText": "智途管理",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f3f3f3",
+    "backgroundTextStyle": "dark",
+    "handleWebviewPreload": "auto"
+  },
+  "tabBar": {
+    "color": "#8c8c8c",
+    "selectedColor": "#0052d9",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "工作台",
+        "iconPath": "assets/icons/home.png",
+        "selectedIconPath": "assets/icons/home-active.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的",
+        "iconPath": "assets/icons/profile.png",
+        "selectedIconPath": "assets/icons/profile-active.png"
+      }
+    ]
+  },
+  "usingComponents": {
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-input": "tdesign-miniprogram/input/input",
+    "t-cell": "tdesign-miniprogram/cell/cell",
+    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
+    "t-empty": "tdesign-miniprogram/empty/empty",
+    "t-tag": "tdesign-miniprogram/tag/tag",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-loading": "tdesign-miniprogram/loading/loading"
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

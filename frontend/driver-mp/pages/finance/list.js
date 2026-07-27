@@ -4,17 +4,21 @@ const { FINANCE_DOC_TYPE, FINANCE_STATUS } = require('../../utils/constants');
 const { formatDate, formatMoney } = require('../../utils/format');
 
 const tabs = [
-  { title: '全部', name: '' },
+  { title: '全部', name: 'all' },
   ...Object.keys(FINANCE_DOC_TYPE).map((k) => ({
     title: FINANCE_DOC_TYPE[k],
     name: String(k)
   }))
 ];
 
+function toApiDocType(tabValue) {
+  return !tabValue || tabValue === 'all' ? '' : String(tabValue);
+}
+
 Page({
   data: {
     tabs,
-    docType: '',
+    docType: 'all',
     list: [],
     page: 1,
     pageSize: 15,
@@ -60,10 +64,11 @@ Page({
     }
   },
 
-  onTab(e) {
-    const name = e.currentTarget.dataset.name;
-    if (name === this.data.docType) return;
-    this.setData({ docType: name == null ? '' : String(name) });
+  onTabsChange(e) {
+    const name = e.detail && e.detail.value;
+    const next = name == null || name === '' ? 'all' : String(name);
+    if (next === this.data.docType) return;
+    this.setData({ docType: next });
     this.reload();
   },
 
@@ -83,7 +88,8 @@ Page({
     else this.setData({ loadingMore: true });
     try {
       const params = { page: this.data.page, pageSize: this.data.pageSize };
-      if (this.data.docType !== '') params.docType = Number(this.data.docType);
+      const docType = toApiDocType(this.data.docType);
+      if (docType !== '') params.docType = Number(docType);
       const res = await listMyFinance(params);
       const raw = (res && res.list) || [];
       const mapped = raw.map((d) => {

@@ -1,7 +1,7 @@
 <view class="page profile">
   <view class="user-card">
     <view class="user-row">
-      <view class="avatar">{{avatarText}}</view>
+      <t-avatar size="100rpx" class="avatar">{{avatarText}}</t-avatar>
       <view class="user-info">
         <view class="name">{{realName}}</view>
         <view class="phone">{{phoneMasked}}</view>
@@ -10,40 +10,28 @@
     <view class="tenant">当前企业：{{tenantName}}</view>
   </view>
 
-  <view class="cell-list">
-    <view class="cell" bindtap="goInfo">
-      <text class="cell-title">个人信息</text>
-      <text class="cell-arrow"></text>
-    </view>
-    <view class="cell" bindtap="goSwitchTenant">
-      <text class="cell-title">切换企业</text>
-      <text class="cell-arrow"></text>
-    </view>
-    <view class="cell" bindtap="goChangePassword">
-      <text class="cell-title">修改密码</text>
-      <text class="cell-arrow"></text>
-    </view>
-  </view>
+  <t-cell-group>
+    <t-cell title="个人信息" left-icon="user" arrow bind:click="goInfo" />
+    <t-cell title="切换企业" left-icon="swap" arrow bind:click="goSwitchTenant" />
+    <t-cell title="修改密码" left-icon="lock-on" arrow bind:click="goChangePassword" />
+  </t-cell-group>
 
-  <view class="cell-list">
-    <view class="cell" bindtap="goSummary">
-      <text class="cell-title">收入汇总</text>
-      <text class="cell-arrow"></text>
-    </view>
-    <view class="cell" bindtap="goSummary">
-      <text class="cell-title">收款账户</text>
-      <text class="cell-arrow"></text>
-    </view>
-  </view>
+  <view class="group-gap"></view>
 
-  <view class="cell-list">
-    <view class="cell" bindtap="onAbout">
-      <text class="cell-title">关于</text>
-      <text class="cell-arrow"></text>
-    </view>
-  </view>
+  <t-cell-group>
+    <t-cell title="收入汇总" left-icon="chart-bar" arrow bind:click="goSummary" />
+    <t-cell title="收款账户" left-icon="card" arrow bind:click="goSummary" />
+  </t-cell-group>
+
+  <view class="group-gap"></view>
+
+  <t-cell-group>
+    <t-cell title="关于" left-icon="info-circle" arrow bind:click="onAbout" />
+  </t-cell-group>
 
   <view class="logout-wrap">
-    <button class="btn-ghost btn-block" bindtap="onLogout">退出登录</button>
+    <t-button theme="danger" variant="outline" size="large" shape="round" block bind:tap="onLogout">
+      退出登录
+    </t-button>
   </view>
 </view>

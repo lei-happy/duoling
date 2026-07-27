@@ -14,41 +14,7 @@
   padding: 20rpx 24rpx;
 }
 
-.action-btn {
-  height: 96rpx;
-  border-radius: 48rpx;
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #fff;
-  border: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1.2;
-}
-
-.action-btn.full {
-  flex: 1;
-}
-
+.action-btn.full,
 .action-btn.flex {
   flex: 1;
-}
-
-.action-btn.primary {
-  background: #1d4ed8;
-}
-
-.action-btn.success {
-  background: #16a34a;
-}
-
-.action-btn.danger {
-  background: #dc2626;
-}
-
-.action-btn[disabled] {
-  opacity: 0.55;
 }

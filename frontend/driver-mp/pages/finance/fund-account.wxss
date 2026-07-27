@@ -1,16 +1,16 @@
 .balance-card {
-  background: linear-gradient(145deg, #0f172a, #1e293b);
+  background: linear-gradient(145deg, #1d4ed8, #3b82f6);
   color: #fff;
 }
 
-.balance-card .label {
+.label {
   font-size: 26rpx;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .balance {
   margin-top: 8rpx;
-  font-size: 56rpx;
+  font-size: 52rpx;
   font-weight: 700;
 }
 
@@ -25,64 +25,33 @@
 
 .sub-label {
   font-size: 22rpx;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .sub-val {
   margin-top: 6rpx;
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: 600;
 }
 
 .section-pad {
-  padding: 8rpx 24rpx 0;
+  padding: 24rpx 24rpx 8rpx;
 }
 
-.txn {
-  margin-top: 0;
+.section-pad .section-title {
+  margin-bottom: 0;
 }
 
-.txn-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.txn-type {
-  font-size: 30rpx;
-  font-weight: 600;
-}
-
-.txn-delta {
-  font-size: 32rpx;
-  font-weight: 700;
-}
-
-.txn-delta.in {
-  color: #16a34a;
-}
-
-.txn-delta.out {
-  color: #dc2626;
-}
-
-.txn-meta {
-  margin-top: 10rpx;
-  display: flex;
-  justify-content: space-between;
-  font-size: 24rpx;
-  color: #94a3b8;
-}
-
-.txn-remark {
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  color: #64748b;
-}
-
+.loading-wrap,
 .footer-tip {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: 24rpx;
   font-size: 24rpx;
   color: #94a3b8;
+}
+
+.loading-wrap {
+  padding: 64rpx 0;
 }

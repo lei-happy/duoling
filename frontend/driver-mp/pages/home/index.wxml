@@ -5,10 +5,10 @@
         <view class="hello">您好，{{realName}}</view>
         <view class="tenant" bindtap="goSwitchTenant">
           <text class="tenant-name">{{tenantName}}</text>
-          <text class="switch">切换</text>
+          <t-icon name="swap" size="28rpx" color="#ffffff" />
         </view>
       </view>
-      <view class="avatar">{{avatarText}}</view>
+      <t-avatar size="96rpx" class="avatar">{{avatarText}}</t-avatar>
     </view>
 
     <view class="kpi-row">
@@ -32,25 +32,18 @@
   </view>
 
   <view class="quick card">
-    <view class="entry" data-status="" bindtap="goTask">
-      <view class="entry-icon blue">任</view>
-      <text>我的任务</text>
-    </view>
-    <view class="entry" bindtap="goFinance">
-      <view class="entry-icon green">收</view>
-      <text>我的收入</text>
-    </view>
-    <view class="entry" bindtap="goSummary">
-      <view class="entry-icon orange">账</view>
-      <text>收款账户</text>
-    </view>
-    <view class="entry" bindtap="goProfile">
-      <view class="entry-icon gray">我</view>
-      <text>个人中心</text>
-    </view>
+    <t-grid column="{{4}}" border="{{false}}">
+      <t-grid-item text="我的任务" icon="view-list" data-status="" bind:click="goTask" />
+      <t-grid-item text="我的收入" icon="wallet" bind:click="goFinance" />
+      <t-grid-item text="收款账户" icon="card" bind:click="goSummary" />
+      <t-grid-item text="个人中心" icon="user" bind:click="goProfile" />
+    </t-grid>
   </view>
 
   <section-header title="近期任务" more="全部" bind:more="goTaskAll" />
+  <view class="loading-wrap" wx:if="{{loading && !recent.length}}">
+    <t-loading theme="circular" size="40rpx" text="正在加载，请稍候…" />
+  </view>
   <empty-state wx:if="{{!loading && !recent.length}}" text="暂无任务" hint="有新任务时会显示在这里" />
   <task-card
     wx:for="{{recent}}"

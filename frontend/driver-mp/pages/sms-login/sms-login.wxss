@@ -23,34 +23,17 @@
 .code-row {
   display: flex;
   gap: 16rpx;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .code-input {
   flex: 1;
+  min-width: 0;
 }
 
 .code-btn {
   flex-shrink: 0;
-  height: 96rpx;
-  min-width: 200rpx;
-  padding: 0 28rpx;
-  margin: 0;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: 26rpx;
-  font-weight: 600;
-  border-radius: 20rpx;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1.2;
-}
-
-.code-btn[disabled] {
-  color: #94a3b8;
-  background: #f1f5f9;
+  margin-bottom: 16rpx;
 }
 
 .links {

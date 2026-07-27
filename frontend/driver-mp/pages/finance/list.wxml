@@ -3,34 +3,46 @@
     <view class="summary-title">本月累计收入</view>
     <view class="summary-amount">¥ {{totalIncomeText}}</view>
     <view class="summary-row">
-      <view class="cell">
-        <view class="cell-label">预付</view>
-        <view class="cell-val">¥{{prepaidText}}</view>
+      <view class="kpi">
+        <view class="kpi-label">预付</view>
+        <view class="kpi-val">¥{{prepaidText}}</view>
       </view>
-      <view class="cell">
-        <view class="cell-label">补款</view>
-        <view class="cell-val">¥{{supplementText}}</view>
+      <view class="kpi">
+        <view class="kpi-label">补款</view>
+        <view class="kpi-val">¥{{supplementText}}</view>
       </view>
-      <view class="cell">
-        <view class="cell-label">结算</view>
-        <view class="cell-val">¥{{settledText}}</view>
+      <view class="kpi">
+        <view class="kpi-label">结算</view>
+        <view class="kpi-val">¥{{settledText}}</view>
       </view>
     </view>
-    <view class="fund-entry" bindtap="goFundAccount">
-      <text>我的资金账户（往来账）</text>
-      <text class="arrow">›</text>
-    </view>
+    <t-cell
+      class="fund-entry"
+      title="我的资金账户（往来账）"
+      arrow
+      bind:click="goFundAccount"
+    />
   </view>
 
-  <scroll-view class="tabs" scroll-x enable-flex>
-    <view
+  <t-tabs
+    value="{{docType}}"
+    theme="tag"
+    space-evenly="{{false}}"
+    swipeable="{{false}}"
+    t-class-content="tabs-panel-hidden"
+    bind:change="onTabsChange"
+  >
+    <t-tab-panel
       wx:for="{{tabs}}"
       wx:key="name"
-      class="tab {{docType === item.name ? 'active' : ''}}"
-      data-name="{{item.name}}"
-      bindtap="onTab"
-    >{{item.title}}</view>
-  </scroll-view>
+      label="{{item.title}}"
+      value="{{item.name}}"
+    />
+  </t-tabs>
+
+  <view class="loading-wrap" wx:if="{{loading && !list.length}}">
+    <t-loading theme="circular" size="40rpx" text="正在加载，请稍候…" />
+  </view>
 
   <empty-state wx:if="{{!loading && !list.length}}" text="暂无费用单" hint="有费用单据时会显示在这里" />
 
@@ -46,7 +58,7 @@
       <status-tag label="{{item.statusLabel}}" level="{{item.statusLevel}}" />
     </view>
     <view class="row-2">
-      <text class="type-tag">{{item.typeLabel}}</text>
+      <t-tag theme="primary" variant="light" size="small">{{item.typeLabel}}</t-tag>
       <text class="task-no">关联任务：{{item.taskNo || item.taskId}}</text>
     </view>
     <view class="row-3">
@@ -59,6 +71,7 @@
   </view>
 
   <view class="footer-tip" wx:if="{{list.length}}">
-    {{finished ? '没有更多了' : (loadingMore ? '加载中…' : '上拉加载更多')}}
+    <t-loading wx:if="{{loadingMore}}" theme="circular" size="32rpx" text="加载中…" />
+    <text wx:else>{{finished ? '没有更多了' : '上拉加载更多'}}</text>
   </view>
 </view>

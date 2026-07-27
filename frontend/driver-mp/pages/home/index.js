@@ -59,9 +59,13 @@ Page({
   },
 
   goTask(e) {
-    const status = e.currentTarget.dataset.status;
+    const dataset = (e && e.currentTarget && e.currentTarget.dataset) || {};
+    const status = dataset.status;
     const app = getApp();
-    if (app) app.globalData.taskStatusFilter = status == null ? '' : String(status);
+    if (app) {
+      app.globalData.taskStatusFilter =
+        status === undefined || status === null ? '' : String(status);
+    }
     wx.switchTab({ url: '/pages/task/list' });
   },
 

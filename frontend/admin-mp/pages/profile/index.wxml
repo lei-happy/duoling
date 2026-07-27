@@ -1,0 +1,20 @@
+<view class="page profile">
+  <view class="user card">
+    <view class="name">{{realName}}</view>
+    <view class="phone muted">{{phoneMasked}}</view>
+    <view class="tags">
+      <t-tag wx:for="{{roles}}" wx:key="*this" theme="primary" variant="light" size="small">{{item}}</t-tag>
+    </view>
+  </view>
+
+  <t-cell-group>
+    <t-cell title="账号与企业" note="后续开放" arrow />
+    <t-cell title="关于智途管理" note="v0.1.0" arrow bind:click="onAbout" />
+  </t-cell-group>
+
+  <view class="logout-wrap">
+    <t-button theme="default" variant="outline" size="large" shape="round" block bind:tap="onLogout">
+      退出登录
+    </t-button>
+  </view>
+</view>

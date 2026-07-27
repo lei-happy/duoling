@@ -8,32 +8,14 @@
     <view class="meta">{{typeLabel}} · {{payMethodText}}</view>
   </view>
 
-  <view class="cell-list">
-    <view class="cell">
-      <text class="cell-title">关联任务</text>
-      <text class="cell-value">{{doc.taskNo || doc.taskId || '-'}}</text>
-    </view>
-    <view class="cell">
-      <text class="cell-title">计划金额</text>
-      <text class="cell-value">¥{{plannedText}}</text>
-    </view>
-    <view class="cell">
-      <text class="cell-title">实付金额</text>
-      <text class="cell-value">¥{{actualText}}</text>
-    </view>
-    <view class="cell">
-      <text class="cell-title">计划付款</text>
-      <text class="cell-value">{{plannedPayText}}</text>
-    </view>
-    <view class="cell">
-      <text class="cell-title">实际付款</text>
-      <text class="cell-value">{{actualPayText}}</text>
-    </view>
-    <view class="cell" wx:if="{{doc.remark}}">
-      <text class="cell-title">备注</text>
-      <text class="cell-value">{{doc.remark}}</text>
-    </view>
-  </view>
+  <t-cell-group>
+    <t-cell title="关联任务" note="{{doc.taskNo || doc.taskId || '-'}}" />
+    <t-cell title="计划金额" note="¥{{plannedText}}" />
+    <t-cell title="实付金额" note="¥{{actualText}}" />
+    <t-cell title="计划付款" note="{{plannedPayText}}" />
+    <t-cell title="实际付款" note="{{actualPayText}}" />
+    <t-cell wx:if="{{doc.remark}}" title="备注" note="{{doc.remark}}" />
+  </t-cell-group>
 
   <view class="card" wx:if="{{doc.items && doc.items.length}}">
     <view class="section-title">费用明细</view>

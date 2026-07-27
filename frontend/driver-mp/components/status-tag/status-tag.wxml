@@ -1,1 +1,1 @@
-<view class="tag tag-{{level}}">{{label}}</view>
+<t-tag theme="{{tagTheme}}" variant="light" size="small">{{label}}</t-tag>

@@ -1,5 +1,4 @@
-<view class="empty">
-  <view class="empty-icon">{{icon}}</view>
-  <view class="empty-text">{{text}}</view>
+<view class="empty-wrap">
+  <t-empty description="{{text}}" />
   <view wx:if="{{hint}}" class="empty-hint">{{hint}}</view>
 </view>

@@ -1,7 +1,13 @@
 {
   "description": "智途驾驶员微信小程序",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      { "type": "folder", "value": "node_modules" },
+      { "type": "folder", "value": "scripts" },
+      { "type": "file", "value": "package-lock.json" },
+      { "type": "file", "value": ".gitignore" },
+      { "type": "glob", "value": "**/*.md" }
+    ],
     "include": []
   },
   "setting": {
@@ -21,15 +27,20 @@
     "uglifyFileName": false,
     "uploadWithSourceMap": true,
     "useIsolateContext": true,
-    "nodeModules": true,
+    "nodeModules": false,
     "enhance": false,
     "useMultiFrameRuntime": true,
     "useApiHook": true,
     "useApiHostProcess": true,
     "showShadowRootInWxmlPanel": true,
-    "packNpmManually": false,
+    "packNpmManually": true,
     "enableEngineNative": false,
-    "packNpmRelationList": [],
+    "packNpmRelationList": [
+      {
+        "packageJsonPath": "./package.json",
+        "miniprogramNpmDistDir": "./"
+      }
+    ],
     "minifyWXSS": true,
     "showES6CompileOption": false,
     "minifyWXML": true,
@@ -48,7 +59,7 @@
   },
   "compileType": "miniprogram",
   "libVersion": "3.7.12",
-  "appid": "wxf57d90338897acbc",
+  "appid": "wxedb8666b33201704",
   "projectname": "zhitu-driver-mp",
   "condition": {},
   "editorSetting": {

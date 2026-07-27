@@ -1,42 +1,49 @@
 <view class="page" wx:if="{{loaded}}">
-  <view class="cell-list">
-    <view class="cell">
-      <text class="cell-title">姓名</text>
-      <text class="cell-value">{{profile.name || '-'}}</text>
-    </view>
-    <view class="cell">
-      <text class="cell-title">司机编号</text>
-      <text class="cell-value">{{profile.driverCode || '-'}}</text>
-    </view>
-    <view class="cell">
-      <text class="cell-title">手机号</text>
-      <text class="cell-value">{{profile.phone || '-'}}</text>
-    </view>
-    <view class="cell">
-      <text class="cell-title">性别</text>
-      <text class="cell-value">{{genderText}}</text>
-    </view>
-    <view class="cell">
-      <text class="cell-title">身份证号</text>
-      <text class="cell-value">{{profile.idCard || '-'}}</text>
-    </view>
-  </view>
+  <t-cell-group>
+    <t-cell title="姓名" note="{{profile.name || '-'}}" />
+    <t-cell title="司机编号" note="{{profile.driverCode || '-'}}" />
+    <t-cell title="手机号" note="{{profile.phone || '-'}}" />
+    <t-cell title="性别" note="{{genderText}}" />
+    <t-cell title="身份证号" note="{{profile.idCard || '-'}}" />
+  </t-cell-group>
 
   <view class="card">
-    <view class="form-group">
-      <view class="form-label">紧急联系人</view>
-      <input class="form-input" placeholder="请输入" value="{{form.emergencyContact}}" bindinput="onContact" />
+    <t-input
+      label="紧急联系人"
+      placeholder="请输入"
+      value="{{form.emergencyContact}}"
+      layout="vertical"
+      clearable
+      bind:change="onContact"
+    />
+    <t-input
+      label="联系人电话"
+      type="number"
+      maxlength="{{11}}"
+      placeholder="请输入"
+      value="{{form.emergencyPhone}}"
+      layout="vertical"
+      clearable
+      bind:change="onPhone"
+    />
+    <t-input
+      label="家庭住址"
+      placeholder="请输入"
+      value="{{form.homeAddress}}"
+      layout="vertical"
+      clearable
+      bind:change="onAddress"
+    />
+    <view class="form-actions">
+      <t-button
+        theme="primary"
+        size="large"
+        shape="round"
+        block
+        loading="{{saving}}"
+        disabled="{{saving}}"
+        bind:tap="onSave"
+      >保存修改</t-button>
     </view>
-    <view class="form-group">
-      <view class="form-label">联系人电话</view>
-      <input class="form-input" type="number" maxlength="11" placeholder="请输入" value="{{form.emergencyPhone}}" bindinput="onPhone" />
-    </view>
-    <view class="form-group">
-      <view class="form-label">家庭住址</view>
-      <input class="form-input" placeholder="请输入" value="{{form.homeAddress}}" bindinput="onAddress" />
-    </view>
-    <button class="btn-primary btn-block" loading="{{saving}}" disabled="{{saving}}" bindtap="onSave">
-      保存修改
-    </button>
   </view>
 </view>

@@ -13,15 +13,8 @@
 }
 
 .avatar {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 40rpx;
-  font-weight: 700;
+  --td-avatar-bg-color: rgba(255, 255, 255, 0.22);
+  --td-avatar-content-color: #ffffff;
 }
 
 .name {
@@ -43,15 +36,10 @@
   opacity: 0.92;
 }
 
-.logout-wrap {
-  margin: 48rpx 24rpx;
+.group-gap {
+  height: 16rpx;
 }
 
-.logout-wrap .btn-ghost {
-  background: #fff;
-  color: #dc2626;
-  border-color: #fecaca;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.logout-wrap {
+  margin: 48rpx 24rpx;
 }

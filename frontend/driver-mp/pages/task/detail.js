@@ -24,6 +24,12 @@ function resolveUrl(u) {
   return UPLOAD_BASE + u;
 }
 
+function collectRemoteUrls(files) {
+  return (files || [])
+    .map((f) => f.remoteUrl || f.url)
+    .filter((u) => u && !/^wxfile:|^http:\/\/tmp|^https:\/\/tmp/i.test(u));
+}
+
 Page({
   data: {
     taskId: 0,
@@ -45,10 +51,26 @@ Page({
     confirmAction: '',
     needPhotos: false,
     photoLabel: '照片',
-    photos: [],
-    photoUrls: [],
+    confirmFiles: [],
+    mediaType: ['image'],
+    confirmBtn: { content: '确认', loading: false },
     rejectVisible: false,
-    rejectReason: ''
+    rejectReason: '',
+    rejectBtn: { content: '确认拒绝', theme: 'danger', loading: false },
+    signVisible: false,
+    signItemId: 0,
+    /** 供 t-upload 使用：写在 data 初始值里才能作为属性传入 */
+    uploadConfirmPhotos(files) {
+      return Promise.all(
+        (files || []).map(async (file) => {
+          const up = await uploadImage(file.url, 'task_loading');
+          file.url = resolveUrl(up.url);
+          file.remoteUrl = up.url;
+          file.status = 'done';
+          file.percent = 100;
+        })
+      );
+    }
   },
 
   onLoad(query) {
@@ -105,12 +127,19 @@ Page({
     const key = e.detail.key;
     if (key === 'sign-items') {
       const next = (this.data.task.items || []).find((it) => it.status < 3);
-      if (next) this.onSignItem({ currentTarget: { dataset: { id: next.id } } });
-      else toast('暂无可签收的运单');
+      if (next) {
+        this.setData({ signVisible: true, signItemId: next.id });
+      } else {
+        toast('暂无可签收的运单');
+      }
       return;
     }
     if (key === 'reject') {
-      this.setData({ rejectVisible: true, rejectReason: '' });
+      this.setData({
+        rejectVisible: true,
+        rejectReason: '',
+        rejectBtn: { content: '确认拒绝', theme: 'danger', loading: false }
+      });
       return;
     }
     const configs = {
@@ -136,8 +165,8 @@ Page({
       confirmAction: key,
       needPhotos,
       photoLabel: key === 'confirm-load' ? '装车照片' : '卸车照片',
-      photos: [],
-      photoUrls: [],
+      confirmFiles: [],
+      confirmBtn: { content: '确认', loading: false },
       currentAction: key
     });
   },
@@ -147,69 +176,55 @@ Page({
   },
 
   closeConfirm() {
-    this.setData({ confirmVisible: false, currentAction: '' });
+    if (this.data.acting) return;
+    this.setData({ confirmVisible: false, currentAction: '', confirmFiles: [] });
   },
 
-  async choosePhoto() {
-    try {
-      const res = await wx.chooseMedia({
-        count: 9 - this.data.photos.length,
-        mediaType: ['image'],
-        sourceType: ['album', 'camera'],
-        sizeType: ['compressed']
-      });
-      const files = res.tempFiles || [];
-      wx.showLoading({ title: '正在上传照片，请稍候…', mask: true });
-      for (let i = 0; i < files.length; i += 1) {
-        const up = await uploadImage(files[i].tempFilePath, 'task_loading');
-        const display = resolveUrl(up.url);
-        this.setData({
-          photos: this.data.photos.concat([display]),
-          photoUrls: this.data.photoUrls.concat([up.url])
-        });
-      }
-    } catch (e) {
-      if (e && e.errMsg && e.errMsg.indexOf('cancel') !== -1) return;
-    } finally {
-      wx.hideLoading();
-    }
+  onConfirmUploadSuccess(e) {
+    const files = (e.detail && e.detail.files) || [];
+    this.setData({ confirmFiles: files });
   },
 
-  removePhoto(e) {
-    const index = e.currentTarget.dataset.index;
-    const photos = this.data.photos.slice();
-    const photoUrls = this.data.photoUrls.slice();
-    photos.splice(index, 1);
-    photoUrls.splice(index, 1);
-    this.setData({ photos, photoUrls });
+  onConfirmUploadRemove(e) {
+    const { index } = e.detail || {};
+    const files = (this.data.confirmFiles || []).slice();
+    if (index == null || index < 0) return;
+    files.splice(index, 1);
+    this.setData({ confirmFiles: files });
   },
 
-  previewPhoto(e) {
-    const url = e.currentTarget.dataset.url;
-    wx.previewImage({ current: url, urls: this.data.photos });
+  onUploadFail() {
+    toast('照片上传失败，请重试');
   },
 
   async submitConfirm() {
     if (!this.data.task || this.data.acting) return;
-    this.setData({ acting: true });
+    this.setData({
+      acting: true,
+      confirmBtn: { content: '确认', loading: true }
+    });
     wx.showLoading({ title: '正在确认，请稍候…', mask: true });
     try {
       const taskId = this.data.task.id;
       const remark = (this.data.confirmRemark || '').trim() || undefined;
-      const photos = this.data.photoUrls.length ? this.data.photoUrls.slice() : undefined;
+      const photos = collectRemoteUrls(this.data.confirmFiles);
+      const photoUrls = photos.length ? photos : undefined;
       const action = this.data.confirmAction;
       if (action === 'accept') await acceptTask(taskId, { remark });
-      else if (action === 'confirm-load') await confirmLoad(taskId, { remark, photoUrls: photos });
+      else if (action === 'confirm-load') await confirmLoad(taskId, { remark, photoUrls });
       else if (action === 'depart') await depart(taskId, { remark });
-      else if (action === 'confirm-arrive') await confirmArrive(taskId, { remark, photoUrls: photos });
+      else if (action === 'confirm-arrive') await confirmArrive(taskId, { remark, photoUrls });
       toast('已确认');
-      this.setData({ confirmVisible: false, currentAction: '' });
+      this.setData({ confirmVisible: false, currentAction: '', confirmFiles: [] });
       await this.load();
     } catch (e) {
       /* handled */
     } finally {
       wx.hideLoading();
-      this.setData({ acting: false });
+      this.setData({
+        acting: false,
+        confirmBtn: { content: '确认', loading: false }
+      });
     }
   },
 
@@ -218,6 +233,7 @@ Page({
   },
 
   closeReject() {
+    if (this.data.acting) return;
     this.setData({ rejectVisible: false });
   },
 
@@ -228,7 +244,10 @@ Page({
       return;
     }
     if (!this.data.task || this.data.acting) return;
-    this.setData({ acting: true });
+    this.setData({
+      acting: true,
+      rejectBtn: { content: '确认拒绝', theme: 'danger', loading: true }
+    });
     wx.showLoading({ title: '正在提交，请稍候…', mask: true });
     try {
       await rejectTask(this.data.task.id, { reason });
@@ -239,23 +258,30 @@ Page({
       /* handled */
     } finally {
       wx.hideLoading();
-      this.setData({ acting: false });
+      this.setData({
+        acting: false,
+        rejectBtn: { content: '确认拒绝', theme: 'danger', loading: false }
+      });
     }
   },
 
-  async onSignItem(e) {
-    const itemId = e.currentTarget.dataset.id;
+  onSignItem(e) {
+    const itemId =
+      (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) ||
+      (e.target && e.target.dataset && e.target.dataset.id);
     if (!itemId || this.data.acting) return;
-    const ok = await new Promise((resolve) => {
-      wx.showModal({
-        title: '确认签收',
-        content: '确认该运单已签收？',
-        success: (r) => resolve(!!r.confirm),
-        fail: () => resolve(false)
-      });
-    });
-    if (!ok) return;
-    this.setData({ acting: true });
+    this.setData({ signVisible: true, signItemId: itemId });
+  },
+
+  closeSign() {
+    if (this.data.acting) return;
+    this.setData({ signVisible: false, signItemId: 0 });
+  },
+
+  async submitSign() {
+    const itemId = this.data.signItemId;
+    if (!itemId || this.data.acting) return;
+    this.setData({ acting: true, signVisible: false });
     wx.showLoading({ title: '正在签收，请稍候…', mask: true });
     try {
       await signItem(itemId);
@@ -265,7 +291,7 @@ Page({
       /* handled */
     } finally {
       wx.hideLoading();
-      this.setData({ acting: false });
+      this.setData({ acting: false, signItemId: 0 });
     }
   },
 
@@ -275,7 +301,5 @@ Page({
 
   goFinance() {
     wx.navigateTo({ url: `/pages/finance/list?taskId=${this.data.taskId}` });
-  },
-
-  noop() {}
+  }
 });

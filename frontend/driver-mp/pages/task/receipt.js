@@ -10,15 +10,32 @@ function resolveUrl(u) {
   return UPLOAD_BASE + u;
 }
 
+function collectRemoteUrls(files) {
+  return (files || [])
+    .map((f) => f.remoteUrl || f.url)
+    .filter((u) => u && !/^wxfile:|^http:\/\/tmp|^https:\/\/tmp/i.test(u));
+}
+
 Page({
   data: {
     taskId: 0,
-    photos: [],
-    uploadedUrls: [],
+    fileList: [],
+    mediaType: ['image'],
     remark: '',
     receipts: [],
     submitting: false,
-    submitActions: [{ key: 'submit', label: '提交回单', level: 'primary' }]
+    submitActions: [{ key: 'submit', label: '提交回单', level: 'primary' }],
+    uploadReceiptPhotos(files) {
+      return Promise.all(
+        (files || []).map(async (file) => {
+          const up = await uploadImage(file.url, 'task_receipt');
+          file.url = resolveUrl(up.url);
+          file.remoteUrl = up.url;
+          file.status = 'done';
+          file.percent = 100;
+        })
+      );
+    }
   },
 
   onLoad(query) {
@@ -50,41 +67,21 @@ Page({
     this.setData({ remark: e.detail.value || '' });
   },
 
-  async choosePhoto() {
-    try {
-      const res = await wx.chooseMedia({
-        count: 9 - this.data.photos.length,
-        mediaType: ['image'],
-        sourceType: ['album', 'camera'],
-        sizeType: ['compressed']
-      });
-      const files = res.tempFiles || [];
-      wx.showLoading({ title: '正在上传回单，请稍候…', mask: true });
-      for (let i = 0; i < files.length; i += 1) {
-        const up = await uploadImage(files[i].tempFilePath, 'task_receipt');
-        this.setData({
-          photos: this.data.photos.concat([resolveUrl(up.url)]),
-          uploadedUrls: this.data.uploadedUrls.concat([up.url])
-        });
-      }
-    } catch (e) {
-      if (e && e.errMsg && e.errMsg.indexOf('cancel') !== -1) return;
-    } finally {
-      wx.hideLoading();
-    }
+  onUploadSuccess(e) {
+    const files = (e.detail && e.detail.files) || [];
+    this.setData({ fileList: files });
   },
 
-  removePhoto(e) {
-    const index = e.currentTarget.dataset.index;
-    const photos = this.data.photos.slice();
-    const uploadedUrls = this.data.uploadedUrls.slice();
-    photos.splice(index, 1);
-    uploadedUrls.splice(index, 1);
-    this.setData({ photos, uploadedUrls });
+  onUploadRemove(e) {
+    const { index } = e.detail || {};
+    const files = (this.data.fileList || []).slice();
+    if (index == null || index < 0) return;
+    files.splice(index, 1);
+    this.setData({ fileList: files });
   },
 
-  preview(e) {
-    wx.previewImage({ current: e.currentTarget.dataset.url, urls: this.data.photos });
+  onUploadFail() {
+    toast('图片上传失败，请重试');
   },
 
   previewHistory(e) {
@@ -93,7 +90,8 @@ Page({
   },
 
   async onSubmit() {
-    if (!this.data.uploadedUrls.length) {
+    const uploadedUrls = collectRemoteUrls(this.data.fileList);
+    if (!uploadedUrls.length) {
       toast('请先上传回单图片');
       return;
     }
@@ -103,11 +101,11 @@ Page({
     try {
       await uploadReceipt({
         taskId: this.data.taskId,
-        fileUrls: this.data.uploadedUrls,
+        fileUrls: uploadedUrls,
         remark: (this.data.remark || '').trim() || undefined
       });
       toast('回单已提交');
-      this.setData({ photos: [], uploadedUrls: [], remark: '' });
+      this.setData({ fileList: [], remark: '' });
       await this.loadReceipts();
     } catch (e) {
       /* handled */

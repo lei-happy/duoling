@@ -1,0 +1,49 @@
+.hero {
+  padding: 48rpx 32rpx 56rpx;
+  background: linear-gradient(160deg, #0052d9 0%, #266fe8 100%);
+  color: #fff;
+}
+
+.hello {
+  font-size: 40rpx;
+  font-weight: 600;
+}
+
+.sub {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+}
+
+.muted-on-dark {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.kpi-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.kpi {
+  flex: 1;
+  background: #f2f3ff;
+  border-radius: 12rpx;
+  padding: 24rpx 12rpx;
+  text-align: center;
+}
+
+.kpi-value {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #0052d9;
+}
+
+.kpi-label {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.kpi-tip {
+  margin-top: 20rpx;
+  font-size: 24rpx;
+}

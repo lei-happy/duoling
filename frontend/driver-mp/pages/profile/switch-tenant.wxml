@@ -1,22 +1,33 @@
 <view class="page">
   <view class="tip card">
-    <view class="tip-title">当前企业</view>
+    <view class="tip-title muted">当前企业</view>
     <view class="current">{{currentName || currentCode || '-'}}</view>
   </view>
 
-  <view class="tenant-list">
-    <view
-      class="tenant-item {{item.tenantCode === currentCode ? 'active' : ''}}"
+  <t-cell-group wx:if="{{tenants.length}}" title="可选企业">
+    <t-cell
       wx:for="{{tenants}}"
       wx:key="tenantCode"
+      title="{{item.tenantName || item.tenantCode}}"
+      description="{{item.tenantCode}}"
+      arrow="{{item.tenantCode !== currentCode}}"
+      hover="{{item.tenantCode !== currentCode}}"
       data-code="{{item.tenantCode}}"
-      bindtap="onSelect"
+      bind:click="onSelect"
     >
-      <view class="tenant-name">{{item.tenantName || item.tenantCode}}</view>
-      <view class="tenant-code">{{item.tenantCode}}</view>
-      <view wx:if="{{item.tenantCode === currentCode}}" class="badge">当前</view>
-    </view>
-  </view>
+      <t-tag
+        wx:if="{{item.tenantCode === currentCode}}"
+        slot="note"
+        theme="primary"
+        variant="light"
+        size="small"
+      >当前</t-tag>
+    </t-cell>
+  </t-cell-group>
 
   <empty-state wx:if="{{!loading && !tenants.length}}" text="暂无其他企业" />
+
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <t-loading theme="circular" size="40rpx" text="加载中…" />
+  </view>
 </view>

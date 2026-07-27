@@ -1,0 +1,14 @@
+{
+  "description": "本地私有配置，勿提交敏感信息",
+  "projectname": "zhitu-admin-mp",
+  "setting": {
+    "urlCheck": false,
+    "coverView": true,
+    "lazyloadPlaceholderEnable": false,
+    "skylineRenderEnable": false,
+    "preloadBackgroundData": false,
+    "autoAudits": false,
+    "showShadowRootInWxmlPanel": true,
+    "compileHotReLoad": true
+  }
+}

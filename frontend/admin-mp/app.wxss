@@ -1,0 +1,54 @@
+/** 智途管理员小程序全局样式 + TDesign 主题 */
+page {
+  /* TDesign 主题色（与品牌蓝对齐） */
+  --td-brand-color: #0052d9;
+  --td-brand-color-active: #003cab;
+  --td-brand-color-disabled: #b5c7ff;
+  --td-brand-color-focus: #d9e1ff;
+  --td-brand-color-light: #f2f3ff;
+
+  --brand-primary: #0052d9;
+  --text-primary: rgba(0, 0, 0, 0.9);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-muted: rgba(0, 0, 0, 0.4);
+  --bg-page: #f3f3f3;
+  --bg-card: #ffffff;
+  --border-color: #e7e7e7;
+  --radius-md: 16rpx;
+
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: 28rpx;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+view,
+text,
+input,
+textarea {
+  box-sizing: border-box;
+}
+
+.page {
+  min-height: 100vh;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  margin: 24rpx;
+  padding: 28rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20rpx;
+}
+
+.muted {
+  color: var(--text-secondary);
+}

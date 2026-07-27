@@ -1,13 +1,17 @@
 <view class="bar safe-bottom" wx:if="{{actions.length}}">
   <view class="bar-inner">
-    <button
-      wx:for="{{actions}}"
+    <t-button
+      wx:for="{{viewActions}}"
       wx:key="key"
-      class="action-btn {{item.level === 'danger' ? 'danger' : item.level === 'success' ? 'success' : 'primary'}} {{actions.length > 1 ? 'flex' : 'full'}}"
+      class="action-btn {{viewActions.length > 1 ? 'flex' : 'full'}}"
+      theme="{{item.theme}}"
+      size="large"
+      shape="round"
+      block="{{viewActions.length === 1}}"
       loading="{{loading && currentKey === item.key}}"
       disabled="{{loading}}"
-      bindtap="onTap"
       data-key="{{item.key}}"
-    >{{item.label}}</button>
+      bind:tap="onTap"
+    >{{item.label}}</t-button>
   </view>
 </view>

@@ -1,22 +1,30 @@
 <view class="page">
   <view class="tip card">
     <view class="tip-title">请选择要进入的企业</view>
-    <view class="tip-desc">同一手机号可能关联多家企业，请确认后进入</view>
+    <view class="tip-desc muted">同一手机号可能关联多家企业，请确认后进入</view>
   </view>
 
-  <view class="tenant-list">
-    <view
-      class="tenant-item"
+  <t-cell-group wx:if="{{tenants.length}}">
+    <t-cell
       wx:for="{{tenants}}"
       wx:key="tenantCode"
+      title="{{item.tenantName || item.tenantCode}}"
+      description="{{item.tenantCode}}"
+      note="进入"
+      arrow
+      hover
       data-code="{{item.tenantCode}}"
-      bindtap="onSelect"
-    >
-      <view class="tenant-name">{{item.tenantName || item.tenantCode}}</view>
-      <view class="tenant-code">{{item.tenantCode}}</view>
-      <view class="go">进入</view>
-    </view>
-  </view>
+      bind:click="onSelect"
+    />
+  </t-cell-group>
 
-  <empty-state wx:if="{{!tenants.length && !loading}}" text="暂无可选企业" hint="请联系企业管理员开通驾驶员账号" />
+  <empty-state
+    wx:if="{{!tenants.length && !loading}}"
+    text="暂无可选企业"
+    hint="请联系企业管理员开通驾驶员账号"
+  />
+
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <t-loading theme="circular" size="48rpx" text="正在进入企业，请稍候…" />
+  </view>
 </view>
