@@ -30,6 +30,8 @@ COPY backend/ .
 
 # 复制项目文档（供文档中心接口读取）
 COPY doc/ /app/docs/
+# 复制产品原型（供设计对接 HTML 预览）
+COPY prototype/ /app/prototypes/
 
 # 创建日志目录
 RUN mkdir -p logs

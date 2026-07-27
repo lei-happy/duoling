@@ -1,64 +1,58 @@
 ---
-alwaysApply: true
----
----
-description: Git commit message rules for this project
+description: Git commit message 规范（Agent / Chat 生成或代提交时生效）
 alwaysApply: true
 ---
 
-# Git Commit Message Rules
+# Git Commit Message
 
-当生成 Git commit message 时，必须遵循以下规则：
+生成或代写 commit message 时必须遵守。
+
+> SCM 侧边栏 ✨「生成提交信息」**不读**本文件，由仓库根目录 `.cursorrules` 约束；两边规则保持同步。
 
 ## 语言
 
-- 使用中文总结。
-- 技术名词、函数名、类名、文件名、参数名保留英文。
-- 不要生成纯英文提交信息。
+- 用中文写 summary 与 body
+- 技术名词、函数名、类名、文件名、参数名保留英文
+- 禁止纯英文提交信息
 
 ## 格式
 
-使用 Conventional Commits 格式：
-
+```
 <type>(<scope>): <summary>
+```
 
-允许的 type：
+| type | 含义 |
+|------|------|
+| feat | 新增功能 |
+| fix | 修复问题 |
+| refactor | 重构（外部行为不变） |
+| perf | 性能优化 |
+| docs | 文档 |
+| style | 格式（不影响逻辑） |
+| test | 测试 |
+| chore | 构建 / 依赖 / 脚本 / 配置 |
+| ci | CI/CD |
 
-- feat：新增功能
-- fix：修复问题
-- refactor：重构，不改变外部行为
-- perf：性能优化
-- docs：文档变更
-- style：格式调整，不影响逻辑
-- test：测试相关
-- chore：构建、依赖、脚本、配置等杂项
-- ci：CI/CD 相关
+## Summary
 
-## 内容要求
+- 不超过 72 字符，具体说清改了什么
+- 必须体现修改对象（如：导出服务、过滤参数、查询构造）
+- 禁止空泛词：improve clarity / enhance logic / update code / refactor service
 
-- summary 不超过 72 个字符。
-- summary 必须具体描述本次改动，不要写泛泛而谈的描述。
-- 禁止使用以下空泛表达：
-  - improve clarity
-  - improve maintainability
-  - enhance logic
-  - update code
-  - refactor service
-- 必须体现实际修改对象，例如：
-  - 导出服务
-  - 过滤参数
-  - 查询构造
-  - 文件生成
-  - 数据聚合逻辑
+## Body
 
-## Body 规则
+改动超过 1 点时用 bullet list 补充；单点改动可省略 body。
 
-如果改动超过 1 个点，需要补充 body，使用 bullet list。
+## 示例
 
-示例：
-
+```
 refactor(churn-warning): 重命名过滤参数并拆分导出查询逻辑
 
 - 将过滤参数统一收敛到 `_filter_kwargs`
 - 拆分查询构造函数，降低主流程复杂度
 - 保持导出结果不变，仅优化代码结构
+```
+
+```
+feat(doc-center): 新增设计模块与原型预览能力
+```

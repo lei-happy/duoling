@@ -89,15 +89,44 @@ class TenantMiddleware:
         path: str = scope.get("path", "")
         if not any(path.startswith(p) for p in self.SKIP_PATHS):
             auth_header: Optional[str] = None
+            cookie_header: Optional[str] = None
             for name, value in scope.get("headers", []):
                 if name == b"authorization":
                     try:
                         auth_header = value.decode("latin-1")
                     except Exception:
                         auth_header = None
-                    break
+                elif name == b"cookie":
+                    try:
+                        cookie_header = value.decode("latin-1")
+                    except Exception:
+                        cookie_header = None
+
+            token: Optional[str] = None
             if auth_header and auth_header.startswith("Bearer "):
                 token = auth_header[7:]
+
+            # 原型 HTML iframe 无法带 Authorization；同源 Cookie / query 兜底
+            if not token and path.startswith(
+                "/api/console/doc-center/prototypes/file"
+            ):
+                if cookie_header:
+                    for part in cookie_header.split(";"):
+                        part = part.strip()
+                        if part.startswith("zt_proto_token="):
+                            token = part[len("zt_proto_token=") :]
+                            break
+                if not token:
+                    qs = scope.get("query_string", b"").decode("latin-1")
+                    for pair in qs.split("&"):
+                        if pair.startswith("access_token="):
+                            token = pair[len("access_token=") :]
+                            break
+                        if pair.startswith("token="):
+                            token = pair[len("token=") :]
+                            break
+
+            if token:
                 token_data = decode_access_token(token)
                 if token_data:
                     state["current_user"] = token_data

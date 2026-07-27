@@ -28,6 +28,7 @@ from app.modules.console.models.promotion.banner import (
     PromotionBanner,
     PromotionBannerEvent,
 )
+from app.modules.console.models.doc_center.sys_design_module import SysDesignModule
 
 # ---- 服务平台（生态）撮合内核 ----
 from app.modules.console.models.ecosystem import (
@@ -88,6 +89,7 @@ __all__ = [
     "SysCapacity",
     "PromotionBanner",
     "PromotionBannerEvent",
+    "SysDesignModule",
     # 服务平台（生态）
     "SysEcoPost",
     "SysEcoPostDest",

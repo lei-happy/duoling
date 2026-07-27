@@ -1,183 +1,51 @@
 <template>
   <ele-page hide-footer :multi-card="false" class="doc-center-page">
-    <div class="doc-center">
-      <!-- 左侧目录树 -->
-      <ele-card class="doc-tree-panel" :body-style="{ padding: 0, height: '100%' }">
-        <div class="doc-tree-header">
-          <el-input
-            v-model="filterText"
-            placeholder="搜索文档..."
-            :prefix-icon="SearchIcon"
-            clearable
-            size="default"
-          />
-        </div>
-        <el-scrollbar class="doc-tree-scroll">
-          <el-tree
-            ref="treeRef"
-            :data="treeData"
-            :props="treeProps"
-            node-key="key"
-            :expand-on-click-node="true"
-            :filter-node-method="filterNode"
-            :default-expanded-keys="expandedKeys"
-            highlight-current
-            @node-click="handleNodeClick"
-          >
-            <template #default="{ node, data }">
-              <span class="doc-tree-node">
-                <el-icon v-if="!data.isLeaf" class="doc-tree-node-icon">
-                  <FolderOpened v-if="node.expanded" />
-                  <Folder v-else />
-                </el-icon>
-                <el-icon v-else class="doc-tree-node-icon">
-                  <Document />
-                </el-icon>
-                <span class="doc-tree-node-label">{{ node.label }}</span>
-              </span>
-            </template>
-          </el-tree>
-        </el-scrollbar>
-      </ele-card>
-
-      <!-- 右侧内容区 -->
-      <ele-card class="doc-content-panel" :body-style="{ padding: 0, height: '100%' }">
-        <!-- 面包屑 -->
-        <div v-if="currentPath" class="doc-content-breadcrumb">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item>文档中心</el-breadcrumb-item>
-            <el-breadcrumb-item
-              v-for="(seg, idx) in breadcrumbs"
-              :key="idx"
-            >
-              {{ seg }}
-            </el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
-
-        <!-- 文档内容 -->
-        <el-scrollbar class="doc-content-scroll">
-          <div v-if="loading" class="doc-content-loading">
-            <el-icon class="is-loading" :size="28"><Loading /></el-icon>
-            <span>加载中...</span>
-          </div>
-          <div v-else-if="docContent" class="doc-content-body">
-            <byte-md-viewer
-              :value="docContent"
-              :config="viewerConfig"
-            />
-          </div>
-          <div v-else class="doc-content-empty">
-            <el-empty description="请从左侧选择一篇文档查看">
-              <template #image>
-                <el-icon :size="64" color="var(--el-text-color-secondary)">
-                  <Reading />
-                </el-icon>
-              </template>
-            </el-empty>
-          </div>
-        </el-scrollbar>
-      </ele-card>
+    <div class="doc-center-shell">
+      <div class="doc-center-tabs">
+        <el-tabs v-model="activeTab" @tab-change="onTabChange">
+          <el-tab-pane label="文档" name="docs" />
+          <el-tab-pane label="设计对接" name="design" />
+        </el-tabs>
+      </div>
+      <div class="doc-center-body">
+        <doc-browser v-if="activeTab === 'docs'" />
+        <design-board v-else />
+      </div>
     </div>
   </ele-page>
 </template>
 
 <script lang="ts" setup>
-  import { ref, watch, computed, onMounted } from 'vue';
-  import {
-    Search as SearchIcon,
-    FolderOpened,
-    Folder,
-    Document,
-    Loading,
-    Reading
-  } from '@element-plus/icons-vue';
-  import type { ElTree } from 'element-plus';
-  import ByteMdViewer from '@/components/ByteMdViewer/index.vue';
-  import gfm from '@bytemd/plugin-gfm';
-  import highlight from '@bytemd/plugin-highlight';
-  import mermaid from '@bytemd/plugin-mermaid';
-  import 'highlight.js/styles/github-dark.css';
-  import 'github-markdown-css/github-markdown-light.css';
-  import { getDocTree, getDocContent } from '@/api/doc-center';
-  import type { DocTreeNode } from '@/api/doc-center/model';
+  import { ref, watch } from 'vue';
+  import { useRoute, useRouter } from 'vue-router';
+  import DocBrowser from './DocBrowser.vue';
+  import DesignBoard from './design/DesignBoard.vue';
 
   defineOptions({ name: 'DocCenter' });
 
-  const treeRef = ref<InstanceType<typeof ElTree>>();
-  const treeData = ref<DocTreeNode[]>([]);
-  const filterText = ref('');
-  const currentPath = ref('');
-  const docContent = ref('');
-  const loading = ref(false);
-  const treeLoading = ref(false);
-  const expandedKeys = ref<string[]>([]);
+  const route = useRoute();
+  const router = useRouter();
 
-  const treeProps = {
-    label: 'title',
-    children: 'children',
-    isLeaf: 'isLeaf'
-  };
+  const resolveTab = () =>
+    route.query.tab === 'design' ? 'design' : 'docs';
 
-  const viewerConfig = {
-    plugins: [gfm(), highlight(), mermaid()]
-  };
+  const activeTab = ref<'docs' | 'design'>(resolveTab());
 
-  const breadcrumbs = computed(() => {
-    if (!currentPath.value) return [];
-    return currentPath.value.replace(/\.md$/i, '').split('/');
-  });
-
-  const filterNode = (value: string, data: DocTreeNode) => {
-    if (!value) return true;
-    return data.title.toLowerCase().includes(value.toLowerCase());
-  };
-
-  watch(filterText, (val) => {
-    treeRef.value?.filter(val);
-  });
-
-  const handleNodeClick = async (data: DocTreeNode) => {
-    if (!data.isLeaf) return;
-
-    const filePath = data.key.endsWith('.md') ? data.key : `${data.key}.md`;
-    if (filePath === currentPath.value) return;
-
-    currentPath.value = filePath;
-    loading.value = true;
-    docContent.value = '';
-
-    try {
-      const res = await getDocContent(filePath);
-      if (res) {
-        docContent.value = res.content;
-      }
-    } catch (e) {
-      console.error(e);
-      docContent.value = '> 文档加载失败，请稍后重试。';
-    } finally {
-      loading.value = false;
+  watch(
+    () => route.query.tab,
+    () => {
+      activeTab.value = resolveTab();
     }
-  };
+  );
 
-  const loadTree = async () => {
-    treeLoading.value = true;
-    try {
-      const data = await getDocTree();
-      treeData.value = data ?? [];
-      if (treeData.value.length > 0) {
-        expandedKeys.value = treeData.value.map((n) => n.key);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      treeLoading.value = false;
-    }
+  const onTabChange = (name: string | number) => {
+    const tab = String(name) === 'design' ? 'design' : 'docs';
+    activeTab.value = tab;
+    router.replace({
+      path: '/doc-center',
+      query: tab === 'design' ? { tab: 'design' } : {}
+    });
   };
-
-  onMounted(() => {
-    loadTree();
-  });
 </script>
 
 <style lang="scss">
@@ -191,133 +59,31 @@
 </style>
 
 <style lang="scss" scoped>
-  .doc-center {
-    display: flex;
-    gap: 16px;
+  .doc-center-shell {
     flex: 1;
-    overflow: hidden;
     min-height: 0;
-  }
-
-  .doc-tree-panel {
-    width: 300px;
-    min-width: 260px;
-    flex-shrink: 0;
-
-    :deep(.el-card) {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    :deep(.el-card__body) {
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-  }
-
-  .doc-tree-header {
-    padding: 12px 12px 8px;
-    border-bottom: 1px solid var(--el-border-color-lighter);
-    flex-shrink: 0;
-  }
-
-  .doc-tree-scroll {
-    flex: 1;
-    overflow: hidden;
-
-    :deep(.el-scrollbar__wrap) {
-      overflow-x: hidden;
-    }
-
-    :deep(.el-tree) {
-      padding: 6px 0;
-      --el-tree-node-content-height: 34px;
-    }
-
-    :deep(.el-tree-node__content) {
-      padding-left: 8px !important;
-    }
-  }
-
-  .doc-tree-node {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    overflow: hidden;
-  }
-
-  .doc-tree-node-icon {
-    flex-shrink: 0;
-    color: var(--el-text-color-secondary);
-  }
-
-  .doc-tree-node-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .doc-content-panel {
-    flex: 1;
-    min-width: 0;
-
-    :deep(.el-card) {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    :deep(.el-card__body) {
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-  }
-
-  .doc-content-breadcrumb {
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--el-border-color-lighter);
-    flex-shrink: 0;
-  }
-
-  .doc-content-scroll {
-    flex: 1;
-    overflow: hidden;
-  }
-
-  .doc-content-body {
-    padding: 20px 32px 40px;
-    max-width: 960px;
-  }
-
-  .doc-content-loading {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    height: 300px;
-    color: var(--el-text-color-secondary);
+    overflow: hidden;
   }
 
-  .doc-content-empty {
+  .doc-center-tabs {
+    flex-shrink: 0;
+    margin-bottom: 4px;
+
+    :deep(.el-tabs__header) {
+      margin-bottom: 0;
+    }
+
+    :deep(.el-tabs__nav-wrap::after) {
+      height: 1px;
+    }
+  }
+
+  .doc-center-body {
+    flex: 1;
+    min-height: 0;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    min-height: 400px;
-  }
-</style>
-
-<style lang="scss">
-  .doc-content-body .markdown-body .highlight pre,
-  .doc-content-body .markdown-body pre {
-    color: #e6edf3;
-    background-color: #161b22;
+    overflow: hidden;
   }
 </style>

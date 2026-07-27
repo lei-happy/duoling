@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>菜单管理 · 原型示例</title>
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --card: #fff;
+      --text: #303133;
+      --muted: #909399;
+      --primary: #409eff;
+      --border: #e4e7ed;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .top {
+      height: 56px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      font-weight: 600;
+    }
+    .wrap { padding: 20px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 16px; }
+    .btn {
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 4px;
+      padding: 8px 14px;
+      cursor: default;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px 8px;
+      text-align: left;
+    }
+    th { color: var(--muted); font-weight: 500; }
+    .tip {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="top">菜单管理（HTML 原型示例）</div>
+  <div class="wrap">
+    <div class="card">
+      <div class="toolbar">
+        <button class="btn" type="button">新建菜单</button>
+        <button class="btn" type="button" style="background:#67c23a">展开全部</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>菜单名称</th>
+            <th>路径</th>
+            <th>排序</th>
+            <th>状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>系统管理</td>
+            <td>/system</td>
+            <td>1</td>
+            <td>启用</td>
+          </tr>
+          <tr>
+            <td>　菜单管理</td>
+            <td>/system/menu</td>
+            <td>1</td>
+            <td>启用</td>
+          </tr>
+          <tr>
+            <td>　角色管理</td>
+            <td>/system/role</td>
+            <td>2</td>
+            <td>启用</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="tip">将 Axure / 手写 HTML 放到仓库 prototype/ 目录即可在设计对接中预览。</p>
+    </div>
+  </div>
+</body>
+</html>

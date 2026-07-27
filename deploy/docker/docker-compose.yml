@@ -61,6 +61,7 @@ services:
       - LOG_LEVEL=INFO
       - LOG_DIR=logs
       - DOC_ROOT=/app/docs
+      - PROTO_ROOT=/app/prototypes
       # 开放平台数据面公网地址：租户端「复制 MCP 配置」生成的 url 以此为准
       - OPEN_PLATFORM_BASE_URL=${OPEN_PLATFORM_BASE_URL:-https://api.zhitu.me}
       # 计费引擎 worker 默认在 API 进程内不启动；

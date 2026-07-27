@@ -1,0 +1,24 @@
+# Commit message（SCM ✨ 生成提交信息必读）
+
+生成 Git commit message 时严格遵守：
+
+1. **必须中文**：summary 与 body 用中文；禁止纯英文。函数名、类名、文件名、参数名可保留英文。
+2. **格式**：Conventional Commits → `type(scope): 中文摘要`
+3. **type**：feat / fix / refactor / perf / docs / style / test / chore / ci
+4. **summary**：≤72 字，说清改了什么对象；禁止 improve / enhance / update code 等空泛英文。
+5. **body**：多点改动才用 `-` 列表补充；不要写成全英文 bullet。
+
+正确示例：
+feat(doc-center): 新增设计模块与原型预览能力
+
+refactor(churn-warning): 重命名过滤参数并拆分导出查询逻辑
+
+- 将过滤参数统一收敛到 `_filter_kwargs`
+- 拆分查询构造函数，降低主流程复杂度
+
+错误示例（禁止）：
+- Enhanced middleware to support token extraction...
+- Updated Docker configurations...
+- Added migration scripts...
+
+完整规范见 `.cursor/rules/Git.mdc`（供 Agent 使用；本文件专供 ✨ 生成）。
