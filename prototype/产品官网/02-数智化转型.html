@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>车队数智化转型的四层能力 · 智途</title>
+<meta name="description" content="信息化、数字化、智能化、数智化不是四个价位的软件，而是四层能力。给车队管理者的五分钟辨析：每层解决什么、卡住的代价、以及下一步该补什么。" />
+<link rel="stylesheet" href="assets/site.css" />
+<style>
+  /* 转型页专用 */
+  .intro-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 56px;
+    align-items: end;
+  }
+
+  .quote-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--r-lg);
+    padding: 26px 28px;
+  }
+
+  .quote-card p {
+    font-size: 18px;
+    line-height: 1.65;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .quote-card span {
+    display: block;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+
+  /* 阶梯图 */
+  .stair {
+    width: 100%;
+    height: auto;
+  }
+
+  .stair-wrap {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 30px 28px 22px;
+    overflow-x: auto;
+  }
+
+  .stair text {
+    font-family: var(--font);
+  }
+
+  /* 阶段卡 */
+  .phase {
+    display: grid;
+    grid-template-columns: 268px 1fr;
+    gap: 40px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .phase + .phase {
+    margin-top: 20px;
+  }
+
+  .phase::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+  }
+
+  .phase[data-tier="1"]::before { background: var(--tier-1); }
+  .phase[data-tier="2"]::before { background: var(--tier-2); }
+  .phase[data-tier="3"]::before { background: var(--tier-3); }
+  .phase[data-tier="4"]::before { background: var(--tier-4); }
+
+  .phase-title {
+    font-size: 26px;
+    letter-spacing: -0.025em;
+    margin: 10px 0 12px;
+  }
+
+  .phase-one {
+    font-size: 15px;
+    color: var(--ink-2);
+    line-height: 1.7;
+  }
+
+  .phase-one b {
+    color: var(--ink);
+  }
+
+  .phase-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+
+  .phase-block h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+
+  .phase-block h4::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  .phase-block ul {
+    display: grid;
+    gap: 9px;
+  }
+
+  .phase-block li {
+    position: relative;
+    padding-left: 16px;
+    font-size: 15px;
+    color: var(--ink-2);
+    line-height: 1.65;
+  }
+
+  .phase-block li::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 11px;
+    width: 5px;
+    height: 1px;
+    background: var(--ink-3);
+  }
+
+  .phase-cost {
+    margin-top: 22px;
+    padding: 14px 18px;
+    border-radius: var(--r);
+    background: var(--bg);
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+
+  .phase-cost b {
+    color: var(--accent);
+  }
+
+  /* 闭环图 */
+  .loop-grid {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 52px;
+    align-items: center;
+  }
+
+  .loop {
+    width: 100%;
+    height: auto;
+  }
+
+  .loop text {
+    font-family: var(--font);
+  }
+
+  /* 三问 */
+  .asks {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line-dark);
+    border: 1px solid var(--line-dark);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    margin-top: 40px;
+  }
+
+  .ask {
+    padding: 28px 26px;
+  }
+
+  .ask .num {
+    font-size: 12px;
+    color: #e8a173;
+    letter-spacing: 0.1em;
+  }
+
+  .ask h3 {
+    font-size: 20px;
+    margin: 10px 0 10px;
+    color: #fff;
+  }
+
+  .ask p {
+    font-size: 15px;
+    color: rgba(244, 248, 247, 0.68);
+  }
+
+  @media (max-width: 1024px) {
+    .intro-grid,
+    .phase,
+    .loop-grid {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+
+    .asks {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .phase {
+      padding: 24px 20px;
+    }
+
+    .phase-cols {
+      grid-template-columns: 1fr;
+      gap: 22px;
+    }
+
+    .stair-wrap {
+      padding: 20px 16px 14px;
+    }
+
+    .stair {
+      min-width: 620px;
+    }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="01-首页.html">
+      <span class="brand-mark">ZT</span>
+      智途
+      <span class="brand-sub">轿运车队数智化</span>
+    </a>
+    <nav class="nav-links" id="nav-links" aria-label="主导航">
+      <a href="02-数智化转型.html" aria-current="page">数智化转型</a>
+      <a href="03-产品能力.html">产品能力</a>
+      <a href="05-价格方案.html">价格方案</a>
+      <a href="04-数智化自测.html">免费自测</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="btn btn-line" href="#">登录</a>
+      <a class="btn btn-primary" href="04-数智化自测.html">开始自测</a>
+      <button class="nav-toggle" type="button" aria-controls="nav-links" aria-label="展开导航"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- Hero -->
+  <section class="band band-paper">
+    <div class="wrap intro-grid">
+      <div>
+        <span class="eyebrow">给车队管理者的 5 分钟</span>
+        <h1 class="h-hero" style="font-size:clamp(30px,3.8vw,48px);margin:18px 0 20px">
+          四个词分不清，<br /><span class="hl">钱就会花错层</span>
+        </h1>
+        <p class="lede">
+          信息化、数字化、智能化、数智化，经常被当成四个价位的软件来卖。
+          其实它们是四层能力：解决的问题不同，需要的前提也不同。
+        </p>
+        <p class="lede" style="margin-top:16px">
+          分不清的代价很具体：主数据还没统一就先上 AI 分析，回单还在群里发就先买大屏，
+          最后系统买了一堆，月底还是靠人拉表。
+        </p>
+      </div>
+
+      <div class="quote-card">
+        <p>装进系统 → 变成数据 → 形成判断 → 嵌入经营</p>
+        <span>如果只记住一句话，记住这条演进链。四层不是采购清单，是能力层级。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 阶梯图 -->
+  <section class="band band-tight band-soft band-line">
+    <div class="wrap">
+      <div class="sec-head reveal" style="margin-bottom:28px">
+        <span class="eyebrow">演进路径</span>
+        <h2 class="h-sec" style="margin-top:12px;font-size:28px">每上一层，管的事不一样</h2>
+      </div>
+
+      <div class="stair-wrap reveal">
+        <svg class="stair" viewBox="0 0 960 268" role="img" aria-label="四层能力阶梯：信息化、数字化、智能化、数智化，从装进系统到嵌入经营逐层递进">
+          <!-- 阶梯块 -->
+          <g>
+            <rect x="10" y="158" width="216" height="62" rx="6" fill="#9db3b8" />
+            <rect x="248" y="122" width="216" height="98" rx="6" fill="#5c8794" />
+            <rect x="486" y="86" width="216" height="134" rx="6" fill="#26616f" />
+            <rect x="724" y="46" width="226" height="174" rx="6" fill="#0f4c5c" />
+          </g>
+
+          <!-- 阶段名与解决的问题 -->
+          <g fill="#ffffff">
+            <text x="30" y="184" font-size="19" font-weight="700">信息化</text>
+            <text x="30" y="206" font-size="13" opacity="0.86">业务如何在系统里跑</text>
+
+            <text x="268" y="148" font-size="19" font-weight="700">数字化</text>
+            <text x="268" y="170" font-size="13" opacity="0.86">数据能不能算出利润</text>
+
+            <text x="506" y="112" font-size="19" font-weight="700">智能化</text>
+            <text x="506" y="134" font-size="13" opacity="0.86">机器能不能形成判断</text>
+
+            <text x="744" y="72" font-size="19" font-weight="700">数智化</text>
+            <text x="744" y="94" font-size="13" opacity="0.86">经营能不能闭环运转</text>
+          </g>
+
+          <!-- 上升箭头 -->
+          <g stroke="#c45c26" stroke-width="1.4" fill="none">
+            <path d="M226 152 L248 152" />
+            <path d="M241 147 L248 152 L241 157" />
+            <path d="M464 116 L486 116" />
+            <path d="M479 111 L486 116 L479 121" />
+            <path d="M702 76 L724 76" />
+            <path d="M717 71 L724 76 L717 81" />
+          </g>
+
+          <!-- 底部动作轴 -->
+          <line x1="10" y1="232" x2="950" y2="232" stroke="#d9e2e0" stroke-width="1" />
+          <g fill="#7c929b" font-size="13">
+            <text x="10" y="254">装进系统</text>
+            <text x="248" y="254">变成数据</text>
+            <text x="486" y="254">形成判断</text>
+            <text x="724" y="254">嵌入经营</text>
+          </g>
+          <g fill="#c45c26" font-size="11" font-family="ui-monospace, Consolas, monospace">
+            <text x="196" y="254">L1–L2</text>
+            <text x="434" y="254">L3–L4</text>
+            <text x="672" y="254">L5–L6</text>
+            <text x="905" y="254">L7–L8</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 四阶段详解 -->
+  <section class="band band-paper">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">逐层看</span>
+        <h2 class="h-sec" style="margin:14px 0 14px">对照一下，你的车队在哪一层</h2>
+        <p class="lede">每一层都写了三件事：这层要解决什么、卡在这层什么样、智途在这层能接上什么。</p>
+      </div>
+
+      <article class="phase reveal" data-tier="1">
+        <div>
+          <span class="tag tag-brand">第一层 · L1–L2</span>
+          <h3 class="phase-title">信息化</h3>
+          <p class="phase-one">
+            把原来靠电话、微信、Excel 完成的活，搬进系统跑。核心成果是<b>业务被系统承载</b>，
+            关键节点留下时间和责任人。
+          </p>
+        </div>
+        <div>
+          <div class="phase-cols">
+            <div class="phase-block">
+              <h4>卡在这层的车队什么样</h4>
+              <ul>
+                <li>客户需求发在微信群，调度誊到 Excel 台账</li>
+                <li>派车打电话，改单口头通知，事后再补录</li>
+                <li>回单拍照发群，结算前才发现少了几张</li>
+                <li>系统买了，但一线还在系统外绕路</li>
+              </ul>
+            </div>
+            <div class="phase-block">
+              <h4>智途在这层做什么</h4>
+              <ul>
+                <li>计划中心在线建单，需求不再散落</li>
+                <li>配载建单与调度工作台，派车进系统</li>
+                <li>司机手机端现场接单、拍回单、报异常</li>
+                <li>操作记录与审批留痕，改单有人负责</li>
+              </ul>
+            </div>
+          </div>
+          <p class="phase-cost">
+            <b>卡住的代价：</b>没有稳定的数据来源，后面所有分析和 AI 都建在沙子上。
+          </p>
+        </div>
+      </article>
+
+      <article class="phase reveal" data-tier="2">
+        <div>
+          <span class="tag tag-brand">第二层 · L3–L4</span>
+          <h3 class="phase-title">数字化</h3>
+          <p class="phase-one">
+            不只是搬上线，而是用数据重新认识业务。核心成果是<b>数据能算出经营结果</b>，
+            并且真的改变了动作。
+          </p>
+        </div>
+        <div>
+          <div class="phase-cols">
+            <div class="phase-block">
+              <h4>卡在这层的车队什么样</h4>
+              <ul>
+                <li>调度的车次、财务的运费、老板的利润三张表对不上</li>
+                <li>成本要月底人工摊，摊完已是下个月中</li>
+                <li>报表不少，但决策还是凭经验和感觉</li>
+                <li>知道整体在赚钱，不知道哪条线在亏</li>
+              </ul>
+            </div>
+            <div class="phase-block">
+              <h4>智途在这层做什么</h4>
+              <ul>
+                <li>客户、车辆、线路、门店统一建档，一套口径</li>
+                <li>运价合同自动取价，成本政策自动摊费用</li>
+                <li>对账中心把客户对账与承运商结算并到一处</li>
+                <li>经营驾驶舱看单车、单线路、单客户利润</li>
+              </ul>
+            </div>
+          </div>
+          <p class="phase-cost">
+            <b>卡住的代价：</b>数据只用于事后汇报，报价、砍线、换承运商仍然是拍脑袋。
+          </p>
+        </div>
+      </article>
+
+      <article class="phase reveal" data-tier="3">
+        <div>
+          <span class="tag tag-brand">第三层 · L5–L6</span>
+          <h3 class="phase-title">智能化</h3>
+          <p class="phase-one">
+            让系统从按规则执行，升级为<b>基于数据形成判断</b>：预测、推荐、预警、自动校验。
+            前提是前两层已经稳。
+          </p>
+        </div>
+        <div>
+          <div class="phase-cols">
+            <div class="phase-block">
+              <h4>卡在这层的车队什么样</h4>
+              <ul>
+                <li>接了智能助手，但只是聊天，没进业务流程</li>
+                <li>演示很顺，上线后调度还是按老办法配载</li>
+                <li>说不清 AI 到底省了多少人、多少钱</li>
+                <li>没有反馈机制，模型错了也没人纠</li>
+              </ul>
+            </div>
+            <div class="phase-block">
+              <h4>智途在这层做什么</h4>
+              <ul>
+                <li>AI 录单员读 Excel 与运单照片直接建计划</li>
+                <li>智能配载按车型、板位、线路推荐组合</li>
+                <li>AI 数据分析员回答经营问题，直接出数</li>
+                <li>证照到期、运费异常主动预警</li>
+              </ul>
+            </div>
+          </div>
+          <p class="phase-cost">
+            <b>卡住的代价：</b>AI 停在旁路工具，投入变成演示费用，业务节奏没有变化。
+          </p>
+        </div>
+      </article>
+
+      <article class="phase reveal" data-tier="4">
+        <div>
+          <span class="tag tag-brand">第四层 · L7–L8</span>
+          <h3 class="phase-title">数智化</h3>
+          <p class="phase-one">
+            数据和智能进入经营机制：<b>预警变任务、任务有结果、结果改回规则</b>。
+            强调的是体系，而不是某一个功能。
+          </p>
+        </div>
+        <div>
+          <div class="phase-cols">
+            <div class="phase-block">
+              <h4>做到这层的车队什么样</h4>
+              <ul>
+                <li>异常出现后自动派人、限时处理、结果回看</li>
+                <li>人机分工写得清楚，多大金额升级到谁</li>
+                <li>每月用经营结果复盘运价与成本政策</li>
+                <li>扩线路、开分公司时，管理方式可以复制</li>
+              </ul>
+            </div>
+            <div class="phase-block">
+              <h4>智途在这层做什么</h4>
+              <ul>
+                <li>智能预测接进计划与运力筹备</li>
+                <li>预警自动派成审批与待办，跟到关闭</li>
+                <li>货源大厅与运力大厅补运力缺口</li>
+                <li>开放平台对接主机厂与客户系统</li>
+                <li>MCP 连接器让你自己的 AI 直接读系统数据</li>
+              </ul>
+            </div>
+          </div>
+          <p class="phase-cost">
+            <b>这一层的价值：</b>经营节奏从月度变成周度，扩张时不再依赖某几个老员工的经验。
+          </p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 速查表 -->
+  <section class="band band-soft band-line">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">管理者速查</span>
+        <h2 class="h-sec" style="margin:14px 0 14px">同样一句「我们已经数字化了」，怎么验真假</h2>
+        <p class="lede">验收任何一层的投入时，只问一句：它改善了哪个经营指标，怎么验证。</p>
+      </div>
+
+      <div class="table-scroll reveal">
+        <table class="ctable">
+          <thead>
+            <tr>
+              <th style="width:110px">这一层</th>
+              <th>典型动作</th>
+              <th>常见假象</th>
+              <th>算真做到的标准</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-label"><b>信息化</b><span>L1–L2</span></td>
+              <td>核心单据上线，流程进系统</td>
+              <td>系统买了不少，Excel 仍是真相</td>
+              <td>核心业务在系统里执行，关键节点可追溯、可追责</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>数字化</b><span>L3–L4</span></td>
+              <td>打通数据、统一口径、算清成本</td>
+              <td>大屏做了几块，开会还是拍脑袋</td>
+              <td>数据改变了报价与线路决策，经营状态随时看得见</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>智能化</b><span>L5–L6</span></td>
+              <td>预测、推荐、预警、自动校验</td>
+              <td>演示效果好，上线后没人用</td>
+              <td>嵌进真实流程，效果能量化，错了能发现能纠正</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>数智化</b><span>L7–L8</span></td>
+              <td>智能结果进入决策与执行闭环</td>
+              <td>项目很多，却没有感知到反馈的循环</td>
+              <td>人机协同成为机制，经营结果持续复盘并驱动迭代</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 四种花错钱的方式 -->
+  <section class="band band-paper">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">避坑</span>
+        <h2 class="h-sec" style="margin:14px 0 14px">四种最常见的花错钱方式</h2>
+      </div>
+      <div class="grid g-2">
+        <div class="card reveal">
+          <h3 class="h-card">把买软件当成完成转型</h3>
+          <p>系统上线只是第一层的成果。只有当数据开始改变报价、排班和线路决策，才算真的走到第二层。</p>
+        </div>
+        <div class="card reveal" data-delay="60">
+          <h3 class="h-card">把大屏当成数字化管理</h3>
+          <p>大屏只提高了可见性。没有责任机制、任务机制和复盘机制，看见了也不会有人动。</p>
+        </div>
+        <div class="card reveal" data-delay="120">
+          <h3 class="h-card">把接入大模型当成智能化</h3>
+          <p>能聊天不等于能干活。要看它是否稳定解决具体业务问题，比如把录单时间从两小时压到十分钟。</p>
+        </div>
+        <div class="card reveal" data-delay="180">
+          <h3 class="h-card">底座没打好就先建 AI</h3>
+          <p>回单还在群里发、成本口径还没统一，模型只能生成看起来合理、但没法验证的结论。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 90 天小闭环 -->
+  <section class="band band-soft band-line">
+    <div class="wrap loop-grid">
+      <div class="reveal">
+        <span class="eyebrow">怎么开始</span>
+        <h2 class="h-sec" style="margin:14px 0 18px">从一个小闭环开始，别从大平台开始</h2>
+        <p class="lede">
+          挑一条主力线路或一个大客户，把「数据采集 → 算出利润 → 发现异常 → 派人处理 → 结果反馈 → 改回规则」
+          跑通一遍。一个真的转起来的小闭环，比一个三年建不完的大平台有用得多。
+        </p>
+        <p class="lede" style="margin-top:16px">
+          跑通之后再复制到其他线路、其他分公司。每一轮都要能回答：这次改善了哪个数字。
+        </p>
+        <div class="btn-row" style="margin-top:26px">
+          <a class="btn btn-dark" href="04-数智化自测.html">先测我的水位<span class="arrow">→</span></a>
+          <a class="btn btn-text" href="03-产品能力.html">看每层对应的模块</a>
+        </div>
+      </div>
+
+      <div class="reveal" data-delay="120">
+        <svg class="loop" viewBox="0 0 560 300" role="img" aria-label="经营闭环示意：数据采集、算出利润、发现异常、派人处理、结果反馈，最后改回规则形成循环">
+          <!-- 环形轨道 -->
+          <ellipse cx="280" cy="150" rx="228" ry="112" fill="none" stroke="#d9e2e0" stroke-width="1.4" stroke-dasharray="5 6" />
+
+          <!-- 五个节点 -->
+          <g>
+            <circle cx="280" cy="38" r="9" fill="#0f4c5c" />
+            <circle cx="497" cy="122" r="9" fill="#26616f" />
+            <circle cx="430" cy="252" r="9" fill="#26616f" />
+            <circle cx="130" cy="252" r="9" fill="#5c8794" />
+            <circle cx="63" cy="122" r="9" fill="#5c8794" />
+          </g>
+
+          <!-- 节点文字 -->
+          <g font-size="14" font-weight="600" fill="#10242b">
+            <text x="280" y="22" text-anchor="middle">数据采集</text>
+            <text x="497" y="108" text-anchor="middle">算出利润</text>
+            <text x="430" y="278" text-anchor="middle">发现异常</text>
+            <text x="130" y="278" text-anchor="middle">派人处理</text>
+            <text x="63" y="108" text-anchor="middle">结果反馈</text>
+          </g>
+          <g font-size="12" fill="#7c929b">
+            <text x="280" y="292" text-anchor="middle">跑通一条线路，再复制到全公司</text>
+          </g>
+
+          <!-- 中心：改回规则 -->
+          <g>
+            <rect x="196" y="126" width="168" height="52" rx="10" fill="#c45c26" />
+            <text x="280" y="150" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">改回规则</text>
+            <text x="280" y="168" text-anchor="middle" font-size="11" fill="#f7e8dd">运价 · 成本政策 · 预警阈值</text>
+          </g>
+
+          <!-- 回流箭头 -->
+          <g stroke="#c45c26" stroke-width="1.4" fill="none">
+            <path d="M63 110 C 70 70, 150 44, 262 38" />
+            <path d="M255 33 L262 38 L255 43" />
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 三问 -->
+  <section class="band band-deep">
+    <div class="wrap">
+      <div class="sec-head reveal" style="margin-bottom:0">
+        <span class="eyebrow">回到三个问题</span>
+        <h2 class="h-sec" style="margin:16px 0 16px">立项之前，先把这三句话回答清楚</h2>
+        <p class="lede">答不出来的项目，无论方案多漂亮，大概率还停在概念阶段。</p>
+      </div>
+
+      <div class="asks reveal" data-delay="100">
+        <div class="ask">
+          <span class="num">01</span>
+          <h3>我们在哪</h3>
+          <p>按业务域分别看：卡在系统承载、数据贯通、智能应用，还是经营闭环？</p>
+        </div>
+        <div class="ask">
+          <span class="num">02</span>
+          <h3>缺什么</h3>
+          <p>以最弱的一环决定补齐顺序，不要在底座不稳时堆 AI。</p>
+        </div>
+        <div class="ask">
+          <span class="num">03</span>
+          <h3>下一件事是什么</h3>
+          <p>选一个 90 天内能验证、且能改善明确经营指标的动作。</p>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:36px">
+        <a class="btn btn-primary btn-lg" href="04-数智化自测.html">用 10 题回答第一问<span class="arrow">→</span></a>
+        <a class="btn btn-line btn-lg" href="04-数智化自测.html#lead">要一份完整转型报告</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <div class="brand"><span class="brand-mark">ZT</span>智途</div>
+        <p class="foot-slogan">让每一公里都不白跑。智途为轿运车队提供从计划录入到结算回款的数智化经营系统。</p>
+      </div>
+      <div>
+        <h4>产品</h4>
+        <ul>
+          <li><a href="03-产品能力.html">产品能力</a></li>
+          <li><a href="05-价格方案.html">价格方案</a></li>
+          <li><a href="#">承运商轻量版</a></li>
+          <li><a href="#">驾驶员手机端</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>了解数智化</h4>
+        <ul>
+          <li><a href="02-数智化转型.html">四阶段辨析</a></li>
+          <li><a href="04-数智化自测.html">车队水位快测</a></li>
+          <li><a href="#">完整转型报告</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>联系我们</h4>
+        <ul>
+          <li><a href="04-数智化自测.html#lead">预约演示</a></li>
+          <li><a href="#">400 电话（待定）</a></li>
+          <li><a href="#">北京 · 智途科技</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-btm">
+      <span>© 2026 北京智途科技有限公司</span>
+      <span>官网原型稿 · 仅用于设计评审</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

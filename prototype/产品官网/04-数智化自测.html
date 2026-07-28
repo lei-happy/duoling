@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>车队数智化水位快测 · 智途</title>
+<meta name="description" content="10 道题、2 分钟，测出你的车队在信息化、数字化、智能化、数智化的哪一档，以及接下来 90 天该先补什么。" />
+<link rel="stylesheet" href="assets/site.css" />
+<style>
+  /* 自测页专用：作答区与结果区 */
+  .check-layout {
+    display: grid;
+    grid-template-columns: 328px 1fr;
+    gap: 44px;
+    align-items: start;
+  }
+
+  .gauge {
+    position: sticky;
+    top: 92px;
+    max-height: calc(100vh - 112px);
+    overflow-y: auto;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .gauge-stage {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 4px 0 18px;
+  }
+
+  .gauge-score {
+    display: flex;
+    gap: 22px;
+    padding: 14px 0 18px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .gauge-score div {
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+
+  .gauge-score b {
+    display: block;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .gauge-score b i {
+    font-style: normal;
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+
+  .gauge .ladder {
+    margin: 26px 0 22px;
+  }
+
+  .dims {
+    display: grid;
+    gap: 14px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .dim-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 13px;
+    color: var(--ink-2);
+    margin-bottom: 6px;
+  }
+
+  .dim-top b {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    color: var(--ink);
+  }
+
+  .dim-top b i {
+    font-style: normal;
+    font-size: 11px;
+    color: var(--ink-3);
+  }
+
+  .dim-bar {
+    height: 5px;
+    border-radius: 3px;
+    background: var(--bg-2);
+    overflow: hidden;
+  }
+
+  .dim-bar i {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--tier-3);
+    transition: width 0.4s var(--ease);
+  }
+
+  .dim.is-weak .dim-bar i {
+    background: var(--accent);
+  }
+
+  .dim-flag {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--accent);
+  }
+
+  .gauge-actions {
+    margin-top: 22px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .gauge-actions .btn {
+    width: 100%;
+  }
+
+  /* 题目 */
+  .q-group + .q-group {
+    margin-top: 34px;
+  }
+
+  .q-group-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .q-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .q {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 20px 22px;
+    transition: border-color 0.25s, box-shadow 0.25s;
+  }
+
+  .q:hover {
+    border-color: #c6d5d2;
+  }
+
+  .q.is-missing {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(196, 92, 38, 0.12);
+  }
+
+  .q-head {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .q-no {
+    font-size: 12px;
+    color: var(--ink-3);
+    padding-top: 3px;
+    flex-shrink: 0;
+  }
+
+  .q-text {
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  .q-choices {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    padding-left: 34px;
+  }
+
+  .ch {
+    position: relative;
+    display: block;
+    cursor: pointer;
+  }
+
+  .ch input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .ch-box {
+    display: block;
+    padding: 9px 4px;
+    text-align: center;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: #fbfdfc;
+    font-size: 13px;
+    color: var(--ink-2);
+    transition: border-color 0.18s, background 0.18s, color 0.18s;
+  }
+
+  .ch-box b {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-3);
+    margin-bottom: 2px;
+  }
+
+  .ch:hover .ch-box {
+    border-color: var(--brand-mid);
+    background: var(--paper);
+  }
+
+  .ch input:checked + .ch-box {
+    border-color: var(--brand);
+    background: rgba(15, 76, 92, 0.07);
+    color: var(--brand);
+    font-weight: 600;
+  }
+
+  .ch input:checked + .ch-box b {
+    color: var(--brand);
+  }
+
+  .ch input:focus-visible + .ch-box {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* 结果 */
+  .result {
+    margin-top: 34px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--r-lg);
+    padding: 34px;
+    box-shadow: var(--shadow);
+  }
+
+  .rs-head .h-sec {
+    margin: 12px 0 10px;
+  }
+
+  .rs-meta {
+    font-size: 13px;
+    color: var(--ink-3);
+    margin-bottom: 12px;
+  }
+
+  .rs-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin: 30px 0;
+    padding-top: 26px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .rs-col-plan {
+    padding-left: 28px;
+    border-left: 1px solid var(--line-soft);
+  }
+
+  .rs-col .h-sub {
+    margin-bottom: 14px;
+  }
+
+  .rs-list {
+    counter-reset: rs;
+    display: grid;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .rs-list li {
+    position: relative;
+    padding-left: 28px;
+    font-size: 15px;
+    color: var(--ink-2);
+    line-height: 1.65;
+    counter-increment: rs;
+  }
+
+  .rs-list li::before {
+    content: counter(rs);
+    position: absolute;
+    left: 0;
+    top: 3px;
+    width: 19px;
+    height: 19px;
+    border-radius: 5px;
+    background: var(--bg-2);
+    color: var(--brand);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    display: grid;
+    place-items: center;
+  }
+
+  .rs-col-plan .rs-list li::before {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .rs-plan {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--brand);
+  }
+
+  .rs-plan i {
+    font-style: normal;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ink-3);
+  }
+
+  .rs-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  /* 留资 */
+  .lead {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 48px;
+    align-items: start;
+  }
+
+  .lead-form {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 30px;
+    box-shadow: var(--shadow);
+  }
+
+  .lead-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
+  }
+
+  .lead-echo {
+    display: block;
+    margin-bottom: 16px;
+    padding: 9px 12px;
+    border-radius: var(--r);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .lead-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 26px;
+  }
+
+  .lead-list li {
+    display: flex;
+    gap: 12px;
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+
+  .lead-list b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .lead-list .num {
+    color: var(--accent);
+    font-size: 13px;
+    padding-top: 3px;
+  }
+
+  @media (max-width: 1024px) {
+    .check-layout,
+    .lead {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+
+    .gauge {
+      position: static;
+      max-height: none;
+      overflow: visible;
+    }
+
+    .gauge .ladder {
+      max-width: 520px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .q-choices {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      padding-left: 0;
+    }
+
+    .ch-box {
+      padding: 8px 2px;
+      font-size: 11px;
+    }
+
+    .q {
+      padding: 18px 16px;
+    }
+
+    .rs-cols {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .rs-col-plan {
+      padding-left: 0;
+      border-left: 0;
+      padding-top: 24px;
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .result {
+      padding: 24px 20px;
+    }
+
+    .lead-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* 小屏：五档改成纵向，点击区域够大、文字不挤 */
+  @media (max-width: 480px) {
+    .q-choices {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .ch-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    .ch-box b {
+      margin-bottom: 0;
+      min-width: 14px;
+    }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="01-首页.html">
+      <span class="brand-mark">ZT</span>
+      智途
+      <span class="brand-sub">轿运车队数智化</span>
+    </a>
+    <nav class="nav-links" id="nav-links" aria-label="主导航">
+      <a href="02-数智化转型.html">数智化转型</a>
+      <a href="03-产品能力.html">产品能力</a>
+      <a href="05-价格方案.html">价格方案</a>
+      <a href="04-数智化自测.html" aria-current="page">免费自测</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="btn btn-line" href="#">登录</a>
+      <a class="btn btn-primary" href="#lead">预约演示</a>
+      <button class="nav-toggle" type="button" aria-controls="nav-links" aria-label="展开导航"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- Hero -->
+  <section class="band band-tight band-paper">
+    <div class="wrap">
+      <div class="sec-head" style="max-width:780px;margin-bottom:0">
+        <span class="eyebrow">10 题 · 约 2 分钟</span>
+        <h1 class="h-hero" style="font-size:clamp(30px,3.6vw,46px);margin:16px 0 16px">
+          你的车队，<span class="hl">卡在哪一层？</span>
+        </h1>
+        <p class="lede">
+          信息化、数字化、智能化、数智化不是四个价位的软件，而是四层能力。底座没打好就上 AI，钱多半花在演示上。
+          先花两分钟量一下水位，再决定接下来 90 天先补什么。
+        </p>
+        <p class="muted" style="margin-top:16px">
+          每题五档，按你车队的真实情况选。四个维度各自折算成 20 分，满分 80 分；
+          短板会封顶你的档位，所以总分高但某一维很弱，不会被判成高阶段。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 作答区 -->
+  <section class="band band-soft band-line" data-self-check>
+    <div class="wrap check-layout">
+
+      <!-- 记忆点：水位刻度尺 -->
+      <aside class="gauge" data-gauge data-stage="s1">
+        <span class="eyebrow">当前水位</span>
+        <p class="gauge-stage" data-gauge-stage>还没开始作答</p>
+
+        <div class="gauge-score">
+          <div>已答<b><span data-gauge-answered>0</span><i>/10</i></b></div>
+          <div>折算总分<b><span data-gauge-total>0</span><i>/80</i></b></div>
+        </div>
+
+        <div class="ladder">
+          <div class="ladder-track">
+            <span class="ladder-pointer" data-gauge-pointer hidden>L1</span>
+            <i class="ladder-seg" data-gauge-seg="1" data-tier="1"></i>
+            <i class="ladder-seg" data-gauge-seg="2" data-tier="1"></i>
+            <i class="ladder-seg" data-gauge-seg="3" data-tier="2"></i>
+            <i class="ladder-seg" data-gauge-seg="4" data-tier="2"></i>
+            <i class="ladder-seg" data-gauge-seg="5" data-tier="3"></i>
+            <i class="ladder-seg" data-gauge-seg="6" data-tier="3"></i>
+            <i class="ladder-seg" data-gauge-seg="7" data-tier="4"></i>
+            <i class="ladder-seg" data-gauge-seg="8" data-tier="4"></i>
+          </div>
+          <div class="ladder-scale">
+            <span><b>L1–L2</b>信息化</span>
+            <span><b>L3–L4</b>数字化</span>
+            <span><b>L5–L6</b>智能化</span>
+            <span><b>L7–L8</b>数智化</span>
+          </div>
+        </div>
+
+        <div class="dims" data-gauge-dims></div>
+
+        <div class="gauge-actions">
+          <button class="btn btn-primary" type="button" data-check-submit disabled>
+            查看结果（还剩 10 题）
+          </button>
+          <button class="btn btn-line" type="button" data-check-reset>清空重答</button>
+        </div>
+      </aside>
+
+      <!-- 题目 -->
+      <div>
+        <form data-check-form>
+          <div data-check-list></div>
+        </form>
+
+        <div class="result" data-check-result hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 留资 -->
+  <section class="band band-paper" id="lead">
+    <div class="wrap lead">
+      <div>
+        <span class="eyebrow">下一步</span>
+        <h2 class="h-sec" style="margin:14px 0 16px">要一份针对你车队的诊断，而不是一份通用报告</h2>
+        <p class="lede">
+          留下联系方式，顾问会带着完整版《车队数智化转型路径》和 20 题深度自检表联系你，
+          按你的车辆规模、线路结构和现有系统，给一份能落地的 90 天清单。
+        </p>
+        <ul class="lead-list">
+          <li><span class="num">01</span><span><b>先看现状</b>：现有系统盘点、系统外操作清单、数据口径问题。</span></li>
+          <li><span class="num">02</span><span><b>再定顺序</b>：按短板决定先补在线、补数据，还是补智能。</span></li>
+          <li><span class="num">03</span><span><b>最后算账</b>：每一项投入对应哪个经营指标，多久能验证。</span></li>
+        </ul>
+        <p class="muted" style="margin-top:26px">
+          想先自己读一遍？完整 20 题深度自检与四阶段辨析，见
+          <a class="btn-text" href="02-数智化转型.html">数智化转型 <span class="arrow">→</span></a>
+        </p>
+      </div>
+
+      <form class="lead-form" data-proto-form>
+        <span class="lead-echo" data-lead-stage-echo hidden></span>
+        <div class="lead-grid">
+          <label class="field"><span>企业名称</span>
+            <input class="input" type="text" placeholder="如：华东某轿运车队" required />
+          </label>
+          <label class="field"><span>联系人</span>
+            <input class="input" type="text" placeholder="您的称呼" required />
+          </label>
+          <label class="field"><span>手机号</span>
+            <input class="input" type="tel" placeholder="接收诊断结果" required />
+          </label>
+          <label class="field"><span>自有板车数量</span>
+            <select class="input">
+              <option>10 台以内</option>
+              <option>10–30 台</option>
+              <option selected>30–100 台</option>
+              <option>100 台以上</option>
+            </select>
+          </label>
+        </div>
+        <label class="field"><span>当前最头疼的一件事 <span class="hint">选填</span></span>
+          <input class="input" type="text" placeholder="如：外协运费对账每月要三个人算一周" />
+        </label>
+        <input type="hidden" data-lead-stage value="" />
+        <button class="btn btn-primary btn-lg" type="submit" style="width:100%">
+          获取我的诊断报告<span class="arrow">→</span>
+        </button>
+        <p class="form-note" data-proto-tip hidden></p>
+        <p class="form-note">我们只用这些信息联系你，不会对外提供。</p>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <div class="brand"><span class="brand-mark">ZT</span>智途</div>
+        <p class="foot-slogan">让每一公里都不白跑。智途为轿运车队提供从计划录入到结算回款的数智化经营系统。</p>
+      </div>
+      <div>
+        <h4>产品</h4>
+        <ul>
+          <li><a href="03-产品能力.html">产品能力</a></li>
+          <li><a href="05-价格方案.html">价格方案</a></li>
+          <li><a href="#">承运商轻量版</a></li>
+          <li><a href="#">驾驶员手机端</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>了解数智化</h4>
+        <ul>
+          <li><a href="02-数智化转型.html">四阶段辨析</a></li>
+          <li><a href="04-数智化自测.html">车队水位快测</a></li>
+          <li><a href="#">完整转型报告</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>联系我们</h4>
+        <ul>
+          <li><a href="#lead">预约演示</a></li>
+          <li><a href="#">400 电话（待定）</a></li>
+          <li><a href="#">北京 · 智途科技</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-btm">
+      <span>© 2026 北京智途科技有限公司</span>
+      <span>官网原型稿 · 仅用于设计评审</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/site.js"></script>
+<script src="assets/self-check.js"></script>
+</body>
+</html>

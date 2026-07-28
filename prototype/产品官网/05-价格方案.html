@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>价格方案 · 智途</title>
+<meta name="description" content="智途按基础服务费加资源包计价：基础版与旗舰版可月付、季付、年付；AI 用量与货源运力大厅的接单接货按资源包购买，旗舰版含初始额度。" />
+<link rel="stylesheet" href="assets/site.css" />
+<style>
+  /* 价格页专用 */
+  .model {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .model-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 26px 28px;
+    position: relative;
+  }
+
+  .model-card .num {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--ink-3);
+  }
+
+  .model-card h3 {
+    font-size: 20px;
+    margin: 10px 0 10px;
+  }
+
+  .model-card p {
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+
+  .model-card ul {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+
+  .model-card li {
+    display: flex;
+    gap: 8px;
+  }
+
+  .model-card li::before {
+    content: "·";
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* 版本卡 */
+  .plans-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+
+  .cycle-note {
+    font-size: 13px;
+    color: var(--ink-3);
+    margin-top: 8px;
+    text-align: right;
+  }
+
+  .plans {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .plan {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-xl);
+    padding: 34px;
+    position: relative;
+  }
+
+  .plan-pro {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), var(--shadow-lg);
+  }
+
+  .plan-flag {
+    position: absolute;
+    top: 0;
+    right: 28px;
+    transform: translateY(-50%);
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .plan-top {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .plan-top h3 {
+    font-size: 24px;
+  }
+
+  .plan-for {
+    margin: 10px 0 22px;
+    font-size: 15px;
+    color: var(--ink-2);
+    min-height: 46px;
+  }
+
+  .plan-price {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    padding-bottom: 8px;
+  }
+
+  .plan-price .cur {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .plan-price b {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 46px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .plan-price .per {
+    font-size: 15px;
+    color: var(--ink-3);
+  }
+
+  .plan-quota {
+    display: flex;
+    gap: 20px;
+    padding: 16px 0 22px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .plan-quota div {
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+
+  .plan-quota b {
+    display: block;
+    font-family: var(--mono);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .plan-inc {
+    display: grid;
+    gap: 11px;
+    margin-bottom: 26px;
+  }
+
+  .plan-inc li {
+    display: grid;
+    grid-template-columns: 18px 1fr;
+    gap: 10px;
+    font-size: 15px;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+
+  .plan-inc li > i {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--brand);
+    padding-top: 2px;
+  }
+
+  .plan-pro .plan-inc li > i {
+    color: var(--accent);
+  }
+
+  .plan-inc b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .plan-cta {
+    display: grid;
+    gap: 10px;
+  }
+
+  .plan-cta .btn {
+    width: 100%;
+  }
+
+  .plan-foot {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+
+  /* 资源包 */
+  .pack {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 24px;
+  }
+
+  .pack h3 {
+    font-size: 17px;
+    margin: 14px 0 8px;
+  }
+
+  .pack p {
+    font-size: 14px;
+    color: var(--ink-2);
+    margin-bottom: 14px;
+  }
+
+  .pack-price {
+    padding-top: 14px;
+    border-top: 1px solid var(--line-soft);
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+
+  .pack-unit {
+    display: block;
+    font-size: 13px;
+    color: var(--ink-3);
+    margin-top: 4px;
+  }
+
+  /* 其他版本说明 */
+  .other {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .other-card {
+    background: var(--bg);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--r-lg);
+    padding: 22px 24px;
+  }
+
+  .other-card h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .other-card p {
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+
+  @media (max-width: 1024px) {
+    .model,
+    .plans,
+    .other {
+      grid-template-columns: 1fr;
+    }
+
+    .cycle-note {
+      text-align: left;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .plan {
+      padding: 26px 22px;
+    }
+
+    .plan-for {
+      min-height: 0;
+    }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="01-首页.html">
+      <span class="brand-mark">ZT</span>
+      智途
+      <span class="brand-sub">轿运车队数智化</span>
+    </a>
+    <nav class="nav-links" id="nav-links" aria-label="主导航">
+      <a href="02-数智化转型.html">数智化转型</a>
+      <a href="03-产品能力.html">产品能力</a>
+      <a href="05-价格方案.html" aria-current="page">价格方案</a>
+      <a href="04-数智化自测.html">免费自测</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="btn btn-line" href="#">登录</a>
+      <a class="btn btn-primary" href="04-数智化自测.html#lead">预约演示</a>
+      <button class="nav-toggle" type="button" aria-controls="nav-links" aria-label="展开导航"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- Hero -->
+  <section class="band band-tight band-paper">
+    <div class="wrap">
+      <div class="sec-head" style="max-width:780px;margin-bottom:36px">
+        <span class="eyebrow">价格</span>
+        <h1 class="h-hero" style="font-size:clamp(30px,3.6vw,46px);margin:16px 0 18px">
+          基础服务费 + 资源包，<br /><span class="hl">用多少买多少</span>
+        </h1>
+        <p class="lede">
+          系统本身按版本和周期订阅，这部分是固定的。AI 用量、货源与运力大厅的接单接货按实际用量买资源包，
+          不用就不花钱。旗舰版自带一份初始额度。
+        </p>
+      </div>
+
+      <div class="model">
+        <div class="model-card reveal">
+          <span class="num">PART 01</span>
+          <h3>基础服务费</h3>
+          <p>按版本订阅，包含系统使用、账号数量、常规升级与在线支持。可月付、季付或年付。</p>
+          <ul>
+            <li>基础版：把计划到结算跑成在线闭环</li>
+            <li>旗舰版：再加 AI、全财务与深度分析</li>
+            <li>付费周期越长，单价越低</li>
+          </ul>
+        </div>
+        <div class="model-card reveal" data-delay="80">
+          <span class="num">PART 02</span>
+          <h3>资源包</h3>
+          <p>按用量计费的能力单独买，避免为不常用的功能付固定钱。</p>
+          <ul>
+            <li>AI 用量：录单识别、数据问答、智能配载调用</li>
+            <li>货源大厅接货、运力大厅接单</li>
+            <li>用完可续，剩余可结转（规则待定）</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 版本 -->
+  <section class="band band-soft band-line">
+    <div class="wrap">
+      <div class="plans-head">
+        <div class="sec-head reveal" style="margin-bottom:0">
+          <span class="eyebrow">选版本</span>
+          <h2 class="h-sec" style="margin-top:12px">两个版本，按车队规模和管理深度选</h2>
+        </div>
+        <div class="reveal">
+          <div class="tabs" data-cycle-switch role="tablist" aria-label="付费周期">
+            <button class="tab-btn" type="button" role="tab" data-cycle="month">月付</button>
+            <button class="tab-btn" type="button" role="tab" data-cycle="quarter">季付</button>
+            <button class="tab-btn" type="button" role="tab" data-cycle="year" aria-selected="true">年付</button>
+          </div>
+          <p class="cycle-note" data-cycle-note>年付约 8 折，相当于省 2 个多月</p>
+        </div>
+      </div>
+
+      <div class="plans">
+        <!-- 基础版 -->
+        <div class="plan reveal">
+          <div class="plan-top">
+            <h3>基础版</h3>
+            <span class="tag">10–100 台板车</span>
+          </div>
+          <p class="plan-for">先把业务搬上线、把账算清楚。适合还在用 Excel 和微信群管调度的车队。</p>
+
+          <div class="plan-price">
+            <span class="cur">￥</span>
+            <b class="pending" data-price data-price-month="349" data-price-quarter="899" data-price-year="2999">2,999</b>
+            <span class="per" data-period-label>/年</span>
+          </div>
+          <p class="muted" style="margin-bottom:0">价格示意，最终以商务报价为准</p>
+
+          <div class="plan-quota">
+            <div>账号数<b>20</b></div>
+            <div>车辆数<b>100</b></div>
+            <div>AI 额度<b>—</b></div>
+          </div>
+
+          <ul class="plan-inc">
+            <li><i>+</i><span><b>运营调度全流程</b>：计划、配载、调度、在途、回单签收</span></li>
+            <li><i>+</i><span><b>运力中心</b>：自有、承运商、社会运力与证照监控</span></li>
+            <li><i>+</i><span><b>客商中心</b>：客户、承运商、经销商门店与承运商互联</span></li>
+            <li><i>+</i><span><b>计费与应付结算</b>：运价合同、路线、费用单台账</span></li>
+            <li><i>+</i><span><b>审批中心</b>与操作留痕</span></li>
+            <li><i>+</i><span><b>经营驾驶舱</b>利润总览</span></li>
+            <li><i>+</i><span><b>服务平台</b>：大厅浏览、发布货源运力、在线成交</span></li>
+            <li><i>+</i><span><b>开放平台与 MCP 连接器</b>：系统对接与自有 AI 接入</span></li>
+          </ul>
+
+          <div class="plan-cta">
+            <a class="btn btn-line btn-lg" href="04-数智化自测.html#lead">申请试用</a>
+          </div>
+          <p class="plan-foot">超出账号或车辆数可按需扩容。</p>
+        </div>
+
+        <!-- 旗舰版 -->
+        <div class="plan plan-pro reveal" data-delay="100">
+          <span class="plan-flag">多数车队的选择</span>
+          <div class="plan-top">
+            <h3>旗舰版</h3>
+            <span class="tag tag-pro">100 台以上 / 多主体</span>
+          </div>
+          <p class="plan-for">在基础版之上，把 AI、全套财务和深度分析补齐，让经营节奏从月度变周度。</p>
+
+          <div class="plan-price">
+            <span class="cur">￥</span>
+            <b class="pending" data-price data-price-month="1099" data-price-quarter="2999" data-price-year="9999">9,999</b>
+            <span class="per" data-period-label>/年</span>
+          </div>
+          <p class="muted" style="margin-bottom:0">价格示意，最终以商务报价为准</p>
+
+          <div class="plan-quota">
+            <div>账号数<b>100</b></div>
+            <div>车辆数<b>500</b></div>
+            <div>AI 额度<b class="pending">含初始</b></div>
+          </div>
+
+          <ul class="plan-inc">
+            <li><i>✓</i><span>包含<b>基础版全部能力</b></span></li>
+            <li><i>+</i><span><b>AI 数字员工</b>：AI 录单员、AI 数据分析员</span></li>
+            <li><i>+</i><span><b>智能配载</b>：按车型板位推荐组合</span></li>
+            <li><i>+</i><span><b>成本政策与承运商运费引擎</b>：成本自动摊到每趟</span></li>
+            <li><i>+</i><span><b>财务全套</b>：应收、对账中心、发票、利润分析</span></li>
+            <li><i>+</i><span><b>数据洞察全套</b>：运营看板、数据报表、智能预测</span></li>
+            <li><i>+</i><span><b>主动联系同行</b>与服务大厅</span></li>
+            <li><i>+</i><span><b>车辆维保</b>台账与专属客户成功支持</span></li>
+          </ul>
+
+          <div class="plan-cta">
+            <a class="btn btn-primary btn-lg" href="04-数智化自测.html#lead">预约演示<span class="arrow">→</span></a>
+          </div>
+          <p class="plan-foot">不确定该选哪个？先做 <a class="btn-text" href="04-数智化自测.html">10 题水位快测</a>，按结果推荐。</p>
+        </div>
+      </div>
+
+      <div class="other" style="margin-top:24px">
+        <div class="other-card reveal">
+          <h3>你的承运商不用付费</h3>
+          <p>被你邀请的外协单位会开通一个免费的轻量版，用来管自己的车和司机、接你派的任务、传回单。账号与你互通。</p>
+        </div>
+        <div class="other-card reveal" data-delay="60">
+          <h3>只想管车管证照？</h3>
+          <p>我们还有一个更轻的运力管理产品，只做运力建档与资质到期监控，可以先用它起步，之后再升级到完整系统。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 资源包 -->
+  <section class="band band-paper">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">按用量购买</span>
+        <h2 class="h-sec" style="margin:14px 0 14px">三类资源包</h2>
+        <p class="lede">这些能力的成本随用量变化，所以单独计费。旗舰版会先给一份初始额度，用完再买。</p>
+      </div>
+
+      <div class="grid g-3">
+        <div class="pack reveal">
+          <div class="ico ico-accent">
+            <svg viewBox="0 0 24 24"><path d="M12 4l1.7 4L18 9.7l-4.3 1.7L12 16l-1.7-4.6L6 9.7 10.3 8z" /></svg>
+          </div>
+          <h3>AI 用量包</h3>
+          <p>AI 录单员识别 Excel 与运单照片、数据分析员问答、智能配载调用，都从这份额度里扣。</p>
+          <div class="pack-price">
+            <span class="pending">价格待定</span>
+            <span class="pack-unit">计量单位：按识别单据数 / 问答次数（待确认）</span>
+          </div>
+        </div>
+
+        <div class="pack reveal" data-delay="60">
+          <div class="ico">
+            <svg viewBox="0 0 24 24"><path d="M3 10.5L12 4l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9.5 20v-5h5v5" /></svg>
+          </div>
+          <h3>货源大厅接货包</h3>
+          <p>空板返程时去货源大厅接同行的货，按成功接单的次数扣额度。</p>
+          <div class="pack-price">
+            <span class="pending">价格待定</span>
+            <span class="pack-unit">计量单位：按成交单量（待确认）</span>
+          </div>
+        </div>
+
+        <div class="pack reveal" data-delay="120">
+          <div class="ico">
+            <svg viewBox="0 0 24 24"><rect x="3" y="7" width="13" height="9" rx="2" /><path d="M16 10h3l2 3v3h-5z" /><circle cx="7" cy="18" r="1.6" /><circle cx="17" cy="18" r="1.6" /></svg>
+          </div>
+          <h3>运力大厅接单包</h3>
+          <p>旺季自有车不够时，从运力大厅找同行的车，按成功派出的任务扣额度。</p>
+          <div class="pack-price">
+            <span class="pending">价格待定</span>
+            <span class="pack-unit">计量单位：按成交任务数（待确认）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 对比表 -->
+  <section class="band band-soft band-line">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">版本对比</span>
+        <h2 class="h-sec" style="margin:14px 0 14px">两个版本的差别，主要在算钱和用 AI</h2>
+        <p class="lede">按模块列，不逐条罗列功能点。完整功能清单可以让顾问发你一份。</p>
+      </div>
+
+      <div class="table-scroll reveal">
+        <table class="ctable">
+          <thead>
+            <tr>
+              <th>模块</th>
+              <th class="cell-c">基础版</th>
+              <th class="cell-c col-pro">旗舰版</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-label"><b>适用规模</b><span>账号数 / 车辆数</span></td>
+              <td class="cell-c num">20 / 100</td>
+              <td class="cell-c col-pro num">100 / 500</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>运营调度</b><span>计划、配载、调度、在途、回单</span></td>
+              <td class="cell-c mark-y">全部</td>
+              <td class="cell-c col-pro mark-pro">全部</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>智能配载</b><span>按车型板位推荐组合</span></td>
+              <td class="cell-c mark-n">—</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>运力中心</b><span>自有、承运商、社会运力、证照监控</span></td>
+              <td class="cell-c mark-y">全部</td>
+              <td class="cell-c col-pro mark-pro">全部 + 车辆维保</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>客商与承运商互联</b><span>邀请开户、账号互通</span></td>
+              <td class="cell-c mark-y">✓</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>计费中心</b><span>运价合同、路线管理</span></td>
+              <td class="cell-c mark-y">✓</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>成本政策与承运商运费引擎</b><span>成本自动摊到每趟</span></td>
+              <td class="cell-c mark-n">—</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>应付结算</b><span>费用工作台、费用单台账</span></td>
+              <td class="cell-c mark-y">✓</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>应收、对账、发票、利润分析</b><span>收得回来、算得清楚</span></td>
+              <td class="cell-c mark-n">—</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>经营驾驶舱</b><span>利润总览</span></td>
+              <td class="cell-c mark-y">✓</td>
+              <td class="cell-c col-pro mark-pro">✓ 含计划总览</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>运营看板、数据报表、智能预测</b><span>分岗位看数与预判</span></td>
+              <td class="cell-c mark-n">—</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>AI 数字员工</b><span>AI 录单员、AI 数据分析员</span></td>
+              <td class="cell-c mark-n">—</td>
+              <td class="cell-c col-pro mark-pro">✓ 含初始额度</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>服务平台</b><span>货源与运力大厅</span></td>
+              <td class="cell-c mark-y">浏览、发布、成交</td>
+              <td class="cell-c col-pro mark-pro">再加主动联系同行</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>开放平台与 MCP 连接器</b><span>系统对接 + 你自己的 AI 接入</span></td>
+              <td class="cell-c mark-y">✓ 全版本可用</td>
+              <td class="cell-c col-pro mark-pro">✓ 全版本可用</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>服务与支持</b><span>上线陪跑与响应</span></td>
+              <td class="cell-c">在线支持</td>
+              <td class="cell-c col-pro mark-pro">专属客户成功</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="band band-paper">
+    <div class="wrap wrap-narrow">
+      <div class="sec-head reveal" style="margin-bottom:28px">
+        <span class="eyebrow">常见问题</span>
+        <h2 class="h-sec" style="margin-top:12px">关于价格，你可能想问</h2>
+      </div>
+
+      <div class="faq reveal">
+        <details class="faq-item">
+          <summary>可以先试用再决定吗？</summary>
+          <div class="faq-body">
+            可以。我们会用你自己的线路、运价和真实单据配一个试用环境，跑一遍从建计划到出利润的完整流程，
+            确认好用再谈订阅。
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>基础版和旗舰版怎么选？</summary>
+          <div class="faq-body">
+            简单判断：如果现在的主要痛点是「单据不在线、回单收不齐」，基础版够用；
+            如果痛点是「成本算不清、对账要一周、想让 AI 分担录单和取数」，直接上旗舰版更划算。
+            不确定的话，先做 10 题水位快测，结果页会按你的短板给建议。
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>资源包怎么计费，不买会影响正常业务吗？</summary>
+          <div class="faq-body">
+            不影响。计划、调度、回单、结算这些主流程都在基础服务费里，不消耗资源包。
+            只有 AI 识别与问答、在大厅接货接单这类按量产生成本的动作才扣额度，
+            额度用完会提前提醒，不会中断在跑的业务。
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>用我们自己的 AI 通过 MCP 连进来，算不算 AI 用量？</summary>
+          <div class="faq-body">
+            不算。AI 用量包只对系统内置的 AI 数字员工计费。
+            通过 MCP 连接器接入的是你自己的 AI 工具，算力由你那边承担，我们只提供数据通道和授权控制，
+            开放平台在所有版本里都可以用。
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>我的承运商也要买账号吗？</summary>
+          <div class="faq-body">
+            不用。你邀请的承运商会免费开通轻量版，用来管自己的车和司机、接任务、传回单，
+            双方账号互通。这样外协协同才能真的搬到线上。
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>中途可以升级吗？会不会重新开始算钱？</summary>
+          <div class="faq-body">
+            可以随时从基础版升到旗舰版，差价按剩余时长折算，数据和配置全部保留，不需要重新导入。
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>数据安全和归属怎么保证？</summary>
+          <div class="faq-body">
+            数据归你所有，按经营主体和角色分权，关键操作全部留痕可审计。
+            需要时可以导出完整业务数据，不做数据锁定。
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="band band-tight band-deep">
+    <div class="wrap" style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between">
+      <div>
+        <h2 class="h-sec" style="font-size:26px">给你算一份具体的账</h2>
+        <p class="lede" style="margin-top:10px">按你的车辆数、线路数和现有人手，我们算清一年省多少人工、多看清多少利润。</p>
+      </div>
+      <div class="btn-row">
+        <a class="btn btn-primary btn-lg" href="04-数智化自测.html#lead">找顾问算一算<span class="arrow">→</span></a>
+        <a class="btn btn-line btn-lg" href="04-数智化自测.html">先做 10 题快测</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <div class="brand"><span class="brand-mark">ZT</span>智途</div>
+        <p class="foot-slogan">让每一公里都不白跑。智途为轿运车队提供从计划录入到结算回款的数智化经营系统。</p>
+      </div>
+      <div>
+        <h4>产品</h4>
+        <ul>
+          <li><a href="03-产品能力.html">产品能力</a></li>
+          <li><a href="05-价格方案.html">价格方案</a></li>
+          <li><a href="#">承运商轻量版</a></li>
+          <li><a href="#">驾驶员手机端</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>了解数智化</h4>
+        <ul>
+          <li><a href="02-数智化转型.html">四阶段辨析</a></li>
+          <li><a href="04-数智化自测.html">车队水位快测</a></li>
+          <li><a href="#">完整转型报告</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>联系我们</h4>
+        <ul>
+          <li><a href="04-数智化自测.html#lead">预约演示</a></li>
+          <li><a href="#">400 电话（待定）</a></li>
+          <li><a href="#">北京 · 智途科技</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-btm">
+      <span>© 2026 北京智途科技有限公司</span>
+      <span>官网原型稿 · 价格为示意，待商务确认</span>
+    </div>
+  </div>
+</footer>
+
+<div class="proto-note">
+  <b>原型说明</b><br />
+  带虚线下划线的数字均为占位：基础服务费按后台版本配置的年价示意，资源包单价待定。
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

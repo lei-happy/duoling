@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>智途 · 轿运车队的数智化经营系统</title>
+<meta name="description" content="智途把轿运车队的计划、配载、调度、回单、对账、结算装进一条在线链路，让每台车、每条线、每个客户的利润随时算得清。" />
+<link rel="stylesheet" href="assets/site.css" />
+<style>
+  /* 首页专用 */
+  .hero {
+    padding: 92px 0 100px;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 60px;
+    align-items: center;
+  }
+
+  .hero h1 {
+    margin: 20px 0 22px;
+  }
+
+  .hero .lede {
+    color: rgba(244, 248, 247, 0.74);
+    max-width: 520px;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 32px 0 26px;
+  }
+
+  .hero-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 26px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line-dark);
+    font-size: 14px;
+    color: rgba(244, 248, 247, 0.6);
+  }
+
+  .hero-foot span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hero-foot span::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #e8a173;
+  }
+
+  /* 痛点清单：像一本翻开的台账 */
+  .pains {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 56px;
+    align-items: start;
+  }
+
+  .pain-list {
+    border-top: 1px solid var(--line);
+  }
+
+  .pain-list li {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 16px;
+    padding: 20px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .pain-list .num {
+    font-size: 12px;
+    color: var(--ink-3);
+    padding-top: 4px;
+  }
+
+  .pain-list b {
+    display: block;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    margin-bottom: 5px;
+  }
+
+  .pain-list p {
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+
+  /* 演进与自测钩子 */
+  .stage-hook {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 56px;
+    align-items: center;
+    margin-bottom: 44px;
+  }
+
+  .hook-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 30px 30px 26px;
+    box-shadow: var(--shadow);
+  }
+
+  .hook-card .ladder {
+    margin: 26px 0 20px;
+  }
+
+  .hook-note {
+    font-size: 13px;
+    color: var(--ink-3);
+    padding-top: 18px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  /* 亮点 */
+  .feats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .feat-lead {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .feat-lead .mock {
+    box-shadow: var(--shadow);
+  }
+
+  .feat-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  /* 开放平台 / MCP */
+  .mcp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+
+  .mcp-points {
+    display: grid;
+    gap: 18px;
+    margin-top: 26px;
+  }
+
+  .mcp-points li {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 14px;
+  }
+
+  .mcp-points .num {
+    font-size: 12px;
+    color: var(--accent);
+    padding-top: 3px;
+  }
+
+  .mcp-points b {
+    display: block;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+
+  .mcp-points p {
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+
+  /* 成效 */
+  .metric-note {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+
+  /* 定价预览 */
+  .plans-mini {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .plan-mini {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 28px;
+  }
+
+  .plan-mini.is-pro {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+  }
+
+  .plan-mini-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .plan-mini h3 {
+    font-size: 20px;
+  }
+
+  .plan-mini .price {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+    margin: 14px 0 18px;
+  }
+
+  .plan-mini .price b {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
+
+  .plan-mini .price span {
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+
+  .plan-mini ul {
+    display: grid;
+    gap: 9px;
+    margin-bottom: 22px;
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+
+  .plan-mini li {
+    display: flex;
+    gap: 9px;
+  }
+
+  .plan-mini li::before {
+    content: "—";
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding-top: 3px;
+  }
+
+  .plan-mini.is-pro li::before {
+    content: "+";
+    color: var(--accent);
+  }
+
+  .cta-final {
+    text-align: center;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .cta-final .btn-row {
+    justify-content: center;
+    margin-top: 28px;
+  }
+
+  @media (max-width: 1024px) {
+    .hero {
+      padding: 64px 0 72px;
+    }
+
+    .hero-grid,
+    .pains,
+    .stage-hook,
+    .mcp-grid,
+    .feat-lead {
+      grid-template-columns: 1fr;
+      gap: 36px;
+    }
+
+    .feats,
+    .plans-mini {
+      grid-template-columns: 1fr;
+    }
+
+    .feat-lead {
+      grid-column: span 1;
+    }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="01-首页.html">
+      <span class="brand-mark">ZT</span>
+      智途
+      <span class="brand-sub">轿运车队数智化</span>
+    </a>
+    <nav class="nav-links" id="nav-links" aria-label="主导航">
+      <a href="02-数智化转型.html">数智化转型</a>
+      <a href="03-产品能力.html">产品能力</a>
+      <a href="05-价格方案.html">价格方案</a>
+      <a href="04-数智化自测.html">免费自测</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="btn btn-line" href="#">登录</a>
+      <a class="btn btn-primary" href="#cta">预约演示</a>
+      <button class="nav-toggle" type="button" aria-controls="nav-links" aria-label="展开导航"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- Hero -->
+  <section class="band-deep hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">轿运车队 · 数智化经营系统</span>
+        <h1 class="h-hero">
+          车队的利润，<br />不该等到月底才知道
+        </h1>
+        <p class="lede">
+          智途把商品车运输的计划、配载、调度、回单、对账、结算装进一条在线链路。
+          每台车、每条线、每个客户赚没赚，随时算得出来 —— 这也是车队从信息化走向数智化最实的一步。
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary btn-lg" href="#cta">预约演示<span class="arrow">→</span></a>
+          <a class="btn btn-line btn-lg" href="04-数智化自测.html">2 分钟测我的数智化水位</a>
+        </div>
+        <div class="hero-foot">
+          <span>专为商品车整车运输设计</span>
+          <span>承运商受邀免费开通</span>
+          <span>司机手机端现场作业</span>
+          <span>支持你的 AI 工具直连</span>
+        </div>
+      </div>
+
+      <!-- 首屏视觉：一张真实的经营驾驶舱切片，而不是抽象插画 -->
+      <div class="mock" aria-hidden="true">
+        <div class="mock-bar">
+          <i></i><i></i><i></i><b>经营驾驶舱 / 本月</b>
+        </div>
+        <div class="mock-body">
+          <div class="mock-kpis">
+            <div class="mock-kpi"><span>运输收入</span><b>486.2万</b></div>
+            <div class="mock-kpi"><span>单车日均利润</span><b class="up">1,240</b></div>
+            <div class="mock-kpi"><span>亏损线路</span><b class="down">3 条</b></div>
+          </div>
+          <div class="mock-flow">
+            <span class="mock-node is-done">计划</span>
+            <span class="mock-node is-done">配载</span>
+            <span class="mock-node is-done">派车</span>
+            <span class="mock-node is-live">在途 42</span>
+            <span class="mock-node">回单</span>
+            <span class="mock-node">对账</span>
+            <span class="mock-node">结算</span>
+          </div>
+          <div class="mock-rows">
+            <div class="mock-row is-head"><span>线路</span><span>趟次</span><span>单趟毛利</span><span>状态</span></div>
+            <div class="mock-row"><span>上海 → 郑州</span><span class="num">38</span><span class="num">￥2,180</span><span class="tag tag-brand">优</span></div>
+            <div class="mock-row"><span>广州 → 长沙</span><span class="num">26</span><span class="num">￥940</span><span class="tag">偏低</span></div>
+            <div class="mock-row"><span>成都 → 西安</span><span class="num">17</span><span class="num">-￥310</span><span class="tag tag-pro">亏损</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 痛点 -->
+  <section class="band band-paper">
+    <div class="wrap pains">
+      <div class="sec-head reveal" style="margin-bottom:0">
+        <span class="eyebrow">车队的日常</span>
+        <h2 class="h-sec">这些事，多数车队每天都在重复</h2>
+        <p class="lede">
+          它们看起来是效率问题，实际上都是同一个问题：业务没有真正在线，数据也就不可能算得准。
+        </p>
+      </div>
+
+      <ul class="pain-list reveal" data-delay="120">
+        <li>
+          <span class="num">01</span>
+          <div>
+            <b>计划在微信，台账在 Excel</b>
+            <p>客户的运输需求发在群里，调度誊到表格，改一次要同步三个地方。</p>
+          </div>
+        </li>
+        <li>
+          <span class="num">02</span>
+          <div>
+            <b>回单靠拍照，齐不齐没人说得清</b>
+            <p>司机把回单发到群里，内勤回场统一补录，结算前才发现少了七八张。</p>
+          </div>
+        </li>
+        <li>
+          <span class="num">03</span>
+          <div>
+            <b>外协运费每月要算一周</b>
+            <p>承运商报的数和自己的记录对不上，扣款、押金、亏舱各算一套，扯皮到月中。</p>
+          </div>
+        </li>
+        <li>
+          <span class="num">04</span>
+          <div>
+            <b>亏损线路一直在跑</b>
+            <p>看着忙、看着有量，摊完油费路桥人工才发现每趟都在贴钱，但没有数据不敢停。</p>
+          </div>
+        </li>
+        <li>
+          <span class="num">05</span>
+          <div>
+            <b>旺季找不到车，淡季车找不到货</b>
+            <p>临时找运力只能打电话问同行，价格随行就市，成本控不住。</p>
+          </div>
+        </li>
+        <li>
+          <span class="num">06</span>
+          <div>
+            <b>老板看到的数，永远是上个月的</b>
+            <p>报表要人做，口径还常常不一致，决策只能靠经验和感觉。</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 数智化演进 + 自测钩子 -->
+  <section class="band band-soft band-line">
+    <div class="wrap">
+      <div class="stage-hook">
+        <div class="reveal">
+          <span class="eyebrow">先搞清概念，再花钱</span>
+          <h2 class="h-sec" style="margin:14px 0 18px">
+            信息化、数字化、智能化、数智化，<br />不是四个价位的软件
+          </h2>
+          <p class="lede">
+            它们是四层能力：先把业务装进系统，再让业务变成数据，然后让机器形成判断，最后把数据和智能嵌进经营。
+            底座没打好就上 AI，钱多半花在演示上。
+          </p>
+          <p class="lede" style="margin-top:16px">
+            所以我们不劝你一次买全，而是先帮你量清水位，再决定这 90 天该补哪一层。
+          </p>
+          <div class="btn-row" style="margin-top:26px">
+            <a class="btn btn-dark" href="04-数智化自测.html">开始 10 题快测<span class="arrow">→</span></a>
+            <a class="btn btn-text" href="02-数智化转型.html">读懂四个阶段的区别</a>
+          </div>
+        </div>
+
+        <div class="hook-card reveal" data-delay="140">
+          <span class="eyebrow">水位刻度</span>
+          <p style="font-size:17px;font-weight:600;margin-top:10px">从 L1 到 L8，你的车队在第几格？</p>
+          <div class="ladder">
+            <div class="ladder-track">
+              <span class="ladder-pointer" style="--pos:31.25%">多数车队</span>
+              <i class="ladder-seg is-on" data-tier="1"></i>
+              <i class="ladder-seg is-on" data-tier="1"></i>
+              <i class="ladder-seg is-on is-current" data-tier="2"></i>
+              <i class="ladder-seg" data-tier="2"></i>
+              <i class="ladder-seg" data-tier="3"></i>
+              <i class="ladder-seg" data-tier="3"></i>
+              <i class="ladder-seg" data-tier="4"></i>
+              <i class="ladder-seg" data-tier="4"></i>
+            </div>
+            <div class="ladder-scale">
+              <span><b>L1–L2</b>信息化</span>
+              <span><b>L3–L4</b>数字化</span>
+              <span><b>L5–L6</b>智能化</span>
+              <span><b>L7–L8</b>数智化</span>
+            </div>
+          </div>
+          <p class="hook-note">
+            我们接触过的轿运车队，多数自评落在 L2–L4：系统买了，但对账、成本、利润仍要人工拼。
+            短板会封顶档位，所以某一维很弱时，总分再高也上不去。
+          </p>
+        </div>
+      </div>
+
+      <div class="chain reveal" data-delay="80">
+        <div class="chain-step" data-tier="1">
+          <span class="num">STEP 01</span>
+          <h3>装进系统</h3>
+          <p>计划、派车、回单不再靠群聊和表格，节点有时间也有责任人。</p>
+        </div>
+        <div class="chain-step" data-tier="2">
+          <span class="num">STEP 02</span>
+          <h3>变成数据</h3>
+          <p>收入与成本自动归到单车、单线路、单客户，全公司一套口径。</p>
+        </div>
+        <div class="chain-step" data-tier="3">
+          <span class="num">STEP 03</span>
+          <h3>形成判断</h3>
+          <p>配载推荐、异常预警、运费校验由系统先算一遍，人只做决定。</p>
+        </div>
+        <div class="chain-step" data-tier="4">
+          <span class="num">STEP 04</span>
+          <h3>嵌入经营</h3>
+          <p>预警变任务、任务有结果、结果改回规则，形成持续循环。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 六大亮点 -->
+  <section class="band band-paper">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">产品亮点</span>
+        <h2 class="h-sec">智途在车队里，具体解决什么</h2>
+        <p class="lede">不做功能堆叠。下面每一项都对应一段真实存在的浪费。</p>
+      </div>
+
+      <div class="feats">
+
+        <!-- 主亮点 -->
+        <article class="card feat-lead reveal">
+          <div>
+            <div class="ico ico-accent">
+              <svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h16M4 18h7" /><circle cx="19" cy="6" r="2" /><circle cx="14" cy="18" r="2" /></svg>
+            </div>
+            <h3 class="h-card">一张单子，从录入到收款不落地</h3>
+            <p>
+              客户需求进来就建计划，配载成任务单、派给车和司机，在途可查、回单在线签收，
+              然后直接进对账和结算。中间不再落到 Excel，也不需要谁在群里催。
+            </p>
+            <div class="feat-tags">
+              <span class="tag">计划中心</span>
+              <span class="tag">配载建单</span>
+              <span class="tag">调度工作台</span>
+              <span class="tag">回单签收</span>
+              <span class="tag">对账中心</span>
+              <span class="tag">发票管理</span>
+            </div>
+          </div>
+          <div class="mock" aria-hidden="true">
+            <div class="mock-bar"><i></i><i></i><i></i><b>任务单 ZT-24081207 / 上海 → 郑州</b></div>
+            <div class="mock-body">
+              <div class="mock-flow">
+                <span class="mock-node is-done">建计划</span>
+                <span class="mock-node is-done">配载</span>
+                <span class="mock-node is-done">派车</span>
+                <span class="mock-node is-live">在途</span>
+                <span class="mock-node">签收</span>
+                <span class="mock-node">结算</span>
+              </div>
+              <div class="mock-rows">
+                <div class="mock-row is-head"><span>节点</span><span>操作人</span><span>时间</span><span>凭证</span></div>
+                <div class="mock-row"><span>装车完成</span><span>王强（车队长）</span><span class="num">08-12 09:24</span><span class="tag tag-brand">6 张</span></div>
+                <div class="mock-row"><span>到货签收</span><span>李师傅（司机）</span><span class="num">08-13 15:07</span><span class="tag tag-brand">已上传</span></div>
+                <div class="mock-row"><span>运费确认</span><span>财务 · 待确认</span><span class="num">—</span><span class="tag">待处理</span></div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card card-lift reveal" data-delay="60">
+          <div class="ico">
+            <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16" /><path d="M7 15l4-5 3 3 5-7" /></svg>
+          </div>
+          <h3 class="h-card">利润不是月底才知道</h3>
+          <p>
+            运价合同自动取价，成本政策把油费、路桥、外协、人工按规则摊到每一趟。
+            单车、单线路、单客户的毛利随时能看，报价前就知道这单该不该接。
+          </p>
+          <div class="feat-tags">
+            <span class="tag">运价合同</span>
+            <span class="tag">成本政策</span>
+            <span class="tag">利润分析</span>
+          </div>
+        </article>
+
+        <article class="card card-lift reveal" data-delay="120">
+          <div class="ico">
+            <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3" /><circle cx="17" cy="10" r="2.4" /><path d="M3 20c0-3 2.2-5 5-5s5 2 5 5" /><path d="M14 20c0-2.2 1.4-3.6 3-3.6S20 17.8 20 20" /></svg>
+          </div>
+          <h3 class="h-card">五个角色都在线，流程不断点</h3>
+          <p>
+            司机在手机上接任务、拍回单、报异常；调度配载派车；车队长审批；财务对账开票；老板看驾驶舱。
+            同一套数据，谁卡住了一眼看得出来。
+          </p>
+          <div class="feat-tags">
+            <span class="tag">驾驶员手机端</span>
+            <span class="tag">审批中心</span>
+            <span class="tag">经营驾驶舱</span>
+          </div>
+        </article>
+
+        <article class="card card-lift reveal" data-delay="60">
+          <div class="ico">
+            <svg viewBox="0 0 24 24"><circle cx="6.5" cy="12" r="3" /><circle cx="17.5" cy="12" r="3" /><path d="M9.5 12h5" /><path d="M6.5 5.5V9M17.5 15v3.5" /></svg>
+          </div>
+          <h3 class="h-card">承运商邀请一下就能协同</h3>
+          <p>
+            发个邀请，外协单位免费开通轻量版，账号互通。派给他的任务、他的车和司机、回单与运费，
+            都在线上流转，不用再一遍遍转发和口头确认。
+          </p>
+          <div class="feat-tags">
+            <span class="tag">承运商管理</span>
+            <span class="tag">互联客户</span>
+            <span class="tag">承运商运费</span>
+          </div>
+        </article>
+
+        <article class="card card-lift reveal" data-delay="120">
+          <div class="ico ico-accent">
+            <svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z" /><path d="M17.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" /></svg>
+          </div>
+          <h3 class="h-card">AI 数字员工替人干重复活</h3>
+          <p>
+            录单员读客户发来的 Excel 和运单照片，直接生成运输计划；
+            数据分析员听得懂“上月哪条线亏得最多”，当场把数摆出来。
+          </p>
+          <div class="feat-tags">
+            <span class="tag tag-pro">旗舰版</span>
+            <span class="tag">AI 录单员</span>
+            <span class="tag">AI 数据分析员</span>
+            <span class="tag">智能配载</span>
+          </div>
+        </article>
+
+        <article class="card card-lift reveal" data-delay="60">
+          <div class="ico">
+            <svg viewBox="0 0 24 24"><path d="M3 10.5L12 4l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9.5 20v-5h5v5" /></svg>
+          </div>
+          <h3 class="h-card">货源大厅、运力大厅，资源可控</h3>
+          <p>
+            缺车的时候在运力大厅找同行，空板的时候去货源大厅接货。
+            成交、评价、合作记录都留在系统里，慢慢沉淀成自己能调得动的运力池。
+          </p>
+          <div class="feat-tags">
+            <span class="tag">货源大厅</span>
+            <span class="tag">运力大厅</span>
+            <span class="tag">我的合作</span>
+          </div>
+        </article>
+
+        <article class="card card-lift reveal" data-delay="120">
+          <div class="ico">
+            <svg viewBox="0 0 24 24"><path d="M12 4v3M12 17v3M4 12h3M17 12h3" /><circle cx="12" cy="12" r="4.2" /><path d="M6.4 6.4l1.9 1.9M15.7 15.7l1.9 1.9" /></svg>
+          </div>
+          <h3 class="h-card">该提醒的事，不靠人记</h3>
+          <p>
+            证照到期、运费异常、回单超期、亏损线路，系统先发现再提醒，
+            并能派成待办跟到底。旺季前还能预测缺多少车，提前筹备。
+          </p>
+          <div class="feat-tags">
+            <span class="tag">证照监控</span>
+            <span class="tag">运营看板</span>
+            <span class="tag tag-pro">智能预测</span>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 开放平台 / MCP -->
+  <section class="band band-soft band-line">
+    <div class="wrap mcp-grid">
+      <div class="reveal">
+        <span class="eyebrow">面向 AI 时代的开放能力</span>
+        <h2 class="h-sec" style="margin:14px 0 18px">
+          你自己的 AI，<br />也能直接连进系统
+        </h2>
+        <p class="lede">
+          系统里有我们内置的 AI 数字员工。但如果你的团队已经在用别的 AI 工具，
+          不必再等我们做功能：开放平台会生成一段 MCP 连接配置，复制粘贴进去，
+          AI 就能按你授权的范围读到系统里的客户、车辆和运单。
+        </p>
+        <ul class="mcp-points">
+          <li>
+            <span class="num">01</span>
+            <div>
+              <b>复制一段配置就连上</b>
+              <p>生成连接地址与访问 Token，粘进支持远程 MCP 的 AI 工具即可，不需要写代码、不需要导表。</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">02</span>
+            <div>
+              <b>能给它看什么，你说了算</b>
+              <p>按应用、按连接分别勾选能力，当前开放的都是只读查询，联系电话这类敏感字段自动打码。</p>
+            </div>
+          </li>
+          <li>
+            <span class="num">03</span>
+            <div>
+              <b>每一次调用都留痕</b>
+              <p>哪个 AI、什么时候、查了什么、耗时多少，调用记录里查得到，还能按连接限流。</p>
+            </div>
+          </li>
+        </ul>
+        <div class="btn-row" style="margin-top:26px">
+          <a class="btn btn-dark" href="03-产品能力.html">看开放平台怎么接<span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="reveal" data-delay="120">
+        <div class="codecard">
+          <div class="codecard-bar">
+            <i style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.18)"></i>
+            <b>MCP 连接配置 / 一键复制</b>
+            <button class="codecard-copy" type="button">复制配置</button>
+          </div>
+          <pre aria-label="MCP 连接配置示例">{
+  <span class="ck">"mcpServers"</span>: {
+    <span class="ck">"智途运输助手"</span>: {
+      <span class="ck">"url"</span>: <span class="cs">"https://api.zhitu.me/mcp/7f3a9c2e1b4d"</span>,
+      <span class="ck">"headers"</span>: {
+        <span class="ck">"Authorization"</span>: <span class="cs">"Bearer mcp_····.mcpt_········"</span>
+      }
+    }
+  }
+}
+<span class="cp">// Token 仅在创建时展示一次，遗失后重新生成即可</span></pre>
+          <div class="codecard-foot">
+            <span class="lbl">这条连接被授权的能力</span>
+            <span class="tag tag-ro">连接自检</span>
+            <span class="tag tag-ro">查询客户</span>
+            <span class="tag tag-ro">查询车辆</span>
+            <span class="tag tag-ro">查询运单</span>
+            <span class="tag">只读</span>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:14px">
+          同一套能力目录也提供标准 REST 接口，用于和主机厂 DMS、客户 TMS 做系统级对接。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 补充能力 -->
+  <section class="band band-tight band-paper">
+    <div class="wrap">
+      <div class="sec-head reveal" style="margin-bottom:28px">
+        <h2 class="h-sec" style="font-size:24px">还有这些，扩张的时候你会用到</h2>
+      </div>
+      <div class="grid g-4">
+        <div class="card card-soft reveal">
+          <h3 class="h-sub">多经营主体与数据权限</h3>
+          <p class="muted">按主体、组织、角色分权，分公司之间数据不串。</p>
+        </div>
+        <div class="card card-soft reveal" data-delay="60">
+          <h3 class="h-sub">标准接口对接主机厂</h3>
+          <p class="muted">与客户的 DMS、TMS 打通，运输指令自动进单，不用人工转录。</p>
+        </div>
+        <div class="card card-soft reveal" data-delay="120">
+          <h3 class="h-sub">车辆维保与合规台账</h3>
+          <p class="muted">维保记录、证照资质集中管理，到期自动提醒。</p>
+        </div>
+        <div class="card card-soft reveal" data-delay="180">
+          <h3 class="h-sub">操作留痕与登录审计</h3>
+          <p class="muted">谁改了运费、谁确认了到货，全部可追溯。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 成效 -->
+  <section class="band band-tight band-paper band-line">
+    <div class="wrap">
+      <div class="sec-head reveal" style="margin-bottom:28px">
+        <span class="eyebrow">上线之后</span>
+        <h2 class="h-sec" style="font-size:26px;margin-top:12px">变化通常先出现在这四个地方</h2>
+      </div>
+      <div class="stat-row reveal">
+        <div class="stat">
+          <div class="stat-val">-60%</div>
+          <div class="stat-label">月度对账与结算的人工工时</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">T+1</div>
+          <div class="stat-label">单车与线路利润的可见时效</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">+25pt</div>
+          <div class="stat-label">回单及时回收率</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">-8pt</div>
+          <div class="stat-label">空板位率</div>
+        </div>
+      </div>
+      <p class="metric-note">
+        以上为<span class="pending">示意数据，待真实客户案例校准</span>后再对外发布。
+      </p>
+    </div>
+  </section>
+
+  <!-- 定价预览 -->
+  <section class="band band-soft band-line">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">价格</span>
+        <h2 class="h-sec" style="margin:14px 0 14px">基础服务费 + 资源包，用多少买多少</h2>
+        <p class="lede">
+          基础服务费按版本和周期订阅；AI 用量、货源与运力大厅的接单接货按资源包购买，旗舰版自带初始额度。
+        </p>
+      </div>
+
+      <div class="plans-mini">
+        <div class="plan-mini reveal">
+          <div class="plan-mini-head">
+            <h3>基础版</h3>
+            <span class="tag">中小车队</span>
+          </div>
+          <p class="muted">把计划到结算跑成在线闭环，先把账算清。</p>
+          <div class="price">
+            <span>￥</span><b class="pending">2,999</b><span>/年起</span>
+          </div>
+          <ul>
+            <li>运营调度、运力中心、客商中心</li>
+            <li>运价合同与应付结算</li>
+            <li>审批中心与驾驶舱利润总览</li>
+            <li>货源与运力大厅（可发布、可成交）</li>
+          </ul>
+          <a class="btn btn-line" href="05-价格方案.html" style="width:100%">看包含的模块</a>
+        </div>
+
+        <div class="plan-mini is-pro reveal" data-delay="100">
+          <div class="plan-mini-head">
+            <h3>旗舰版</h3>
+            <span class="tag tag-pro">推荐</span>
+          </div>
+          <p class="muted">在基础版之上加 AI、全财务与深度分析。</p>
+          <div class="price">
+            <span>￥</span><b class="pending">9,999</b><span>/年起</span>
+          </div>
+          <ul>
+            <li>AI 数字员工与智能配载</li>
+            <li>应收、对账、发票、利润分析全套</li>
+            <li>运营看板、数据报表、智能预测</li>
+            <li>承运商运费引擎与成本政策</li>
+            <li>含初始 AI 用量额度</li>
+          </ul>
+          <a class="btn btn-primary" href="05-价格方案.html" style="width:100%">对比两个版本<span class="arrow">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 结尾 CTA -->
+  <section class="band band-deep" id="cta">
+    <div class="wrap cta-final">
+      <span class="eyebrow">下一步</span>
+      <h2 class="h-sec" style="margin:16px 0 16px">先量水位，再决定花钱的顺序</h2>
+      <p class="lede">
+        我们更愿意先花 30 分钟看你现在的单据怎么流转、成本怎么算，再告诉你哪一层值得先补。
+      </p>
+      <div class="btn-row">
+        <a class="btn btn-primary btn-lg" href="04-数智化自测.html">开始 10 题快测<span class="arrow">→</span></a>
+        <a class="btn btn-line btn-lg" href="04-数智化自测.html#lead">预约 30 分钟演示</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <div class="brand"><span class="brand-mark">ZT</span>智途</div>
+        <p class="foot-slogan">让每一公里都不白跑。智途为轿运车队提供从计划录入到结算回款的数智化经营系统。</p>
+      </div>
+      <div>
+        <h4>产品</h4>
+        <ul>
+          <li><a href="03-产品能力.html">产品能力</a></li>
+          <li><a href="05-价格方案.html">价格方案</a></li>
+          <li><a href="#">承运商轻量版</a></li>
+          <li><a href="#">驾驶员手机端</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>了解数智化</h4>
+        <ul>
+          <li><a href="02-数智化转型.html">四阶段辨析</a></li>
+          <li><a href="04-数智化自测.html">车队水位快测</a></li>
+          <li><a href="#">完整转型报告</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>联系我们</h4>
+        <ul>
+          <li><a href="04-数智化自测.html#lead">预约演示</a></li>
+          <li><a href="#">400 电话（待定）</a></li>
+          <li><a href="#">北京 · 智途科技</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-btm">
+      <span>© 2026 北京智途科技有限公司</span>
+      <span>官网原型稿 · 仅用于设计评审</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/site.js"></script>
+</body>
+</html>
