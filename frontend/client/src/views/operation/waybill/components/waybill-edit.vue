@@ -2,7 +2,7 @@
   <el-dialog
     :title="isEdit ? '编辑计划' : '新增计划'"
     :model-value="visible"
-    width="880px"
+    width="1000px"
     draggable
     class="waybill-edit-dialog"
     :close-on-click-modal="false"
@@ -20,369 +20,122 @@
       :validate-on-rule-change="false"
       @submit.prevent=""
     >
-      <el-tabs
-        v-model="activeTab"
-        class="waybill-edit-tabs"
-        @tab-change="onTabChange"
-      >
-        <el-tab-pane name="basic">
-          <template #label>
-            <span class="waybill-tab-label">
-              <span
-                class="waybill-tab-idx"
-                :class="{ 'is-done': basicStepDone }"
-              >
-                <el-icon v-if="basicStepDone" class="waybill-tab-check"
-                  ><CircleCheck
-                /></el-icon>
-                <template v-else>{{ tabStepNo('basic') }}</template>
-              </span>
-              <span class="waybill-tab-text">基础信息</span>
-            </span>
-          </template>
-          <div class="waybill-tab-pane">
-            <el-row :gutter="10">
-              <el-col :xs="24" :sm="12">
-                <el-form-item prop="customerId">
-                  <floating-label
-                    v-model="form.customerId"
-                    label="请选择客户"
-                    type="select"
-                    filterable
-                    :filter-method="setCustomerFilter"
-                    clearable
-                    @change="onCustomerChange"
-                  >
-                    <el-option
-                      v-for="item in customersShown"
-                      :key="item.id"
-                      :label="item.customerName"
-                      :value="item.id"
-                    />
-                  </floating-label>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12">
-                <el-form-item prop="waybillNo">
-                  <floating-label
-                    label="计划编号（唯一）"
-                    type="input"
-                    v-model.trim="form.waybillNo"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12">
-                <el-form-item prop="originCode">
-                  <floating-label
-                    label="请选择出发地"
-                    type="cascader"
-                    v-model="originCodes"
-                    :cascader-options="regionTree"
-                    :cascader-option-props="regionCascaderProps"
-                    :cascader-filterable="true"
-                    @change="onOriginChange"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12">
-                <el-form-item prop="destinationCode">
-                  <floating-label
-                    label="请选择目的地"
-                    type="cascader"
-                    v-model="destCodes"
-                    :cascader-options="regionTree"
-                    :cascader-option-props="regionCascaderProps"
-                    :cascader-filterable="true"
-                    @change="onDestChange"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12">
-                <el-form-item prop="planIssueTime">
-                  <floating-label
-                    label="计划下达时间"
-                    type="date"
-                    date-type="datetime"
-                    v-model="form.planIssueTime"
-                    value-format="YYYY-MM-DD HH:mm:ss"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12">
-                <el-form-item prop="requiredDeliverTime">
-                  <floating-label
-                    label="要求送达时间"
-                    type="date"
-                    date-type="datetime"
-                    v-model="form.requiredDeliverTime"
-                    value-format="YYYY-MM-DD HH:mm:ss"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </div>
-        </el-tab-pane>
-
-        <el-tab-pane name="cargo">
-          <template #label>
-            <span class="waybill-tab-label">
-              <span
-                class="waybill-tab-idx"
-                :class="{ 'is-done': cargoStepDone }"
-              >
-                <el-icon v-if="cargoStepDone" class="waybill-tab-check"
-                  ><CircleCheck
-                /></el-icon>
-                <template v-else>{{ tabStepNo('cargo') }}</template>
-              </span>
-              <span class="waybill-tab-text">
-                商品车信息
-                <span v-if="cargoTabTotalVisible" class="waybill-tab-sub">
-                  · 合计 {{ cargoTotalQty }} 台
-                </span>
-              </span>
-            </span>
-          </template>
-          <div class="waybill-tab-pane">
-            <div
-              v-for="(row, idx) in cargoRows"
-              :key="idx"
-              class="waybill-cargo-row"
+      <div class="waybill-edit-layout">
+        <aside class="waybill-edit-steps" aria-label="计划步骤">
+          <button
+            v-for="tab in visibleTabOrder"
+            :key="tab"
+            type="button"
+            class="waybill-edit-step-btn"
+            :class="{
+              'is-active': activeTab === tab,
+              'is-done': stepDoneMap[tab]
+            }"
+            @click="onStepClick(tab)"
+          >
+            <span
+              class="waybill-edit-step-btn__idx"
+              :class="{ 'is-done': stepDoneMap[tab] }"
             >
-              <div class="waybill-cargo-row__line">
-                <div class="waybill-cargo-row__meta">
-                  <span class="waybill-cargo-row__label"
-                    >商品车 {{ idx + 1 }}</span
-                  >
-                  <el-button
-                    v-if="cargoRows.length > 1"
-                    type="danger"
-                    link
-                    size="small"
-                    class="waybill-cargo-row__del"
-                    @click="removeCargoRow(idx)"
-                  >
-                    删除
-                  </el-button>
-                </div>
-                <div class="waybill-cargo-row__fields">
-                  <el-form-item
-                    class="waybill-cargo-field waybill-cargo-field--brand"
-                  >
-                    <floating-label
-                      v-model="row.vehicleBrand"
-                      label="品牌"
-                      type="select"
-                      filterable
-                      :filter-method="setBrandFilter"
-                      clearable
-                      @change="() => onCargoBrandChange(row)"
-                    >
-                      <el-option
-                        v-for="b in brandsShown"
-                        :key="b.brandId"
-                        :label="b.brandNameCn"
-                        :value="b.brandNameCn"
-                      />
-                    </floating-label>
-                  </el-form-item>
-                  <el-form-item
-                    class="waybill-cargo-field waybill-cargo-field--model"
-                  >
-                    <floating-label
-                      v-model="row.vehicleModel"
-                      label="车型"
-                      type="select"
-                      filterable
-                      :filter-method="setSeriesFilter"
-                      :disabled="!row.brandId"
-                      clearable
-                    >
-                      <el-option
-                        v-for="s in seriesShownForRow(row)"
-                        :key="s.seriesId"
-                        :label="s.seriesName"
-                        :value="s.seriesName"
-                      />
-                    </floating-label>
-                  </el-form-item>
-                  <el-form-item
-                    v-if="row.requireVin"
-                    class="waybill-cargo-field waybill-cargo-field--vin"
-                  >
-                    <floating-label
-                      label="VIN码"
-                      type="input"
-                      v-model.trim="row.vinStr"
-                      clearable
-                      maxlength="50"
-                      show-word-limit
-                      @blur="normalizeRowVin(row)"
-                    />
-                  </el-form-item>
-                  <el-form-item
-                    v-else
-                    class="waybill-cargo-field waybill-cargo-field--qty"
-                  >
-                    <floating-label
-                      label="台数"
-                      type="input"
-                      input-type="number"
-                      v-model="row.quantityStr"
-                      clearable
-                      @blur="normalizeCargoQty(row)"
-                    />
-                  </el-form-item>
-                </div>
-              </div>
-            </div>
-            <el-button
-              type="primary"
-              plain
-              class="waybill-cargo-add"
-              @click="addCargoRow"
-            >
-              添加新车
-            </el-button>
-          </div>
-        </el-tab-pane>
-
-        <el-tab-pane name="receive">
-          <template #label>
-            <span class="waybill-tab-label">
-              <span
-                class="waybill-tab-idx"
-                :class="{ 'is-done': receiveStepDone }"
+              <el-icon
+                v-if="stepDoneMap[tab] && activeTab !== tab"
+                class="waybill-edit-step-btn__check"
               >
-                <el-icon v-if="receiveStepDone" class="waybill-tab-check"
-                  ><CircleCheck
-                /></el-icon>
-                <template v-else>{{ tabStepNo('receive') }}</template>
-              </span>
-              <span class="waybill-tab-text">收车信息</span>
+                <CircleCheck />
+              </el-icon>
+              <template v-else>{{ tabStepNo(tab) }}</template>
             </span>
-          </template>
-          <div class="waybill-tab-pane">
-            <el-row :gutter="10">
-              <el-col :xs="24" :sm="8">
-                <el-form-item prop="dealerName">
-                  <floating-label
-                    v-model="selectedDealerId"
-                    label="收车门店"
-                    type="select"
-                    filterable
-                    :filter-method="setDealerFilter"
-                    clearable
-                    @change="onDealerChange"
-                  >
-                    <el-option
-                      v-for="d in dealersShown"
-                      :key="d.dealerId"
-                      :label="d.dealerName"
-                      :value="d.dealerId"
-                    />
-                  </floating-label>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="8">
-                <el-form-item prop="dealerContact">
-                  <floating-label
-                    label="联系人姓名"
-                    type="input"
-                    v-model.trim="form.dealerContact"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="8">
-                <el-form-item prop="dealerPhone">
-                  <floating-label
-                    label="联系电话"
-                    type="input"
-                    v-model.trim="form.dealerPhone"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :span="24">
-                <el-form-item>
-                  <floating-label
-                    label="门店地址"
-                    type="input"
-                    v-model="form.dealerAddress"
-                    :disabled="true"
-                    :clearable="false"
-                  />
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </div>
-        </el-tab-pane>
-
-        <el-tab-pane v-if="showFreightTab" name="freight">
-          <template #label>
-            <span class="waybill-tab-label">
+            <span class="waybill-edit-step-btn__text">
+              <span class="waybill-edit-step-btn__title">{{
+                stepTitle(tab)
+              }}</span>
               <span
-                class="waybill-tab-idx"
-                :class="{ 'is-done': freightStepDone }"
+                v-if="tab === 'cargo' && cargoTabTotalVisible"
+                class="waybill-edit-step-btn__sub"
               >
-                <el-icon v-if="freightStepDone" class="waybill-tab-check"
-                  ><CircleCheck
-                /></el-icon>
-                <template v-else>{{ tabStepNo('freight') }}</template>
+                合计 {{ cargoTotalQty }} 台
               </span>
-              <span class="waybill-tab-text">运费信息</span>
             </span>
-          </template>
-          <div class="waybill-tab-pane">
-            <template v-if="freightCalcMode !== 'auto_required'">
-              <el-row :gutter="10" align="middle">
-                <el-col :xs="24" :sm="10" :md="8">
-                  <el-form-item prop="freightAmount">
-                    <floating-label
-                      label="请输入运费金额（元）"
-                      type="input"
-                      v-model="freightAmountStr"
-                      clearable
-                      @blur="syncFreightAmountFromStr"
-                    />
-                  </el-form-item>
-                </el-col>
-                <el-col
-                  v-if="freightCalcMode !== 'manual_only'"
-                  :xs="24"
-                  :sm="14"
-                  :md="16"
-                >
-                  <el-form-item
-                    :label-width="0"
-                    class="waybill-freight-actions"
-                  >
-                    <el-button
-                      type="success"
-                      :loading="calcLoading"
-                      @click="calcFreight"
-                    >
-                      计算运费
-                    </el-button>
-                    <span v-if="calcHint" class="waybill-calc-hint">{{
-                      calcHint
-                    }}</span>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </template>
-            <template v-else>
-              <p class="waybill-freight-auto-note">
-                当前为运费自动必填模式，保存时将按商品车明细逐行匹配运价并汇总。
-              </p>
-            </template>
+          </button>
+        </aside>
+
+        <div class="waybill-edit-main">
+          <div
+            v-show="activeTab === 'basic'"
+            class="waybill-edit-pane"
+            :class="{ 'is-active-pane': activeTab === 'basic' }"
+          >
+            <waybill-edit-basic
+              :form="form"
+              :origin-codes="originCodes"
+              :dest-codes="destCodes"
+              :region-tree="regionTree"
+              :region-cascader-props="regionCascaderProps"
+              :customers-shown="customersShown"
+              :set-customer-filter="setCustomerFilter"
+              @update:origin-codes="originCodes = $event"
+              @update:dest-codes="destCodes = $event"
+              @customer-change="onCustomerChange"
+              @origin-change="onOriginChange"
+              @dest-change="onDestChange"
+            />
           </div>
-        </el-tab-pane>
-      </el-tabs>
+
+          <div
+            v-show="activeTab === 'cargo'"
+            class="waybill-edit-pane"
+            :class="{ 'is-active-pane': activeTab === 'cargo' }"
+          >
+            <waybill-edit-cargo
+              :cargo-rows="cargoRows"
+              :brands-shown="brandsShown"
+              :series-shown-for-row="seriesShownForRow"
+              :set-brand-filter="setBrandFilter"
+              :set-series-filter="setSeriesFilter"
+              @add="addCargoRow"
+              @remove="removeCargoRow"
+              @brand-change="onCargoBrandChange"
+              @normalize-vin="normalizeRowVin"
+              @normalize-qty="normalizeCargoQty"
+            />
+          </div>
+
+          <div
+            v-show="activeTab === 'receive'"
+            class="waybill-edit-pane"
+            :class="{ 'is-active-pane': activeTab === 'receive' }"
+          >
+            <waybill-edit-receive
+              :form="form"
+              :selected-dealer-id="selectedDealerId"
+              :dealers-shown="dealersShown"
+              :set-dealer-filter="setDealerFilter"
+              :dealer-longitude="selectedDealerLng"
+              :dealer-latitude="selectedDealerLat"
+              :map-visible="activeTab === 'receive'"
+              @update:selected-dealer-id="selectedDealerId = $event"
+              @dealer-change="onDealerChange"
+            />
+          </div>
+
+          <div
+            v-if="showFreightTab"
+            v-show="activeTab === 'freight'"
+            class="waybill-edit-pane"
+            :class="{ 'is-active-pane': activeTab === 'freight' }"
+          >
+            <waybill-edit-freight
+              :freight-calc-mode="freightCalcMode"
+              :freight-amount-str="freightAmountStr"
+              :calc-loading="calcLoading"
+              :calc-hint="calcHint"
+              @update:freight-amount-str="freightAmountStr = $event"
+              @sync-amount="syncFreightAmountFromStr"
+              @calc="calcFreight"
+            />
+          </div>
+        </div>
+      </div>
     </el-form>
 
     <template #footer>
@@ -412,7 +165,6 @@
   import type { FormInstance, FormRules, CascaderProps } from 'element-plus';
   import { CircleCheck } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
-  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import {
     addWaybill,
     updateWaybill,
@@ -438,28 +190,31 @@
     findRegionCodePath
   } from '@/utils/region-nav-tree';
   import { pinyinMatch } from '@/utils/pinyin-match';
+  import type { CargoEditRow, WaybillEditTabName } from './waybill-edit-types';
+  import WaybillEditBasic from './waybill-edit-basic.vue';
+  import WaybillEditCargo from './waybill-edit-cargo.vue';
+  import WaybillEditReceive from './waybill-edit-receive.vue';
+  import WaybillEditFreight from './waybill-edit-freight.vue';
 
   /** 经销商全量分页较慢，短时缓存减轻重复打开弹窗等待 */
   let _waybillDealersCache: Dealer[] | null = null;
   let _waybillDealersCacheAt = 0;
   const WAYBILL_DEALERS_CACHE_MS = 45_000;
 
-  type CargoEditRow = {
-    vehicleBrand?: string;
-    vehicleModel?: string;
-    quantityStr: string;
-    /** 与后端 normalize 一致：仅大写字母数字 */
-    vinStr: string;
-    /** 编辑时回填的 cargo.id；无 id 表示本次新增行（须填 VIN） */
-    cargoId?: number | null;
-    /** 新建与「添加新车」为 true；编辑时无 VIN 的旧行仅台数 */
-    requireVin: boolean;
-    brandId?: number | null;
-    seriesOptions: VehicleSeries[];
-  };
+  const TAB_ORDER: WaybillEditTabName[] = [
+    'basic',
+    'cargo',
+    'receive',
+    'freight'
+  ];
+  type TabName = WaybillEditTabName;
 
-  const TAB_ORDER = ['basic', 'cargo', 'receive', 'freight'] as const;
-  type TabName = (typeof TAB_ORDER)[number];
+  const STEP_TITLES: Record<TabName, string> = {
+    basic: '基础信息',
+    cargo: '商品车信息',
+    receive: '收车信息',
+    freight: '运费信息'
+  };
 
   const freightCalcMode = ref('auto_preferred');
   /** 与系统设置 waybill.list_show_freight_amount 一致，默认不展示运费 Tab */
@@ -473,6 +228,10 @@
     const order = visibleTabOrder.value;
     const i = order.indexOf(tab);
     return i >= 0 ? i + 1 : 1;
+  }
+
+  function stepTitle(tab: TabName): string {
+    return STEP_TITLES[tab];
   }
 
   const FIELD_TAB: Record<string, TabName> = {
@@ -519,7 +278,7 @@
   const freightAmountStr = ref('');
 
   const dialogBodyStyle = {
-    padding: '0 12px 8px'
+    padding: '0 16px 8px'
   };
 
   const customerOptions = ref<CustomerSelectItem[]>([]);
@@ -527,6 +286,8 @@
   const regionTree = ref<RegionNavNode[]>([]);
   const dealerOptions = ref<Dealer[]>([]);
   const selectedDealerId = ref<number | null>(null);
+  const selectedDealerLng = ref<number | null>(null);
+  const selectedDealerLat = ref<number | null>(null);
   const originCodes = ref<string[]>([]);
   const destCodes = ref<string[]>([]);
 
@@ -587,7 +348,7 @@
     });
   });
 
-  /** Tab 上合计台数：新建须商品车行全部填写完整；编辑则只要有有效台数即展示 */
+  /** 步骤上合计台数：新建须商品车行全部填写完整；编辑则只要有有效台数即展示 */
   const cargoTabTotalVisible = computed(
     () => cargoTotalQty.value > 0 && (isEdit.value || cargoStepDone.value)
   );
@@ -609,6 +370,15 @@
     const n = parseFloat(raw);
     return Number.isFinite(n) && n >= 0;
   });
+
+  const stepDoneMap = computed(
+    (): Record<TabName, boolean> => ({
+      basic: basicStepDone.value,
+      cargo: cargoStepDone.value,
+      receive: receiveStepDone.value,
+      freight: freightStepDone.value
+    })
+  );
 
   const filterQ = reactive({
     customer: '',
@@ -823,21 +593,39 @@
       ]);
     }
     if (!ok) return;
-    if (i < order.length - 1) activeTab.value = order[i + 1]!;
+    if (i < order.length - 1) {
+      const next = order[i + 1]!;
+      activeTab.value = next;
+      await ensureTabReady(next);
+    }
   }
 
-  function onTabChange(name: string | number) {
-    const n = String(name) as TabName;
+  async function ensureTabReady(n: TabName) {
+    try {
+      if (n === 'cargo') await ensureCargoSeriesHydrated();
+      else if (n === 'receive') await ensureReceiveTabReady();
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function onStepClick(tab: TabName) {
     const order = visibleTabOrder.value;
-    if (order.includes(n)) activeTab.value = n;
-    void (async () => {
-      try {
-        if (n === 'cargo') await ensureCargoSeriesHydrated();
-        else if (n === 'receive') await ensureReceiveTabReady();
-      } catch (_) {
-        /* ignore */
-      }
-    })();
+    if (!order.includes(tab)) return;
+    activeTab.value = tab;
+    void ensureTabReady(tab);
+  }
+
+  function syncDealerCoords(dealer: Dealer | undefined | null) {
+    if (!dealer) {
+      selectedDealerLng.value = null;
+      selectedDealerLat.value = null;
+      return;
+    }
+    const lng = dealer.longitude != null ? Number(dealer.longitude) : NaN;
+    const lat = dealer.latitude != null ? Number(dealer.latitude) : NaN;
+    selectedDealerLng.value = Number.isFinite(lng) ? lng : null;
+    selectedDealerLat.value = Number.isFinite(lat) ? lat : null;
   }
 
   async function fetchAllDealersPaged(): Promise<Dealer[]> {
@@ -922,12 +710,14 @@
   function matchDealerSelection() {
     if (!form.dealerName?.trim()) {
       selectedDealerId.value = null;
+      syncDealerCoords(null);
       return;
     }
     const dealer = dealerOptions.value.find(
       (d) => d.dealerName === form.dealerName
     );
     selectedDealerId.value = dealer?.dealerId ?? null;
+    syncDealerCoords(dealer);
   }
 
   async function ensureCargoSeriesHydrated() {
@@ -1018,6 +808,7 @@
     if (dealerId == null) {
       form.dealerName = undefined;
       form.dealerAddress = undefined;
+      syncDealerCoords(null);
       return;
     }
     const dealer = dealerOptions.value.find((d) => d.dealerId === dealerId);
@@ -1026,6 +817,9 @@
       form.dealerAddress = [dealer.province, dealer.city, dealer.addressDetail]
         .filter(Boolean)
         .join(' ');
+      syncDealerCoords(dealer);
+    } else {
+      syncDealerCoords(null);
     }
   };
 
@@ -1088,6 +882,7 @@
       filterQ.dealer = '';
       calcResults.value = [];
       selectedDealerId.value = null;
+      syncDealerCoords(null);
       originCodes.value = [];
       destCodes.value = [];
       activeTab.value = 'basic';
@@ -1385,25 +1180,61 @@
     gap: 8px;
   }
 
-  .waybill-tab-label {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    max-width: 100%;
-    white-space: nowrap;
+  .waybill-edit-form {
+    margin: 0;
   }
 
-  .waybill-tab-idx {
+  .waybill-edit-layout {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  .waybill-edit-steps {
+    flex: 0 0 168px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px 0;
+  }
+
+  .waybill-edit-step-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    color: var(--el-text-color-regular);
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .waybill-edit-step-btn:hover {
+    background: var(--el-fill-color-light);
+  }
+
+  .waybill-edit-step-btn.is-active {
+    background: var(--el-color-primary-light-9);
+    border-color: var(--el-color-primary-light-7);
+    color: var(--el-color-primary);
+  }
+
+  .waybill-edit-step-btn__idx {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 22px;
-    min-width: 22px;
-    height: 22px;
-    padding: 0;
-    box-sizing: border-box;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     font-size: 12px;
     font-weight: 600;
@@ -1412,221 +1243,165 @@
     color: var(--el-text-color-secondary);
   }
 
-  .waybill-tab-idx.is-done {
+  .waybill-edit-step-btn.is-active .waybill-edit-step-btn__idx {
+    background: var(--el-color-primary);
+    color: #fff;
+  }
+
+  .waybill-edit-step-btn__idx.is-done {
     background: var(--el-color-success-light-9);
     color: var(--el-color-success);
   }
 
-  .waybill-tab-check {
+  .waybill-edit-step-btn.is-active .waybill-edit-step-btn__idx.is-done {
+    background: var(--el-color-primary);
+    color: #fff;
+  }
+
+  .waybill-edit-step-btn__check {
     font-size: 14px;
   }
 
-  .waybill-tab-sub {
+  .waybill-edit-step-btn__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding-top: 2px;
+  }
+
+  .waybill-edit-step-btn__title {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .waybill-edit-step-btn.is-active .waybill-edit-step-btn__title {
+    font-weight: 600;
+  }
+
+  .waybill-edit-step-btn__sub {
     font-size: 11px;
     font-weight: 400;
     color: var(--el-text-color-secondary);
+    line-height: 1.3;
   }
 
-  .waybill-tab-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .waybill-edit-tabs :deep(.el-tabs__item.is-active) .waybill-tab-idx {
-    background: var(--el-color-primary-light-9);
-    color: var(--el-color-primary);
-  }
-
-  .waybill-edit-form {
-    margin: 0;
-  }
-
-  .waybill-edit-tabs :deep(.el-tabs__header) {
-    margin: 0 0 10px;
-    border-bottom: none;
-  }
-
-  .waybill-edit-tabs :deep(.el-tabs__nav-wrap) {
-    width: 100%;
-  }
-
-  .waybill-edit-tabs :deep(.el-tabs__nav-wrap)::after {
-    display: none;
-  }
-
-  .waybill-edit-tabs :deep(.el-tabs__nav-scroll) {
-    width: 100%;
-    overflow: hidden;
-  }
-
-  .waybill-edit-tabs :deep(.el-tabs__nav) {
-    display: flex;
-    width: 100%;
-    box-sizing: border-box;
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 10px;
-    padding: 4px;
-    gap: 4px;
-    background: var(--el-fill-color-light);
-  }
-
-  .waybill-edit-tabs :deep(.el-tabs__item) {
-    flex: 1;
+  .waybill-edit-main {
+    flex: 1 1 auto;
     min-width: 0;
-    margin: 0;
-    padding: 0 6px;
-    height: 36px;
-    line-height: 36px;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    color: var(--el-text-color-regular);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    transition:
-      color 0.2s,
-      background 0.2s,
-      box-shadow 0.2s;
+    border-left: 1px solid var(--el-border-color-extra-light);
+    padding-left: 16px;
   }
 
-  .waybill-edit-tabs :deep(.el-tabs__item:hover) {
-    color: var(--el-color-primary);
-  }
-
-  .waybill-edit-tabs :deep(.el-tabs__item.is-active) {
-    color: var(--el-color-primary);
-    font-weight: 600;
-    background: var(--el-bg-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  }
-
-  .waybill-edit-tabs :deep(.el-tabs__active-bar) {
-    display: none;
-  }
-
-  .waybill-edit-tabs :deep(.el-tabs__content) {
-    overflow: visible;
-  }
-
-  .waybill-tab-pane {
-    max-height: min(420px, calc(100vh - 320px));
+  .waybill-edit-pane {
+    max-height: min(520px, calc(100vh - 280px));
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 14px 6px 12px 4px;
+    padding: 12px 4px 8px 0;
     scrollbar-gutter: stable;
   }
 
-  .waybill-edit-dialog
-    :deep(.floating-label-wrapper.is-focused .floating-label),
-  .waybill-edit-dialog
-    :deep(.floating-label-wrapper.has-value .floating-label) {
-    transform: translateY(-62%);
-    padding: 2px 6px;
-    z-index: 4;
-    background-color: var(--el-bg-color) !important;
-    box-shadow: 0 0 0 2px var(--el-bg-color);
+  @media (prefers-reduced-motion: no-preference) {
+    .waybill-edit-pane.is-active-pane {
+      animation: waybill-pane-in 0.15s ease;
+    }
   }
 
-  .waybill-edit-dialog
-    :deep(.waybill-tab-pane > .el-row > .el-col > .el-form-item) {
-    margin-bottom: 14px;
+  @keyframes waybill-pane-in {
+    from {
+      opacity: 0.55;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
-  .waybill-item-tight-label :deep(.el-form-item__label) {
-    padding-bottom: 2px;
-    line-height: 1.2;
-    font-size: 12px;
+  @media (max-width: 767.99px) {
+    .waybill-edit-layout {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .waybill-edit-steps {
+      flex: none;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      width: 100%;
+      overflow-x: auto;
+      gap: 4px;
+      padding: 0 0 4px;
+    }
+
+    .waybill-edit-step-btn {
+      flex: 0 0 auto;
+      min-width: 120px;
+      padding: 8px 10px;
+    }
+
+    .waybill-edit-main {
+      border-left: none;
+      border-top: 1px solid var(--el-border-color-extra-light);
+      padding-left: 0;
+      padding-top: 10px;
+    }
+
+    .waybill-edit-pane {
+      max-height: min(480px, calc(100vh - 300px));
+    }
+  }
+</style>
+
+<!-- 弹框挂到 body，需非 scoped 覆盖校验与浮动标签间距 -->
+<style lang="scss">
+  .waybill-edit-dialog {
+    .waybill-edit-form {
+      .el-form-item {
+        margin-bottom: 18px;
+      }
+
+      .el-form-item.is-error {
+        margin-bottom: 26px;
+      }
+
+      .el-form-item__error {
+        position: static;
+        padding-top: 4px;
+        line-height: 1.3;
+        left: auto;
+        top: auto;
+        transform: none;
+      }
+
+      .waybill-edit-pane {
+        padding-top: 16px;
+      }
+
+      .waybill-cargo-field {
+        margin-bottom: 0;
+      }
+
+      .waybill-cargo-field.is-error {
+        margin-bottom: 8px;
+      }
+    }
+
+    .floating-label-wrapper.is-focused .floating-label,
+    .floating-label-wrapper.has-value .floating-label {
+      transform: translateY(-62%);
+      padding: 2px 6px;
+      z-index: 4;
+      background-color: var(--el-bg-color) !important;
+      box-shadow: 0 0 0 2px var(--el-bg-color);
+    }
   }
 
-  .waybill-freight-actions {
-    margin-bottom: 8px;
-  }
-
-  .waybill-freight-actions :deep(.el-form-item__content) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .waybill-calc-hint {
-    font-size: 12px;
-    color: var(--el-color-success);
-    line-height: 1.4;
-  }
-
-  .waybill-freight-auto-note {
-    margin: 0;
-    font-size: 13px;
-    color: var(--el-text-color-secondary);
-    line-height: 1.5;
-  }
-
-  .waybill-cargo-row {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed var(--el-border-color-lighter);
-  }
-
-  .waybill-cargo-row:last-of-type {
-    border-bottom: none;
-  }
-
-  .waybill-cargo-row__line {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 8px 12px;
-  }
-
-  .waybill-cargo-row__meta {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding-top: 8px;
-  }
-
-  .waybill-cargo-row__fields {
-    flex: 1 1 320px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 8px;
-    min-width: 0;
-  }
-
-  .waybill-cargo-field {
-    flex: 1 1 130px;
-    min-width: 108px;
-    margin-bottom: 0 !important;
-  }
-
-  .waybill-cargo-field--qty {
-    flex: 0 1 96px;
-    max-width: 104px;
-  }
-
-  .waybill-cargo-field--vin {
-    flex: 1 1 160px;
-    min-width: 140px;
-    max-width: 260px;
-  }
-
-  .waybill-cargo-field :deep(.el-form-item__content) {
-    width: 100%;
-  }
-
-  .waybill-cargo-row__label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--el-text-color-regular);
-    white-space: nowrap;
-  }
-
-  .waybill-cargo-add {
-    margin-top: 4px;
+  @media (max-width: 767.99px) {
+    .waybill-edit-dialog.el-dialog {
+      width: 92vw !important;
+      max-width: 1000px;
+    }
   }
 </style>
