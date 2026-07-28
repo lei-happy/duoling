@@ -240,20 +240,18 @@
   .profile-weather-widget {
     position: relative;
     z-index: 1;
-    width: 100%;
-    margin-top: auto;
-    padding-top: 12px;
+    /* 与问候文案列左对齐（头像宽 48 + gap 12），紧跟角色标签下方 */
+    width: calc(100% - 60px);
+    margin-top: 12px;
+    margin-left: 60px;
+    padding-top: 0;
     /* 天气 iframe 固定 60px，禁止被压缩裁切 */
     flex-shrink: 0;
     min-height: 60px;
   }
 
-  /* 跟随 Banner 定高：收紧上下留白，把空间留给天气 */
+  /* 跟随 Banner 定高：收紧问候区留白，天气仍保持标签下 12px */
   .profile-card.is-synced {
-    .profile-weather-widget {
-      padding-top: 8px;
-    }
-
     .profile-sub {
       margin-top: 6px;
     }
@@ -353,7 +351,10 @@
     }
 
     .profile-weather-widget {
-      padding-top: 4px;
+      /* 紧凑态头像 40 + gap 8，间距仍为标签下 12px */
+      width: calc(100% - 48px);
+      margin-left: 48px;
+      margin-top: 12px;
     }
   }
 </style>

@@ -2,20 +2,6 @@
   {
     "level": 1,
     "ancestors": [],
-    "name": "首页",
-    "path": "/dashboard",
-    "menu_code": "",
-    "visible": true,
-    "menu_type": 0,
-    "component": null,
-    "feature_code": "base_dashboard",
-    "id": 164
-  },
-  {
-    "level": 2,
-    "ancestors": [
-      "首页"
-    ],
     "name": "工作台",
     "path": "/dashboard/workplace",
     "menu_code": "dashboard:workplace",

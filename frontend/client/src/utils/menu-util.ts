@@ -14,8 +14,8 @@ const OVERVIEW_PATH_SUFFIX = '/overview';
  * 避免同名导致总览路由被业务页覆盖而不显示。
  */
 const OVERVIEW_PATH_FALLBACK_SUFFIX = '/overview-home';
-/** 不注入总览入口的一级模块（首页本身即工作台，无需总览） */
-const OVERVIEW_EXCLUDED_PATHS = new Set<string>(['/dashboard']);
+/** 不注入总览入口的一级模块（工作台为一级叶子页，无子菜单可注入） */
+const OVERVIEW_EXCLUDED_PATHS = new Set<string>(['/dashboard/workplace']);
 
 /**
  * 二级菜单图标映射：key 为二级菜单 path，value 为 src/assets/menu-icons 下的
@@ -24,8 +24,6 @@ const OVERVIEW_EXCLUDED_PATHS = new Set<string>(['/dashboard']);
  * 用于在不改动后端菜单数据的前提下，为所有二级菜单补齐图标；一级菜单图标则统一移除。
  */
 const SUBMENU_ICON_BY_PATH: Record<string, string> = {
-  // 首页
-  '/dashboard/workplace': 'sub-workplace',
   // 运营调度
   '/operation/waybill': 'sub-waybill',
   '/operation/task': 'sub-task',
@@ -143,7 +141,7 @@ function formatMenus(data: Menu[], childField = 'children'): UserMenuResult {
 /**
  * 为每个一级业务模块在其子菜单最前方注入「总览」入口，并将模块默认重定向指向总览页。
  *
- * - 仅处理有子菜单、且未被排除（如首页）的可见一级模块；
+ * - 仅处理有子菜单、且未被排除（如工作台叶子）的可见一级模块；
  * - 总览节点全部指向同一个共享组件，页面内按 meta.overviewModule 区分模块；
  * - 幂等处理：若已存在总览节点则跳过插入，仅纠正重定向，避免重复注入。
  * @param menus 已格式化的菜单树

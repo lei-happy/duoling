@@ -14,6 +14,7 @@ const modules = import.meta.glob('/src/views/**/index.vue');
 
 /** 已在布局 childRoutes 中静态注册的路径，供 menuToRoutes 去重，避免与后端菜单重复生成 */
 const STATIC_LAYOUT_MENU_PATHS = [
+  { path: '/dashboard' },
   { path: '/enterprise/manage' },
   { path: '/user/profile' },
   { path: '/user/feedback' },
@@ -62,6 +63,11 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       path: REDIRECT_PATH + '/:path(.*)',
       component: RedirectLayout,
       meta: { hideFooter: true }
+    },
+    // 兼容旧「首页」目录 path：统一落到工作台叶子页
+    {
+      path: '/dashboard',
+      redirect: '/dashboard/workplace'
     },
     // 企业管理（静态路由，不依赖后端菜单）
     {
@@ -120,7 +126,7 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       meta: { title: '智能配载' }
     },
     // 审批流程画布配置（从审批流程配置列表进入，独立页，不在后端菜单中单独挂路由）
-    // meta.active 指向列表菜单，保证侧栏仍高亮「审批配置」而非回退到首页工作台
+    // meta.active 指向列表菜单，保证侧栏仍高亮「审批配置」而非回退到工作台
     {
       path: '/enterprise/approval-config/flow/:id',
       name: 'EnterpriseApprovalFlowDesign',
