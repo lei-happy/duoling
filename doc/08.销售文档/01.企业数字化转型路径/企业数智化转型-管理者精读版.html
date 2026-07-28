@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>信息化 · 数字化 · 智能化 · 数智化｜管理者精读版</title>
+<meta name="description" content="面向企业管理者：分清信息化、数字化、智能化、数智化，完成阶段自检并获得下一步行动建议。完整内容均在本页呈现。" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+
+:root {
+  --bg:#F3F5F7; --bg-elevated:#FFF; --bg-soft:#E8EEF1; --ink:#1A2332; --ink-muted:#5A6573;
+  --brand:#0F4C5C; --brand-deep:#0A3540; --accent:#C45C26; --accent-soft:#F4E4D8; --line:#D5DEE3;
+  --font-display:"Noto Serif SC","Source Han Serif SC","Songti SC",serif;
+  --font-body:"Noto Sans SC","Source Han Sans SC","PingFang SC",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,monospace;
+  --max:1120px; --nav-w:240px; --radius:12px;
+  --shadow:0 1px 0 rgba(26,35,50,.04),0 14px 36px rgba(15,76,92,.07);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:5rem}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+body{
+  margin:0;font-family:var(--font-body);font-size:17px;line-height:1.75;color:var(--ink);
+  background:radial-gradient(1400px 560px at 85% -12%,rgba(15,76,92,.07),transparent 60%),
+    radial-gradient(1000px 420px at 0% 18%,rgba(196,92,38,.05),transparent 55%),var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--brand);text-decoration-thickness:1px;text-underline-offset:.18em}
+a:hover{color:var(--accent)}
+img{max-width:100%;height:auto;display:block}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.skip-link{position:absolute;left:-999px;top:0;background:var(--brand);color:#fff;padding:.6rem 1rem;z-index:1000}
+.skip-link:focus{left:1rem;top:1rem}
+.topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);background:rgba(243,245,247,.9);border-bottom:1px solid var(--line)}
+.topbar-inner{max-width:calc(var(--max) + var(--nav-w) + 5rem);margin:0 auto;padding:.9rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.brand-mark{font-family:var(--font-display);font-weight:600;font-size:1rem;color:var(--brand-deep);white-space:nowrap}
+.brand-mark span{color:var(--accent)}
+.top-actions{display:flex;gap:.55rem;align-items:center;flex-wrap:wrap}
+.btn{appearance:none;border:1px solid transparent;border-radius:999px;padding:.55rem 1.15rem;font-family:var(--font-body);font-size:.92rem;font-weight:600;cursor:pointer;transition:background .2s,color .2s,border-color .2s,transform .15s}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--brand);color:#fff}.btn-primary:hover{background:var(--brand-deep)}
+.btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}.btn-ghost:hover{border-color:var(--brand);color:var(--brand)}
+.btn-linkish{background:transparent;border:none;color:var(--brand);font-weight:600;padding:.15rem 0;cursor:pointer;font-family:var(--font-body);font-size:.92rem;text-decoration:underline;text-underline-offset:.18em}
+.btn-linkish:hover{color:var(--accent)}
+.layout{max-width:calc(var(--max) + var(--nav-w) + 5rem);margin:0 auto;padding:0 1.5rem 5rem;display:grid;grid-template-columns:var(--nav-w) minmax(0,1fr);gap:2.75rem;align-items:start}
+.toc{position:sticky;top:4.6rem;padding-top:2rem}
+.toc-title{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);margin:0 0 1rem}
+.toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line)}
+.toc a{display:block;padding:.38rem 0 .38rem .95rem;margin-left:-1px;border-left:2px solid transparent;color:var(--ink-muted);text-decoration:none;font-size:.88rem;line-height:1.4}
+.toc a:hover{color:var(--brand)}.toc a.is-active{color:var(--brand);border-left-color:var(--accent);font-weight:600}
+.main{min-width:0;padding-top:1.5rem;max-width:var(--max)}
+.hero{padding:2.2rem 0 1rem}
+.eyebrow{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 1rem}
+.hero h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2rem,3.6vw,2.85rem);line-height:1.22;letter-spacing:-.02em;color:var(--brand-deep);margin:0 0 1.2rem;max-width:18em}
+.hero-lead{font-size:1.1rem;color:var(--ink-muted);max-width:48em;margin:0 0 1.5rem}
+.chain{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:0 0 2rem}
+.chain-step{background:var(--bg-elevated);border:1px solid var(--line);border-radius:999px;padding:.45rem 1rem;font-size:.92rem;font-weight:600;color:var(--brand);box-shadow:var(--shadow)}
+.chain-arrow{color:var(--accent);font-weight:700}
+.figure{margin:0 0 2.25rem;background:var(--bg-elevated);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.figure img{width:100%}
+.figure figcaption{padding:.8rem 1.15rem 1rem;font-size:.88rem;color:var(--ink-muted);border-top:1px solid var(--line);background:var(--bg-soft)}
+section{padding:2.6rem 0;border-top:1px solid var(--line)}
+section>h2{font-family:var(--font-display);font-size:clamp(1.5rem,2.4vw,1.95rem);line-height:1.3;color:var(--brand-deep);margin:0 0 1rem}
+.section-lead{color:var(--ink-muted);margin:0 0 1.4rem;max-width:50em}
+h3{font-family:var(--font-display);font-size:1.22rem;margin:1.85rem 0 .7rem;color:var(--ink)}
+h4{font-family:var(--font-display);font-size:1.05rem;margin:1.2rem 0 .45rem;color:var(--brand-deep)}
+p{margin:0 0 1rem}ul,ol{margin:0 0 1.2rem;padding-left:1.25rem}li{margin-bottom:.35rem}
+.pullquote{margin:1.4rem 0;padding:1.15rem 1.3rem;border-left:3px solid var(--accent);background:linear-gradient(90deg,var(--accent-soft),transparent 90%);font-family:var(--font-display);font-size:1.08rem;line-height:1.6;color:var(--brand-deep)}
+.card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin:1.4rem 0}
+.card-grid.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.concept-card{background:var(--bg-elevated);border:1px solid var(--line);border-radius:var(--radius);padding:1.25rem 1.3rem 1.35rem;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:.35rem;min-height:100%}
+.concept-card:hover{border-color:rgba(15,76,92,.35)}
+.concept-card .tag{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;color:var(--accent)}
+.concept-card h3{margin:0;font-size:1.15rem;color:var(--brand-deep)}
+.concept-card p{margin:0;font-size:.95rem;color:var(--ink-muted);line-height:1.6;flex:1}
+.concept-card .card-actions{margin-top:.75rem}
+.table-wrap{overflow-x:auto;margin:1.2rem 0 1.6rem;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg-elevated);box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:760px}
+th,td{padding:.8rem 1rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{background:var(--bg-soft);font-weight:600;color:var(--brand-deep);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.callout{margin:1.4rem 0;padding:1.2rem 1.35rem;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg-elevated)}
+.callout strong{color:var(--brand-deep)}
+.two-col{display:grid;grid-template-columns:1.1fr .9fr;gap:1.25rem;margin:1.4rem 0}
+.panel{background:var(--bg-elevated);border:1px solid var(--line);border-radius:var(--radius);padding:1.25rem 1.35rem;box-shadow:var(--shadow)}
+.panel h3{margin-top:0}
+.layer-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem;margin:1.2rem 0}
+.layer-item{background:var(--bg-elevated);border:1px solid var(--line);border-radius:10px;padding:1rem 1.05rem}
+.layer-item .n{font-family:var(--font-mono);font-size:.72rem;color:var(--accent)}
+.layer-item h4{margin:.25rem 0 .35rem;font-size:1rem}
+.layer-item p{margin:0;font-size:.9rem;color:var(--ink-muted)}
+.check-panel{margin-top:1.4rem;background:var(--bg-elevated);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:visible}
+.gauge{
+  --stage-accent:var(--brand);
+  --stage-soft:rgba(15,76,92,.07);
+  --stage-fill-from:var(--brand);
+  --stage-fill-to:var(--accent);
+  --stage-border:var(--line);
+  position:sticky;top:4.5rem;z-index:40;
+  padding:1.35rem 1.5rem 1.15rem;
+  background:linear-gradient(180deg,var(--stage-soft),var(--bg-elevated) 72%);
+  border-bottom:1px solid var(--stage-border);
+  border-radius:14px 14px 0 0;
+  transition:background .25s ease,box-shadow .2s ease,padding .2s ease;
+}
+.gauge[data-stage="idle"]{--stage-accent:var(--brand);--stage-soft:rgba(15,76,92,.06);--stage-fill-from:#0F4C5C;--stage-fill-to:#5A8A96;--stage-border:var(--line)}
+.gauge[data-stage="s1"]{--stage-accent:#5B6B7A;--stage-soft:#E8ECF0;--stage-fill-from:#9AA6B2;--stage-fill-to:#5B6B7A;--stage-border:#C5CED6}
+.gauge[data-stage="s2"]{--stage-accent:#3D5A80;--stage-soft:#DDE6F2;--stage-fill-from:#7A97B8;--stage-fill-to:#3D5A80;--stage-border:#B7C7D9}
+.gauge[data-stage="s3"]{--stage-accent:#0F6E6A;--stage-soft:#D8EFEC;--stage-fill-from:#4AA8A2;--stage-fill-to:#0F6E6A;--stage-border:#A8D4D0}
+.gauge[data-stage="s4"]{--stage-accent:#0F4C5C;--stage-soft:#D5E8EC;--stage-fill-from:#3D7F90;--stage-fill-to:#0F4C5C;--stage-border:#A8C5CE}
+.gauge[data-stage="s5"]{--stage-accent:#A67C12;--stage-soft:#F5EBD0;--stage-fill-from:#D4A93A;--stage-fill-to:#A67C12;--stage-border:#E2D0A0}
+.gauge[data-stage="s6"]{--stage-accent:#C45C26;--stage-soft:#F4E4D8;--stage-fill-from:#E08955;--stage-fill-to:#C45C26;--stage-border:#E5C4AE}
+.gauge[data-stage="s7"]{--stage-accent:#A63D2F;--stage-soft:#F3DDD8;--stage-fill-from:#D06B5A;--stage-fill-to:#A63D2F;--stage-border:#E3B6AF}
+.gauge[data-stage="s8"]{--stage-accent:#1F6B4A;--stage-soft:#D9EDE3;--stage-fill-from:#4C9A74;--stage-fill-to:#1F6B4A;--stage-border:#A8D0BC}
+.gauge.is-stuck{
+  box-shadow:0 10px 28px rgba(26,35,50,.12);
+  border:1px solid var(--stage-border);
+  border-top:none;
+  border-radius:0 0 12px 12px;
+  padding:0.85rem 1.25rem 0.8rem;
+}
+.gauge.is-stuck .scale-legend,
+.gauge.is-stuck .progress-hint{display:none}
+.gauge.is-stuck .ruler{margin:0.85rem 0 0.45rem}
+.gauge.is-stuck .dim-scores{margin-top:0.65rem;gap:0.45rem}
+.gauge.is-stuck .dim-score{padding:0.45rem 0.4rem}
+.gauge.is-stuck .ruler-ticks{font-size:0.62rem}
+.gauge-label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.85rem;gap:1rem;flex-wrap:wrap}
+.gauge-label strong{font-family:var(--font-display);font-size:1.2rem;color:var(--stage-accent)}
+.gauge-label span{font-family:var(--font-mono);font-size:.8rem;color:var(--ink-muted)}
+.gauge-band{display:inline-block;margin-left:.45rem;padding:.12rem .45rem;border-radius:999px;background:var(--stage-soft);border:1px solid var(--stage-border);font-family:var(--font-mono);font-size:.68rem;font-weight:500;color:var(--stage-accent);vertical-align:middle}
+.ruler{position:relative;height:14px;background:rgba(255,255,255,.65);border-radius:999px;border:1px solid var(--stage-border);margin:1.35rem 0 .65rem}
+.ruler-fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:linear-gradient(90deg,var(--stage-fill-from),var(--stage-fill-to));border-radius:999px;transition:width .45s ease}
+.ruler-pointer{position:absolute;top:-10px;left:0%;width:2px;height:34px;background:var(--stage-accent);transform:translateX(-50%);transition:left .45s ease}
+.ruler-pointer::after{content:"";position:absolute;top:-6px;left:50%;transform:translateX(-50%);border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid var(--stage-accent)}
+.ruler-ticks{display:grid;grid-template-columns:repeat(8,1fr);gap:.2rem;font-family:var(--font-mono);font-size:.64rem;color:var(--ink-muted);text-align:center;line-height:1.25}
+.ruler-ticks .is-active{color:var(--stage-accent);font-weight:600}
+.dim-scores{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-top:1.25rem}
+.dim-score{background:rgba(255,255,255,.72);border-radius:8px;padding:.7rem .6rem;text-align:center;border:1px solid transparent}
+.dim-score .name{font-size:.78rem;color:var(--ink-muted);margin-bottom:.2rem}
+.dim-score .val{font-family:var(--font-mono);font-weight:500;font-size:1.05rem;color:var(--brand-deep)}
+.dim-score.is-weak{background:var(--stage-soft);outline:1px solid var(--stage-border)}
+.scale-legend{display:flex;flex-wrap:wrap;gap:.45rem;margin:1rem 0 0;font-size:.82rem;color:var(--ink-muted)}
+.scale-legend span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:.2rem .65rem}
+#self-check-form{background:var(--bg-elevated);border-radius:0 0 14px 14px;position:relative;z-index:1}
+.q-group{padding:1.35rem 1.5rem .6rem;border-bottom:1px solid var(--line)}
+.q-group:last-of-type{border-bottom:none}
+.q-group h3{margin:0 0 .9rem;font-size:1.08rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.q-badge{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.06em;padding:.2rem .45rem;border-radius:4px;background:var(--bg-soft);color:var(--brand);font-weight:500}
+.question{margin-bottom:1.2rem;padding-bottom:1.15rem;border-bottom:1px dashed var(--line)}
+.question:last-child{border-bottom:none;margin-bottom:.4rem}
+.question p{margin:0 0 .7rem;font-size:.97rem;line-height:1.55}
+.question p .qid{font-family:var(--font-mono);font-size:.78rem;color:var(--accent);margin-right:.35rem}
+.choices{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.45rem}
+.choices label{position:relative;cursor:pointer;min-width:0}
+.choices input{position:absolute;opacity:0;pointer-events:none}
+.choices span{display:flex;align-items:center;justify-content:center;text-align:center;min-height:2.7rem;padding:.4rem .35rem;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:.8rem;line-height:1.25;color:var(--ink-muted);transition:all .15s}
+.choices label:hover span{border-color:var(--brand);color:var(--brand)}
+.choices input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.choices input:checked+span{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.check-actions{display:flex;flex-wrap:wrap;gap:.6rem;padding:1.3rem 1.5rem 1.55rem;background:var(--bg-soft);border-top:1px solid var(--line)}
+.result-box{
+  --stage-accent:var(--accent); --stage-soft:#fff8f3; --stage-border:rgba(196,92,38,.35);
+  display:none;margin:1.5rem 0 0;padding:1.4rem 1.5rem;border-radius:var(--radius);
+  border:1px solid var(--stage-border);background:linear-gradient(180deg,var(--stage-soft),#fff);box-shadow:var(--shadow)
+}
+.result-box.is-visible{display:block}
+.result-box[data-stage="s1"]{--stage-accent:#5B6B7A;--stage-soft:#F2F4F6;--stage-border:#C5CED6}
+.result-box[data-stage="s2"]{--stage-accent:#3D5A80;--stage-soft:#EEF3F9;--stage-border:#B7C7D9}
+.result-box[data-stage="s3"]{--stage-accent:#0F6E6A;--stage-soft:#ECF7F5;--stage-border:#A8D4D0}
+.result-box[data-stage="s4"]{--stage-accent:#0F4C5C;--stage-soft:#EAF3F5;--stage-border:#A8C5CE}
+.result-box[data-stage="s5"]{--stage-accent:#A67C12;--stage-soft:#FBF6E8;--stage-border:#E2D0A0}
+.result-box[data-stage="s6"]{--stage-accent:#C45C26;--stage-soft:#FFF8F3;--stage-border:#E5C4AE}
+.result-box[data-stage="s7"]{--stage-accent:#A63D2F;--stage-soft:#FBF1EF;--stage-border:#E3B6AF}
+.result-box[data-stage="s8"]{--stage-accent:#1F6B4A;--stage-soft:#EEF7F2;--stage-border:#A8D0BC}
+.result-box .stage{font-family:var(--font-display);font-size:1.4rem;color:var(--stage-accent);margin:0 0 .45rem}
+.result-box .meta{font-family:var(--font-mono);font-size:.8rem;color:var(--ink-muted);margin-bottom:.85rem}
+@media (max-width:720px){
+  .gauge{top:3.8rem}
+  .ruler-ticks{grid-template-columns:repeat(4,1fr);row-gap:.25rem}
+}
+.path-steps{counter-reset:step;list-style:none;padding:0;margin:1.2rem 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}
+.path-steps li{position:relative;padding:1.1rem 1.1rem 1.1rem 3.3rem;margin:0;background:var(--bg-elevated);border:1px solid var(--line);border-radius:var(--radius)}
+.path-steps li::before{counter-increment:step;content:counter(step,decimal-leading-zero);position:absolute;left:.95rem;top:1.15rem;font-family:var(--font-mono);font-size:.8rem;font-weight:500;color:var(--accent)}
+.path-steps strong{display:block;margin-bottom:.3rem;color:var(--brand-deep)}
+.path-steps p{margin:0 0 .65rem;font-size:.93rem;color:var(--ink-muted)}
+.myth-list,.advice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem;margin:1.2rem 0}
+.myth,.advice-card{padding:1.05rem 1.2rem;background:var(--bg-elevated);border:1px solid var(--line);border-radius:var(--radius)}
+.myth{border-left:3px solid var(--brand);border-radius:0 var(--radius) var(--radius) 0}
+.myth h4,.advice-card h4{margin:0 0 .35rem}
+.myth p,.advice-card p{margin:0;font-size:.95rem;color:var(--ink-muted)}
+.roadmap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem;margin:1.2rem 0}
+.roadmap article{background:var(--bg-elevated);border:1px solid var(--line);border-radius:var(--radius);padding:1.1rem 1.15rem}
+.roadmap .t{font-family:var(--font-mono);font-size:.72rem;color:var(--accent)}
+.roadmap h3{margin:.35rem 0 .5rem;font-size:1.05rem}
+.roadmap p,.roadmap ul{margin:0;font-size:.9rem;color:var(--ink-muted)}
+.roadmap ul{padding-left:1.1rem;margin-top:.4rem}
+.closing{background:var(--brand-deep);color:rgba(255,255,255,.9);border-radius:14px;padding:2.1rem 1.7rem;margin-top:1rem}
+.closing h2{color:#fff;margin-top:0}
+.closing .pullquote{background:rgba(255,255,255,.08);border-left-color:var(--accent);color:#fff}
+.closing ol{color:rgba(255,255,255,.88)}
+.footer{max-width:calc(var(--max)+var(--nav-w)+5rem);margin:0 auto;padding:0 1.5rem 3rem;color:var(--ink-muted);font-size:.85rem}
+.footer-inner{border-top:1px solid var(--line);padding-top:1.25rem;display:flex;flex-wrap:wrap;justify-content:space-between;gap:.75rem}
+.progress-hint{font-size:.88rem;color:var(--ink-muted);margin:.55rem 0 0}
+.gauge .progress-hint strong{color:var(--stage-accent)}
+.modal-library{display:none}
+dialog.modal{border:none;border-radius:16px;padding:0;width:min(940px,94vw);max-height:86vh;box-shadow:0 24px 80px rgba(15,76,92,.22);background:var(--bg-elevated);color:var(--ink)}
+dialog.modal::backdrop{background:rgba(15,30,40,.48);backdrop-filter:blur(2px)}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding:1.25rem 1.4rem;border-bottom:1px solid var(--line);background:var(--bg-soft);position:sticky;top:0;z-index:1}
+.modal-head h2{margin:0;font-family:var(--font-display);font-size:1.25rem;color:var(--brand-deep);line-height:1.35}
+.modal-close{appearance:none;border:1px solid var(--line);background:#fff;border-radius:999px;width:2.2rem;height:2.2rem;cursor:pointer;font-size:1.2rem;line-height:1;color:var(--ink-muted)}
+.modal-close:hover{color:var(--brand);border-color:var(--brand)}
+.modal-body{padding:1.35rem 1.5rem 1.7rem;overflow:auto;max-height:calc(86vh - 4.5rem)}
+.modal-body h3{margin-top:1.35rem}
+@media (max-width:1180px){.card-grid.cols-4,.roadmap{grid-template-columns:repeat(2,minmax(0,1fr))}.layer-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:960px){
+  .layout{grid-template-columns:1fr;gap:0}
+  .toc{position:static;padding:1rem 0 0;overflow-x:auto}.toc-title{display:none}
+  .toc ol{display:flex;gap:.3rem;border-left:none;padding-bottom:.5rem}
+  .toc a{border-left:none;white-space:nowrap;padding:.45rem .75rem;margin:0;background:var(--bg-elevated);border-radius:999px;border:1px solid var(--line)}
+  .toc a.is-active{border-color:var(--brand);background:var(--brand);color:#fff}
+  .two-col,.path-steps,.myth-list,.advice-grid{grid-template-columns:1fr}
+}
+@media (max-width:720px){
+  body{font-size:16px}
+  .card-grid,.card-grid.cols-4,.dim-scores,.layer-list,.roadmap{grid-template-columns:1fr}
+  .choices{grid-template-columns:1fr}.choices span{min-height:auto;justify-content:flex-start;padding:.55rem .8rem;text-align:left}
+  .top-actions .hide-sm{display:none}
+}
+
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">跳到正文</a>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand-mark">数智化辨析 <span>v1.1</span></div>
+    <div class="top-actions">
+      <button type="button" class="btn btn-ghost hide-sm" data-open-modal="why-distinguish">为何不区分会踩坑</button>
+      <a class="btn btn-primary" href="#self-check">开始阶段自检</a>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="章节导航">
+  <p class="toc-title">目录</p>
+  <ol>
+    <li><a href="#hero">开篇</a></li>
+    <li><a href="#why-now">为何现在更要分清</a></li>
+    <li><a href="#concepts">四概念详解</a></li>
+    <li><a href="#relation">演进与联系</a></li>
+    <li><a href="#self-check">企业阶段自检</a></li>
+    <li><a href="#strategy">战略视角</a></li>
+    <li><a href="#path">落地路径</a></li>
+    <li><a href="#org">组织与路线图</a></li>
+    <li><a href="#advice">建议与误区</a></li>
+    <li><a href="#closing">结论</a></li>
+  </ol>
+</nav>
+
+<main class="main" id="main">
+<header class="hero" id="hero">
+  <p class="eyebrow">企业管理者精读版 · 全文自洽，无需另附 Markdown</p>
+  <h1>先分清四个词，再谈数智化升级</h1>
+  <p class="hero-lead">信息化、数字化、智能化、数智化不是采购清单上的四个模块，而是企业经营能力的不同层级。大模型让“看起来很智能”变得容易，管理者更需要看清：企业到底在哪一层，下一件事该补什么。</p>
+  <div class="chain" aria-label="演进链">
+    <span class="chain-step">装进系统</span><span class="chain-arrow" aria-hidden="true">→</span>
+    <span class="chain-step">变成数据</span><span class="chain-arrow" aria-hidden="true">→</span>
+    <span class="chain-step">形成判断</span><span class="chain-arrow" aria-hidden="true">→</span>
+    <span class="chain-step">嵌入经营</span>
+  </div>
+  <figure class="figure">
+    <img src="assets/enterprise-digitalization-illustrations/01-four-words-mixup.png" alt="小黑把贴错标签的四个箱子重新分拣" width="1536" height="1024" />
+    <figcaption>四个词看起来像同类包装，贴错标签就会把建设资源投错方向。</figcaption>
+  </figure>
+  <div class="callout">
+    <p><strong>给管理者的 30 秒理解：</strong>四者是能力层级，不是采购清单。自问三句——我们在哪？缺什么？下一件事改善哪项经营指标？</p>
+  </div>
+</header>
+
+<section id="why-now">
+  <h2>为什么现在更要分清这四个词</h2>
+  <p class="section-lead">大模型降低了做出演示效果的门槛，也抬高了概念混淆的代价。</p>
+  <div class="two-col">
+    <div class="panel">
+      <h3>三条必须划清的边界</h3>
+      <ul>
+        <li><strong>接入 Copilot / 知识库问答 ≠ 智能化经营</strong></li>
+        <li><strong>“数字化 + AI”包装 ≠ 数智化</strong></li>
+        <li><strong>演示成功 ≠ 经营成功</strong></li>
+      </ul>
+      <p class="pullquote" style="margin-bottom:0">这项投入改善了哪一项经营指标？如何验证？责任由谁承担？</p>
+    </div>
+    <div class="panel">
+      <h3>不区分的代价</h3>
+      <p>战略目标模糊、建设顺序错误、投入失衡、价值难衡量——例如主数据未统一就上 AI 经营分析，或核心流程仍线下却直接上智能助手。</p>
+      <button type="button" class="btn-linkish" data-open-modal="why-distinguish">展开：七类典型踩坑问题</button>
+    </div>
+  </div>
+</section>
+
+<section id="concepts">
+  <h2>四概念详解</h2>
+  <p class="section-lead">先记住一句话，再点开弹层阅读完整定义、价值、局限与对照案例。</p>
+  <figure class="figure">
+    <img src="assets/enterprise-digitalization-illustrations/02-evolution-path.png" alt="演进路径：装进系统到嵌入经营" width="1536" height="1024" />
+    <figcaption>演进不是买四个产品，而是能力沿同一路径不断加深。</figcaption>
+  </figure>
+  <div class="card-grid cols-4">
+    <article class="concept-card">
+      <div class="tag">01 · 信息化</div>
+      <h3>把业务装进系统</h3>
+      <p>固化流程、留痕与管控。关心：是否还依赖 Excel、微信群和口头传达。</p>
+      <div class="card-actions"><button type="button" class="btn-linkish" data-open-modal="def-info">阅读完整定义</button></div>
+    </article>
+    <article class="concept-card">
+      <div class="tag">02 · 数字化</div>
+      <h3>用数据经营业务</h3>
+      <p>不只上线，而是用数据重新认识与运营业务。关心：决策是否因数据而改变。</p>
+      <div class="card-actions"><button type="button" class="btn-linkish" data-open-modal="def-digital">阅读完整定义</button></div>
+    </article>
+    <article class="concept-card">
+      <div class="tag">03 · 智能化</div>
+      <h3>让机器形成判断</h3>
+      <p>预测、推荐、预警或自动执行。关心：是否稳定解决具体问题并能量化收益。</p>
+      <div class="card-actions"><button type="button" class="btn-linkish" data-open-modal="def-intel">阅读完整定义</button></div>
+    </article>
+    <article class="concept-card">
+      <div class="tag">04 · 数智化</div>
+      <h3>嵌入经营闭环</h3>
+      <p>数据与智能进入战略、组织、流程与决策机制。关心：是否形成感知—决策—执行—反馈。</p>
+      <div class="card-actions"><button type="button" class="btn-linkish" data-open-modal="def-smart">阅读完整定义</button></div>
+    </article>
+  </div>
+
+  <h3>管理者速查：典型动作 / 常见假象 / 成立标准</h3>
+  <div class="table-wrap" tabindex="0">
+    <table>
+      <thead><tr><th>概念</th><th>典型动作</th><th>常见假象</th><th>成立标准</th></tr></thead>
+      <tbody>
+        <tr><td>信息化</td><td>上线 ERP/CRM/OA，流程进系统</td><td>系统很多，Excel 仍是业务真相</td><td>核心业务在系统执行，关键节点可留痕、可追责</td></tr>
+        <tr><td>数字化</td><td>打通数据、统一口径、精细运营</td><td>大屏很多，决策仍靠开会拍脑袋</td><td>数据改变经营动作，状态可看见并响应</td></tr>
+        <tr><td>智能化</td><td>预测、推荐、预警、自动执行</td><td>演示很好，上线后闲置或只做旁路工具</td><td>嵌入真实流程，效果可量化，错误可纠正</td></tr>
+        <tr><td>数智化</td><td>智能结果进入决策与执行闭环</td><td>项目很多，却没有经营反馈循环</td><td>人机协同成机制，结果持续复盘并驱动迭代</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="figure">
+    <img src="assets/enterprise-digitalization-illustrations/03-systems-vs-dataflow.png" alt="有系统柜子但水管没通" width="1536" height="1024" />
+    <figcaption>信息化解决“有柜子装业务”；数字化要求把水管接通，让数据真正流动。</figcaption>
+  </figure>
+
+  <h3>核心区别对照</h3>
+  <div class="table-wrap" tabindex="0">
+    <table>
+      <thead><tr><th>对比维度</th><th>信息化</th><th>数字化</th><th>智能化</th><th>数智化</th></tr></thead>
+      <tbody>
+        <tr><td>核心目标</td><td>规范流程、提高效率</td><td>数据驱动业务重构</td><td>提升预测和决策能力</td><td>重构企业经营与管理体系</td></tr>
+        <tr><td>主要对象</td><td>业务流程和信息记录</td><td>客户、业务、资产和经营数据</td><td>预测、判断、推荐和执行</td><td>战略、组织、流程、数据和智能</td></tr>
+        <tr><td>主要手段</td><td>软件系统、数据库、网络</td><td>数据连接、分析、在线运营</td><td>算法、模型、AI和自动化</td><td>数据平台、AI与经营机制融合</td></tr>
+        <tr><td>典型问题</td><td>业务是否进入系统</td><td>数据是否能够驱动经营</td><td>系统能否形成判断</td><td>能否形成智能经营闭环</td></tr>
+        <tr><td>决策方式</td><td>人工经验为主</td><td>数据辅助决策</td><td>模型辅助或自动决策</td><td>人机协同、持续优化</td></tr>
+        <tr><td>管理视角</td><td>部门与流程</td><td>客户与价值链</td><td>任务与决策场景</td><td>企业整体经营体系</td></tr>
+        <tr><td>建设重点</td><td>系统覆盖</td><td>数据连接和业务重构</td><td>模型准确性与业务嵌入</td><td>战略、机制、组织和技术协同</td></tr>
+        <tr><td>衡量结果</td><td>系统使用率、流程效率</td><td>数据质量、经营透明度、业务改善</td><td>准确率、自动化率、决策收益</td><td>收入、利润、效率、风险与组织能力</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="relation">
+  <h2>演进关系与联系</h2>
+  <p class="section-lead">总体有演进逻辑，但不是全公司整齐划一的线性台阶。应按业务域分别评估。</p>
+  <figure class="figure">
+    <img src="assets/enterprise-digitalization-illustrations/04-ai-needs-data.png" alt="无数据基础的AI只是演示" width="1536" height="1024" />
+    <figcaption>没有数据砝码，AI 再会“念咒”也只是演示；智能化依赖数字化底座。</figcaption>
+  </figure>
+  <div class="two-col">
+    <div class="panel">
+      <h3>总体演进</h3>
+      <p>业务标准化 → 业务在线化 → 数据资产化 → 决策智能化 → 经营闭环化。</p>
+      <ul>
+        <li>信息化提供承载</li>
+        <li>数字化完成连接与重构</li>
+        <li>智能化提升判断</li>
+        <li>数智化形成体系</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>关键判断</h3>
+      <p><strong>智能化强调能力，数智化强调体系。</strong>单点智能应用不等于完成数智化转型。</p>
+      <button type="button" class="btn-linkish" data-open-modal="relation-full">展开：演进但不线性的完整说明</button>
+    </div>
+  </div>
+</section>
+
+<section id="self-check">
+  <h2>企业阶段自检</h2>
+  <p class="section-lead">20 题，四维各 5 题；结果落位到 <strong>8 档阶段</strong>（信息起步→数智闭环）。答题时上方刻度盘会吸顶，便于边答边看水位。建议按某一业务域分别作答。</p>
+  <figure class="figure">
+    <img src="assets/enterprise-digitalization-illustrations/05-self-check-measure.png" alt="企业阶段自检量尺" width="1536" height="1024" />
+    <figcaption>先量清楚水位，再决定往哪一层建设。</figcaption>
+  </figure>
+  <div class="check-panel" id="check-panel">
+    <div class="gauge" id="gauge" data-stage="idle" aria-live="polite">
+      <div class="gauge-label">
+        <strong id="gauge-stage">阶段刻度尺 <span class="gauge-band" id="gauge-band">待作答</span></strong>
+        <span id="gauge-score">已答 0 / 20 · 总分 — / 80</span>
+      </div>
+      <div class="ruler" aria-hidden="true">
+        <div class="ruler-fill" id="ruler-fill"></div>
+        <div class="ruler-pointer" id="ruler-pointer"></div>
+      </div>
+      <div class="ruler-ticks" id="ruler-ticks">
+        <span data-stage="s1">信息起步</span>
+        <span data-stage="s2">信息夯实</span>
+        <span data-stage="s3">数字起步</span>
+        <span data-stage="s4">数字推进</span>
+        <span data-stage="s5">智能试点</span>
+        <span data-stage="s6">智能扩展</span>
+        <span data-stage="s7">数智成型</span>
+        <span data-stage="s8">数智闭环</span>
+      </div>
+      <div class="dim-scores">
+        <div class="dim-score" data-dim="A"><div class="name">信息化</div><div class="val">—/20</div></div>
+        <div class="dim-score" data-dim="B"><div class="name">数字化</div><div class="val">—/20</div></div>
+        <div class="dim-score" data-dim="C"><div class="name">智能化</div><div class="val">—/20</div></div>
+        <div class="dim-score" data-dim="D"><div class="name">闭环</div><div class="val">—/20</div></div>
+      </div>
+      <div class="scale-legend" aria-label="选项说明">
+        <span>0 几乎没有</span><span>1 偶尔做到</span><span>2 部分做到</span><span>3 多数做到</span><span>4 稳定做到</span>
+      </div>
+      <p class="progress-hint" id="progress-hint">五档作答：几乎没有 → 稳定做到。建议按某一业务域填写。</p>
+    </div>
+    <form id="self-check-form" class="questions">
+      <div class="q-group"><h3><span class="q-badge">A · 信息化</span>业务是否被系统稳定承载</h3><div class="question" data-dim="A" data-id="A1"><p><span class="qid">A1</span>核心业务（订单、客户、合同、库存/运单、财务等）是否已在系统中稳定执行，而非主要依赖 Excel、微信群或口头传达？</p><div class="choices"><label><input type="radio" name="A1" value="0" /><span>几乎没有</span></label><label><input type="radio" name="A1" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="A1" value="2" /><span>部分做到</span></label><label><input type="radio" name="A1" value="3" /><span>多数做到</span></label><label><input type="radio" name="A1" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="A" data-id="A2"><p><span class="qid">A2</span>关键业务节点是否有时间、责任人和结果留痕，事后可追溯、可追责？</p><div class="choices"><label><input type="radio" name="A2" value="0" /><span>几乎没有</span></label><label><input type="radio" name="A2" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="A2" value="2" /><span>部分做到</span></label><label><input type="radio" name="A2" value="3" /><span>多数做到</span></label><label><input type="radio" name="A2" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="A" data-id="A3"><p><span class="qid">A3</span>一线实际操作是否与系统流程一致，系统外“绕路”操作是否已被明显压缩？</p><div class="choices"><label><input type="radio" name="A3" value="0" /><span>几乎没有</span></label><label><input type="radio" name="A3" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="A3" value="2" /><span>部分做到</span></label><label><input type="radio" name="A3" value="3" /><span>多数做到</span></label><label><input type="radio" name="A3" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="A" data-id="A4"><p><span class="qid">A4</span>权限、审批与关键操作是否通过系统管控，而不是线下口头批准后再补录？</p><div class="choices"><label><input type="radio" name="A4" value="0" /><span>几乎没有</span></label><label><input type="radio" name="A4" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="A4" value="2" /><span>部分做到</span></label><label><input type="radio" name="A4" value="3" /><span>多数做到</span></label><label><input type="radio" name="A4" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="A" data-id="A5"><p><span class="qid">A5</span>一线/移动端是否能够支撑现场业务操作，避免“事后统一补录”成为常态？</p><div class="choices"><label><input type="radio" name="A5" value="0" /><span>几乎没有</span></label><label><input type="radio" name="A5" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="A5" value="2" /><span>部分做到</span></label><label><input type="radio" name="A5" value="3" /><span>多数做到</span></label><label><input type="radio" name="A5" value="4" /><span>稳定做到</span></label></div></div></div>
+<div class="q-group"><h3><span class="q-badge">B · 数字化</span>数据是否真正驱动经营</h3><div class="question" data-dim="B" data-id="B1"><p><span class="qid">B1</span>客户、产品、组织等主数据是否统一，关键经营指标口径是否跨部门一致？</p><div class="choices"><label><input type="radio" name="B1" value="0" /><span>几乎没有</span></label><label><input type="radio" name="B1" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="B1" value="2" /><span>部分做到</span></label><label><input type="radio" name="B1" value="3" /><span>多数做到</span></label><label><input type="radio" name="B1" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="B" data-id="B2"><p><span class="qid">B2</span>跨部门数据能否流动连接，是否显著减少了重复录入与口径对账？</p><div class="choices"><label><input type="radio" name="B2" value="0" /><span>几乎没有</span></label><label><input type="radio" name="B2" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="B2" value="2" /><span>部分做到</span></label><label><input type="radio" name="B2" value="3" /><span>多数做到</span></label><label><input type="radio" name="B2" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="B" data-id="B3"><p><span class="qid">B3</span>经营决策是否经常因数据而改变，而不是数据只用于事后汇报？</p><div class="choices"><label><input type="radio" name="B3" value="0" /><span>几乎没有</span></label><label><input type="radio" name="B3" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="B3" value="2" /><span>部分做到</span></label><label><input type="radio" name="B3" value="3" /><span>多数做到</span></label><label><input type="radio" name="B3" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="B" data-id="B4"><p><span class="qid">B4</span>管理者能否及时看见收入、成本、客户、履约与风险等关键经营状态？</p><div class="choices"><label><input type="radio" name="B4" value="0" /><span>几乎没有</span></label><label><input type="radio" name="B4" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="B4" value="2" /><span>部分做到</span></label><label><input type="radio" name="B4" value="3" /><span>多数做到</span></label><label><input type="radio" name="B4" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="B" data-id="B5"><p><span class="qid">B5</span>核心流程是否围绕价值链端到端连接，而不是各部门系统各自为政？</p><div class="choices"><label><input type="radio" name="B5" value="0" /><span>几乎没有</span></label><label><input type="radio" name="B5" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="B5" value="2" /><span>部分做到</span></label><label><input type="radio" name="B5" value="3" /><span>多数做到</span></label><label><input type="radio" name="B5" value="4" /><span>稳定做到</span></label></div></div></div>
+<div class="q-group"><h3><span class="q-badge">C · 智能化</span>智能是否嵌入真实业务</h3><div class="question" data-dim="C" data-id="C1"><p><span class="qid">C1</span>是否至少有一个稳定运行的智能场景（预测、推荐、预警、审核、调度等），而非仅停留在演示？</p><div class="choices"><label><input type="radio" name="C1" value="0" /><span>几乎没有</span></label><label><input type="radio" name="C1" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="C1" value="2" /><span>部分做到</span></label><label><input type="radio" name="C1" value="3" /><span>多数做到</span></label><label><input type="radio" name="C1" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="C" data-id="C2"><p><span class="qid">C2</span>智能场景的效果是否可量化（准确率、采纳率、成本/收入影响等）并定期评估？</p><div class="choices"><label><input type="radio" name="C2" value="0" /><span>几乎没有</span></label><label><input type="radio" name="C2" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="C2" value="2" /><span>部分做到</span></label><label><input type="radio" name="C2" value="3" /><span>多数做到</span></label><label><input type="radio" name="C2" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="C" data-id="C3"><p><span class="qid">C3</span>智能能力是否嵌入业务流程（触发任务、影响审批或执行），而非旁路聊天/写作工具？</p><div class="choices"><label><input type="radio" name="C3" value="0" /><span>几乎没有</span></label><label><input type="radio" name="C3" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="C3" value="2" /><span>部分做到</span></label><label><input type="radio" name="C3" value="3" /><span>多数做到</span></label><label><input type="radio" name="C3" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="C" data-id="C4"><p><span class="qid">C4</span>相关业务规则、约束条件与决策目标是否足够清晰，支撑模型稳定运行？</p><div class="choices"><label><input type="radio" name="C4" value="0" /><span>几乎没有</span></label><label><input type="radio" name="C4" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="C4" value="2" /><span>部分做到</span></label><label><input type="radio" name="C4" value="3" /><span>多数做到</span></label><label><input type="radio" name="C4" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="C" data-id="C5"><p><span class="qid">C5</span>是否具备数据样本、反馈与纠错机制，使模型/规则能够持续改进？</p><div class="choices"><label><input type="radio" name="C5" value="0" /><span>几乎没有</span></label><label><input type="radio" name="C5" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="C5" value="2" /><span>部分做到</span></label><label><input type="radio" name="C5" value="3" /><span>多数做到</span></label><label><input type="radio" name="C5" value="4" /><span>稳定做到</span></label></div></div></div>
+<div class="q-group"><h3><span class="q-badge">D · 闭环</span>是否形成经营闭环</h3><div class="question" data-dim="D" data-id="D1"><p><span class="qid">D1</span>是否形成“感知异常 → 形成策略 → 组织执行 → 结果反馈”的贯通机制？</p><div class="choices"><label><input type="radio" name="D1" value="0" /><span>几乎没有</span></label><label><input type="radio" name="D1" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="D1" value="2" /><span>部分做到</span></label><label><input type="radio" name="D1" value="3" /><span>多数做到</span></label><label><input type="radio" name="D1" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="D" data-id="D2"><p><span class="qid">D2</span>人机职责是否清晰：哪些由机器做、哪些必须人判断、重大风险谁负责？</p><div class="choices"><label><input type="radio" name="D2" value="0" /><span>几乎没有</span></label><label><input type="radio" name="D2" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="D2" value="2" /><span>部分做到</span></label><label><input type="radio" name="D2" value="3" /><span>多数做到</span></label><label><input type="radio" name="D2" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="D" data-id="D3"><p><span class="qid">D3</span>是否用经营结果定期复盘数据与智能能力，并驱动规则/模型持续改进？</p><div class="choices"><label><input type="radio" name="D3" value="0" /><span>几乎没有</span></label><label><input type="radio" name="D3" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="D3" value="2" /><span>部分做到</span></label><label><input type="radio" name="D3" value="3" /><span>多数做到</span></label><label><input type="radio" name="D3" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="D" data-id="D4"><p><span class="qid">D4</span>智能结果是否进入跨部门协同与责任机制，而不是停在单个工具或单个岗位？</p><div class="choices"><label><input type="radio" name="D4" value="0" /><span>几乎没有</span></label><label><input type="radio" name="D4" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="D4" value="2" /><span>部分做到</span></label><label><input type="radio" name="D4" value="3" /><span>多数做到</span></label><label><input type="radio" name="D4" value="4" /><span>稳定做到</span></label></div></div><div class="question" data-dim="D" data-id="D5"><p><span class="qid">D5</span>企业是否把“小闭环验证—推广—再优化”作为常态推进方式，而不是一次性工程？</p><div class="choices"><label><input type="radio" name="D5" value="0" /><span>几乎没有</span></label><label><input type="radio" name="D5" value="1" /><span>偶尔做到</span></label><label><input type="radio" name="D5" value="2" /><span>部分做到</span></label><label><input type="radio" name="D5" value="3" /><span>多数做到</span></label><label><input type="radio" name="D5" value="4" /><span>稳定做到</span></label></div></div></div>
+      <div class="check-actions">
+        <button type="submit" class="btn btn-primary" id="btn-result">查看阶段判断与建议</button>
+        <button type="button" class="btn btn-ghost" id="btn-reset">清空重答</button>
+      </div>
+    </form>
+  </div>
+  <div class="result-box" id="result-box" data-stage="idle" role="status" aria-live="polite">
+    <p class="stage" id="result-stage">—</p>
+    <p class="meta" id="result-meta"></p>
+    <p id="result-desc"></p>
+    <p><strong>90 天优先动作</strong></p>
+    <ul id="result-actions"></ul>
+  </div>
+</section>
+
+<section id="strategy">
+  <h2>从战略视角理解数智化</h2>
+  <p class="section-lead">数智化首先是经营战略，不是 IT 战略；真正对象不是软件，而是经营能力。</p>
+  <div class="layer-list">
+    <div class="layer-item"><div class="n">L1</div><h4>业务在线</h4><p>核心业务进系统，关键节点可记录。</p></div>
+    <div class="layer-item"><div class="n">L2</div><h4>流程协同</h4><p>跨部门、跨系统流程贯通。</p></div>
+    <div class="layer-item"><div class="n">L3</div><h4>数据治理</h4><p>核心数据统一、准确、及时、可追溯。</p></div>
+    <div class="layer-item"><div class="n">L4</div><h4>经营洞察</h4><p>发现问题、解释原因、评估结果。</p></div>
+    <div class="layer-item"><div class="n">L5</div><h4>智能决策</h4><p>预测、推荐、预警、优化与决策辅助。</p></div>
+    <div class="layer-item"><div class="n">L6</div><h4>闭环经营</h4><p>策略、执行、反馈与优化持续循环。</p></div>
+  </div>
+  <div class="callout">
+    <p>真正有效的数据应用要回答四层：发生了什么 → 为什么发生 → 未来会怎样 → 应该怎么做。只停留在第一层，仍是可视化，不是数智化。</p>
+    <button type="button" class="btn-linkish" data-open-modal="strategy-full">展开：战略视角完整论述</button>
+  </div>
+</section>
+
+<section id="path">
+  <h2>企业实际落地路径</h2>
+  <p class="section-lead">不要从“准备买什么系统 / 接什么模型”出发，而从经营问题出发。点击每一步可阅读完整细则。</p>
+  <figure class="figure">
+    <img src="assets/enterprise-digitalization-illustrations/06-closed-loop.png" alt="数智化闭环回流" width="1536" height="1024" />
+    <figcaption>数智化不是单向吐出报告，而是把结果塞回经营入口，形成回流。</figcaption>
+  </figure>
+  <ol class="path-steps">
+    <li><strong>明确经营目标</strong><p>增长、效率、利润、风险、组织——每项目至少对应一个可验证指标。</p><button type="button" class="btn-linkish" data-open-modal="path-1">查看五类目标清单</button></li>
+    <li><strong>梳理价值链与决策点</strong><p>优先高频、高价值、强依赖个人经验的场景。</p><button type="button" class="btn-linkish" data-open-modal="path-2">查看分析框架表</button></li>
+    <li><strong>补齐信息化基础</strong><p>核心业务在线、关键节点留痕、减少系统外操作。</p><button type="button" class="btn-linkish" data-open-modal="path-3">查看检查清单</button></li>
+    <li><strong>建立数据治理</strong><p>主数据、指标口径、质量、权限与责任机制。</p><button type="button" class="btn-linkish" data-open-modal="path-4">查看治理细则</button></li>
+    <li><strong>建设经营分析体系</strong><p>从“发生了什么”走向原因、预测与行动任务闭环。</p><button type="button" class="btn-linkish" data-open-modal="path-5">查看四级指标</button></li>
+    <li><strong>选择高价值智能场景</strong><p>按价值、数据、规则、频率、可验证性评估。</p><button type="button" class="btn-linkish" data-open-modal="path-6">查看评估维度</button></li>
+    <li><strong>建立人机协同</strong><p>机器做高频低风险；人做价值权衡与责任承担。</p><button type="button" class="btn-linkish" data-open-modal="path-7">查看职责与自动化等级</button></li>
+  </ol>
+</section>
+
+<section id="org">
+  <h2>组织治理与落地路线图</h2>
+  <p class="section-lead">数智化不能由 IT 单独推动；路线图控制节奏，避免同时开过多项目。</p>
+  <div class="two-col">
+    <div class="panel">
+      <h3>三层治理</h3>
+      <ul>
+        <li><strong>战略层：</strong>方向、目标、资源、重大项目与价值评估</li>
+        <li><strong>业务层：</strong>问题、规则、口径、流程变革与结果责任</li>
+        <li><strong>技术层：</strong>架构、数据平台、模型、安全与稳定</li>
+      </ul>
+      <button type="button" class="btn-linkish" data-open-modal="org-full">展开：组织与项目责任制</button>
+    </div>
+    <div class="panel">
+      <h3>验收不只看上线</h3>
+      <p>每个项目明确业务/产品/技术/数据负责人，以及目标、收益、验收指标与复盘周期。验收应覆盖系统、数据、业务与经营价值。</p>
+      <button type="button" class="btn-linkish" data-open-modal="ai-safety">展开：AI 安全与使用边界</button>
+    </div>
+  </div>
+  <div class="roadmap">
+    <article><div class="t">0—3 个月</div><h3>诊断与规划</h3><p>战略、价值链、系统与数据盘点、场景优先级、路线图。</p></article>
+    <article><div class="t">3—12 个月</div><h3>夯实基础</h3><p>一个核心闭环、一套统一指标、2–3 个可量化智能试点。</p></article>
+    <article><div class="t">12—24 个月</div><h3>规模推广</h3><p>数据资产、模型管理、流程嵌入、人机协同机制。</p></article>
+    <article><div class="t">24 个月以后</div><h3>持续优化</h3><p>企业级智能决策、关键场景闭环、新业务模式探索。</p></article>
+  </div>
+  <button type="button" class="btn-linkish" data-open-modal="roadmap-full">展开：各阶段任务与产出物</button>
+</section>
+
+<section id="advice">
+  <h2>管理建议与常见误区</h2>
+  <div class="advice-grid">
+    <article class="advice-card"><h4>建议一：从经营指标出发</h4><p>不要只提“建客户数据平台”，要提转化率、流失率、响应时长等可验收结果。</p></article>
+    <article class="advice-card"><h4>建议二：优先高价值高频可量化</h4><p>每天发生、大量人工、规则相对明确、数据可得、效果可测、对收入成本或风险影响明显。</p></article>
+    <article class="advice-card"><h4>建议三：先统一规则再自动化</h4><p>流程与口径不清时上系统，只会把混乱固化。先明确异常、权限与评价。</p></article>
+    <article class="advice-card"><h4>建议四：从小闭环开始</h4><p>数据采集 → 指标 → 异常 → 任务 → 反馈。一个有效小闭环，胜过空转的大平台。</p></article>
+    <article class="advice-card"><h4>建议五：将 AI 纳入安全体系</h4><p>敏感数据、权限、审核、留痕与供应商管理必须同步建设。</p><button type="button" class="btn-linkish" data-open-modal="ai-safety">查看完整规范</button></article>
+    <article class="advice-card"><h4>建议六：建设复合型团队</h4><p>数字化/数据/AI 产品经理、业务架构师、分析师、治理负责人，把业务问题翻译成可建设问题。</p></article>
+    <article class="advice-card"><h4>建议七：用经营结果衡量</h4><p>看收入、毛利、成本、风险是否改善，而不是看上了多少模型和看板。</p><button type="button" class="btn-linkish" data-open-modal="metrics-full">查看完整指标体系</button></article>
+  </div>
+  <div class="myth-list">
+    <article class="myth"><h4>误区一：信息化＝数字化</h4><p>系统上线只是信息化。只有数据开始改变经营动作，才进入数字化。</p></article>
+    <article class="myth"><h4>误区二：数据大屏＝数字化管理</h4><p>大屏提高可视性。管理还需要责任、分析、任务与复盘机制。</p></article>
+    <article class="myth"><h4>误区三：接入大模型＝智能化</h4><p>大模型只是技术手段之一。有效性看能否稳定解决业务问题并产生可量化价值。</p></article>
+    <article class="myth"><h4>误区四：忽视基础数据直接上 AI</h4><p>口径不一、样本不可信时，AI 只会产出“看起来合理但难以验证”的结论。</p></article>
+    <article class="myth"><h4>误区五：只建技术不改组织流程</h4><p>考核、审批、部门边界不变，新系统常被旧管理方式抵消。</p></article>
+    <article class="myth"><h4>误区六：追求一次性完成总体规划</h4><p>数智化是持续迭代的经营变革：小步验证、快速扩展，而不是一次宏大工程。</p></article>
+  </div>
+</section>
+
+<section id="closing">
+  <div class="closing">
+    <h2>结论：回到管理者三问</h2>
+    <ol>
+      <li><strong>我们在哪</strong>——按业务域看清信息化、数字化、智能化与闭环的真实水位；</li>
+      <li><strong>缺什么</strong>——以最弱维度决定补齐顺序，底座不稳时不要盲目堆 AI；</li>
+      <li><strong>下一件事是什么</strong>——选择能改善明确经营指标、可在 90 天内验证的动作。</li>
+    </ol>
+    <p class="pullquote">能够及时感知经营变化，准确识别问题，科学制定策略，高效组织执行，并根据结果持续优化——这才是数智化的最终目的。</p>
+    <p style="margin:0;opacity:.85;font-size:.95rem">信息化让业务有系统；数字化让经营有数据；智能化让系统有判断；数智化让企业形成数据驱动、智能决策与人机协同的经营体系。</p>
+  </div>
+</section>
+</main>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <span>企业数智化转型 · 管理者精读版 v1.1</span>
+    <span>正文与弹层已覆盖完整报告内容，可直接对外分享本页</span>
+  </div>
+</footer>
+
+<dialog class="modal" id="content-modal" aria-labelledby="modal-title">
+  <div class="modal-head">
+    <h2 id="modal-title">详细内容</h2>
+    <button type="button" class="modal-close" id="modal-close" aria-label="关闭">×</button>
+  </div>
+  <div class="modal-body" id="modal-body"></div>
+</dialog>
+
+<div class="modal-library" id="modal-library" hidden>
+<article data-modal-id="def-info" data-title="信息化：完整定义与边界">
+<p>信息化是指企业利用软件、数据库、网络和信息系统，将原本依靠纸质文件、人工记录、电话沟通和线下审批完成的业务活动，转移到信息系统中进行管理。</p>
+<p class="pullquote">将业务过程固化为系统流程，将线下记录转化为结构化信息。</p>
+<h3>解决的核心问题</h3>
+<ul><li>业务有没有系统承载</li><li>流程能不能标准化执行</li><li>信息能不能被记录和查询</li><li>部门内部效率能不能提高</li><li>权限、审批和操作能不能得到管控</li><li>业务过程能不能留下完整记录</li></ul>
+<h3>典型系统</h3>
+<ul><li>ERP、CRM、OA、财务、人力、采购、运输、仓储、客服等</li></ul>
+<p>例如：运输企业从纸质运单、电话派车、Excel统计，升级为在线创建运单、分配车辆、记录节点、生成结算——属于典型信息化。</p>
+<h3>战略价值</h3>
+<ul><li>提升流程效率、降低重复劳动、形成业务标准</li><li>加强内控、建立经营活动数据记录基础</li><li>降低扩张过程中对个人经验的依赖</li></ul>
+<h3>局限</h3>
+<p>信息化并不天然等于数字化。常见现象：系统相互独立、口径不一致、跨系统断裂、只用于事后统计、决策仍靠经验。核心成果是“业务被系统承载”，不一定意味着“数据能够驱动经营”。</p>
+</article><article data-modal-id="def-digital" data-title="数字化：完整定义与边界">
+<p>数字化是指企业将客户、产品、交易、流程、资产、组织和经营活动转化为可连接、可计算、可分析和可运营的数据对象，并基于数据重新设计业务流程、经营模式和管理机制。</p>
+<p class="pullquote">不只是将原有业务搬到线上，而是利用数据重新认识和经营业务。</p>
+<h3>解决的核心问题</h3>
+<ul><li>经营状态是否透明</li><li>各业务环节是否能够连接</li><li>数据是否能够跨部门流动</li><li>管理层是否能够实时掌握经营情况</li><li>业务是否能够基于数据持续优化</li><li>客户、产品和渠道是否可以精细化运营</li><li>企业是否能够快速响应市场变化</li></ul>
+<h3>与信息化的关键区别</h3>
+<ul>
+<li>在线录入客户信息＝信息化；根据客户行为分层运营＝数字化</li>
+<li>系统记录订单＝信息化；据订单优化定价/库存/资源＝数字化</li>
+<li>系统生成财务报表＝信息化；据实时经营数据调整策略＝数字化</li>
+</ul>
+<h3>五个层面</h3>
+<ol><li>业务数字化</li><li>流程数字化</li><li>客户数字化</li><li>管理数字化</li><li>决策数字化</li></ol>
+<p>衡量标准不是系统数量，而是：经营状态能否实时看见、问题能否快速定位、动作能否形成数据反馈、规则能否系统执行、决策结果能否持续验证。</p>
+</article><article data-modal-id="def-intel" data-title="智能化：完整定义与边界">
+<p>智能化是指企业利用机器学习、知识图谱、运筹优化、自然语言处理、大模型、计算机视觉等技术，对业务数据进行分析、预测、判断、推荐或自动执行。</p>
+<p class="pullquote">从“系统按照固定规则执行”，升级为“系统能够基于数据形成判断”。</p>
+<h3>解决的核心问题</h3>
+<ul><li>未来可能发生什么</li><li>为什么会发生</li><li>企业应该采取什么行动</li><li>哪些工作可由机器自动完成</li><li>哪些决策可由算法辅助</li><li>如何提高复杂场景下的决策质量与响应速度</li></ul>
+<h3>典型应用</h3>
+<ul><li>销量预测、流失预警、智能定价、风险识别</li><li>智能排产、路径规划、库存优化、智能调度</li><li>营销推荐、合同审核、财务异常检测</li><li>智能客服、经营分析助手、知识问答、自动报告</li></ul>
+<p>物流例子：记运单＝信息化；打通订单/车辆/司机/线路/成本＝数字化；自动推荐车辆司机＝智能化；预测—调度—执行—监控—复盘闭环＝数智化。</p>
+<h3>前提与局限</h3>
+<p>依赖稳定系统、完整采集、统一标准、清晰规则、可验证样本、明确目标与持续反馈。单点智能（客服、问答、写报告）不等于企业完成数智化转型。</p>
+</article><article data-modal-id="def-smart" data-title="数智化：完整定义与特征">
+<p>数智化是数字化与智能化的深度融合。不是简单把数据平台与AI模型放在一起，而是把数据、算法和智能能力嵌入战略、组织、流程、决策与执行反馈。</p>
+<p class="pullquote">让数据成为企业经营的基础生产要素，让智能成为企业决策和执行的基础能力。</p>
+<h3>关注的问题</h3>
+<ul><li>能否实时感知经营变化</li><li>系统能否识别问题与机会</li><li>能否形成更优经营决策并快速转化动作</li><li>执行结果能否自动反馈</li><li>模型与规则能否持续迭代</li><li>人与机器能否形成稳定协作</li></ul>
+<h3>七个典型特征</h3>
+<ol>
+<li>经营活动全面在线</li><li>核心数据统一可信</li><li>业务流程端到端贯通</li>
+<li>经营过程实时可视</li><li>算法进入业务决策</li><li>决策执行形成闭环</li>
+<li>人机协同成为组织能力</li>
+</ol>
+<p>最终目标不是“看起来更先进”，而是更低成本、更高效率、更快响应、更准运营、更强风控、更高质量决策与更可复制的组织能力。</p>
+</article><article data-modal-id="why-distinguish" data-title="为什么必须区分这四个概念">
+<p>很多企业在转型中存在典型问题：</p>
+<ol>
+<li>将购买软件等同于完成数字化</li>
+<li>将业务线上化等同于形成数据驱动</li>
+<li>将接入大模型等同于实现智能化</li>
+<li>将“数字化+AI”简单包装为数智化</li>
+<li>系统建设很多，但数据仍然割裂</li>
+<li>报表数量很多，但管理决策仍然依靠经验</li>
+<li>AI应用场景很多，但没有形成经营价值闭环</li>
+</ol>
+<p>概念不清会导致：战略目标模糊、建设顺序错误、投入结构失衡、转型价值难衡量。例如尚未统一主数据就建AI经营分析；核心流程仍线下却上智能助手；口径不统一却要求自动输出经营结论；规则未标准化却希望算法自动决策。</p>
+<p><strong>结论：</strong>先明确所处阶段，再决定下一阶段补齐什么能力。</p>
+</article><article data-modal-id="strategy-full" data-title="战略视角：经营能力再造（完整）">
+<h3>数智化首先是经营战略，不是IT战略</h3>
+<p>应从这些问题出发，而不是从“准备建设什么系统”出发：</p>
+<ul>
+<li>未来三年增长来自哪里</li><li>利润被哪些成本侵蚀</li><li>哪些客户价值更高</li>
+<li>哪些风险最需控制</li><li>哪些组织能力限制扩张</li>
+<li>哪些环节最依赖少数人经验</li><li>哪些决策质量直接影响收入利润</li>
+</ul>
+<h3>六层数智能力</h3>
+<ol>
+<li>业务在线能力</li><li>流程协同能力</li><li>数据治理能力</li>
+<li>经营洞察能力</li><li>智能决策能力</li><li>闭环经营能力</li>
+</ol>
+<h3>围绕价值链，而非部门边界</h3>
+<p>“客户利润下降”可能同时涉及定价、履约成本、服务质量、采购价格、账期、优惠与异常损失。建设应从端到端价值链出发：线索到回款、需求到交付、采购到付款、订单到履约、问题发现到闭环改进。</p>
+<h3>关注决策，而不仅是数据展示</h3>
+<ol><li>发生了什么</li><li>为什么发生</li><li>未来会怎样</li><li>应该怎么做</li></ol>
+<p>数智化要把数据转化为：预警 → 建议 → 决策 → 任务 → 执行 → 反馈。</p>
+</article><article data-modal-id="path-1" data-title="第一步：明确经营目标（完整）">
+<p>每一个数智化项目，都应至少对应一个明确的经营指标。</p>
+<h3>增长类</h3><ul><li>转化率、复购率、客户生命周期价值、产品渗透率、渠道效率</li></ul>
+<h3>效率类</h3><ul><li>订单处理周期、人工操作量、人均产出、资源利用率、跨部门沟通成本</li></ul>
+<h3>利润类</h3><ul><li>毛利率、履约成本、采购成本、异常损失、经营现金流</li></ul>
+<h3>风险类</h3><ul><li>信用风险、交易异常、合规风险、安全管理、风险响应速度</li></ul>
+<h3>组织类</h3><ul><li>减少对关键个人经验依赖、协同能力、决策一致性、知识沉淀、可复制管理机制</li></ul>
+</article><article data-modal-id="path-2" data-title="第二步：梳理价值链与决策点（完整）">
+<p>不能只梳理业务流程，还应梳理流程中的关键决策。</p>
+<div class="table-wrap"><table>
+<thead><tr><th>分析内容</th><th>核心问题</th></tr></thead>
+<tbody>
+<tr><td>业务对象</td><td>客户、订单、产品、合同、资产等是否定义清晰</td></tr>
+<tr><td>流程节点</td><td>哪些节点依赖人工传递和线下沟通</td></tr>
+<tr><td>数据来源</td><td>数据在哪里产生，由谁维护</td></tr>
+<tr><td>决策动作</td><td>哪些节点需要判断、审批、选择或预测</td></tr>
+<tr><td>业务规则</td><td>规则是否明确，能否标准化</td></tr>
+<tr><td>异常情况</td><td>哪些问题频繁出现</td></tr>
+<tr><td>价值指标</td><td>哪些指标反映该流程是否有效</td></tr>
+<tr><td>责任主体</td><td>谁对数据、决策和结果负责</td></tr>
+</tbody></table></div>
+<p>优先三类场景：高频重复且标准化；对收入/成本/风险影响大；高度依赖个人经验。</p>
+</article><article data-modal-id="path-3" data-title="第三步：补齐信息化基础（完整）">
+<p>检查重点：大量Excel台账；依赖微信群/电话/口头传递；重复录入；系统外操作；关键节点缺时间与责任记录；系统与实际业务脱节；移动端不支持一线操作。</p>
+<p>目标不是盲目加系统，而是确保：核心业务有系统承载；关键过程有数据记录；业务规则可通过系统执行；权责关系可通过系统体现。</p>
+</article><article data-modal-id="path-4" data-title="第四步：数据治理体系（完整）">
+<h3>主数据管理</h3>
+<p>统一管理客户、供应商、产品、组织、员工、车辆、设备、站点、区域等。</p>
+<h3>指标口径管理</h3>
+<p>明确指标名称、定义、计算公式、数据来源、统计周期、责任部门、更新频率、使用范围。</p>
+<h3>数据质量管理</h3>
+<p>持续监控完整率、准确率、一致率、及时率、唯一性、可追溯性。</p>
+<h3>数据权限与责任</h3>
+<p>按数据分类、组织范围、角色职责和业务场景配置权限。明确：谁产生、谁维护、谁定义口径、谁批准变更、谁对质量负责、谁可以使用。业务部门必须成为数据责任主体。</p>
+</article><article data-modal-id="path-5" data-title="第五步：经营分析与决策体系（完整）">
+<p>从“报表体系”升级为“经营管理体系”。</p>
+<ul>
+<li><strong>一级战略指标：</strong>收入、毛利、现金流、市场份额、客户增长、资产回报率</li>
+<li><strong>二级经营指标：</strong>转化率、复购率、单位履约成本、订单完成率、资源利用率、渠道贡献率</li>
+<li><strong>三级过程指标：</strong>报价及时率、调度响应时间、异常处理时长、客诉解决率、回款周期</li>
+<li><strong>四级执行指标：</strong>每日任务完成率、重点客户跟进、异常订单处理、预警任务关闭率</li>
+</ul>
+<p class="pullquote">指标异常 → 原因定位 → 责任识别 → 行动任务 → 结果跟踪 → 策略复盘</p>
+</article><article data-modal-id="path-6" data-title="第六步：高价值智能化场景（完整）">
+<p>不要从“哪里可以用AI”出发，而从“哪些决策值得智能化”出发。</p>
+<div class="table-wrap"><table>
+<thead><tr><th>评估维度</th><th>评估内容</th></tr></thead>
+<tbody>
+<tr><td>业务价值</td><td>是否显著影响收入、成本、效率或风险</td></tr>
+<tr><td>数据基础</td><td>是否具备足够、准确、连续的数据</td></tr>
+<tr><td>规则清晰度</td><td>业务目标和约束条件是否明确</td></tr>
+<tr><td>使用频率</td><td>是否属于高频业务场景</td></tr>
+<tr><td>可验证性</td><td>模型效果和经营结果是否可以量化</td></tr>
+</tbody></table></div>
+<p>优先场景：经营异常预警、流失预测、需求预测、智能定价、资源调度、风险识别、智能客服、单据审核、知识助手、报告生成、经营分析助手。</p>
+<p>生成式AI额外关注：知识来源可信、答案可追溯、敏感数据泄露、人工审核、错误后果、权限边界。</p>
+</article><article data-modal-id="path-7" data-title="第七步：人机协同机制（完整）">
+<h3>适合机器</h3>
+<ul><li>数据采集整理、重复录入、规则校验、异常识别</li><li>信息检索、初步分析、标准化内容生成、候选方案推荐</li><li>高频低风险任务执行</li></ul>
+<h3>必须由人</h3>
+<ul><li>战略目标、价值判断、利益权衡、复杂谈判</li><li>伦理判断、例外审批、重大风险决策、最终责任承担</li></ul>
+<h3>自动化等级</h3>
+<ol><li>AI只提供信息</li><li>AI提供分析</li><li>AI提出建议</li><li>AI执行、人审核</li><li>AI自动执行、异常时人介入</li></ol>
+<p>高风险场景不宜直接完全自动化。</p>
+</article><article data-modal-id="org-full" data-title="组织与治理机制（完整）">
+<h3>三层治理</h3>
+<p><strong>战略层</strong>（董事长/总经理/核心班子）：转型方向、经营目标、跨部门资源、重大项目、转型价值评估。</p>
+<p><strong>业务层</strong>（业务/产品/数据负责人）：定义业务问题、设计规则、明确口径、推动流程变革、对业务结果负责。</p>
+<p><strong>技术层</strong>（IT/数据/算法/安全）：技术架构、数据平台、系统与模型、安全稳定、技术支撑。</p>
+<h3>项目价值责任制</h3>
+<p>每个项目明确：业务/产品/技术/数据负责人，业务目标、预期收益、验收指标、复盘周期。验收应包括系统、数据、业务与经营价值，不能只用“是否上线”。</p>
+</article><article data-modal-id="roadmap-full" data-title="落地路线图（0–24个月+）">
+<h3>第一阶段：诊断与规划（0—3个月）</h3>
+<p>明确战略目标；梳理价值链；盘点系统；评估数据质量；识别痛点；建立项目清单；定优先级与责任人。产出：战略地图、能力评估、系统与数据资产清单、核心指标、场景优先级、2–3年路线图。</p>
+<h3>第二阶段：夯实基础（3—12个月）</h3>
+<p>补齐核心系统；打通关键流程；统一主数据与指标；建设集成分析能力；管理驾驶舱；少量高价值试点。优先完成：一个核心业务闭环、一套统一经营指标、两至三个可量化智能场景。</p>
+<h3>第三阶段：规模推广（12—24个月）</h3>
+<p>推广试点；企业级数据资产；算法模型管理平台；预警/推荐/预测嵌入流程；人机协同岗位机制；业务规则平台化。</p>
+<h3>第四阶段：持续优化（24个月以后）</h3>
+<p>企业级智能决策；关键场景闭环；模型持续学习；智能运营中心；逐步形成新产品、服务与商业模式。</p>
+</article><article data-modal-id="metrics-full" data-title="成效衡量指标体系（完整）">
+<h3>业务结果</h3><ul><li>收入增长率、毛利改善额、成本节约额、客户转化率、客户流失率、风险损失下降额</li></ul>
+<h3>流程效率</h3><ul><li>流程处理时长、自动化率、人均业务处理量、异常关闭周期、重复录入减少量</li></ul>
+<h3>数据能力</h3><ul><li>完整率、准确率、指标一致率、更新及时率、数据问题关闭率</li></ul>
+<h3>智能应用</h3><ul><li>模型准确率、预警命中率、建议采纳率、自动决策覆盖率、AI应用活跃率、人工工作量减少比例</li></ul>
+</article><article data-modal-id="ai-safety" data-title="AI 安全与使用边界（完整）">
+<p>企业应建立AI使用规范，包括：敏感数据分类；模型访问权限；提示词和知识库管理；输出内容审核；操作日志留痕；高风险动作确认；第三方模型评估；AI供应商管理；员工使用边界；事故响应机制。</p>
+<p>涉及财务、客户、合同、生产、安全和个人信息的场景，不应允许员工随意将原始数据提交给未经批准的外部模型。</p>
+</article><article data-modal-id="relation-full" data-title="四者联系：演进但不线性（完整）">
+<p>总体逻辑：业务标准化 → 业务在线化 → 数据资产化 → 决策智能化 → 经营闭环化。</p>
+<ul>
+<li>信息化提供业务承载基础</li>
+<li>数字化完成数据连接和业务重构</li>
+<li>智能化提升判断和执行能力</li>
+<li>数智化形成整体经营体系</li>
+</ul>
+<p>但并非严格先后。企业可能财务高度信息化、客户运营数字化、客服接了大模型、供应链仍靠经验。应按业务域分别评估成熟度。</p>
+<p>信息化是基础不是终点；数字化是智能化重要前提（完整、准确、一致、及时、可解释、可追溯）；智能化是数智化的能力组件，数智化强调体系：谁用智能结果、影响什么决策、如何执行、如何反馈、如何改进、责任谁承担。</p>
+</article>
+</div>
+
+<script>
+
+(function(){
+  const dims=['A','B','C','D'];
+  const dimNames={A:'信息化',B:'数字化',C:'智能化',D:'闭环'};
+  const qIds=["A1","A2","A3","A4","A5","B1","B2","B3","B4","B5","C1","C2","C3","C4","C5","D1","D2","D3","D4","D5"];
+  const maxDim=20, maxTotal=80;
+  const stageOrder=['s1','s2','s3','s4','s5','s6','s7','s8'];
+  const actionsByWeak={
+    A:["盘点并压缩系统外操作（Excel/微信群/口头传递）","补齐1条核心业务在线闭环，强制关键节点留痕与权责","对齐一线实际操作与系统流程，补齐移动端/现场录入能力"],
+    B:["选定1套经营主指标并统一跨部门口径","打通1条跨部门数据链，明确主数据与数据责任人","经营会议改为数据先于经验：先看数，再决策，再派任务"],
+    C:["按价值高、数据够、可验证，选1–2个智能场景试点","为试点明确验收指标（准确率/采纳率/经营影响）","把智能结果接到流程动作，并建立反馈纠错机制"],
+    D:["把看板/模型接到任务：异常→责任→动作→结果","书面明确人机职责与重大风险升级机制","建立双周复盘：用经营结果驱动规则与模型迭代"]
+  };
+  const stageCopy={
+    s1:{name:'信息化起步期',short:'信息起步',band:'L1',desc:'核心业务大量仍在系统外运行，数据来源不稳。优先完成关键业务上线与留痕，暂缓大规模 AI 投入。'},
+    s2:{name:'信息化夯实期',short:'信息夯实',band:'L2',desc:'已有系统覆盖，但绕路操作、权责留痕或一线录入仍不稳。应压缩系统外流程，打牢信息化底座后再谈数据驱动。'},
+    s3:{name:'数字化起步期',short:'数字起步',band:'L3',desc:'系统底座基本具备，但主数据/口径与跨部门连接仍弱。下一步聚焦统一指标、打通一条跨部门数据链。'},
+    s4:{name:'数字化推进期',short:'数字推进',band:'L4',desc:'数据开始连接并影响部分决策，经营可见性提升。应扩大端到端流程贯通，让数据稳定改变经营动作。'},
+    s5:{name:'智能化试点期',short:'智能试点',band:'L5',desc:'数字化基础可用，智能应用处于试点或演示边缘。应选 1–2 个高价值可验证场景嵌入流程，并明确验收指标。'},
+    s6:{name:'智能化扩展期',short:'智能扩展',band:'L6',desc:'已有稳定智能场景，开始扩展覆盖面。重点是量化效果、建立反馈纠错，避免工具停在旁路。'},
+    s7:{name:'数智化成型期',short:'数智成型',band:'L7',desc:'数据与智能已进入部分经营机制，人机协同初步成型。应补齐闭环短板，把复盘迭代变成组织习惯。'},
+    s8:{name:'数智化闭环期',short:'数智闭环',band:'L8',desc:'数据与智能已进入经营机制，四维相对均衡。继续巩固人机协同与复盘迭代，并按业务域扩大闭环覆盖面。'}
+  };
+  const form=document.getElementById('self-check-form');
+  const resultBox=document.getElementById('result-box');
+  const gauge=document.getElementById('gauge');
+  const checkPanel=document.getElementById('check-panel');
+  const gaugeScore=document.getElementById('gauge-score');
+  const gaugeStage=document.getElementById('gauge-stage');
+  const gaugeBand=document.getElementById('gauge-band');
+  const rulerFill=document.getElementById('ruler-fill');
+  const rulerPointer=document.getElementById('ruler-pointer');
+  const progressHint=document.getElementById('progress-hint');
+  const tickEls=Array.from(document.querySelectorAll('#ruler-ticks [data-stage]'));
+  const dimScoreEls={A:document.querySelector('.dim-score[data-dim="A"] .val'),B:document.querySelector('.dim-score[data-dim="B"] .val'),C:document.querySelector('.dim-score[data-dim="C"] .val'),D:document.querySelector('.dim-score[data-dim="D"] .val')};
+  const dimCardEls={A:document.querySelector('.dim-score[data-dim="A"]'),B:document.querySelector('.dim-score[data-dim="B"]'),C:document.querySelector('.dim-score[data-dim="C"]'),D:document.querySelector('.dim-score[data-dim="D"]')};
+
+  function readScores(){
+    const scores={A:null,B:null,C:null,D:null}; let answered=0,total=0,complete=true;
+    qIds.forEach(id=>{
+      const checked=form.querySelector('input[name="'+id+'"]:checked');
+      const dim=id.charAt(0);
+      if(!checked){complete=false;return;}
+      answered+=1; const v=Number(checked.value); total+=v;
+      if(scores[dim]===null) scores[dim]=0; scores[dim]+=v;
+    });
+    return {scores,answered,total,complete};
+  }
+  function stageByTotal(total){
+    if(total<=18) return 's1';
+    if(total<=28) return 's2';
+    if(total<=38) return 's3';
+    if(total<=48) return 's4';
+    if(total<=56) return 's5';
+    if(total<=64) return 's6';
+    if(total<=72) return 's7';
+    return 's8';
+  }
+  function capStage(current, maxAllowed){
+    return stageOrder.indexOf(current) > stageOrder.indexOf(maxAllowed) ? maxAllowed : current;
+  }
+  function judgeStage(scores,total,complete){
+    let key=stageByTotal(total);
+    if(!complete) return key;
+    const A=scores.A,B=scores.B,C=scores.C,D=scores.D;
+    if(A<=6) key=capStage(key,'s1');
+    else if(A<=10) key=capStage(key,'s2');
+    else if(A<=12) key=capStage(key,'s3');
+    if(B<=8) key=capStage(key,'s3');
+    else if(B<=11) key=capStage(key,'s4');
+    if(C<=8) key=capStage(key,'s5');
+    else if(C<=12) key=capStage(key,'s6');
+    if(D<=10) key=capStage(key,'s6');
+    else if(D<=13) key=capStage(key,'s7');
+    if(key==='s8' && (A<14 || B<14 || C<14 || D<14)) key='s7';
+    return key;
+  }
+  function weakestDim(scores){
+    let weak='A', min=Infinity;
+    dims.forEach(d=>{ const v=scores[d]; if(v!==null && v<min){min=v;weak=d;} });
+    return weak;
+  }
+  function stagePointerPercent(key){
+    const i=stageOrder.indexOf(key);
+    if(i<0) return 0;
+    return ((i+0.5)/stageOrder.length)*100;
+  }
+  function applyStageTheme(key){
+    gauge.setAttribute('data-stage', key || 'idle');
+    resultBox.setAttribute('data-stage', key || 'idle');
+    tickEls.forEach(el=>el.classList.toggle('is-active', el.getAttribute('data-stage')===key));
+  }
+  function setGaugeTitle(name, band){
+    gaugeStage.innerHTML = name + ' <span class="gauge-band" id="gauge-band">' + band + '</span>';
+  }
+
+  function updateLive(){
+    const data=readScores();
+    gaugeScore.textContent='已答 '+data.answered+' / 20 · 总分 '+(data.answered?data.total:'—')+' / '+maxTotal;
+    dims.forEach(d=>{
+      const v=data.scores[d];
+      dimScoreEls[d].textContent=v===null?'—/'+maxDim:(v+'/'+maxDim);
+      dimCardEls[d].classList.remove('is-weak');
+    });
+    if(data.answered===0){
+      rulerFill.style.width='0%'; rulerPointer.style.left='0%';
+      setGaugeTitle('阶段刻度尺','待作答');
+      applyStageTheme('idle');
+      progressHint.textContent='五档作答：几乎没有 → 稳定做到。建议按某一业务域填写。答完后会落位到 8 档阶段之一。';
+      return;
+    }
+    const pct=Math.round((data.total/maxTotal)*100);
+    rulerFill.style.width=pct+'%';
+    const stageKey=judgeStage(data.scores,data.total,data.complete);
+    const stage=stageCopy[stageKey];
+    rulerPointer.style.left=stagePointerPercent(stageKey)+'%';
+    applyStageTheme(stageKey);
+    if(data.complete){
+      const weak=weakestDim(data.scores);
+      setGaugeTitle(stage.name, stage.band);
+      dims.forEach(d=>dimCardEls[d].classList.toggle('is-weak',d===weak));
+      progressHint.innerHTML='落位：<strong>'+stage.name+'</strong>（'+stage.band+'）；最弱维度：<strong>'+dimNames[weak]+'</strong>。点击按钮查看完整建议。';
+    }else{
+      setGaugeTitle('作答中 · 预估 '+stage.short, stage.band);
+      progressHint.textContent='继续作答，答完 20 题后按总分与短板维度精确定位到 8 档之一。';
+    }
+  }
+  function showResult(){
+    const data=readScores();
+    if(!data.complete){
+      resultBox.classList.add('is-visible');
+      resultBox.setAttribute('data-stage','idle');
+      document.getElementById('result-stage').textContent='还有题目未完成';
+      document.getElementById('result-meta').textContent='已答 '+data.answered+' / 20，请补全后再查看建议。';
+      document.getElementById('result-desc').textContent='';
+      document.getElementById('result-actions').innerHTML='';
+      resultBox.scrollIntoView({behavior:'smooth',block:'nearest'});
+      return;
+    }
+    const stageKey=judgeStage(data.scores,data.total,true);
+    const weak=weakestDim(data.scores);
+    const stage=stageCopy[stageKey];
+    applyStageTheme(stageKey);
+    setGaugeTitle(stage.name, stage.band);
+    document.getElementById('result-stage').textContent=stage.name+'（'+stage.band+'）';
+    document.getElementById('result-meta').textContent='总分 '+data.total+'/'+maxTotal+' · A'+data.scores.A+' · B'+data.scores.B+' · C'+data.scores.C+' · D'+data.scores.D+' · 最弱：'+dimNames[weak];
+    document.getElementById('result-desc').textContent=stage.desc;
+    const ul=document.getElementById('result-actions'); ul.innerHTML='';
+    actionsByWeak[weak].forEach(t=>{const li=document.createElement('li'); li.textContent=t; ul.appendChild(li);});
+    dims.forEach(d=>dimCardEls[d].classList.toggle('is-weak',d===weak));
+    rulerPointer.style.left=stagePointerPercent(stageKey)+'%';
+    resultBox.classList.add('is-visible');
+    resultBox.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+  function updateGaugeStuck(){
+    if(!gauge || !checkPanel) return;
+    const topbar=document.querySelector('.topbar');
+    const stickyTop=(topbar?topbar.getBoundingClientRect().height:72)+1;
+    const g=gauge.getBoundingClientRect();
+    const panel=checkPanel.getBoundingClientRect();
+    const stuck=g.top<=stickyTop+1 && panel.bottom>g.bottom+8 && panel.top<stickyTop;
+    gauge.classList.toggle('is-stuck', stuck);
+  }
+  form.addEventListener('change',updateLive);
+  form.addEventListener('submit',e=>{e.preventDefault();showResult();});
+  document.getElementById('btn-reset').addEventListener('click',()=>{
+    form.reset();
+    resultBox.classList.remove('is-visible');
+    resultBox.setAttribute('data-stage','idle');
+    updateLive();
+  });
+  window.addEventListener('resize',updateGaugeStuck);
+
+  // Modal
+  const dialog=document.getElementById('content-modal');
+  const modalTitle=document.getElementById('modal-title');
+  const modalBody=document.getElementById('modal-body');
+  const library=document.getElementById('modal-library');
+  function openModal(id){
+    const src=library.querySelector('[data-modal-id="'+id+'"]');
+    if(!src) return;
+    modalTitle.textContent=src.getAttribute('data-title')||'详细内容';
+    modalBody.innerHTML=src.innerHTML;
+    if(typeof dialog.showModal==='function') dialog.showModal();
+    else dialog.setAttribute('open','');
+  }
+  document.querySelectorAll('[data-open-modal]').forEach(btn=>{
+    btn.addEventListener('click',()=>openModal(btn.getAttribute('data-open-modal')));
+  });
+  document.getElementById('modal-close').addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('click',e=>{ if(e.target===dialog) dialog.close(); });
+
+  // TOC
+  const tocLinks=Array.from(document.querySelectorAll('.toc a'));
+  const sections=tocLinks.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  function onScroll(){
+    const y=window.scrollY+120; let current=sections[0];
+    sections.forEach(sec=>{ if(sec.offsetTop<=y) current=sec; });
+    tocLinks.forEach(a=>a.classList.toggle('is-active', a.getAttribute('href')==='#'+current.id));
+    updateGaugeStuck();
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll(); updateLive(); updateGaugeStuck();
+})();
+
+</script>
+</body>
+</html>
