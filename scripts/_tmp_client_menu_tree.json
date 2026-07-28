@@ -1,0 +1,3206 @@
+[
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "首页",
+    "path": "/dashboard",
+    "menu_code": "",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": "base_dashboard",
+    "id": 164
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "首页"
+    ],
+    "name": "工作台",
+    "path": "/dashboard/workplace",
+    "menu_code": "dashboard:workplace",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/dashboard/workplace/index",
+    "feature_code": "base_dashboard",
+    "id": 165
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "运营调度",
+    "path": "/operation",
+    "menu_code": "",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": null,
+    "id": 191
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运营调度"
+    ],
+    "name": "计划中心",
+    "path": "/operation/waybill",
+    "menu_code": "business:waybill",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/operation/waybill/index",
+    "feature_code": "biz_waybill",
+    "id": 243
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "计划中心"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "business:waybill:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_waybill",
+    "id": 244
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "计划中心"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "business:waybill:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_waybill",
+    "id": 245
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "计划中心"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "business:waybill:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_waybill",
+    "id": 246
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "计划中心"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "business:waybill:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_waybill",
+    "id": 247
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运营调度"
+    ],
+    "name": "配载建单",
+    "path": "/operation/stowage",
+    "menu_code": "operation:stowage",
+    "visible": true,
+    "menu_type": 0,
+    "component": "",
+    "feature_code": "biz_task",
+    "id": 931
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "配载建单"
+    ],
+    "name": "手动配载",
+    "path": "/operation/task-create",
+    "menu_code": "operation:task-create",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/operation/task-create/index",
+    "feature_code": "biz_task",
+    "id": 426
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "配载建单"
+    ],
+    "name": "智能配载",
+    "path": "/operation/smart-stowage",
+    "menu_code": "operation:smart-stowage",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/operation/smart-stowage/index",
+    "feature_code": "smart_stowage",
+    "id": 850
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运营调度"
+    ],
+    "name": "调度工作台",
+    "path": "/operation/task-workbench",
+    "menu_code": "operation:task-workbench",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/operation/task-workbench/index",
+    "feature_code": "biz_task",
+    "id": 402
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运营调度"
+    ],
+    "name": "在途监控",
+    "path": "/operation/tracking",
+    "menu_code": "business:tracking",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/operation/tracking/index",
+    "feature_code": "biz_tracking",
+    "id": 194
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运营调度"
+    ],
+    "name": "回单签收",
+    "path": "/operation/receipt",
+    "menu_code": "business:receipt",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/operation/receipt/index",
+    "feature_code": "biz_receipt",
+    "id": 195
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "回单签收"
+    ],
+    "name": "确认回单",
+    "path": "",
+    "menu_code": "operation:waybill:confirm-receipt",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_receipt",
+    "id": 815
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "回单签收"
+    ],
+    "name": "撤销回单",
+    "path": "",
+    "menu_code": "operation:waybill:revert-receipt",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_receipt",
+    "id": 816
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运营调度"
+    ],
+    "name": "已完成任务",
+    "path": "/operation/completed-task",
+    "menu_code": "operation:completed-task",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/operation/completed-task/index",
+    "feature_code": "biz_task",
+    "id": 818
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运营调度"
+    ],
+    "name": "任务单列表",
+    "path": "/operation/task",
+    "menu_code": "operation:task",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/operation/task/index",
+    "feature_code": "biz_task",
+    "id": 400
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "operation:task:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 410
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "operation:task:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 411
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "operation:task:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 412
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "operation:task:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 413
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "派车",
+    "path": "",
+    "menu_code": "operation:task:dispatch",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 414
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "取消",
+    "path": "",
+    "menu_code": "operation:task:cancel",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 415
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "确认装车",
+    "path": "",
+    "menu_code": "operation:task:confirm-load",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 416
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "标记出发",
+    "path": "",
+    "menu_code": "operation:task:confirm-depart",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 417
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "确认到达",
+    "path": "",
+    "menu_code": "operation:task:confirm-arrive",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 418
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "确认签收",
+    "path": "",
+    "menu_code": "operation:task:confirm-sign",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 419
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "关闭任务",
+    "path": "",
+    "menu_code": "operation:task:close",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 430
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "规划路线",
+    "path": "",
+    "menu_code": "operation:task:plan-route",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 431
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "撤回派车",
+    "path": "",
+    "menu_code": "operation:task:revert-dispatch",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 432
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "撤销装车",
+    "path": "",
+    "menu_code": "operation:task:revert-load",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 433
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "撤回出发",
+    "path": "",
+    "menu_code": "operation:task:revert-depart",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 434
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "撤回到达",
+    "path": "",
+    "menu_code": "operation:task:revert-arrive",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 435
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "强制取消",
+    "path": "",
+    "menu_code": "operation:task:force-cancel",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 436
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运营调度",
+      "任务单列表"
+    ],
+    "name": "撤销签收",
+    "path": "",
+    "menu_code": "operation:task:revert-sign",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "biz_task",
+    "id": 817
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "运力中心",
+    "path": "/capacity",
+    "menu_code": "capacity",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": "capacity_center",
+    "id": 260
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运力中心"
+    ],
+    "name": "自有运力",
+    "path": "/capacity/self-capacity",
+    "menu_code": "capacity:self_capacity",
+    "visible": true,
+    "menu_type": 0,
+    "component": "",
+    "feature_code": "capacity_self",
+    "id": 338
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运力中心",
+      "自有运力"
+    ],
+    "name": "运力列表",
+    "path": "/capacity/self-capacity/list",
+    "menu_code": "capacity:self_capacity:list",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/capacity/self-capacity/list/index",
+    "feature_code": "capacity_self_list",
+    "id": 339
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "运力列表"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "capacity:self_capacity:list:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_list",
+    "id": 348
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "运力列表"
+    ],
+    "name": "上车",
+    "path": "",
+    "menu_code": "capacity:self_capacity:list:bind",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_list",
+    "id": 349
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "运力列表"
+    ],
+    "name": "下车",
+    "path": "",
+    "menu_code": "capacity:self_capacity:list:unbind",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_list",
+    "id": 350
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运力中心",
+      "自有运力"
+    ],
+    "name": "驾驶员管理",
+    "path": "/capacity/self-capacity/driver",
+    "menu_code": "capacity:self_capacity:driver",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/capacity/self-capacity/driver/index",
+    "feature_code": "capacity_self_driver",
+    "id": 342
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "驾驶员管理"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "capacity:self_capacity:driver:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_driver",
+    "id": 359
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "驾驶员管理"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "capacity:self_capacity:driver:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_driver",
+    "id": 360
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "驾驶员管理"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "capacity:self_capacity:driver:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_driver",
+    "id": 361
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "驾驶员管理"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "capacity:self_capacity:driver:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_driver",
+    "id": 362
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "驾驶员管理"
+    ],
+    "name": "资金账户查看",
+    "path": "",
+    "menu_code": "capacity:self_capacity:driver:fund-account",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_driver",
+    "id": 820
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "驾驶员管理"
+    ],
+    "name": "资金账户记账",
+    "path": "",
+    "menu_code": "capacity:self_capacity:driver:fund-post",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_driver",
+    "id": 821
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "驾驶员管理"
+    ],
+    "name": "资金账户冻结/解冻",
+    "path": "",
+    "menu_code": "capacity:self_capacity:driver:fund-freeze",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_driver",
+    "id": 822
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运力中心",
+      "自有运力"
+    ],
+    "name": "车辆管理",
+    "path": "/capacity/self-capacity/vehicle",
+    "menu_code": "capacity:self_capacity:vehicle",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/capacity/self-capacity/vehicle/index",
+    "feature_code": "capacity_self_vehicle",
+    "id": 340
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "车辆管理"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "capacity:self_capacity:vehicle:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_vehicle",
+    "id": 351
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "车辆管理"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "capacity:self_capacity:vehicle:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_vehicle",
+    "id": 352
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "车辆管理"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "capacity:self_capacity:vehicle:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_vehicle",
+    "id": 353
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "车辆管理"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "capacity:self_capacity:vehicle:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_vehicle",
+    "id": 354
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运力中心",
+      "自有运力"
+    ],
+    "name": "挂车管理",
+    "path": "/capacity/self-capacity/trailer",
+    "menu_code": "capacity:self_capacity:trailer",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/capacity/self-capacity/trailer/index",
+    "feature_code": "capacity_self_trailer",
+    "id": 341
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "挂车管理"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "capacity:self_capacity:trailer:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_trailer",
+    "id": 355
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "挂车管理"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "capacity:self_capacity:trailer:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_trailer",
+    "id": 356
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "挂车管理"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "capacity:self_capacity:trailer:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_trailer",
+    "id": 357
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "挂车管理"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "capacity:self_capacity:trailer:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_trailer",
+    "id": 358
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运力中心",
+      "自有运力"
+    ],
+    "name": "运力分组",
+    "path": "/capacity/self-capacity/group",
+    "menu_code": "capacity:self_capacity:group",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/capacity/self-capacity/group/index",
+    "feature_code": "capacity_self_group",
+    "id": 860
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "运力分组"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "capacity:self_capacity:group:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_group",
+    "id": 861
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "运力分组"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "capacity:self_capacity:group:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_group",
+    "id": 862
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "运力分组"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "capacity:self_capacity:group:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_group",
+    "id": 863
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "运力分组"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "capacity:self_capacity:group:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_group",
+    "id": 864
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "运力分组"
+    ],
+    "name": "成员管理",
+    "path": "",
+    "menu_code": "capacity:self_capacity:group:member",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_group",
+    "id": 865
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运力中心",
+      "自有运力"
+    ],
+    "name": "变更记录",
+    "path": "/capacity/self-capacity/log",
+    "menu_code": "capacity:self_capacity:log",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/capacity/self-capacity/log/index",
+    "feature_code": "capacity_self_log",
+    "id": 345
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "自有运力",
+      "变更记录"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "capacity:self_capacity:log:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_self_log",
+    "id": 363
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运力中心"
+    ],
+    "name": "承运商运力",
+    "path": "/capacity/carrier-capacity",
+    "menu_code": "capacity:carrier_capacity",
+    "visible": true,
+    "menu_type": 0,
+    "component": "",
+    "feature_code": "capacity_carrier",
+    "id": 303
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运力中心",
+      "承运商运力"
+    ],
+    "name": "运力列表",
+    "path": "/capacity/carrier-capacity/list",
+    "menu_code": "capacity:carrier_capacity:list",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/capacity/carrier-capacity/list/index",
+    "feature_code": "capacity_carrier_list",
+    "id": 343
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运力中心",
+      "承运商运力"
+    ],
+    "name": "运力审批",
+    "path": "/capacity/carrier-capacity/capacity-approval",
+    "menu_code": "capacity:carrier_capacity:approval",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/capacity/carrier-capacity/capacity-approval/index",
+    "feature_code": "capacity_carrier_approval",
+    "id": 346
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运力中心"
+    ],
+    "name": "社会运力池",
+    "path": "/capacity/social-capacity",
+    "menu_code": "capacity:social_capacity",
+    "visible": true,
+    "menu_type": 0,
+    "component": "",
+    "feature_code": "capacity_social",
+    "id": 304
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运力中心",
+      "社会运力池"
+    ],
+    "name": "运力列表",
+    "path": "/capacity/social-capacity/list",
+    "menu_code": "capacity:social_capacity:list",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/capacity/social-capacity/list/index",
+    "feature_code": "capacity_social_list",
+    "id": 344
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力列表"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "capacity:social_capacity:list:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_list",
+    "id": 800
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力列表"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "capacity:social_capacity:list:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_list",
+    "id": 801
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力列表"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "capacity:social_capacity:list:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_list",
+    "id": 802
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力列表"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "capacity:social_capacity:list:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_list",
+    "id": 803
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力列表"
+    ],
+    "name": "提交/撤回审核",
+    "path": "",
+    "menu_code": "capacity:social_capacity:list:submit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_list",
+    "id": 804
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力列表"
+    ],
+    "name": "状态变更",
+    "path": "",
+    "menu_code": "capacity:social_capacity:list:status",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_list",
+    "id": 805
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力列表"
+    ],
+    "name": "结算账户管理",
+    "path": "",
+    "menu_code": "capacity:social_capacity:list:account",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_list",
+    "id": 806
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力列表"
+    ],
+    "name": "资金账户",
+    "path": "",
+    "menu_code": "capacity:social_capacity:list:fund-account",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_list",
+    "id": 835
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力列表"
+    ],
+    "name": "资金记账",
+    "path": "",
+    "menu_code": "capacity:social_capacity:list:fund-post",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_list",
+    "id": 836
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力列表"
+    ],
+    "name": "冻结/解冻资金账户",
+    "path": "",
+    "menu_code": "capacity:social_capacity:list:fund-freeze",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_list",
+    "id": 837
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "运力中心",
+      "社会运力池"
+    ],
+    "name": "运力审批",
+    "path": "/capacity/social-capacity/capacity-approval",
+    "menu_code": "capacity:social_capacity:approval",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/capacity/social-capacity/capacity-approval/index",
+    "feature_code": "capacity_social_approval",
+    "id": 347
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力审批"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "capacity:social_capacity:approval:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_approval",
+    "id": 807
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力审批"
+    ],
+    "name": "查看详情",
+    "path": "",
+    "menu_code": "capacity:social_capacity:approval:detail",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_approval",
+    "id": 808
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力审批"
+    ],
+    "name": "审核通过",
+    "path": "",
+    "menu_code": "capacity:social_capacity:approval:approve",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_approval",
+    "id": 809
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "运力中心",
+      "社会运力池",
+      "运力审批"
+    ],
+    "name": "审核驳回",
+    "path": "",
+    "menu_code": "capacity:social_capacity:approval:reject",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "capacity_social_approval",
+    "id": 810
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运力中心"
+    ],
+    "name": "车辆维保",
+    "path": "/capacity/maintenance",
+    "menu_code": "capacity:maintenance",
+    "visible": false,
+    "menu_type": 0,
+    "component": "/capacity/maintenance/index",
+    "feature_code": "fleet_maintenance",
+    "id": 305
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "运力中心"
+    ],
+    "name": "证照监控",
+    "path": "/capacity/compliance",
+    "menu_code": "capacity:compliance",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/capacity/compliance/index",
+    "feature_code": "fleet_compliance",
+    "id": 306
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "客商中心",
+    "path": "/partner",
+    "menu_code": "",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": null,
+    "id": 237
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "客商中心"
+    ],
+    "name": "客户管理",
+    "path": "/partner/customer",
+    "menu_code": "partner:customer",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/partner/customer/index",
+    "feature_code": "partner_customer",
+    "id": 238
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "客户管理"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "partner:customer:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "partner_customer",
+    "id": 239
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "客户管理"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "partner:customer:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "partner_customer",
+    "id": 240
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "客户管理"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "partner:customer:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "partner_customer",
+    "id": 241
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "客户管理"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "partner:customer:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "partner_customer",
+    "id": 242
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "客商中心"
+    ],
+    "name": "承运商管理",
+    "path": "/partner/carrier",
+    "menu_code": "partner:carrier",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/partner/carrier/index",
+    "feature_code": "partner_carrier",
+    "id": 330
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "承运商管理"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "partner:carrier:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "partner_carrier",
+    "id": 331
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "承运商管理"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "partner:carrier:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "partner_carrier",
+    "id": 332
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "承运商管理"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "partner:carrier:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "partner_carrier",
+    "id": 333
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "承运商管理"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "partner:carrier:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "partner_carrier",
+    "id": 334
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "承运商管理"
+    ],
+    "name": "邀请激活",
+    "path": "",
+    "menu_code": "partner:carrier:invite",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "partner_carrier",
+    "id": 335
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "承运商管理"
+    ],
+    "name": "撤回邀请",
+    "path": "",
+    "menu_code": "partner:carrier:revoke-invite",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "partner_carrier",
+    "id": 336
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "客商中心"
+    ],
+    "name": "供应商管理",
+    "path": "/partner/supplier",
+    "menu_code": "partner:supplier",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/partner/supplier/index",
+    "feature_code": "partner_supplier",
+    "id": 307
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "客商中心"
+    ],
+    "name": "互联客户",
+    "path": "/partner/inbound",
+    "menu_code": "partner:inbound",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/partner/inbound/index",
+    "feature_code": "partner_inbound",
+    "id": 337
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "客商中心"
+    ],
+    "name": "经销商门店",
+    "path": "/partner/dealer",
+    "menu_code": "basic_data:dealer",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/partner/dealer/index",
+    "feature_code": "basic_data_dealer",
+    "id": 232
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "经销商门店"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "basic_data:dealer:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_dealer",
+    "id": 233
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "经销商门店"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "basic_data:dealer:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_dealer",
+    "id": 234
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "经销商门店"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "basic_data:dealer:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_dealer",
+    "id": 235
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "客商中心",
+      "经销商门店"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "basic_data:dealer:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_dealer",
+    "id": 236
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "计费中心",
+    "path": "/billing",
+    "menu_code": "",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": null,
+    "id": 248
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "计费中心"
+    ],
+    "name": "运价合同",
+    "path": "/billing/contract",
+    "menu_code": "billing:contract",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/billing/contract/index",
+    "feature_code": "billing_contract",
+    "id": 249
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "运价合同"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "billing:contract:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_contract",
+    "id": 250
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "运价合同"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "billing:contract:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_contract",
+    "id": 251
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "运价合同"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "billing:contract:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_contract",
+    "id": 252
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "运价合同"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "billing:contract:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_contract",
+    "id": 253
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "计费中心"
+    ],
+    "name": "路线管理",
+    "path": "/billing/route",
+    "menu_code": "resource:route",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/billing/route/index",
+    "feature_code": "billing_route",
+    "id": 190
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "计费中心"
+    ],
+    "name": "成本政策",
+    "path": "/billing/cost-policy",
+    "menu_code": "billing:cost-policy",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/billing/cost-policy/index",
+    "feature_code": "billing_cost_rule",
+    "id": 308
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "成本政策"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "billing:cost-policy:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_cost_rule",
+    "id": 830
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "成本政策"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "billing:cost-policy:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_cost_rule",
+    "id": 831
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "成本政策"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "billing:cost-policy:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_cost_rule",
+    "id": 832
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "成本政策"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "billing:cost-policy:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_cost_rule",
+    "id": 833
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "成本政策"
+    ],
+    "name": "重算",
+    "path": "",
+    "menu_code": "billing:cost-policy:recalc",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_cost_rule",
+    "id": 834
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "计费中心"
+    ],
+    "name": "承运商合同",
+    "path": "/billing/carrier-contract",
+    "menu_code": "billing:carrier-contract",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/billing/carrier-contract/index",
+    "feature_code": "billing_carrier_freight",
+    "id": 838
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "承运商合同"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "billing:carrier-contract:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_carrier_freight",
+    "id": 839
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "承运商合同"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "billing:carrier-contract:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_carrier_freight",
+    "id": 840
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "承运商合同"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "billing:carrier-contract:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_carrier_freight",
+    "id": 841
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "承运商合同"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "billing:carrier-contract:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_carrier_freight",
+    "id": 842
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "计费中心",
+      "承运商合同"
+    ],
+    "name": "重算",
+    "path": "",
+    "menu_code": "billing:carrier-contract:recalc",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "billing_carrier_freight",
+    "id": 843
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "计费中心"
+    ],
+    "name": "费用模板",
+    "path": "/billing/fee-template",
+    "menu_code": "billing:fee-template",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/billing/fee-template/index",
+    "feature_code": "billing_fee_template",
+    "id": 309
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "审批中心",
+    "path": "/approval",
+    "menu_code": "approval",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": "approval_manage",
+    "id": 300
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "审批中心"
+    ],
+    "name": "我的待办",
+    "path": "/approval/pending",
+    "menu_code": "approval:pending",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/approval/pending/index",
+    "feature_code": "approval_manage",
+    "id": 310
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "审批中心"
+    ],
+    "name": "我的申请",
+    "path": "/approval/initiated",
+    "menu_code": "approval:initiated",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/approval/initiated/index",
+    "feature_code": "approval_manage",
+    "id": 311
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "审批中心"
+    ],
+    "name": "审批记录",
+    "path": "/approval/history",
+    "menu_code": "approval:history",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/approval/history/index",
+    "feature_code": "approval_manage",
+    "id": 312
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "财务结算",
+    "path": "/finance",
+    "menu_code": "",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": null,
+    "id": 196
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "财务结算"
+    ],
+    "name": "应收管理",
+    "path": "/finance/receivable",
+    "menu_code": "finance:receivable",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/finance/receivable/index",
+    "feature_code": "finance_receivable",
+    "id": 197
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "财务结算"
+    ],
+    "name": "费用工作台",
+    "path": "/operation/task-finance-workbench",
+    "menu_code": "operation:task-finance-workbench",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/operation/task-finance-workbench/index",
+    "feature_code": "finance_payable",
+    "id": 403
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "财务结算"
+    ],
+    "name": "应付管理",
+    "path": "/finance/payable",
+    "menu_code": "finance:payable",
+    "visible": false,
+    "menu_type": 0,
+    "component": "/finance/payable/index",
+    "feature_code": "finance_payable",
+    "id": 198
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "财务结算"
+    ],
+    "name": "费用单台账",
+    "path": "/operation/task-finance",
+    "menu_code": "operation:task-finance",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/operation/task-finance/index",
+    "feature_code": "finance_payable",
+    "id": 401
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "财务结算",
+      "费用单台账"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "operation:task-finance:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "finance_payable",
+    "id": 420
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "财务结算",
+      "费用单台账"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "operation:task-finance:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "finance_payable",
+    "id": 421
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "财务结算",
+      "费用单台账"
+    ],
+    "name": "审批",
+    "path": "",
+    "menu_code": "operation:task-finance:approve",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "finance_payable",
+    "id": 422
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "财务结算",
+      "费用单台账"
+    ],
+    "name": "支付",
+    "path": "",
+    "menu_code": "operation:task-finance:pay",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "finance_payable",
+    "id": 423
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "财务结算",
+      "费用单台账"
+    ],
+    "name": "撤销",
+    "path": "",
+    "menu_code": "operation:task-finance:cancel",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "finance_payable",
+    "id": 424
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "财务结算",
+      "费用单台账"
+    ],
+    "name": "提交审批",
+    "path": "",
+    "menu_code": "operation:task-finance:submit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "finance_payable",
+    "id": 425
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "财务结算"
+    ],
+    "name": "对账中心",
+    "path": "/finance/reconciliation",
+    "menu_code": "finance:reconciliation",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/finance/reconciliation/index",
+    "feature_code": "finance_reconciliation",
+    "id": 199
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "财务结算"
+    ],
+    "name": "发票管理",
+    "path": "/finance/invoice",
+    "menu_code": "finance:invoice",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/finance/invoice/index",
+    "feature_code": "finance_invoice",
+    "id": 313
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "财务结算"
+    ],
+    "name": "利润分析",
+    "path": "/finance/profit",
+    "menu_code": "finance:profit",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/finance/profit/index",
+    "feature_code": "finance_profit",
+    "id": 314
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "数据洞察",
+    "path": "/insight",
+    "menu_code": "",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": null,
+    "id": 215
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "数据洞察"
+    ],
+    "name": "经营驾驶舱",
+    "path": "/insight/cockpit",
+    "menu_code": "insight:cockpit",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": "bi_cockpit",
+    "id": 364
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "数据洞察",
+      "经营驾驶舱"
+    ],
+    "name": "计划总览",
+    "path": "/insight/cockpit/overview",
+    "menu_code": "insight:cockpit:overview",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/insight/cockpit/overview/index",
+    "feature_code": "bi_cockpit_overview",
+    "id": 365
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "数据洞察",
+      "经营驾驶舱"
+    ],
+    "name": "利润总览",
+    "path": "/insight/cockpit/profit",
+    "menu_code": "insight:cockpit:profit",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/insight/cockpit/profit/index",
+    "feature_code": "bi_cockpit_profit",
+    "id": 844
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "数据洞察"
+    ],
+    "name": "运营看板",
+    "path": "/insight/overview",
+    "menu_code": "analytics:overview",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/insight/overview/index",
+    "feature_code": "bi_overview",
+    "id": 201
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "数据洞察"
+    ],
+    "name": "数据报表",
+    "path": "/insight/report",
+    "menu_code": "analytics:report",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/insight/report/index",
+    "feature_code": "bi_report",
+    "id": 202
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "数据洞察"
+    ],
+    "name": "智能预测",
+    "path": "/insight/prediction",
+    "menu_code": "insight:prediction",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/insight/prediction/index",
+    "feature_code": "bi_prediction",
+    "id": 315
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "开放平台",
+    "path": "/open-platform",
+    "menu_code": "open-platform",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": "open_platform",
+    "id": 900
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "开放平台"
+    ],
+    "name": "接入应用",
+    "path": "/open-platform/apps",
+    "menu_code": "open-platform:app",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/open-platform/apps/index",
+    "feature_code": "open_platform",
+    "id": 902
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "开放平台",
+      "接入应用"
+    ],
+    "name": "新建应用",
+    "path": "",
+    "menu_code": "open-platform:app:create",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "open_platform",
+    "id": 911
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "开放平台",
+      "接入应用"
+    ],
+    "name": "编辑应用",
+    "path": "",
+    "menu_code": "open-platform:app:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "open_platform",
+    "id": 912
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "开放平台",
+      "接入应用"
+    ],
+    "name": "创建密钥",
+    "path": "",
+    "menu_code": "open-platform:credential:create",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "open_platform",
+    "id": 913
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "开放平台",
+      "接入应用"
+    ],
+    "name": "重置密钥",
+    "path": "",
+    "menu_code": "open-platform:credential:reset",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "open_platform",
+    "id": 914
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "开放平台",
+      "接入应用"
+    ],
+    "name": "停用密钥",
+    "path": "",
+    "menu_code": "open-platform:credential:revoke",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "open_platform",
+    "id": 915
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "开放平台",
+      "接入应用"
+    ],
+    "name": "新建 MCP 连接",
+    "path": "",
+    "menu_code": "open-platform:mcp:create",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "open_platform",
+    "id": 916
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "开放平台",
+      "接入应用"
+    ],
+    "name": "编辑 MCP 连接",
+    "path": "",
+    "menu_code": "open-platform:mcp:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "open_platform",
+    "id": 917
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "开放平台",
+      "接入应用"
+    ],
+    "name": "删除 MCP 连接",
+    "path": "",
+    "menu_code": "open-platform:mcp:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "open_platform",
+    "id": 918
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "开放平台"
+    ],
+    "name": "能力目录",
+    "path": "/open-platform/capabilities",
+    "menu_code": "open-platform:capability",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/open-platform/capabilities/index",
+    "feature_code": "open_platform",
+    "id": 903
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "开放平台"
+    ],
+    "name": "接口文档",
+    "path": "/open-platform/docs",
+    "menu_code": "open-platform:docs",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/open-platform/docs/index",
+    "feature_code": "open_platform",
+    "id": 904
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "开放平台"
+    ],
+    "name": "调用记录",
+    "path": "/open-platform/logs",
+    "menu_code": "open-platform:logs",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/open-platform/logs/index",
+    "feature_code": "open_platform",
+    "id": 905
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "服务平台",
+    "path": "/ecosystem",
+    "menu_code": "ecosystem",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": null,
+    "id": 301
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "服务平台"
+    ],
+    "name": "货源大厅",
+    "path": "/ecosystem/cargo-hall",
+    "menu_code": "ecosystem:cargo-hall",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/ecosystem/cargo-hall/index",
+    "feature_code": "ecosystem_cargo_hall",
+    "id": 316
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "服务平台",
+      "货源大厅"
+    ],
+    "name": "发布货源",
+    "path": "",
+    "menu_code": "ecosystem:cargo:publish",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "ecosystem_cargo_publish",
+    "id": 922
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "服务平台",
+      "货源大厅"
+    ],
+    "name": "下架货源",
+    "path": "",
+    "menu_code": "ecosystem:cargo:delist",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "ecosystem_cargo_publish",
+    "id": 923
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "服务平台"
+    ],
+    "name": "运力大厅",
+    "path": "/ecosystem/capacity-hall",
+    "menu_code": "ecosystem:capacity-hall",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/ecosystem/capacity-hall/index",
+    "feature_code": "ecosystem_capacity_hall",
+    "id": 317
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "服务平台",
+      "运力大厅"
+    ],
+    "name": "发布运力",
+    "path": "",
+    "menu_code": "ecosystem:capacity:publish",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "ecosystem_capacity_publish",
+    "id": 924
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "服务平台",
+      "运力大厅"
+    ],
+    "name": "下架运力",
+    "path": "",
+    "menu_code": "ecosystem:capacity:delist",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "ecosystem_capacity_publish",
+    "id": 925
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "服务平台"
+    ],
+    "name": "服务大厅",
+    "path": "/ecosystem/service-hall",
+    "menu_code": "ecosystem:service-hall",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/ecosystem/service-hall/index",
+    "feature_code": "ecosystem_service_hall",
+    "id": 318
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "服务平台"
+    ],
+    "name": "我的合作",
+    "path": "/ecosystem/deals",
+    "menu_code": "ecosystem:deals",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/ecosystem/deals/index",
+    "feature_code": "ecosystem_deal",
+    "id": 920
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "服务平台",
+      "我的合作"
+    ],
+    "name": "发起合作意向",
+    "path": "",
+    "menu_code": "ecosystem:intent:create",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "ecosystem_intent",
+    "id": 926
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "服务平台",
+      "我的合作"
+    ],
+    "name": "响应意向",
+    "path": "",
+    "menu_code": "ecosystem:intent:handle",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "ecosystem_deal",
+    "id": 927
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "服务平台",
+      "我的合作"
+    ],
+    "name": "确认成交",
+    "path": "",
+    "menu_code": "ecosystem:deal:confirm",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "ecosystem_deal",
+    "id": 928
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "服务平台",
+      "我的合作"
+    ],
+    "name": "确认完成与评价",
+    "path": "",
+    "menu_code": "ecosystem:deal:complete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "ecosystem_deal",
+    "id": 929
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "服务平台"
+    ],
+    "name": "企业名片",
+    "path": "/ecosystem/profile",
+    "menu_code": "ecosystem:profile",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/ecosystem/profile/index",
+    "feature_code": "ecosystem_deal",
+    "id": 921
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "服务平台",
+      "企业名片"
+    ],
+    "name": "编辑名片与屏蔽名单",
+    "path": "",
+    "menu_code": "ecosystem:profile:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "ecosystem_deal",
+    "id": 930
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "日志中心",
+    "path": "/log-center",
+    "menu_code": "log-center",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": "base_log",
+    "id": 814
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "日志中心"
+    ],
+    "name": "操作记录",
+    "path": "/log-center/operation-log",
+    "menu_code": "system:operation-record",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/log-center/operation-log/index",
+    "feature_code": "base_log",
+    "id": 175
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "日志中心"
+    ],
+    "name": "登录记录",
+    "path": "/log-center/login-log",
+    "menu_code": "system:login-record",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/log-center/login-log/index",
+    "feature_code": "base_log",
+    "id": 176
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "企业配置",
+    "path": "/enterprise",
+    "menu_code": "",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": "base_system",
+    "id": 166
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "企业配置"
+    ],
+    "name": "组织架构",
+    "path": "/enterprise/organization",
+    "menu_code": "system:organization",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/enterprise/organization/index",
+    "feature_code": "base_organization",
+    "id": 167
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "企业配置"
+    ],
+    "name": "经营主体",
+    "path": "/enterprise/business-entity",
+    "menu_code": "system:business-entity",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/enterprise/business-entity/index",
+    "feature_code": "base_business_entity",
+    "id": 823
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "经营主体"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "system:business-entity:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "base_business_entity",
+    "id": 824
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "经营主体"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "system:business-entity:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "base_business_entity",
+    "id": 825
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "经营主体"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "system:business-entity:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "base_business_entity",
+    "id": 826
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "经营主体"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "system:business-entity:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "base_business_entity",
+    "id": 827
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "经营主体"
+    ],
+    "name": "设为默认",
+    "path": "",
+    "menu_code": "system:business-entity:default",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "base_business_entity",
+    "id": 828
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "经营主体"
+    ],
+    "name": "启停",
+    "path": "",
+    "menu_code": "system:business-entity:status",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "base_business_entity",
+    "id": 829
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "企业配置"
+    ],
+    "name": "员工管理",
+    "path": "/enterprise/user",
+    "menu_code": "system:user",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/enterprise/user/index",
+    "feature_code": "base_user",
+    "id": 168
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "员工管理"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "system:user:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "base_user",
+    "id": 169
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "员工管理"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "system:user:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "base_user",
+    "id": 170
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "员工管理"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "system:user:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "base_user",
+    "id": 171
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "员工管理"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "system:user:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "base_user",
+    "id": 172
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "企业配置"
+    ],
+    "name": "角色权限",
+    "path": "/enterprise/role",
+    "menu_code": "system:role",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/enterprise/role/index",
+    "feature_code": "base_role",
+    "id": 173
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "企业配置"
+    ],
+    "name": "审批配置",
+    "path": "/enterprise/approval-config",
+    "menu_code": "enterprise:approval-config",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/enterprise/approval-config/index",
+    "feature_code": "approval_config",
+    "id": 319
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "企业配置"
+    ],
+    "name": "数据管理",
+    "path": "/enterprise/basic-data",
+    "menu_code": "enterprise:basic-data",
+    "visible": true,
+    "menu_type": 0,
+    "component": null,
+    "feature_code": "basic_data",
+    "id": 320
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "数据管理"
+    ],
+    "name": "地区数据",
+    "path": "/enterprise/basic-data/regional",
+    "menu_code": "basic_data:regional_data",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/enterprise/basic-data/regional/index",
+    "feature_code": "basic_data_region",
+    "id": 210
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "企业配置",
+      "数据管理",
+      "地区数据"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "basic_data:regional_data:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_region",
+    "id": 211
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "企业配置",
+      "数据管理",
+      "地区数据"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "basic_data:regional_data:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_region",
+    "id": 212
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "企业配置",
+      "数据管理",
+      "地区数据"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "basic_data:regional_data:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_region",
+    "id": 213
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "企业配置",
+      "数据管理",
+      "地区数据"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "basic_data:regional_data:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_region",
+    "id": 214
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "数据管理"
+    ],
+    "name": "品牌车型",
+    "path": "/enterprise/basic-data/brand-series",
+    "menu_code": "basic_data:vehicle_brand_series",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/enterprise/basic-data/brand-series/index",
+    "feature_code": "basic_data_vehicle_brand_series",
+    "id": 224
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "企业配置",
+      "数据管理",
+      "品牌车型"
+    ],
+    "name": "查询",
+    "path": "",
+    "menu_code": "basic_data:vehicle_brand_series:list",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_vehicle_brand_series",
+    "id": 225
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "企业配置",
+      "数据管理",
+      "品牌车型"
+    ],
+    "name": "新增",
+    "path": "",
+    "menu_code": "basic_data:vehicle_brand_series:add",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_vehicle_brand_series",
+    "id": 226
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "企业配置",
+      "数据管理",
+      "品牌车型"
+    ],
+    "name": "编辑",
+    "path": "",
+    "menu_code": "basic_data:vehicle_brand_series:edit",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_vehicle_brand_series",
+    "id": 227
+  },
+  {
+    "level": 4,
+    "ancestors": [
+      "企业配置",
+      "数据管理",
+      "品牌车型"
+    ],
+    "name": "删除",
+    "path": "",
+    "menu_code": "basic_data:vehicle_brand_series:delete",
+    "visible": true,
+    "menu_type": 1,
+    "component": null,
+    "feature_code": "basic_data_vehicle_brand_series",
+    "id": 228
+  },
+  {
+    "level": 3,
+    "ancestors": [
+      "企业配置",
+      "数据管理"
+    ],
+    "name": "数据字典",
+    "path": "/enterprise/dictionary",
+    "menu_code": "system:dictionary",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/enterprise/dictionary/index",
+    "feature_code": "base_dict",
+    "id": 174
+  },
+  {
+    "level": 2,
+    "ancestors": [
+      "企业配置"
+    ],
+    "name": "系统设置",
+    "path": "/enterprise/config",
+    "menu_code": "system:config",
+    "visible": true,
+    "menu_type": 0,
+    "component": "/enterprise/config/index",
+    "feature_code": "base_config",
+    "id": 254
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "个人中心",
+    "path": "/user/profile",
+    "menu_code": "",
+    "visible": false,
+    "menu_type": 0,
+    "component": "/user/profile/index",
+    "feature_code": "",
+    "id": 206
+  },
+  {
+    "level": 1,
+    "ancestors": [],
+    "name": "消息中心",
+    "path": "/user/message",
+    "menu_code": "",
+    "visible": false,
+    "menu_type": 0,
+    "component": "/user/message/index",
+    "feature_code": "",
+    "id": 207
+  }
+]

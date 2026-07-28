@@ -1,0 +1,1117 @@
+{
+  "ts": "2026-07-28 17:28:58",
+  "api": "http://localhost:8000",
+  "phone": "13900001001",
+  "total": 64,
+  "passed": 64,
+  "failed_count": 0,
+  "placeholder_count": 9,
+  "failed": [],
+  "placeholders": [
+    "/partner/supplier",
+    "/billing/fee-template",
+    "/finance/receivable",
+    "/finance/reconciliation",
+    "/finance/invoice",
+    "/insight/overview",
+    "/insight/report",
+    "/insight/prediction",
+    "/ecosystem/service-hall"
+  ],
+  "results": [
+    {
+      "name": "工作台",
+      "path": "/dashboard/workplace",
+      "l1": "首页",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/workbench/activities",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        },
+        {
+          "method": "GET",
+          "url": "/workbench/todo",
+          "http": 405,
+          "code": null,
+          "message": null,
+          "ok": true
+        },
+        {
+          "method": "GET",
+          "url": "/workbench/banner",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "计划中心",
+      "path": "/operation/waybill",
+      "l1": "运营调度",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/business/waybill",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "手动配载",
+      "path": "/operation/task-create",
+      "l1": "运营调度",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/business/task/candidate-waybills",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "智能配载",
+      "path": "/operation/smart-stowage",
+      "l1": "运营调度",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/business/smart-stowage/plans",
+          "http": 422,
+          "code": null,
+          "message": null,
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "调度工作台",
+      "path": "/operation/task-workbench",
+      "l1": "运营调度",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/business/task",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        },
+        {
+          "method": "GET",
+          "url": "/business/task/workbench-stats",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "在途监控",
+      "path": "/operation/tracking",
+      "l1": "运营调度",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/business/task",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "回单签收",
+      "path": "/operation/receipt",
+      "l1": "运营调度",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/business/task",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "已完成任务",
+      "path": "/operation/completed-task",
+      "l1": "运营调度",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/business/task",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "任务单列表",
+      "path": "/operation/task",
+      "l1": "运营调度",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/business/task",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "运力列表",
+      "path": "/capacity/self-capacity/list",
+      "l1": "运力中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/capacity/self_capacity/list",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "驾驶员管理",
+      "path": "/capacity/self-capacity/driver",
+      "l1": "运力中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/capacity/self_capacity/driver",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "车辆管理",
+      "path": "/capacity/self-capacity/vehicle",
+      "l1": "运力中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/capacity/self_capacity/vehicle",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "挂车管理",
+      "path": "/capacity/self-capacity/trailer",
+      "l1": "运力中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/capacity/self_capacity/trailer",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "运力分组",
+      "path": "/capacity/self-capacity/group",
+      "l1": "运力中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/capacity/self_capacity/group",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "变更记录",
+      "path": "/capacity/self-capacity/log",
+      "l1": "运力中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/capacity/self_capacity/log",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "运力列表",
+      "path": "/capacity/carrier-capacity/list",
+      "l1": "运力中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/capacity/carrier_capacity/list",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "运力审批",
+      "path": "/capacity/carrier-capacity/capacity-approval",
+      "l1": "运力中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/capacity/social_capacity/approval",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "运力列表",
+      "path": "/capacity/social-capacity/list",
+      "l1": "运力中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/capacity/social_capacity/list",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "运力审批",
+      "path": "/capacity/social-capacity/capacity-approval",
+      "l1": "运力中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/capacity/social_capacity/approval",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "证照监控",
+      "path": "/capacity/compliance",
+      "l1": "运力中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/capacity/compliance/alerts",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "客户管理",
+      "path": "/partner/customer",
+      "l1": "客商中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/partner/customer",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "承运商管理",
+      "path": "/partner/carrier",
+      "l1": "客商中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/partner/carrier",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "供应商管理",
+      "path": "/partner/supplier",
+      "l1": "客商中心",
+      "ok": true,
+      "kind": "placeholder",
+      "apis": [],
+      "note": "placeholder"
+    },
+    {
+      "name": "互联客户",
+      "path": "/partner/inbound",
+      "l1": "客商中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/partner/inbound",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "经销商门店",
+      "path": "/partner/dealer",
+      "l1": "客商中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/basic-data/dealer",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "运价合同",
+      "path": "/billing/contract",
+      "l1": "计费中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/billing/contract",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "路线管理",
+      "path": "/billing/route",
+      "l1": "计费中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/resource/route",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "成本政策",
+      "path": "/billing/cost-policy",
+      "l1": "计费中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/billing/cost-policy",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "承运商合同",
+      "path": "/billing/carrier-contract",
+      "l1": "计费中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/billing/carrier-contract",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "费用模板",
+      "path": "/billing/fee-template",
+      "l1": "计费中心",
+      "ok": true,
+      "kind": "placeholder",
+      "apis": [],
+      "note": "placeholder"
+    },
+    {
+      "name": "我的待办",
+      "path": "/approval/pending",
+      "l1": "审批中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/approval/pending",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "我的申请",
+      "path": "/approval/initiated",
+      "l1": "审批中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/approval/initiated",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "审批记录",
+      "path": "/approval/history",
+      "l1": "审批中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/approval/history",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "应收管理",
+      "path": "/finance/receivable",
+      "l1": "财务结算",
+      "ok": true,
+      "kind": "placeholder",
+      "apis": [],
+      "note": "placeholder"
+    },
+    {
+      "name": "费用工作台",
+      "path": "/operation/task-finance-workbench",
+      "l1": "财务结算",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/business/task-finance",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        },
+        {
+          "method": "GET",
+          "url": "/business/task-finance/workbench-stats",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "费用单台账",
+      "path": "/operation/task-finance",
+      "l1": "财务结算",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/business/task-finance",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "对账中心",
+      "path": "/finance/reconciliation",
+      "l1": "财务结算",
+      "ok": true,
+      "kind": "placeholder",
+      "apis": [],
+      "note": "placeholder"
+    },
+    {
+      "name": "发票管理",
+      "path": "/finance/invoice",
+      "l1": "财务结算",
+      "ok": true,
+      "kind": "placeholder",
+      "apis": [],
+      "note": "placeholder"
+    },
+    {
+      "name": "利润分析",
+      "path": "/finance/profit",
+      "l1": "财务结算",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/insight/cockpit/profit/kpi-summary",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "计划总览",
+      "path": "/insight/cockpit/overview",
+      "l1": "数据洞察",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/insight/cockpit/kpi-summary",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "利润总览",
+      "path": "/insight/cockpit/profit",
+      "l1": "数据洞察",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/insight/cockpit/profit/kpi-summary",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "运营看板",
+      "path": "/insight/overview",
+      "l1": "数据洞察",
+      "ok": true,
+      "kind": "placeholder",
+      "apis": [],
+      "note": "placeholder"
+    },
+    {
+      "name": "数据报表",
+      "path": "/insight/report",
+      "l1": "数据洞察",
+      "ok": true,
+      "kind": "placeholder",
+      "apis": [],
+      "note": "placeholder"
+    },
+    {
+      "name": "智能预测",
+      "path": "/insight/prediction",
+      "l1": "数据洞察",
+      "ok": true,
+      "kind": "placeholder",
+      "apis": [],
+      "note": "placeholder"
+    },
+    {
+      "name": "接入应用",
+      "path": "/open-platform/apps",
+      "l1": "开放平台",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/open-platform/apps",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "能力目录",
+      "path": "/open-platform/capabilities",
+      "l1": "开放平台",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/open-platform/capabilities",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "接口文档",
+      "path": "/open-platform/docs",
+      "l1": "开放平台",
+      "ok": true,
+      "kind": "static",
+      "apis": [],
+      "note": "static"
+    },
+    {
+      "name": "调用记录",
+      "path": "/open-platform/logs",
+      "l1": "开放平台",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/open-platform/logs",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "货源大厅",
+      "path": "/ecosystem/cargo-hall",
+      "l1": "服务平台",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/ecosystem/cargo-hall",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "运力大厅",
+      "path": "/ecosystem/capacity-hall",
+      "l1": "服务平台",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/ecosystem/capacity-hall",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "服务大厅",
+      "path": "/ecosystem/service-hall",
+      "l1": "服务平台",
+      "ok": true,
+      "kind": "placeholder",
+      "apis": [],
+      "note": "placeholder"
+    },
+    {
+      "name": "我的合作",
+      "path": "/ecosystem/deals",
+      "l1": "服务平台",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/ecosystem/my-posts",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "企业名片",
+      "path": "/ecosystem/profile",
+      "l1": "服务平台",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/ecosystem/my-posts",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "操作记录",
+      "path": "/log-center/operation-log",
+      "l1": "日志中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/logcenter/operation-record/page",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "登录记录",
+      "path": "/log-center/login-log",
+      "l1": "日志中心",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/logcenter/login-record/page",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "组织架构",
+      "path": "/enterprise/organization",
+      "l1": "企业配置",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/system/organization/tree",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "经营主体",
+      "path": "/enterprise/business-entity",
+      "l1": "企业配置",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/system/business-entity",
+          "http": 405,
+          "code": null,
+          "message": null,
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "员工管理",
+      "path": "/enterprise/user",
+      "l1": "企业配置",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/system/user/page",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "角色权限",
+      "path": "/enterprise/role",
+      "l1": "企业配置",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/system/role/page",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "审批配置",
+      "path": "/enterprise/approval-config",
+      "l1": "企业配置",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/approval/flow",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "地区数据",
+      "path": "/enterprise/basic-data/regional",
+      "l1": "企业配置",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/basic-data/region/children",
+          "http": 422,
+          "code": null,
+          "message": null,
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "品牌车型",
+      "path": "/enterprise/basic-data/brand-series",
+      "l1": "企业配置",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/basic-data/vehicle-brand",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "数据字典",
+      "path": "/enterprise/dictionary",
+      "l1": "企业配置",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/system/dictionary/page",
+          "http": 405,
+          "code": null,
+          "message": null,
+          "ok": true
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "系统设置",
+      "path": "/enterprise/config",
+      "l1": "企业配置",
+      "ok": true,
+      "kind": "api",
+      "apis": [
+        {
+          "method": "GET",
+          "url": "/system/config",
+          "http": 200,
+          "code": 0,
+          "message": "操作成功",
+          "ok": true
+        }
+      ],
+      "note": ""
+    }
+  ]
+}
