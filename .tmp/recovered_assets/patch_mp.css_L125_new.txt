@@ -1,0 +1,2 @@
+.dev .wx-head.onpage,
+.dev .wx-head.dark-cap { background: #fff; color: var(--t1); }

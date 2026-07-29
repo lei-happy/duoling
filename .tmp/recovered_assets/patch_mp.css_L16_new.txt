@@ -1,0 +1,8 @@
+/* 横幅内的次要分隔符要跟随白字，不能用页面级灰 */
+.dev .banner .mut {
+  color: inherit;
+  opacity: 0.5;
+}
+
+.dev .banner .no {
+  margin-left: auto;

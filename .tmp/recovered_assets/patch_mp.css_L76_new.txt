@@ -1,0 +1,22 @@
+/* 智途 · 后台人员微信小程序原型 · 共享样式 */
+:root {
+  --brand: #0052d9;
+  --brand-dark: #003cab;
+  --brand-light: #f2f3ff;
+  --brand-soft: #d9e1ff;
+  --success: #2ba471;
+  --success-soft: #e3f9e9;
+  --warning: #e37318;
+  --warning-soft: #fff1e9;
+  --danger: #d54941;
+  --danger-soft: #fff0ed;
+  --info: #0594fa;
+  --info-soft: #ecf6ff;
+  --text: rgba(0, 0, 0, 0.9);
+  --text-2: rgba(0, 0, 0, 0.6);
+  --text-3: rgba(0, 0, 0, 0.4);
+  --bg: #f3f3f3;
+  --card: #ffffff;
+  --line: #e7e7e7;
+  --nav: #0052d9;
+  --nav-text: #ffffff;

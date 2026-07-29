@@ -1,0 +1,1742 @@
+[
+  {
+    "title": "工作台",
+    "path": "/dashboard/workplace",
+    "component": "/dashboard/workplace/index",
+    "view": "frontend/client/src/views/dashboard/workplace/index.vue",
+    "menu_type": 0,
+    "children": []
+  },
+  {
+    "title": "运营调度",
+    "path": "/operation",
+    "component": "",
+    "view": null,
+    "menu_type": 0,
+    "children": [
+      {
+        "title": "计划中心",
+        "path": "/operation/waybill",
+        "component": "/operation/waybill/index",
+        "view": "frontend/client/src/views/operation/waybill/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "查询",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新增",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "删除",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "配载建单",
+        "path": "/operation/stowage",
+        "component": "",
+        "view": null,
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "手动配载",
+            "path": "/operation/task-create",
+            "component": "/operation/task-create/index",
+            "view": "frontend/client/src/views/operation/task-create/index.vue",
+            "menu_type": 0,
+            "children": []
+          },
+          {
+            "title": "智能配载",
+            "path": "/operation/smart-stowage",
+            "component": "/operation/smart-stowage/index",
+            "view": "frontend/client/src/views/operation/smart-stowage/index.vue",
+            "menu_type": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "调度工作台",
+        "path": "/operation/task-workbench",
+        "component": "/operation/task-workbench/index",
+        "view": "frontend/client/src/views/operation/task-workbench/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "在途监控",
+        "path": "/operation/tracking",
+        "component": "/operation/tracking/index",
+        "view": "frontend/client/src/views/operation/tracking/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "回单签收",
+        "path": "/operation/receipt",
+        "component": "/operation/receipt/index",
+        "view": "frontend/client/src/views/operation/receipt/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "确认回单",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "撤销回单",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "已完成任务",
+        "path": "/operation/completed-task",
+        "component": "/operation/completed-task/index",
+        "view": "frontend/client/src/views/operation/completed-task/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "任务单列表",
+        "path": "/operation/task",
+        "component": "/operation/task/index",
+        "view": "frontend/client/src/views/operation/task/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "查询",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新增",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "删除",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "派车",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "取消",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "确认装车",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "标记出发",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "确认到达",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "确认签收",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "关闭任务",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "规划路线",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "撤回派车",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "撤销装车",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "撤回出发",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "撤回到达",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "强制取消",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "撤销签收",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "运力中心",
+    "path": "/capacity",
+    "component": "",
+    "view": null,
+    "menu_type": 0,
+    "children": [
+      {
+        "title": "自有运力",
+        "path": "/capacity/self-capacity",
+        "component": "",
+        "view": null,
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "运力列表",
+            "path": "/capacity/self-capacity/list",
+            "component": "/capacity/self-capacity/list/index",
+            "view": "frontend/client/src/views/capacity/self-capacity/list/index.vue",
+            "menu_type": 0,
+            "children": [
+              {
+                "title": "查询",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "上车",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "下车",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "title": "驾驶员管理",
+            "path": "/capacity/self-capacity/driver",
+            "component": "/capacity/self-capacity/driver/index",
+            "view": "frontend/client/src/views/capacity/self-capacity/driver/index.vue",
+            "menu_type": 0,
+            "children": [
+              {
+                "title": "查询",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "新增",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "编辑",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "删除",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "资金账户查看",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "资金账户记账",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "资金账户冻结/解冻",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "title": "车辆管理",
+            "path": "/capacity/self-capacity/vehicle",
+            "component": "/capacity/self-capacity/vehicle/index",
+            "view": "frontend/client/src/views/capacity/self-capacity/vehicle/index.vue",
+            "menu_type": 0,
+            "children": [
+              {
+                "title": "查询",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "新增",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "编辑",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "删除",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "title": "挂车管理",
+            "path": "/capacity/self-capacity/trailer",
+            "component": "/capacity/self-capacity/trailer/index",
+            "view": "frontend/client/src/views/capacity/self-capacity/trailer/index.vue",
+            "menu_type": 0,
+            "children": [
+              {
+                "title": "查询",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "新增",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "编辑",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "删除",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "title": "运力分组",
+            "path": "/capacity/self-capacity/group",
+            "component": "/capacity/self-capacity/group/index",
+            "view": "frontend/client/src/views/capacity/self-capacity/group/index.vue",
+            "menu_type": 0,
+            "children": [
+              {
+                "title": "查询",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "新增",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "编辑",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "删除",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "成员管理",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "title": "变更记录",
+            "path": "/capacity/self-capacity/log",
+            "component": "/capacity/self-capacity/log/index",
+            "view": "frontend/client/src/views/capacity/self-capacity/log/index.vue",
+            "menu_type": 0,
+            "children": [
+              {
+                "title": "查询",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "承运商运力",
+        "path": "/capacity/carrier-capacity",
+        "component": "",
+        "view": null,
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "运力列表",
+            "path": "/capacity/carrier-capacity/list",
+            "component": "/capacity/carrier-capacity/list/index",
+            "view": "frontend/client/src/views/capacity/carrier-capacity/list/index.vue",
+            "menu_type": 0,
+            "children": []
+          },
+          {
+            "title": "运力审批",
+            "path": "/capacity/carrier-capacity/capacity-approval",
+            "component": "/capacity/carrier-capacity/capacity-approval/index",
+            "view": "frontend/client/src/views/capacity/carrier-capacity/capacity-approval/index.vue",
+            "menu_type": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "社会运力池",
+        "path": "/capacity/social-capacity",
+        "component": "",
+        "view": null,
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "运力列表",
+            "path": "/capacity/social-capacity/list",
+            "component": "/capacity/social-capacity/list/index",
+            "view": "frontend/client/src/views/capacity/social-capacity/list/index.vue",
+            "menu_type": 0,
+            "children": [
+              {
+                "title": "查询",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "新增",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "编辑",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "删除",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "提交/撤回审核",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "状态变更",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "结算账户管理",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "资金账户",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "资金记账",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "冻结/解冻资金账户",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "title": "运力审批",
+            "path": "/capacity/social-capacity/capacity-approval",
+            "component": "/capacity/social-capacity/capacity-approval/index",
+            "view": "frontend/client/src/views/capacity/social-capacity/capacity-approval/index.vue",
+            "menu_type": 0,
+            "children": [
+              {
+                "title": "查询",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "查看详情",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "审核通过",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "审核驳回",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "证照监控",
+        "path": "/capacity/compliance",
+        "component": "/capacity/compliance/index",
+        "view": "frontend/client/src/views/capacity/compliance/index.vue",
+        "menu_type": 0,
+        "children": []
+      }
+    ]
+  },
+  {
+    "title": "客商中心",
+    "path": "/partner",
+    "component": "",
+    "view": null,
+    "menu_type": 0,
+    "children": [
+      {
+        "title": "客户管理",
+        "path": "/partner/customer",
+        "component": "/partner/customer/index",
+        "view": "frontend/client/src/views/partner/customer/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "查询",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新增",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "删除",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "承运商管理",
+        "path": "/partner/carrier",
+        "component": "/partner/carrier/index",
+        "view": "frontend/client/src/views/partner/carrier/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "查询",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新增",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "删除",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "邀请激活",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "撤回邀请",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "供应商管理",
+        "path": "/partner/supplier",
+        "component": "/partner/supplier/index",
+        "view": "frontend/client/src/views/partner/supplier/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "互联客户",
+        "path": "/partner/inbound",
+        "component": "/partner/inbound/index",
+        "view": "frontend/client/src/views/partner/inbound/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "经销商门店",
+        "path": "/partner/dealer",
+        "component": "/partner/dealer/index",
+        "view": "frontend/client/src/views/partner/dealer/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "查询",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新增",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "删除",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "计费中心",
+    "path": "/billing",
+    "component": "",
+    "view": null,
+    "menu_type": 0,
+    "children": [
+      {
+        "title": "运价合同",
+        "path": "/billing/contract",
+        "component": "/billing/contract/index",
+        "view": "frontend/client/src/views/billing/contract/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "查询",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新增",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "删除",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "路线管理",
+        "path": "/billing/route",
+        "component": "/billing/route/index",
+        "view": "frontend/client/src/views/billing/route/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "成本政策",
+        "path": "/billing/cost-policy",
+        "component": "/billing/cost-policy/index",
+        "view": "frontend/client/src/views/billing/cost-policy/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "查询",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新增",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "删除",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "重算",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "承运商合同",
+        "path": "/billing/carrier-contract",
+        "component": "/billing/carrier-contract/index",
+        "view": "frontend/client/src/views/billing/carrier-contract/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "查询",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新增",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "删除",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "重算",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "费用模板",
+        "path": "/billing/fee-template",
+        "component": "/billing/fee-template/index",
+        "view": "frontend/client/src/views/billing/fee-template/index.vue",
+        "menu_type": 0,
+        "children": []
+      }
+    ]
+  },
+  {
+    "title": "审批中心",
+    "path": "/approval",
+    "component": "",
+    "view": null,
+    "menu_type": 0,
+    "children": [
+      {
+        "title": "我的待办",
+        "path": "/approval/pending",
+        "component": "/approval/pending/index",
+        "view": "frontend/client/src/views/approval/pending/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "我的申请",
+        "path": "/approval/initiated",
+        "component": "/approval/initiated/index",
+        "view": "frontend/client/src/views/approval/initiated/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "审批记录",
+        "path": "/approval/history",
+        "component": "/approval/history/index",
+        "view": "frontend/client/src/views/approval/history/index.vue",
+        "menu_type": 0,
+        "children": []
+      }
+    ]
+  },
+  {
+    "title": "财务结算",
+    "path": "/finance",
+    "component": "",
+    "view": null,
+    "menu_type": 0,
+    "children": [
+      {
+        "title": "应收管理",
+        "path": "/finance/receivable",
+        "component": "/finance/receivable/index",
+        "view": "frontend/client/src/views/finance/receivable/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "费用工作台",
+        "path": "/operation/task-finance-workbench",
+        "component": "/operation/task-finance-workbench/index",
+        "view": "frontend/client/src/views/operation/task-finance-workbench/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "费用单台账",
+        "path": "/operation/task-finance",
+        "component": "/operation/task-finance/index",
+        "view": "frontend/client/src/views/operation/task-finance/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "查询",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新增",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "审批",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "支付",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "撤销",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "提交审批",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "对账中心",
+        "path": "/finance/reconciliation",
+        "component": "/finance/reconciliation/index",
+        "view": "frontend/client/src/views/finance/reconciliation/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "发票管理",
+        "path": "/finance/invoice",
+        "component": "/finance/invoice/index",
+        "view": "frontend/client/src/views/finance/invoice/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "利润分析",
+        "path": "/finance/profit",
+        "component": "/finance/profit/index",
+        "view": "frontend/client/src/views/finance/profit/index.vue",
+        "menu_type": 0,
+        "children": []
+      }
+    ]
+  },
+  {
+    "title": "数据洞察",
+    "path": "/insight",
+    "component": "",
+    "view": null,
+    "menu_type": 0,
+    "children": [
+      {
+        "title": "经营驾驶舱",
+        "path": "/insight/cockpit",
+        "component": "",
+        "view": null,
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "计划总览",
+            "path": "/insight/cockpit/overview",
+            "component": "/insight/cockpit/overview/index",
+            "view": "frontend/client/src/views/insight/cockpit/overview/index.vue",
+            "menu_type": 0,
+            "children": []
+          },
+          {
+            "title": "利润总览",
+            "path": "/insight/cockpit/profit",
+            "component": "/insight/cockpit/profit/index",
+            "view": "frontend/client/src/views/insight/cockpit/profit/index.vue",
+            "menu_type": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "运营看板",
+        "path": "/insight/overview",
+        "component": "/insight/overview/index",
+        "view": "frontend/client/src/views/insight/overview/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "数据报表",
+        "path": "/insight/report",
+        "component": "/insight/report/index",
+        "view": "frontend/client/src/views/insight/report/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "智能预测",
+        "path": "/insight/prediction",
+        "component": "/insight/prediction/index",
+        "view": "frontend/client/src/views/insight/prediction/index.vue",
+        "menu_type": 0,
+        "children": []
+      }
+    ]
+  },
+  {
+    "title": "开放平台",
+    "path": "/open-platform",
+    "component": "",
+    "view": null,
+    "menu_type": 0,
+    "children": [
+      {
+        "title": "接入应用",
+        "path": "/open-platform/apps",
+        "component": "/open-platform/apps/index",
+        "view": "frontend/client/src/views/open-platform/apps/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "新建应用",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑应用",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "创建密钥",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "重置密钥",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "停用密钥",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新建 MCP 连接",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑 MCP 连接",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "删除 MCP 连接",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "能力目录",
+        "path": "/open-platform/capabilities",
+        "component": "/open-platform/capabilities/index",
+        "view": "frontend/client/src/views/open-platform/capabilities/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "接口文档",
+        "path": "/open-platform/docs",
+        "component": "/open-platform/docs/index",
+        "view": "frontend/client/src/views/open-platform/docs/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "调用记录",
+        "path": "/open-platform/logs",
+        "component": "/open-platform/logs/index",
+        "view": "frontend/client/src/views/open-platform/logs/index.vue",
+        "menu_type": 0,
+        "children": []
+      }
+    ]
+  },
+  {
+    "title": "服务平台",
+    "path": "/ecosystem",
+    "component": "",
+    "view": null,
+    "menu_type": 0,
+    "children": [
+      {
+        "title": "货源大厅",
+        "path": "/ecosystem/cargo-hall",
+        "component": "/ecosystem/cargo-hall/index",
+        "view": "frontend/client/src/views/ecosystem/cargo-hall/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "发布货源",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "下架货源",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "运力大厅",
+        "path": "/ecosystem/capacity-hall",
+        "component": "/ecosystem/capacity-hall/index",
+        "view": "frontend/client/src/views/ecosystem/capacity-hall/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "发布运力",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "下架运力",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "服务大厅",
+        "path": "/ecosystem/service-hall",
+        "component": "/ecosystem/service-hall/index",
+        "view": "frontend/client/src/views/ecosystem/service-hall/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "我的合作",
+        "path": "/ecosystem/deals",
+        "component": "/ecosystem/deals/index",
+        "view": "frontend/client/src/views/ecosystem/deals/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "发起合作意向",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "响应意向",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "确认成交",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "确认完成与评价",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "企业名片",
+        "path": "/ecosystem/profile",
+        "component": "/ecosystem/profile/index",
+        "view": "frontend/client/src/views/ecosystem/profile/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "编辑名片与屏蔽名单",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "日志中心",
+    "path": "/log-center",
+    "component": "",
+    "view": null,
+    "menu_type": 0,
+    "children": [
+      {
+        "title": "操作记录",
+        "path": "/log-center/operation-log",
+        "component": "/log-center/operation-log/index",
+        "view": "frontend/client/src/views/log-center/operation-log/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "登录记录",
+        "path": "/log-center/login-log",
+        "component": "/log-center/login-log/index",
+        "view": "frontend/client/src/views/log-center/login-log/index.vue",
+        "menu_type": 0,
+        "children": []
+      }
+    ]
+  },
+  {
+    "title": "企业配置",
+    "path": "/enterprise",
+    "component": "",
+    "view": null,
+    "menu_type": 0,
+    "children": [
+      {
+        "title": "组织架构",
+        "path": "/enterprise/organization",
+        "component": "/enterprise/organization/index",
+        "view": "frontend/client/src/views/enterprise/organization/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "经营主体",
+        "path": "/enterprise/business-entity",
+        "component": "/enterprise/business-entity/index",
+        "view": "frontend/client/src/views/enterprise/business-entity/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "查询",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新增",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "删除",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "设为默认",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "启停",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "员工管理",
+        "path": "/enterprise/user",
+        "component": "/enterprise/user/index",
+        "view": "frontend/client/src/views/enterprise/user/index.vue",
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "查询",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "新增",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "编辑",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          },
+          {
+            "title": "删除",
+            "path": "",
+            "component": "",
+            "view": null,
+            "menu_type": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "角色权限",
+        "path": "/enterprise/role",
+        "component": "/enterprise/role/index",
+        "view": "frontend/client/src/views/enterprise/role/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "审批配置",
+        "path": "/enterprise/approval-config",
+        "component": "/enterprise/approval-config/index",
+        "view": "frontend/client/src/views/enterprise/approval-config/index.vue",
+        "menu_type": 0,
+        "children": []
+      },
+      {
+        "title": "数据管理",
+        "path": "/enterprise/basic-data",
+        "component": "",
+        "view": null,
+        "menu_type": 0,
+        "children": [
+          {
+            "title": "地区数据",
+            "path": "/enterprise/basic-data/regional",
+            "component": "/enterprise/basic-data/regional/index",
+            "view": "frontend/client/src/views/enterprise/basic-data/regional/index.vue",
+            "menu_type": 0,
+            "children": [
+              {
+                "title": "查询",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "新增",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "编辑",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "删除",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "title": "品牌车型",
+            "path": "/enterprise/basic-data/brand-series",
+            "component": "/enterprise/basic-data/brand-series/index",
+            "view": "frontend/client/src/views/enterprise/basic-data/brand-series/index.vue",
+            "menu_type": 0,
+            "children": [
+              {
+                "title": "查询",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "新增",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "编辑",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              },
+              {
+                "title": "删除",
+                "path": "",
+                "component": "",
+                "view": null,
+                "menu_type": 1,
+                "children": []
+              }
+            ]
+          },
+          {
+            "title": "数据字典",
+            "path": "/enterprise/dictionary",
+            "component": "/enterprise/dictionary/index",
+            "view": "frontend/client/src/views/enterprise/dictionary/index.vue",
+            "menu_type": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "title": "系统设置",
+        "path": "/enterprise/config",
+        "component": "/enterprise/config/index",
+        "view": "frontend/client/src/views/enterprise/config/index.vue",
+        "menu_type": 0,
+        "children": []
+      }
+    ]
+  }
+]

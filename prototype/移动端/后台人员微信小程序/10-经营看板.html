@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>10 经营看板 · 后台人员微信小程序</title>
+<link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body data-app="admin">
+
+<header class="pt-head">
+  <div class="pt-head-inner">
+    <div class="pt-kicker"><i></i><b>后台人员微信小程序</b><span>模块 10</span></div>
+    <div class="pt-title">
+      <h1>经营看板</h1>
+      <span class="badge p0">P0 老板视角</span>
+    </div>
+    <p class="pt-intent">老板打开手机只问：这个月赚没赚、哪条线在亏。看板回答这两个问题即可。</p>
+    <dl class="pt-meta"><div><dt>覆盖屏数</dt><dd>3 屏</dd></div><div><dt>对齐</dt><dd>PC /insight/cockpit</dd></div></dl>
+    <nav class="pt-rail"><a href="#s1"><span class="n">1</span><span class="t">KPI</span></a><a href="#s2"><span class="n">2</span><span class="t">客户</span></a><a href="#s3"><span class="n">3</span><span class="t">线路</span></a></nav>
+  </div>
+</header>
+
+<main class="pt-body">
+  <div class="pt-gallery">
+
+    <section class="board" id="s1">
+      <div class="board-cap"><span class="n">01</span><h3>经营 KPI 总览</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">经营看板</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="chips" style="background:#fff;margin:0;border-bottom:1px solid var(--line)"><div class="chip on">本月</div><div class="chip">本季</div><div class="chip">本年</div></div>
+          <div class="kpi-grid">
+            <div class="kpi"><div class="k">运输单量</div><div class="v">128</div></div>
+            <div class="kpi"><div class="k">运费收入</div><div class="v sm">¥286万</div></div>
+            <div class="kpi"><div class="k">运输成本</div><div class="v sm">¥245万</div></div>
+            <div class="kpi brand"><div class="k">毛利</div><div class="v sm">¥41万</div></div>
+          </div>
+          <div class="card">
+            <div class="hd">运费趋势</div>
+            <div class="chart-bars">
+              <div class="bar" style="height:45%"><span class="lbl">2月</span></div>
+              <div class="bar" style="height:60%"><span class="lbl">3月</span></div>
+              <div class="bar" style="height:52%"><span class="lbl">4月</span></div>
+              <div class="bar" style="height:75%"><span class="lbl">5月</span></div>
+              <div class="bar" style="height:70%"><span class="lbl">6月</span></div>
+              <div class="bar" style="height:90%"><span class="lbl">7月</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>对齐 PC 经营驾驶舱摘要，不做复杂下钻。</li></ol>
+    </section>
+
+
+    <section class="board" id="s2">
+      <div class="board-cap"><span class="n">02</span><h3>客户排行</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">客户排行</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="card">
+              <div class="fx between mb12" style="font-size:13px"><span class="strong">1. 上汽乘用车</span><span class="money">¥ 86万</span></div>
+              <div class="fx between mb12" style="font-size:13px"><span class="strong">2. 奇瑞商用</span><span class="money">¥ 52万</span></div>
+              <div class="fx between mb12" style="font-size:13px"><span class="strong">3. 江淮经销</span><span class="money">¥ 31万</span></div>
+              <div class="fx between" style="font-size:13px"><span>4. 本地二网</span><span>¥ 18万</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>按运费收入排序；点击不进入复杂客户档案编辑。</li></ol>
+    </section>
+
+
+    <section class="board" id="s3">
+      <div class="board-cap"><span class="n">03</span><h3>线路利润</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">线路利润</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="task">
+              <div class="nm" style="font-size:14px">上海 → 合肥</div>
+              <div class="meta"><span>32 单</span><span class="green">毛利 18%</span></div>
+            </div>
+            <div class="task">
+              <div class="nm" style="font-size:14px">上海 → 南京</div>
+              <div class="meta"><span>21 单</span><span class="green">毛利 15%</span></div>
+            </div>
+            <div class="task">
+              <div class="nm" style="font-size:14px">杭州 → 武汉</div>
+              <div class="meta"><span>9 单</span><span class="err">毛利 6%</span></div>
+            </div>
+            <div class="notice info" style="border-radius:8px;margin:0"><span>应收/对账/开票能力在电脑端完善前，手机看板仅作经营速览。</span></div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>低毛利线路用红色提示老板关注。</li></ol>
+    </section>
+
+  </div>
+
+
+  <div class="pt-rules">
+    <h4>看板规则</h4>
+    <ul>
+      <li>老板/管理层深页；工作台模块 02 仅放摘要 KPI。</li>
+      <li>卡片可下钻到明细列表，不在手机端做复杂筛选导出。</li>
+      <li>API 规划复用 <code>/api/client/insight/*</code>。</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="pt-foot">智途 · 后台人员微信小程序原型 · 模块 10 经营看板</footer>
+<script src="assets/mp.js"></script>
+</body>
+</html>

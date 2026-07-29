@@ -1,0 +1,5 @@
+.dev .cell .k {
+  flex: none;
+  font-size: 14px;
+  color: var(--t1);
+}

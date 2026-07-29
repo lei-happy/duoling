@@ -1,0 +1,11 @@
+.dev .cells {
+  overflow: hidden;
+  margin: 10px 12px;
+  border-radius: var(--r-l);
+  background: var(--card);
+}
+
+.dev .cells.flush {
+  margin: 0;
+  border-radius: 0;
+}

@@ -1,0 +1,27 @@
+/* 不用 overflow:hidden 收圆角，否则会裁掉挂在外沿的原型标注徽标 */
+.dev .cells {
+  margin: 10px 12px;
+  border-radius: var(--r-l);
+  background: var(--card);
+}
+
+.dev .cells > .cell:first-of-type {
+  border-radius: var(--r-l) var(--r-l) 0 0;
+}
+
+.dev .cells > .cell:last-of-type {
+  border-radius: 0 0 var(--r-l) var(--r-l);
+}
+
+.dev .cells > .cell:only-of-type {
+  border-radius: var(--r-l);
+}
+
+.dev .cells.flush {
+  margin: 0;
+  border-radius: 0;
+}
+
+.dev .cells.flush > .cell {
+  border-radius: 0;
+}

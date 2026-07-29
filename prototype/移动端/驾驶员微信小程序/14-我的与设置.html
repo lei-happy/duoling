@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>14 我的与设置 · 驾驶员微信小程序</title>
+<link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body data-app="driver">
+
+<header class="pt-head">
+  <div class="pt-head-inner">
+    <div class="pt-kicker"><i></i><b>驾驶员微信小程序</b><span>模块 14</span></div>
+    <div class="pt-title">
+      <h1>我的与设置</h1>
+      <span class="badge p0">P0 已有能力</span>
+    </div>
+    <p class="pt-intent">账号、企业、密码、授权——司机很少来，但来的时候必须一次搞定。</p>
+    <dl class="pt-meta"><div><dt>覆盖屏数</dt><dd>5 屏</dd></div><div><dt>tabBar</dt><dd>第 4 个 · 我的</dd></div></dl>
+    <nav class="pt-rail"><a href="#s1"><span class="n">1</span><span class="t">首页</span></a><a href="#s2"><span class="n">2</span><span class="t">资料</span></a><a href="#s3"><span class="n">3</span><span class="t">切企业</span></a><a href="#s4"><span class="n">4</span><span class="t">改密</span></a><a href="#s5"><span class="n">5</span><span class="t">隐私退出</span></a></nav>
+  </div>
+</header>
+
+<main class="pt-body">
+  <div class="pt-gallery">
+
+    <section class="board" id="s1">
+      <div class="board-cap"><span class="n">01</span><h3>我的首页</h3><span class="tip">P0</span></div>
+      <div class="dev auto">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">我的</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="hero pad-b">
+            <div class="fx g10" style="padding-top:8px">
+              <div class="ava lg" style="width:56px;height:56px;font-size:20px">王</div>
+              <div>
+                <div style="font-size:18px;font-weight:600">王建军</div>
+                <div class="t3 mt4" style="font-size:12px;opacity:.9">139****3308</div>
+                <div class="fx g4 mt6" style="font-size:12px;opacity:.9"><svg class="ico" style="width:12px;height:12px"><use href="#i-building"></use></svg>皖通汽车物流</div>
+              </div>
+            </div>
+          </div>
+          <div class="cells">
+            <div class="cell"><div class="ib"><svg class="ico"><use href="#i-user"></use></svg></div><div class="k">个人信息</div><span class="caret">›</span></div>
+            <div class="cell"><div class="ib"><svg class="ico"><use href="#i-swap"></use></svg></div><div class="k">切换企业</div><div class="v">皖通</div><span class="caret">›</span></div>
+            <div class="cell"><div class="ib"><svg class="ico"><use href="#i-wallet"></use></svg></div><div class="k">收入汇总</div><span class="caret">›</span></div>
+            <div class="cell"><div class="ib" style="background:var(--warning-soft);color:#b45309"><svg class="ico"><use href="#i-shield"></use></svg></div><div class="k">我的证照</div><div class="v err">1 即将到期</div><span class="caret">›</span></div>
+            <div class="cell"><div class="ib"><svg class="ico"><use href="#i-setting"></use></svg></div><div class="k">隐私与授权</div><span class="caret">›</span></div>
+            <div class="cell"><div class="ib"><svg class="ico"><use href="#i-msg"></use></svg></div><div class="k">联系调度 / 帮助</div><span class="caret">›</span></div>
+          </div>
+          <a class="btn line block" style="margin:16px 12px;color:var(--danger);border-color:#fecaca">退出登录</a>
+        </div>
+        <div class="wx-foot">
+
+          <div class="tabbar">
+          <div class="item"><svg class="ico"><use href="#i-home"></use></svg>工作台</div>
+          <div class="item"><svg class="ico"><use href="#i-list"></use></svg>任务</div>
+          <div class="item"><svg class="ico"><use href="#i-wallet"></use></svg>收入</div>
+          <div class="item on"><svg class="ico"><use href="#i-user"></use></svg>我的<i class="dot"></i></div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>API：<code>GET /auth/user-info</code>、<code>/profile/me</code>。证照预警角标与模块 10 联动。</li></ol>
+    </section>
+
+
+    <section class="board" id="s2">
+      <div class="board-cap"><span class="n">02</span><h3>个人信息编辑</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">个人信息</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="cells" style="margin:0 0 12px">
+              <div class="cell"><div class="k">姓名</div><div class="v">王建军</div></div>
+              <div class="cell"><div class="k">手机号</div><div class="v">139****3308</div></div>
+              <div class="cell"><div class="k">驾驶证号</div><div class="v">已登记</div></div>
+            </div>
+            <div class="t3 mb8" style="font-size:12px">以下信息可自行修改</div>
+            <div class="field"><div class="lab">紧急联系人</div><div class="inp">王芳</div></div>
+            <div class="field"><div class="lab">紧急联系电话</div><div class="inp">138****2211</div></div>
+            <div class="field"><div class="lab">住址</div><div class="inp">上海市嘉定区安亭镇…</div></div>
+          </div>
+        </div>
+        <div class="action-bar"><a class="btn wide">保存</a></div>
+
+      </div>
+      <ol class="notes"><li>白名单字段：紧急联系人/电话/住址/头像。姓名手机号只读。API：<code>PUT /profile/me</code>。</li></ol>
+    </section>
+
+
+    <section class="board" id="s3">
+      <div class="board-cap"><span class="n">03</span><h3>切换企业</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">切换企业</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="card" style="border:1.5px solid var(--brand)">
+              <div class="fx between"><span class="strong">皖通汽车物流</span><span class="chip success">当前</span></div>
+              <div class="t3 mt8" style="font-size:12px">主驾 · 沪B·D7392</div>
+            </div>
+            <div class="card">
+              <div class="fx between"><span class="strong">上汽安吉物流</span><span class="chip muted">在职</span></div>
+              <div class="t3 mt8" style="font-size:12px">主驾 · 沪A·K2281</div>
+            </div>
+            <div class="card dim">
+              <div class="fx between"><span class="strong">合众轿运</span><span class="chip muted">已离职</span></div>
+              <div class="t3 mt8" style="font-size:12px">可查历史收入，不可接新任务</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>API：<code>/auth/user-tenants</code>、<code>/auth/switch-tenant</code>。已离职只读。</li></ol>
+    </section>
+
+
+    <section class="board" id="s4">
+      <div class="board-cap"><span class="n">04</span><h3>修改密码</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">修改密码</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="field"><div class="lab">当前密码</div><div class="inp ph">请输入</div></div>
+            <div class="field"><div class="lab">新密码</div><div class="inp ph">至少 8 位</div></div>
+            <div class="field"><div class="lab">确认新密码</div><div class="inp ph">再输入一次</div></div>
+            <div class="notice info" style="border-radius:8px"><span>改密成功后需重新登录。</span></div>
+          </div>
+        </div>
+        <div class="action-bar"><a class="btn wide">确认修改</a></div>
+
+      </div>
+      <ol class="notes"><li>强制改密场景带 <code>force=1</code>，成功后进工作台。API：<code>PUT /auth/password</code>。</li></ol>
+    </section>
+
+
+    <section class="board" id="s5">
+      <div class="board-cap"><span class="n">05</span><h3>隐私授权与退出</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">隐私与授权</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="cells">
+            <div class="cell"><div class="k">位置信息</div><div class="v green">已允许</div><span class="caret">›</span></div>
+            <div class="cell"><div class="k">摄像头 / 相册</div><div class="v green">已允许</div><span class="caret">›</span></div>
+            <div class="cell"><div class="k">订阅消息</div><div class="v">去管理</div><span class="caret">›</span></div>
+          </div>
+          <div class="pad" style="filter:blur(.5px);opacity:.5"><div class="card">服务协议 · 隐私政策</div></div>
+          <div class="mask center">
+            <div class="dialog">
+              <div class="t">确定退出登录？</div>
+              <div class="d">退出后不会删除你的任务和收入记录，下次用手机号还能进来。</div>
+              <div class="af">
+                <a class="btn line wide">取消</a>
+                <a class="btn danger wide">退出</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>退出清除本地 Token；不提示「清除数据」等恐吓文案。</li></ol>
+    </section>
+
+  </div>
+
+
+  <div class="pt-rules">
+    <h4>个人中心</h4>
+    <ul>
+      <li>白名单可改：紧急联系人、住址、头像；身份证/姓名只读。</li>
+      <li>切换企业后清空任务与财务缓存，防数据串租户。</li>
+      <li>API：<code>/api/driver/profile/me</code>、<code>/auth/switch-tenant</code>。</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="pt-foot">智途 · 驾驶员微信小程序原型 · 模块 14 我的与设置</footer>
+<script src="assets/mp.js"></script>
+</body>
+</html>

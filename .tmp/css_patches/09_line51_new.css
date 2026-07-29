@@ -1,0 +1,15 @@
+.dev .hero {
+  padding: 4px 16px 18px;
+  color: #fff;
+  background-color: var(--brand);
+  background-image: radial-gradient(
+    130% 110% at 100% 100%,
+    var(--brand-deep) 0%,
+    transparent 62%
+  );
+}
+
+.dev .hero .mut {
+  color: inherit;
+  opacity: 0.5;
+}

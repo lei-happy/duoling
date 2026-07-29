@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>01 登录与身份 · 驾驶员微信小程序</title>
+<link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body data-app="driver">
+
+<header class="pt-head">
+  <div class="pt-head-inner">
+    <div class="pt-kicker"><i></i><b>驾驶员微信小程序</b><span>模块 01</span></div>
+    <div class="pt-title">
+      <h1>登录与身份</h1>
+      <span class="badge p0">密码 / 验证码登录已有</span>
+      <span class="badge p1">微信一键登录 P1</span>
+    </div>
+    <p class="pt-intent">
+      司机群体的登录有两个现实特征：<em>记不住密码</em>、<em>可能同时在几家运输公司挂靠</em>。
+      所以这一版把微信手机号一键登录做成主路径，密码登录降级为备用；
+      并且把"你的手机号还没被企业录进运力"这种最常见的失败，做成<em>有出路的引导页</em>而不是一句报错。
+    </p>
+
+    <dl class="pt-meta">
+      <div><dt>覆盖屏数</dt><dd>6 屏</dd></div>
+      <div><dt>使用角色</dt><dd>驾驶员（首次进入 / 换手机 / 多企业）</dd></div>
+      <div><dt>数据来源</dt><dd><code>POST /api/driver/auth/login</code><span class="sep">·</span><code>/auth/sms-login</code><span class="sep">·</span><code>/auth/user-tenants</code><span class="sep">·</span><code>/auth/switch-tenant</code><span class="sep">·</span><code>PUT /auth/password</code></dd></div>
+      <div><dt>身份信息</dt><dd><code>GET /auth/user-info</code> 返回角色、权限与 <code>driver_id</code></dd></div>
+    </dl>
+
+    <nav class="pt-rail">
+      <a href="#s1"><span class="n">STEP 1</span><span class="t">进入小程序</span></a>
+      <a href="#s2"><span class="n">STEP 2</span><span class="t">微信手机号授权</span></a>
+      <a href="#s3"><span class="n">ALT</span><span class="t">手机号登录</span></a>
+      <a href="#s4"><span class="n">STEP 3</span><span class="t">选择企业</span></a>
+      <a href="#s5"><span class="n">EDGE</span><span class="t">号码未建档</span></a>
+      <a href="#s6"><span class="n">STEP 4</span><span class="t">首次改密</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="pt-body">
+
+  <div class="pt-gallery">
+
+    <!-- 1 -->
+    <section class="board" id="s1">
+      <div class="board-cap"><span class="n">01</span><h3>进入小程序 · 一键登录为主路径</h3></div>
+
+      <div class="dev">
+        <div class="wx-head onpage dark-cap" style="background:#fff">
+          <div class="wx-nav"></div>
+        </div>
+
+        <div class="wx-body white">
+          <div style="padding:26px 28px 0">
+            <div class="fx g10">
+              <div style="width:52px;height:52px;border-radius:15px;background:var(--brand);display:flex;align-items:center;justify-content:center;color:#fff">
+                <svg class="ico" style="width:28px;height:28px"><use href="#i-truck"></use></svg>
+              </div>
+              <div>
+                <div class="t1 strong" style="font-size:20px;letter-spacing:-.01em">智途司机</div>
+                <div class="t3" style="font-size:12.5px">接单、装车、签收、查收入</div>
+              </div>
+            </div>
+
+            <div class="mt16" style="margin-top:34px">
+              <div class="t1" style="font-size:22px;font-weight:600;line-height:1.4;letter-spacing:-.01em">
+                用微信绑定的手机号<br />直接进你所在的运输公司
+              </div>
+              <div class="t3 mt8" style="font-size:13px;line-height:1.75">
+                不用记密码。企业把你录进运力后，<br />手机号就是你的账号。
+              </div>
+            </div>
+
+            <div style="margin-top:38px">
+              <a class="btn block rel" style="height:46px">
+                <svg class="ico" style="width:19px;height:19px"><use href="#i-wechat"></use></svg>
+                微信一键登录
+                <i class="pin">1</i>
+              </a>
+              <a class="btn line block mt12" style="height:46px">用手机号和密码登录</a>
+            </div>
+
+            <div class="fx g6 mt16" style="align-items:flex-start;margin-top:22px">
+              <span class="ck sq rel" style="width:17px;height:17px;margin-top:1px"><i class="pin tl" style="width:14px;height:14px;font-size:9px">2</i></span>
+              <span class="t3" style="font-size:11.5px;line-height:1.65">
+                我已阅读并同意<span class="blue">服务协议</span>和<span class="blue">隐私政策</span>，
+                同意智途在派车、签收、结算范围内处理我的手机号、位置和照片
+              </span>
+            </div>
+          </div>
+
+          <div style="position:absolute;left:0;right:0;bottom:26px;text-align:center">
+            <div class="t3" style="font-size:11.5px">登录不了？<span class="blue">联系你的调度</span></div>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li><span class="flag">P1</span>微信一键登录需要新增 <code>POST /auth/wechat-login</code>：小程序侧 <code>wx.login</code> 拿 code + <code>getPhoneNumber</code> 拿加密手机号，后端解密后按手机号匹配 <code>biz_driver</code>。当前后端只有密码与短信两种，一键登录是本版最值得做的增量——它一次性解决了司机记不住密码的问题。</li>
+        <li>协议勾选默认<b>不勾</b>，未勾时点登录按钮弹出协议确认（合规要求）。授权说明写清用途范围（派车、签收、结算），不写空泛的"为了提供更好的服务"。</li>
+        <li>首屏标题直接说清价值主张"不用记密码"，而不是放一句 slogan。底部常驻「登录不了？联系你的调度」——这是司机侧最高频的求助路径。</li>
+      </ol>
+    </section>
+
+    <!-- 2 -->
+    <section class="board" id="s2">
+      <div class="board-cap"><span class="n">02</span><h3>微信手机号授权 · 系统弹窗</h3></div>
+
+      <div class="dev">
+        <div class="wx-head onpage dark-cap" style="background:#fff">
+          <div class="wx-nav"></div>
+        </div>
+
+        <div class="wx-body white">
+          <div style="padding:26px 28px 0;filter:blur(1.5px);opacity:.5">
+            <div class="t1 strong" style="font-size:20px">智途司机</div>
+            <div class="t1 mt16" style="font-size:22px;font-weight:600;line-height:1.4">
+              用微信绑定的手机号<br />直接进你所在的运输公司
+            </div>
+            <a class="btn block" style="margin-top:34px">微信一键登录</a>
+          </div>
+
+          <div class="mask bottom">
+            <div class="wx-auth rel" style="border-radius:14px 14px 0 0;padding-bottom:28px">
+              <div class="ah">
+                <span class="lg">智</span>
+                <div class="grow">
+                  <div class="nm">智途司机</div>
+                  <div class="sub">皖通汽车物流提供的司机端小程序</div>
+                </div>
+              </div>
+              <div class="aq">申请获取你的手机号</div>
+              <div class="ai">
+                139****3308
+                <div class="t3 mt6" style="font-size:11.5px">微信绑定的手机号</div>
+              </div>
+              <div class="af">
+                <a class="btn line wide" style="height:42px">拒绝</a>
+                <a class="btn wide" style="height:42px">允许</a>
+              </div>
+              <i class="pin in">1</i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>这是微信原生弹窗，样式不可自定义，但<b>小程序名称和主体信息会展示在这里</b>，所以小程序名要让司机认得出（「智途司机」而不是公司全称）。原型保留这一屏，是为了让评审看到授权前的真实观感。</li>
+        <li>拒绝授权后不能死路一条：回到首屏并把「用手机号和密码登录」提升为主按钮，同时提示「不用微信手机号也可以登录，用你在企业登记的手机号就行」。</li>
+      </ol>
+    </section>
+
+  </div>
+
+  <div class="pt-gallery">
+
+    <!-- 3 -->
+    <section class="board" id="s3">
+      <div class="board-cap"><span class="n">03</span><h3>手机号登录 · 密码与验证码</h3></div>
+
+      <div class="dev auto">
+        <div class="wx-head" data-back>
+          <div class="wx-nav" data-back><span class="ttl">手机号登录</span></div>
+        </div>
+
+        <div class="wx-body white">
+          <div class="seg rel" style="margin:16px 16px 0">
+            <a class="on">收验证码</a>
+            <a>用密码</a>
+            <i class="pin tl">1</i>
+          </div>
+
+          <div style="padding:6px 4px 0">
+            <div class="field">
+              <div class="lb">手机号</div>
+              <div class="in">139 3308 5521<span class="caret"></span></div>
+            </div>
+            <div class="field bad rel">
+              <div class="lb">验证码</div>
+              <div class="in">
+                <span>4 2 9</span>
+                <span class="lnk auto">重新获取 48s</span>
+              </div>
+              <div class="err">验证码是 6 位，还差 3 位</div>
+              <i class="pin">2</i>
+            </div>
+          </div>
+
+          <div style="padding:18px 16px 0">
+            <a class="btn block dis" style="height:46px">登录</a>
+          </div>
+
+          <div class="pad" style="padding-top:22px">
+            <div class="t3 mb8" style="font-size:11.5px">切到「用密码」时的形态</div>
+            <div style="border-radius:10px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)">
+              <div class="field">
+                <div class="lb">手机号</div>
+                <div class="in">139 3308 5521</div>
+              </div>
+              <div class="field rel">
+                <div class="lb">密码</div>
+                <div class="in">
+                  <span>••••••••</span>
+                  <svg class="ico"><use href="#i-eye"></use></svg>
+                </div>
+                <i class="pin">3</i>
+              </div>
+              <div class="field" style="background:var(--card)">
+                <div class="fx between">
+                  <span class="lnk">忘记密码，用验证码登录</span>
+                  <span class="t3" style="font-size:11.5px">首次登录密码是手机号后 6 位</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pad" style="padding-top:18px">
+            <div class="t3 mb8" style="font-size:11.5px">登录失败的提示写法</div>
+            <div class="notice red rel" style="margin:0;border-radius:10px">
+              <svg class="ico"><use href="#i-warning"></use></svg>
+              <span>手机号或密码不对。连续错 5 次会锁 30 分钟，可以改用验证码登录</span>
+              <i class="pin in">4</i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>验证码登录（<code>/auth/sms-login</code>）放在第一个 Tab，密码登录（<code>/auth/login</code>）放第二个。司机换手机、忘密码的频率远高于正常记得密码。</li>
+        <li>校验提示要<b>说清还差什么</b>：「验证码是 6 位，还差 3 位」，不写「格式错误」。按钮在校验通过前保持禁用，避免无效请求。</li>
+        <li>首次登录的默认密码规则直接写在界面上（手机号后 6 位），这是司机侧最常问调度的问题，写出来能省掉大量电话。</li>
+        <li>失败提示同时给出<b>后果</b>（错 5 次锁 30 分钟）和<b>替代路径</b>（改用验证码登录）。不暴露"账号不存在"还是"密码错误"，避免撞库探测。</li>
+      </ol>
+    </section>
+
+    <!-- 4 -->
+    <section class="board" id="s4">
+      <div class="board-cap"><span class="n">04</span><h3>选择企业 · 一个手机号多家挂靠</h3></div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav"><span class="ttl">选择企业</span></div>
+        </div>
+
+        <div class="wx-body scroll">
+          <div class="pad" style="padding-bottom:2px">
+            <div class="t1 strong" style="font-size:17px">你在 3 家企业当司机</div>
+            <div class="t3 mt4" style="font-size:12.5px">选一家进去干活，之后可以在工作台随时切换</div>
+          </div>
+
+          <div class="cells rel">
+            <div class="cell">
+              <span class="lead"><svg class="ico"><use href="#i-building"></use></svg></span>
+              <span class="k">皖通汽车物流<span class="sub">主驾 · 沪B·D7392 · 在职</span></span>
+              <span class="v"><span class="tag warning sm">1 个待接</span></span>
+              <svg class="ico arrow"><use href="#i-right"></use></svg>
+            </div>
+            <div class="cell">
+              <span class="lead"><svg class="ico"><use href="#i-building"></use></svg></span>
+              <span class="k">徽通商品车运输<span class="sub">主驾 · 皖A·L2288 · 在职</span></span>
+              <span class="v"><span class="tag warning sm">2 个待接</span></span>
+              <svg class="ico arrow"><use href="#i-right"></use></svg>
+            </div>
+            <div class="cell">
+              <span class="lead n"><svg class="ico"><use href="#i-building"></use></svg></span>
+              <span class="k mut">长风物流（合肥）<span class="sub">已离职 · 只能查历史收入</span></span>
+              <svg class="ico arrow"><use href="#i-right"></use></svg>
+            </div>
+            <i class="pin tl">1</i>
+          </div>
+
+          <div class="card rel">
+            <div class="fx g8 top">
+              <svg class="ico" style="width:15px;height:15px;color:var(--t3);margin-top:2px"><use href="#i-info"></use></svg>
+              <div class="t2" style="font-size:12.5px;line-height:1.7">
+                每家企业的任务、收入、证照都是分开的。选了这家，就只看得到这家的东西。
+                企业把你从运力里解绑后会变成「已离职」，<b>历史收入还能查</b>。
+              </div>
+            </div>
+            <i class="pin">2</i>
+          </div>
+
+          <div class="cells">
+            <div class="cell">
+              <span class="k">下次直接进上次那家<span class="sub">不用每次选</span></span>
+              <span class="sw on"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>企业列表取 <code>GET /auth/user-tenants</code>。每行必须带上<b>本人在该企业的车牌与在职状态</b>——同一个司机在两家公司常开不同车，只显示企业名分不清。带待接调令数是为了让司机优先进有活儿的那家。</li>
+        <li>把"数据是按企业隔离的"这条规则直接说人话讲清楚，避免司机切错企业后以为任务丢了、收入少了。</li>
+        <li>记住上次选择默认开启，减少每次登录多一步。切换调 <code>POST /auth/switch-tenant</code> 换发 Token。</li>
+      </ol>
+    </section>
+
+  </div>
+
+  <div class="pt-gallery">
+
+    <!-- 5 -->
+    <section class="board" id="s5">
+      <div class="board-cap"><span class="n">05</span><h3>号码未建档 · 最常见的失败</h3></div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">登录</span></div>
+        </div>
+
+        <div class="wx-body white">
+          <div class="empty rel" style="padding:64px 34px 0">
+            <div class="ib" style="width:70px;height:70px;color:var(--warning);background:var(--warning-weak)">
+              <svg class="ico" style="width:32px;height:32px"><use href="#i-users"></use></svg>
+            </div>
+            <div class="tt" style="font-size:17px;font-weight:600;color:var(--t1)">这个号码还没被企业录进运力</div>
+            <div class="hint" style="font-size:13px">
+              139****3308<br /><br />
+              司机账号是由运输公司在系统里建的。<br />
+              把这个手机号发给你的调度或车队长，<br />他们在「运力管理」里加上你，你就能登录了。
+            </div>
+            <i class="pin">1</i>
+          </div>
+
+          <div style="padding:26px 24px 0">
+            <div class="card rel" style="margin:0">
+              <div class="sec-t">要告诉调度这些</div>
+              <div class="kv c1" style="gap:9px">
+                <div><div class="k">手机号</div><div class="v num">139 3308 5521</div></div>
+                <div><div class="k">姓名</div><div class="v">按身份证填</div></div>
+                <div><div class="k">驾驶证与从业资格证</div><div class="v">拍照给调度</div></div>
+              </div>
+              <a class="btn ghost block mt12"><svg class="ico"><use href="#i-chat"></use></svg>复制这些信息发给调度</a>
+              <i class="pin">2</i>
+            </div>
+
+            <div class="fx g8 mt16" style="justify-content:center">
+              <a class="btn line sm">换个手机号试试</a>
+              <a class="btn line sm">重新登录</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>这是司机首次登录失败率最高的一种情况。后端按手机号在 <code>biz_driver</code> 里匹配不到就走这一屏。<b>不能只提示「账号不存在」</b>——司机会以为是产品坏了，实际是企业还没录他。</li>
+        <li>把"该找谁、要提供什么"结构化列出来，并给一键复制。这一步把一次客服工单变成一条微信消息。</li>
+        <li>提供换号与重试两个出口，覆盖"微信绑的号和企业登记的号不是同一个"这种常见情况。</li>
+      </ol>
+    </section>
+
+    <!-- 6 -->
+    <section class="board" id="s6">
+      <div class="board-cap"><span class="n">06</span><h3>首次登录 · 必须改密码</h3></div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav"><span class="ttl">设置你的密码</span></div>
+        </div>
+
+        <div class="wx-body white">
+          <div class="notice blue rel">
+            <svg class="ico"><use href="#i-lock"></use></svg>
+            <span>现在用的是默认密码（手机号后 6 位），换一个只有你知道的</span>
+            <i class="pin in">1</i>
+          </div>
+
+          <div style="padding:6px 4px 0">
+            <div class="field">
+              <div class="lb">新密码<span class="req">*</span></div>
+              <div class="in">
+                <span>••••••••</span>
+                <svg class="ico"><use href="#i-eye"></use></svg>
+              </div>
+            </div>
+            <div class="field rel">
+              <div class="lb">再输一次<span class="req">*</span></div>
+              <div class="in ph">再把新密码输一遍</div>
+              <i class="pin">2</i>
+            </div>
+          </div>
+
+          <div class="card rel">
+            <div class="fx g6 mb8">
+              <span class="t3" style="font-size:12px">密码强度</span>
+              <span class="green auto strong" style="font-size:12px">够用了</span>
+            </div>
+            <div class="pg g mb12"><i style="width:70%"></i></div>
+            <div class="t2" style="font-size:12px;line-height:1.9">
+              <div class="fx g6"><svg class="ico green" style="width:13px;height:13px"><use href="#i-check"></use></svg>8 位以上</div>
+              <div class="fx g6"><svg class="ico green" style="width:13px;height:13px"><use href="#i-check"></use></svg>有字母也有数字</div>
+              <div class="fx g6 mut"><svg class="ico" style="width:13px;height:13px"><use href="#i-close"></use></svg>不要用手机号、生日、车牌</div>
+            </div>
+            <i class="pin">3</i>
+          </div>
+
+          <div style="padding:8px 16px 0">
+            <a class="btn block" style="height:46px">保存密码，开始干活</a>
+            <div style="text-align:center;margin-top:14px">
+              <span class="t3" style="font-size:12px">以后忘了可以用验证码登录，不用找调度重置</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>调 <code>PUT /auth/password</code>。首次登录（<code>must_change_password</code>）时这一步不可跳过，但要解释为什么——「换一个只有你知道的」，比「安全策略要求」有效。</li>
+        <li>强度反馈用「够用了」这种口语判断，规则清单里第三条直接点出司机最常用的弱密码（手机号、生日、车牌）。</li>
+        <li>按钮文案带上下一步的目的「保存密码，开始干活」，并提前告知忘记密码有自助出路，减少改密的心理负担。</li>
+      </ol>
+    </section>
+
+  </div>
+
+  <div class="pt-rules">
+    <h4>登录链路与接口</h4>
+    <table>
+      <thead><tr><th>步骤</th><th>接口</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>微信一键登录</td><td><code>POST /auth/wechat-login</code>（新增）</td><td><span class="badge p1" style="height:18px">P1</span></td></tr>
+        <tr><td>验证码登录</td><td><code>POST /auth/sms-login</code></td><td>已有</td></tr>
+        <tr><td>密码登录</td><td><code>POST /auth/login</code></td><td>已有</td></tr>
+        <tr><td>可登录企业</td><td><code>GET /auth/user-tenants</code></td><td>已有</td></tr>
+        <tr><td>切换企业</td><td><code>POST /auth/switch-tenant</code></td><td>已有</td></tr>
+        <tr><td>身份与权限</td><td><code>GET /auth/user-info</code></td><td>已有，返回 <code>driver_id</code></td></tr>
+        <tr><td>修改密码</td><td><code>PUT /auth/password</code></td><td>已有</td></tr>
+        <tr><td>Token 续期</td><td><code>POST /auth/refresh</code></td><td>已有，静默续期不打扰司机</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pt-rules">
+    <h4>本模块的边界与约定</h4>
+    <ul>
+      <li><b>司机不能自助注册。</b> 账号来源只有一条：企业在运力管理里建档。所有登录失败的引导终点都是"联系调度"，不是"去注册"。</li>
+      <li><b>Token 过期静默续期</b>，不把司机踢回登录页。续期失败才回登录页，并保留他刚才在看的任务，登录后跳回原页面。</li>
+      <li><b>企业隔离是硬边界</b>：切换企业等于换一套数据，任务、收入、证照、消息全部按当前企业过滤。</li>
+      <li>登录页不出现「租户」「Token」「授权码」等实现词汇，一律说「企业」「登录」。</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="pt-foot">
+  智途 · 驾驶员微信小程序原型 · 模块 01 登录与身份
+</footer>
+
+<script src="assets/mp.js"></script>
+</body>
+</html>

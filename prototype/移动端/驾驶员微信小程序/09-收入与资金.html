@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>09 收入与资金 · 驾驶员微信小程序</title>
+<link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body data-app="driver">
+
+<header class="pt-head">
+  <div class="pt-head-inner">
+    <div class="pt-kicker"><i></i><b>驾驶员微信小程序</b><span>模块 09</span></div>
+    <div class="pt-title">
+      <h1>收入与资金</h1>
+      <span class="badge p0">P0 已有能力</span>
+    </div>
+    <p class="pt-intent">司机最关心两件事：这趟能拿多少、钱到哪了。收入模块只做透明查询，不做支付操作。</p>
+    <dl class="pt-meta"><div><dt>覆盖屏数</dt><dd>6 屏</dd></div><div><dt>tabBar</dt><dd>第 3 个 · 收入</dd></div><div><dt>API</dt><dd><code>/api/driver/finance/*</code></dd></div></dl>
+    <nav class="pt-rail"><a href="#s1"><span class="n">1</span><span class="t">列表</span></a><a href="#s2"><span class="n">2</span><span class="t">详情</span></a><a href="#s3"><span class="n">3</span><span class="t">汇总</span></a><a href="#s4"><span class="n">4</span><span class="t">资金账</span></a><a href="#s5"><span class="n">5</span><span class="t">收款账户</span></a><a href="#s6"><span class="n">6</span><span class="t">余额说明</span></a></nav>
+  </div>
+</header>
+
+<main class="pt-body">
+  <div class="pt-gallery">
+
+    <section class="board" id="s1">
+      <div class="board-cap"><span class="n">01</span><h3>收入 Tab · 费用单列表</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">收入</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="hero pad-b">
+            <div class="t3" style="font-size:12px;opacity:.85">本月收入</div>
+            <div style="font-size:32px;font-weight:700;font-family:var(--mono);margin-top:4px">¥ 18,600</div>
+            <div class="fx g14 mt12" style="font-size:12px;opacity:.9">
+              <span>预付 6,200</span><span>补款 1,400</span><span>结算 11,000</span>
+            </div>
+          </div>
+          <div class="tabs">
+            <div class="tab on">全部</div><div class="tab">预付单</div><div class="tab">补款单</div><div class="tab">结算单</div>
+          </div>
+          <div class="task">
+            <div class="top"><span class="chip success">已支付</span><span class="chip primary">预付单</span></div>
+            <div class="fx between"><span class="strong">TK202607290031</span><span class="money">¥ 800.00</span></div>
+            <div class="meta mt8"><span>上海 → 合肥</span><span>07-29 支付</span></div>
+          </div>
+          <div class="task">
+            <div class="top"><span class="chip info">已审批</span><span class="chip primary">结算单</span></div>
+            <div class="fx between"><span class="strong">TK202607250018</span><span class="money">¥ 2,100.00</span></div>
+            <div class="meta mt8"><span>杭州 → 南京</span><span>待打款</span></div>
+          </div>
+        </div>
+        <div class="wx-foot">
+
+          <div class="tabbar">
+          <div class="item"><svg class="ico"><use href="#i-home"></use></svg>工作台</div>
+          <div class="item"><svg class="ico"><use href="#i-list"></use></svg>任务</div>
+          <div class="item on"><svg class="ico"><use href="#i-wallet"></use></svg>收入</div>
+          <div class="item"><svg class="ico"><use href="#i-user"></use></svg>我的</div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>金额与状态同屏。API：<code>GET /api/driver/finance/my</code>、<code>/summary</code>。</li></ol>
+    </section>
+
+
+    <section class="board" id="s2">
+      <div class="board-cap"><span class="n">02</span><h3>费用单详情</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">费用单详情</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="card" style="text-align:center">
+              <div class="chip success mb8">已支付</div>
+              <div class="money" style="font-size:28px">¥ 800.00</div>
+              <div class="t3 mt8">预付单 · FP202607290012</div>
+            </div>
+            <div class="card">
+              <div class="cell" style="padding:8px 0;border:none"><div class="k">关联任务</div><div class="v">TK202607290031</div></div>
+              <div class="cell" style="padding:8px 0;border:none"><div class="k">支付方式</div><div class="v">银行转账</div></div>
+              <div class="cell" style="padding:8px 0;border:none"><div class="k">支付时间</div><div class="v">07-29 11:20</div></div>
+            </div>
+            <div class="card">
+              <div class="hd">费用明细</div>
+              <div class="fx between mb8"><span class="t2">运输费预付</span><span>¥ 800.00</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>只读。司机不能改金额、不能自己「确认支付」。</li></ol>
+    </section>
+
+
+    <section class="board" id="s3">
+      <div class="board-cap"><span class="n">03</span><h3>收入汇总</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">收入汇总</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="card">
+              <div class="t3">近 6 个月合计</div>
+              <div class="money" style="font-size:26px;margin-top:4px">¥ 96,480</div>
+              <div class="chart-bars mt12">
+                <div class="bar" style="height:40%"><span class="lbl">2月</span></div>
+                <div class="bar" style="height:55%"><span class="lbl">3月</span></div>
+                <div class="bar" style="height:48%"><span class="lbl">4月</span></div>
+                <div class="bar" style="height:70%"><span class="lbl">5月</span></div>
+                <div class="bar" style="height:62%"><span class="lbl">6月</span></div>
+                <div class="bar" style="height:85%"><span class="lbl">7月</span></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="fx between mb10"><span class="t2">预付</span><span class="strong">¥ 28,400</span></div>
+              <div class="fx between mb10"><span class="t2">补款</span><span class="strong">¥ 6,080</span></div>
+              <div class="fx between"><span class="t2">结算</span><span class="strong">¥ 62,000</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>API：<code>GET /api/driver/finance/summary</code>。柱状为示意，正式版可换轻量图表。</li></ol>
+    </section>
+
+
+    <section class="board" id="s4">
+      <div class="board-cap"><span class="n">04</span><h3>资金往来账</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">资金账户</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="hero pad-b">
+            <div class="t3" style="opacity:.85">可用余额</div>
+            <div style="font-size:30px;font-weight:700;font-family:var(--mono)">¥ 3,260.00</div>
+            <div class="t3 mt6" style="font-size:11px;opacity:.85">正数表示公司还欠你，负数表示你需要向公司补款</div>
+            <div class="fx g14 mt12" style="font-size:12px;opacity:.9"><span>累计入 96,480</span><span>累计出 93,220</span><span>冻结 0</span></div>
+          </div>
+          <div class="pad">
+            <div class="t1 strong mb12">近期流水</div>
+            <div class="fx between mb12" style="font-size:13px">
+              <div><div class="strong">任务结算入账</div><div class="t3" style="font-size:11px">07-28 · TK018</div></div>
+              <span class="green strong">+2,100.00</span>
+            </div>
+            <div class="fx between mb12" style="font-size:13px">
+              <div><div class="strong">预付登记</div><div class="t3" style="font-size:11px">07-29 · TK031</div></div>
+              <span class="green strong">+800.00</span>
+            </div>
+            <div class="fx between" style="font-size:13px">
+              <div><div class="strong">人工出账</div><div class="t3" style="font-size:11px">07-20 · 提现</div></div>
+              <span class="err strong">-5,000.00</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>API：<code>GET /api/driver/finance/fund-account</code>、<code>/fund-account/transactions</code>。</li><li>余额 = 累计入 − 累计出 − 冻结；司机端只读，不能自行提现或改账。</li><li>流水 biz_type 映射为白话：预付登记、任务结算入账、人工出账等。</li></ol>
+    </section>
+
+
+    <section class="board" id="s5">
+      <div class="board-cap"><span class="n">05</span><h3>收款账户</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">收款账户</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="card">
+              <div class="fx g10">
+                <div class="ib" style="width:40px;height:40px;border-radius:10px;background:var(--brand-tint);color:var(--brand);display:flex;align-items:center;justify-content:center">卡</div>
+                <div class="grow">
+                  <div class="strong">工商银行</div>
+                  <div class="t3" style="font-size:12px">尾号 6682 · 王建军</div>
+                </div>
+                <span class="chip success">默认</span>
+              </div>
+            </div>
+            <div class="card">
+              <div class="fx g10">
+                <div class="ib" style="width:40px;height:40px;border-radius:10px;background:var(--warning-soft);color:#b45309;display:flex;align-items:center;justify-content:center">油</div>
+                <div class="grow">
+                  <div class="strong">中石油油卡</div>
+                  <div class="t3" style="font-size:12px">尾号 0199</div>
+                </div>
+              </div>
+            </div>
+            <div class="notice info" style="margin:12px;border-radius:8px">
+              <span>账户由公司维护。要换卡请联系调度或财务，不要自己改。</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>只读列表。API：<code>GET /api/driver/finance/account</code>。</li></ol>
+    </section>
+
+
+    <section class="board" id="s6">
+      <div class="board-cap"><span class="n">06</span><h3>负余额说明态</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">资金账户</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="hero pad-b" style="background:linear-gradient(135deg,#7f1d1d,#b91c1c)">
+            <div class="t3" style="opacity:.85">可用余额</div>
+            <div style="font-size:30px;font-weight:700;font-family:var(--mono)">- ¥ 1,200.00</div>
+            <div class="t3 mt6" style="font-size:11px;opacity:.9">当前需向公司补款 ¥1,200，请联系财务核对</div>
+          </div>
+          <div class="pad">
+            <div class="notice warn" style="border-radius:8px;margin-bottom:12px"><span>余额为负通常因预支过多或扣款登记，详情见下方流水。</span></div>
+            <div class="t1 strong mb12">近期流水</div>
+            <div class="fx between mb12" style="font-size:13px">
+              <div><div class="strong">人工出账</div><div class="t3" style="font-size:11px">07-25 · 油卡扣款</div></div>
+              <span class="err strong">-3,000.00</span>
+            </div>
+            <div class="fx between" style="font-size:13px">
+              <div><div class="strong">预付登记</div><div class="t3" style="font-size:11px">07-20 · TK025</div></div>
+              <span class="green strong">+1,800.00</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>负余额用警示色 hero，但不恐吓；引导联系财务而非展示内部科目。</li><li>费用单（模块 09 列表）与资金账户是两套数据：前者看「单据」，后者看「往来账」。</li></ol>
+    </section>
+
+  </div>
+
+  <div class="pt-rules">
+    <h4>收入 vs 资金账户</h4>
+    <table>
+      <tr><th>概念</th><th>司机看到什么</th><th>数据来源</th></tr>
+      <tr><td>费用单</td><td>预付/补款/结算单据及支付状态</td><td><code>GET /api/driver/finance/my</code></td></tr>
+      <tr><td>收入汇总</td><td>按月已支付合计</td><td><code>GET /api/driver/finance/summary</code></td></tr>
+      <tr><td>资金账户</td><td>与公司往来余额 + 流水</td><td><code>GET /api/driver/finance/fund-account</code></td></tr>
+      <tr><td>收款账户</td><td>打款用的银行卡/油卡（脱敏）</td><td><code>GET /api/driver/finance/account</code></td></tr>
+    </table>
+    <h4 style="margin-top:16px">余额正负语义</h4>
+    <ul>
+      <li><b>正余额</b>：公司欠司机，后续结算会入账或减少欠款。</li>
+      <li><b>负余额</b>：司机欠公司，需补款或由后续任务运费抵扣。</li>
+      <li>司机不可自行改余额；所有变动来自 PC 端财务/调度流程。</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="pt-foot">智途 · 驾驶员微信小程序原型 · 模块 09 收入与资金</footer>
+<script src="assets/mp.js"></script>
+</body>
+</html>

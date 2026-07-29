@@ -1,0 +1,5 @@
+.dev .hero {
+  padding: 4px 16px 18px;
+  color: #fff;
+  background: linear-gradient(160deg, var(--brand) 0%, var(--brand-deep) 100%);
+}

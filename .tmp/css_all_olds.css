@@ -1,0 +1,113 @@
+/* 个人中心头图 */
+.dev .hero {\n\n/* ==== OLD ==== */\n\n.dev .map .pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  z-index: 2;
+}
+
+.dev .map .pin .bub {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--r-s);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: #fff;
+  background: var(--brand);
+  box-shadow: 0 2px 6px rgba(16, 36, 43, 0.24);
+}
+
+.dev .map .pin .bub .ico {
+  width: 12px;
+  height: 12px;
+}
+
+.dev .map .pin.g .bub {
+  background: var(--success);
+}
+
+.dev .map .pin.r .bub {
+  background: var(--danger);
+}
+
+.dev .map .pin.w .bub {
+  color: var(--t1);
+  background: #fff;
+}
+
+.dev .map .pin::after {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: -2px auto 0;
+  border-radius: 0 0 2px 0;
+  transform: rotate(45deg);
+  background: inherit;
+}\n\n/* ==== OLD ==== */\n\n.dev .cell .k {
+  flex: none;
+  font-size: 14px;
+  color: var(--t1);
+}\n\n/* ==== OLD ==== */\n\n/* 链接式操作 */
+.dev .lnk {
+  font-size: 13px;
+  color: var(--brand);
+}\n\n/* ==== OLD ==== */\n\n.dev .banner .no {
+  margin-left: auto;\n\n/* ==== OLD ==== */\n\n.pin.in {
+  top: 5px;
+  right: 5px;
+  box-shadow: 0 1px 3px rgba(16, 36, 43, 0.4);
+}\n\n/* ==== OLD ==== */\n\n/* 画板进入动效：一次性、轻微，尊重 reduced-motion */
+.board {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.board.in {
+  opacity: 1;
+  transform: none;
+}
+
+.board.hl .dev {
+  box-shadow: 0 0 0 9px #202832, 0 0 0 10.5px var(--accent),
+    0 16px 34px -10px rgba(196, 92, 38, 0.36);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .dev .spin,\n\n/* ==== OLD ==== */\n\n.dev .cells {
+  overflow: hidden;
+  margin: 10px 12px;
+  border-radius: var(--r-l);
+  background: var(--card);
+}
+
+.dev .cells.flush {
+  margin: 0;
+  border-radius: 0;
+}\n\n/* ==== OLD ==== */\n\n.dev .cell .lead .ico {
+  width: 17px;
+  height: 17px;
+}\n\n/* ==== OLD ==== */\n\n.dev .hero {
+  padding: 4px 16px 18px;
+  color: #fff;
+  background: linear-gradient(160deg, var(--brand) 0%, var(--brand-deep) 100%);
+}\n\n/* ==== OLD ==== */\n\n.dev .kpis .kpi .v {
+  font-family: var(--mono);
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.dev .kpis .kpi .v.sm {
+  font-size: 16px;
+}

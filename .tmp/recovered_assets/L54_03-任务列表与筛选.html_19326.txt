@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>03 任务列表与筛选 · 驾驶员微信小程序</title>
+<link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body data-app="driver">
+
+<header class="pt-head">
+  <div class="pt-head-inner">
+    <div class="pt-kicker"><i></i><b>驾驶员微信小程序</b><span>模块 03</span></div>
+    <div class="pt-title">
+      <h1>任务列表与筛选</h1>
+      <span class="badge p0">P0 已有能力</span>
+    </div>
+    <p class="pt-intent">
+      司机的任务列表和 PC 的任务列表是<em>两种东西</em>。PC 要的是全字段表格与批量操作，
+      司机要的是<em>一眼看出这趟去哪、几台车、什么时候装、现在该干什么</em>。
+      因此列表卡只留 5 个信息位，其余全部让给"下一步动作"按钮。
+    </p>
+
+    <dl class="pt-meta">
+      <div><dt>覆盖屏数</dt><dd>5 屏（列表 / 状态筛选 / 搜索 / 筛选面板 / 空态）</dd></div>
+      <div><dt>使用角色</dt><dd>驾驶员</dd></div>
+      <div><dt>数据来源</dt><dd><code>GET /api/driver/task/my?status=&amp;keyword=&amp;page=</code></dd></div>
+      <div><dt>tabBar 位置</dt><dd>第 2 个 · 任务</dd></div>
+    </dl>
+
+    <nav class="pt-rail parallel">
+      <a href="#s1"><span class="t">全部任务</span></a>
+      <a href="#s2"><span class="t">按状态筛</span></a>
+      <a href="#s3"><span class="t">搜索</span></a>
+      <a href="#s4"><span class="t">高级筛选</span></a>
+      <a href="#s5"><span class="t">空态与到底</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="pt-body">
+
+  <div class="pt-gallery">
+
+    <!-- 1 -->
+    <section class="board" id="s1">
+      <div class="board-cap">
+        <span class="n">01</span>
+        <h3>全部任务 · 默认列表</h3>
+      </div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav"><span class="ttl">我的任务</span></div>
+        </div>
+
+        <div class="wx-body scroll">
+          <div class="search rel">
+            <span class="box"><svg class="ico"><use href="#i-search"></use></svg>搜任务号、车型、门店</span>
+            <span class="act"><svg class="ico"><use href="#i-filter"></use></svg>筛选</span>
+            <i class="pin in">1</i>
+          </div>
+
+          <div class="tabs rel">
+            <a class="on">全部<span class="c">12</span></a>
+            <a>待接收<span class="c">1</span></a>
+            <a>待装车<span class="c">1</span></a>
+            <a>在途<span class="c">1</span></a>
+            <a>已到达<span class="c">2</span></a>
+            <a>已签收</a>
+            <i class="pin in">2</i>
+          </div>
+
+          <div class="item rel">
+            <div class="item-top">
+              <span class="no">TK202607290031</span>
+              <span class="tag warning">待接收</span>
+            </div>
+            <div class="route-h">
+              <span>上海嘉定</span>
+              <span class="mid"><span class="km">468 km</span></span>
+              <span>合肥包河</span>
+            </div>
+            <div class="fx between mt8">
+              <span class="t3" style="font-size:12px">8 台 / 3 单<span class="mut"> · </span>装车 今天 08:30</span>
+              <span class="money blue" style="font-size:13.5px"><span class="cur">¥</span>4,860</span>
+            </div>
+            <div class="item-foot">
+              <span class="meta">调度 张敏 08:15 派单</span>
+              <a class="btn sm">接单</a>
+            </div>
+            <i class="pin">3</i>
+          </div>
+
+          <div class="item">
+            <div class="item-top">
+              <span class="no">TK202607300044</span>
+              <span class="tag primary">待装车</span>
+            </div>
+            <div class="route-h">
+              <span>合肥包河</span>
+              <span class="mid"><span class="km">156 km</span></span>
+              <span>芜湖鸠江</span>
+            </div>
+            <div class="fx between mt8">
+              <span class="t3" style="font-size:12px">4 台 / 1 单<span class="mut"> · </span>装车 今天 14:00</span>
+              <span class="money blue" style="font-size:13.5px"><span class="cur">¥</span>1,720</span>
+            </div>
+            <div class="item-foot">
+              <span class="meta">沪B·D7392</span>
+              <a class="btn sm">去装车</a>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="item-top">
+              <span class="no">TK202607280019</span>
+              <span class="tag info">在途</span>
+            </div>
+            <div class="route-h">
+              <span>南京江宁</span>
+              <span class="mid"><span class="km">312 km</span></span>
+              <span>徐州铜山</span>
+            </div>
+            <div class="fx between mt8">
+              <span class="t3" style="font-size:12px">6 台 / 2 单<span class="mut"> · </span>预计到达 明天 09:20</span>
+              <span class="money blue" style="font-size:13.5px"><span class="cur">¥</span>3,240</span>
+            </div>
+            <div class="item-foot">
+              <span class="meta">已跑 198 km · 剩 114 km</span>
+              <a class="btn sm ghost">查看</a>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="item-top">
+              <span class="no">TK202607270008</span>
+              <span class="tag success">已签收</span>
+              <span class="tag warning sm">回单缺 2</span>
+            </div>
+            <div class="route-h">
+              <span>上海嘉定</span>
+              <span class="mid"><span class="km">468 km</span></span>
+              <span>合肥包河</span>
+            </div>
+            <div class="fx between mt8">
+              <span class="t3" style="font-size:12px">8 台 / 3 单<span class="mut"> · </span>07-30 13:52 签收</span>
+              <span class="money red" style="font-size:13.5px"><span class="cur">¥</span>3,660 待收</span>
+            </div>
+            <div class="item-foot">
+              <span class="meta">回单齐了才能出结算单</span>
+              <a class="btn sm">传回单</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="wx-foot">
+          <div class="tabbar" data-tab="task" data-badge="task:5"></div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>搜索框常驻不折叠。司机搜的往往是<b>门店名或车型</b>（"合肥庐阳那一车"），不是任务号，所以占位文案要把可搜内容写出来。</li>
+        <li>状态 Tab 与后端 <code>status</code> 一致，但把 <code>status=1</code> 拆成「待接收 / 待装车」两个 Tab（按 <code>accepted</code> 区分）——对司机这是两件完全不同的事。Tab 上带数量，为 0 的 Tab 不显示数字而不是显示 0。</li>
+        <li>卡片信息位固定 5 项：<b>任务号、起终点与里程、台数与时间、运费、下一步按钮</b>。已签收但回单没齐的加一个副标签，因为它直接关系到钱。</li>
+      </ol>
+    </section>
+
+    <!-- 2 -->
+    <section class="board" id="s2">
+      <div class="board-cap">
+        <span class="n">02</span>
+        <h3>按状态筛 · 已到达</h3>
+      </div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav"><span class="ttl">我的任务</span></div>
+        </div>
+
+        <div class="wx-body scroll">
+          <div class="search">
+            <span class="box"><svg class="ico"><use href="#i-search"></use></svg>搜任务号、车型、门店</span>
+            <span class="act"><svg class="ico"><use href="#i-filter"></use></svg>筛选</span>
+          </div>
+
+          <div class="tabs">
+            <a>全部<span class="c">12</span></a>
+            <a>待接收<span class="c">1</span></a>
+            <a>待装车<span class="c">1</span></a>
+            <a>在途<span class="c">1</span></a>
+            <a class="on">已到达<span class="c">2</span></a>
+            <a>已签收</a>
+          </div>
+
+          <div class="notice rel">
+            <svg class="ico"><use href="#i-info"></use></svg>
+            <span>这 2 个任务车都到场了，等你和收货人核对后签收</span>
+            <i class="pin in">1</i>
+          </div>
+
+          <div class="item rel">
+            <div class="item-top">
+              <span class="no">TK202607290031</span>
+              <span class="tag info">已到达</span>
+            </div>
+            <div class="route-h">
+              <span>上海嘉定</span>
+              <span class="mid"><span class="km">468 km</span></span>
+              <span>合肥包河</span>
+            </div>
+            <div class="mt8">
+              <div class="fx between mb8">
+                <span class="t3" style="font-size:12px">已签 1 / 3 单</span>
+                <span class="t3 num" style="font-size:11.5px">13:26 到场</span>
+              </div>
+              <div class="pg g"><i style="width:33%"></i></div>
+            </div>
+            <div class="item-foot">
+              <span class="meta">还差 2 单</span>
+              <a class="btn sm success">去签收</a>
+            </div>
+            <i class="pin">2</i>
+          </div>
+
+          <div class="item">
+            <div class="item-top">
+              <span class="no">TK202607290052</span>
+              <span class="tag info">已到达</span>
+            </div>
+            <div class="route-h">
+              <span>芜湖鸠江</span>
+              <span class="mid"><span class="km">88 km</span></span>
+              <span>马鞍山雨山</span>
+            </div>
+            <div class="mt8">
+              <div class="fx between mb8">
+                <span class="t3" style="font-size:12px">已签 0 / 1 单</span>
+                <span class="t3 num" style="font-size:11.5px">昨天 17:40 到场</span>
+              </div>
+              <div class="pg"><i style="width:0"></i></div>
+            </div>
+            <div class="item-foot">
+              <span class="meta red">到场超过 18 小时未签收</span>
+              <a class="btn sm success">去签收</a>
+            </div>
+          </div>
+
+          <div class="end">已经到底了</div>
+        </div>
+
+        <div class="wx-foot">
+          <div class="tabbar" data-tab="task" data-badge="task:5"></div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>每个状态 Tab 顶部加一句<b>这一批任务现在的处境</b>，把状态名翻译成人话。这是列表页最便宜的体验改进：司机不用猜"已到达"意味着他该干什么。</li>
+        <li>已到达的卡片把台数换成<b>签收进度条</b>，因为此时唯一有意义的信息是"还差几单"。超时未签收标红提醒——这是企业端最常催的事，提前在司机侧暴露。</li>
+      </ol>
+    </section>
+
+  </div>
+
+  <div class="pt-gallery">
+
+    <!-- 3 -->
+    <section class="board" id="s3">
+      <div class="board-cap">
+        <span class="n">03</span>
+        <h3>搜索 · 历史词与结果</h3>
+      </div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">搜索任务</span></div>
+        </div>
+
+        <div class="wx-body scroll white">
+          <div class="search rel" style="background:var(--card)">
+            <span class="box filled"><svg class="ico"><use href="#i-search"></use></svg>合肥庐阳<span class="caret" style="width:1.5px;height:15px;background:var(--brand);display:inline-block"></span></span>
+            <span class="act blue">搜索</span>
+            <i class="pin in">1</i>
+          </div>
+
+          <div class="pad" style="padding-top:4px">
+            <div class="fx between mb8">
+              <span class="t3" style="font-size:12px">最近搜过</span>
+              <span class="t3 fx g4" style="font-size:12px"><svg class="ico" style="width:12px;height:12px"><use href="#i-trash"></use></svg>清空</span>
+            </div>
+            <div class="fx wrap g8">
+              <span class="chip">合肥庐阳</span>
+              <span class="chip">荣威 D5X</span>
+              <span class="chip">TK2026072</span>
+              <span class="chip">徽通汽车城</span>
+            </div>
+          </div>
+
+          <div class="hr" style="margin:6px 0"></div>
+
+          <div class="sec-h">找到 3 个任务<span class="more">按时间倒序</span></div>
+
+          <div class="item rel" style="margin-top:0">
+            <div class="item-top">
+              <span class="no">TK202607290031</span>
+              <span class="tag success">已签收</span>
+            </div>
+            <div class="route-h">
+              <span>上海嘉定</span>
+              <span class="mid"><span class="km">468 km</span></span>
+              <span>合肥包河</span>
+            </div>
+            <div class="t3 mt8" style="font-size:12px">命中门店：<span class="blue">合肥庐阳店</span><span class="mut"> · </span>荣威 D5X DMH 3 台</div>
+            <i class="pin">2</i>
+          </div>
+
+          <div class="item">
+            <div class="item-top">
+              <span class="no">TK202607150076</span>
+              <span class="tag">已关闭</span>
+            </div>
+            <div class="route-h">
+              <span>上海嘉定</span>
+              <span class="mid"><span class="km">468 km</span></span>
+              <span>合肥庐阳</span>
+            </div>
+            <div class="t3 mt8" style="font-size:12px">命中终点：<span class="blue">合肥庐阳</span><span class="mut"> · </span>MG7 5 台</div>
+          </div>
+        </div>
+
+        <div class="wx-foot">
+          <div class="tabbar" data-tab="task"></div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>搜索是<b>独立页面</b>而不是原地过滤，这样键盘弹起时不挤压列表，且能放历史搜索词。历史词存本地，不上传。</li>
+        <li>结果卡多一行<b>命中说明</b>（命中门店 / 命中终点 / 命中车型），让司机知道为什么这条被搜出来——关键词模糊匹配 <code>keyword</code> 时尤其必要。</li>
+      </ol>
+    </section>
+
+    <!-- 4 -->
+    <section class="board" id="s4">
+      <div class="board-cap">
+        <span class="n">04</span>
+        <h3>高级筛选 · 底部面板</h3>
+      </div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav"><span class="ttl">我的任务</span></div>
+        </div>
+
+        <div class="wx-body scroll" style="position:relative">
+          <div class="search" style="filter:blur(1px);opacity:.5">
+            <span class="box"><svg class="ico"><use href="#i-search"></use></svg>搜任务号、车型、门店</span>
+            <span class="act">筛选</span>
+          </div>
+          <div class="tabs" style="filter:blur(1px);opacity:.5">
+            <a class="on">全部<span class="c">12</span></a>
+            <a>待接收</a>
+            <a>待装车</a>
+            <a>在途</a>
+          </div>
+
+          <div class="mask bottom">
+            <div class="sheet">
+              <div class="sh">筛选<span class="act">重置</span></div>
+              <div class="sb">
+                <div class="card" style="margin:10px 12px">
+                  <div class="sec-t bare t3" style="font-size:12px">时间范围</div>
+                  <div class="fx wrap g8 rel">
+                    <span class="chip on">本月</span>
+                    <span class="chip">上月</span>
+                    <span class="chip">近 3 个月</span>
+                    <span class="chip"><svg class="ico"><use href="#i-calendar"></use></svg>自定义</span>
+                    <i class="pin">1</i>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="sec-t bare t3" style="font-size:12px">出发地</div>
+                  <div class="fx wrap g8">
+                    <span class="chip">上海嘉定</span>
+                    <span class="chip on">合肥包河</span>
+                    <span class="chip">南京江宁</span>
+                    <span class="chip">芜湖鸠江</span>
+                  </div>
+                  <div class="hr full"></div>
+                  <div class="sec-t bare t3" style="font-size:12px">目的地</div>
+                  <div class="fx wrap g8">
+                    <span class="chip">合肥包河</span>
+                    <span class="chip">徐州铜山</span>
+                    <span class="chip">马鞍山雨山</span>
+                    <span class="chip">芜湖鸠江</span>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="sec-t bare t3" style="font-size:12px">客户</div>
+                  <div class="fx wrap g8">
+                    <span class="chip">上汽安吉物流</span>
+                    <span class="chip">奇瑞徽银</span>
+                    <span class="chip">江淮商用车</span>
+                  </div>
+                </div>
+
+                <div class="cells rel">
+                  <div class="cell">
+                    <span class="k">只看回单没传完的<span class="sub">影响结算，建议优先处理</span></span>
+                    <span class="sw on"></span>
+                  </div>
+                  <i class="pin tl">2</i>
+                </div>
+              </div>
+              <div class="sf">
+                <a class="btn line" style="flex:0 0 96px">重置</a>
+                <a class="btn grow">看这 4 个任务</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>筛选项的候选值<b>只来自司机自己跑过的数据</b>（出发地、目的地、客户都是他历史任务里出现过的），不给全量地区树。司机不需要在小屏幕上翻省市区三级联动。</li>
+        <li>把「只看回单没传完的」做成显式开关，这是司机使用频率最高的筛选意图。</li>
+        <li>确认按钮写出<b>结果数量</b>「看这 4 个任务」，选完就知道会筛出多少，避免筛出空列表再退回来改。</li>
+      </ol>
+    </section>
+
+    <!-- 5 -->
+    <section class="board" id="s5">
+      <div class="board-cap">
+        <span class="n">05</span>
+        <h3>空态与加载更多</h3>
+      </div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav"><span class="ttl">我的任务</span></div>
+        </div>
+
+        <div class="wx-body scroll">
+          <div class="search">
+            <span class="box"><svg class="ico"><use href="#i-search"></use></svg>搜任务号、车型、门店</span>
+            <span class="act">筛选</span>
+          </div>
+          <div class="tabs">
+            <a>全部<span class="c">12</span></a>
+            <a class="on">待接收</a>
+            <a>待装车<span class="c">1</span></a>
+            <a>在途<span class="c">1</span></a>
+            <a>已到达<span class="c">2</span></a>
+          </div>
+
+          <div class="empty rel">
+            <div class="ib"><svg class="ico"><use href="#i-package"></use></svg></div>
+            <div class="tt">没有待接收的调令</div>
+            <div class="hint">调度派单后会用微信消息通知你<br />也可以看看在途和待签收的任务</div>
+            <a class="btn ghost sm">看在途任务</a>
+            <i class="pin">1</i>
+          </div>
+
+          <div class="hr" style="margin:0 12px"></div>
+
+          <div class="chips rel">
+            <span class="chip on">本月</span>
+            <span class="chip on">合肥包河<svg class="ico"><use href="#i-close"></use></svg></span>
+            <span class="chip on">回单未齐<svg class="ico"><use href="#i-close"></use></svg></span>
+            <span class="chip">清除筛选</span>
+            <i class="pin in">2</i>
+          </div>
+
+          <div class="item" style="opacity:.55">
+            <div class="item-top">
+              <span class="no">TK202607270008</span>
+              <span class="tag success">已签收</span>
+            </div>
+            <div class="route-h">
+              <span>上海嘉定</span>
+              <span class="mid"></span>
+              <span>合肥包河</span>
+            </div>
+          </div>
+
+          <div class="refresh rel">
+            <span class="spin"></span>正在加载更多，请稍候…
+            <i class="pin in">3</i>
+          </div>
+        </div>
+
+        <div class="wx-foot">
+          <div class="tabbar" data-tab="task"></div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>空态给出<b>两个方向</b>：解释为什么空（派单会微信通知），以及现在能去哪（看在途任务）。不写"暂无数据"。</li>
+        <li>筛选生效后在列表顶部保留可见的筛选 chip，带 × 可单个去掉。<b>不能只靠筛选按钮变蓝</b>——司机翻两屏后就忘了自己筛过什么，会误以为任务丢了。</li>
+        <li>上拉加载与下拉刷新的文案区分开：加载更多 / 刷新今天的活儿，让司机知道是在往下翻还是在取最新。</li>
+      </ol>
+    </section>
+
+  </div>
+
+  <div class="pt-rules">
+    <h4>状态 Tab 与后端参数对照</h4>
+    <table>
+      <thead><tr><th>Tab</th><th>请求参数</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>全部</td><td><code>status</code> 不传</td><td>不含已取消（9）</td></tr>
+        <tr><td>待接收</td><td><code>status=1</code> + 前端按 <code>accepted=false</code> 过滤</td><td>后端无独立状态，靠 <code>acceptedAt</code> 判断</td></tr>
+        <tr><td>待装车</td><td><code>status=1</code> + <code>accepted=true</code></td><td>同一状态的两种子态</td></tr>
+        <tr><td>在途</td><td><code>status=3</code></td><td><code>status=2</code> 已装车未出发也归到这个 Tab 的顶部</td></tr>
+        <tr><td>已到达</td><td><code>status=4</code></td><td>展示签收进度</td></tr>
+        <tr><td>已签收</td><td><code>status=5</code></td><td>带回单齐否标签</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer class="pt-foot">
+  智途 · 驾驶员微信小程序原型 · 模块 03 任务列表与筛选
+</footer>
+
+<script src="assets/mp.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+.dev .kpis .kpi .v {
+  font-family: var(--mono);
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.dev .kpis .kpi .v.sm {
+  font-size: 16px;
+}

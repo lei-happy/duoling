@@ -1,0 +1,9 @@
+/* 链接式操作 */
+.dev .lnk {
+  font-size: 13px;
+  color: var(--brand);
+}
+
+.dev .lnk.dim {
+  color: var(--t3);
+}

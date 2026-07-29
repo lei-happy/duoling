@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>07 位置与导航 · 驾驶员微信小程序</title>
+<link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body data-app="driver">
+
+<header class="pt-head">
+  <div class="pt-head-inner">
+    <div class="pt-kicker"><i></i><b>驾驶员微信小程序</b><span>模块 07</span></div>
+    <div class="pt-title">
+      <h1>位置与导航</h1>
+      <span class="badge p1">P1 需后端新增</span>
+    </div>
+    <p class="pt-intent">装车、到达要打卡，在途要能被调度看见。位置能力不是炫技，而是让「我到了」这件事可核验。</p>
+    <dl class="pt-meta"><div><dt>覆盖屏数</dt><dd>5 屏</dd></div><div><dt>使用角色</dt><dd>驾驶员</dd></div><div><dt>数据来源</dt><dd><code>wx.getLocation</code><span class="sep">·</span>轨迹上报 API（新增）</dd></div><div><dt>关联模块</dt><dd>05 任务执行<span class="sep">·</span>后台 06 在途监控</dd></div></dl>
+    <nav class="pt-rail"><a href="#s1"><span class="n">1</span><span class="t">授权引导</span></a><a href="#s2"><span class="n">2</span><span class="t">被拒补救</span></a><a href="#s3"><span class="n">3</span><span class="t">地图轨迹</span></a><a href="#s4"><span class="n">4</span><span class="t">导航</span></a><a href="#s5"><span class="n">5</span><span class="t">围栏</span></a></nav>
+  </div>
+</header>
+
+<main class="pt-body">
+  <div class="pt-gallery">
+
+    <section class="board" id="s1">
+      <div class="board-cap"><span class="n">01</span><h3>位置授权引导</h3><span class="tip">P1</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">位置服务</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad" style="padding-top:var(--space-8);text-align:center">
+            <div style="width:72px;height:72px;border-radius:20px;background:var(--brand-tint);color:var(--brand);display:flex;align-items:center;justify-content:center;margin:0 auto 18px">
+              <svg class="ico" style="width:36px;height:36px"><use href="#i-nav"></use></svg>
+            </div>
+            <div class="t1 strong" style="font-size:20px">允许智途使用你的位置</div>
+            <div class="t3 mt12" style="font-size:13px;line-height:1.7;padding:0 12px">
+              装车、到达需要打卡定位；在途可上报轨迹，方便调度知道你到哪了。<br/>我们不会在收工后持续定位。
+            </div>
+            <a class="btn block mt16" style="margin-top:var(--space-8)">允许使用位置</a>
+            <a class="btn line block mt12">暂不开启</a>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li><span class="flag">P1</span>需小程序位置权限与后端接收坐标。装车/到达打卡可先用可选文本 location（现有接口已支持），轨迹上报需新增 API。</li>
+<li>文案说清用途与边界（收工不定位），提高授权通过率。</li></ol>
+    </section>
+
+
+    <section class="board" id="s2">
+      <div class="board-cap"><span class="n">02</span><h3>授权被拒 · 补救</h3><span class="tip">P1</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">位置服务</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad" style="padding-top:var(--space-6)">
+            <div class="notice danger">
+              <svg class="ico"><use href="#i-warn"></use></svg>
+              <span>你之前拒绝了位置权限。没有定位就没法打卡装车和到达。</span>
+            </div>
+            <div class="card" style="margin-top:14px">
+              <div class="hd">怎么打开</div>
+              <div class="t2" style="font-size:13px;line-height:1.7">
+                1. 点下方「去设置」<br/>
+                2. 找到「位置信息」<br/>
+                3. 选「使用小程序时允许」
+              </div>
+            </div>
+            <a class="btn block" style="margin:16px 12px">去设置打开</a>
+            <div class="t3" style="text-align:center;font-size:12px">还是不行？联系调度，让他在电脑上代确认</div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>被拒后不弹系统死胡同，给出可行动步骤；并保留「调度代操作」退路（后台模块 05）。</li></ol>
+    </section>
+
+
+    <section class="board" id="s3">
+      <div class="board-cap"><span class="n">03</span><h3>任务内地图与轨迹开关</h3><span class="tip">P1</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="banner">
+            <div class="top"><span class="stat info">在途</span><span class="no">TK202607290031</span></div>
+            <div class="nm">上海嘉定 → 合肥包河</div>
+          </div>
+          <div class="map" style="margin-top:12px">
+            <div class="hint">轨迹上报已开启 · 每 2 分钟</div>
+            <div class="mrk" style="left:58%;top:42%"><span class="bub"><svg class="ico"><use href="#i-truck"></use></svg>沪B·D7392</span></div>
+          </div>
+          <div class="card">
+            <div class="cell" style="padding:0;border:none">
+              <div class="k">轨迹上报</div>
+              <div class="v green">已开启</div>
+            </div>
+            <div class="hr"></div>
+            <div class="t3" style="font-size:12px;line-height:1.6">开启后，调度能在「在途监控」看到你的位置。费电较多时，可在休息时暂时关闭。</div>
+          </div>
+          <div class="card">
+            <a class="btn soft block"><svg class="ico"><use href="#i-nav"></use></svg>导航去卸车地</a>
+          </div>
+        </div>
+        <div class="action-bar"><a class="btn line">上报异常</a><a class="btn wide">确认到达</a></div>
+
+      </div>
+      <ol class="notes"><li><span class="flag">P1</span>轨迹上报开关本地记忆；后台在途监控（admin 06）消费同一数据源。</li>
+<li>导航走 <code>wx.openLocation</code> / 跳转腾讯或系统地图。</li></ol>
+    </section>
+
+
+    <section class="board" id="s4">
+      <div class="board-cap"><span class="n">04</span><h3>一键导航确认</h3><span class="tip">P1</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad" style="filter:blur(1px);opacity:.45;pointer-events:none">
+            <div class="card"><div class="hd">卸车地</div><div>合肥包河 · 徽通汽车城</div></div>
+          </div>
+          <div class="mask bottom">
+            <div class="sheet">
+              <div class="handle"></div>
+              <div class="t1 strong" style="font-size:16px;margin-bottom:6px">打开地图导航</div>
+              <div class="t3" style="font-size:13px;margin-bottom:14px">合肥包河 · 徽通汽车城<br/>合肥市包河区徽州大道 188 号</div>
+              <a class="btn block mb8">腾讯地图</a>
+              <a class="btn line block mb8">高德地图</a>
+              <a class="btn line block">苹果地图</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>按手机已安装地图应用展示可选列表；一个都没有则直接 <code>wx.openLocation</code>。</li></ol>
+    </section>
+
+
+    <section class="board" id="s5">
+      <div class="board-cap"><span class="n">05</span><h3>到场围栏提醒</h3><span class="tip">P1</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">智途司机</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad" style="padding-top:var(--space-8)">
+            <div class="dialog" style="margin:0 auto;box-shadow:var(--shadow)">
+              <div style="font-size:32px;margin-bottom:8px">📍</div>
+              <div class="t">你已接近装车地</div>
+              <div class="d">距离安亭商品车库约 480 米。到场后记得确认装车并拍照。</div>
+              <div class="af">
+                <a class="btn line wide">稍后</a>
+                <a class="btn wide">去确认装车</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li><span class="flag">P1</span>围栏半径建议 500m；仅对当前进行中任务触发一次，避免刷屏。</li>
+<li>可结合订阅消息，锁屏时也能提醒。</li></ol>
+    </section>
+
+  </div>
+
+
+  <div class="pt-rules">
+    <h4>导航规则</h4>
+    <ul>
+      <li>P1 增量：调起微信地图导航，不自建路线规划。</li>
+      <li>到厂签到可选上报定位，作为辅助凭证。</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="pt-foot">智途 · 驾驶员微信小程序原型 · 模块 07 位置与导航</footer>
+<script src="assets/mp.js"></script>
+</body>
+</html>

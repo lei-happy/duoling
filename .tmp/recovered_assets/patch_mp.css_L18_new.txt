@@ -1,0 +1,16 @@
+/* 链轨 hover 时点亮对应画板：唯一保留的动效，因为它承担导航职责 */
+.board .dev {
+  transition: box-shadow 0.2s ease;
+}
+
+.board.hl .dev {
+  box-shadow: 0 0 0 9px #202832, 0 0 0 10.5px var(--accent),
+    0 16px 34px -10px rgba(196, 92, 38, 0.36);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board .dev {
+    transition: none;
+  }
+
+  .dev .spin,

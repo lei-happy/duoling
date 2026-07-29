@@ -1,0 +1,1 @@
+.dev .wx-head.onpage { background: #fff; color: var(--t1); }

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>08 异常上报 · 驾驶员微信小程序</title>
+<link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body data-app="driver">
+
+<header class="pt-head">
+  <div class="pt-head-inner">
+    <div class="pt-kicker"><i></i><b>驾驶员微信小程序</b><span>模块 08</span></div>
+    <div class="pt-title">
+      <h1>异常上报</h1>
+      <span class="badge p1">P1 需后端新增</span>
+    </div>
+    <p class="pt-intent">路上出状况时，司机需要一条「一键喊调度」的通路。异常不是工单系统，而是让调度在 5 分钟内知道并回应。</p>
+    <dl class="pt-meta"><div><dt>覆盖屏数</dt><dd>5 屏</dd></div><div><dt>使用角色</dt><dd>驾驶员</dd></div><div><dt>关联</dt><dd>任务详情<span class="sep">·</span>后台在途监控</dd></div></dl>
+    <nav class="pt-rail"><a href="#s1"><span class="n">1</span><span class="t">类型</span></a><a href="#s2"><span class="n">2</span><span class="t">填写</span></a><a href="#s3"><span class="n">3</span><span class="t">成功</span></a><a href="#s4"><span class="n">4</span><span class="t">记录</span></a><a href="#s5"><span class="n">5</span><span class="t">回执</span></a></nav>
+  </div>
+</header>
+
+<main class="pt-body">
+  <div class="pt-gallery">
+
+    <section class="board" id="s1">
+      <div class="board-cap"><span class="n">01</span><h3>选择异常类型</h3><span class="tip">P1</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">上报异常</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="t1 strong" style="font-size:16px;margin-bottom:6px">这趟活出了什么情况？</div>
+            <div class="t3" style="font-size:12px;margin-bottom:14px">选一个最贴近的，调度能更快帮你处理。</div>
+            <div class="chips" style="padding:0;flex-wrap:wrap"><div class="chip">等货</div><div class="chip">堵车</div><div class="chip">故障</div><div class="chip">事故</div><div class="chip">货损</div><div class="chip">超时</div></div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li><span class="flag">P1</span>异常类型枚举与后台告警（admin 06）共用；提交后任务详情出现「处理中」标记。</li></ol>
+    </section>
+
+
+    <section class="board" id="s2">
+      <div class="board-cap"><span class="n">02</span><h3>填写异常详情</h3><span class="tip">P1</span></div>
+      <div class="dev auto">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">上报异常</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="chip danger mb12">故障</div>
+            <div class="field"><div class="lab">发生位置</div><div class="inp">沪陕高速 K326 · 已定位</div></div>
+            <div class="field"><div class="lab">情况说明 <span class="req">*</span></div><div class="ta">右后轮胎爆胎，已靠边。预计换胎 40 分钟，可能晚到 1 小时。</div></div>
+            <div class="field"><div class="lab">现场照片</div>
+              <div class="photos">
+                <div class="slot filled">1</div>
+                <div class="slot filled">2</div>
+                <div class="slot"><span class="add">+</span>添加</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="action-bar"><a class="btn wide">提交给调度</a></div>
+
+      </div>
+      <ol class="notes"><li>说明必填；照片最多 6 张。提交中文案：「正在通知调度，请稍候…」</li></ol>
+    </section>
+
+
+    <section class="board" id="s3">
+      <div class="board-cap"><span class="n">03</span><h3>提交成功</h3><span class="tip">P1</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">上报异常</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad" style="padding-top:60px;text-align:center">
+            <div style="width:64px;height:64px;border-radius:50%;background:var(--success-soft);color:var(--success);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px">✓</div>
+            <div class="t1 strong" style="font-size:18px">调度已收到</div>
+            <div class="t3 mt8" style="font-size:13px;line-height:1.6;padding:0 20px">我们会尽快联系你。也可以在「我的异常」里看处理进度。</div>
+            <a class="btn block" style="margin:28px 12px 10px">返回任务</a>
+            <a class="btn line block" style="margin:0 12px">查看异常记录</a>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>成功页给出路：回任务或看记录，不停留在空白成功态。</li></ol>
+    </section>
+
+
+    <section class="board" id="s4">
+      <div class="board-cap"><span class="n">04</span><h3>我的异常记录</h3><span class="tip">P1</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">我的异常</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="task">
+              <div class="top"><span class="chip danger">故障</span><span class="chip muted">处理中</span></div>
+              <div class="nm" style="font-size:14px">TK202607290031 · 爆胎靠边</div>
+              <div class="meta"><span>今日 15:22</span><span>沪陕高速 K326</span></div>
+            </div>
+            <div class="task">
+              <div class="top"><span class="chip warning">等货</span><span class="chip success">已完结</span></div>
+              <div class="nm" style="font-size:14px">TK202607250018 · 厂家晚放行</div>
+              <div class="meta"><span>07-25 09:40</span><span>等了 2.5 小时</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>列表按时间倒序；「处理中 / 已完结」状态与后台回执同步。</li></ol>
+    </section>
+
+
+    <section class="board" id="s5">
+      <div class="board-cap"><span class="n">05</span><h3>处理结果回执</h3><span class="tip">P1</span></div>
+      <div class="dev auto">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">异常详情</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="card">
+              <div class="fx between mb8"><span class="chip danger">故障</span><span class="chip success">已完结</span></div>
+              <div class="t1 strong">右后轮胎爆胎</div>
+              <div class="t3 mt8" style="font-size:12px">TK202607290031 · 今日 15:22</div>
+            </div>
+            <div class="card">
+              <div class="hd">调度回复</div>
+              <div style="font-size:13px;line-height:1.65">已安排附近救援换胎，费用公司承担。晚到已跟客户报备，你安心处理。</div>
+              <div class="t3 mt10" style="font-size:11px">调度 · 李敏 16:05</div>
+            </div>
+            <div class="card">
+              <div class="hd">处理时间线</div>
+              <div class="steps">
+                <div class="s done"><div class="t">你已上报</div><div class="d">15:22</div></div>
+                <div class="s done"><div class="t">调度已接单</div><div class="d">15:28</div></div>
+                <div class="s done"><div class="t">已完结</div><div class="d">16:05 · 救援到位</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>回执必须让司机看见「公司知道了、怎么处理的」，否则上报意愿会掉。</li></ol>
+    </section>
+
+  </div>
+
+
+  <div class="pt-rules">
+    <h4>异常上报</h4>
+    <ul>
+      <li>P1 增量：结构化类型（车辆/道路/货损/其他）+ 描述 + 照片。</li>
+      <li>提交后后台模块 06 在途监控可见，调度可联系处理。</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="pt-foot">智途 · 驾驶员微信小程序原型 · 模块 08 异常上报</footer>
+<script src="assets/mp.js"></script>
+</body>
+</html>

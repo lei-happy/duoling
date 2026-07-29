@@ -1,0 +1,24 @@
+.dev .cell .lead .ico {
+  width: 17px;
+  height: 17px;
+}
+
+.dev .cell .lead.o {
+  color: var(--warning);
+  background: var(--warning-weak);
+}
+
+.dev .cell .lead.r {
+  color: var(--danger);
+  background: var(--danger-weak);
+}
+
+.dev .cell .lead.g {
+  color: var(--success);
+  background: var(--success-weak);
+}
+
+.dev .cell .lead.n {
+  color: var(--t3);
+  background: var(--muted-weak);
+}

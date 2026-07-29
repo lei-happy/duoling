@@ -1,0 +1,12 @@
+.pin.in {
+  top: 5px;
+  right: 5px;
+  box-shadow: 0 1px 3px rgba(16, 36, 43, 0.4);
+}
+
+/* 通栏元素（底部动作条 / tabBar）的标注不能溢出机身，会被圆角裁掉 */
+.pin.bar {
+  top: -8px;
+  right: auto;
+  left: 14px;
+}

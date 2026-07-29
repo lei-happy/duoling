@@ -5,6 +5,7 @@
 - 只扫描本目录下的多级文件夹与 `.html` / `.htm` 文件
 - 每个 HTML 文件即一条可预览的产品原型
 - 可按产品端、功能模块自由建多级子目录
+- 移动端高保真规范见 [`移动端/DESIGN.md`](移动端/DESIGN.md)（融合 apple-design + frontend-design）
 
 ## 推荐结构
 

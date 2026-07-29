@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>01 登录与企业切换 · 后台人员微信小程序</title>
+<link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body data-app="admin">
+
+<header class="pt-head">
+  <div class="pt-head-inner">
+    <div class="pt-kicker"><i></i><b>后台人员微信小程序</b><span>模块 01</span></div>
+    <div class="pt-title">
+      <h1>登录与企业切换</h1>
+      <span class="badge p0">密码登录可对接</span><span class="badge p1">微信登录 P1</span>
+    </div>
+    <p class="pt-intent">后台人员小程序服务老板、调度、车队长、财务。登录要快，角色要一眼可见，没有权限要说清找谁开。</p>
+    <dl class="pt-meta"><div><dt>覆盖屏数</dt><dd>5 屏</dd></div><div><dt>产品名</dt><dd>智途管理</dd></div><div><dt>账号</dt><dd>租户端用户 sys_user</dd></div></dl>
+    <nav class="pt-rail"><a href="#s1"><span class="n">1</span><span class="t">微信登录</span></a><a href="#s2"><span class="n">2</span><span class="t">密码登录</span></a><a href="#s3"><span class="n">3</span><span class="t">选企业</span></a><a href="#s4"><span class="n">4</span><span class="t">无权限</span></a><a href="#s5"><span class="n">5</span><span class="t">登录中</span></a></nav>
+  </div>
+</header>
+
+<main class="pt-body">
+  <div class="pt-gallery">
+
+    <section class="board" id="s1">
+      <div class="board-cap"><span class="n">01</span><h3>微信一键登录</h3><span class="tip">P1</span></div>
+      <div class="dev">
+        <div class="wx-head onpage">
+          <div class="wx-nav"><span class="ttl">智途管理</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad" style="padding-top:var(--space-8)">
+            <div class="fx g10 mb16">
+              <div style="width:48px;height:48px;border-radius:14px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px">智</div>
+              <div><div class="t1 strong" style="font-size:20px">智途管理</div><div class="t3" style="font-size:12px">老板 / 调度 / 车队长 / 财务</div></div>
+            </div>
+            <div class="t1" style="font-size:20px;font-weight:600;line-height:1.45;margin:28px 0 10px">手机办公，批得快、看得清</div>
+            <div class="t3" style="font-size:13px;line-height:1.65;margin-bottom:var(--space-8)">用微信手机号登录你所在的运输公司。复杂配置仍在电脑上完成。</div>
+            <a class="btn block">微信一键登录</a>
+            <a class="btn line block mt12">手机号密码登录</a>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li><span class="flag">P1</span>复用租户账号体系；当前 admin-mp 仅为演示登录。正式对接 <code>/api/client</code> 鉴权。</li>
+<li>移动端不做注册，账号由企业在 PC 开通。</li></ol>
+    </section>
+
+
+    <section class="board" id="s2">
+      <div class="board-cap"><span class="n">02</span><h3>手机号密码登录</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head onpage">
+          <div class="wx-nav" data-back><span class="ttl">密码登录</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad stack-lg" style="padding-top:var(--space-6)">
+            <div class="field"><div class="lab">手机号</div><div class="inp">138 1234 5678</div></div>
+            <div class="field"><div class="lab">密码</div><div class="inp">••••••••</div></div>
+            <a class="btn block section-gap">登录</a>
+            <div class="caption" style="text-align:center">忘记密码？联系企业管理员重置</div>
+          </div>
+        </div>
+      </div>
+      <ol class="notes"><li>失败：账号或密码不对 / 登录失败，请稍后重试。</li></ol>
+    </section>
+
+
+    <section class="board" id="s3">
+      <div class="board-cap"><span class="n">03</span><h3>选择企业与角色</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">选择企业</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad"><div class="stack-lg"><div class="t3 mb12" style="font-size:12px">你的账号属于多家企业，请选择本次要进入的</div>
+            <div class="card" style="border:1.5px solid var(--brand)">
+              <div class="strong">皖通汽车物流</div>
+              <div class="fx g6 mt8"><span class="chip primary">调度</span><span class="chip muted">车队长</span></div>
+            </div>
+            <div class="card">
+              <div class="strong">合众轿运</div>
+              <div class="fx g6 mt8"><span class="chip muted">老板</span></div>
+            </div>
+          </div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>角色标签来自租户权限；进入后工作台按角色裁剪。</li></ol>
+    </section>
+
+
+    <section class="board" id="s4">
+      <div class="board-cap"><span class="n">04</span><h3>无权限空态</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">智途管理</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="empty" style="padding-top:var(--space-8)">
+            <div class="t">当前账号暂无移动端权限</div>
+            <div class="d">请联系企业管理员，在电脑端「角色权限」里开通调度、财务或审批相关权限后再试。</div>
+            <a class="btn line" style="margin-top:var(--space-5)">切换企业</a>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>无菜单权限时不进空工作台，直接说明怎么办。</li></ol>
+    </section>
+
+
+    <section class="board" id="s5">
+      <div class="board-cap"><span class="n">05</span><h3>登录中</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head onpage"><div class="wx-nav"><span class="ttl">智途管理</span></div></div>
+        <div class="wx-body scroll white">
+          <div class="empty" style="padding-top:120px">
+            <div style="width:36px;height:36px;border:3px solid var(--brand-soft);border-top-color:var(--brand);border-radius:50%;margin:0 auto var(--space-4)"></div>
+            <div class="t">正在登录，请稍候…</div>
+            <div class="d">验证账号与企业权限</div>
+          </div>
+        </div>
+      </div>
+      <ol class="notes"><li>Loading 带业务动作。</li></ol>
+    </section>
+
+  </div>
+
+
+  <div class="pt-rules">
+    <h4>登录规则</h4>
+    <ul>
+      <li>复用租户 PC 账号体系，JWT 含 <code>tenant_code</code>。</li>
+      <li>多企业用户登录后必选企业；切换企业重签 token 并清空缓存。</li>
+      <li>失败文案：账号或密码不对 / 登录失败，请稍后重试。</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="pt-foot">智途 · 后台人员微信小程序原型 · 模块 01 登录与企业切换</footer>
+<script src="assets/mp.js"></script>
+</body>
+</html>

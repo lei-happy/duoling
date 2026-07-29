@@ -1,0 +1,48 @@
+.dev .map .pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  z-index: 2;
+}
+
+.dev .map .pin .bub {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--r-s);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: #fff;
+  background: var(--brand);
+  box-shadow: 0 2px 6px rgba(16, 36, 43, 0.24);
+}
+
+.dev .map .pin .bub .ico {
+  width: 12px;
+  height: 12px;
+}
+
+.dev .map .pin.g .bub {
+  background: var(--success);
+}
+
+.dev .map .pin.r .bub {
+  background: var(--danger);
+}
+
+.dev .map .pin.w .bub {
+  color: var(--t1);
+  background: #fff;
+}
+
+.dev .map .pin::after {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: -2px auto 0;
+  border-radius: 0 0 2px 0;
+  transform: rotate(45deg);
+  background: inherit;
+}

@@ -1,0 +1,1 @@
+.pt-rules ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--t2); line-height: 1.7; }

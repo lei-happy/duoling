@@ -1,0 +1,467 @@
+
+/* ---- from L11 ---- */
+/* 单据状态横幅：底色与导航栏同色保持无缝，状态色收敛在状态胶囊里 */
+.dev .banner {
+  position: relative;
+  padding: 12px 16px 24px;
+  color: #fff;
+  background-color: var(--brand);
+  background-image: radial-gradient(
+    130% 110% at 100% 100%,
+    var(--brand-deep) 0%,
+    transparent 62%
+  );
+}
+
+.dev .banner .top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dev .banner .stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 25px;
+  padding: 0 11px;
+  border-radius: var(--pill);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--muted);
+}
+
+.dev .banner .stat::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.92;
+}
+
+.dev .banner .stat.warning {
+  background: var(--warning);
+}
+
+.dev .banner .stat.info {
+  background: var(--info);
+}
+
+.dev .banner .stat.success {
+  background: var(--success);
+}
+
+.dev .banner .stat.danger {
+  background: var(--danger);
+}
+
+.dev .banner .stat.primary {
+  color: var(--brand-deep);
+  background: #fff;
+}
+
+.dev .banner .stat.primary::before {
+  background: var(--brand);
+  opacity: 1;
+}
+
+.dev .banner .no {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.dev .banner .nm {
+  margin-top: 11px;
+  font-size: 18.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.dev .banner .sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 12.5px;
+  opacity: 0.84;
+}
+
+.dev .banner .sub .ico {
+  width: 13px;
+  height: 13px;
+}
+
+.dev .banner .mini {
+  display: flex;
+  margin-top: 15px;
+}
+
+.dev .banner .mini > div {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.28;
+}
+
+.dev .banner .mini .k {
+  font-size: 11px;
+  opacity: 0.76;
+}
+
+.dev .banner .mini .v {
+  margin-top: 3px;
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* 个人中心头图 */
+.dev .hero {
+
+/* ---- from L11 ---- */
+/* 个人中心头图 */
+.dev .hero {
+
+/* ---- from L13 ---- */
+.dev .map .mrk {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -100%);
+}
+
+.dev .map .mrk .bub {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--r-s);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: #fff;
+  background: var(--brand);
+  box-shadow: 0 2px 6px rgba(16, 36, 43, 0.24);
+}
+
+.dev .map .mrk .bub::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 0 0 2px 0;
+  transform: rotate(45deg);
+  background: inherit;
+}
+
+.dev .map .mrk .bub .ico {
+  width: 12px;
+  height: 12px;
+}
+
+.dev .map .mrk.g .bub {
+  background: var(--success);
+}
+
+.dev .map .mrk.r .bub {
+  background: var(--danger);
+}
+
+.dev .map .mrk.w .bub {
+  color: var(--t1);
+  background: #fff;
+}
+
+/* ---- from L13 ---- */
+.dev .map .pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  z-index: 2;
+}
+
+.dev .map .pin .bub {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--r-s);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: #fff;
+  background: var(--brand);
+  box-shadow: 0 2px 6px rgba(16, 36, 43, 0.24);
+}
+
+.dev .map .pin .bub .ico {
+  width: 12px;
+  height: 12px;
+}
+
+.dev .map .pin.g .bub {
+  background: var(--success);
+}
+
+.dev .map .pin.r .bub {
+  background: var(--danger);
+}
+
+.dev .map .pin.w .bub {
+  color: var(--t1);
+  background: #fff;
+}
+
+.dev .map .pin::after {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: -2px auto 0;
+  border-radius: 0 0 2px 0;
+  transform: rotate(45deg);
+  background: inherit;
+}
+
+/* ---- from L14 ---- */
+.dev .cell .k {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--t1);
+}
+
+/* ---- from L14 ---- */
+.dev .cell .k {
+  flex: none;
+  font-size: 14px;
+  color: var(--t1);
+}
+
+/* ---- from L15 ---- */
+/* 链接式操作 */
+.dev .lnk {
+  font-size: 13px;
+  color: var(--brand);
+}
+
+.dev .lnk.dim {
+  color: var(--t3);
+}
+
+/* ---- from L15 ---- */
+/* 链接式操作 */
+.dev .lnk {
+  font-size: 13px;
+  color: var(--brand);
+}
+
+/* ---- from L16 ---- */
+/* 横幅内的次要分隔符要跟随白字，不能用页面级灰 */
+.dev .banner .mut {
+  color: inherit;
+  opacity: 0.5;
+}
+
+.dev .banner .no {
+  margin-left: auto;
+
+/* ---- from L16 ---- */
+.dev .banner .no {
+  margin-left: auto;
+
+/* ---- from L17 ---- */
+.pin.in {
+  top: 5px;
+  right: 5px;
+  box-shadow: 0 1px 3px rgba(16, 36, 43, 0.4);
+}
+
+/* 通栏元素（底部动作条 / tabBar）的标注不能溢出机身，会被圆角裁掉 */
+.pin.bar {
+  top: -8px;
+  right: auto;
+  left: 14px;
+}
+
+/* ---- from L17 ---- */
+.pin.in {
+  top: 5px;
+  right: 5px;
+  box-shadow: 0 1px 3px rgba(16, 36, 43, 0.4);
+}
+
+/* ---- from L18 ---- */
+/* 链轨 hover 时点亮对应画板：唯一保留的动效，因为它承担导航职责 */
+.board .dev {
+  transition: box-shadow 0.2s ease;
+}
+
+.board.hl .dev {
+  box-shadow: 0 0 0 9px #202832, 0 0 0 10.5px var(--accent),
+    0 16px 34px -10px rgba(196, 92, 38, 0.36);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board .dev {
+    transition: none;
+  }
+
+  .dev .spin,
+
+/* ---- from L18 ---- */
+/* 画板进入动效：一次性、轻微，尊重 reduced-motion */
+.board {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.board.in {
+  opacity: 1;
+  transform: none;
+}
+
+.board.hl .dev {
+  box-shadow: 0 0 0 9px #202832, 0 0 0 10.5px var(--accent),
+    0 16px 34px -10px rgba(196, 92, 38, 0.36);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .dev .spin,
+
+/* ---- from L46 ---- */
+/* 不用 overflow:hidden 收圆角，否则会裁掉挂在外沿的原型标注徽标 */
+.dev .cells {
+  margin: 10px 12px;
+  border-radius: var(--r-l);
+  background: var(--card);
+}
+
+.dev .cells > .cell:first-of-type {
+  border-radius: var(--r-l) var(--r-l) 0 0;
+}
+
+.dev .cells > .cell:last-of-type {
+  border-radius: 0 0 var(--r-l) var(--r-l);
+}
+
+.dev .cells > .cell:only-of-type {
+  border-radius: var(--r-l);
+}
+
+.dev .cells.flush {
+  margin: 0;
+  border-radius: 0;
+}
+
+.dev .cells.flush > .cell {
+  border-radius: 0;
+}
+
+/* ---- from L46 ---- */
+.dev .cells {
+  overflow: hidden;
+  margin: 10px 12px;
+  border-radius: var(--r-l);
+  background: var(--card);
+}
+
+.dev .cells.flush {
+  margin: 0;
+  border-radius: 0;
+}
+
+/* ---- from L47 ---- */
+.dev .cell .lead .ico {
+  width: 17px;
+  height: 17px;
+}
+
+.dev .cell .lead.o {
+  color: var(--warning);
+  background: var(--warning-weak);
+}
+
+.dev .cell .lead.r {
+  color: var(--danger);
+  background: var(--danger-weak);
+}
+
+.dev .cell .lead.g {
+  color: var(--success);
+  background: var(--success-weak);
+}
+
+.dev .cell .lead.n {
+  color: var(--t3);
+  background: var(--muted-weak);
+}
+
+/* ---- from L47 ---- */
+.dev .cell .lead .ico {
+  width: 17px;
+  height: 17px;
+}
+
+/* ---- from L52 ---- */
+.dev .hero {
+  padding: 4px 16px 18px;
+  color: #fff;
+  background-color: var(--brand);
+  background-image: radial-gradient(
+    130% 110% at 100% 100%,
+    var(--brand-deep) 0%,
+    transparent 62%
+  );
+}
+
+.dev .hero .mut {
+  color: inherit;
+  opacity: 0.5;
+}
+
+/* ---- from L52 ---- */
+.dev .hero {
+  padding: 4px 16px 18px;
+  color: #fff;
+  background: linear-gradient(160deg, var(--brand) 0%, var(--brand-deep) 100%);
+}
+
+/* ---- from L59 ---- */
+.dev .kpis .kpi .v {
+  font-family: var(--mono);
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.dev .kpis .kpi .v.sm {
+  font-size: 15px;
+}
+
+/* ---- from L59 ---- */
+.dev .kpis .kpi .v {
+  font-family: var(--mono);
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.dev .kpis .kpi .v.sm {
+  font-size: 16px;
+}

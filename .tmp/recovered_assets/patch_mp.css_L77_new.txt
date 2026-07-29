@@ -1,0 +1,1 @@
+  background: linear-gradient(135deg, var(--brand), #4787f0);

@@ -1,0 +1,22 @@
+/* 智途 · 驾驶员微信小程序原型 · 共享样式 */
+:root {
+  --brand: #1d4ed8;
+  --brand-dark: #1e40af;
+  --brand-light: #eff6ff;
+  --brand-soft: #dbeafe;
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+  --warning: #f59e0b;
+  --warning-soft: #fef3c7;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --info: #0ea5e9;
+  --info-soft: #e0f2fe;
+  --text: #1e293b;
+  --text-2: #64748b;
+  --text-3: #94a3b8;
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --line: #e2e8f0;
+  --nav: #1d4ed8;
+  --nav-text: #ffffff;

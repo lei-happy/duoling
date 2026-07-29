@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>03 计划中心 · 后台人员微信小程序</title>
+<link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body data-app="admin">
+
+<header class="pt-head">
+  <div class="pt-head-inner">
+    <div class="pt-kicker"><i></i><b>后台人员微信小程序</b><span>模块 03</span></div>
+    <div class="pt-title">
+      <h1>计划中心</h1>
+      <span class="badge p0">P0</span>
+    </div>
+    <p class="pt-intent">移动端计划中心服务「碎片时间确认」，不做复杂录入与计费重算。</p>
+    <dl class="pt-meta"><div><dt>覆盖屏数</dt><dd>5 屏</dd></div><div><dt>对齐</dt><dd>PC /operation/waybill</dd></div></dl>
+    <nav class="pt-rail"><a href="#s1"><span class="n">1</span><span class="t">列表</span></a><a href="#s2"><span class="n">2</span><span class="t">详情</span></a><a href="#s3"><span class="n">3</span><span class="t">批量</span></a><a href="#s4"><span class="n">4</span><span class="t">驳回</span></a><a href="#s5"><span class="n">5</span><span class="t">空态</span></a></nav>
+  </div>
+</header>
+
+<main class="pt-body">
+  <div class="pt-gallery">
+
+    <section class="board" id="s1">
+      <div class="board-cap"><span class="n">01</span><h3>计划中心 · 状态池</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">计划中心</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="tabs">
+            <div class="tab on">待确认</div><div class="tab">待调度</div><div class="tab">调度中</div><div class="tab">运输中</div><div class="tab">更多</div>
+          </div>
+          <div class="search"><svg class="ico"><use href="#i-search"></use></svg>计划号 / 客户 / 起终地</div>
+          <div class="task">
+            <div class="top"><span class="chip warning">待确认</span><span class="no">WB202607280117</span></div>
+            <div class="nm" style="font-size:15px">上海安亭 → 合肥庐阳</div>
+            <div class="meta"><span>上汽乘用车</span><span>3 台</span><span class="money">¥ 4,800</span></div>
+          </div>
+          <div class="task">
+            <div class="top"><span class="chip warning">待确认</span><span class="no">WB202607280119</span></div>
+            <div class="nm" style="font-size:15px">上海安亭 → 合肥包河</div>
+            <div class="meta"><span>上汽乘用车</span><span>3 台</span><span class="money">¥ 4,600</span></div>
+          </div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>8 状态池对齐 PC 计划中心；移动端首期聚焦待确认 / 待调度查询与确认。</li></ol>
+    </section>
+
+
+    <section class="board" id="s2">
+      <div class="board-cap"><span class="n">02</span><h3>计划详情与确认</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">计划详情</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="card">
+              <div class="fx between mb8"><span class="chip warning">待确认</span><span class="no">WB…0117</span></div>
+              <div class="strong" style="font-size:16px">上海安亭 → 合肥庐阳</div>
+              <div class="t3 mt8" style="font-size:12px">上汽乘用车 · 荣威 D5X · 3 台</div>
+              <div class="hr"></div>
+              <div class="fx between mb8" style="font-size:13px"><span class="t2">运费</span><span class="money">¥ 4,800</span></div>
+              <div class="fx between" style="font-size:13px"><span class="t2">计费状态</span><span>已计算</span></div>
+            </div>
+            <div class="notice warn" style="margin:0 0 10px;border-radius:8px"><span>确认后不可随意删除。若已锁定请先在电脑端解锁。</span></div>
+          </div>
+        </div>
+        <div class="action-bar"><a class="btn line">返回</a><a class="btn wide">确认计划</a></div>
+
+      </div>
+      <ol class="notes"><li>确认文案：「确认后计划进入待调度，确定吗？」Loading：正在确认计划，请稍候…</li></ol>
+    </section>
+
+
+    <section class="board" id="s3">
+      <div class="board-cap"><span class="n">03</span><h3>批量确认</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">计划中心</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="notice info" style="border-radius:8px;margin-bottom:10px"><span>已选 3 条待确认计划</span></div>
+            <div class="task"><div class="fx g8"><span class="ck on">✓</span><div class="grow"><div class="strong">WB…0117</div><div class="t3">3 台 · ¥4,800</div></div></div></div>
+            <div class="task"><div class="fx g8"><span class="ck on">✓</span><div class="grow"><div class="strong">WB…0119</div><div class="t3">3 台 · ¥4,600</div></div></div></div>
+            <div class="task"><div class="fx g8"><span class="ck on">✓</span><div class="grow"><div class="strong">WB…0120</div><div class="t3">2 台 · ¥3,100</div></div></div></div>
+          </div>
+        </div>
+        <div class="action-bar"><a class="btn line">取消</a><a class="btn wide">确认 3 条</a></div>
+
+      </div>
+      <ol class="notes"><li>成功提示：「已成功确认 3 条计划」。</li></ol>
+    </section>
+
+
+    <section class="board" id="s4">
+      <div class="board-cap"><span class="n">04</span><h3>驳回计划</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head"><div class="wx-nav" data-back><span class="ttl">驳回计划</span></div></div>
+        <div class="wx-body scroll">
+          <div class="mask bottom">
+            <div class="sheet">
+              <div class="handle"></div>
+              <div class="strong mb8">驳回原因（必填）</div>
+              <div class="field"><div class="lab">原因</div><div class="ta">客户临时取消，暂不需要发运</div></div>
+              <a class="btn danger block">确认驳回</a>
+            </div>
+          </div>
+          <div class="pad dim" style="opacity:.35"><div class="card"><div class="strong">WB…0117</div></div></div>
+        </div>
+      </div>
+      <ol class="notes"><li>驳回后计划回到客户对接流程，调度侧不再可见。</li></ol>
+    </section>
+
+
+    <section class="board" id="s5">
+      <div class="board-cap"><span class="n">05</span><h3>无待确认计划</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head"><div class="wx-nav" data-back><span class="ttl">计划中心</span></div></div>
+        <div class="wx-body scroll">
+          <div class="empty" style="padding-top:100px">
+            <div class="t">没有待确认的计划</div>
+            <div class="d">新计划进入待确认后会显示在这里。你也可以先查看待调度池。</div>
+          </div>
+        </div>
+      </div>
+      <ol class="notes"><li>空态给下一步：切换 Tab 或回工作台。</li></ol>
+    </section>
+
+  </div>
+
+
+  <div class="pt-rules">
+    <h4>计划操作规则</h4>
+    <ul>
+      <li>移动侧以确认/驳回为主，不做批量导入与复杂编辑。</li>
+      <li>确认后计划进入待调度池，调度员在模块 04 继续派车。</li>
+      <li>API 规划复用 <code>/api/client/waybill/*</code>。</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="pt-foot">智途 · 后台人员微信小程序原型 · 模块 03 计划中心</footer>
+<script src="assets/mp.js"></script>
+</body>
+</html>

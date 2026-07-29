@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04 · 任务详情与流转 · 驾驶员微信小程序</title>
+  <link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body>
+  <header class="module-bar">
+    <span class="title">04 · 任务详情与流转</span>
+    <span class="badge badge-p0">P0 已有能力</span>
+    <span class="badge badge-role">角色：驾驶员</span>
+    <span class="meta">覆盖 <b>5</b> 屏 · 对齐 <b>driver-mp/pages/task/detail</b></span>
+    <span class="meta">接口 <b>GET /api/driver/task/{id}</b></span>
+  </header>
+
+  <nav class="anchor-nav">
+    <a href="#s1" class="active">① 待接收</a>
+    <a href="#s2">② 待装车</a>
+    <a href="#s3">③ 在途</a>
+    <a href="#s4">④ 待签收</a>
+    <a href="#s5">⑤ 已签收</a>
+  </nav>
+
+  <div class="gallery">
+
+    <!-- ========== ① 待接收 ========== -->
+    <section class="screen-block" id="s1">
+      <div class="screen-label">
+        <span class="num">1</span>
+        <span class="name">任务详情 · 待接收调令</span>
+        <span class="badge badge-p0 pri">P0</span>
+      </div>
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="status-bar"><span class="time">09:41</span><span class="icons">▮▮▮ Wi‑Fi 🔋</span></div>
+          <div class="nav-bar">
+            <span class="back">‹</span>
+            <span class="title">任务详情</span>
+            <div class="capsule"><span class="dot">···</span><span class="sep"></span><span class="dot">◎</span></div>
+          </div>
+          <div class="page page-with-action">
+            <div class="page-pad">
+              <div class="card">
+                <div class="row-between mb-10">
+                  <span class="bold" style="font-size:13px">T202607280031</span>
+                  <span class="tag tag-warning">待接收</span>
+                </div>
+                <div class="route">
+                  <span class="city">成都</span>
+                  <span class="arrow"></span>
+                  <span class="city">重庆</span>
+                </div>
+                <div class="meta-grid">
+                  <div><span class="k">车牌 </span><span class="v">川A·D8821</span></div>
+                  <div><span class="k">台数 </span><span class="v">6 台</span></div>
+                  <div><span class="k">计划装车 </span><span class="v">07-29 14:00</span></div>
+                  <div><span class="k">承运 </span><span class="v">自有运力</span></div>
+                </div>
+              </div>
+
+              <div class="notice notice-warn">
+                <span>⚠</span>
+                <span>调度已派车给你，请尽快确认是否接单。超时未接，调度可能改派。</span>
+              </div>
+
+              <div class="card">
+                <div class="section-title">执行进度</div>
+                <div class="timeline">
+                  <div class="tl-item current"><div class="t">待接收调令</div><div class="d">刚刚 · 请确认接单</div></div>
+                  <div class="tl-item pending"><div class="t">确认装车</div><div class="d">待完成</div></div>
+                  <div class="tl-item pending"><div class="t">确认出发</div><div class="d">待完成</div></div>
+                  <div class="tl-item pending"><div class="t">确认到达</div><div class="d">待完成</div></div>
+                  <div class="tl-item pending"><div class="t">逐单签收</div><div class="d">待完成</div></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">路线分段</div>
+                <div class="row-between mb-8">
+                  <div>
+                    <div class="tiny">装车地</div>
+                    <div style="font-size:13px;font-weight:600">成都经开区整车中心</div>
+                    <div class="muted mt-8">成都市龙泉驿区经开大道 88 号</div>
+                  </div>
+                  <span class="btn btn-soft btn-xs">导航</span>
+                </div>
+                <div class="divider"></div>
+                <div class="row-between">
+                  <div>
+                    <div class="tiny">卸车地</div>
+                    <div style="font-size:13px;font-weight:600">重庆两江经销商库</div>
+                    <div class="muted mt-8">重庆市渝北区两江大道 216 号</div>
+                  </div>
+                  <span class="btn btn-soft btn-xs">导航</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">挂接车辆 <span class="muted" style="font-weight:400">6 台</span></div>
+                <div class="row-between mb-8" style="font-size:12px">
+                  <span>LS·极氪 001 · 白</span><span class="tag tag-default">待装车</span>
+                </div>
+                <div class="row-between mb-8" style="font-size:12px">
+                  <span>LS·极氪 001 · 灰</span><span class="tag tag-default">待装车</span>
+                </div>
+                <div class="row-between" style="font-size:12px;color:var(--text-3)">
+                  <span>… 另有 4 台</span><span>查看全部 ›</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">费用摘要</div>
+                <div class="row-between mb-8"><span class="muted">预估运费</span><span class="text-money">¥ 2,400.00</span></div>
+                <div class="row-between"><span class="muted">已预付</span><span>¥ 0.00</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="action-bar">
+            <button class="btn btn-ghost-danger">拒绝</button>
+            <button class="btn btn-primary" style="flex:2">接收调令</button>
+          </div>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="h">交互说明</div>
+        <ol>
+          <li>首屏突出「待接收」状态与接单动作；超时提醒用警告条，不打断操作。</li>
+          <li>「接收调令」二次确认：「确认接这单吗？接单后请按时到场装车。」</li>
+          <li>「拒绝」弹出原因必填（档期冲突 / 车辆故障 / 其他），确认后任务从列表消失。</li>
+          <li>导航按钮跳转微信内置地图或系统地图（小程序 <code>wx.openLocation</code>）。</li>
+        </ol>
+        <div class="api">API：POST /task/{id}/accept · POST /task/{id}/reject · status=1 且未 accept</div>
+      </div>
+    </section>
+
+    <!-- ========== ② 待装车 ========== -->
+    <section class="screen-block" id="s2">
+      <div class="screen-label">
+        <span class="num">2</span>
+        <span class="name">任务详情 · 待装车</span>
+        <span class="badge badge-p0 pri">P0</span>
+      </div>
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="status-bar"><span class="time">10:05</span><span class="icons">▮▮▮ Wi‑Fi 🔋</span></div>
+          <div class="nav-bar">
+            <span class="back">‹</span>
+            <span class="title">任务详情</span>
+            <div class="capsule"><span class="dot">···</span><span class="sep"></span><span class="dot">◎</span></div>
+          </div>
+          <div class="page page-with-action">
+            <div class="page-pad">
+              <div class="card">
+                <div class="row-between mb-10">
+                  <span class="bold" style="font-size:13px">T202607280031</span>
+                  <span class="tag tag-primary">待装车</span>
+                </div>
+                <div class="route">
+                  <span class="city">成都</span>
+                  <span class="arrow"></span>
+                  <span class="city">重庆</span>
+                </div>
+                <div class="meta-grid">
+                  <div><span class="k">车牌 </span><span class="v">川A·D8821</span></div>
+                  <div><span class="k">台数 </span><span class="v">6 台</span></div>
+                  <div><span class="k">计划装车 </span><span class="v">今日 14:00</span></div>
+                  <div><span class="k">接单时间 </span><span class="v">10:02</span></div>
+                </div>
+              </div>
+
+              <div class="notice notice-info">
+                <span>ℹ</span>
+                <span>已接单。请在计划装车时间前到场，到场后拍照并确认装车。</span>
+              </div>
+
+              <div class="card">
+                <div class="section-title">执行进度</div>
+                <div class="timeline">
+                  <div class="tl-item done"><div class="t">已接收调令</div><div class="d">今日 10:02</div></div>
+                  <div class="tl-item current"><div class="t">确认装车</div><div class="d">进行中 · 请到场后操作</div></div>
+                  <div class="tl-item pending"><div class="t">确认出发</div><div class="d">待完成</div></div>
+                  <div class="tl-item pending"><div class="t">确认到达</div><div class="d">待完成</div></div>
+                  <div class="tl-item pending"><div class="t">逐单签收</div><div class="d">待完成</div></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">装车地</div>
+                <div style="font-size:13px;font-weight:600">成都经开区整车中心</div>
+                <div class="muted mt-8 mb-10">成都市龙泉驿区经开大道 88 号</div>
+                <div class="row gap-8">
+                  <span class="btn btn-soft btn-sm" style="flex:1">导航前往</span>
+                  <span class="btn btn-ghost btn-sm" style="flex:1">联系调度</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">挂接车辆</div>
+                <div class="row-between mb-8" style="font-size:12px">
+                  <span>VIN …8821 · 极氪 001</span><span class="tag tag-warning">待装车</span>
+                </div>
+                <div class="row-between mb-8" style="font-size:12px">
+                  <span>VIN …7730 · 极氪 001</span><span class="tag tag-warning">待装车</span>
+                </div>
+                <div class="tiny">共 6 台，装车后统一确认</div>
+              </div>
+            </div>
+          </div>
+          <div class="action-bar">
+            <button class="btn btn-primary btn-block">确认装车</button>
+          </div>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="h">交互说明</div>
+        <ol>
+          <li>接单后状态由「待接收」变为「待装车」（status=1 + accepted）。</li>
+          <li>主按钮「确认装车」进入动作页（见模块 05）：定位打卡 + 装车照片。</li>
+          <li>「联系调度」调起拨号，号码取任务上的调度员手机号。</li>
+        </ol>
+        <div class="api">状态：status=1 且 accepted · 下一动作 confirm-load</div>
+      </div>
+    </section>
+
+    <!-- ========== ③ 在途 ========== -->
+    <section class="screen-block" id="s3">
+      <div class="screen-label">
+        <span class="num">3</span>
+        <span class="name">任务详情 · 在途</span>
+        <span class="badge badge-p0 pri">P0</span>
+      </div>
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="status-bar"><span class="time">16:20</span><span class="icons">▮▮▮ 5G 🔋</span></div>
+          <div class="nav-bar">
+            <span class="back">‹</span>
+            <span class="title">任务详情</span>
+            <div class="capsule"><span class="dot">···</span><span class="sep"></span><span class="dot">◎</span></div>
+          </div>
+          <div class="page page-with-action">
+            <div class="page-pad">
+              <div class="card">
+                <div class="row-between mb-10">
+                  <span class="bold" style="font-size:13px">T202607280031</span>
+                  <span class="tag tag-info">在途</span>
+                </div>
+                <div class="route">
+                  <span class="city">成都</span>
+                  <span class="arrow"></span>
+                  <span class="city">重庆</span>
+                </div>
+                <div class="meta-grid">
+                  <div><span class="k">出发 </span><span class="v">今日 14:38</span></div>
+                  <div><span class="k">预计到达 </span><span class="v">今日 19:30</span></div>
+                  <div><span class="k">台数 </span><span class="v">6 台已装</span></div>
+                  <div><span class="k">车牌 </span><span class="v">川A·D8821</span></div>
+                </div>
+              </div>
+
+              <div class="map-box">
+                <div class="pin">📍</div>
+                <div class="hint">距卸车地约 86 km · 约 1.5 小时</div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">执行进度</div>
+                <div class="timeline">
+                  <div class="tl-item done"><div class="t">已接收调令</div><div class="d">今日 10:02</div></div>
+                  <div class="tl-item done"><div class="t">已装车</div><div class="d">今日 14:22 · 6 台</div></div>
+                  <div class="tl-item done"><div class="t">已出发</div><div class="d">今日 14:38</div></div>
+                  <div class="tl-item current"><div class="t">确认到达</div><div class="d">进行中 · 到卸车地后操作</div></div>
+                  <div class="tl-item pending"><div class="t">逐单签收</div><div class="d">待完成</div></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">卸车地</div>
+                <div style="font-size:13px;font-weight:600">重庆两江经销商库</div>
+                <div class="muted mt-8 mb-10">重庆市渝北区两江大道 216 号</div>
+                <span class="btn btn-soft btn-sm btn-block">导航前往卸车地</span>
+              </div>
+
+              <div class="card">
+                <div class="section-title">费用摘要</div>
+                <div class="row-between mb-8"><span class="muted">预估运费</span><span class="text-money">¥ 2,400.00</span></div>
+                <div class="row-between"><span class="muted">已预付</span><span class="text-success">¥ 800.00</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="action-bar">
+            <button class="btn btn-ghost">上报异常</button>
+            <button class="btn btn-primary" style="flex:2">确认到达</button>
+          </div>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="h">交互说明</div>
+        <ol>
+          <li>在途页金额与状态同屏：已预付金额用成功色，增强「钱已到账」感知。</li>
+          <li>地图为示意；正式版接轨迹上报（P1，见模块 07）。</li>
+          <li>「上报异常」跳转模块 08；「确认到达」需定位 + 可选卸车照片。</li>
+        </ol>
+        <div class="api">status=3 · POST /task/{id}/confirm-arrive</div>
+      </div>
+    </section>
+
+    <!-- ========== ④ 待签收 ========== -->
+    <section class="screen-block" id="s4">
+      <div class="screen-label">
+        <span class="num">4</span>
+        <span class="name">任务详情 · 已到达待签收</span>
+        <span class="badge badge-p0 pri">P0</span>
+      </div>
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="status-bar"><span class="time">19:12</span><span class="icons">▮▮▮ Wi‑Fi 🔋</span></div>
+          <div class="nav-bar">
+            <span class="back">‹</span>
+            <span class="title">任务详情</span>
+            <div class="capsule"><span class="dot">···</span><span class="sep"></span><span class="dot">◎</span></div>
+          </div>
+          <div class="page page-with-action">
+            <div class="page-pad">
+              <div class="card">
+                <div class="row-between mb-10">
+                  <span class="bold" style="font-size:13px">T202607280031</span>
+                  <span class="tag tag-info">已到达</span>
+                </div>
+                <div class="route">
+                  <span class="city">成都</span>
+                  <span class="arrow"></span>
+                  <span class="city">重庆</span>
+                </div>
+                <div class="notice notice-info" style="margin:10px 0 0">
+                  <span>ℹ</span>
+                  <span>已到达卸车地。请按台签收，全部签收后任务完成。</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">
+                  挂接车辆签收
+                  <span class="more">2/6 已签</span>
+                </div>
+                <div class="row-between mb-10" style="font-size:12px">
+                  <div>
+                    <div class="bold">VIN …8821 · 极氪 001 · 白</div>
+                    <div class="tiny mt-8">经销商：重庆两江 4S</div>
+                  </div>
+                  <span class="tag tag-success">已签收</span>
+                </div>
+                <div class="row-between mb-10" style="font-size:12px">
+                  <div>
+                    <div class="bold">VIN …7730 · 极氪 001 · 灰</div>
+                    <div class="tiny mt-8">经销商：重庆两江 4S</div>
+                  </div>
+                  <span class="tag tag-success">已签收</span>
+                </div>
+                <div class="row-between mb-10" style="font-size:12px">
+                  <div>
+                    <div class="bold">VIN …6612 · 极氪 X · 蓝</div>
+                    <div class="tiny mt-8">经销商：重庆两江 4S</div>
+                  </div>
+                  <span class="btn btn-success btn-xs">签收</span>
+                </div>
+                <div class="row-between mb-10" style="font-size:12px">
+                  <div>
+                    <div class="bold">VIN …5501 · 极氪 007</div>
+                    <div class="tiny mt-8">经销商：重庆两江 4S</div>
+                  </div>
+                  <span class="btn btn-success btn-xs">签收</span>
+                </div>
+                <div class="tiny">另有 2 台待签收</div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">执行进度</div>
+                <div class="timeline">
+                  <div class="tl-item done"><div class="t">已到达</div><div class="d">今日 19:05</div></div>
+                  <div class="tl-item current"><div class="t">逐单签收</div><div class="d">2/6 已完成</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="action-bar">
+            <button class="btn btn-success btn-block">批量签收剩余 4 台</button>
+          </div>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="h">交互说明</div>
+        <ol>
+          <li>签收按挂接行（台）执行；全部签收后任务自动变为「已签收」。</li>
+          <li>支持逐台签收与批量签收；批量需二次确认：「确认将剩余 4 台一并签收？」</li>
+          <li>已签收行可展示「撤销」（需 PC 权限 <code>operation:task:revert-sign</code>，无权限则隐藏）。</li>
+        </ol>
+        <div class="api">status=4 · POST /task/items/{itemId}/sign</div>
+      </div>
+    </section>
+
+    <!-- ========== ⑤ 已签收 ========== -->
+    <section class="screen-block" id="s5">
+      <div class="screen-label">
+        <span class="num">5</span>
+        <span class="name">任务详情 · 已签收</span>
+        <span class="badge badge-p0 pri">P0</span>
+      </div>
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="status-bar"><span class="time">19:48</span><span class="icons">▮▮▮ Wi‑Fi 🔋</span></div>
+          <div class="nav-bar">
+            <span class="back">‹</span>
+            <span class="title">任务详情</span>
+            <div class="capsule"><span class="dot">···</span><span class="sep"></span><span class="dot">◎</span></div>
+          </div>
+          <div class="page page-with-action">
+            <div class="page-pad">
+              <div class="card" style="text-align:center;padding:20px 14px">
+                <div style="font-size:36px;margin-bottom:8px">✓</div>
+                <div class="bold" style="font-size:16px;color:var(--success)">本单已签收完成</div>
+                <div class="muted mt-8">T202607280031 · 6 台全部签收</div>
+                <div class="row-between mt-12" style="text-align:left">
+                  <span class="muted">本单运费</span>
+                  <span class="text-money" style="font-size:18px">¥ 2,400.00</span>
+                </div>
+                <div class="row-between mt-8" style="text-align:left">
+                  <span class="muted">已预付 / 待结算</span>
+                  <span>¥ 800 / ¥ 1,600</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">执行进度</div>
+                <div class="timeline">
+                  <div class="tl-item done"><div class="t">已接收调令</div><div class="d">今日 10:02</div></div>
+                  <div class="tl-item done"><div class="t">已装车</div><div class="d">今日 14:22</div></div>
+                  <div class="tl-item done"><div class="t">已出发</div><div class="d">今日 14:38</div></div>
+                  <div class="tl-item done"><div class="t">已到达</div><div class="d">今日 19:05</div></div>
+                  <div class="tl-item done"><div class="t">已签收</div><div class="d">今日 19:46 · 6/6</div></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="section-title">后续事项</div>
+                <div class="cell" style="padding:10px 0;border:none">
+                  <div class="ico-wrap">📷</div>
+                  <div class="label">上传回单凭证</div>
+                  <div class="value">建议尽快</div>
+                  <span class="arrow">›</span>
+                </div>
+                <div class="divider"></div>
+                <div class="cell" style="padding:10px 0;border:none">
+                  <div class="ico-wrap" style="background:var(--success-soft);color:var(--success)">¥</div>
+                  <div class="label">查看本单费用</div>
+                  <div class="value">预付已到账</div>
+                  <span class="arrow">›</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="action-bar">
+            <button class="btn btn-ghost">查看费用</button>
+            <button class="btn btn-primary" style="flex:2">上传回单</button>
+          </div>
+        </div>
+      </div>
+      <div class="notes">
+        <div class="h">交互说明</div>
+        <ol>
+          <li>完成后首屏用成功态收束，金额与状态同屏展示，避免司机再翻页找钱。</li>
+          <li>「上传回单」进入模块 06；回单与签收解耦，签收后仍可补传。</li>
+          <li>无底部主业务动作时，动作栏转为「后续事项」引导。</li>
+        </ol>
+        <div class="api">status=5 · 回单 POST /task-receipt/upload · 费用 GET /finance/my</div>
+      </div>
+    </section>
+
+  </div>
+  <script src="assets/mp.js"></script>
+</body>
+</html>

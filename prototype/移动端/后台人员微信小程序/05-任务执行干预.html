@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>05 任务执行干预 · 后台人员微信小程序</title>
+<link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body data-app="admin">
+
+<header class="pt-head">
+  <div class="pt-head-inner">
+    <div class="pt-kicker"><i></i><b>后台人员微信小程序</b><span>模块 05</span></div>
+    <div class="pt-title">
+      <h1>任务执行干预</h1>
+      <span class="badge p0">P0</span>
+    </div>
+    <p class="pt-intent">司机失联时，调度要能代推状态、催办、紧急取消——这是移动端不可缺的补位能力。</p>
+    <dl class="pt-meta"><div><dt>覆盖屏数</dt><dd>3 屏</dd></div><div><dt>角色</dt><dd>调度 / 车队长</dd></div></dl>
+    <nav class="pt-rail"><a href="#s1"><span class="n">1</span><span class="t">代操作</span></a><a href="#s2"><span class="n">2</span><span class="t">催办</span></a><a href="#s3"><span class="n">3</span><span class="t">强制取消</span></a></nav>
+  </div>
+</header>
+
+<main class="pt-body">
+  <div class="pt-gallery">
+
+    <section class="board" id="s1">
+      <div class="board-cap"><span class="n">01</span><h3>代确认装车</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">代司机操作</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="notice warn" style="border-radius:8px;margin-bottom:10px"><span>司机王建军 30 分钟未响应装车确认。你可代为确认，操作将记入日志。</span></div>
+            <div class="card">
+              <div class="strong">TK…0031 · 待装车</div>
+              <div class="t3 mt6">上海嘉定 · 计划 08:30</div>
+            </div>
+            <div class="field"><div class="lab">代操作原因 <span class="req">*</span></div><div class="ta">司机手机没电，已电话确认已装完</div></div>
+          </div>
+        </div>
+        <div class="action-bar"><a class="btn line">取消</a><a class="btn wide">代确认装车</a></div>
+
+      </div>
+      <ol class="notes"><li>代操作必须填原因；PC/小程序共用状态机动作。</li></ol>
+    </section>
+
+
+    <section class="board" id="s2">
+      <div class="board-cap"><span class="n">02</span><h3>催办司机</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">催办</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="pad">
+            <div class="card">
+              <div class="fx g10">
+                <div class="ava sm">王</div>
+                <div class="grow"><div class="strong">王建军</div><div class="t3">139****3308 · 待接收调令</div></div>
+                <a class="btn soft xs"><svg class="ico"><use href="#i-phone"></use></svg></a>
+              </div>
+            </div>
+            <div class="card">
+              <div class="hd">催办方式</div>
+              <div class="cell" style="padding:10px 0;border:none"><div class="k">发送订阅消息</div><span class="chip primary">推荐</span></div>
+              <div class="cell" style="padding:10px 0;border:none"><div class="k">短信提醒</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="action-bar"><a class="btn wide">发送催办</a></div>
+
+      </div>
+      <ol class="notes"><li>一键拨号用 <code>tel:</code>；订阅消息需司机已授权。</li></ol>
+    </section>
+
+
+    <section class="board" id="s3">
+      <div class="board-cap"><span class="n">03</span><h3>强制取消 / 关闭</h3><span class="tip">P0</span></div>
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
+        </div>
+        <div class="wx-body scroll">
+          <div class="mask center">
+            <div class="dialog">
+              <div class="t">强制取消任务？</div>
+              <div class="d">取消后不可恢复。挂接计划将回到待调度，请确认客户侧已沟通。</div>
+              <div class="af"><a class="btn line wide">返回</a><a class="btn danger wide">强制取消</a></div>
+            </div>
+          </div>
+          <div class="pad" style="opacity:.35;filter:blur(1px)"><div class="card">任务</div></div>
+        </div>
+
+      </div>
+      <ol class="notes"><li>高风险操作仅对有权限角色展示。</li></ol>
+    </section>
+
+  </div>
+
+
+  <div class="pt-rules">
+    <h4>代操作规则</h4>
+    <ul>
+      <li>调度员可代确认装车/到达，系统留痕「调度代操作」。</li>
+      <li>不能代替司机签收或上传回单。</li>
+      <li>司机拒单后任务回流模块 04 待派车池（参见驾驶员模块 05）。</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="pt-foot">智途 · 后台人员微信小程序原型 · 模块 05 任务执行干预</footer>
+<script src="assets/mp.js"></script>
+</body>
+</html>

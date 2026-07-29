@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>04 任务详情与流转 · 驾驶员微信小程序</title>
+<link rel="stylesheet" href="assets/mp.css" />
+</head>
+<body data-app="driver">
+
+<header class="pt-head">
+  <div class="pt-head-inner">
+    <div class="pt-kicker"><i></i><b>驾驶员微信小程序</b><span>模块 04</span></div>
+    <div class="pt-title">
+      <h1>任务详情与流转</h1>
+      <span class="badge p0">P0 已有能力</span>
+      <span class="badge p1">含 2 处 P1 增量</span>
+    </div>
+    <p class="pt-intent">
+      司机一天里打开次数最多的页面。它要在三秒内回答两个问题：<em>这趟活是什么</em>、<em>现在该点哪个按钮</em>。
+      因此详情页不做"一页展示全部字段"，而是<em>同一页面五种状态形态</em>——状态变了，页面重点、卡片顺序、底部动作跟着变。
+    </p>
+
+    <dl class="pt-meta">
+      <div><dt>覆盖屏数</dt><dd>6 屏（5 种状态形态 + 流转轨迹）</dd></div>
+      <div><dt>使用角色</dt><dd>驾驶员</dd></div>
+      <div><dt>数据来源</dt><dd><code>GET /api/driver/task/{task_id}</code></dd></div>
+      <div><dt>字段契约</dt><dd><code>DriverTaskDetail</code><span class="sep">·</span><code>DriverTaskItem</code><span class="sep">·</span><code>DriverTaskSegment</code></dd></div>
+      <div><dt>入口</dt><dd>工作台近期任务<span class="sep">·</span>任务列表卡片<span class="sep">·</span>订阅消息点击</dd></div>
+    </dl>
+
+    <nav class="pt-rail">
+      <a href="#s1"><span class="n">STATUS 1</span><span class="t">待接收</span></a>
+      <a href="#s2"><span class="n">STATUS 1</span><span class="t">待装车</span></a>
+      <a href="#s3"><span class="n">STATUS 3</span><span class="t">在途</span></a>
+      <a href="#s4"><span class="n">STATUS 4</span><span class="t">已到达</span></a>
+      <a href="#s5"><span class="n">STATUS 5</span><span class="t">已签收</span></a>
+      <a href="#s6"><span class="n">REVIEW</span><span class="t">流转轨迹</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="pt-body">
+
+  <div class="pt-group">
+    <div class="pt-group-head">
+      <h2>一、接单前后</h2>
+      <span class="sub">调令送达手机 → 司机表态 → 到场装车，这一段决定任务能不能开始动</span>
+    </div>
+  </div>
+
+  <div class="pt-gallery">
+
+    <!-- ============ 1. 待接收 ============ -->
+    <section class="board" id="s1">
+      <div class="board-cap">
+        <span class="n">01</span>
+        <h3>待接收 · 调令刚派到手机</h3>
+        <span class="tip">整页拼接</span>
+      </div>
+
+      <div class="dev auto">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
+        </div>
+
+        <div class="wx-body scroll">
+          <div class="banner rel">
+            <div class="top">
+              <span class="stat warning">待接收</span>
+              <span class="no">TK202607290031</span>
+            </div>
+            <div class="nm">上海嘉定 → 合肥包河</div>
+            <div class="sub">
+              <svg class="ico"><use href="#i-building"></use></svg>
+              上汽安吉物流<span class="mut">·</span>8 台 / 3 单
+            </div>
+            <div class="mini">
+              <div><div class="k">计划装车</div><div class="v">07-29 08:30</div></div>
+              <div><div class="k">计划到达</div><div class="v">07-30 14:00</div></div>
+              <div><div class="k">里程</div><div class="v">468 km</div></div>
+            </div>
+            <i class="pin in">1</i>
+          </div>
+
+          <div class="notice rel">
+            <svg class="ico"><use href="#i-clock"></use></svg>
+            <span>调度 08:15 派单给你，请在 <b>30 分钟内</b>确认，超时会自动退回调度台</span>
+            <i class="pin">2</i>
+          </div>
+
+          <div class="card pull-up rel">
+            <div class="route">
+              <div class="leg">
+                <div class="grow">
+                  <div class="loc">上海嘉定 · 安亭商品车库</div>
+                  <div class="when">计划装车 07-29 08:30</div>
+                </div>
+              </div>
+              <div class="leg to">
+                <div class="grow">
+                  <div class="loc">合肥包河 · 徽通汽车城</div>
+                  <div class="when">计划到达 07-30 14:00</div>
+                </div>
+                <div class="side">468 km<br />约 6.5 h</div>
+              </div>
+            </div>
+            <i class="pin">3</i>
+          </div>
+
+          <div class="card rel">
+            <div class="sec-t">货物明细<span class="more">3 行 / 8 台</span></div>
+            <div class="row">
+              <div class="main">
+                <div class="l1">荣威 D5X DMH<span class="tag warning sm">待装车</span></div>
+                <div class="l2">3 台<span class="mut"> · </span>合肥庐阳店<span class="mut"> · </span>WB202607280117</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="main">
+                <div class="l1">MG7 1.5T<span class="tag warning sm">待装车</span></div>
+                <div class="l2">3 台<span class="mut"> · </span>合肥包河旗舰店<span class="mut"> · </span>WB202607280119</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="main">
+                <div class="l1">智己 LS6<span class="tag warning sm">待装车</span></div>
+                <div class="l2">2 台<span class="mut"> · </span>合肥政务区店<span class="mut"> · </span>WB202607280124</div>
+              </div>
+            </div>
+            <i class="pin">4</i>
+          </div>
+
+          <div class="cells">
+            <div class="cell"><span class="k">主驾</span><span class="v">王建军（我）</span></div>
+            <div class="cell"><span class="k">车牌</span><span class="v">沪B·D7392</span></div>
+            <div class="cell"><span class="k">挂车</span><span class="v">沪BQ2831</span></div>
+            <div class="cell"><span class="k">承运方式</span><span class="v">自有运力</span></div>
+          </div>
+
+          <div class="card rel">
+            <div class="sec-t">这趟的钱</div>
+            <div class="fx between">
+              <div>
+                <div class="t3">本次运费</div>
+                <div class="money blue mt4" style="font-size:19px"><span class="cur">¥</span>4,860.00</div>
+              </div>
+              <div style="text-align:right">
+                <div class="t3">已预付</div>
+                <div class="money mt4" style="font-size:19px"><span class="cur">¥</span>1,200.00</div>
+              </div>
+            </div>
+            <div class="hr full"></div>
+            <div class="fx between t3" style="font-size:12px">
+              <span>结算单在签收后由企业生成</span>
+              <span class="lnk">查看费用单</span>
+            </div>
+            <i class="pin">5</i>
+          </div>
+
+          <div class="end">已经到底了</div>
+        </div>
+
+        <div class="wx-foot">
+          <div class="action-bar rel">
+            <a class="btn line">拒绝</a>
+            <a class="btn grow">接收调令</a>
+            <i class="pin tl">6</i>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li><b>状态胶囊留在蓝色底上</b>：导航栏与横幅同色保持无缝，状态色只收进胶囊。避免整屏泛橙/泛绿，司机在阳光下也能看清车次与地名。</li>
+        <li><span class="flag">P1</span>派发倒计时需要后端补 <code>dispatch_order.dispatched_at</code> 与超时退回策略；当前 <code>/task/{id}</code> 只返回 <code>acceptedAt</code>。</li>
+        <li>路线卡取 <code>segments</code>，单段任务只画起终点；多段任务在此处展开分段（见第 6 屏说明）。</li>
+        <li>货物明细即 <code>items</code>（挂接行），一行 = 一个运单在本任务上的台数。<b>接单前不出现签收按钮</b>，只让司机核对车型和台数对不对。</li>
+        <li>钱要在接单前就能看见。金额用等宽数字，位数对齐，便于和纸质调令核对。</li>
+        <li>拒绝是次要动作用描边按钮；点击后必须填原因（<code>DriverRejectTaskRequest.reason</code> 必填），详见模块 05。</li>
+      </ol>
+    </section>
+
+    <!-- ============ 2. 待装车 ============ -->
+    <section class="board" id="s2">
+      <div class="board-cap">
+        <span class="n">02</span>
+        <h3>待装车 · 已接单，等着到场装车</h3>
+        <span class="tip">整页拼接</span>
+      </div>
+
+      <div class="dev auto">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
+        </div>
+
+        <div class="wx-body scroll">
+          <div class="banner">
+            <div class="top">
+              <span class="stat primary">待装车</span>
+              <span class="no">TK202607290031</span>
+            </div>
+            <div class="nm">上海嘉定 → 合肥包河</div>
+            <div class="sub">
+              <svg class="ico"><use href="#i-check"></use></svg>
+              你已在 08:22 接单
+            </div>
+            <div class="mini">
+              <div><div class="k">计划装车</div><div class="v">今天 08:30</div></div>
+              <div><div class="k">距装车点</div><div class="v">3.2 km</div></div>
+              <div><div class="k">台数</div><div class="v">8 台</div></div>
+            </div>
+          </div>
+
+          <div class="card pull-up rel">
+            <div class="fx between mb12">
+              <div class="strong t1">上海嘉定 · 安亭商品车库</div>
+              <a class="btn ghost xs"><svg class="ico"><use href="#i-nav"></use></svg>导航</a>
+            </div>
+            <div class="t2" style="font-size:12.5px">墨玉北路 1000 号 3 号门<span class="mut"> · </span>库管 李工 138****6721</div>
+            <div class="hr full"></div>
+            <div class="fx g8">
+              <a class="btn line wide sm"><svg class="ico"><use href="#i-phone"></use></svg>打给库管</a>
+              <a class="btn line wide sm"><svg class="ico"><use href="#i-chat"></use></svg>联系调度</a>
+            </div>
+            <i class="pin">1</i>
+          </div>
+
+          <div class="cells rel">
+            <div class="cell">
+              <span class="lead"><svg class="ico"><use href="#i-shield"></use></svg></span>
+              <span class="k">出车前点检<span class="sub">胎压、灯光、绑扎带、灭火器</span></span>
+              <span class="v"><span class="tag warning sm">未完成</span></span>
+              <svg class="ico arrow"><use href="#i-right"></use></svg>
+            </div>
+            <i class="pin tl">2</i>
+          </div>
+
+          <div class="card">
+            <div class="sec-t">装车清单<span class="more">按台核对</span></div>
+            <div class="row">
+              <div class="main">
+                <div class="l1">荣威 D5X DMH<span class="tag sm">3 台</span></div>
+                <div class="l2">合肥庐阳店<span class="mut"> · </span>上层 1-3 位</div>
+              </div>
+              <div class="side"><span class="ck"></span></div>
+            </div>
+            <div class="row">
+              <div class="main">
+                <div class="l1">MG7 1.5T<span class="tag sm">3 台</span></div>
+                <div class="l2">合肥包河旗舰店<span class="mut"> · </span>上层 4-6 位</div>
+              </div>
+              <div class="side"><span class="ck"></span></div>
+            </div>
+            <div class="row">
+              <div class="main">
+                <div class="l1">智己 LS6<span class="tag sm">2 台</span></div>
+                <div class="l2">合肥政务区店<span class="mut"> · </span>下层 1-2 位</div>
+              </div>
+              <div class="side"><span class="ck"></span></div>
+            </div>
+          </div>
+
+          <div class="notice blue rel">
+            <svg class="ico"><use href="#i-camera"></use></svg>
+            <span>确认装车时请拍全车照，装车照片是后续车损争议的唯一凭据</span>
+            <i class="pin">3</i>
+          </div>
+
+          <div class="end">已经到底了</div>
+        </div>
+
+        <div class="wx-foot">
+          <div class="action-bar rel">
+            <a class="btn ghost">车辆信息</a>
+            <a class="btn grow"><svg class="ico"><use href="#i-camera"></use></svg>确认装车</a>
+            <i class="pin tl">4</i>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>接单后重点从"这活干不干"切到"怎么到装车点"。路线卡收成一张<b>装车点卡</b>，导航、打给库管、联系调度都在拇指范围内。</li>
+        <li><span class="flag">P1</span>出车前点检表需要新增 <code>biz_vehicle_inspection</code> 与提交接口，见模块 10。点检未完成不拦截装车，只做提醒——拦截会导致司机在车库门口卡住。</li>
+        <li>装车清单的勾选框只是<b>司机自查</b>，不回传后端。真正的状态推进由「确认装车」一次性提交，避免半成品状态。</li>
+        <li>「确认装车」调 <code>POST /task/{id}/confirm-load</code>，带 <code>location</code>、<code>photoUrls</code>（最多 9 张）、<code>remark</code>。成功后 <code>task.status</code> 1 → 2，所有 <code>items</code> 0 → 1。</li>
+      </ol>
+    </section>
+
+  </div>
+
+  <div class="pt-group">
+    <div class="pt-group-head">
+      <h2>二、在途到签收</h2>
+      <span class="sub">这一段司机在路上，页面要少读多点；到场后才展开逐单签收</span>
+    </div>
+  </div>
+
+  <div class="pt-gallery">
+
+    <!-- ============ 3. 在途 ============ -->
+    <section class="board" id="s3">
+      <div class="board-cap">
+        <span class="n">03</span>
+        <h3>在途 · 车在路上</h3>
+      </div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
+        </div>
+
+        <div class="wx-body scroll">
+          <div class="banner">
+            <div class="top">
+              <span class="stat info">在途</span>
+              <span class="no">TK202607290031</span>
+            </div>
+            <div class="nm">上海嘉定 → 合肥包河</div>
+            <div class="sub">
+              <svg class="ico"><use href="#i-truck"></use></svg>
+              08:52 出发<span class="mut">·</span>已跑 312 km
+            </div>
+          </div>
+
+          <div class="card pull-up rel" style="padding:0;overflow:hidden">
+            <div class="map" style="height:150px">
+              <svg class="path" viewBox="0 0 347 150" preserveAspectRatio="none">
+                <path d="M24 122 C 80 110, 96 66, 158 62" />
+                <path class="plan" d="M158 62 C 214 58, 250 40, 322 30" />
+              </svg>
+              <span class="dotp" style="left:158px;top:62px"></span>
+              <span class="pin" style="left:158px;top:52px">
+                <span class="bub"><svg class="ico"><use href="#i-truck"></use></svg>沪B·D7392</span>
+              </span>
+              <span class="pin g" style="left:24px;top:118px"><span class="bub">装</span></span>
+              <span class="pin r" style="left:322px;top:26px"><span class="bub">卸</span></span>
+            </div>
+            <div class="pad">
+              <div class="fx between">
+                <div>
+                  <div class="t3">当前位置</div>
+                  <div class="t1 strong mt4">安徽滁州 · 沪陕高速 K312</div>
+                </div>
+                <div style="text-align:right">
+                  <div class="t3">预计到达</div>
+                  <div class="t1 strong mt4">明天 13:40</div>
+                </div>
+              </div>
+              <div class="hr"></div>
+              <div class="fx between t3" style="font-size:12px">
+                <span>位置 3 分钟前更新</span>
+                <span class="fx g4"><svg class="ico" style="width:12px;height:12px"><use href="#i-refresh"></use></svg>刷新</span>
+              </div>
+            </div>
+            <i class="pin in">1</i>
+          </div>
+
+          <div class="cells rel">
+            <div class="cell">
+              <span class="lead"><svg class="ico"><use href="#i-warning"></use></svg></span>
+              <span class="k">上报异常<span class="sub">堵车、故障、等货、车损</span></span>
+              <svg class="ico arrow"><use href="#i-right"></use></svg>
+            </div>
+            <div class="cell">
+              <span class="lead"><svg class="ico"><use href="#i-file"></use></svg></span>
+              <span class="k">货物明细<span class="sub">3 行 / 8 台 · 全部已装车</span></span>
+              <svg class="ico arrow"><use href="#i-right"></use></svg>
+            </div>
+            <i class="pin tl">2</i>
+          </div>
+
+          <div class="card">
+            <div class="sec-t">卸货点</div>
+            <div class="t1 strong">合肥包河 · 徽通汽车城</div>
+            <div class="t2 mt4" style="font-size:12.5px">包河区花园大道 58 号<span class="mut"> · </span>收货 周经理 139****3308</div>
+            <div class="fx g8 mt12">
+              <a class="btn line wide sm"><svg class="ico"><use href="#i-nav"></use></svg>导航去卸货点</a>
+              <a class="btn line wide sm"><svg class="ico"><use href="#i-phone"></use></svg>打给收货人</a>
+            </div>
+          </div>
+
+          <div class="end">已经到底了</div>
+        </div>
+
+        <div class="wx-foot">
+          <div class="action-bar rel">
+            <a class="btn line">上报异常</a>
+            <a class="btn grow dis">确认到达</a>
+            <i class="pin tl">3</i>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li><span class="flag">P1</span>位置卡依赖新增的轨迹上报接口（见模块 07）。现状 <code>confirm-load</code> / <code>confirm-arrive</code> 只接受一个文本 <code>location</code>，无法画在途轨迹。<b>实线是已走轨迹，虚线是计划路线</b>，两者区分能让司机自己发现走错路。</li>
+        <li>在途期间司机不需要读明细，把货物明细收成一行入口，把「上报异常」提到同级——路上出问题的处置成本远高于查数据。</li>
+        <li>「确认到达」在<b>进入卸货点地理围栏前置灰</b>，点击时提示「离卸货点还有 12 km，到场后再确认到达」。防止司机在路上提前点，导致企业端误判到场时间。</li>
+      </ol>
+    </section>
+
+    <!-- ============ 4. 已到达 ============ -->
+    <section class="board" id="s4">
+      <div class="board-cap">
+        <span class="n">04</span>
+        <h3>已到达 · 逐单签收现场</h3>
+      </div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
+        </div>
+
+        <div class="wx-body scroll">
+          <div class="banner">
+            <div class="top">
+              <span class="stat info">已到达</span>
+              <span class="no">TK202607290031</span>
+            </div>
+            <div class="nm">合肥包河 · 徽通汽车城</div>
+            <div class="sub">
+              <svg class="ico"><use href="#i-location"></use></svg>
+              13:26 到场<span class="mut">·</span>比计划早 34 分钟
+            </div>
+          </div>
+
+          <div class="notice pull-up rel" style="margin:0 12px;border-radius:10px">
+            <svg class="ico"><use href="#i-info"></use></svg>
+            <span>请与收货人当面核对车辆后再签收，签收后运单进入结算</span>
+            <i class="pin">1</i>
+          </div>
+
+          <div class="card rel">
+            <div class="sec-t">逐单签收<span class="more">已签 1 / 3</span></div>
+            <div class="pg g mb12"><i style="width:33%"></i></div>
+
+            <div class="row">
+              <div class="main">
+                <div class="l1">荣威 D5X DMH<span class="tag success sm">已签收</span></div>
+                <div class="l2">3 台<span class="mut"> · </span>合肥庐阳店<span class="mut"> · </span>13:31 签收</div>
+              </div>
+              <div class="side"><span class="lnk mut">撤销</span></div>
+            </div>
+
+            <div class="row">
+              <div class="main">
+                <div class="l1">MG7 1.5T<span class="tag info sm">已卸车</span></div>
+                <div class="l2">3 台<span class="mut"> · </span>合肥包河旗舰店</div>
+              </div>
+              <div class="side"><a class="btn success xs">签收</a></div>
+            </div>
+
+            <div class="row">
+              <div class="main">
+                <div class="l1">智己 LS6<span class="tag info sm">已卸车</span></div>
+                <div class="l2">2 台<span class="mut"> · </span>合肥政务区店</div>
+              </div>
+              <div class="side"><a class="btn success xs">签收</a></div>
+            </div>
+            <i class="pin">2</i>
+          </div>
+
+          <div class="card rel">
+            <div class="sec-t">卸车照片<span class="more">4 张</span></div>
+            <div class="ups">
+              <div class="ph"><span class="mk">13:28 车尾</span></div>
+              <div class="ph b"><span class="mk">13:29 左侧</span></div>
+              <div class="ph c"><span class="mk">13:30 仪表</span></div>
+              <div class="ph"><span class="mk">13:30 车架号</span></div>
+            </div>
+            <i class="pin">3</i>
+          </div>
+
+          <div class="cells">
+            <div class="cell">
+              <span class="lead"><svg class="ico"><use href="#i-signature"></use></svg></span>
+              <span class="k">上传回单<span class="sub">收货人签字盖章的纸质回单</span></span>
+              <span class="v"><span class="tag warning sm">待上传</span></span>
+              <svg class="ico arrow"><use href="#i-right"></use></svg>
+            </div>
+          </div>
+
+          <div class="end">已经到底了</div>
+        </div>
+
+        <div class="wx-foot">
+          <div class="action-bar rel">
+            <div class="sum">
+              <div class="k">剩余待签</div>
+              <div class="v">2 单</div>
+            </div>
+            <a class="btn success grow"><svg class="ico"><use href="#i-check"></use></svg>剩余全部签收</a>
+            <i class="pin tl">4</i>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>到场后页面重点切到签收，卸货点地址、导航这些"到场前"信息全部收起——同一个页面在不同状态下<b>该显示的东西是不一样的</b>。</li>
+        <li>签收是逐行的（<code>POST /task/items/{item_id}/sign</code>），因为一个任务的 8 台车可能交给 3 个不同经销商，到场时间不一致。进度条让司机知道还差几单。</li>
+        <li>已签收行的「撤销」走 <code>POST /task/items/{item_id}/revert-sign</code>，需权限 <code>operation:task:revert-sign</code>，多数司机看不到此入口；无权限时点击提示「撤销签收需要调度协助，已通知张敏」。</li>
+        <li>底部提供「剩余全部签收」批量动作，同时保留每行单签。<b>批量按钮上要写清剩余单数</b>，避免司机误签未卸车的行。全部签完后 <code>task.status</code> 由后端聚合 4 → 5。</li>
+      </ol>
+    </section>
+
+    <!-- ============ 5. 已签收 ============ -->
+    <section class="board" id="s5">
+      <div class="board-cap">
+        <span class="n">05</span>
+        <h3>已签收 · 收尾与要钱</h3>
+      </div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
+        </div>
+
+        <div class="wx-body scroll">
+          <div class="banner">
+            <div class="top">
+              <span class="stat success">已签收</span>
+              <span class="no">TK202607290031</span>
+            </div>
+            <div class="nm">上海嘉定 → 合肥包河</div>
+            <div class="sub">
+              <svg class="ico"><use href="#i-check"></use></svg>
+              8 台全部签收<span class="mut">·</span>07-30 13:52 完成
+            </div>
+            <div class="mini">
+              <div><div class="k">本次运费</div><div class="v">¥4,860.00</div></div>
+              <div><div class="k">已预付</div><div class="v">¥1,200.00</div></div>
+              <div><div class="k">待结算</div><div class="v">¥3,660.00</div></div>
+            </div>
+          </div>
+
+          <div class="notice rel pull-up" style="margin:0 12px;border-radius:10px">
+            <svg class="ico"><use href="#i-upload"></use></svg>
+            <span>还有 <b>2 单</b>回单没上传，回单齐了财务才能出结算单</span>
+            <span class="go">去上传</span>
+            <i class="pin">1</i>
+          </div>
+
+          <div class="card rel">
+            <div class="sec-t">回单进度<span class="more">1 / 3</span></div>
+            <div class="row">
+              <div class="main">
+                <div class="l1">合肥庐阳店<span class="tag success sm">已上传</span></div>
+                <div class="l2">荣威 D5X DMH 3 台<span class="mut"> · </span>2 张照片</div>
+              </div>
+              <div class="side"><span class="lnk">查看</span></div>
+            </div>
+            <div class="row">
+              <div class="main">
+                <div class="l1">合肥包河旗舰店<span class="tag warning sm">待上传</span></div>
+                <div class="l2">MG7 1.5T 3 台</div>
+              </div>
+              <div class="side"><a class="btn ghost xs">拍照</a></div>
+            </div>
+            <div class="row">
+              <div class="main">
+                <div class="l1">合肥政务区店<span class="tag warning sm">待上传</span></div>
+                <div class="l2">智己 LS6 2 台</div>
+              </div>
+              <div class="side"><a class="btn ghost xs">拍照</a></div>
+            </div>
+            <i class="pin">2</i>
+          </div>
+
+          <div class="card rel">
+            <div class="sec-t">费用单<span class="more">2 张</span></div>
+            <div class="row">
+              <div class="main">
+                <div class="l1">预付单<span class="tag success sm">已支付</span></div>
+                <div class="l2">TF20260729-0088<span class="mut"> · </span>银行转账 07-29 09:10</div>
+              </div>
+              <div class="side money"><span class="cur">¥</span>1,200.00</div>
+            </div>
+            <div class="row">
+              <div class="main">
+                <div class="l1">结算单<span class="tag warning sm">待审批</span></div>
+                <div class="l2">TF20260730-0142<span class="mut"> · </span>回单齐全后放款</div>
+              </div>
+              <div class="side money red"><span class="cur">¥</span>3,660.00</div>
+            </div>
+            <div class="hr full"></div>
+            <div class="fx between">
+              <span class="t3" style="font-size:12px">结算口径以企业核定为准</span>
+              <span class="lnk">去收入页看明细</span>
+            </div>
+            <i class="pin">3</i>
+          </div>
+
+          <div class="cells">
+            <div class="cell">
+              <span class="lead"><svg class="ico"><use href="#i-clock"></use></svg></span>
+              <span class="k">流转轨迹<span class="sub">7 个节点 · 含操作人与照片</span></span>
+              <svg class="ico arrow"><use href="#i-right"></use></svg>
+            </div>
+          </div>
+
+          <div class="end">已经到底了</div>
+        </div>
+
+        <div class="wx-foot">
+          <div class="action-bar rel">
+            <a class="btn block"><svg class="ico"><use href="#i-camera"></use></svg>上传剩余 2 张回单</a>
+            <i class="pin tl">4</i>
+          </div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>签收完成不等于任务结束。此时司机唯一关心的是"钱什么时候到"，所以横幅从"到哪儿了"换成<b>运费三段数字</b>：本次运费、已预付、待结算。</li>
+        <li>回单按<b>经销商维度</b>拆分而不是按任务，因为一个任务的回单可能分属 3 家门店，混在一起司机会漏传。</li>
+        <li>费用单区块只读，取 <code>GET /api/driver/finance/my?taskId=</code>。金额右对齐、等宽，待收的金额用红色——这是司机自己的钱，不是系统内部状态。</li>
+        <li>底部动作从状态推进换成"补齐凭证"。按钮写明还差几张，比「上传回单」更能推动完成。</li>
+      </ol>
+    </section>
+
+    <!-- ============ 6. 流转轨迹 ============ -->
+    <section class="board" id="s6">
+      <div class="board-cap">
+        <span class="n">06</span>
+        <h3>流转轨迹 · 谁在什么时候做了什么</h3>
+      </div>
+
+      <div class="dev">
+        <div class="wx-head">
+          <div class="wx-nav" data-back><span class="ttl">流转轨迹</span></div>
+        </div>
+
+        <div class="wx-body scroll white">
+          <div class="pad">
+            <div class="steps-h mb12">
+              <span class="s done">派车</span>
+              <span class="s done">接单</span>
+              <span class="s done">装车</span>
+              <span class="s done">出发</span>
+              <span class="s done">到达</span>
+              <span class="s now">签收</span>
+              <span class="s">关闭</span>
+            </div>
+          </div>
+
+          <div class="card flat rel" style="margin-top:0">
+            <div class="steps">
+              <div class="st done">
+                <div class="nm">调度派车</div>
+                <div class="tm">07-29 08:15</div>
+                <div class="by">调度 张敏<span class="mut"> · </span>PC 调度工作台</div>
+              </div>
+              <div class="st done">
+                <div class="nm">接收调令</div>
+                <div class="tm">07-29 08:22</div>
+                <div class="by">王建军（我）<span class="mut"> · </span>用时 7 分钟</div>
+              </div>
+              <div class="st done">
+                <div class="nm">确认装车<span class="tag success sm" style="margin-left:6px">8 台</span></div>
+                <div class="tm">07-29 08:46</div>
+                <div class="by">王建军（我）<span class="mut"> · </span>安亭商品车库</div>
+                <div class="ups mt8" style="grid-template-columns:repeat(6,1fr);gap:5px">
+                  <div class="ph"></div>
+                  <div class="ph b"></div>
+                  <div class="ph c"></div>
+                  <div class="ph"></div>
+                  <div class="ph b"></div>
+                  <div class="ph c"></div>
+                </div>
+              </div>
+              <div class="st done">
+                <div class="nm">确认出发</div>
+                <div class="tm">07-29 08:52</div>
+                <div class="by">王建军（我）</div>
+              </div>
+              <div class="st done">
+                <div class="nm">确认到达</div>
+                <div class="tm">07-30 13:26</div>
+                <div class="by">王建军（我）<span class="mut"> · </span>徽通汽车城<span class="mut"> · </span>早 34 分钟</div>
+              </div>
+              <div class="st now">
+                <div class="nm">逐单签收</div>
+                <div class="tm">07-30 13:31 ~ 13:52</div>
+                <div class="by">王建军（我）<span class="mut"> · </span>3 单全部签收</div>
+                <div class="mt6">
+                  <div class="t3" style="font-size:11.5px">13:31 合肥庐阳店 3 台<br />13:44 合肥包河旗舰店 3 台<br />13:52 合肥政务区店 2 台</div>
+                </div>
+              </div>
+              <div class="st wait">
+                <div class="nm">任务关闭</div>
+                <div class="tm">待企业确认回单后关闭</div>
+              </div>
+            </div>
+            <i class="pin">1</i>
+          </div>
+
+          <div class="card rel">
+            <div class="sec-t">运输分段<span class="more">单段直送</span></div>
+            <div class="route">
+              <div class="leg">
+                <div class="grow">
+                  <div class="loc">第 1 段 · 安亭商品车库</div>
+                  <div class="when">实际装车 07-29 08:46</div>
+                </div>
+              </div>
+              <div class="leg to">
+                <div class="grow">
+                  <div class="loc">第 1 段 · 徽通汽车城</div>
+                  <div class="when">实际到达 07-30 13:26</div>
+                </div>
+                <div class="side">468 km</div>
+              </div>
+            </div>
+            <i class="pin">2</i>
+          </div>
+
+          <div class="cells rel">
+            <div class="cell">
+              <span class="lead"><svg class="ico"><use href="#i-help"></use></svg></span>
+              <span class="k">签收有误，需要撤回<span class="sub">会通知调度处理，不能自己改</span></span>
+              <svg class="ico arrow"><use href="#i-right"></use></svg>
+            </div>
+            <i class="pin tl">3</i>
+          </div>
+
+          <div class="end">已经到底了</div>
+        </div>
+      </div>
+
+      <ol class="notes">
+        <li>轨迹页解决的是<b>争议追溯</b>：车损谁的责任、晚点是谁的原因。所以每个节点都要有时间 + 操作人 + 现场照片，且区分是 PC 端调度做的还是司机做的。</li>
+        <li>多段运输（<code>segments.length &gt; 1</code>）时这里展开每段的计划/实际时间；单段任务保持一行，不制造空壳分组。</li>
+        <li>把"我签错了"这类求助明确成一个入口，比让司机在群里问调度更省事。文案强调"不能自己改"，管理边界写在界面上而不是靠培训。</li>
+      </ol>
+    </section>
+
+  </div>
+
+  <div class="pt-rules">
+    <h4>状态与司机动作对照（实现依据）</h4>
+    <table>
+      <thead>
+        <tr><th>task.status</th><th>司机看到</th><th>底部主动作</th><th>接口</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1 已派车 · 未接单</td><td>待接收</td><td>接收调令 / 拒绝</td><td><code>/task/{id}/accept</code>、<code>/reject</code></td></tr>
+        <tr><td>1 已派车 · 已接单</td><td>待装车</td><td>确认装车</td><td><code>/task/{id}/confirm-load</code></td></tr>
+        <tr><td>2 已装车</td><td>已装车</td><td>确认出发</td><td><code>/task/{id}/depart</code></td></tr>
+        <tr><td>3 在途</td><td>在途</td><td>确认到达</td><td><code>/task/{id}/confirm-arrive</code></td></tr>
+        <tr><td>4 已到达</td><td>已到达</td><td>逐单签收 / 剩余全部签收</td><td><code>/task/items/{id}/sign</code></td></tr>
+        <tr><td>5 已签收</td><td>已签收</td><td>上传回单</td><td><code>/task-receipt/upload</code></td></tr>
+        <tr><td>7 已关闭 / 9 已取消</td><td>已关闭 / 已取消</td><td>无动作，仅可查看</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pt-rules">
+    <h4>本模块的边界与约定</h4>
+    <ul>
+      <li><b>一个页面，五种形态</b>：不为每种状态做独立页面。卡片顺序、底部动作由 <code>status</code> + <code>accepted</code> 决定，与 <code>utils/constants.js</code> 的 <code>getAvailableActions</code> 保持同一份判断。</li>
+      <li><b>状态推进只能前进</b>：司机端不提供任何回退动作，撤销签收是受权限的例外，且默认对司机隐藏。回退一律走调度端（后台人员小程序模块 05）。</li>
+      <li><b>动作全部二次确认</b>：确认装车、出发、到达、签收都弹确认，提交中禁用按钮防重复。三态样式见模块 05。</li>
+      <li><b>失败要给下一步</b>：网络失败提示「提交没成功，检查信号后重试；照片已暂存在手机里，不会丢」，不出现状态码与接口名。</li>
+      <li><b>P1 依赖</b>：派发倒计时、在途轨迹与地理围栏、出车前点检三项需要后端新增能力，界面已按"有数据"设计，缺数据时降级为不显示该卡片，不显示空壳。</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="pt-foot">
+  智途 · 驾驶员微信小程序原型 · 模块 04 任务详情与流转 · 字段对齐 <code>backend/app/modules/driver/schemas/task.py</code>
+</footer>
+
+<script src="assets/mp.js"></script>
+</body>
+</html>
