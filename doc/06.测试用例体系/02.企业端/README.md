@@ -22,6 +22,8 @@
 | 08 | [AI 数字人](./08.AI数字人.md) | ai/client（chat、session、employee、file）+ security 脱敏 |
 | 13 | [任务费用单发起节点](./13.任务费用单发起节点.md) | task_finance 发起节点配置（finance_stage_rules、system_config 懒补齐） |
 | 14 | [开放平台](./14.开放平台.md) | open_platform（接入应用、API 密钥、MCP 配置、能力目录、调用审计）；脚本在 `backend/tests/open/test_open_platform_*.py` |
+| 15 | [车辆资产维修保养](./15.车辆资产维修保养.md) | 车辆资产目录、维修保养工单/计划/看板、运力状态联动；脚本 `test_fleet_maintenance_service.py`；报告见 [15.车辆资产维修保养-测试报告](./15.车辆资产维修保养-测试报告.md) |
+| 16 | [车辆资产成本](./16.车辆资产成本.md) | 续期台账、资产卡片与折旧、单车四类成本汇总；脚本 `test_fleet_asset_cost_service.py`；报告见 [16.车辆资产成本-测试报告](./16.车辆资产成本-测试报告.md) |
 
 缺陷统一登记：[缺陷记录.md](./缺陷记录.md)（不改 `00.缺陷台账/README.md`）。
 

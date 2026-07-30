@@ -231,6 +231,9 @@ class CapacityService:
     # 允许人工手动切换到的目标状态（运输中/维修保养由上游模块驱动，不允许手动置位）
     MANUAL_TARGET_STATUSES = {1, 3, 4}
 
+    # 上游模块可写入的被动状态
+    MODULE_TARGET_STATUSES = {1, 2, 5}
+
     @staticmethod
     async def update_operation_status(
         db: AsyncSession,
@@ -243,7 +246,78 @@ class CapacityService:
             raise BizException(
                 "该状态由任务单或维修保养等模块自动管理，不支持手动切换"
             )
+        return await CapacityService._apply_operation_status(
+            db,
+            capacity_id=capacity_id,
+            operation_status=operation_status,
+            operator_user_id=operator_user_id,
+            remark_prefix="运力状态",
+            event_code="capacity.self_status_change",
+            allow_same=False,
+        )
 
+    @staticmethod
+    async def set_operation_status_by_module(
+        db: AsyncSession,
+        *,
+        vehicle_id: int,
+        operation_status: int,
+        source: str,
+        operator_user_id: Optional[int] = None,
+        remark: Optional[str] = None,
+    ) -> Optional[int]:
+        """上游模块（维修保养/任务）回写运力运营状态。
+
+        按 vehicle_id 查找绑定中运力；无绑定则跳过并返回 None。
+        返回受影响的 capacity_id。
+        """
+        if operation_status not in CapacityService.MODULE_TARGET_STATUSES:
+            raise BizException("不支持的运力状态写入")
+
+        result = await db.execute(
+            select(Capacity).where(
+                Capacity.vehicle_id == vehicle_id,
+                Capacity.status == 1,
+                Capacity.is_deleted == 0,
+            )
+        )
+        capacities = list(result.scalars().all())
+        if not capacities:
+            return None
+
+        labels = CapacityService.OPERATION_STATUS_LABELS
+        next_label = labels.get(operation_status, "未知")
+        source_note = remark or f"模块写入（{source}）"
+        last_id: Optional[int] = None
+        for capacity in capacities:
+            await CapacityService._apply_operation_status(
+                db,
+                capacity_id=capacity.id,
+                operation_status=operation_status,
+                operator_user_id=operator_user_id,
+                remark_prefix=source_note,
+                event_code="capacity.module_status_change",
+                allow_same=True,
+                activity_summary=(
+                    f"系统将车辆「{capacity.plate_number}」的运力状态"
+                    f"调整为「{next_label}」（{source_note}）"
+                ),
+            )
+            last_id = capacity.id
+        return last_id
+
+    @staticmethod
+    async def _apply_operation_status(
+        db: AsyncSession,
+        *,
+        capacity_id: int,
+        operation_status: int,
+        operator_user_id: Optional[int] = None,
+        remark_prefix: str = "运力状态",
+        event_code: str = "capacity.self_status_change",
+        allow_same: bool = False,
+        activity_summary: Optional[str] = None,
+    ) -> CapacityOut:
         result = await db.execute(
             select(Capacity).where(
                 Capacity.id == capacity_id,
@@ -258,6 +332,24 @@ class CapacityService:
 
         prev_status = capacity.operation_status
         if prev_status == operation_status:
+            if allow_same:
+                vr = await db.execute(
+                    select(Vehicle).where(
+                        Vehicle.id == capacity.vehicle_id,
+                        Vehicle.is_deleted == 0,
+                    )
+                )
+                vehicle = vr.scalar_one_or_none()
+                pc = (vehicle.plate_category if vehicle else None) or "YELLOW"
+                trailer_plate, trailer_cat = (
+                    await CapacityService._trailer_plates_for_vehicle(db, vehicle)
+                )
+                extras = await CapacityService._load_capacity_extras(
+                    db, capacity.driver_id, capacity.vehicle_id
+                )
+                return CapacityOut.from_model(
+                    capacity, pc, trailer_plate, trailer_cat, **extras
+                )
             raise BizException("运力当前已是该状态，无需变更")
 
         labels = CapacityService.OPERATION_STATUS_LABELS
@@ -270,7 +362,7 @@ class CapacityService:
         operator_name = await CapacityService._get_operator_name(
             db, operator_user_id
         )
-        change_note = f"运力状态：{prev_label} → {next_label}"
+        change_note = f"{remark_prefix}：{prev_label} → {next_label}"
         log = CapacityLog(
             capacity_id=capacity.id,
             driver_id=capacity.driver_id,
@@ -287,15 +379,16 @@ class CapacityService:
         await db.flush()
 
         op_label = operator_name or "用户"
+        summary = activity_summary or (
+            f"{op_label} 将司机「{capacity.driver_name}」与车辆"
+            f"「{capacity.plate_number}」的运力状态从「{prev_label}」"
+            f"调整为「{next_label}」"
+        )
         await CompanyActivityService.record(
             db,
             occurred_at=now,
-            event_code="capacity.self_status_change",
-            summary=(
-                f"{op_label} 将司机「{capacity.driver_name}」与车辆"
-                f"「{capacity.plate_number}」的运力状态从「{prev_label}」"
-                f"调整为「{next_label}」"
-            ),
+            event_code=event_code,
+            summary=summary,
             actor_user_id=operator_user_id,
             actor_display_name=operator_name,
             payload={

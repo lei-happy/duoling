@@ -7,7 +7,7 @@
 
 from typing import Optional
 from datetime import date
-from sqlalchemy import String, BigInteger, Date, Text, Numeric
+from sqlalchemy import String, BigInteger, Date, Integer, Text, Numeric
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.modules.client.models.base import TenantModelBase
@@ -48,6 +48,21 @@ class VehicleExt(TenantModelBase):
     )
     purchase_date: Mapped[Optional[date]] = mapped_column(
         Date, nullable=True, comment="购买日期"
+    )
+    original_value: Mapped[Optional[float]] = mapped_column(
+        Numeric(14, 2), nullable=True, comment="资产原值（元）"
+    )
+    residual_value: Mapped[Optional[float]] = mapped_column(
+        Numeric(14, 2), nullable=True, comment="预计残值（元）"
+    )
+    depreciable_months: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True, comment="折旧月数"
+    )
+    depreciation_method: Mapped[Optional[str]] = mapped_column(
+        String(32), nullable=True, comment="折旧方法，默认 straight_line"
+    )
+    depreciation_start_date: Mapped[Optional[date]] = mapped_column(
+        Date, nullable=True, comment="折旧起算日"
     )
     insurance_expire: Mapped[Optional[date]] = mapped_column(
         Date, nullable=True, comment="保险到期日"

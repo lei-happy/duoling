@@ -45,6 +45,8 @@ python scripts/mockdata/mock_tenant_customers.py --help
 | `mock_tenant_waybills.py` | `biz_waybill`、`biz_waybill_cargo` | 运单及货物明细；从库内随机抽取客户、品牌/车系、经销商、地区；`--cargo-lines` 固定每单货物行数（默认随机 1~2 行）；`--fetch-limit` 控制随机池大小。 |
 | `mock_tenant_drivers.py` | `biz_driver`、`biz_driver_license`、`biz_driver_operation`、`biz_driver_account`、`biz_driver_route` | 自有运力驾驶员及关联资质、运营、账户、常跑线路等（每位司机含多条子表记录）。 |
 | `mock_tenant_vehicles.py` | `biz_vehicle`、`biz_vehicle_ext` | 自有运力车辆及扩展信息；可关联已有挂车 `trailer_id`；车辆类型优先读字典 `vehicle_type`。 |
+| `mock_tenant_fleet_assets.py` | `biz_vehicle_ext`（资产卡片字段）、`biz_fleet_work_order`、`biz_fleet_maintain_plan`、`biz_fleet_renewal` | 车辆资产二期联调数据：维保工单/保养计划/续期台账，并补齐直线法折旧字段；依赖已有车辆。 |
+| `mock_tenant_compliance_alerts.py` | `biz_compliance_alert`，并回写 `biz_vehicle_ext` / `biz_driver_license` 到期日 | 证照监控预警（过期/临界/预警；open/dismissed/resolved）；依赖车辆，驾驶员可选。 |
 | `mock_tenant_trailers.py` | `biz_trailer`、`biz_trailer_ext` | 自有运力挂车及扩展信息；号牌格式与车辆脚本区分（挂车为「…挂」后缀）；挂车类型优先读字典 `trailer_type`。 |
 | `mock_tenant_social_capacities.py` | `biz_social_capacity`、`biz_social_capacity_vehicle`、`biz_social_capacity_driver`、`biz_social_capacity_account` | 社会运力（驾驶员+车辆+证照+结算账户）；号牌规则与车辆/挂车 mock 一致；`--accounts` 控制结算账户条数（默认 1，范围 1~4）；审核/启用状态组合多样化。 |
 | `mock_eco_cargo_hall.py` | `sys_eco_post`、`sys_eco_cargo_post`、`sys_eco_post_dest`，以及发布方 `sys_eco_tenant_profile` / `sys_eco_tenant_credit` | **平台库**货源大厅挂牌（`status=3` 展示中）；约 1/3 归主租户（「我发布的」），其余归其它企业（大厅列表可见）。共用模块见 `eco_hall_common.py`。 |
@@ -57,8 +59,19 @@ python scripts/mockdata/mock_tenant_customers.py --help
 - **运单**（`mock_tenant_waybills.py`）：需要客户、地区、经销商、车辆品牌/车系等。
 - **运价合同**（`mock_tenant_freight_contracts.py`）：需要客户、地区；品牌/车系用于可选填充运价行。
 - **车辆**（`mock_tenant_vehicles.py`）：若需挂车关联，宜先有挂车数据（`mock_tenant_trailers.py`）。
+- **车辆资产**（`mock_tenant_fleet_assets.py`）：需要已有自有车辆；建议先跑 `mock_tenant_vehicles.py`。
 
 客户、承运商、驾驶员、挂车、车辆、社会运力等脚本以**单表或固定关联**为主，一般可独立执行；仍建议先在测试环境用 `--dry-run` 验证输出再正式写入。
+
+```bash
+# 车辆资产（维修保养 / 续期 / 资产成本）示例
+python scripts/mockdata/mock_tenant_fleet_assets.py --tenant-code 1001 --dry-run
+python scripts/mockdata/mock_tenant_fleet_assets.py --tenant-code 1001
+
+# 证照监控预警示例
+python scripts/mockdata/mock_tenant_compliance_alerts.py --tenant-code 1001 --dry-run
+python scripts/mockdata/mock_tenant_compliance_alerts.py --tenant-code 1001
+```
 
 ### 服务平台大厅（`mock_eco_*`）
 

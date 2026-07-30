@@ -397,10 +397,14 @@
   },
   {
     "feature_code": "fleet_maintenance",
-    "feature_name": "车辆维保",
+    "feature_name": "维修保养",
     "module": "capacity",
-    "description": null,
-    "required_tables": null,
+    "description": "车辆资产-维修保养与资产成本（专业版）",
+    "required_tables": [
+      "biz_fleet_work_order",
+      "biz_fleet_maintain_plan",
+      "biz_fleet_renewal"
+    ],
     "sort_order": 46,
     "status": 1
   },

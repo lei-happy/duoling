@@ -26,6 +26,7 @@ from app.modules.client.api.capacity.carrier_capacity.approval import router as 
 from app.modules.client.api.capacity.social_capacity.list import router as social_capacity_list_router
 from app.modules.client.api.capacity.social_capacity.approval import router as social_capacity_approval_router
 from app.modules.client.api.capacity.compliance.alerts import router as compliance_alert_router
+from app.modules.client.api.capacity.maintenance.routes import router as fleet_maintenance_router
 from app.modules.client.api.customer import router as customer_router
 from app.modules.client.api.route import router as route_router
 from app.modules.client.api.operation_record import router as operation_record_router
@@ -174,6 +175,12 @@ router.include_router(
     prefix="/capacity/compliance/alerts",
     tags=["客户端-证照监控-到期预警"],
     dependencies=[Depends(require_feature("fleet_compliance"))],
+)
+router.include_router(
+    fleet_maintenance_router,
+    prefix="/capacity/maintenance",
+    tags=["客户端-车辆资产-维修保养"],
+    dependencies=[Depends(require_feature("fleet_maintenance"))],
 )
 router.include_router(customer_router, prefix="/resource/customer", tags=["客户端-客户管理"])
 router.include_router(route_router, prefix="/resource/route", tags=["客户端-路线管理"])

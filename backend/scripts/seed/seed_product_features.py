@@ -84,7 +84,12 @@ def _load_features() -> list:
         if isinstance(rt, list):
             rt_serialized = json.dumps(rt, ensure_ascii=False)
         elif isinstance(rt, str):
-            rt_serialized = rt
+            s = rt.strip()
+            if s.startswith("["):
+                rt_serialized = s
+            else:
+                tables = [t.strip() for t in s.split(",") if t.strip()]
+                rt_serialized = json.dumps(tables, ensure_ascii=False)
         else:
             rt_serialized = None
         features.append({
