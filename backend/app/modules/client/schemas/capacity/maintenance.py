@@ -1,10 +1,36 @@
 """车辆资产 - 维修保养 Schemas"""
 
+from __future__ import annotations
+
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
+
+
+class WorkOrderLineIn(BaseModel):
+    lineType: str = Field(..., description="labor/part/other")
+    partId: Optional[int] = None
+    title: str
+    qty: Decimal = Decimal("1")
+    unitPrice: Optional[Decimal] = None
+    laborHours: Optional[Decimal] = None
+    amount: Optional[Decimal] = None
+    sortOrder: int = 0
+
+
+class WorkOrderLineOut(BaseModel):
+    id: int
+    workOrderId: int
+    lineType: str
+    partId: Optional[int] = None
+    title: str
+    qty: Decimal
+    unitPrice: Optional[Decimal] = None
+    laborHours: Optional[Decimal] = None
+    amount: Decimal
+    sortOrder: int
 
 
 class WorkOrderCreate(BaseModel):
@@ -14,22 +40,28 @@ class WorkOrderCreate(BaseModel):
     planId: Optional[int] = None
     description: Optional[str] = None
     odometer: Optional[int] = None
+    faultCategory: Optional[str] = None
+    workshopId: Optional[int] = None
     workshop: Optional[str] = None
     expectFinishDate: Optional[date] = None
     costAmount: Optional[Decimal] = None
     costRemark: Optional[str] = None
     remark: Optional[str] = None
+    lines: Optional[List[WorkOrderLineIn]] = None
 
 
 class WorkOrderUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     odometer: Optional[int] = None
+    faultCategory: Optional[str] = None
+    workshopId: Optional[int] = None
     workshop: Optional[str] = None
     expectFinishDate: Optional[date] = None
     costAmount: Optional[Decimal] = None
     costRemark: Optional[str] = None
     remark: Optional[str] = None
+    lines: Optional[List[WorkOrderLineIn]] = None
 
 
 class WorkOrderCompleteBody(BaseModel):
@@ -49,8 +81,12 @@ class WorkOrderOut(BaseModel):
     title: str
     description: Optional[str] = None
     odometer: Optional[int] = None
+    faultCategory: Optional[str] = None
+    workshopId: Optional[int] = None
     workshop: Optional[str] = None
     expectFinishDate: Optional[date] = None
+    laborAmount: Optional[Decimal] = None
+    partsAmount: Optional[Decimal] = None
     costAmount: Optional[Decimal] = None
     costRemark: Optional[str] = None
     status: str
@@ -58,6 +94,7 @@ class WorkOrderOut(BaseModel):
     finishedAt: Optional[datetime] = None
     capacityId: Optional[int] = None
     remark: Optional[str] = None
+    lines: Optional[List[WorkOrderLineOut]] = None
     createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
 
@@ -170,3 +207,98 @@ class AssetCardOut(BaseModel):
     monthlyDepreciation: Optional[Decimal] = None
     accumulatedDepreciation: Optional[Decimal] = None
     netValue: Optional[Decimal] = None
+
+
+# ---------- 工单做厚：备件 / 维修厂 / 库存 ----------
+
+
+class PartCreate(BaseModel):
+    partCode: str
+    partName: str
+    category: Optional[str] = None
+    unit: str = "个"
+    refPrice: Optional[Decimal] = None
+    safetyStock: int = 0
+    remark: Optional[str] = None
+
+
+class PartUpdate(BaseModel):
+    partName: Optional[str] = None
+    category: Optional[str] = None
+    unit: Optional[str] = None
+    refPrice: Optional[Decimal] = None
+    safetyStock: Optional[int] = None
+    status: Optional[int] = None
+    remark: Optional[str] = None
+
+
+class PartOut(BaseModel):
+    id: int
+    partCode: str
+    partName: str
+    category: Optional[str] = None
+    unit: str
+    refPrice: Optional[Decimal] = None
+    safetyStock: int
+    qtyOnHand: Decimal
+    status: int
+    lowStock: bool = False
+    remark: Optional[str] = None
+    createdAt: Optional[datetime] = None
+    updatedAt: Optional[datetime] = None
+
+
+class StockInboundBody(BaseModel):
+    qty: Decimal = Field(..., gt=0)
+    unitCost: Optional[Decimal] = None
+    remark: Optional[str] = None
+
+
+class StockAdjustBody(BaseModel):
+    qtyDelta: Decimal = Field(..., description="正数盘盈、负数盘亏")
+    remark: Optional[str] = None
+
+
+class StockTxnOut(BaseModel):
+    id: int
+    partId: int
+    partCode: str
+    partName: str
+    txnType: str
+    qty: Decimal
+    unitCost: Optional[Decimal] = None
+    amount: Optional[Decimal] = None
+    refType: Optional[str] = None
+    refId: Optional[int] = None
+    remark: Optional[str] = None
+    createdAt: Optional[datetime] = None
+
+
+class WorkshopCreate(BaseModel):
+    name: str
+    contact: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    enabled: int = 1
+    remark: Optional[str] = None
+
+
+class WorkshopUpdate(BaseModel):
+    name: Optional[str] = None
+    contact: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    enabled: Optional[int] = None
+    remark: Optional[str] = None
+
+
+class WorkshopOut(BaseModel):
+    id: int
+    name: str
+    contact: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    enabled: int
+    remark: Optional[str] = None
+    createdAt: Optional[datetime] = None
+    updatedAt: Optional[datetime] = None

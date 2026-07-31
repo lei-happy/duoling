@@ -55,8 +55,12 @@ from app.modules.client.models.capacity.carrier_capacity import (
 from app.modules.client.models.compliance import BizComplianceAlert
 from app.modules.client.models.capacity.maintenance import (
     FleetWorkOrder,
+    FleetWorkOrderLine,
     FleetMaintainPlan,
     FleetRenewal,
+    FleetPart,
+    FleetStockTxn,
+    FleetWorkshop,
 )
 from app.modules.client.models.route import Route
 from app.modules.client.models.partner.customer import Customer
@@ -235,8 +239,12 @@ __all__ = [
     "CarrierCapacityDriver",
     "BizComplianceAlert",
     "FleetWorkOrder",
+    "FleetWorkOrderLine",
     "FleetMaintainPlan",
     "FleetRenewal",
+    "FleetPart",
+    "FleetStockTxn",
+    "FleetWorkshop",
     "BizCompanyActivity",
     "BizEcoPostRef",
     # AI 数字员工（biz_ai_*）

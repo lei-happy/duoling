@@ -24,7 +24,7 @@
       <!-- 看板 -->
       <template v-if="activeTab === 'board'">
         <el-row :gutter="12" class="fleet-maint-page__stats">
-          <el-col :lg="8" :md="8" :xs="24">
+          <el-col :lg="6" :md="12" :xs="24">
             <ele-card>
               <div class="stat-item">
                 <div class="stat-label">待办保养</div>
@@ -32,7 +32,7 @@
               </div>
             </ele-card>
           </el-col>
-          <el-col :lg="8" :md="8" :xs="24">
+          <el-col :lg="6" :md="12" :xs="24">
             <ele-card>
               <div class="stat-item">
                 <div class="stat-label">进行中工单</div>
@@ -42,7 +42,7 @@
               </div>
             </ele-card>
           </el-col>
-          <el-col :lg="8" :md="8" :xs="24">
+          <el-col :lg="6" :md="12" :xs="24">
             <ele-card>
               <div class="stat-item">
                 <div class="stat-label">本周完工</div>
@@ -52,6 +52,28 @@
                     · 费用 ¥{{ formatMoney(board.weekSummary.costAmount) }}
                   </span>
                 </div>
+              </div>
+            </ele-card>
+          </el-col>
+          <el-col :lg="6" :md="12" :xs="24">
+            <ele-card>
+              <div class="stat-item">
+                <div class="stat-label">低库存备件</div>
+                <div
+                  class="stat-value"
+                  :class="{ danger: (board.lowStockCount || 0) > 0 }"
+                >
+                  {{ board.lowStockCount || 0 }}
+                </div>
+                <el-button
+                  v-if="(board.lowStockCount || 0) > 0"
+                  type="primary"
+                  link
+                  style="margin-top: 4px; padding: 0"
+                  @click="goParts"
+                >
+                  去备件库存查看
+                </el-button>
               </div>
             </ele-card>
           </el-col>
@@ -111,7 +133,11 @@
                     {{ o.plateNumber }} · {{ o.title }}
                   </div>
                   <div class="due-meta">
-                    {{ orderTypeLabel(o.orderType) }} · {{ o.workOrderNo }}
+                    {{ orderTypeLabel(o.orderType) }}
+                    <template v-if="o.faultCategory">
+                      · {{ faultCategoryLabel(o.faultCategory) }}
+                    </template>
+                    · {{ o.workOrderNo }}
                   </div>
                 </div>
                 <el-button type="primary" link @click="openComplete(o)">
@@ -179,6 +205,9 @@
           <template #orderType="{ row }">
             {{ orderTypeLabel(row.orderType) }}
           </template>
+          <template #faultCategory="{ row }">
+            {{ faultCategoryLabel(row.faultCategory) }}
+          </template>
           <template #status="{ row }">
             <el-tag size="small" :type="statusTagType(row.status)">
               {{ statusLabel(row.status) }}
@@ -186,6 +215,14 @@
           </template>
           <template #action="{ row }">
             <el-space>
+              <el-link
+                v-if="row.status === 'draft' || row.status === 'in_progress'"
+                type="primary"
+                :underline="false"
+                @click="openEditOrder(row)"
+              >
+                编辑
+              </el-link>
               <el-link
                 v-if="row.status === 'draft'"
                 type="primary"
@@ -285,14 +322,19 @@
       </ele-card>
     </template>
 
-    <!-- 新建工单 -->
-    <ele-modal
+    <!-- 新建/编辑工单 -->
+    <ele-drawer
       v-model="orderDialogVisible"
-      title="新建维修工单"
-      :width="520"
-      @ok="submitOrder"
+      :title="orderForm.id ? '编辑维修工单' : '新建维修工单'"
+      :size="720"
+      :body-style="{ paddingBottom: '8px' }"
     >
-      <el-form ref="orderFormRef" :model="orderForm" :rules="orderRules" label-width="96px">
+      <el-form
+        ref="orderFormRef"
+        :model="orderForm"
+        :rules="orderRules"
+        label-width="96px"
+      >
         <el-form-item label="车辆" prop="vehicleId">
           <el-select
             v-model="orderForm.vehicleId"
@@ -300,6 +342,7 @@
             remote
             clearable
             placeholder="搜索车牌"
+            :disabled="!!orderForm.id"
             :remote-method="searchVehicles"
             :loading="vehicleLoading"
             style="width: 100%"
@@ -313,10 +356,25 @@
           </el-select>
         </el-form-item>
         <el-form-item label="类型" prop="orderType">
-          <el-radio-group v-model="orderForm.orderType">
+          <el-radio-group v-model="orderForm.orderType" :disabled="!!orderForm.id">
             <el-radio value="repair">维修</el-radio>
             <el-radio value="maintenance">保养</el-radio>
           </el-radio-group>
+        </el-form-item>
+        <el-form-item label="分类" prop="faultCategory">
+          <el-select
+            v-model="orderForm.faultCategory"
+            clearable
+            placeholder="故障/作业分类"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="c in FAULT_CATEGORIES"
+              :key="c.value"
+              :label="c.label"
+              :value="c.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="标题" prop="title">
           <el-input v-model="orderForm.title" maxlength="200" show-word-limit />
@@ -330,31 +388,185 @@
           />
         </el-form-item>
         <el-form-item label="维修厂">
-          <el-input v-model="orderForm.workshop" />
+          <el-select
+            v-model="orderForm.workshopId"
+            filterable
+            clearable
+            allow-create
+            default-first-option
+            placeholder="选择或输入维修厂"
+            style="width: 100%"
+            @change="onWorkshopChange"
+          >
+            <el-option
+              v-for="w in workshopOptions"
+              :key="w.id"
+              :label="w.name!"
+              :value="w.id!"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="说明">
-          <el-input v-model="orderForm.description" type="textarea" :rows="3" />
+          <el-input v-model="orderForm.description" type="textarea" :rows="2" />
         </el-form-item>
+
+        <div class="section-title">
+          项目 / 工时
+          <el-button type="primary" link @click="addLaborLine">添加行</el-button>
+        </div>
+        <el-table :data="laborLines" border size="small" class="line-table">
+          <el-table-column label="项目名称" min-width="160">
+            <template #default="{ row }">
+              <el-input v-model="row.title" placeholder="如：更换刹车片" />
+            </template>
+          </el-table-column>
+          <el-table-column label="工时(h)" width="110">
+            <template #default="{ row }">
+              <el-input-number
+                v-model="row.laborHours"
+                :min="0"
+                :precision="1"
+                controls-position="right"
+                style="width: 100%"
+                @change="recalcLine(row)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="单价" width="120">
+            <template #default="{ row }">
+              <el-input-number
+                v-model="row.unitPrice"
+                :min="0"
+                :precision="2"
+                controls-position="right"
+                style="width: 100%"
+                @change="recalcLine(row)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="金额" width="100">
+            <template #default="{ row }">
+              {{ formatMoney(row.amount) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="" width="56" align="center">
+            <template #default="{ $index }">
+              <el-button
+                type="danger"
+                link
+                @click="laborLines.splice($index, 1)"
+              >
+                删
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="section-title" style="margin-top: 16px">
+          备件
+          <el-button type="primary" link @click="addPartLine">添加行</el-button>
+        </div>
+        <el-table :data="partLines" border size="small" class="line-table">
+          <el-table-column label="备件" min-width="200">
+            <template #default="{ row }">
+              <el-select
+                v-model="row.partId"
+                filterable
+                remote
+                clearable
+                placeholder="搜索备件"
+                :remote-method="searchParts"
+                :loading="partLoading"
+                style="width: 100%"
+                @change="(id: number) => onPartLineChange(row, id)"
+              >
+                <el-option
+                  v-for="p in partOptions"
+                  :key="p.id"
+                  :label="`${p.partCode} · ${p.partName}（库存 ${formatQty(p.qtyOnHand)}）`"
+                  :value="p.id!"
+                />
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="数量" width="110">
+            <template #default="{ row }">
+              <el-input-number
+                v-model="row.qty"
+                :min="0.01"
+                :precision="2"
+                controls-position="right"
+                style="width: 100%"
+                @change="recalcLine(row)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="单价" width="120">
+            <template #default="{ row }">
+              <el-input-number
+                v-model="row.unitPrice"
+                :min="0"
+                :precision="2"
+                controls-position="right"
+                style="width: 100%"
+                @change="recalcLine(row)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="金额" width="100">
+            <template #default="{ row }">
+              {{ formatMoney(row.amount) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="" width="56" align="center">
+            <template #default="{ $index }">
+              <el-button
+                type="danger"
+                link
+                @click="partLines.splice($index, 1)"
+              >
+                删
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="line-summary">
+          工时/项目 ¥{{ formatMoney(laborTotal) }}
+          · 备件 ¥{{ formatMoney(partsTotal) }}
+          · 合计
+          <strong>¥{{ formatMoney(laborTotal + partsTotal) }}</strong>
+          <span class="muted">（完工时扣减备件库存）</span>
+        </div>
       </el-form>
-    </ele-modal>
+      <template #footer>
+        <el-button @click="orderDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitOrder">保存</el-button>
+      </template>
+    </ele-drawer>
 
     <!-- 完工 -->
     <ele-modal
       v-model="completeVisible"
       title="完工登记"
-      :width="480"
+      :width="560"
       @ok="submitComplete"
     >
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        title="完工后将按备件行扣减库存；库存不足时无法完工。"
+        style="margin-bottom: 12px"
+      />
+      <div class="complete-summary">
+        <div>工时/项目：¥{{ formatMoney(completeTarget?.laborAmount) }}</div>
+        <div>备件：¥{{ formatMoney(completeTarget?.partsAmount) }}</div>
+        <div class="complete-total">
+          合计：¥{{ formatMoney(completeTarget?.costAmount) }}
+        </div>
+      </div>
       <el-form :model="completeForm" label-width="96px">
-        <el-form-item label="费用合计">
-          <el-input-number
-            v-model="completeForm.costAmount"
-            :min="0"
-            :precision="2"
-            controls-position="right"
-            style="width: 100%"
-          />
-        </el-form-item>
         <el-form-item label="费用备注">
           <el-input v-model="completeForm.costRemark" type="textarea" :rows="2" />
         </el-form-item>
@@ -465,17 +677,34 @@
     deleteMaintainPlan,
     generateWorkOrderFromPlan,
     getMaintenanceBoard,
+    getWorkOrder,
     pageMaintainPlans,
+    pageParts,
     pageWorkOrders,
-    startWorkOrder
+    pageWorkshops,
+    startWorkOrder,
+    updateWorkOrder
   } from '@/api/capacity/maintenance';
   import type {
+    FleetPart,
+    FleetWorkshop,
     MaintainPlan,
     MaintenanceBoard,
-    WorkOrder
+    WorkOrder,
+    WorkOrderLine
   } from '@/api/capacity/maintenance/model';
 
   defineOptions({ name: 'CapacityMaintenance' });
+
+  const FAULT_CATEGORIES = [
+    { value: 'engine', label: '发动机' },
+    { value: 'brake', label: '制动' },
+    { value: 'electrical', label: '电气' },
+    { value: 'body', label: '车身' },
+    { value: 'tire', label: '轮胎' },
+    { value: 'routine', label: '常规保养' },
+    { value: 'other', label: '其他' }
+  ];
 
   const router = useRouter();
   const userStore = useUserStore();
@@ -487,7 +716,8 @@
   const board = reactive<MaintenanceBoard>({
     duePlans: [],
     inProgressOrders: [],
-    weekSummary: { completedCount: 0, costAmount: 0 }
+    weekSummary: { completedCount: 0, costAmount: 0 },
+    lowStockCount: 0
   });
   const genLoadingId = ref<number | null>(null);
 
@@ -502,23 +732,35 @@
 
   const vehicleOptions = ref<Vehicle[]>([]);
   const vehicleLoading = ref(false);
+  const partOptions = ref<FleetPart[]>([]);
+  const partLoading = ref(false);
+  const workshopOptions = ref<FleetWorkshop[]>([]);
 
   const orderDialogVisible = ref(false);
   const orderFormRef = ref<FormInstance>();
   const orderForm = reactive<WorkOrder>({
     orderType: 'repair',
-    title: ''
+    title: '',
+    lines: []
   });
+  const laborLines = ref<WorkOrderLine[]>([]);
+  const partLines = ref<WorkOrderLine[]>([]);
   const orderRules: FormRules = {
     vehicleId: [{ required: true, message: '请选择车辆', trigger: 'change' }],
     orderType: [{ required: true, message: '请选择类型', trigger: 'change' }],
     title: [{ required: true, message: '请填写标题', trigger: 'blur' }]
   };
 
+  const laborTotal = computed(() =>
+    laborLines.value.reduce((s, r) => s + Number(r.amount || 0), 0)
+  );
+  const partsTotal = computed(() =>
+    partLines.value.reduce((s, r) => s + Number(r.amount || 0), 0)
+  );
+
   const completeVisible = ref(false);
   const completeTarget = ref<WorkOrder | null>(null);
   const completeForm = reactive<{
-    costAmount?: number;
     costRemark?: string;
     odometer?: number;
   }>({});
@@ -540,15 +782,23 @@
   const orderColumns = computed<Columns>(() => [
     { prop: 'workOrderNo', label: '工单号', minWidth: 140 },
     { prop: 'plateNumber', label: '车牌', width: 110 },
-    { prop: 'orderType', label: '类型', width: 80, slot: 'orderType' },
-    { prop: 'title', label: '标题', minWidth: 160 },
+    { prop: 'orderType', label: '类型', width: 70, slot: 'orderType' },
+    {
+      prop: 'faultCategory',
+      label: '分类',
+      width: 90,
+      slot: 'faultCategory'
+    },
+    { prop: 'title', label: '标题', minWidth: 140 },
     { prop: 'status', label: '状态', width: 90, slot: 'status' },
-    { prop: 'costAmount', label: '费用', width: 100 },
-    { prop: 'updatedAt', label: '更新时间', minWidth: 160 },
+    { prop: 'laborAmount', label: '工时费', width: 90 },
+    { prop: 'partsAmount', label: '备件费', width: 90 },
+    { prop: 'costAmount', label: '总费用', width: 90 },
+    { prop: 'updatedAt', label: '更新时间', minWidth: 150 },
     {
       columnKey: 'action',
       label: '操作',
-      width: 160,
+      width: 180,
       slot: 'action',
       hideInPrint: true,
       hideInExport: true
@@ -605,8 +855,18 @@
         completedCount: 0,
         costAmount: 0
       };
+      board.lowStockCount = data.lowStockCount || 0;
     } catch (e: any) {
       EleMessage.error(e.message || '加载看板失败，请重试');
+    }
+  };
+
+  const loadWorkshops = async () => {
+    try {
+      const res = await pageWorkshops({ enabled: 1, page: 1, limit: 100 });
+      workshopOptions.value = res?.list || [];
+    } catch {
+      workshopOptions.value = [];
     }
   };
 
@@ -639,27 +899,184 @@
     }
   };
 
+  const searchParts = async (q: string) => {
+    partLoading.value = true;
+    try {
+      const res = await pageParts({ keyword: q, status: 1, page: 1, limit: 30 });
+      partOptions.value = res?.list || [];
+    } finally {
+      partLoading.value = false;
+    }
+  };
+
+  const recalcLine = (row: WorkOrderLine) => {
+    const qty =
+      row.lineType === 'labor'
+        ? Number(row.laborHours || 0) || 1
+        : Number(row.qty || 1);
+    if (row.lineType === 'labor') {
+      row.qty = 1;
+    }
+    const price = Number(row.unitPrice || 0);
+    const base =
+      row.lineType === 'labor' ? Number(row.laborHours || 0) || 1 : qty;
+    row.amount = Math.round(base * price * 100) / 100;
+  };
+
+  const addLaborLine = () => {
+    laborLines.value.push({
+      lineType: 'labor',
+      title: '',
+      qty: 1,
+      laborHours: 1,
+      unitPrice: 0,
+      amount: 0
+    });
+  };
+
+  const addPartLine = () => {
+    partLines.value.push({
+      lineType: 'part',
+      title: '',
+      partId: undefined,
+      qty: 1,
+      unitPrice: 0,
+      amount: 0
+    });
+    searchParts('');
+  };
+
+  const onPartLineChange = (row: WorkOrderLine, partId?: number) => {
+    const p = partOptions.value.find((x) => x.id === partId);
+    if (!p) return;
+    row.title = p.partName || '';
+    row.unitPrice = p.refPrice != null ? Number(p.refPrice) : 0;
+    recalcLine(row);
+  };
+
+  const onWorkshopChange = (id: number | string) => {
+    if (typeof id === 'string') {
+      orderForm.workshopId = undefined;
+      orderForm.workshop = id;
+      return;
+    }
+    const w = workshopOptions.value.find((x) => x.id === id);
+    orderForm.workshop = w?.name || '';
+  };
+
+  const resetOrderForm = () => {
+    Object.assign(orderForm, {
+      id: undefined,
+      vehicleId: undefined,
+      orderType: 'repair',
+      title: '',
+      faultCategory: undefined,
+      odometer: undefined,
+      workshopId: undefined,
+      workshop: '',
+      description: ''
+    });
+    laborLines.value = [];
+    partLines.value = [];
+  };
+
   const openCreateOrder = () => {
-    orderForm.vehicleId = undefined;
-    orderForm.orderType = 'repair';
-    orderForm.title = '';
-    orderForm.odometer = undefined;
-    orderForm.workshop = '';
-    orderForm.description = '';
+    resetOrderForm();
+    addLaborLine();
     orderDialogVisible.value = true;
     searchVehicles('');
+    loadWorkshops();
+    searchParts('');
+  };
+
+  const openEditOrder = async (row: WorkOrder) => {
+    if (!row.id) return;
+    try {
+      EleMessage.loading({ message: '正在加载工单，请稍候…', plain: true });
+      const detail = await getWorkOrder(row.id);
+      Object.assign(orderForm, {
+        id: detail.id,
+        vehicleId: detail.vehicleId,
+        orderType: detail.orderType,
+        title: detail.title,
+        faultCategory: detail.faultCategory,
+        odometer: detail.odometer,
+        workshopId: detail.workshopId,
+        workshop: detail.workshop,
+        description: detail.description
+      });
+      if (detail.plateNumber) {
+        vehicleOptions.value = [
+          {
+            id: detail.vehicleId,
+            plateNumber: detail.plateNumber
+          } as Vehicle
+        ];
+      }
+      const lines = detail.lines || [];
+      laborLines.value = lines
+        .filter((l) => l.lineType !== 'part')
+        .map((l) => ({ ...l }));
+      partLines.value = lines
+        .filter((l) => l.lineType === 'part')
+        .map((l) => ({ ...l }));
+      orderDialogVisible.value = true;
+      loadWorkshops();
+      searchParts('');
+    } catch (e: any) {
+      EleMessage.error(e.message || '加载失败，请重试');
+    }
+  };
+
+  const buildLinesPayload = (): WorkOrderLine[] => {
+    const lines: WorkOrderLine[] = [];
+    laborLines.value.forEach((l, i) => {
+      if (!(l.title || '').trim()) return;
+      recalcLine(l);
+      lines.push({
+        lineType: l.lineType || 'labor',
+        title: l.title.trim(),
+        qty: 1,
+        unitPrice: l.unitPrice,
+        laborHours: l.laborHours,
+        amount: l.amount,
+        sortOrder: i
+      });
+    });
+    partLines.value.forEach((l, i) => {
+      if (!l.partId) return;
+      recalcLine(l);
+      lines.push({
+        lineType: 'part',
+        partId: l.partId,
+        title: l.title || '备件',
+        qty: l.qty || 1,
+        unitPrice: l.unitPrice,
+        amount: l.amount,
+        sortOrder: laborLines.value.length + i
+      });
+    });
+    return lines;
   };
 
   const submitOrder = async () => {
     await orderFormRef.value?.validate?.();
+    const lines = buildLinesPayload();
     try {
       EleMessage.loading({ message: '正在保存工单，请稍候…', plain: true });
-      const res = await createWorkOrder({ ...orderForm });
-      EleMessage.success(res.message || '工单已创建');
+      const payload = { ...orderForm, lines };
+      if (orderForm.id) {
+        const res = await updateWorkOrder(orderForm.id, payload);
+        EleMessage.success(res.message || '工单已保存');
+      } else {
+        const res = await createWorkOrder(payload);
+        EleMessage.success(res.message || '工单已创建');
+      }
       orderDialogVisible.value = false;
       activeTab.value = 'orders';
       await nextTick();
       reloadOrders();
+      loadBoard();
     } catch (e: any) {
       EleMessage.error(e.message || '保存失败，请重试');
     }
@@ -684,12 +1101,20 @@
     }
   };
 
-  const openComplete = (row: WorkOrder) => {
-    completeTarget.value = row;
-    completeForm.costAmount = row.costAmount ?? undefined;
-    completeForm.costRemark = row.costRemark || '';
-    completeForm.odometer = row.odometer ?? undefined;
-    completeVisible.value = true;
+  const openComplete = async (row: WorkOrder) => {
+    try {
+      const detail = row.lines
+        ? row
+        : row.id
+          ? await getWorkOrder(row.id)
+          : row;
+      completeTarget.value = detail;
+      completeForm.costRemark = detail.costRemark || '';
+      completeForm.odometer = detail.odometer ?? undefined;
+      completeVisible.value = true;
+    } catch (e: any) {
+      EleMessage.error(e.message || '加载工单失败，请重试');
+    }
   };
 
   const submitComplete = async () => {
@@ -711,7 +1136,7 @@
   const onCancel = async (row: WorkOrder) => {
     try {
       await ElMessageBox.confirm(
-        `确认取消工单 ${row.workOrderNo}？`,
+        `确认取消工单 ${row.workOrderNo}？取消不会扣减库存。`,
         '取消工单',
         { type: 'warning' }
       );
@@ -785,15 +1210,21 @@
   };
 
   const goHome = () => router.replace('/');
+  const goParts = () => router.push('/capacity/vehicle-asset/parts');
 
-  const formatMoney = (n?: number) =>
+  const formatMoney = (n?: number | null) =>
     Number(n || 0).toLocaleString('zh-CN', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2
     });
 
+  const formatQty = (n?: number | null) =>
+    Number(n || 0).toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+
   const orderTypeLabel = (t?: string) =>
     t === 'maintenance' ? '保养' : t === 'repair' ? '维修' : t || '—';
+  const faultCategoryLabel = (c?: string | null) =>
+    FAULT_CATEGORIES.find((x) => x.value === c)?.label || c || '—';
   const statusLabel = (s?: string) =>
     ({
       draft: '草稿',
@@ -851,6 +1282,10 @@
     color: var(--el-color-primary);
   }
 
+  .stat-value.danger {
+    color: var(--el-color-danger);
+  }
+
   .stat-sub {
     font-size: 13px;
     font-weight: 400;
@@ -880,5 +1315,35 @@
   .muted {
     font-size: 12px;
     color: var(--el-text-color-secondary);
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    margin: 8px 0 8px;
+  }
+
+  .line-table {
+    width: 100%;
+  }
+
+  .line-summary {
+    margin-top: 12px;
+    font-size: 13px;
+  }
+
+  .complete-summary {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--el-fill-color-light);
+    border-radius: 6px;
+    line-height: 1.8;
+  }
+
+  .complete-total {
+    font-weight: 600;
+    font-size: 15px;
   }
 </style>

@@ -1,3 +1,17 @@
+/** 工单明细行 */
+export interface WorkOrderLine {
+  id?: number;
+  workOrderId?: number;
+  lineType: 'labor' | 'part' | 'other' | string;
+  partId?: number | null;
+  title: string;
+  qty?: number;
+  unitPrice?: number | null;
+  laborHours?: number | null;
+  amount?: number | null;
+  sortOrder?: number;
+}
+
 /** 维保工单 */
 export interface WorkOrder {
   id?: number;
@@ -9,8 +23,12 @@ export interface WorkOrder {
   title?: string;
   description?: string;
   odometer?: number | null;
+  faultCategory?: string | null;
+  workshopId?: number | null;
   workshop?: string;
   expectFinishDate?: string | null;
+  laborAmount?: number | null;
+  partsAmount?: number | null;
   costAmount?: number | null;
   costRemark?: string;
   status?: string;
@@ -18,8 +36,78 @@ export interface WorkOrder {
   finishedAt?: string | null;
   capacityId?: number | null;
   remark?: string;
+  lines?: WorkOrderLine[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** 备件 */
+export interface FleetPart {
+  id?: number;
+  partCode?: string;
+  partName?: string;
+  category?: string;
+  unit?: string;
+  refPrice?: number | null;
+  safetyStock?: number;
+  qtyOnHand?: number;
+  status?: number;
+  lowStock?: boolean;
+  remark?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FleetPartParam {
+  page?: number;
+  limit?: number;
+  keyword?: string;
+  status?: number;
+  lowStockOnly?: boolean;
+}
+
+/** 库存流水 */
+export interface StockTxn {
+  id?: number;
+  partId?: number;
+  partCode?: string;
+  partName?: string;
+  txnType?: string;
+  qty?: number;
+  unitCost?: number | null;
+  amount?: number | null;
+  refType?: string | null;
+  refId?: number | null;
+  remark?: string;
+  createdAt?: string;
+}
+
+export interface StockTxnParam {
+  page?: number;
+  limit?: number;
+  partId?: number;
+  txnType?: string;
+  keyword?: string;
+}
+
+/** 维修厂 */
+export interface FleetWorkshop {
+  id?: number;
+  name?: string;
+  contact?: string;
+  phone?: string;
+  address?: string;
+  enabled?: number;
+  remark?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FleetWorkshopParam {
+  page?: number;
+  limit?: number;
+  keyword?: string;
+  enabled?: number;
 }
 
 export interface WorkOrderParam extends WorkOrder {
@@ -61,6 +149,7 @@ export interface MaintenanceBoard {
     completedCount: number;
     costAmount: number;
   };
+  lowStockCount?: number;
 }
 
 /** 续期台账 */

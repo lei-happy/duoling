@@ -15,7 +15,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
 from app.modules.client.models.capacity.maintenance.maintain_plan import FleetMaintainPlan
+from app.modules.client.models.capacity.maintenance.part import FleetPart
 from app.modules.client.models.capacity.maintenance.work_order import FleetWorkOrder
+from app.modules.client.models.capacity.maintenance.work_order_line import (
+    FleetWorkOrderLine,
+)
 from app.modules.client.models.capacity.self_capacity.capacity import Capacity
 from app.modules.client.models.capacity.self_capacity.vehicle import Vehicle
 from app.modules.client.schemas.capacity.maintenance import (
@@ -24,8 +28,13 @@ from app.modules.client.schemas.capacity.maintenance import (
     MaintainPlanUpdate,
     WorkOrderCompleteBody,
     WorkOrderCreate,
+    WorkOrderLineIn,
+    WorkOrderLineOut,
     WorkOrderOut,
     WorkOrderUpdate,
+)
+from app.modules.client.services.capacity.maintenance.fleet_parts_service import (
+    FleetPartsService,
 )
 from app.modules.client.services.capacity.self_capacity.capacity_service import (
     CapacityService,
@@ -37,7 +46,19 @@ from app.modules.client.services.capacity.self_capacity.vehicle_status_service i
 ORDER_TYPES = {"repair", "maintenance"}
 WO_STATUSES = {"draft", "in_progress", "completed", "cancelled"}
 CYCLE_TYPES = {"time", "mileage", "either"}
+LINE_TYPES = {"labor", "part", "other"}
+FAULT_CATEGORIES = {
+    "engine",
+    "brake",
+    "electrical",
+    "body",
+    "tire",
+    "routine",
+    "other",
+}
 MILEAGE_REMIND_BUFFER = 500
+_ZERO = Decimal("0")
+_CENT = Decimal("0.01")
 
 
 class FleetMaintenanceService:
@@ -45,7 +66,25 @@ class FleetMaintenanceService:
     # ---------- 序列化 ----------
 
     @staticmethod
-    def _wo_out(row: FleetWorkOrder) -> dict[str, Any]:
+    def _line_out(line: FleetWorkOrderLine) -> dict[str, Any]:
+        return WorkOrderLineOut(
+            id=line.id,
+            workOrderId=line.work_order_id,
+            lineType=line.line_type,
+            partId=line.part_id,
+            title=line.title,
+            qty=line.qty,
+            unitPrice=line.unit_price,
+            laborHours=line.labor_hours,
+            amount=line.amount,
+            sortOrder=line.sort_order,
+        ).model_dump(mode="json")
+
+    @staticmethod
+    def _wo_out(
+        row: FleetWorkOrder,
+        lines: Optional[list[FleetWorkOrderLine]] = None,
+    ) -> dict[str, Any]:
         return WorkOrderOut(
             id=row.id,
             workOrderNo=row.work_order_no,
@@ -56,8 +95,12 @@ class FleetMaintenanceService:
             title=row.title,
             description=row.description,
             odometer=row.odometer,
+            faultCategory=row.fault_category,
+            workshopId=row.workshop_id,
             workshop=row.workshop,
             expectFinishDate=row.expect_finish_date,
+            laborAmount=row.labor_amount,
+            partsAmount=row.parts_amount,
             costAmount=row.cost_amount,
             costRemark=row.cost_remark,
             status=row.status,
@@ -65,9 +108,107 @@ class FleetMaintenanceService:
             finishedAt=row.finished_at,
             capacityId=row.capacity_id,
             remark=row.remark,
+            lines=[FleetMaintenanceService._line_out(x) for x in lines]
+            if lines is not None
+            else None,
             createdAt=row.created_at,
             updatedAt=row.updated_at,
         ).model_dump(mode="json")
+
+    @staticmethod
+    async def _load_lines(
+        db: AsyncSession, wo_id: int
+    ) -> list[FleetWorkOrderLine]:
+        return list(
+            (
+                await db.execute(
+                    select(FleetWorkOrderLine)
+                    .where(
+                        FleetWorkOrderLine.work_order_id == wo_id,
+                        FleetWorkOrderLine.is_deleted == 0,
+                    )
+                    .order_by(
+                        FleetWorkOrderLine.sort_order.asc(),
+                        FleetWorkOrderLine.id.asc(),
+                    )
+                )
+            ).scalars().all()
+        )
+
+    @staticmethod
+    async def _wo_out_with_lines(db: AsyncSession, row: FleetWorkOrder) -> dict:
+        lines = await FleetMaintenanceService._load_lines(db, row.id)
+        return FleetMaintenanceService._wo_out(row, lines)
+
+    @staticmethod
+    def _calc_line_amount(line: WorkOrderLineIn) -> Decimal:
+        if line.amount is not None:
+            return Decimal(str(line.amount)).quantize(_CENT)
+        qty = Decimal(str(line.qty or 1))
+        price = Decimal(str(line.unitPrice or 0))
+        return (qty * price).quantize(_CENT)
+
+    @staticmethod
+    async def _replace_lines(
+        db: AsyncSession,
+        wo: FleetWorkOrder,
+        lines: Optional[list[WorkOrderLineIn]],
+    ) -> None:
+        existing = await FleetMaintenanceService._load_lines(db, wo.id)
+        for e in existing:
+            e.is_deleted = 1
+
+        labor_sum = _ZERO
+        parts_sum = _ZERO
+        if lines:
+            for idx, item in enumerate(lines):
+                if item.lineType not in LINE_TYPES:
+                    raise BizException("明细行类型不正确")
+                title = (item.title or "").strip()
+                if not title:
+                    raise BizException("请填写明细行名称")
+                qty = Decimal(str(item.qty or 1))
+                if qty <= 0:
+                    raise BizException("明细数量须大于 0")
+                part_id = item.partId
+                if item.lineType == "part":
+                    if not part_id:
+                        raise BizException("备件行请选择备件")
+                    part = (
+                        await db.execute(
+                            select(FleetPart).where(
+                                FleetPart.id == part_id,
+                                FleetPart.is_deleted == 0,
+                            )
+                        )
+                    ).scalar_one_or_none()
+                    if not part or part.status != 1:
+                        raise BizException(f"备件「{title}」不可用，请重新选择")
+                    title = part.part_name
+                    if item.unitPrice is None and part.ref_price is not None:
+                        item.unitPrice = part.ref_price
+                amount = FleetMaintenanceService._calc_line_amount(item)
+                db.add(
+                    FleetWorkOrderLine(
+                        work_order_id=wo.id,
+                        line_type=item.lineType,
+                        part_id=part_id if item.lineType == "part" else None,
+                        title=title,
+                        qty=qty,
+                        unit_price=item.unitPrice,
+                        labor_hours=item.laborHours,
+                        amount=amount,
+                        sort_order=item.sortOrder if item.sortOrder else idx,
+                    )
+                )
+                if item.lineType == "part":
+                    parts_sum += amount
+                else:
+                    labor_sum += amount
+
+        wo.labor_amount = labor_sum
+        wo.parts_amount = parts_sum
+        wo.cost_amount = labor_sum + parts_sum
 
     @staticmethod
     def _plan_out(row: FleetMaintainPlan, due_level: Optional[str] = None) -> dict:
@@ -238,11 +379,6 @@ class FleetMaintenanceService:
         }
 
     @staticmethod
-    async def get_work_order(db: AsyncSession, wo_id: int) -> dict:
-        row = await FleetMaintenanceService._get_wo(db, wo_id)
-        return FleetMaintenanceService._wo_out(row)
-
-    @staticmethod
     async def _get_wo(db: AsyncSession, wo_id: int) -> FleetWorkOrder:
         result = await db.execute(
             select(FleetWorkOrder).where(
@@ -265,9 +401,17 @@ class FleetMaintenanceService:
             raise BizException("请选择正确的工单类型")
         if not (body.title or "").strip():
             raise BizException("请填写工单标题")
+        if body.faultCategory and body.faultCategory not in FAULT_CATEGORIES:
+            raise BizException("请选择正确的作业分类")
         vehicle = await FleetMaintenanceService._get_vehicle(db, body.vehicleId)
         if body.planId:
             await FleetMaintenanceService._get_plan(db, body.planId)
+
+        workshop_name = body.workshop
+        if body.workshopId:
+            workshop_name = await FleetPartsService.get_workshop_name(
+                db, body.workshopId
+            ) or workshop_name
 
         row = FleetWorkOrder(
             work_order_no=await FleetMaintenanceService._gen_work_order_no(db),
@@ -278,7 +422,9 @@ class FleetMaintenanceService:
             title=body.title.strip(),
             description=body.description,
             odometer=body.odometer,
-            workshop=body.workshop,
+            fault_category=body.faultCategory,
+            workshop_id=body.workshopId,
+            workshop=workshop_name,
             expect_finish_date=body.expectFinishDate,
             cost_amount=body.costAmount,
             cost_remark=body.costRemark,
@@ -288,24 +434,30 @@ class FleetMaintenanceService:
         )
         db.add(row)
         await db.flush()
+        await FleetMaintenanceService._replace_lines(db, row, body.lines)
+        await db.flush()
         await db.refresh(row)
-        return FleetMaintenanceService._wo_out(row)
+        return await FleetMaintenanceService._wo_out_with_lines(db, row)
 
     @staticmethod
     async def update_work_order(
         db: AsyncSession, wo_id: int, body: WorkOrderUpdate
     ) -> dict:
         row = await FleetMaintenanceService._get_wo(db, wo_id)
-        if row.status != "draft":
-            raise BizException("仅草稿状态的工单可以编辑")
+        if row.status not in ("draft", "in_progress"):
+            raise BizException("仅草稿或进行中的工单可以编辑")
         data = body.model_dump(exclude_unset=True)
+        if "faultCategory" in data and data["faultCategory"]:
+            if data["faultCategory"] not in FAULT_CATEGORIES:
+                raise BizException("请选择正确的作业分类")
         mapping = {
             "title": "title",
             "description": "description",
             "odometer": "odometer",
+            "faultCategory": "fault_category",
+            "workshopId": "workshop_id",
             "workshop": "workshop",
             "expectFinishDate": "expect_finish_date",
-            "costAmount": "cost_amount",
             "costRemark": "cost_remark",
             "remark": "remark",
         }
@@ -317,9 +469,20 @@ class FleetMaintenanceService:
                     if not val:
                         raise BizException("请填写工单标题")
                 setattr(row, attr, val)
+        if "workshopId" in data:
+            name = await FleetPartsService.get_workshop_name(db, row.workshop_id)
+            if name:
+                row.workshop = name
+        if "lines" in data:
+            await FleetMaintenanceService._replace_lines(db, row, body.lines)
         await db.flush()
         await db.refresh(row)
-        return FleetMaintenanceService._wo_out(row)
+        return await FleetMaintenanceService._wo_out_with_lines(db, row)
+
+    @staticmethod
+    async def get_work_order(db: AsyncSession, wo_id: int) -> dict:
+        row = await FleetMaintenanceService._get_wo(db, wo_id)
+        return await FleetMaintenanceService._wo_out_with_lines(db, row)
 
     @staticmethod
     async def _count_in_progress(db: AsyncSession, vehicle_id: int) -> int:
@@ -403,14 +566,49 @@ class FleetMaintenanceService:
         if row.status != "in_progress":
             raise BizException("仅进行中的工单可以完工")
         if body:
-            if body.costAmount is not None:
-                row.cost_amount = body.costAmount
             if body.costRemark is not None:
                 row.cost_remark = body.costRemark
             if body.odometer is not None:
                 row.odometer = body.odometer
             if body.remark is not None:
                 row.remark = body.remark
+
+        lines = await FleetMaintenanceService._load_lines(db, row.id)
+        # 按备件汇总数量后出库
+        need: dict[int, Decimal] = {}
+        unit_costs: dict[int, Optional[Decimal]] = {}
+        for line in lines:
+            if line.line_type != "part" or not line.part_id:
+                continue
+            pid = int(line.part_id)
+            need[pid] = need.get(pid, _ZERO) + Decimal(str(line.qty or 0))
+            if pid not in unit_costs:
+                unit_costs[pid] = line.unit_price
+        for pid, qty in need.items():
+            await FleetPartsService.issue_for_work_order(
+                db,
+                part_id=pid,
+                qty=qty,
+                unit_cost=unit_costs.get(pid),
+                work_order_id=row.id,
+                operator_user_id=operator_user_id,
+            )
+
+        labor_sum = sum(
+            (Decimal(str(x.amount or 0)) for x in lines if x.line_type != "part"),
+            _ZERO,
+        )
+        parts_sum = sum(
+            (Decimal(str(x.amount or 0)) for x in lines if x.line_type == "part"),
+            _ZERO,
+        )
+        row.labor_amount = labor_sum
+        row.parts_amount = parts_sum
+        # 有明细时以行汇总为准；无明细时允许完工体传入费用
+        if lines:
+            row.cost_amount = labor_sum + parts_sum
+        elif body and body.costAmount is not None:
+            row.cost_amount = body.costAmount
 
         row.status = "completed"
         row.finished_at = datetime.now()
@@ -427,7 +625,7 @@ class FleetMaintenanceService:
             db, row, operator_user_id
         )
         await db.refresh(row)
-        return FleetMaintenanceService._wo_out(row)
+        return await FleetMaintenanceService._wo_out_with_lines(db, row)
 
     @staticmethod
     async def cancel_work_order(
@@ -678,6 +876,7 @@ class FleetMaintenanceService:
             (r.cost_amount or Decimal("0")) for r in completed_rows
         )
 
+        low_stock = await FleetPartsService.low_stock_count(db)
         return {
             "duePlans": due_plans,
             "inProgressOrders": [
@@ -687,4 +886,5 @@ class FleetMaintenanceService:
                 "completedCount": len(completed_rows),
                 "costAmount": float(cost_sum),
             },
+            "lowStockCount": low_stock,
         }

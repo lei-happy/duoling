@@ -9674,6 +9674,152 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_fleet_part",
+      "comment": "车辆备件主数据",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "category",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "分类"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "part_code",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备件编码"
+        },
+        {
+          "name": "part_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备件名称"
+        },
+        {
+          "name": "qty_on_hand",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "现存量"
+        },
+        {
+          "name": "ref_price",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "参考单价"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "safety_stock",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "安全库存"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "1启用 0停用"
+        },
+        {
+          "name": "unit",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "'个'",
+          "comment": "单位"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": "uk_fleet_part_code",
+          "columns": [
+            "part_code"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_fleet_part_status_name",
+          "columns": [
+            "status",
+            "part_name"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_fleet_renewal",
       "comment": "车辆保险/年检续期台账",
       "table_tier": "business",
@@ -9848,6 +9994,171 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_fleet_stock_txn",
+      "comment": "车辆备件库存流水",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "金额"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "part_code",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备件编码（冗余）"
+        },
+        {
+          "name": "part_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备件ID"
+        },
+        {
+          "name": "part_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备件名称（冗余）"
+        },
+        {
+          "name": "qty",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变动数量（正数）"
+        },
+        {
+          "name": "ref_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联单据ID"
+        },
+        {
+          "name": "ref_type",
+          "type": "VARCHAR(32)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联类型"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "txn_type",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "in/out/adjust"
+        },
+        {
+          "name": "unit_cost",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单价"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_fleet_stock_txn_part",
+          "columns": [
+            "part_id",
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_fleet_stock_txn_ref",
+          "columns": [
+            "ref_type",
+            "ref_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_fleet_work_order",
       "comment": "车辆维保工单表",
       "table_tier": "business",
@@ -9916,6 +10227,15 @@
           "comment": "预计完工日"
         },
         {
+          "name": "fault_category",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "故障/作业分类"
+        },
+        {
           "name": "finished_at",
           "type": "DATETIME",
           "nullable": true,
@@ -9943,6 +10263,15 @@
           "comment": "是否删除 0-否 1-是"
         },
         {
+          "name": "labor_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "工时/项目费用合计"
+        },
+        {
           "name": "odometer",
           "type": "INTEGER",
           "nullable": true,
@@ -9959,6 +10288,15 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "类型 repair/maintenance"
+        },
+        {
+          "name": "parts_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备件费用合计"
         },
         {
           "name": "plan_id",
@@ -10048,7 +10386,16 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "维修厂/地点"
+          "comment": "维修厂/地点（冗余）"
+        },
+        {
+          "name": "workshop_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "维修厂ID"
         }
       ],
       "primary_key": [
@@ -10076,6 +10423,256 @@
           "columns": [
             "vehicle_id",
             "status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_fleet_work_order_line",
+      "comment": "车辆维保工单明细行",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "行金额"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "labor_hours",
+          "type": "NUMERIC(8, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "工时（小时）"
+        },
+        {
+          "name": "line_type",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "labor/part/other"
+        },
+        {
+          "name": "part_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备件ID"
+        },
+        {
+          "name": "qty",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "数量"
+        },
+        {
+          "name": "sort_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "排序"
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "项目/备件名称"
+        },
+        {
+          "name": "unit_price",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单价"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "work_order_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "工单ID"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_fleet_wo_line_wo",
+          "columns": [
+            "work_order_id",
+            "sort_order"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_fleet_workshop",
+      "comment": "车辆维修厂主数据",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "address",
+          "type": "VARCHAR(200)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "地址"
+        },
+        {
+          "name": "contact",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "联系人"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "enabled",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否启用"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "名称"
+        },
+        {
+          "name": "phone",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "电话"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_fleet_workshop_enabled",
+          "columns": [
+            "enabled"
           ],
           "unique": false
         }

@@ -17,9 +17,19 @@ from sqlalchemy import select
 from app.common.exceptions import BizException
 from app.modules.client.models.capacity.self_capacity.capacity import Capacity
 from app.modules.client.models.capacity.self_capacity.vehicle import Vehicle
+from decimal import Decimal
+
+from app.modules.client.models.capacity.maintenance.part import FleetPart
+from app.modules.client.models.capacity.maintenance.stock_txn import FleetStockTxn
 from app.modules.client.schemas.capacity.maintenance import (
     MaintainPlanCreate,
+    PartCreate,
+    StockInboundBody,
     WorkOrderCreate,
+    WorkOrderLineIn,
+)
+from app.modules.client.services.capacity.maintenance.fleet_parts_service import (
+    FleetPartsService,
 )
 from app.modules.client.schemas.capacity.self_capacity.vehicle import VehicleCreate
 from app.modules.client.services.capacity.maintenance.fleet_maintenance_service import (
@@ -41,8 +51,18 @@ def _ensure_fleet_tables_sync() -> None:
     from app.modules.client.models.capacity.maintenance.maintain_plan import (
         FleetMaintainPlan,
     )
+    from app.modules.client.models.capacity.maintenance.part import FleetPart
+    from app.modules.client.models.capacity.maintenance.stock_txn import (
+        FleetStockTxn,
+    )
     from app.modules.client.models.capacity.maintenance.work_order import (
         FleetWorkOrder,
+    )
+    from app.modules.client.models.capacity.maintenance.work_order_line import (
+        FleetWorkOrderLine,
+    )
+    from app.modules.client.models.capacity.maintenance.workshop import (
+        FleetWorkshop,
     )
     from tests.client.conftest import TENANT_CODE
 
@@ -52,7 +72,14 @@ def _ensure_fleet_tables_sync() -> None:
     try:
         TenantBase.metadata.create_all(
             engine,
-            tables=[FleetWorkOrder.__table__, FleetMaintainPlan.__table__],
+            tables=[
+                FleetWorkOrder.__table__,
+                FleetWorkOrderLine.__table__,
+                FleetMaintainPlan.__table__,
+                FleetPart.__table__,
+                FleetStockTxn.__table__,
+                FleetWorkshop.__table__,
+            ],
         )
     finally:
         engine.dispose()
@@ -250,3 +277,207 @@ async def test_start_without_capacity(tenant_session):
         )
     ).scalar_one()
     assert vehicle.status == 2
+
+
+async def _make_part(session, *, code: str, qty: str = "10") -> dict:
+    part = await FleetPartsService.create_part(
+        session,
+        PartCreate(
+            partCode=code,
+            partName=f"备件-{code}",
+            unit="个",
+            refPrice=Decimal("100"),
+            safetyStock=2,
+        ),
+    )
+    await FleetPartsService.inbound(
+        session,
+        part["id"],
+        StockInboundBody(qty=Decimal(qty), unitCost=Decimal("100")),
+        operator_user_id=1,
+    )
+    return part
+
+
+async def test_work_order_lines_complete_deducts_stock(tenant_session):
+    """TC-CLI-FLEETMAINT-021：含明细行创建，完工扣库存并汇总费用"""
+    vehicle = await _make_vehicle(tenant_session)
+    await _bind_capacity(tenant_session, vehicle, op_status=1)
+    part = await _make_part(
+        tenant_session, code=f"P{random.randint(10000, 99999)}", qty="5"
+    )
+
+    created = await FleetMaintenanceService.create_work_order(
+        tenant_session,
+        WorkOrderCreate(
+            vehicleId=vehicle.id,
+            orderType="repair",
+            title="刹车片更换",
+            faultCategory="brake",
+            lines=[
+                WorkOrderLineIn(
+                    lineType="labor",
+                    title="工时",
+                    qty=Decimal("1"),
+                    unitPrice=Decimal("200"),
+                    laborHours=Decimal("2"),
+                    amount=Decimal("400"),
+                ),
+                WorkOrderLineIn(
+                    lineType="part",
+                    partId=part["id"],
+                    title=part["partName"],
+                    qty=Decimal("2"),
+                    unitPrice=Decimal("100"),
+                ),
+            ],
+        ),
+        operator_user_id=1,
+    )
+    assert created["laborAmount"] == "400.00" or Decimal(
+        str(created["laborAmount"])
+    ) == Decimal("400")
+    assert Decimal(str(created["partsAmount"])) == Decimal("200")
+    assert Decimal(str(created["costAmount"])) == Decimal("600")
+    assert created.get("lines") and len(created["lines"]) == 2
+
+    await FleetMaintenanceService.start_work_order(
+        tenant_session, created["id"], operator_user_id=1
+    )
+    completed = await FleetMaintenanceService.complete_work_order(
+        tenant_session, created["id"], None, operator_user_id=1
+    )
+    assert completed["status"] == "completed"
+    assert Decimal(str(completed["costAmount"])) == Decimal("600")
+
+    part_row = (
+        await tenant_session.execute(
+            select(FleetPart).where(FleetPart.id == part["id"])
+        )
+    ).scalar_one()
+    assert Decimal(str(part_row.qty_on_hand)) == Decimal("3")
+
+    txn_cnt = (
+        await tenant_session.execute(
+            select(FleetStockTxn)
+            .where(
+                FleetStockTxn.part_id == part["id"],
+                FleetStockTxn.txn_type == "out",
+                FleetStockTxn.ref_type == "work_order",
+                FleetStockTxn.ref_id == created["id"],
+                FleetStockTxn.is_deleted == 0,
+            )
+        )
+    ).scalars().all()
+    assert len(txn_cnt) == 1
+
+
+async def test_complete_rejected_when_stock_insufficient(tenant_session):
+    """TC-CLI-FLEETMAINT-022：库存不足拒绝完工"""
+    vehicle = await _make_vehicle(tenant_session)
+    await _bind_capacity(tenant_session, vehicle, op_status=1)
+    part = await _make_part(
+        tenant_session, code=f"P{random.randint(10000, 99999)}", qty="1"
+    )
+
+    created = await FleetMaintenanceService.create_work_order(
+        tenant_session,
+        WorkOrderCreate(
+            vehicleId=vehicle.id,
+            orderType="repair",
+            title="库存不足场景",
+            lines=[
+                WorkOrderLineIn(
+                    lineType="part",
+                    partId=part["id"],
+                    title=part["partName"],
+                    qty=Decimal("3"),
+                    unitPrice=Decimal("100"),
+                ),
+            ],
+        ),
+        operator_user_id=1,
+    )
+    await FleetMaintenanceService.start_work_order(
+        tenant_session, created["id"], operator_user_id=1
+    )
+    with pytest.raises(BizException) as ei:
+        await FleetMaintenanceService.complete_work_order(
+            tenant_session, created["id"], None, operator_user_id=1
+        )
+    assert "库存不足" in str(ei.value)
+
+
+async def test_inbound_increases_stock(tenant_session):
+    """TC-CLI-FLEETMAINT-023：入库增加库存"""
+    part = await FleetPartsService.create_part(
+        tenant_session,
+        PartCreate(
+            partCode=f"IN{random.randint(10000, 99999)}",
+            partName="机油滤芯",
+            unit="个",
+            refPrice=Decimal("35"),
+            safetyStock=5,
+        ),
+    )
+    assert Decimal(str(part["qtyOnHand"])) == Decimal("0")
+    updated = await FleetPartsService.inbound(
+        tenant_session,
+        part["id"],
+        StockInboundBody(qty=Decimal("12"), unitCost=Decimal("30")),
+        operator_user_id=1,
+    )
+    assert Decimal(str(updated["qtyOnHand"])) == Decimal("12")
+
+
+async def test_cancel_in_progress_does_not_deduct_stock(tenant_session):
+    """TC-CLI-FLEETMAINT-024：取消进行中工单不扣库存"""
+    vehicle = await _make_vehicle(tenant_session)
+    await _bind_capacity(tenant_session, vehicle, op_status=1)
+    part = await _make_part(
+        tenant_session, code=f"P{random.randint(10000, 99999)}", qty="8"
+    )
+
+    created = await FleetMaintenanceService.create_work_order(
+        tenant_session,
+        WorkOrderCreate(
+            vehicleId=vehicle.id,
+            orderType="repair",
+            title="取消不扣库",
+            lines=[
+                WorkOrderLineIn(
+                    lineType="part",
+                    partId=part["id"],
+                    title=part["partName"],
+                    qty=Decimal("2"),
+                    unitPrice=Decimal("100"),
+                ),
+            ],
+        ),
+        operator_user_id=1,
+    )
+    await FleetMaintenanceService.start_work_order(
+        tenant_session, created["id"], operator_user_id=1
+    )
+    await FleetMaintenanceService.cancel_work_order(
+        tenant_session, created["id"], operator_user_id=1
+    )
+
+    part_row = (
+        await tenant_session.execute(
+            select(FleetPart).where(FleetPart.id == part["id"])
+        )
+    ).scalar_one()
+    assert Decimal(str(part_row.qty_on_hand)) == Decimal("8")
+
+    out_txns = (
+        await tenant_session.execute(
+            select(FleetStockTxn).where(
+                FleetStockTxn.part_id == part["id"],
+                FleetStockTxn.txn_type == "out",
+                FleetStockTxn.ref_id == created["id"],
+                FleetStockTxn.is_deleted == 0,
+            )
+        )
+    ).scalars().all()
+    assert len(out_txns) == 0

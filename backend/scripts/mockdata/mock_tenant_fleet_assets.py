@@ -13,9 +13,10 @@
 
 写入表：
 - biz_vehicle_ext（补齐资产卡片字段）
-- biz_fleet_work_order
+- biz_fleet_work_order / biz_fleet_work_order_line
 - biz_fleet_maintain_plan
 - biz_fleet_renewal
+- biz_fleet_part / biz_fleet_stock_txn / biz_fleet_workshop
 """
 
 from __future__ import annotations
@@ -37,11 +38,23 @@ from app.core.config import get_settings  # noqa: E402
 from app.modules.client.models.capacity.maintenance.maintain_plan import (  # noqa: E402
     FleetMaintainPlan,
 )
+from app.modules.client.models.capacity.maintenance.part import (  # noqa: E402
+    FleetPart,
+)
 from app.modules.client.models.capacity.maintenance.renewal import (  # noqa: E402
     FleetRenewal,
 )
+from app.modules.client.models.capacity.maintenance.stock_txn import (  # noqa: E402
+    FleetStockTxn,
+)
 from app.modules.client.models.capacity.maintenance.work_order import (  # noqa: E402
     FleetWorkOrder,
+)
+from app.modules.client.models.capacity.maintenance.work_order_line import (  # noqa: E402
+    FleetWorkOrderLine,
+)
+from app.modules.client.models.capacity.maintenance.workshop import (  # noqa: E402
+    FleetWorkshop,
 )
 from app.modules.client.models.capacity.self_capacity.vehicle import Vehicle  # noqa: E402
 from app.modules.client.models.capacity.self_capacity.vehicle_ext import (  # noqa: E402
@@ -71,6 +84,23 @@ PLAN_NAMES = (
     "轮胎轮换计划",
 )
 WORKSHOPS = ("华通汽修", "顺达维修厂", "车友之家", "中联养车", "自有维修班组")
+FAULT_CATEGORIES = (
+    "engine",
+    "brake",
+    "electrical",
+    "body",
+    "tire",
+    "routine",
+    "other",
+)
+PART_SEED = (
+    ("FLT-OIL", "机油滤芯", "滤清器", "个", Decimal("35"), 10),
+    ("FLT-AIR", "空气滤芯", "滤清器", "个", Decimal("48"), 8),
+    ("BRK-PAD", "刹车片", "制动", "套", Decimal("280"), 4),
+    ("TIR-275", "轮胎 275/70R22.5", "轮胎", "条", Decimal("1200"), 2),
+    ("OIL-15W40", "机油 15W-40", "油液", "桶", Decimal("220"), 6),
+    ("BAT-12V", "蓄电池 12V", "电气", "个", Decimal("650"), 2),
+)
 
 
 def _load_vehicles(session: Session, limit: int) -> list[tuple[Vehicle, VehicleExt]]:
@@ -143,6 +173,89 @@ def _fill_asset_cards(
     return n
 
 
+def _ensure_workshops(
+    session: Session, rng: random.Random, *, dry_run: bool
+) -> list[FleetWorkshop]:
+    existing = (
+        session.execute(
+            select(FleetWorkshop).where(FleetWorkshop.is_deleted == 0)
+        )
+        .scalars()
+        .all()
+    )
+    if existing:
+        return list(existing)
+    if dry_run:
+        print(f"[dry-run] workshops x{len(WORKSHOPS)}")
+        return []
+    rows: list[FleetWorkshop] = []
+    for name in WORKSHOPS:
+        row = FleetWorkshop(
+            name=name,
+            contact=rng.choice(["张工", "李主管", "王师傅", None]),
+            phone=f"138{rng.randint(10000000, 99999999)}",
+            address="本地汽修园区",
+            enabled=1,
+            remark="[mockdata]",
+        )
+        session.add(row)
+        rows.append(row)
+    session.flush()
+    return rows
+
+
+def _ensure_parts(
+    session: Session, rng: random.Random, *, dry_run: bool
+) -> list[FleetPart]:
+    existing = (
+        session.execute(select(FleetPart).where(FleetPart.is_deleted == 0))
+        .scalars()
+        .all()
+    )
+    if existing:
+        return list(existing)
+    if dry_run:
+        print(f"[dry-run] parts x{len(PART_SEED)}")
+        return []
+    rows: list[FleetPart] = []
+    for code, name, cat, unit, price, safety in PART_SEED:
+        qty = Decimal(str(rng.randint(0, 20)))
+        # 约 1/3 做成低库存演示
+        if rng.random() < 0.35:
+            qty = Decimal(str(rng.randint(0, max(0, safety - 1))))
+        row = FleetPart(
+            part_code=code,
+            part_name=name,
+            category=cat,
+            unit=unit,
+            ref_price=price,
+            safety_stock=safety,
+            qty_on_hand=qty,
+            status=1,
+            remark="[mockdata]",
+        )
+        session.add(row)
+        session.flush()
+        rows.append(row)
+        if qty > 0:
+            session.add(
+                FleetStockTxn(
+                    part_id=row.id,
+                    part_code=code,
+                    part_name=name,
+                    txn_type="in",
+                    qty=qty,
+                    unit_cost=price,
+                    amount=(qty * price).quantize(Decimal("0.01")),
+                    ref_type="inbound",
+                    remark="[mockdata] 初始入库",
+                    created_by=1,
+                )
+            )
+    session.flush()
+    return rows
+
+
 def _gen_work_orders(
     session: Session,
     pairs: list[tuple[Vehicle, VehicleExt]],
@@ -150,6 +263,8 @@ def _gen_work_orders(
     rng: random.Random,
     *,
     dry_run: bool,
+    parts: list[FleetPart] | None = None,
+    workshops: list[FleetWorkshop] | None = None,
 ) -> int:
     if not pairs:
         return 0
@@ -176,10 +291,24 @@ def _gen_work_orders(
             "completed",
             "cancelled",
         ) else None
+
+        workshop_row = rng.choice(workshops) if workshops else None
+        labor_amt = Decimal(str(round(rng.uniform(100, 800), 2)))
+        parts_amt = Decimal("0")
+        line_specs: list[tuple[str, ...]] = [
+            ("labor", "维修工时", labor_amt, Decimal("1"), Decimal(str(round(rng.uniform(80, 200), 2)))),
+        ]
+        if parts:
+            p = rng.choice(parts)
+            pq = Decimal(str(rng.randint(1, 3)))
+            up = Decimal(str(p.ref_price or 100))
+            parts_amt = (pq * up).quantize(Decimal("0.01"))
+            line_specs.append(("part", p.part_name, parts_amt, pq, up, p.id))
+
         cost = (
-            Decimal(str(round(rng.uniform(300, 8000), 2)))
-            if status == "completed"
-            else (Decimal(str(round(rng.uniform(0, 2000), 2))) if rng.random() < 0.3 else None)
+            (labor_amt + parts_amt)
+            if status == "completed" or rng.random() < 0.5
+            else None
         )
         wo_no = _next_wo_no(session, rng, i)
         if dry_run:
@@ -198,8 +327,12 @@ def _gen_work_orders(
             title=title,
             description=f"[mockdata] {title}",
             odometer=rng.randint(20000, 280000),
-            workshop=rng.choice(WORKSHOPS),
+            fault_category=rng.choice(FAULT_CATEGORIES),
+            workshop_id=workshop_row.id if workshop_row else None,
+            workshop=workshop_row.name if workshop_row else rng.choice(WORKSHOPS),
             expect_finish_date=(started + timedelta(days=3)).date(),
+            labor_amount=labor_amt if cost is not None else None,
+            parts_amount=parts_amt if cost is not None else None,
             cost_amount=cost,
             cost_remark="配件+工时" if cost else None,
             status=status,
@@ -209,6 +342,47 @@ def _gen_work_orders(
             created_by=1,
         )
         session.add(row)
+        session.flush()
+        for idx, spec in enumerate(line_specs):
+            line_type = spec[0]
+            title_l = spec[1]
+            amount = spec[2]
+            qty = spec[3]
+            unit_price = spec[4]
+            part_id = spec[5] if line_type == "part" else None
+            session.add(
+                FleetWorkOrderLine(
+                    work_order_id=row.id,
+                    line_type=line_type,
+                    part_id=part_id,
+                    title=title_l,
+                    qty=qty,
+                    unit_price=unit_price,
+                    labor_hours=Decimal("1") if line_type == "labor" else None,
+                    amount=amount,
+                    sort_order=idx,
+                )
+            )
+            # 已完工工单补写出库流水（不二次扣减当前库存，仅演示流水）
+            if status == "completed" and line_type == "part" and part_id:
+                session.add(
+                    FleetStockTxn(
+                        part_id=part_id,
+                        part_code=next(
+                            (x.part_code for x in (parts or []) if x.id == part_id),
+                            "",
+                        ),
+                        part_name=title_l,
+                        txn_type="out",
+                        qty=qty,
+                        unit_cost=unit_price,
+                        amount=amount,
+                        ref_type="work_order",
+                        ref_id=row.id,
+                        remark=f"[mockdata] 工单出库 {wo_no}",
+                        created_by=1,
+                    )
+                )
         created += 1
     return created
 
@@ -364,10 +538,22 @@ def generate(
             "  python scripts/mockdata/mock_tenant_vehicles.py --tenant-code <编码> --count 20"
         )
 
+    workshops = _ensure_workshops(session, rng, dry_run=dry_run)
+    parts = _ensure_parts(session, rng, dry_run=dry_run)
     stats = {
         "vehicles_used": len(pairs),
         "asset_cards": _fill_asset_cards(session, pairs, rng, dry_run=dry_run),
-        "work_orders": _gen_work_orders(session, pairs, orders, rng, dry_run=dry_run),
+        "workshops": len(workshops) if workshops else len(WORKSHOPS),
+        "parts": len(parts) if parts else len(PART_SEED),
+        "work_orders": _gen_work_orders(
+            session,
+            pairs,
+            orders,
+            rng,
+            dry_run=dry_run,
+            parts=parts,
+            workshops=workshops,
+        ),
         "plans": _gen_plans(session, pairs, plans, rng, dry_run=dry_run),
         "renewals": _gen_renewals(session, pairs, renewals, rng, dry_run=dry_run),
     }
@@ -409,6 +595,7 @@ def main() -> None:
     print(
         f"[OK] 租户 {args.tenant_code}：{action} 车辆资产 Mock\n"
         f"  车辆池={stats['vehicles_used']}  资产卡片补齐={stats['asset_cards']}\n"
+        f"  维修厂={stats['workshops']}  备件={stats['parts']}\n"
         f"  工单={stats['work_orders']}  保养计划={stats['plans']}  续期={stats['renewals']}"
     )
 

@@ -4,11 +4,17 @@ import type {
   AssetCard,
   CostDetail,
   CostSummary,
+  FleetPart,
+  FleetPartParam,
   FleetRenewal,
   FleetRenewalParam,
+  FleetWorkshop,
+  FleetWorkshopParam,
   MaintainPlan,
   MaintainPlanParam,
   MaintenanceBoard,
+  StockTxn,
+  StockTxnParam,
   WorkOrder,
   WorkOrderParam
 } from './model';
@@ -27,6 +33,16 @@ export async function pageWorkOrders(params: WorkOrderParam) {
   const res = await request.get<ApiResult<PageResult<WorkOrder>>>(
     `${BASE}/work-orders`,
     { params }
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function getWorkOrder(id: number) {
+  const res = await request.get<ApiResult<WorkOrder>>(
+    `${BASE}/work-orders/${id}`
   );
   if (res.data.code === 0) {
     return res.data.data;
@@ -230,6 +246,108 @@ export async function getCostDetails(params: {
   >(`${BASE}/cost/details`, { params });
   if (res.data.code === 0) {
     return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function pageParts(params: FleetPartParam) {
+  const res = await request.get<ApiResult<PageResult<FleetPart>>>(
+    `${BASE}/parts`,
+    { params }
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function createPart(data: FleetPart) {
+  const res = await request.post<ApiResult<FleetPart>>(`${BASE}/parts`, data);
+  if (res.data.code === 0) {
+    return res.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function updatePart(id: number, data: FleetPart) {
+  const res = await request.put<ApiResult<FleetPart>>(
+    `${BASE}/parts/${id}`,
+    data
+  );
+  if (res.data.code === 0) {
+    return res.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function inboundPart(
+  id: number,
+  data: { qty: number; unitCost?: number; remark?: string }
+) {
+  const res = await request.post<ApiResult<FleetPart>>(
+    `${BASE}/parts/${id}/inbound`,
+    data
+  );
+  if (res.data.code === 0) {
+    return res.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function adjustPart(
+  id: number,
+  data: { qtyDelta: number; remark?: string }
+) {
+  const res = await request.post<ApiResult<FleetPart>>(
+    `${BASE}/parts/${id}/adjust`,
+    data
+  );
+  if (res.data.code === 0) {
+    return res.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function pageStockTxns(params: StockTxnParam) {
+  const res = await request.get<ApiResult<PageResult<StockTxn>>>(
+    `${BASE}/stock-txns`,
+    { params }
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function pageWorkshops(params?: FleetWorkshopParam) {
+  const res = await request.get<ApiResult<PageResult<FleetWorkshop>>>(
+    `${BASE}/workshops`,
+    { params }
+  );
+  if (res.data.code === 0) {
+    return res.data.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function createWorkshop(data: FleetWorkshop) {
+  const res = await request.post<ApiResult<FleetWorkshop>>(
+    `${BASE}/workshops`,
+    data
+  );
+  if (res.data.code === 0) {
+    return res.data;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+export async function updateWorkshop(id: number, data: FleetWorkshop) {
+  const res = await request.put<ApiResult<FleetWorkshop>>(
+    `${BASE}/workshops/${id}`,
+    data
+  );
+  if (res.data.code === 0) {
+    return res.data;
   }
   return Promise.reject(new Error(res.data.message));
 }

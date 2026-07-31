@@ -64,11 +64,23 @@ class FleetWorkOrder(TenantModelBase):
     odometer: Mapped[Optional[int]] = mapped_column(
         Integer, nullable=True, comment="进厂里程(km)"
     )
+    fault_category: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, comment="故障/作业分类"
+    )
+    workshop_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True, comment="维修厂ID"
+    )
     workshop: Mapped[Optional[str]] = mapped_column(
-        String(200), nullable=True, comment="维修厂/地点"
+        String(200), nullable=True, comment="维修厂/地点（冗余）"
     )
     expect_finish_date: Mapped[Optional[date]] = mapped_column(
         Date, nullable=True, comment="预计完工日"
+    )
+    labor_amount: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(12, 2), nullable=True, comment="工时/项目费用合计"
+    )
+    parts_amount: Mapped[Optional[Decimal]] = mapped_column(
+        Numeric(12, 2), nullable=True, comment="备件费用合计"
     )
     cost_amount: Mapped[Optional[Decimal]] = mapped_column(
         Numeric(12, 2), nullable=True, comment="费用合计"

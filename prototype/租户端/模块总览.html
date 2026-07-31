@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>租户端 · 模块总览（高保真 · 单屏）</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500;9..40,600;9..40,700&display=swap");
+
+  :root {
+    --bg: #eef1f6;
+    --panel: #ffffff;
+    --ink: #1d2129;
+    --ink-2: #4e5969;
+    --muted: #86909c;
+    --line: rgba(15, 23, 42, 0.08);
+    --accent: #3f7cff;
+    --accent-soft: color-mix(in srgb, var(--accent) 12%, #fff);
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.06);
+    --radius: 12px;
+    --sidebar-w: 176px;
+    --bar-h: 40px;
+    --font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+    --font-display: "DM Sans", var(--font);
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; }
+
+  /* 顶栏 */
+  .proto-bar {
+    height: var(--bar-h);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    background: #0f172a;
+    color: #cbd5e1;
+    font-size: 12px;
+  }
+  .proto-bar strong {
+    font-family: var(--font-display);
+    color: #fff;
+    font-weight: 700;
+  }
+  .proto-bar .tag {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: rgba(63, 124, 255, 0.3);
+    color: #bfdbfe;
+    font-weight: 600;
+  }
+  .proto-bar .muted { color: #64748b; flex: 1; }
+  .proto-bar .toggle {
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: #e2e8f0;
+    border-radius: 7px;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+  .proto-bar .toggle[aria-pressed="true"] {
+    background: rgba(63, 124, 255, 0.35);
+  }
+
+  .layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* 侧栏 */
+  .sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    background: #0b1220;
+    color: #94a3b8;
+    padding: 12px 8px;
+    overflow-y: auto;
+  }
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 8px 12px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .sidebar-logo {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, #3f7cff, #7048e8);
+    display: grid; place-items: center;
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .sidebar-brand .name { color: #fff; font-size: 12.5px; font-weight: 600; }
+  .sidebar-brand .sub { font-size: 10px; color: #64748b; }
+  .sidebar .hint {
+    margin: 0 8px 6px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #475569;
+  }
+  .nav-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+  .nav-list button {
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    color: #94a3b8;
+    border-radius: 8px;
+    padding: 7px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+  }
+  .nav-list button:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+  .nav-list button.active {
+    background: color-mix(in srgb, var(--accent) 24%, transparent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .nav-ico {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,0.06);
+  }
+  .nav-list button.active .nav-ico {
+    background: color-mix(in srgb, var(--accent) 55%, #0b1220);
+  }
+  .nav-ico svg { width: 12px; height: 12px; }
+
+  /* 主画布：严格单屏 */
+  .main {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    padding: 12px 14px;
+    overflow: hidden;
+    background:
+      radial-gradient(700px 280px at 8% -20%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
+      var(--bg);
+  }
+
+  /* 总览板：填满主区 */
+  .board {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 10px;
+    min-height: 0;
+  }
+  .board.has-workflow {
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+  }
+
+  /* —— 顶区 Hero —— */
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 220px;
+    gap: 14px;
+    align-items: stretch;
+    padding: 14px 16px;
+    border-radius: var(--radius);
+    background: linear-gradient(
+      118deg,
+      color-mix(in srgb, var(--accent) 16%, #fff) 0%,
+      color-mix(in srgb, var(--accent) 6%, #fff) 45%,
+      #fff 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--line));
+    box-shadow: var(--shadow-sm);
+    min-height: 0;
+  }
+  .hero-main { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .hero-top {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, #fff);
+    padding: 1px 8px;
+    border-radius: 999px;
+  }
+  .eyebrow svg { width: 12px; height: 12px; }
+  .roles { display: flex; flex-wrap: wrap; gap: 5px; }
+  .role-chip {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--accent) 70%, #0f172a);
+    background: rgba(255,255,255,0.7);
+    border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  .hero h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+  }
+  .positioning {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+  .desc {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .boundary {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: auto;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid var(--line);
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--ink-2);
+  }
+  .boundary svg {
+    width: 14px; height: 14px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--accent);
+  }
+  .boundary b { color: var(--ink); font-weight: 600; }
+
+  .art {
+    border-radius: 10px;
+    border: 1.5px dashed color-mix(in srgb, var(--accent) 38%, #cbd5e1);
+    background:
+      linear-gradient(160deg, color-mix(in srgb, var(--accent) 8%, #fff), #fff 72%),
+      repeating-linear-gradient(-45deg, transparent, transparent 7px, color-mix(in srgb, var(--accent) 4%, transparent) 7px, color-mix(in srgb, var(--accent) 4%, transparent) 14px);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 0;
+  }
+  .art-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .art-title {
+    margin: 8px 0 4px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+  .art-brief {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* —— 中条：上下游 + 常用操作 —— */
+  .strip {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    min-height: 0;
+  }
+  .chain {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .chain-label {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-right: 2px;
+  }
+  .chain-node {
+    min-width: 0;
+    flex: 1;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #f5f7fa;
+    border: 1px solid var(--line);
+  }
+  .chain-node.current {
+    background: var(--accent-soft);
+    border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+  .chain-node .k {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 1px;
+  }
+  .chain-node.current .k { color: var(--accent); }
+  .chain-node .v {
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chain-arrow {
+    flex-shrink: 0;
+    color: #c0c4cc;
+    display: grid;
+    place-items: center;
+  }
+  .chain-arrow svg { width: 14px; height: 14px; }
+
+  .actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 8px;
+    padding: 6px 11px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(15,23,42,0.12);
+    background: #fff;
+    color: var(--ink);
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn.primary {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, #fff), var(--accent));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+  .btn svg { width: 12px; height: 12px; }
+
+  /* —— 工作流（仅运营） —— */
+  .workflow-panel {
+    padding: 8px 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+  }
+  .workflow-panel .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .workflow-panel .head h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .workflow-panel .head h3 .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .workflow-panel .head span { font-size: 11px; color: var(--muted); }
+  .workflow {
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+  }
+  .step {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    padding: 6px 4px;
+    border-radius: 8px;
+    transition: background 0.15s var(--ease);
+  }
+  .step:hover { background: var(--accent-soft); }
+  .step-badge {
+    position: relative;
+    width: 32px; height: 32px;
+    margin: 0 auto 4px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .step-badge svg { width: 15px; height: 15px; }
+  .step-num {
+    position: absolute;
+    top: -2px; right: -2px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .step h4 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .step p { display: none; }
+  .wf-arrow {
+    align-self: center;
+    color: #d0d3d9;
+    flex: 0 0 auto;
+    padding-bottom: 14px;
+  }
+  .wf-arrow svg { width: 12px; height: 12px; }
+
+  /* —— 底区：导航 + 指引 —— */
+  .body-row {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px;
+    gap: 10px;
+  }
+  .panel {
+    min-height: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
+  .panel-head h3 {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .panel-head h3 .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .panel-head span { font-size: 11px; color: var(--muted); }
+
+  .cards {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    gap: 8px;
+    align-content: stretch;
+  }
+  .card {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: #fff;
+    min-height: 0;
+    transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+  }
+  .card:hover {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+    box-shadow: var(--shadow-md);
+  }
+  .card-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    color: var(--accent);
+    background: var(--accent-soft);
+    flex-shrink: 0;
+  }
+  .card-icon svg { width: 15px; height: 15px; }
+  .card-body { min-width: 0; }
+  .card-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card p {
+    margin: 3px 0 0;
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .guide {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .guide-block {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 10px;
+    border-radius: 9px;
+    background: #f5f7fa;
+    border: 1px solid var(--line);
+  }
+  .guide-block.tips {
+    background: #f0fdfa;
+    border-color: rgba(15, 118, 110, 0.12);
+  }
+  .guide-block h4 {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-2);
+    flex-shrink: 0;
+  }
+  .guide-block.tips h4 { color: #0f766e; }
+  .guide-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 5px;
+    overflow: hidden;
+  }
+  .guide-list li {
+    position: relative;
+    padding-left: 14px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--ink-2);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .guide-list li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 6px;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .guide-block.tips .guide-list li::before { background: #0f766e; }
+
+  /* 旁注浮层 */
+  .anno-layer {
+    display: none;
+    position: fixed;
+    inset: var(--bar-h) 0 0 var(--sidebar-w);
+    z-index: 30;
+    background: rgba(15, 23, 42, 0.35);
+    padding: 16px;
+    overflow: auto;
+  }
+  body.show-anno .anno-layer { display: block; }
+  .anno-card {
+    max-width: 560px;
+    margin: 0 auto;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: #92400e;
+    font-size: 12.5px;
+    line-height: 1.55;
+    box-shadow: var(--shadow-md);
+  }
+  .anno-card strong { display: block; margin-bottom: 6px; }
+  .anno-card ul { margin: 0; padding-left: 18px; }
+
+  @media (max-width: 1100px) {
+    .hero { grid-template-columns: minmax(0, 1fr) 180px; }
+    .body-row { grid-template-columns: minmax(0, 1fr) 200px; }
+    .strip { grid-template-columns: 1fr; }
+    .actions { justify-content: flex-start; }
+  }
+  @media (max-height: 780px) {
+    .hero { padding: 10px 12px; }
+    .hero h2 { font-size: 19px; }
+    .desc { -webkit-line-clamp: 1; }
+    .art-brief { -webkit-line-clamp: 2; }
+  }
+</style>
+</head>
+<body>
+  <header class="proto-bar">
+    <strong>租户端 · 模块总览</strong>
+    <span class="tag">单屏高保真</span>
+    <span class="muted">一屏看完 · 插画预留 · 旁注浮层</span>
+    <button type="button" class="toggle" id="annoToggle" aria-pressed="false">设计旁注</button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-logo">ZT</div>
+        <div>
+          <div class="name">智途企业端</div>
+          <div class="sub">模块总览</div>
+        </div>
+      </div>
+      <p class="hint">一级菜单</p>
+      <ul class="nav-list" id="nav"></ul>
+    </aside>
+
+    <main class="main">
+      <div class="board" id="canvas"></div>
+    </main>
+  </div>
+
+  <div class="anno-layer" id="annoLayer"></div>
+
+<script>
+const ICONS = {
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4"/><path d="M12 17v4"/><path d="M3 12h4"/><path d="M17 12h4"/><path d="m5.6 5.6 2.8 2.8"/><path d="m15.6 15.6 2.8 2.8"/><path d="m5.6 18.4 2.8-2.8"/><path d="m15.6 8.4 2.8-2.8"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
+  grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11h12z"/><path d="M14 9h4l4 4v5h-8V9z"/><circle cx="6.5" cy="18.5" r="1.5"/><circle cx="17.5" cy="18.5" r="1.5"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  coin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.5c-.6-1-1.7-1.5-2.5-1.5s-2 .7-2 2 1 1.7 2.2 2.1c1.4.4 2.3 1 2.3 2.2s-.9 2-2.3 2-2.1-.6-2.6-1.5"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="16" cy="14" r="1.5"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-3"/></svg>',
+  plug: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 22v-5"/><path d="M9 7V2"/><path d="M15 7V2"/><path d="M6 12V9a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v3a6 6 0 0 1-12 0z"/></svg>',
+  store: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9 5 3h14l2 6"/><path d="M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"/><path d="M9 21V12h6v9"/></svg>',
+  log: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9c.3.6.9 1 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>',
+  route: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 18c4-1 4-7 8-8"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21V3z"/><path d="M9 8h6"/><path d="M9 12h6"/></svg>'
+};
+
+const MODULES = [
+  {
+    key: "operation",
+    title: "运营调度",
+    accent: "#3f7cff",
+    navIcon: "truck",
+    positioning: "从接到客户计划，到派车、盯在途、收回单——运输现场都在这里干。",
+    description: "把客户要运的货录进来或批量导入，配成运输任务，派给车和司机，路上盯进度，交付后收回单。",
+    roles: ["调度员", "计划员", "跟单员"],
+    boundary: "管计划/配载/派车/在途/回单；不管车辆档案（运力中心）、不对账收款（财务结算）。",
+    chain: {
+      from: { label: "来自", text: "客商档案 + 可用运力" },
+      current: { label: "本模块", text: "接计划 → 派车 → 交付" },
+      to: { label: "流向", text: "计费 · 财务结算" }
+    },
+    workflow: [
+      { title: "计划受理", desc: "录入或批量导入客户计划", icon: "doc" },
+      { title: "配载建单", desc: "把计划配成运输任务单", icon: "grid" },
+      { title: "派车调度", desc: "选车选司机并下发", icon: "truck" },
+      { title: "在途监控", desc: "看位置与进度", icon: "pin" },
+      { title: "回单签收", desc: "确认回单完成交付", icon: "receipt" }
+    ],
+    quickActions: [
+      { title: "新建计划", primary: true },
+      { title: "配载建单" },
+      { title: "调度工作台" }
+    ],
+    cards: [
+      { title: "计划中心", desc: "客户计划，支持批量导入", icon: "doc" },
+      { title: "配载", desc: "把计划配成运输任务单", icon: "grid" },
+      { title: "调度工作台", desc: "派车、跟踪、处理异常", icon: "truck" },
+      { title: "在途监控", desc: "实时看车在哪、进度如何", icon: "pin" },
+      { title: "回单签收", desc: "上传确认回单，完成交付", icon: "receipt" },
+      { title: "已完成任务", desc: "归档任务，衔接费用结算", icon: "check" },
+      { title: "任务单", desc: "查看全部任务及状态", icon: "log" }
+    ],
+    prereq: [
+      "先在客商中心建好客户",
+      "运力中心补齐车与司机档案"
+    ],
+    tips: [
+      "大批量计划优先用批量导入",
+      "配载后去调度工作台统一派车",
+      "回单确认后再做财务结算"
+    ],
+    illustration: {
+      metaphor: "运输指挥台 / 作业流水线",
+      must: "计划单、车辆、路线箭头、回单票据",
+      avoid: "抽象科技球、纯数据看板、财务图标",
+      aspect: "宽幅约 4:1 或左右分栏"
+    }
+  },
+  {
+    key: "capacity",
+    title: "运力中心",
+    accent: "#7048e8",
+    navIcon: "truck",
+    positioning: "把自有车、承运商车、社会车和司机、证照管齐，调度时能直接派。",
+    description: "登记车辆、司机、挂车，盯着驾驶证、行驶证、保险有没有到期。",
+    roles: ["车管", "运力管理员", "安全员"],
+    boundary: "管「谁能跑、证件是否合规」；不管哪一单派哪台车（运营调度），不算运费（计费中心）。",
+    chain: {
+      from: { label: "来自", text: "企业组织与账号就绪" },
+      current: { label: "本模块", text: "车 / 人 / 证照档案" },
+      to: { label: "流向", text: "运营调度可派车" }
+    },
+    quickActions: [
+      { title: "自有运力", primary: true },
+      { title: "证照监控" }
+    ],
+    cards: [
+      { title: "自有运力", desc: "自有车辆、司机、挂车档案", icon: "truck" },
+      { title: "承运商运力", desc: "承运商提供的车与人", icon: "users" },
+      { title: "社会运力", desc: "零散社会运力资源池", icon: "store" },
+      { title: "证照监控", desc: "盯到期，避免违规上路", icon: "shield" }
+    ],
+    prereq: [
+      "明确车辆归属并分门别类建档",
+      "准备行驶证、驾驶证、保险材料"
+    ],
+    tips: [
+      "档案不全时调度选不到车",
+      "每天看一眼证照监控临期项"
+    ],
+    illustration: {
+      metaphor: "车队车库档案墙 + 合规盾牌",
+      must: "货车剪影、司机、证件卡片、到期角标",
+      avoid: "调度地图、派车界面、财务元素",
+      aspect: "方形或略横"
+    }
+  },
+  {
+    key: "partner",
+    title: "客商中心",
+    accent: "#e14b8a",
+    navIcon: "users",
+    positioning: "客户、承运商、门店等合作方档案都在这里，开单和对账都靠它。",
+    description: "先把跟谁做生意建清楚：客户、承运商、供应商、经销商门店。",
+    roles: ["商务", "客服", "结算对接人"],
+    boundary: "管合作方是谁、怎么联系；不管运输计划（运营调度），不直接算运费或收款。",
+    chain: {
+      from: { label: "来自", text: "企业开通与基础配置" },
+      current: { label: "本模块", text: "客户 / 承运商档案" },
+      to: { label: "流向", text: "计划 · 计费 · 结算" }
+    },
+    quickActions: [
+      { title: "客户管理", primary: true },
+      { title: "承运商管理" }
+    ],
+    cards: [
+      { title: "客户管理", desc: "客户档案、联系人、合作状态", icon: "user" },
+      { title: "承运商管理", desc: "承运商档案，可邀请协同", icon: "users" },
+      { title: "互联客户", desc: "对接互通过来的订单", icon: "plug" },
+      { title: "经销商门店", desc: "收发货网点与门店信息", icon: "store" }
+    ],
+    prereq: [
+      "准备企业名称、联系人、结算信息",
+      "承运商协同需对方完成邀请激活"
+    ],
+    tips: [
+      "客户与承运商尽早建全",
+      "可用邀请激活让对方补资料"
+    ],
+    illustration: {
+      metaphor: "握手的业务伙伴名册",
+      must: "客户/承运商名片、门店网点、联系人",
+      avoid: "车辆特写抢戏、抽象网络拓扑",
+      aspect: "方形或略横"
+    }
+  },
+  {
+    key: "billing",
+    title: "计费中心",
+    accent: "#f08c00",
+    navIcon: "coin",
+    positioning: "把运价、线路、成本规则配好，系统才能自动算出运费和承运成本。",
+    description: "维护运输线路与里程、客户运价合同、承运商合同和成本政策。",
+    roles: ["商务", "计费员", "运营主管"],
+    boundary: "管怎么计价；不对账、不收款、不开票（财务结算）；也不直接派车。",
+    chain: {
+      from: { label: "来自", text: "客商档案 + 线路资料" },
+      current: { label: "本模块", text: "运价 / 成本规则" },
+      to: { label: "流向", text: "任务计费 → 财务" }
+    },
+    quickActions: [
+      { title: "运价合同", primary: true },
+      { title: "成本政策" }
+    ],
+    cards: [
+      { title: "运价合同", desc: "客户怎么计价、什么规则", icon: "doc" },
+      { title: "运输线路", desc: "线路与里程基础数据", icon: "route" },
+      { title: "成本政策", desc: "承运成本怎么核算", icon: "coin" },
+      { title: "承运商合同", desc: "付给承运商的运价约定", icon: "doc" },
+      { title: "费用模板", desc: "常用费用项，少重复录入", icon: "grid" }
+    ],
+    prereq: [
+      "先维护常用运输线路与里程",
+      "客户、承运商档案已建立"
+    ],
+    tips: [
+      "线路不齐时合同容易算不准",
+      "费用模板配一次，建单少填项"
+    ],
+    illustration: {
+      metaphor: "价目表 + 路线尺子",
+      must: "合同文件、单价/里程符号、简单路线",
+      avoid: "发票印章、调度地图主视觉",
+      aspect: "方形或略横"
+    }
+  },
+  {
+    key: "approval",
+    title: "审批中心",
+    accent: "#4263eb",
+    navIcon: "check",
+    positioning: "待我批的、我提的、历史记录——关键事项集中处理，留得住痕。",
+    description: "业务里需要领导点头的事汇到这里：看待办、跟进度、查历史。",
+    roles: ["审批人", "发起人", "管理人员"],
+    boundary: "只管审批流转与记录；业务单据在各自模块改；流程在企业配置里设置。",
+    chain: {
+      from: { label: "来自", text: "各业务发起的申请" },
+      current: { label: "本模块", text: "待办 / 审批 / 留痕" },
+      to: { label: "流向", text: "继续或驳回修改" }
+    },
+    quickActions: [
+      { title: "我的待办", primary: true },
+      { title: "我的申请" }
+    ],
+    cards: [
+      { title: "我的待办", desc: "等我审批的事项", icon: "check" },
+      { title: "我的申请", desc: "我发起的进度跟踪", icon: "doc" },
+      { title: "审批记录", desc: "历史审批可追溯", icon: "log" }
+    ],
+    prereq: [
+      "企业配置中已配好相关审批流",
+      "发起人具备对应业务权限"
+    ],
+    tips: [
+      "优先清待办，避免卡住下游",
+      "不确定规则时先问管理员"
+    ],
+    illustration: {
+      metaphor: "待办清单 + 通过/驳回印章",
+      must: "清单、勾选、流转箭头",
+      avoid: "复杂组织全图、无关运输场景",
+      aspect: "方形"
+    }
+  },
+  {
+    key: "finance",
+    title: "财务结算",
+    accent: "#099268",
+    navIcon: "wallet",
+    positioning: "应收、应付、对账、发票、利润——钱从算清到收付，都在这里跟。",
+    description: "处理应付费用、客户应收、对账核销、开票，并看利润。",
+    roles: ["财务", "结算员", "对账专员"],
+    boundary: "管费用确认、对账、发票与利润；不管派车（运营调度），不定运价规则（计费中心）。",
+    chain: {
+      from: { label: "来自", text: "任务归档 + 计费结果" },
+      current: { label: "本模块", text: "对账 · 收付 · 发票" },
+      to: { label: "流向", text: "实际收款 / 付款" }
+    },
+    quickActions: [
+      { title: "应收管理", primary: true },
+      { title: "对账中心" }
+    ],
+    cards: [
+      { title: "任务费用工作台", desc: "集中处理任务应付费用", icon: "wallet" },
+      { title: "应付费用单", desc: "应付费用台账", icon: "log" },
+      { title: "应收管理", desc: "客户应收账款", icon: "coin" },
+      { title: "对账中心", desc: "与客户、承运商对账核销", icon: "check" },
+      { title: "发票管理", desc: "开具与管理发票", icon: "receipt" },
+      { title: "利润分析", desc: "看收入、成本与利润", icon: "chart" }
+    ],
+    prereq: [
+      "相关运输任务已完成并归档",
+      "计费规则/合同已配置好"
+    ],
+    tips: [
+      "先对账核销，再开票",
+      "利润依赖运营与计费录入完整"
+    ],
+    illustration: {
+      metaphor: "账本 + 对账勾选 + 发票",
+      must: "账单、对勾、发票边角",
+      avoid: "卡车派车主画面、投机感K线",
+      aspect: "方形或略横"
+    }
+  },
+  {
+    key: "insight",
+    title: "数据洞察",
+    accent: "#1098ad",
+    navIcon: "chart",
+    positioning: "用看板和报表看经营好不好，不在这里改业务单据。",
+    description: "老板看驾驶舱，运营盯日常指标，也能出报表、看趋势。",
+    roles: ["老板 / 管理层", "运营主管", "数据分析岗"],
+    boundary: "只看和分析；不创建计划、不派车、不对账。发现问题回业务模块处理。",
+    chain: {
+      from: { label: "来自", text: "运营 · 计费 · 财务数据" },
+      current: { label: "本模块", text: "看板 / 报表 / 预测" },
+      to: { label: "流向", text: "管理决策与复盘" }
+    },
+    quickActions: [
+      { title: "经营驾驶舱", primary: true },
+      { title: "运营看板" }
+    ],
+    cards: [
+      { title: "经营驾驶舱", desc: "老板视角经营与利润总览", icon: "chart" },
+      { title: "运营看板", desc: "日常核心运营指标", icon: "grid" },
+      { title: "数据报表", desc: "多维报表与分析", icon: "doc" },
+      { title: "智能预测", desc: "基于历史的趋势参考", icon: "spark" }
+    ],
+    prereq: [
+      "日常业务已在系统正常录入",
+      "明确看老板总览还是运营盯盘"
+    ],
+    tips: [
+      "管理层看驾驶舱，日常用运营看板",
+      "数字异常先回业务核原始单据"
+    ],
+    illustration: {
+      metaphor: "驾驶舱仪表盘（经营视角）",
+      must: "简洁图表、关键指标卡片",
+      avoid: "花哨3D堆砌、游戏化元素",
+      aspect: "略横"
+    }
+  },
+  {
+    key: "open-platform",
+    title: "开放平台",
+    accent: "#3b5bdb",
+    navIcon: "plug",
+    positioning: "把智途的能力安全接到你们自己的系统或 AI 办公工具上。",
+    description: "建应用、勾选能力、生成密钥或 MCP 配置；调用可查、随时可停。",
+    roles: ["企业管理员", "IT / 对接人"],
+    boundary: "管对外接入的授权与审计；日常开单、派车仍在各业务模块完成。",
+    chain: {
+      from: { label: "来自", text: "企业业务数据与能力" },
+      current: { label: "本模块", text: "授权 · 密钥 · 审计" },
+      to: { label: "流向", text: "外部系统 / AI 工具" }
+    },
+    quickActions: [
+      { title: "接入应用", primary: true },
+      { title: "接入指南" }
+    ],
+    cards: [
+      { title: "接入应用", desc: "应用、API 密钥与 MCP 连接", icon: "plug" },
+      { title: "能力目录", desc: "能开放哪些能力与字段", icon: "grid" },
+      { title: "接入指南", desc: "对接步骤与配置说明", icon: "doc" },
+      { title: "调用记录", desc: "谁调了、是否成功、耗时", icon: "log" }
+    ],
+    prereq: [
+      "明确要对接的外部系统或 AI 工具",
+      "约定最小所需能力范围"
+    ],
+    tips: [
+      "密钥只显示一次，立刻复制保存",
+      "只勾选真正需要的能力",
+      "异常可查记录，必要时停用应用"
+    ],
+    illustration: {
+      metaphor: "安全的插座 / 网关",
+      must: "钥匙/令牌、连接线、审计清单",
+      avoid: "黑客暗黑风、恐吓式锁链",
+      aspect: "方形或略横"
+    }
+  },
+  {
+    key: "ecosystem",
+    title: "服务平台",
+    accent: "#e8590c",
+    navIcon: "store",
+    positioning: "对外找货、找车、找增值服务，拓展合作与资源补给。",
+    description: "货源/运力/服务大厅帮你在忙时补充资源，也能跟进合作意向。",
+    roles: ["业务拓展", "调度（高峰补车）", "运营负责人"],
+    boundary: "偏对外协同与资源撮合；企业内部日常派车仍以运营调度 + 运力中心为主。",
+    chain: {
+      from: { label: "来自", text: "企业名片与资质" },
+      current: { label: "本模块", text: "货源 / 运力 / 服务大厅" },
+      to: { label: "流向", text: "合作意向与成交" }
+    },
+    quickActions: [
+      { title: "货源大厅", primary: true },
+      { title: "运力大厅" }
+    ],
+    cards: [
+      { title: "货源大厅", desc: "发布或获取货源信息", icon: "store" },
+      { title: "运力大厅", desc: "对接、匹配社会运力", icon: "truck" },
+      { title: "服务大厅", desc: "平台增值服务", icon: "spark" },
+      { title: "我的合作", desc: "跟进意向与成交", icon: "check" },
+      { title: "企业名片", desc: "对外展示的企业信息", icon: "user" }
+    ],
+    prereq: [
+      "完善企业名片与必要资质",
+      "高峰补车前想清车型与线路"
+    ],
+    tips: [
+      "高峰可先来大厅找补充资源",
+      "合作进度记在「我的合作」里"
+    ],
+    illustration: {
+      metaphor: "货源/运力集市（大厅感）",
+      must: "货、车、握手或匹配连线",
+      avoid: "内部调度台复制、促销电商风",
+      aspect: "略横"
+    }
+  },
+  {
+    key: "log-center",
+    title: "日志中心",
+    accent: "#495057",
+    navIcon: "log",
+    positioning: "查出谁登录过、谁改过关键操作——出问题能回溯。",
+    description: "安全审计、纠纷排查、合规检查时，按人、按时间把轨迹找出来。",
+    roles: ["企业管理员", "安全 / 审计岗"],
+    boundary: "只查记录，不在这里改业务数据；纠错请回对应业务模块。",
+    chain: {
+      from: { label: "来自", text: "全系统操作与登录" },
+      current: { label: "本模块", text: "查询 · 审计 · 留痕" },
+      to: { label: "流向", text: "问题定位与合规" }
+    },
+    quickActions: [
+      { title: "操作记录", primary: true },
+      { title: "登录记录" }
+    ],
+    cards: [
+      { title: "操作记录", desc: "关键操作可按人、按时间查", icon: "log" },
+      { title: "登录记录", desc: "账号何时何地登录", icon: "user" }
+    ],
+    prereq: [
+      "明确大致时间范围和相关账号",
+      "了解业务发生在哪个模块"
+    ],
+    tips: [
+      "争议时先用操作记录锁定责任人",
+      "登录异常及时联系管理员"
+    ],
+    illustration: {
+      metaphor: "时间轴审计卷宗",
+      must: "列表/时间线、放大镜、简洁安全感",
+      avoid: "监控恐吓风、红色警报夸张",
+      aspect: "方形"
+    }
+  },
+  {
+    key: "enterprise",
+    title: "企业配置",
+    accent: "#5f3dc4",
+    navIcon: "gear",
+    positioning: "组织、员工账号、权限、审批流和基础设置——企业先在这里搭好台。",
+    description: "新员工账号、菜单权限、审批怎么走、开票主体与基础数据都在这里。",
+    roles: ["企业管理员", "人事 / 行政（协同）"],
+    boundary: "管谁能用系统、规则怎么定；不管日常开计划、派车、对账。",
+    chain: {
+      from: { label: "来自", text: "企业开通租户" },
+      current: { label: "本模块", text: "组织 · 权限 · 设置" },
+      to: { label: "流向", text: "全业务模块可用" }
+    },
+    quickActions: [
+      { title: "员工管理", primary: true },
+      { title: "角色权限" }
+    ],
+    cards: [
+      { title: "组织架构", desc: "部门与组织层级", icon: "users" },
+      { title: "员工管理", desc: "员工账号开通与维护", icon: "user" },
+      { title: "角色权限", desc: "谁能进哪些功能", icon: "shield" },
+      { title: "审批配置", desc: "审批流程怎么走", icon: "check" },
+      { title: "经营主体", desc: "开票等用的主体信息", icon: "store" },
+      { title: "基础数据", desc: "地区、品牌车型等", icon: "grid" },
+      { title: "系统设置", desc: "参数与偏好", icon: "gear" }
+    ],
+    prereq: [
+      "先搭组织架构再批量建账号",
+      "调度/财务/车管等角色分开配权"
+    ],
+    tips: [
+      "经营主体信息用于开票须真实",
+      "改权限后让同事刷新或重登"
+    ],
+    illustration: {
+      metaphor: "企业底座积木 / 组织树",
+      must: "组织树、钥匙（权限）、设置齿轮",
+      avoid: "运输作业主画面、娱乐化插画",
+      aspect: "方形"
+    }
+  }
+];
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function icon(name) {
+  return ICONS[name] || ICONS.grid;
+}
+
+function renderAnno(mod) {
+  return `
+    <div class="anno-card">
+      <strong>设计师旁注 · ${escapeHtml(mod.title)}</strong>
+      <ul>
+        <li>主文案：一句话定位；描述最多两行；边界一句话</li>
+        <li>插画 metaphor：${escapeHtml(mod.illustration.metaphor)}</li>
+        <li>必含：${escapeHtml(mod.illustration.must)}</li>
+        <li>避免：${escapeHtml(mod.illustration.avoid)}</li>
+        <li>构图：${escapeHtml(mod.illustration.aspect)}</li>
+        <li>布局目标：整页一屏，无纵向滚动</li>
+      </ul>
+    </div>`;
+}
+
+function renderModule(mod) {
+  document.documentElement.style.setProperty("--accent", mod.accent);
+
+  const hasWf = !!mod.workflow;
+  let workflowHtml = "";
+  if (hasWf) {
+    const parts = [];
+    mod.workflow.forEach((s, i) => {
+      parts.push(`
+        <div class="step" title="${escapeHtml(s.desc)}">
+          <div class="step-badge">
+            ${icon(s.icon)}
+            <span class="step-num">${i + 1}</span>
+          </div>
+          <h4>${escapeHtml(s.title)}</h4>
+        </div>`);
+      if (i < mod.workflow.length - 1) {
+        parts.push(`<div class="wf-arrow" aria-hidden="true">${icon("arrow")}</div>`);
+      }
+    });
+    workflowHtml = `
+      <section class="workflow-panel">
+        <div class="head">
+          <h3><span class="dot"></span>工作流程</h3>
+          <span>悬停步骤可看说明</span>
+        </div>
+        <div class="workflow">${parts.join("")}</div>
+      </section>`;
+  }
+
+  return `
+    <section class="hero">
+      <div class="hero-main">
+        <div class="hero-top">
+          <span class="eyebrow">${icon("spark")} 模块总览</span>
+          <div class="roles">
+            ${mod.roles.map((r) => `<span class="role-chip">${escapeHtml(r)}</span>`).join("")}
+          </div>
+        </div>
+        <h2>${escapeHtml(mod.title)}</h2>
+        <p class="positioning">${escapeHtml(mod.positioning)}</p>
+        <p class="desc" title="${escapeHtml(mod.description)}">${escapeHtml(mod.description)}</p>
+        <div class="boundary">
+          ${icon("shield")}
+          <div><b>边界</b> · ${escapeHtml(mod.boundary)}</div>
+        </div>
+      </div>
+      <div class="art" aria-label="插画预留占位" title="必含：${escapeHtml(mod.illustration.must)}｜避免：${escapeHtml(mod.illustration.avoid)}">
+        <div>
+          <div class="art-badge">Illustration</div>
+          <div class="art-title">${escapeHtml(mod.illustration.metaphor)}</div>
+          <p class="art-brief">${escapeHtml(mod.illustration.must)}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="strip">
+      <div class="chain">
+        <span class="chain-label">链路</span>
+        <div class="chain-node">
+          <div class="k">${escapeHtml(mod.chain.from.label)}</div>
+          <div class="v" title="${escapeHtml(mod.chain.from.text)}">${escapeHtml(mod.chain.from.text)}</div>
+        </div>
+        <div class="chain-arrow">${icon("arrow")}</div>
+        <div class="chain-node current">
+          <div class="k">${escapeHtml(mod.chain.current.label)}</div>
+          <div class="v" title="${escapeHtml(mod.chain.current.text)}">${escapeHtml(mod.chain.current.text)}</div>
+        </div>
+        <div class="chain-arrow">${icon("arrow")}</div>
+        <div class="chain-node">
+          <div class="k">${escapeHtml(mod.chain.to.label)}</div>
+          <div class="v" title="${escapeHtml(mod.chain.to.text)}">${escapeHtml(mod.chain.to.text)}</div>
+        </div>
+      </div>
+      <div class="actions">
+        ${mod.quickActions
+          .map(
+            (a) =>
+              `<span class="btn${a.primary ? " primary" : ""}">${
+                a.primary ? icon("plus") : ""
+              }${escapeHtml(a.title)}</span>`
+          )
+          .join("")}
+      </div>
+    </section>
+
+    ${workflowHtml}
+
+    <section class="body-row">
+      <div class="panel">
+        <div class="panel-head">
+          <h3><span class="dot"></span>模块导航</h3>
+          <span>${mod.cards.length} 个子模块</span>
+        </div>
+        <div class="cards">
+          ${mod.cards
+            .map(
+              (c) => `
+            <div class="card" title="${escapeHtml(c.desc)}">
+              <div class="card-icon">${icon(c.icon)}</div>
+              <div class="card-body">
+                <div class="card-title">${escapeHtml(c.title)}</div>
+                <p>${escapeHtml(c.desc)}</p>
+              </div>
+            </div>`
+            )
+            .join("")}
+        </div>
+      </div>
+      <aside class="panel guide">
+        <div class="panel-head">
+          <h3><span class="dot"></span>上手指引</h3>
+        </div>
+        <div class="guide-block">
+          <h4>开始前准备</h4>
+          <ul class="guide-list">
+            ${mod.prereq.map((t) => `<li title="${escapeHtml(t)}">${escapeHtml(t)}</li>`).join("")}
+          </ul>
+        </div>
+        <div class="guide-block tips">
+          <h4>使用提示</h4>
+          <ul class="guide-list">
+            ${mod.tips.map((t) => `<li title="${escapeHtml(t)}">${escapeHtml(t)}</li>`).join("")}
+          </ul>
+        </div>
+      </aside>
+    </section>
+  `;
+}
+
+function init() {
+  const nav = document.getElementById("nav");
+  const canvas = document.getElementById("canvas");
+  const annoLayer = document.getElementById("annoLayer");
+  const annoToggle = document.getElementById("annoToggle");
+  let active = MODULES[0].key;
+
+  annoToggle.addEventListener("click", () => {
+    const on = document.body.classList.toggle("show-anno");
+    annoToggle.setAttribute("aria-pressed", String(on));
+    annoToggle.textContent = on ? "关闭旁注" : "设计旁注";
+  });
+  annoLayer.addEventListener("click", (e) => {
+    if (e.target === annoLayer) {
+      document.body.classList.remove("show-anno");
+      annoToggle.setAttribute("aria-pressed", "false");
+      annoToggle.textContent = "设计旁注";
+    }
+  });
+
+  function select(key) {
+    active = key;
+    const mod = MODULES.find((m) => m.key === key);
+    canvas.className = "board" + (mod.workflow ? " has-workflow" : "");
+    canvas.innerHTML = renderModule(mod);
+    annoLayer.innerHTML = renderAnno(mod);
+    [...nav.querySelectorAll("button")].forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.key === key);
+    });
+  }
+
+  nav.innerHTML = MODULES.map(
+    (m) => `
+    <li>
+      <button type="button" data-key="${m.key}" style="--accent:${m.accent}">
+        <span class="nav-ico">${icon(m.navIcon)}</span>
+        ${escapeHtml(m.title)}
+      </button>
+    </li>`
+  ).join("");
+
+  nav.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-key]");
+    if (!btn) return;
+    select(btn.dataset.key);
+  });
+
+  select(active);
+}
+
+init();
+</script>
+</body>
+</html>

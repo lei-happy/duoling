@@ -402,8 +402,12 @@
     "description": "车辆资产-维修保养与资产成本（专业版）",
     "required_tables": [
       "biz_fleet_work_order",
+      "biz_fleet_work_order_line",
       "biz_fleet_maintain_plan",
-      "biz_fleet_renewal"
+      "biz_fleet_renewal",
+      "biz_fleet_part",
+      "biz_fleet_stock_txn",
+      "biz_fleet_workshop"
     ],
     "sort_order": 46,
     "status": 1
