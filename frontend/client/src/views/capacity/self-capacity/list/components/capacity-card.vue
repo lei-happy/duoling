@@ -12,7 +12,7 @@
       :transition="layoutTransition"
       :crossfade="true"
     >
-      <!-- 身份区：头像 + 姓名/手机/状态 + 更多 -->
+      <!-- 身份区：头像 + 姓名/状态并排；手机与车牌左对齐 -->
       <header class="capacity-card__header">
         <div class="capacity-card__portrait">
           <el-image
@@ -38,66 +38,69 @@
         </div>
 
         <div class="capacity-card__main">
-          <div class="capacity-card__title-row">
-            <h3 class="capacity-card__name" :title="item.driverName">
-              {{ item.driverName || '—' }}
-            </h3>
-            <el-dropdown trigger="click" @command="onCommand">
-              <button
-                type="button"
-                class="capacity-card__menu-btn"
-                aria-label="更多操作"
-                @click.stop
-              >
-                <el-icon :size="16"><MoreOutlined /></el-icon>
-              </button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item
-                    v-for="target in manualTargets"
-                    :key="target.value"
-                    :command="`status:${target.value}`"
-                  >
-                    {{ target.label }}
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="lockedHint" disabled>
-                    {{ lockedHint }}
-                  </el-dropdown-item>
-                  <el-dropdown-item command="unbind" divided>
-                    <span class="capacity-card__menu-danger">下车</span>
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+          <div class="capacity-card__identity">
+            <div class="capacity-card__title-row">
+              <div class="capacity-card__title-left">
+                <h3 class="capacity-card__name" :title="item.driverName">
+                  {{ item.driverName || '—' }}
+                </h3>
+                <span class="capacity-card__badge">{{ statusLabel }}</span>
+              </div>
+              <el-dropdown trigger="click" @command="onCommand">
+                <button
+                  type="button"
+                  class="capacity-card__menu-btn"
+                  aria-label="更多操作"
+                  @click.stop
+                >
+                  <el-icon :size="16"><MoreOutlined /></el-icon>
+                </button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item
+                      v-for="target in manualTargets"
+                      :key="target.value"
+                      :command="`status:${target.value}`"
+                    >
+                      {{ target.label }}
+                    </el-dropdown-item>
+                    <el-dropdown-item v-if="lockedHint" disabled>
+                      {{ lockedHint }}
+                    </el-dropdown-item>
+                    <el-dropdown-item command="unbind" divided>
+                      <span class="capacity-card__menu-danger">下车</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+            <p class="capacity-card__phone">{{ item.driverPhone || '—' }}</p>
           </div>
-          <p class="capacity-card__phone">{{ item.driverPhone || '—' }}</p>
-          <span class="capacity-card__badge">{{ statusLabel }}</span>
+          <div
+            v-if="item.plateNumber || item.trailerPlateNumber"
+            class="capacity-card__plates"
+          >
+            <plate-number-tag
+              v-if="item.plateNumber"
+              :text="item.plateNumber"
+              :category="item.plateCategory"
+            />
+            <span
+              v-if="item.trailerPlateNumber"
+              class="capacity-card__trailer-mark"
+              title="已绑定挂车，完整车牌见详情"
+            >
+              挂
+            </span>
+          </div>
         </div>
       </header>
 
-      <!-- 车辆信息 -->
-      <section class="capacity-card__vehicle">
-        <div
-          v-if="item.plateNumber || item.trailerPlateNumber"
-          class="capacity-card__plates"
-        >
-          <plate-number-tag
-            v-if="item.plateNumber"
-            :text="item.plateNumber"
-            :category="item.plateCategory"
-            size="large"
-          />
-          <template v-if="item.trailerPlateNumber">
-            <span class="capacity-card__plate-plus">+</span>
-            <plate-number-tag
-              :text="item.trailerPlateNumber"
-              :category="item.trailerPlateCategory"
-              size="large"
-            />
-          </template>
-        </div>
-        <span v-else class="capacity-card__vehicle-empty">暂无车辆信息</span>
-
+      <!-- 车型 / 无车辆时的空态 -->
+      <section
+        v-if="item.vehicleType || (!item.plateNumber && !item.trailerPlateNumber)"
+        class="capacity-card__vehicle"
+      >
         <div v-if="item.vehicleType" class="capacity-card__vehicle-type">
           <dict-data
             type="tag"
@@ -106,13 +109,16 @@
             :component-props="{ size: 'small', type: 'info', effect: 'plain' }"
           />
         </div>
+        <span v-else class="capacity-card__vehicle-empty">暂无车辆信息</span>
       </section>
 
-      <!-- 底部：上车时间；部门仅作弱化尾注 -->
+      <!-- 底部：上车时间（强调）；部门弱化尾注 -->
       <footer v-if="hasFooter" class="capacity-card__footer">
         <span v-if="item.boundAt" class="capacity-card__meta">
           <span class="capacity-card__meta-label">上车</span>
-          <span class="capacity-card__meta-value">{{ boundAtLabel }}</span>
+          <span class="capacity-card__meta-value" :title="boundAtFullLabel">
+            {{ boundAtLabel }}
+          </span>
         </span>
         <span
           v-if="item.departmentName"
@@ -128,6 +134,7 @@
 
 <script lang="ts" setup>
   import { computed } from 'vue';
+  import dayjs from 'dayjs';
   import { Motion } from 'motion-v';
   import { UserOutlined, MoreOutlined } from '@/components/icons';
   import PlateNumberTag from '@/components/PlateNumberTag/index.vue';
@@ -228,7 +235,14 @@
     () => !!props.item.boundAt || !!props.item.departmentName
   );
 
+  /** 列表展示精确到分钟，完整时分秒放 title */
   const boundAtLabel = computed(() => {
+    if (!props.item.boundAt) return '';
+    const d = dayjs(props.item.boundAt);
+    return d.isValid() ? d.format('YYYY-MM-DD HH:mm') : String(props.item.boundAt);
+  });
+
+  const boundAtFullLabel = computed(() => {
     if (!props.item.boundAt) return '';
     return formatDateTime(props.item.boundAt);
   });
@@ -352,14 +366,15 @@
   /* —— Header —— */
   .capacity-card__header {
     display: flex;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 10px;
     min-width: 0;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
 
   .capacity-card__portrait {
     flex-shrink: 0;
+    align-self: flex-start;
     width: 64px;
     aspect-ratio: 3 / 4;
     border-radius: 10px;
@@ -401,19 +416,68 @@
   .capacity-card__main {
     flex: 1;
     min-width: 0;
+    /* 与左侧照片同高：身份组顶对齐，车牌底对齐 */
+    min-height: calc(64px * 4 / 3);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .capacity-card__identity {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 3px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .capacity-card__plates {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+  }
+
+  .capacity-card__plates :deep(.plate-number-tag) {
+    max-width: 100%;
+  }
+
+  .capacity-card__trailer-mark {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: var(--el-color-warning-dark-2, #b88230);
+    background: var(--el-color-warning-light-9);
+    border: 1px solid
+      color-mix(in srgb, var(--el-color-warning) 35%, transparent);
   }
 
   .capacity-card__title-row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 4px;
     width: 100%;
     min-width: 0;
+  }
+
+  .capacity-card__title-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
   }
 
   .capacity-card__name {
@@ -435,7 +499,7 @@
     justify-content: center;
     width: 26px;
     height: 26px;
-    margin: -4px -4px 0 0;
+    margin: 0 -4px 0 0;
     padding: 0;
     border: none;
     border-radius: 7px;
@@ -477,7 +541,7 @@
   .capacity-card__badge {
     display: inline-flex;
     align-items: center;
-    margin-top: 2px;
+    flex-shrink: 0;
     padding: 1px 7px;
     border-radius: 999px;
     font-size: 11px;
@@ -493,24 +557,10 @@
   .capacity-card__vehicle {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     flex: 1;
     min-height: 0;
-    padding-bottom: 10px;
-  }
-
-  .capacity-card__plates {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .capacity-card__plate-plus {
-    color: var(--el-text-color-secondary);
-    font-weight: 700;
-    font-size: 13px;
-    flex-shrink: 0;
+    padding-bottom: 8px;
   }
 
   .capacity-card__vehicle-empty {
@@ -544,21 +594,22 @@
   .capacity-card__meta {
     display: inline-flex;
     align-items: baseline;
-    gap: 4px;
+    gap: 5px;
     min-width: 0;
   }
 
   .capacity-card__meta-label {
     flex-shrink: 0;
-    font-size: 11px;
-    color: var(--el-text-color-placeholder);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--el-text-color-secondary);
   }
 
   .capacity-card__meta-value {
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
-    color: var(--el-text-color-secondary);
+    color: var(--el-text-color-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -566,7 +617,7 @@
 
   .capacity-card__dept {
     flex-shrink: 1;
-    max-width: 42%;
+    max-width: 36%;
     font-size: 11px;
     color: var(--el-text-color-placeholder);
     text-align: right;
