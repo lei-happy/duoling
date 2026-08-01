@@ -3,7 +3,7 @@ import type { ApiResult, PageResult } from '@/api';
 import type { Region, RegionNavNode, RegionParam } from './model';
 
 /**
- * 获取省+市两级导航树（左侧面板）
+ * 获取省/市/区县三级导航树（左侧面板；浏览与检索由前端分流渲染）
  */
 export async function getRegionNavTree() {
   const res = await request.get<ApiResult<RegionNavNode[]>>(

@@ -16,7 +16,7 @@
             clearable
             :maxlength="20"
             v-model="keywords"
-            placeholder="输入地区名称搜索"
+            placeholder="输入名称或拼音搜索"
             :prefix-icon="SearchOutlined"
           />
         </template>
@@ -25,15 +25,23 @@
           :spinner-style="{ background: 'none' }"
           :style="{ flex: '1 1 60px', overflow: 'auto' }"
         >
+          <el-empty
+            v-if="searchActive && displayTree.length === 0"
+            description="未找到相关地区"
+            :image-size="72"
+          />
           <el-tree
+            v-else
+            :key="treeRenderKey"
             ref="treeRef"
-            :data="navTree"
+            :data="searchActive ? displayTree : []"
             highlight-current
             node-key="code"
-            :props="{ label: 'name', children: 'children' }"
+            :lazy="!searchActive"
+            :load="loadTreeNode"
+            :props="{ label: 'name', children: 'children', isLeaf: 'leaf' }"
             :expand-on-click-node="false"
-            :default-expand-all="false"
-            :filter-node-method="filterNode"
+            :default-expand-all="searchActive"
             :style="{
               '--ele-tree-item-height': '34px',
               '--ele-tree-expand-margin':
@@ -71,6 +79,7 @@
             row-key="regionId"
             :columns="columns"
             :datasource="datasource"
+            :pagination="{ pageSize: 20 }"
             :show-overflow-tooltip="true"
             :highlight-current-row="true"
             :load-on-created="false"
@@ -123,6 +132,7 @@
 <script lang="ts" setup>
   import { ref, computed, watch, nextTick } from 'vue';
   import type { ElTree } from 'element-plus';
+  import type Node from 'element-plus/es/components/tree/src/model/node';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
@@ -130,7 +140,9 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { debounce } from 'lodash-es';
   import { SearchOutlined, EnvironmentOutlined } from '@/components/icons';
+  import { pinyinMatch, warmPinyinCache } from '@/utils/pinyin-match';
   import RegionSearch from './components/region-search.vue';
   import {
     getRegionNavTree,
@@ -146,7 +158,12 @@
   const collapse = ref(false);
   const treeRef = ref<InstanceType<typeof ElTree> | null>(null);
   const treeLoading = ref(true);
-  const navTree = ref<RegionNavNode[]>([]);
+  /** 完整三级树（仅内存索引，不直接绑到 el-tree） */
+  const navTreeAll = ref<RegionNavNode[]>([]);
+  /** 实际渲染的树：浏览态省/市，检索态为命中分支（可含区县） */
+  const displayTree = ref<RegionNavNode[]>([]);
+  const searchActive = ref(false);
+  const treeRenderKey = ref(0);
   const currentNode = ref<RegionNavNode | null>(null);
   const keywords = ref('');
 
@@ -166,13 +183,13 @@
     {
       prop: 'code',
       label: '地区代码',
-      width: 140,
+      minWidth: 140,
       align: 'center'
     },
     {
       prop: 'level',
       label: '层级',
-      width: 90,
+      minWidth: 90,
       align: 'center',
       formatter: (row: Region) => {
         const map: Record<number, string> = { 1: '省', 2: '市', 3: '区/县' };
@@ -182,7 +199,7 @@
     {
       prop: 'longitude',
       label: '经度',
-      width: 110,
+      minWidth: 110,
       align: 'center',
       formatter: (row: Region) =>
         row.longitude != null ? String(row.longitude) : '—'
@@ -190,7 +207,7 @@
     {
       prop: 'latitude',
       label: '纬度',
-      width: 110,
+      minWidth: 110,
       align: 'center',
       formatter: (row: Region) =>
         row.latitude != null ? String(row.latitude) : '—'
@@ -199,14 +216,14 @@
       columnKey: 'source',
       prop: 'source',
       label: '来源',
-      width: 100,
+      minWidth: 100,
       align: 'center',
       slot: 'source'
     },
     {
       prop: 'status',
       label: '状态',
-      width: 90,
+      minWidth: 90,
       align: 'center',
       slot: 'status',
       formatter: (row: Region) => (row.status === 1 ? '正常' : '停用')
@@ -240,7 +257,7 @@
     tableRef.value?.reload?.({ where, page });
   };
 
-  /** 在导航树中按 code 查找节点（省/市两级） */
+  /** 在完整导航树中按 code 查找节点 */
   const findNodeByCode = (
     nodes: RegionNavNode[],
     code: string
@@ -259,6 +276,125 @@
     return null;
   };
 
+  /** 收集导航树全部名称，用于预热拼音缓存 */
+  const collectNavNames = (nodes: RegionNavNode[], out: string[] = []) => {
+    for (const n of nodes) {
+      if (n.name) out.push(n.name);
+      if (n.children?.length) collectNavNames(n.children, out);
+    }
+    return out;
+  };
+
+  /** 树节点视图（补充 leaf，供 el-tree 懒加载判断） */
+  type NavViewNode = RegionNavNode & { leaf?: boolean };
+
+  /**
+   * 检索态：在完整三级树上做拼音匹配，只保留命中节点及其祖先路径。
+   * 渲染节点极少，因此可流畅支持区县拼音。
+   */
+  const filterNavTree = (
+    nodes: RegionNavNode[],
+    keyword: string
+  ): NavViewNode[] => {
+    const result: NavViewNode[] = [];
+    for (const n of nodes) {
+      const children = n.children?.length
+        ? filterNavTree(n.children, keyword)
+        : [];
+      if (pinyinMatch(n.name ?? '', keyword) || children.length) {
+        result.push({
+          ...n,
+          children,
+          leaf: children.length === 0
+        });
+      }
+    }
+    return result;
+  };
+
+  /**
+   * 浏览态懒加载：
+   * - el-tree lazy 下根节点必须由 load 注入（:data 不会自动建子节点）
+   * - 省 → 市 → 区县逐级展开，避免一次挂载全国区县
+   */
+  const loadTreeNode = (node: Node, resolve: (data: NavViewNode[]) => void) => {
+    // 根节点：注入省级列表
+    if (node.level === 0) {
+      const provinces = navTreeAll.value.map((p) => ({
+        ...p,
+        leaf: false,
+        children: undefined
+      }));
+      resolve(provinces);
+      const keep = currentNode.value?.code;
+      if (keep) {
+        nextTick(() => treeRef.value?.setCurrentKey?.(keep));
+      }
+      return;
+    }
+
+    const data = node.data as NavViewNode | undefined;
+    if (!data?.code) {
+      resolve([]);
+      return;
+    }
+
+    const full = findNodeByCode(navTreeAll.value, data.code);
+    const children = full?.children || [];
+
+    if (data.level === 1) {
+      // 省 → 市
+      resolve(
+        children.map((c) => ({
+          ...c,
+          leaf: (c.childCount ?? 0) <= 0,
+          children: undefined
+        }))
+      );
+      return;
+    }
+
+    if (data.level === 2) {
+      // 市 → 区县
+      resolve(
+        children.map((d) => ({
+          ...d,
+          leaf: true,
+          children: undefined
+        }))
+      );
+      return;
+    }
+
+    resolve([]);
+  };
+
+  const syncTreeSelection = (code?: string | null) => {
+    if (!code) return;
+    nextTick(() => {
+      treeRef.value?.setCurrentKey?.(code);
+    });
+  };
+
+  /** 按关键词切换浏览树 / 检索树 */
+  const applyTreeKeywords = (raw: string) => {
+    const kw = raw.trim();
+    const keepCode = currentNode.value?.code;
+    if (!kw) {
+      searchActive.value = false;
+      displayTree.value = [];
+      treeRenderKey.value += 1;
+      syncTreeSelection(keepCode);
+      return;
+    }
+    searchActive.value = true;
+    displayTree.value = filterNavTree(navTreeAll.value, kw);
+    treeRenderKey.value += 1;
+    syncTreeSelection(keepCode);
+  };
+
+  const applyTreeKeywordsDebounced = debounce(applyTreeKeywords, 200);
+
   /**
    * 左侧树：加载
    * @param preserveCode 刷新后仍选中该节点（新增/删除子级后保持当前市/省），不传则首次选中第一个省
@@ -268,21 +404,23 @@
     getRegionNavTree()
       .then((data) => {
         treeLoading.value = false;
-        navTree.value = data ?? [];
-        if (navTree.value.length === 0) {
+        navTreeAll.value = data ?? [];
+        // 加载阶段预热拼音，输入时只做字符串判断
+        warmPinyinCache(collectNavNames(navTreeAll.value));
+        if (navTreeAll.value.length === 0) {
+          displayTree.value = [];
           return;
         }
+        applyTreeKeywords(keywords.value);
         let target: RegionNavNode | null = null;
         if (preserveCode) {
-          target = findNodeByCode(navTree.value, preserveCode);
+          target = findNodeByCode(navTreeAll.value, preserveCode);
         }
         if (!target) {
-          target = navTree.value[0];
+          target = navTreeAll.value[0];
         }
         handleNodeClick(target);
-        nextTick(() => {
-          treeRef.value?.setCurrentKey?.(target!.code);
-        });
+        syncTreeSelection(target.code);
       })
       .catch((e) => {
         treeLoading.value = false;
@@ -296,19 +434,16 @@
     reload({}, 1);
   };
 
-  /** 左侧树：过滤 */
-  const filterNode = (value: string, data: RegionNavNode) => {
-    if (value) {
-      return !!(data.name && data.name.includes(value));
-    }
-    return true;
-  };
-
   watch(keywords, (value) => {
-    treeRef.value?.filter?.(value);
+    if (!value?.trim()) {
+      applyTreeKeywordsDebounced.cancel();
+      applyTreeKeywords('');
+      return;
+    }
+    applyTreeKeywordsDebounced(value);
   });
 
-  /** 从导航树拼出节点完整路径，如 北京市/市辖区 */
+  /** 从完整导航树拼出节点路径，如 内蒙古自治区/鄂尔多斯市/东胜区 */
   const findNavPathNames = (
     nodes: RegionNavNode[],
     code: string,
@@ -327,7 +462,7 @@
 
   const getParentPath = (code?: string) => {
     if (!code) return '';
-    const names = findNavPathNames(navTree.value, code);
+    const names = findNavPathNames(navTreeAll.value, code);
     return names?.join('/') || '';
   };
 

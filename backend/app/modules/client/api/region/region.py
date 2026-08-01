@@ -23,8 +23,8 @@ async def get_nav_tree(
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """获取省+市两级树结构（左侧导航面板）"""
-    tree = await RegionService.get_nav_tree(db)
+    """获取省/市/区县三级树（左侧导航；前端浏览与检索分流渲染）"""
+    tree = await RegionService.get_nav_tree(db, max_level=3)
     return success(data=tree)
 
 

@@ -9,6 +9,7 @@ from sqlalchemy import select, func, exists, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
+from app.common.pinyin_utils import match_pinyin
 from app.modules.client.models.region.biz_region import BizRegion
 from app.modules.client.schemas.region.region import (
     RegionCreate, RegionUpdate, RegionOut,
@@ -108,26 +109,34 @@ class RegionService:
         name: Optional[str] = None,
         source: Optional[int] = None,
     ) -> dict:
-        """分页查询指定节点的子地区列表（右侧表格用）"""
+        """分页查询指定节点的子地区列表（右侧表格用，名称支持拼音/首字母）"""
         base = select(BizRegion).where(
             BizRegion.parent_code == parent_code,
             BizRegion.is_deleted == 0,
         )
-
-        if name:
-            base = base.where(BizRegion.name.contains(name))
         if source is not None:
             base = base.where(BizRegion.source == source)
 
-        count_q = select(func.count()).select_from(base.subquery())
-        count = (await db.execute(count_q)).scalar() or 0
-
-        result = await db.execute(
-            base.order_by(BizRegion.sort_order, BizRegion.code)
-            .offset((page - 1) * limit)
-            .limit(limit)
-        )
-        rows = result.scalars().all()
+        # 单父级下子地区数量通常较少；有名称关键词时内存拼音过滤后再分页
+        if name and name.strip():
+            result = await db.execute(
+                base.order_by(BizRegion.sort_order, BizRegion.code)
+            )
+            all_rows = [
+                r for r in result.scalars().all()
+                if match_pinyin(r.name or "", name)
+            ]
+            count = len(all_rows)
+            rows = all_rows[(page - 1) * limit: page * limit]
+        else:
+            count_q = select(func.count()).select_from(base.subquery())
+            count = (await db.execute(count_q)).scalar() or 0
+            result = await db.execute(
+                base.order_by(BizRegion.sort_order, BizRegion.code)
+                .offset((page - 1) * limit)
+                .limit(limit)
+            )
+            rows = list(result.scalars().all())
 
         codes = [r.code for r in rows]
         child_counts: dict[str, int] = {}
@@ -187,19 +196,18 @@ class RegionService:
         name: Optional[str] = None,
         source: Optional[int] = None,
     ) -> List[RegionOut]:
-        """按名称搜索地区（扁平列表）"""
+        """按名称搜索地区（扁平列表，支持拼音/首字母）"""
         stmt = select(BizRegion).where(BizRegion.is_deleted == 0)
-
-        if name:
-            stmt = stmt.where(BizRegion.name.contains(name))
         if source is not None:
             stmt = stmt.where(BizRegion.source == source)
 
         result = await db.execute(
             stmt.order_by(BizRegion.level, BizRegion.sort_order, BizRegion.code)
-            .limit(200)
         )
-        return [RegionOut.from_model(r) for r in result.scalars().all()]
+        rows = result.scalars().all()
+        if name and name.strip():
+            rows = [r for r in rows if match_pinyin(r.name or "", name)]
+        return [RegionOut.from_model(r) for r in rows[:200]]
 
     @staticmethod
     async def get_region(db: AsyncSession, region_id: int) -> RegionOut:
