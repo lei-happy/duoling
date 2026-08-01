@@ -4,6 +4,7 @@ import { toTree, mapTree } from 'ele-admin-plus';
 import type { MenuItem } from 'ele-admin-plus/es/ele-pro-layout/types';
 import type { UserMenuResult } from '@/utils/menu-util';
 import { formatUserMenu } from '@/utils/menu-util';
+import { isShowModuleOverviewEnabled } from '@/utils/workplace-config';
 import defaultAvatarUrl from '@/assets/avatar.png';
 import type { User } from '@/api/system/user/model';
 import { resolveUploadUrl } from '@/utils/upload-url';
@@ -75,7 +76,11 @@ export const useUserStore = defineStore('user', {
           idField: 'menuId',
           parentIdField: 'parentId'
         });
-        const userMenuResult: UserMenuResult = formatUserMenu(userMenu);
+        const workplaceConfig = userInfo.workplaceConfig;
+        const userMenuResult: UserMenuResult = formatUserMenu(userMenu, {
+          isModuleOverviewEnabled: (moduleKey) =>
+            isShowModuleOverviewEnabled(workplaceConfig, moduleKey)
+        });
         // 租户端已关闭自定义主题功能，主题固定为品牌配置，
         // 不再从服务端恢复主题外观自定义
         // 数据更新到状态管理中

@@ -10,6 +10,22 @@
       :accent-color="config?.accentColor"
     />
 
+    <section class="overview-pref">
+      <div class="overview-pref__row">
+        <div class="overview-pref__text">
+          <div class="overview-pref__title">下次进入本模块时先打开总览</div>
+          <div class="overview-pref__hint">
+            仅影响当前模块；关闭后进入本模块会直达第一个业务页，需要时仍可在侧栏打开总览
+          </div>
+        </div>
+        <el-switch
+          v-model="showOverview"
+          :disabled="prefSaving"
+          @change="onShowOverviewChange"
+        />
+      </div>
+    </section>
+
     <section v-if="workflow?.length" class="overview-section">
       <div class="overview-section__head">
         <h3 class="overview-section__title">工作流程</h3>
@@ -40,12 +56,22 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed } from 'vue';
+  import { computed, ref, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
+  import { EleMessage } from 'ele-admin-plus';
   import type { MenuItem } from 'ele-admin-plus/es/ele-pro-layout/types';
   import { useUserStore } from '@/store/modules/user';
+  import { saveWorkplaceConfigNow } from '@/api/home/workbench/quick-action';
   import { resolveOverviewConfig } from '@/config/module-overview';
   import type { OverviewModuleCard } from '@/config/module-overview/types';
+  import {
+    applyModuleOverviewRedirectPreference,
+    syncRouterModuleRedirects
+  } from '@/utils/menu-util';
+  import {
+    isShowModuleOverviewEnabled,
+    setModuleOverviewPreference
+  } from '@/utils/workplace-config';
   import OverviewHero from './components/overview-hero.vue';
   import OverviewWorkflow from './components/overview-workflow.vue';
   import OverviewModuleGrid from './components/overview-module-grid.vue';
@@ -64,6 +90,24 @@
     }
     return route.path.replace(/^\//, '').replace(/\/overview(-home)?$/, '');
   });
+
+  const showOverview = ref(
+    isShowModuleOverviewEnabled(
+      userStore.info?.workplaceConfig,
+      moduleKey.value
+    )
+  );
+  const prefSaving = ref(false);
+
+  watch(
+    [() => userStore.info?.workplaceConfig, moduleKey],
+    ([config, key]) => {
+      if (prefSaving.value) {
+        return;
+      }
+      showOverview.value = isShowModuleOverviewEnabled(config, key);
+    }
+  );
 
   /** 当前模块在菜单中的一级节点 */
   const moduleNode = computed<MenuItem | undefined>(() => {
@@ -115,6 +159,37 @@
       router.push(path).catch(() => {});
     }
   };
+
+  const onShowOverviewChange = async (value: string | number | boolean) => {
+    const next = value === true;
+    const prev = !next;
+    const key = moduleKey.value;
+    prefSaving.value = true;
+    const configToSave = setModuleOverviewPreference(
+      userStore.info?.workplaceConfig,
+      key,
+      next
+    );
+    try {
+      await saveWorkplaceConfigNow(configToSave);
+      if (userStore.info) {
+        userStore.info.workplaceConfig = configToSave;
+      }
+      applyModuleOverviewRedirectPreference(userStore.menus, (module) =>
+        isShowModuleOverviewEnabled(configToSave, module)
+      );
+      syncRouterModuleRedirects(userStore.menus, router);
+      EleMessage.success({ message: '已记住你对本模块的选择', plain: true });
+    } catch (e: any) {
+      showOverview.value = prev;
+      EleMessage.error({
+        message: e?.message || '保存失败，请稍后重试',
+        plain: true
+      });
+    } finally {
+      prefSaving.value = false;
+    }
+  };
 </script>
 
 <style lang="scss" scoped>
@@ -122,6 +197,39 @@
     :deep(.overview-section) + .overview-section {
       margin-top: 16px;
     }
+  }
+
+  .overview-pref {
+    margin-top: 12px;
+    padding: 14px 20px;
+    border-radius: 12px;
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color-lighter);
+  }
+
+  .overview-pref__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .overview-pref__text {
+    min-width: 0;
+  }
+
+  .overview-pref__title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--el-text-color-primary);
+    line-height: 1.4;
+  }
+
+  .overview-pref__hint {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    line-height: 1.5;
   }
 
   .overview-section {

@@ -190,3 +190,53 @@ class TestWorkplaceConfigApi:
         body = resp.json()
         assert body["code"] != 0
         assert "16" in body["message"]
+
+    async def test_update_workplace_config_show_module_overview_ok(self, auth_client):
+        """保存含按模块总览偏好的工作台配置 → code=0"""
+        resp = await auth_client.put(
+            "/api/console/auth/user-workplace-config",
+            json={
+                "workplaceConfig": {
+                    "version": 1,
+                    "quickActions": ["tenant"],
+                    "showModuleOverviewByModule": {
+                        "operation": False,
+                        "approval": True,
+                    },
+                }
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.json()["code"] == 0
+
+    async def test_update_workplace_config_show_module_overview_legacy_ok(
+        self, auth_client
+    ):
+        """旧版全局 showModuleOverview 布尔仍可保存（兼容）"""
+        resp = await auth_client.put(
+            "/api/console/auth/user-workplace-config",
+            json={
+                "workplaceConfig": {
+                    "version": 1,
+                    "quickActions": ["tenant"],
+                    "showModuleOverview": False,
+                }
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.json()["code"] == 0
+
+    async def test_update_workplace_config_show_module_overview_invalid(self, auth_client):
+        """showModuleOverviewByModule 值非法时返回业务错误"""
+        resp = await auth_client.put(
+            "/api/console/auth/user-workplace-config",
+            json={
+                "workplaceConfig": {
+                    "showModuleOverviewByModule": {"operation": "no"}
+                }
+            },
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] != 0
+        assert "总览" in body["message"]

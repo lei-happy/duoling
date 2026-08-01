@@ -11,6 +11,7 @@ import {
   getQuickActionRegistry,
   saveWorkplaceConfig
 } from '@/api/home/workbench/quick-action';
+import { mergeWorkplaceConfig } from '@/utils/workplace-config';
 import {
   getDefaultQuickActionKeys,
   getQuickActionConfig,
@@ -18,7 +19,6 @@ import {
   getRegistryKeys,
   normalizeQuickActionKey,
   setQuickActionRegistry,
-  QUICK_ACTION_CONFIG_VERSION,
   QUICK_ACTION_MAX
 } from './quick-action-registry';
 import type {
@@ -63,11 +63,11 @@ function toQuickActionItem(config: QuickActionConfig): QuickActionItem {
   return { ...config, to: resolveTo(config) };
 }
 
-function buildWorkplaceConfig(keys: string[]): WorkplaceConfig {
-  return {
-    version: QUICK_ACTION_CONFIG_VERSION,
-    quickActions: keys
-  };
+function buildWorkplaceConfig(
+  keys: string[],
+  current?: unknown
+): WorkplaceConfig {
+  return mergeWorkplaceConfig(current, { quickActions: keys });
 }
 
 function sanitizeKeys(keys: unknown): string[] {
@@ -147,7 +147,10 @@ export function useQuickActions() {
   );
 
   const persist = () => {
-    const config = buildWorkplaceConfig(selectedKeys.value);
+    const config = buildWorkplaceConfig(
+      selectedKeys.value,
+      userStore.info?.workplaceConfig
+    );
     saveWorkplaceConfig(config);
     // 仅同步 workplaceConfig，避免 setInfo 整对象替换触发无关 UI（如问候语）刷新
     if (userStore.info) {

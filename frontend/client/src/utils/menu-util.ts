@@ -139,14 +139,45 @@ function formatMenus(data: Menu[], childField = 'children'): UserMenuResult {
 }
 
 /**
- * 为每个一级业务模块在其子菜单最前方注入「总览」入口，并将模块默认重定向指向总览页。
+ * 计算一级模块默认落地路径。
+ * - showModuleOverview=true：总览页
+ * - false：首个可见业务子页；若无则回退总览
+ */
+function resolveModuleRedirect(
+  children: MenuItem[],
+  overviewPath: string,
+  showModuleOverview: boolean
+): string {
+  if (showModuleOverview) {
+    return overviewPath;
+  }
+  const firstBiz = children.find(
+    (child) =>
+      !!child.path &&
+      !child.meta?.overviewModule &&
+      !child.meta?.hide &&
+      !isExternalLink(child.path)
+  );
+  return firstBiz?.path || overviewPath;
+}
+
+/** 判断某模块是否默认落地总览；未提供时全部视为 true */
+export type ModuleOverviewEnabledResolver = (moduleKey: string) => boolean;
+
+/**
+ * 为每个一级业务模块在其子菜单最前方注入「总览」入口，并设置模块默认重定向。
  *
  * - 仅处理有子菜单、且未被排除（如工作台叶子）的可见一级模块；
  * - 总览节点全部指向同一个共享组件，页面内按 meta.overviewModule 区分模块；
- * - 幂等处理：若已存在总览节点则跳过插入，仅纠正重定向，避免重复注入。
+ * - 幂等处理：若已存在总览节点则跳过插入，仅纠正重定向，避免重复注入；
+ * - 侧栏始终保留总览；某模块关闭时仅改该模块 redirect 到首个业务子页。
  * @param menus 已格式化的菜单树
+ * @param isOverviewEnabled 按模块 key 判断是否默认落地总览
  */
-function injectModuleOverview(menus?: MenuItem[]): MenuItem[] | undefined {
+function injectModuleOverview(
+  menus?: MenuItem[],
+  isOverviewEnabled: ModuleOverviewEnabledResolver = () => true
+): MenuItem[] | undefined {
   if (!menus?.length) {
     return menus;
   }
@@ -163,12 +194,17 @@ function injectModuleOverview(menus?: MenuItem[]): MenuItem[] | undefined {
       return;
     }
     const moduleKey = path.replace(/^\//, '');
+    const showOverview = isOverviewEnabled(moduleKey);
     // 幂等：若已注入过总览（按 overviewModule 标识），仅纠正重定向后返回
     const injected = children.find(
       (child) => child.meta?.overviewModule === moduleKey
     );
     if (injected?.path) {
-      top.redirect = injected.path;
+      top.redirect = resolveModuleRedirect(
+        children,
+        injected.path,
+        showOverview
+      );
       return;
     }
     // 与既有业务子路由同名（如 /insight/overview 运营看板）时启用兜底后缀，避免路由被覆盖
@@ -186,10 +222,65 @@ function injectModuleOverview(menus?: MenuItem[]): MenuItem[] | undefined {
         overviewModule: moduleKey
       }
     });
-    // 覆写模块默认重定向，使点击顶部一级菜单默认落地总览页
-    top.redirect = overviewPath;
+    top.redirect = resolveModuleRedirect(
+      children,
+      overviewPath,
+      showOverview
+    );
   });
   return menus;
+}
+
+/**
+ * 按用户偏好更新已注入总览的菜单树 redirect（不增删菜单节点）。
+ * 切换偏好后同步侧栏数据用；可按模块分别开关。
+ */
+export function applyModuleOverviewRedirectPreference(
+  menus?: MenuItem[] | null,
+  isOverviewEnabled: ModuleOverviewEnabledResolver = () => true
+): void {
+  if (!menus?.length) {
+    return;
+  }
+  menus.forEach((top) => {
+    const children = top.children;
+    if (!children?.length || !top.path) {
+      return;
+    }
+    const overview = children.find((child) => child.meta?.overviewModule);
+    if (!overview?.path) {
+      return;
+    }
+    const moduleKey = top.path.replace(/^\//, '');
+    top.redirect = resolveModuleRedirect(
+      children,
+      overview.path,
+      isOverviewEnabled(moduleKey)
+    );
+  });
+}
+
+/**
+ * 将菜单上的模块 redirect 同步到已注册的 Vue Router 记录，
+ * 使偏好切换后访问模块根路径立即生效，无需整页刷新。
+ */
+export function syncRouterModuleRedirects(
+  menus?: MenuItem[] | null,
+  router?: { getRoutes: () => Array<{ path: string; redirect?: unknown }> }
+): void {
+  if (!menus?.length || !router) {
+    return;
+  }
+  const records = router.getRoutes();
+  menus.forEach((top) => {
+    if (!top.path || !top.redirect) {
+      return;
+    }
+    const record = records.find((r) => r.path === top.path);
+    if (record) {
+      record.redirect = top.redirect;
+    }
+  });
 }
 
 /**
@@ -216,13 +307,23 @@ function applyMenuIconRules(menus?: MenuItem[]): MenuItem[] | undefined {
   return menus;
 }
 
+export interface FormatUserMenuOptions {
+  /** 按模块判断是否默认落地总览；缺省全部 true */
+  isModuleOverviewEnabled?: ModuleOverviewEnabledResolver;
+}
+
 /**
  * 处理用户菜单数据
  * @param userMenu 用户菜单
+ * @param options 可选：总览默认落地等用户偏好
  */
-export function formatUserMenu(userMenu: Menu[]): UserMenuResult {
+export function formatUserMenu(
+  userMenu: Menu[],
+  options?: FormatUserMenuOptions
+): UserMenuResult {
+  const isOverviewEnabled = options?.isModuleOverviewEnabled ?? (() => true);
   const result = formatMenus(USER_MENUS ?? userMenu);
-  result.menus = injectModuleOverview(result.menus);
+  result.menus = injectModuleOverview(result.menus, isOverviewEnabled);
   result.menus = applyMenuIconRules(result.menus);
   return result;
 }

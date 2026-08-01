@@ -4,10 +4,21 @@
 
 export type QuickActionType = 'route' | 'external';
 
-/** 服务端持久化的工作台配置结构 */
+/** 服务端持久化的工作台配置结构（用户级偏好袋） */
 export interface WorkplaceConfig {
   version: number;
   quickActions: string[];
+  /**
+   * @deprecated 旧版全局开关；读偏好时仅作未配置模块的回退。
+   * 新写入请用 showModuleOverviewByModule。
+   */
+  showModuleOverview?: boolean;
+  /**
+   * 按一级模块 key（如 operation、approval）控制是否默认落地总览。
+   * 缺省 / true：模块根路径 redirect 到总览；false：redirect 到首个业务子页。
+   * 侧栏「总览」入口始终保留，与本字段无关。
+   */
+  showModuleOverviewByModule?: Record<string, boolean>;
 }
 
 export interface QuickActionConfig {

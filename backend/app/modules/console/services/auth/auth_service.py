@@ -973,6 +973,22 @@ class AuthService:
         version = config.get("version")
         if version is not None and not isinstance(version, int):
             raise BizException("工作台配置 version 必须为整数")
+        # 旧版全局总览开关（兼容读取）
+        show_overview = config.get("showModuleOverview")
+        if show_overview is not None and not isinstance(show_overview, bool):
+            raise BizException("模块总览偏好格式无效")
+        # 按模块独立的总览落地偏好：{ "operation": false, "approval": true }
+        by_module = config.get("showModuleOverviewByModule")
+        if by_module is not None:
+            if not isinstance(by_module, dict):
+                raise BizException("模块总览偏好格式无效")
+            if len(by_module) > 64:
+                raise BizException("模块总览偏好项过多")
+            for module_key, enabled in by_module.items():
+                if not isinstance(module_key, str) or not module_key.strip():
+                    raise BizException("模块总览偏好格式无效")
+                if not isinstance(enabled, bool):
+                    raise BizException("模块总览偏好格式无效")
         quick_actions = config.get("quickActions")
         if quick_actions is None:
             return

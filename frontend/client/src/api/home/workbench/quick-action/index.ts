@@ -7,13 +7,24 @@ import type {
   WorkplaceConfig
 } from '@/views/dashboard/workplace/quick-action/types';
 
+/** 立即保存工作台配置（抛错供调用方提示用户） */
+export async function saveWorkplaceConfigNow(
+  workplaceConfig: WorkplaceConfig | null
+): Promise<void> {
+  const res = await request.put<ApiResult<unknown>>(
+    '/auth/user-workplace-config',
+    { workplaceConfig }
+  );
+  if (res.data.code !== 0) {
+    return Promise.reject(new Error(res.data.message || '保存失败'));
+  }
+}
+
 async function _saveWorkplaceConfig(
   workplaceConfig: WorkplaceConfig | null
 ): Promise<void> {
   try {
-    await request.put<ApiResult<unknown>>('/auth/user-workplace-config', {
-      workplaceConfig
-    });
+    await saveWorkplaceConfigNow(workplaceConfig);
   } catch (e) {
     console.error('保存工作台配置失败', e);
   }
