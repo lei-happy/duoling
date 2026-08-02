@@ -1,107 +1,79 @@
 <template>
   <ele-page>
-    <role-search @search="(where) => reload(where, 1)" />
+    <role-search @search="onSearch" />
     <ele-card :body-style="{ paddingTop: '8px' }">
-      <ele-pro-table
-        ref="tableRef"
-        row-key="roleId"
-        :columns="columns"
-        :datasource="datasource"
-        :show-overflow-tooltip="true"
-        :highlight-current-row="true"
-        :tools="proTableToolsWithExportPrint"
-        :export-config="{ fileName: '角色数据', datasource: exportSource }"
-        :print-config="{ datasource: exportSource }"
-        cache-key="SystemRoleTable"
-      >
-        <template #toolbar>
-          <btn-items :items="[{ preset: 'add', onClick: () => openEdit() }]" />
-        </template>
-        <template #action="{ row }">
+      <div class="role-gallery-toolbar">
+        <btn-items :items="[{ preset: 'add', onClick: () => openEdit() }]" />
+      </div>
+
+      <div v-loading="loading" class="role-gallery-body">
+        <div v-if="list.length" class="role-card-grid">
+          <role-card
+            v-for="item in list"
+            :key="item.roleId"
+            :data="item"
+            @auth="openAuth(item)"
+            @edit="openEdit(item)"
+            @delete="remove(item)"
+            @view-users="openUsers(item)"
+          />
+          <button
+            type="button"
+            class="role-card-create"
+            @click="openEdit()"
+          >
+            <span class="role-card-create__plus">+</span>
+            <span>新建角色</span>
+          </button>
+        </div>
+        <el-empty v-else-if="!loading" description="还没有角色，先新建一个吧">
           <btn-items
-            :divider="true"
-            type="link"
             :items="[
-              { preset: 'edit', onClick: () => openEdit(row) },
-              {
-                title: '分配权限',
-                icon: AppstoreAddOutlined,
-                onClick: () => openAuth(row)
-              },
-              { preset: 'del', onClick: () => remove(row) }
+              { preset: 'add', title: '新建角色', onClick: () => openEdit() }
             ]"
           />
-        </template>
-      </ele-pro-table>
+        </el-empty>
+      </div>
     </ele-card>
   </ele-page>
 </template>
 
 <script lang="ts" setup>
-  import { ref } from 'vue';
+  import { ref, onMounted } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage, useModal } from 'ele-admin-plus';
-  import type { EleProTable } from 'ele-admin-plus';
-  import type {
-    DatasourceFunction,
-    Columns
-  } from 'ele-admin-plus/es/ele-pro-table/types';
-  import { proTableToolsWithExportPrint } from '@/config/pro-table-tool-presets';
-  import { AppstoreAddOutlined } from '@/components/icons';
   import RoleSearch from './components/role-search.vue';
-  import { pageRoles, removeRole, listRoles } from '@/api/system/role';
+  import RoleCard from './components/role-card.vue';
+  import { listRoles, removeRole } from '@/api/system/role';
   import type { Role, RoleParam } from '@/api/system/role/model';
 
   defineOptions({ name: 'SystemRole' });
 
   const { openModal } = useModal();
 
-  /** 表格实例 */
-  const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
+  const loading = ref(false);
+  const list = ref<Role[]>([]);
+  const queryWhere = ref<RoleParam>({});
 
-  /** 表格列配置 */
-  const columns = ref<Columns>([
-    {
-      prop: 'roleName',
-      label: '角色名称',
-      minWidth: 120
-    },
-    {
-      prop: 'roleCode',
-      label: '角色标识',
-      minWidth: 120
-    },
-    {
-      prop: 'comments',
-      label: '角色描述',
-      minWidth: 140
-    },
-    {
-      prop: 'createTime',
-      label: '创建时间',
-      sortable: 'custom',
-      width: 180,
-      align: 'center'
-    },
-    {
-      columnKey: 'action',
-      label: '操作',
-      width: 240,
-      align: 'center',
-      slot: 'action',
-      hideInPrint: true,
-      hideInExport: true
+  const loadData = async () => {
+    loading.value = true;
+    try {
+      list.value = await listRoles({ ...queryWhere.value });
+    } catch (e: any) {
+      list.value = [];
+      EleMessage.error({ message: e.message, plain: true });
+    } finally {
+      loading.value = false;
     }
-  ]);
-
-  /** 表格数据源 */
-  const datasource: DatasourceFunction = ({ pages, where, orders }) => {
-    return pageRoles({ ...where, ...orders, ...pages });
   };
 
-  /** 搜索 */
-  const reload = (where?: RoleParam, page?: number) => {
-    tableRef.value?.reload?.({ where, page });
+  const reload = () => {
+    loadData();
+  };
+
+  const onSearch = (where?: RoleParam) => {
+    queryWhere.value = { ...(where || {}) };
+    loadData();
   };
 
   /** 打开编辑弹窗 */
@@ -122,33 +94,111 @@
     });
   };
 
-  /** 删除单行 */
+  /** 查看角色关联人员 */
+  const openUsers = (row: Role) => {
+    openModal({
+      custom: true,
+      asyncComponent: () => import('./components/role-users.vue'),
+      componentProps: { data: row }
+    });
+  };
+
+  /** 删除 */
   const remove = (row: Role) => {
-    ElMessageBox.confirm(`确定要删除“${row.roleName}”吗?`, '系统提示', {
+    ElMessageBox.confirm(`确定要删除「${row.roleName}」吗？`, '系统提示', {
       type: 'warning',
       draggable: true
     })
       .then(() => {
-        const loading = EleMessage.loading({
-          message: '请求中..',
+        const loadingMsg = EleMessage.loading({
+          message: '正在删除角色，请稍候…',
           plain: true
         });
         removeRole(row.roleId)
           .then((msg) => {
-            loading.close();
+            loadingMsg.close();
             EleMessage.success({ message: msg, plain: true });
             reload();
           })
           .catch((e) => {
-            loading.close();
+            loadingMsg.close();
             EleMessage.error({ message: e.message, plain: true });
           });
       })
       .catch(() => {});
   };
 
-  /** 导出和打印全部数据的数据源 */
-  const exportSource: DatasourceFunction = ({ where, orders }) => {
-    return listRoles({ ...where, ...orders });
-  };
+  onMounted(() => {
+    loadData();
+  });
 </script>
+
+<style scoped>
+  .role-gallery-toolbar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .role-gallery-body {
+    min-height: 200px;
+  }
+
+  .role-card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  @media (max-width: 1400px) {
+    .role-card-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 992px) {
+    .role-card-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .role-card-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .role-card-create {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 180px;
+    margin: 0;
+    padding: 16px;
+    border: 1px dashed var(--el-border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--el-text-color-secondary);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .role-card-create:hover {
+    border-color: var(--el-color-primary);
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+  }
+
+  .role-card-create__plus {
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 300;
+  }
+</style>

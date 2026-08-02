@@ -14,6 +14,10 @@ export interface Role {
   comments?: string;
   /** 创建时间 */
   createTime?: string;
+  /** 关联用户数 */
+  userCount?: number;
+  /** 已授权菜单数 */
+  menuCount?: number;
 }
 
 /**

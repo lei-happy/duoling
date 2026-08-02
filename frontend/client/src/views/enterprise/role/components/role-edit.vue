@@ -23,13 +23,12 @@
           clearable
         />
       </el-form-item>
-      <el-form-item prop="roleCode">
+      <el-form-item v-if="isUpdate">
         <floating-label
-          label="请输入角色标识"
+          label="角色标识"
           type="input"
           v-model.trim="form.roleCode"
-          :maxlength="20"
-          clearable
+          disabled
         />
       </el-form-item>
       <el-form-item>
@@ -99,14 +98,6 @@
         type: 'string',
         trigger: 'blur'
       }
-    ],
-    roleCode: [
-      {
-        required: true,
-        message: '请输入角色标识',
-        type: 'string',
-        trigger: 'blur'
-      }
     ]
   });
 
@@ -122,8 +113,14 @@
         return;
       }
       loading.value = true;
+      const payload: Role = isUpdate.value
+        ? { ...form }
+        : {
+            roleName: form.roleName,
+            comments: form.comments
+          };
       const saveOrUpdate = isUpdate.value ? updateRole : addRole;
-      saveOrUpdate(form)
+      saveOrUpdate(payload)
         .then((msg) => {
           loading.value = false;
           EleMessage.success({ message: msg, plain: true });

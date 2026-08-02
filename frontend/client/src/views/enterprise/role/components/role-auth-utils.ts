@@ -50,9 +50,95 @@ export function filterAuthNode(value: string, data: Menu): boolean {
     return true;
   }
   const kw = value.trim().toLowerCase();
+  return menuTextMatches(data, kw);
+}
+
+function menuTextMatches(data: Menu, kw: string): boolean {
   const title = (data.title || '').toLowerCase();
   const auth = (data.authority || '').toLowerCase();
   return title.includes(kw) || auth.includes(kw);
+}
+
+/** 节点自身或任意子孙是否匹配关键词 */
+export function menuOrDescendantMatches(node: Menu, filterText: string): boolean {
+  const kw = filterText?.trim().toLowerCase();
+  if (!kw) {
+    return true;
+  }
+  if (menuTextMatches(node, kw)) {
+    return true;
+  }
+  return (node.children ?? []).some((c) => menuOrDescendantMatches(c, filterText));
+}
+
+/** 模块勾选统计（含自身） */
+export function countModuleSelection(
+  module: Menu,
+  checkedSet: ReadonlySet<number>
+): { checked: number; total: number } {
+  const ids = collectAllMenuIds([module]);
+  let checked = 0;
+  for (const id of ids) {
+    if (checkedSet.has(id)) {
+      checked++;
+    }
+  }
+  return { checked, total: ids.length };
+}
+
+/**
+ * 与 el-tree（非 check-strictly）一致：若父节点在勾选集中，则级联补全全部子孙
+ */
+export function expandCheckedKeysWithCascade(
+  modules: Menu[],
+  checked: number[]
+): number[] {
+  const set = new Set(checked);
+  const walk = (node: Menu) => {
+    if (node.menuId != null && set.has(node.menuId)) {
+      for (const id of collectAllMenuIds([node])) {
+        set.add(id);
+      }
+      return;
+    }
+    for (const child of node.children ?? []) {
+      walk(child);
+    }
+  };
+  for (const m of modules) {
+    walk(m);
+  }
+  return [...set];
+}
+
+/**
+ * 提交用 id：完全勾选的节点 + 有勾选子孙的祖先（等价于 checked + half-checked）
+ */
+export function collectSaveMenuIds(
+  modules: Menu[],
+  checkedSet: ReadonlySet<number>
+): number[] {
+  const ids: number[] = [];
+  const walk = (node: Menu): boolean => {
+    let childHit = false;
+    for (const child of node.children ?? []) {
+      if (walk(child)) {
+        childHit = true;
+      }
+    }
+    const selfHit = node.menuId != null && checkedSet.has(node.menuId);
+    if (selfHit || childHit) {
+      if (node.menuId != null) {
+        ids.push(node.menuId);
+      }
+      return true;
+    }
+    return false;
+  };
+  for (const m of modules) {
+    walk(m);
+  }
+  return ids;
 }
 
 /**

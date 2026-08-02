@@ -2,6 +2,7 @@ import request from '@/utils/request';
 import type { ApiResult, PageResult } from '@/api';
 import type { Role, RoleParam } from './model';
 import type { Menu } from '../menu/model';
+import type { User } from '../user/model';
 
 /**
  * 分页查询角色
@@ -59,6 +60,19 @@ export async function removeRole(id?: number) {
   const res = await request.delete<ApiResult<unknown>>(`/system/role/${id}`);
   if (res.data.code === 0) {
     return res.data.message;
+  }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/**
+ * 查询拥有该角色的员工列表
+ */
+export async function listRoleUsers(roleId?: number) {
+  const res = await request.get<ApiResult<User[]>>(
+    `/system/role/${roleId}/users`
+  );
+  if (res.data.code === 0 && res.data.data) {
+    return res.data.data;
   }
   return Promise.reject(new Error(res.data.message));
 }

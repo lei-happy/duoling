@@ -2,7 +2,8 @@
 企业端角色管理服务（租户库）
 """
 
-from typing import Optional, List
+import secrets
+from typing import Optional, List, Dict
 
 from sqlalchemy import select, func, asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,9 +11,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.exceptions import BizException
 from app.modules.client.models.role.biz_role import BizRole
 from app.modules.client.models.role.biz_role_menu import BizRoleMenu
+from app.modules.client.models.user.biz_user import BizUser
+from app.modules.client.models.user.biz_user_role import BizUserRole
 from app.modules.client.schemas.role.role import (
     BizRoleCreate, BizRoleUpdate, BizRoleOut,
 )
+from app.modules.client.schemas.user.user import BizUserOut
 
 # 与前端表格列 prop 对齐，仅允许白名单字段参与排序
 _ROLE_SORT_COLUMNS = {
@@ -34,6 +38,65 @@ def _role_list_order_clauses(sort: Optional[str], order: Optional[str]):
 
 
 class BizRoleService:
+
+    @staticmethod
+    async def _load_role_stats(
+        db: AsyncSession, role_ids: List[int]
+    ) -> Dict[int, Dict[str, int]]:
+        """批量聚合角色关联用户数、已授权菜单数。"""
+        if not role_ids:
+            return {}
+        stats: Dict[int, Dict[str, int]] = {
+            rid: {"userCount": 0, "menuCount": 0} for rid in role_ids
+        }
+
+        # 与 list_role_users 一致：只计未删除用户，且按 user_id 去重
+        user_rows = await db.execute(
+            select(
+                BizUserRole.role_id,
+                func.count(func.distinct(BizUserRole.user_id)),
+            )
+            .join(
+                BizUser,
+                (BizUser.id == BizUserRole.user_id) & (BizUser.is_deleted == 0),
+            )
+            .where(
+                BizUserRole.role_id.in_(role_ids),
+                BizUserRole.is_deleted == 0,
+            )
+            .group_by(BizUserRole.role_id)
+        )
+        for role_id, cnt in user_rows.all():
+            stats[int(role_id)]["userCount"] = int(cnt)
+
+        menu_rows = await db.execute(
+            select(BizRoleMenu.role_id, func.count())
+            .where(
+                BizRoleMenu.role_id.in_(role_ids),
+                BizRoleMenu.is_deleted == 0,
+            )
+            .group_by(BizRoleMenu.role_id)
+        )
+        for role_id, cnt in menu_rows.all():
+            stats[int(role_id)]["menuCount"] = int(cnt)
+
+        return stats
+
+    @staticmethod
+    def _roles_to_out(
+        roles: List[BizRole], stats: Dict[int, Dict[str, int]]
+    ) -> List[BizRoleOut]:
+        items: List[BizRoleOut] = []
+        for r in roles:
+            s = stats.get(r.id) or {}
+            items.append(
+                BizRoleOut.from_model(
+                    r,
+                    user_count=s.get("userCount", 0),
+                    menu_count=s.get("menuCount", 0),
+                )
+            )
+        return items
 
     @staticmethod
     async def page_roles(
@@ -61,7 +124,11 @@ class BizRoleService:
             .offset((page - 1) * limit)
             .limit(limit)
         )
-        items = [BizRoleOut.from_model(r) for r in result.scalars().all()]
+        roles = list(result.scalars().all())
+        stats = await BizRoleService._load_role_stats(
+            db, [r.id for r in roles]
+        )
+        items = BizRoleService._roles_to_out(roles, stats)
 
         return {
             "list": [item.model_dump() for item in items],
@@ -71,29 +138,58 @@ class BizRoleService:
     @staticmethod
     async def list_roles(
         db: AsyncSession,
+        role_name: Optional[str] = None,
+        role_code: Optional[str] = None,
         sort: Optional[str] = None,
         order: Optional[str] = None,
     ) -> List[BizRoleOut]:
+        base = select(BizRole).where(BizRole.is_deleted == 0)
+        if role_name:
+            base = base.where(BizRole.role_name.contains(role_name))
+        if role_code:
+            base = base.where(BizRole.role_code.contains(role_code))
+
         result = await db.execute(
-            select(BizRole)
-            .where(BizRole.is_deleted == 0)
-            .order_by(*_role_list_order_clauses(sort, order))
+            base.order_by(*_role_list_order_clauses(sort, order))
         )
-        return [BizRoleOut.from_model(r) for r in result.scalars().all()]
+        roles = list(result.scalars().all())
+        stats = await BizRoleService._load_role_stats(
+            db, [r.id for r in roles]
+        )
+        return BizRoleService._roles_to_out(roles, stats)
+
+    @staticmethod
+    async def _generate_role_code(db: AsyncSession) -> str:
+        """生成角色标识：R + 8 位十六进制，冲突则重试。"""
+        for _ in range(12):
+            code = "R" + secrets.token_hex(4).upper()
+            existing = await db.execute(
+                select(BizRole.id).where(
+                    BizRole.role_code == code,
+                    BizRole.is_deleted == 0,
+                )
+            )
+            if existing.scalar_one_or_none() is None:
+                return code
+        raise BizException("角色标识生成失败，请稍后重试")
 
     @staticmethod
     async def create_role(db: AsyncSession, data: BizRoleCreate) -> BizRole:
-        existing = await db.execute(
-            select(BizRole).where(
-                BizRole.role_code == data.roleCode,
-                BizRole.is_deleted == 0,
+        role_code = (data.roleCode or "").strip() or None
+        if role_code:
+            existing = await db.execute(
+                select(BizRole).where(
+                    BizRole.role_code == role_code,
+                    BizRole.is_deleted == 0,
+                )
             )
-        )
-        if existing.scalar_one_or_none():
-            raise BizException(f"角色编码 {data.roleCode} 已存在")
+            if existing.scalar_one_or_none():
+                raise BizException(f"角色编码 {role_code} 已存在")
+        else:
+            role_code = await BizRoleService._generate_role_code(db)
 
         role = BizRole(
-            role_code=data.roleCode,
+            role_code=role_code,
             role_name=data.roleName,
             sort_order=0,
             remark=data.comments,
@@ -141,6 +237,44 @@ class BizRoleService:
             raise BizException("管理员角色无法删除")
         role.is_deleted = 1
         await db.flush()
+
+    @staticmethod
+    async def list_role_users(db: AsyncSession, role_id: int) -> List[dict]:
+        """查询拥有指定角色的员工列表。"""
+        role = (
+            await db.execute(
+                select(BizRole).where(
+                    BizRole.id == role_id,
+                    BizRole.is_deleted == 0,
+                )
+            )
+        ).scalar_one_or_none()
+        if not role:
+            raise BizException("角色不存在")
+
+        result = await db.execute(
+            select(BizUser)
+            .join(
+                BizUserRole,
+                (BizUserRole.user_id == BizUser.id)
+                & (BizUserRole.role_id == role_id)
+                & (BizUserRole.is_deleted == 0),
+            )
+            .where(BizUser.is_deleted == 0)
+            .order_by(desc(BizUser.id))
+        )
+        users = list(result.scalars().all())
+
+        # 延迟导入，避免与 user_service 循环依赖
+        from app.modules.client.services.user.user_service import BizUserService
+
+        items: List[dict] = []
+        for u in users:
+            dept_name = await BizUserService._get_dept_name(db, u.department_id)
+            items.append(
+                BizUserOut.from_model(u, dept_name=dept_name).model_dump()
+            )
+        return items
 
     @staticmethod
     async def get_role_menu_ids(db: AsyncSession, role_id: int) -> List[int]:

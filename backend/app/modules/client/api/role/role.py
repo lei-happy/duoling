@@ -42,13 +42,21 @@ async def page_roles(
 
 @router.get("")
 async def list_roles(
+    roleName: Optional[str] = Query(None),
+    roleCode: Optional[str] = Query(None),
     sort: Optional[str] = Query(None),
     order: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
-    """获取角色列表"""
-    items = await BizRoleService.list_roles(db, sort=sort, order=order)
+    """获取角色列表（含关联用户数、已授权菜单数）"""
+    items = await BizRoleService.list_roles(
+        db,
+        role_name=roleName,
+        role_code=roleCode,
+        sort=sort,
+        order=order,
+    )
     return success(data=[item.model_dump() for item in items])
 
 
@@ -89,6 +97,17 @@ async def delete_role(
     """删除角色"""
     await BizRoleService.delete_role(db, role_id)
     return success()
+
+
+@router.get("/{role_id}/users")
+async def list_role_users(
+    role_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    """查询拥有该角色的员工列表"""
+    items = await BizRoleService.list_role_users(db, role_id)
+    return success(data=items)
 
 
 @router.get("/{role_id}/menus")

@@ -4,16 +4,16 @@
 """
 
 from typing import Optional, List
-from datetime import datetime
 from pydantic import BaseModel
 
 
 class BizRoleCreate(BaseModel):
     model_config = {"extra": "ignore"}
 
-    roleCode: str
     roleName: str
     comments: Optional[str] = None
+    # 可选；不传则由服务端自动生成
+    roleCode: Optional[str] = None
 
 
 class BizRoleUpdate(BaseModel):
@@ -31,17 +31,26 @@ class BizRoleOut(BaseModel):
     roleName: str
     comments: Optional[str] = None
     createTime: Optional[str] = None
+    userCount: int = 0
+    menuCount: int = 0
 
     model_config = {"from_attributes": True}
 
     @classmethod
-    def from_model(cls, m) -> "BizRoleOut":
+    def from_model(
+        cls,
+        m,
+        user_count: int = 0,
+        menu_count: int = 0,
+    ) -> "BizRoleOut":
         return cls(
             roleId=m.id,
             roleCode=m.role_code,
             roleName=m.role_name,
             comments=m.remark,
             createTime=m.created_at.strftime("%Y-%m-%d %H:%M:%S") if m.created_at else None,
+            userCount=user_count,
+            menuCount=menu_count,
         )
 
 
