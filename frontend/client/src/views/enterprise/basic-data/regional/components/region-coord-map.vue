@@ -26,13 +26,14 @@
         </template>
       </el-autocomplete>
     </div>
-    <div class="region-coord-map-tip">点击地图或搜索地点选择坐标</div>
+    <div class="region-coord-map-tip">{{ tipText }}</div>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
+  import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
   import AMapLoader from '@amap/amap-jsapi-loader';
+  import { EleMessage } from 'ele-admin-plus';
   import { Search } from '@element-plus/icons-vue';
 
   type SuggestItem = {
@@ -46,8 +47,10 @@
   const props = defineProps<{
     longitude?: string | number | null;
     latitude?: string | number | null;
-    /** 输入建议城市范围，默认全国 */
-    suggestionCity?: string;
+    /** 上级行政区划代码（adcode），用于搜索偏置与落点校验 */
+    parentCode?: string;
+    /** 上级地区名称，用于提示文案 */
+    parentName?: string;
   }>();
 
   const emit = defineEmits<{
@@ -63,10 +66,21 @@
   let mapIns: any = null;
   let AMapNS: any = null;
   let marker: any = null;
+  let boundaryPolygons: any[] = [];
   let autoCompleteIns: any = null;
+  let geocoderIns: any = null;
   let lastSuggestion = '';
   let suggestionData: SuggestItem[] = [];
   let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+  let applyingPoint = false;
+
+  const tipText = computed(() => {
+    const name = props.parentName?.trim();
+    if (name) {
+      return `请在「${name}」范围内点选或搜索`;
+    }
+    return '请在当前上级地区范围内点选或搜索';
+  });
 
   const toCoord = (value: string | number | null | undefined) => {
     if (value === '' || value == null) return null;
@@ -80,11 +94,52 @@
     return toCoord(props.longitude) != null && toCoord(props.latitude) != null;
   };
 
+  const normalizeAdcode = (code?: string | null) => {
+    const raw = (code || '').trim();
+    if (!raw) return '';
+    // 国标多为 6 位；不足补 0，便于前缀比较
+    return raw.padEnd(6, '0').slice(0, 6);
+  };
+
+  /**
+   * 判断点的 adcode 是否属于上级行政区。
+   * - 区县：全码相等
+   * - 市（xx yy 00）：前 4 位一致
+   * - 省（xx 0000）：前 2 位一致
+   */
+  const isAdcodeWithinParent = (pointAdcode: string, parentCode: string) => {
+    const point = normalizeAdcode(pointAdcode);
+    const parent = normalizeAdcode(parentCode);
+    if (!point || !parent) return false;
+    if (parent.endsWith('0000')) {
+      return point.slice(0, 2) === parent.slice(0, 2);
+    }
+    if (parent.endsWith('00')) {
+      return point.slice(0, 4) === parent.slice(0, 4);
+    }
+    return point === parent;
+  };
+
+  const outOfRangeMessage = () => {
+    const name = props.parentName?.trim();
+    if (name) {
+      return `所选位置不在「${name}」范围内，请在当前地区内重新选择`;
+    }
+    return '所选位置不在当前上级地区范围内，请重新选择';
+  };
+
   const destroyMarker = () => {
     if (marker) {
       marker.setMap(null);
       marker = null;
     }
+  };
+
+  const clearBoundary = () => {
+    boundaryPolygons.forEach((p) => {
+      p.setMap?.(null);
+    });
+    boundaryPolygons = [];
   };
 
   const showMarker = (lng: number, lat: number) => {
@@ -107,13 +162,90 @@
     }
   };
 
-  const applyPoint = (lng: number, lat: number) => {
+  const reverseGeocodeAdcode = (lng: number, lat: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (!geocoderIns) {
+        reject(new Error('Geocoder instance is null'));
+        return;
+      }
+      geocoderIns.getAddress([lng, lat], (status: string, result: any) => {
+        if (status !== 'complete' || !result?.regeocode) {
+          reject(new Error(status || 'regeocode_failed'));
+          return;
+        }
+        const adcode =
+          result.regeocode.addressComponent?.adcode ||
+          result.regeocode.addressComponent?.towncode ||
+          '';
+        resolve(String(adcode || ''));
+      });
+    });
+  };
+
+  /** 校验坐标是否落在上级行政区内；无 parentCode 时视为通过 */
+  const validatePointInParent = async (
+    lng: number,
+    lat: number,
+    options?: { silent?: boolean }
+  ): Promise<boolean> => {
+    const parentCode = props.parentCode?.trim();
+    if (!parentCode) return true;
+    try {
+      const adcode = await reverseGeocodeAdcode(lng, lat);
+      if (!adcode || !isAdcodeWithinParent(adcode, parentCode)) {
+        if (!options?.silent) {
+          EleMessage.warning({ message: outOfRangeMessage(), plain: true });
+        }
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.error(e);
+      if (!options?.silent) {
+        EleMessage.error({
+          message: '无法确认所选位置所属地区，请稍后重试',
+          plain: true
+        });
+      }
+      return false;
+    }
+  };
+
+  const commitPoint = (lng: number, lat: number) => {
     const nextLng = roundCoord(lng);
     const nextLat = roundCoord(lat);
     showMarker(nextLng, nextLat);
     mapIns?.setZoomAndCenter(SELECTED_ZOOM, [nextLng, nextLat]);
     emit('change', { lng: nextLng, lat: nextLat });
   };
+
+  const applyPoint = async (lng: number, lat: number) => {
+    if (applyingPoint) return;
+    applyingPoint = true;
+    try {
+      const ok = await validatePointInParent(lng, lat);
+      if (!ok) return;
+      commitPoint(lng, lat);
+    } finally {
+      applyingPoint = false;
+    }
+  };
+
+  /** 供保存前复验当前表单坐标 */
+  const validateCurrentPoint = async (): Promise<boolean> => {
+    const lng = toCoord(props.longitude);
+    const lat = toCoord(props.latitude);
+    if (lng == null || lat == null) {
+      EleMessage.warning({
+        message: '请在地图上点选位置',
+        plain: true
+      });
+      return false;
+    }
+    return validatePointInParent(lng, lat);
+  };
+
+  defineExpose({ validateCurrentPoint });
 
   const syncSelected = (moveCenter = false) => {
     if (!mapIns) return;
@@ -163,6 +295,13 @@
     };
   };
 
+  const searchCity = () => props.parentCode?.trim() || '全国';
+
+  const applySearchCity = (code?: string) => {
+    if (!autoCompleteIns) return;
+    autoCompleteIns.setCity?.(code?.trim() || '全国');
+  };
+
   const searchKeywords = (keyword: string): Promise<SuggestItem[]> => {
     return new Promise((resolve, reject) => {
       if (!autoCompleteIns) {
@@ -210,7 +349,52 @@
 
   const handleSearchSelect = (item: SuggestItem) => {
     if (!item || item.lng == null || item.lat == null) return;
-    applyPoint(item.lng, item.lat);
+    void applyPoint(item.lng, item.lat);
+  };
+
+  const districtLevelOf = (code: string) => {
+    const parent = normalizeAdcode(code);
+    if (!parent) return 'district';
+    if (parent.endsWith('0000')) return 'province';
+    if (parent.endsWith('00')) return 'city';
+    return 'district';
+  };
+
+  const fitParentDistrict = (code: string) => {
+    if (!mapIns || !AMapNS || !code) return;
+    const district = new AMapNS.DistrictSearch({
+      level: districtLevelOf(code),
+      extensions: 'all',
+      subdistrict: 0
+    });
+    district.search(code, (status: string, result: any) => {
+      if (status !== 'complete' || !result?.districtList?.length) return;
+      const info = result.districtList[0];
+      const bounds = info.boundaries;
+      if (!bounds?.length) {
+        if (info.center) {
+          mapIns.setZoomAndCenter(11, [info.center.lng, info.center.lat]);
+        }
+        return;
+      }
+      clearBoundary();
+      const polygons: any[] = [];
+      for (let i = 0; i < bounds.length; i++) {
+        const polygon = new AMapNS.Polygon({
+          path: bounds[i],
+          strokeWeight: 1.5,
+          strokeColor: '#409eff',
+          fillColor: '#409eff',
+          fillOpacity: 0.08
+        });
+        polygon.setMap(mapIns);
+        polygons.push(polygon);
+      }
+      boundaryPolygons = polygons;
+      if (!hasSelected()) {
+        mapIns.setFitView(polygons);
+      }
+    });
   };
 
   const initMap = async () => {
@@ -219,7 +403,13 @@
       AMapNS = await AMapLoader.load({
         key: import.meta.env.VITE_MAP_KEY,
         version: '2.0',
-        plugins: ['AMap.Marker', 'AMap.Icon', 'AMap.AutoComplete']
+        plugins: [
+          'AMap.Marker',
+          'AMap.Icon',
+          'AMap.AutoComplete',
+          'AMap.Geocoder',
+          'AMap.DistrictSearch'
+        ]
       });
       const lng = toCoord(props.longitude);
       const lat = toCoord(props.latitude);
@@ -230,15 +420,20 @@
         viewMode: '2D',
         resizeEnable: true
       });
+      geocoderIns = new AMapNS.Geocoder({ radius: 500, extensions: 'base' });
       autoCompleteIns = new AMapNS.AutoComplete({
-        city: props.suggestionCity || '全国'
+        city: searchCity()
       });
       if (hasPoint) {
         showMarker(lng, lat);
       }
+      const parentCode = props.parentCode?.trim();
+      if (parentCode) {
+        fitParentDistrict(parentCode);
+      }
       mapIns.on('click', (e: any) => {
         if (!e?.lnglat) return;
-        applyPoint(e.lnglat.getLng(), e.lnglat.getLat());
+        void applyPoint(e.lnglat.getLng(), e.lnglat.getLat());
       });
       await nextTick();
       scheduleResize();
@@ -257,7 +452,9 @@
       resizeTimer = null;
     }
     destroyMarker();
+    clearBoundary();
     autoCompleteIns = null;
+    geocoderIns = null;
     if (mapIns) {
       mapIns.destroy();
       mapIns = null;
@@ -273,10 +470,11 @@
   );
 
   watch(
-    () => props.suggestionCity,
-    (city) => {
-      if (autoCompleteIns && city) {
-        autoCompleteIns.setCity?.(city);
+    () => props.parentCode,
+    (code) => {
+      applySearchCity(code);
+      if (code?.trim() && mapIns && AMapNS) {
+        fitParentDistrict(code.trim());
       }
     }
   );
@@ -324,6 +522,7 @@
     left: 12px;
     bottom: 12px;
     z-index: 1;
+    max-width: calc(100% - 24px);
     padding: 4px 10px;
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.92);

@@ -38,9 +38,11 @@
       </el-row>
       <el-form-item prop="longitude" class="is-map-coord">
         <region-coord-map
+          ref="mapRef"
           :longitude="form.longitude"
           :latitude="form.latitude"
-          :suggestion-city="mapSuggestionCity"
+          :parent-code="parentCode"
+          :parent-name="mapParentName"
           @change="handleMapChange"
         />
         <div v-if="hasCoord" class="coord-text">
@@ -92,6 +94,7 @@
   const isUpdate = ref(false);
   const loading = ref(false);
   const formRef = ref<FormInstance | null>(null);
+  const mapRef = ref<InstanceType<typeof RegionCoordMap> | null>(null);
 
   const [form, _resetFields, assignFields] = useFormData({
     regionId: void 0 as number | undefined,
@@ -159,13 +162,14 @@
     return props.parentPath || props.parentName || '—';
   });
 
-  const mapSuggestionCity = computed(() => {
+  /** 地图提示用：优先路径末级名，其次上级名称 */
+  const mapParentName = computed(() => {
     const path = props.parentPath?.trim();
     if (path) {
       const parts = path.split('/').filter(Boolean);
-      return parts[parts.length - 1] || '全国';
+      if (parts.length) return parts[parts.length - 1];
     }
-    return props.parentName?.trim() || '全国';
+    return props.parentName?.trim() || '';
   });
 
   const handleMapChange = (payload: { lng: number; lat: number }) => {
@@ -183,8 +187,12 @@
   };
 
   const handleSave = () => {
-    formRef.value?.validate?.((valid) => {
+    formRef.value?.validate?.(async (valid) => {
       if (!valid) return;
+
+      const inRange = await mapRef.value?.validateCurrentPoint?.();
+      if (!inRange) return;
+
       loading.value = true;
 
       const lng = toNum(form.longitude);

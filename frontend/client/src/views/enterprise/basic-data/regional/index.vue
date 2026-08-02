@@ -86,15 +86,24 @@
             cache-key="BasicDataRegionTable"
           >
             <template #toolbar>
-              <btn-items
-                :items="[
-                  {
-                    preset: 'add',
-                    vIf: () => canAdd,
-                    onClick: () => openEdit()
-                  }
-                ]"
-              />
+              <div class="region-toolbar">
+                <btn-items
+                  :items="[
+                    {
+                      preset: 'add',
+                      vIf: () => canAdd,
+                      onClick: () => openEdit()
+                    }
+                  ]"
+                />
+                <span
+                  v-if="currentPath"
+                  class="region-current-path"
+                  :title="currentPath"
+                >
+                  {{ currentPath }}
+                </span>
+              </div>
             </template>
             <template #source="{ row }">
               <el-tag v-if="row.source === 0" type="primary" size="small">
@@ -466,6 +475,9 @@
     return names?.join('/') || '';
   };
 
+  /** 当前选中节点完整路径，与添加弹窗「上级地区」同源 */
+  const currentPath = computed(() => getParentPath(currentNode.value?.code));
+
   /** 打开编辑弹窗 */
   const openEdit = (row?: Region) => {
     const parentCode = currentNode.value?.code;
@@ -516,5 +528,22 @@
     :deep(.ele-card-body) {
       padding: 8px 0 8px 0 !important;
     }
+  }
+
+  .region-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .region-current-path {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>
