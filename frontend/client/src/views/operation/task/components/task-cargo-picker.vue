@@ -2,8 +2,8 @@
   商品车配载选择器（左右布局）
 
   设计：
-  - 左侧：待选计划（按线路/客户分组；同计划合并行，可展开按 cargo 行追加台数；主按钮整单加入）
-  - 右侧：已选商品车（车型图 + 台数标签只读；可展开查看「每一台」占位明细）
+  - 左侧：待选计划（按计划/线路/客户分组；同计划合并行，可展开按 cargo 行追加台数；主按钮整单加入）
+  - 右侧：已选商品车（按单台展开；路线优先扁卡；非本线色差+标记；VIN 内联）
   - 列表区采用 sticky 分组头，避免嵌套 flex 内部高度塌陷
 
   业务偏好：相同起终点(线路) > 同品牌车型 > 台数充裕
@@ -31,6 +31,7 @@
           size="small"
           class="cargo-picker__group-mode"
         >
+          <el-radio-button value="plan">按计划</el-radio-button>
           <el-radio-button value="route">按线路</el-radio-button>
           <el-radio-button value="customer">按客户</el-radio-button>
         </el-radio-group>
@@ -179,10 +180,8 @@
                   <div class="cargo-row__line1-left">
                     <span
                       class="cargo-row__wb"
-                      :title="mw.lines[0]?.waybillNo"
-                      >{{
-                        mw.lines[0]?.waybillNo || `#${mw.lines[0]?.waybillId}`
-                      }}</span
+                      :title="mergedRowPrimaryTitle(mw)"
+                      >{{ mergedRowPrimaryLabel(mw) }}</span
                     >
                     <span class="cargo-row__customer">{{
                       mw.lines[0]?.customerName || '—'
@@ -379,7 +378,7 @@
 
       <div v-if="modelValue.length" class="cargo-picker__picked-summary">
         <div v-if="dominantRoute" class="cargo-picker__route-banner">
-          <span class="cargo-picker__route-banner-label">主线路</span>
+          <span class="cargo-picker__route-banner-label">本单线路</span>
           <span class="cargo-picker__route-banner-text" :title="dominantRoute">
             {{ dominantRoute }}
           </span>
@@ -400,7 +399,7 @@
             type="warning"
             effect="plain"
           >
-            混线 {{ routeBreakdown.length }} 条
+            含 {{ routeBreakdown.length }} 条线路
           </el-tag>
         </div>
       </div>
@@ -411,106 +410,109 @@
       </div>
 
       <div class="cargo-picker__scroll cargo-picker__scroll--picked">
-        <div v-if="!modelValue.length" class="cargo-picker__picked-empty">
+        <div v-if="!pickedUnitViews.length" class="cargo-picker__picked-empty">
           <el-empty description="尚未选入商品车" :image-size="80" />
         </div>
         <div
-          v-for="(p, idx) in modelValue"
-          :key="`${p.waybillCargoId}_${idx}`"
+          v-for="u in pickedUnitViews"
+          :key="`${u.item.waybillCargoId}_${u.unitIndex}`"
           class="picked-block"
           :class="{
-            'picked-block--main-route':
-              dominantRoute && !routeDiffersFromDominant(p),
-            'picked-block--alt-route': routeDiffersFromDominant(p)
+            'picked-block--alt-route': routeDiffersFromDominant(u.item)
           }"
         >
           <div class="picked-row">
-            <el-button
-              text
-              class="picked-block__toggle"
-              @click="togglePickedExpand(p.waybillCargoId)"
-            >
-              <el-icon
-                class="picked-block__toggle-icon"
-                :class="{
-                  'is-collapsed': !pickedExpandOpen(p.waybillCargoId)
-                }"
-              >
-                <CaretBottom />
-              </el-icon>
-            </el-button>
             <div class="picked-row__thumb">
               <el-image
-                :src="pickedSeriesImageUrl(p)"
+                :src="pickedSeriesImageUrl(u.item)"
                 fit="cover"
                 class="picked-row__img"
                 lazy
               >
                 <template #error>
                   <div class="picked-row__ph">
-                    <el-icon :size="20"><Picture /></el-icon>
+                    <el-icon :size="18"><Picture /></el-icon>
                   </div>
                 </template>
               </el-image>
             </div>
             <div class="picked-row__main">
-              <div class="picked-row__line1">
+              <div
+                class="picked-row__route"
+                :class="{
+                  'picked-row__route--alt': routeDiffersFromDominant(u.item)
+                }"
+              >
                 <el-tooltip
-                  :content="pickWaybillLabel(p)"
+                  :content="routeOfPicked(u.item) || '线路未填'"
                   placement="top"
                   :show-after="300"
                 >
-                  <span class="picked-row__wb">{{ pickWaybillLabel(p) }}</span>
+                  <div class="picked-row__route-line">
+                    <span class="picked-row__route-end">{{
+                      pickedOrigin(u.item)
+                    }}</span>
+                    <span class="picked-row__route-arrow" aria-hidden="true"
+                      >→</span>
+                    <span class="picked-row__route-end">{{
+                      pickedDestination(u.item)
+                    }}</span>
+                  </div>
                 </el-tooltip>
                 <el-tooltip
-                  :content="p.customerName || '—'"
+                  v-if="routeDiffersFromDominant(u.item)"
+                  content="与本单线路不一致"
                   placement="top"
                   :show-after="300"
-                  :disabled="!p.customerName"
+                >
+                  <span class="picked-row__alt-badge">非本线</span>
+                </el-tooltip>
+              </div>
+              <div class="picked-row__meta">
+                <el-tooltip
+                  :content="pickWaybillLabel(u.item)"
+                  placement="top"
+                  :show-after="300"
+                >
+                  <span class="picked-row__wb">{{
+                    pickWaybillLabel(u.item)
+                  }}</span>
+                </el-tooltip>
+                <span class="picked-row__meta-dot" aria-hidden="true">·</span>
+                <el-tooltip
+                  :content="u.item.customerName || '—'"
+                  placement="top"
+                  :show-after="300"
+                  :disabled="!u.item.customerName"
                 >
                   <span class="picked-row__customer">{{
-                    p.customerName || '—'
+                    u.item.customerName || '—'
                   }}</span>
                 </el-tooltip>
               </div>
-              <div class="picked-row__line2">
-                <span class="picked-row__chip picked-row__chip--model">
-                  {{ p.vehicleBrand || '—' }} / {{ p.vehicleModel || '—' }}
+              <div class="picked-row__sub">
+                <span class="picked-row__model">
+                  {{ u.item.vehicleBrand || '—' }} /
+                  {{ u.item.vehicleModel || '—' }}
                 </span>
-              </div>
-              <div
-                v-if="routeDiffersFromDominant(p) && routeOfPicked(p)"
-                class="picked-row__route-meta"
-              >
-                <el-tooltip
-                  content="与汇总「主线路」不一致"
-                  placement="top"
-                  :show-after="300"
-                >
-                  <el-tag size="small" type="warning" effect="plain">
-                    异主线路
-                  </el-tag>
-                </el-tooltip>
-                <span class="picked-row__route-meta-text">
+                <template v-if="pickedVinOf(u.item)">
+                  <span class="picked-row__meta-dot" aria-hidden="true">·</span>
                   <el-tooltip
-                    :content="routeOfPicked(p)"
+                    :content="pickedVinOf(u.item)"
                     placement="top"
                     :show-after="300"
                   >
-                    <span class="picked-row__route-meta-text-inner">{{
-                      routeOfPicked(p)
-                    }}</span>
+                    <span class="picked-row__vin">
+                      VIN {{ formatVinDisplay(pickedVinOf(u.item)) }}
+                    </span>
                   </el-tooltip>
-                </span>
+                </template>
               </div>
             </div>
             <div class="picked-row__rest">
-              <el-tag type="primary" effect="dark" size="small">
-                {{ p.quantity }} 台
-              </el-tag>
               <el-select
                 v-if="segments && segments.length > 1"
-                v-model="p.segmentId"
+                v-model="u.item.segmentId"
                 size="small"
                 clearable
                 placeholder="跟随主任务"
@@ -529,43 +531,8 @@
                 link
                 size="small"
                 :icon="Close"
-                @click="removePick(idx)"
+                @click="removePickedUnit(u.itemIndex)"
               />
-            </div>
-          </div>
-          <div v-show="pickedExpandOpen(p.waybillCargoId)" class="picked-units">
-            <div
-              v-for="n in p.quantity"
-              :key="`${p.waybillCargoId}_u_${n}`"
-              class="picked-unit"
-            >
-              <span class="picked-unit__idx">第 {{ n }} 台</span>
-              <div class="picked-unit__img-wrap">
-                <el-image
-                  :src="pickedSeriesImageUrl(p)"
-                  fit="cover"
-                  class="picked-unit__img"
-                  lazy
-                >
-                  <template #error>
-                    <div class="picked-unit__ph">
-                      <el-icon :size="16"><Picture /></el-icon>
-                    </div>
-                  </template>
-                </el-image>
-              </div>
-              <div class="picked-unit__main">
-                <span class="picked-unit__model">
-                  {{ p.vehicleBrand || '—' }} / {{ p.vehicleModel || '—' }}
-                </span>
-                <span
-                  v-if="pickedVinOf(p)"
-                  class="picked-unit__vin"
-                  :title="pickedVinRaw(p)"
-                >
-                  VIN {{ formatVinDisplay(pickedVinOf(p)) }}
-                </span>
-              </div>
             </div>
           </div>
         </div>
@@ -704,7 +671,7 @@
     vin?: string | null;
   };
 
-  type GroupMode = 'route' | 'customer';
+  type GroupMode = 'plan' | 'route' | 'customer';
 
   /** 同分组内同一计划合并展示（底层仍为多 cargo 行） */
   interface MergedWaybillRow {
@@ -751,7 +718,7 @@
     {
       icon: markRaw(Filter),
       title: '筛选待配计划',
-      desc: '按计划号、起终点、品牌车型等条件缩小范围；支持按线路或按客户分组浏览。'
+      desc: '按计划号、起终点、品牌车型等条件缩小范围；支持按计划、按线路或按客户分组浏览。'
     },
     {
       icon: markRaw(Plus),
@@ -778,8 +745,6 @@
   const collapsedGroups = ref<Set<string>>(new Set());
   /** 左侧：合并计划行内展开（按 cargo 行追加台数） */
   const expandedMergeKeys = ref<Set<string>>(new Set());
-  /** 右侧：已选行展开显示「每一台」占位明细 */
-  const expandedPickedCargoIds = ref<Set<number>>(new Set());
   /** cargoId → 本次要追加的台数（1..可再配） */
   const pickIncrementDraft = reactive<Record<number, number>>({});
 
@@ -835,16 +800,24 @@
 
   const paginationTipText = computed(
     () =>
-      `待配商品车较多，当前仅展示第 ${currentPage.value} 页。左上角是待配计划数与总台数；底部分页按「待配明细」翻页（同一计划多车型会拆成多条），台数才是商品车总数。可先用上方筛选缩小范围，或翻页继续浏览。`
+      `待配的车比较多，现在只看到第 ${currentPage.value} 页。顶部数字是全部计划和台数；往下翻页还能继续看，也可以先用筛选收窄范围，会更好找。`
   );
 
   const candidateStatsTitle = computed(() => {
     if (candidateStats.lineCount <= CANDIDATE_PAGE_SIZE) {
-      return `当前筛选条件下共 ${candidateStats.waybillCount} 个待配计划、${candidateStats.quantityTotal} 台商品车（${candidateStats.lineCount} 条待配明细）`;
+      return `当前筛选下共 ${candidateStats.waybillCount} 个计划、${candidateStats.quantityTotal} 台车`;
     }
-    return `共 ${candidateStats.waybillCount} 个待配计划、${candidateStats.quantityTotal} 台商品车；列表按每页 ${CANDIDATE_PAGE_SIZE} 条待配明细分页`;
+    return `共 ${candidateStats.waybillCount} 个计划、${candidateStats.quantityTotal} 台车；列表分页展示，可翻页或先筛选`;
   });
 
+  function planKeyOf(c: CandidateCargo): string {
+    return `wb:${c.waybillId}`;
+  }
+  function planTitleOf(c: CandidateCargo): string {
+    const no = c.waybillNo || `#${c.waybillId}`;
+    const cust = c.customerName?.trim();
+    return cust ? `${no} · ${cust}` : no;
+  }
   function routeKeyOf(c: CandidateCargo): string {
     return `${c.origin || '未填'}__${c.destination || '未填'}`;
   }
@@ -859,6 +832,19 @@
   }
   function customerTitleOf(c: CandidateCargo): string {
     return c.customerName || '未填客户';
+  }
+
+  function mergedRowPrimaryLabel(m: MergedWaybillRow): string {
+    const first = m.lines[0];
+    if (!first) return '—';
+    if (groupMode.value === 'plan') {
+      return routeTitleOf(first);
+    }
+    return first.waybillNo || `#${first.waybillId}`;
+  }
+
+  function mergedRowPrimaryTitle(m: MergedWaybillRow): string {
+    return mergedRowPrimaryLabel(m);
   }
 
   /** 行内展示的终点/交车点文案 */
@@ -1049,12 +1035,31 @@
     const list = candidates.value;
     if (!list.length) return [];
 
-    const primary = groupMode.value === 'route' ? routeKeyOf : customerKeyOf;
+    const mode = groupMode.value;
+    const primary =
+      mode === 'plan'
+        ? planKeyOf
+        : mode === 'route'
+          ? routeKeyOf
+          : customerKeyOf;
     const primaryTitle =
-      groupMode.value === 'route' ? routeTitleOf : customerTitleOf;
-    const secondary = groupMode.value === 'route' ? customerKeyOf : routeKeyOf;
+      mode === 'plan'
+        ? planTitleOf
+        : mode === 'route'
+          ? routeTitleOf
+          : customerTitleOf;
+    const secondary =
+      mode === 'plan'
+        ? () => 'all'
+        : mode === 'route'
+          ? customerKeyOf
+          : routeKeyOf;
     const secondaryTitle =
-      groupMode.value === 'route' ? customerTitleOf : routeTitleOf;
+      mode === 'plan'
+        ? () => ''
+        : mode === 'route'
+          ? customerTitleOf
+          : routeTitleOf;
 
     const pickedMap = new Map<number, number>();
     (props.modelValue || []).forEach((p) => {
@@ -1163,17 +1168,6 @@
     expandedMergeKeys.value = next;
   }
 
-  function pickedExpandOpen(cargoId: number): boolean {
-    return expandedPickedCargoIds.value.has(cargoId);
-  }
-
-  function togglePickedExpand(cargoId: number): void {
-    const next = new Set(expandedPickedCargoIds.value);
-    if (next.has(cargoId)) next.delete(cargoId);
-    else next.add(cargoId);
-    expandedPickedCargoIds.value = next;
-  }
-
   const emitPickedRefresh = () => {
     emit('update:modelValue', [...(props.modelValue || [])]);
   };
@@ -1196,20 +1190,21 @@
     emit('update:modelValue', list);
   };
 
-  const removePick = (idx: number) => {
-    const cur = props.modelValue[idx];
-    const next = [...(props.modelValue || [])];
-    next.splice(idx, 1);
-    if (cur?.waybillCargoId != null) {
-      const idSet = new Set(expandedPickedCargoIds.value);
-      idSet.delete(cur.waybillCargoId);
-      expandedPickedCargoIds.value = idSet;
+  /** 按单台移除：quantity>1 时减 1，否则删掉该挂接行 */
+  const removePickedUnit = (itemIndex: number) => {
+    const list = [...(props.modelValue || [])];
+    const item = list[itemIndex];
+    if (!item) return;
+    const qty = item.quantity || 0;
+    if (qty <= 1) {
+      list.splice(itemIndex, 1);
+    } else {
+      list[itemIndex] = { ...item, quantity: qty - 1 };
     }
-    emit('update:modelValue', next);
+    emit('update:modelValue', list);
   };
 
   const clearAllPicked = () => {
-    expandedPickedCargoIds.value = new Set();
     emit('update:modelValue', []);
   };
 
@@ -1256,6 +1251,24 @@
     return ids.size;
   });
 
+  /** 右侧按「单台」展开展示（底层仍为 cargo + quantity） */
+  type PickedUnitView = {
+    itemIndex: number;
+    unitIndex: number;
+    item: PickedItem;
+  };
+
+  const pickedUnitViews = computed<PickedUnitView[]>(() => {
+    const out: PickedUnitView[] = [];
+    (props.modelValue || []).forEach((item, itemIndex) => {
+      const q = Math.max(0, item.quantity || 0);
+      for (let unitIndex = 0; unitIndex < q; unitIndex++) {
+        out.push({ itemIndex, unitIndex, item });
+      }
+    });
+    return out;
+  });
+
   const candidateById = computed(() => {
     const m = new Map<number, CandidateCargo>();
     candidates.value.forEach((c) => m.set(c.cargoId, c));
@@ -1268,12 +1281,21 @@
     );
   }
 
-  function routeOfPicked(p: PickedItem): string {
+  function pickedOrigin(p: PickedItem): string {
     const c = candidateById.value.get(p.waybillCargoId);
-    const o = p.origin ?? c?.origin ?? '';
-    const d = p.destination ?? c?.destination ?? '';
-    if (!o && !d) return '';
-    return `${o || '未填'} → ${d || '未填'}`;
+    return (p.origin ?? c?.origin ?? '').trim() || '未填';
+  }
+
+  function pickedDestination(p: PickedItem): string {
+    const c = candidateById.value.get(p.waybillCargoId);
+    return (p.destination ?? c?.destination ?? '').trim() || '未填';
+  }
+
+  function routeOfPicked(p: PickedItem): string {
+    const o = pickedOrigin(p);
+    const d = pickedDestination(p);
+    if (o === '未填' && d === '未填') return '';
+    return `${o} → ${d}`;
   }
 
   function pickedVinOf(p: PickedItem): string {
@@ -1282,10 +1304,6 @@
       candidateById.value.get(p.waybillCargoId)?.vin ??
       ''
     ).trim();
-  }
-
-  function pickedVinRaw(p: PickedItem): string {
-    return pickedVinOf(p);
   }
 
   function dominantOf(keyFn: (p: PickedItem) => string): string | null {
@@ -1328,11 +1346,11 @@
     return p.waybillNo || `#${p.waybillCargoId}`;
   }
 
-  /** 已选行起讫是否与汇总「主线路」（按台数加权最多）不一致 */
+  /** 已选行起讫是否与「本单线路」（按台数加权最多）不一致 */
   function routeDiffersFromDominant(p: PickedItem): boolean {
     const dr = dominantRoute.value;
     if (!dr) return false;
-    if ((props.modelValue || []).length < 2) return false;
+    if (totalQuantity.value < 2) return false;
     if (routeBreakdown.value.length <= 1) return false;
     const mine = routeOfPicked(p);
     if (!mine) return false;
@@ -1471,36 +1489,33 @@
 
   .cargo-picker__route-banner {
     display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: linear-gradient(
-      90deg,
-      var(--el-color-primary-light-9),
-      var(--el-bg-color)
-    );
-    border: 1px solid var(--el-color-primary-light-7);
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--el-color-primary-light-9);
+    border: 1px solid var(--el-border-color-lighter);
   }
 
   .cargo-picker__route-banner-label {
     flex-shrink: 0;
-    padding: 1px 6px;
+    padding: 2px 7px;
     border-radius: 4px;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.5;
-    color: #fff;
-    background: var(--el-color-primary);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--el-color-primary);
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-color-primary-light-5);
   }
 
   .cargo-picker__route-banner-text {
     flex: 1;
     min-width: 0;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.5;
-    color: var(--el-color-primary);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.45;
+    color: var(--el-text-color-primary);
     word-break: break-all;
   }
 
@@ -1899,67 +1914,17 @@
   }
 
   // ============================================
-  // 右侧：已选行
+  // 右侧：已选行（路线优先、扁平密排）
   // ============================================
   .picked-block {
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid var(--el-border-color-lighter);
     background: var(--el-bg-color);
     overflow: hidden;
     flex-shrink: 0;
 
-    &--main-route {
-      background: var(--el-color-primary-light-8);
-      border-color: var(--el-color-primary-light-5);
-      box-shadow: inset 3px 0 0 var(--el-color-primary);
-
-      .picked-row__thumb,
-      .picked-unit__img-wrap {
-        background: transparent;
-        border-color: var(--el-color-primary-light-5);
-      }
-
-      .picked-row__ph,
-      .picked-unit__ph {
-        background: var(--el-color-primary-light-8);
-      }
-
-      .picked-row__chip {
-        color: var(--el-color-primary);
-        background: transparent;
-        border: 1px solid var(--el-color-primary-light-5);
-      }
-
-      .picked-units {
-        border-top-color: var(--el-color-primary-light-5);
-      }
-    }
-
     &--alt-route {
-      background: var(--el-color-warning-light-8);
-      border-color: var(--el-color-warning-light-3);
-      box-shadow: inset 3px 0 0 var(--el-color-warning);
-
-      .picked-row__thumb,
-      .picked-unit__img-wrap {
-        background: transparent;
-        border-color: var(--el-color-warning-light-3);
-      }
-
-      .picked-row__ph,
-      .picked-unit__ph {
-        background: var(--el-color-warning-light-8);
-      }
-
-      .picked-row__chip {
-        color: #ad6800;
-        background: transparent;
-        border: 1px solid var(--el-color-warning-light-3);
-      }
-
-      .picked-units {
-        border-top-color: var(--el-color-warning-light-3);
-      }
+      border-color: var(--el-color-warning-light-5);
     }
   }
 
@@ -1970,31 +1935,16 @@
     padding: 8px 10px;
   }
 
-  .picked-block__toggle {
-    flex-shrink: 0;
-    width: 26px;
-    padding: 0;
-    margin-top: 2px;
-    color: var(--el-text-color-secondary);
-  }
-
-  .picked-block__toggle-icon {
-    font-size: 14px;
-    transition: transform 0.2s;
-    &.is-collapsed {
-      transform: rotate(-90deg);
-    }
-  }
-
   .picked-row__thumb {
     flex-shrink: 0;
-    width: 56px;
+    width: 48px;
     aspect-ratio: 133 / 100;
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
     border: 1px solid var(--el-border-color-lighter);
     background: var(--el-fill-color);
     line-height: 0;
+    margin-top: 1px;
   }
 
   .picked-row__img {
@@ -2022,142 +1972,99 @@
     background: var(--el-fill-color-light);
   }
 
-  .picked-units {
-    padding: 4px 10px 10px 46px;
-    background: transparent;
-    border-top: 1px dashed var(--el-border-color-extra-light);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .picked-unit {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--el-text-color-regular);
-  }
-
-  .picked-unit__main {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .picked-unit__vin {
-    font-size: 11px;
-    line-height: 1.45;
-    font-variant-numeric: tabular-nums;
-    color: var(--el-text-color-secondary);
-    word-break: break-all;
-  }
-
-  .picked-unit__idx {
-    flex-shrink: 0;
-    width: 48px;
-    color: var(--el-text-color-secondary);
-  }
-
-  .picked-unit__img-wrap {
-    flex-shrink: 0;
-    width: 40px;
-    aspect-ratio: 133 / 100;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid var(--el-border-color-lighter);
-    background: var(--el-fill-color);
-    line-height: 0;
-  }
-
-  .picked-unit__img {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-
-  .picked-unit__img-wrap :deep(.el-image__inner),
-  .picked-unit__img-wrap :deep(.el-image__wrapper) {
-    width: 100% !important;
-    height: 100% !important;
-  }
-
-  .picked-unit__ph {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    border-radius: 0;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--el-text-color-placeholder);
-    background: var(--el-fill-color);
-  }
-
-  .picked-unit__model {
-    line-height: 1.35;
-    font-size: 13px;
-    color: var(--el-text-color-regular);
-  }
-
   .picked-row__main {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
   }
 
-  .picked-row__route-meta {
+  .picked-row__route {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 6px;
-    margin-top: 2px;
     min-width: 0;
   }
 
-  .picked-row__route-meta-text {
-    flex: 1;
+  /* 起终点自然贴合，避免两端被撑开留白 */
+  .picked-row__route-line {
     min-width: 0;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    overflow: hidden;
   }
 
-  .picked-row__route-meta-text-inner {
-    display: block;
+  .picked-row__route-end {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 11em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 11px;
-    line-height: 1.45;
-    color: var(--el-text-color-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--el-text-color-primary);
   }
 
-  .picked-row__line1 {
+  .picked-row__route-arrow {
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--el-text-color-secondary);
+    line-height: 1.4;
+  }
+
+  .picked-row__route--alt {
+    .picked-row__route-end {
+      color: #ad6800;
+    }
+
+    .picked-row__route-arrow {
+      color: var(--el-color-warning);
+    }
+  }
+
+  .picked-row__alt-badge {
+    flex-shrink: 0;
+    margin-top: 1px;
+    padding: 0 5px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    color: #ad6800;
+    background: var(--el-color-warning-light-9);
+    border: 1px solid var(--el-color-warning-light-5);
+    cursor: default;
+  }
+
+  .picked-row__meta,
+  .picked-row__sub {
     display: flex;
     align-items: center;
-    gap: 8px;
-    min-width: 0;
-    flex-wrap: nowrap;
-  }
-
-  .picked-row__line2 {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
     gap: 4px;
     min-width: 0;
+  }
+
+  .picked-row__meta-dot {
+    flex-shrink: 0;
+    color: var(--el-text-color-placeholder);
+    font-size: 12px;
+    line-height: 1;
   }
 
   .picked-row__wb {
     flex: 0 1 auto;
     min-width: 0;
-    max-width: 58%;
+    max-width: 52%;
     font-variant-numeric: tabular-nums;
-    font-weight: 600;
-    font-size: 13px;
-    color: var(--el-text-color-primary);
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2166,39 +2073,46 @@
   .picked-row__customer {
     flex: 1 1 0;
     min-width: 0;
-    color: var(--el-text-color-regular);
-    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .picked-row__chip {
-    display: inline-flex;
-    align-items: center;
-    align-self: flex-start;
-    color: var(--el-text-color-regular);
-    font-size: 12px;
-    background: var(--el-fill-color);
-    padding: 1px 6px;
-    border-radius: 4px;
-    max-width: 100%;
+  .picked-row__model,
+  .picked-row__vin {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--el-text-color-secondary);
+  }
+
+  .picked-row__model {
+    flex: 0 1 auto;
+    max-width: 60%;
+  }
+
+  .picked-row__vin {
+    flex: 1 1 0;
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
   }
 
   .picked-row__rest {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     flex-shrink: 0;
-    align-self: center;
+    align-self: flex-start;
     padding-top: 1px;
   }
 
   .picked-row__segment {
-    width: 130px;
+    width: 120px;
   }
 
   // ============================================
