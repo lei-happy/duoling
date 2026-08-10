@@ -68,3 +68,6 @@ docker-compose.override.yml
 
 # ---- 后端本地上传（测试素材勿入库） ----
 backend/uploads/
+
+# ---- 一次性脚本产出的回填 / 校验报告 ----
+backend/reports/

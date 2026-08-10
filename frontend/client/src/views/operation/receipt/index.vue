@@ -3,8 +3,8 @@
   ============
 
   概念（与任务状态机彼此独立）：
-  - 回单 = 计划全量签收后，把签收底单返还货主的人工动作（计划维度）。
-  - 待回单 = 计划 status=5 已签收；已回单 = 计划 status=6 已回单。
+  - 回单 = 计划全量交车后，把交车回单返还货主的人工动作（计划维度）。
+  - 待回单 = 计划 status=5 已交车；已回单 = 计划 status=6 已回单。
   - 任务侧只读展示其下计划状态分布，但任务状态机不含"回单"。
 
   能力：
@@ -146,7 +146,7 @@
 
   defineOptions({ name: 'BusinessReceipt' });
 
-  /** 待回单=已签收(5)，已回单=已回单(6) */
+  /** 待回单=已交车(5)，已回单=已回单(6) */
   const POOL_STATUS: Record<string, number> = {
     pending: 5,
     done: 6
@@ -224,7 +224,7 @@
   // —— 撤销回单
   const handleRevoke = (row: Waybill) => {
     ElMessageBox.confirm(
-      `确定撤销计划"${row.waybillNo}"的回单吗？撤销后计划回到「已签收」。`,
+      `确定撤销计划"${row.waybillNo}"的回单吗？撤销后计划回到「已交车」。`,
       '系统提示',
       { type: 'warning', draggable: true }
     )

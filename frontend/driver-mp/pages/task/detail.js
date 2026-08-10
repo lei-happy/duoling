@@ -130,7 +130,7 @@ Page({
       if (next) {
         this.setData({ signVisible: true, signItemId: next.id });
       } else {
-        toast('暂无可签收的运单');
+        toast('暂无可交车的计划');
       }
       return;
     }
@@ -282,10 +282,10 @@ Page({
     const itemId = this.data.signItemId;
     if (!itemId || this.data.acting) return;
     this.setData({ acting: true, signVisible: false });
-    wx.showLoading({ title: '正在签收，请稍候…', mask: true });
+    wx.showLoading({ title: '正在确认交车，请稍候…', mask: true });
     try {
       await signItem(itemId);
-      toast('签收成功');
+      toast('交车成功');
       await this.load();
     } catch (err) {
       /* handled */

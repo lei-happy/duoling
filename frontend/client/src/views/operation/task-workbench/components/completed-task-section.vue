@@ -2,11 +2,11 @@
   已完成任务区域 - 调度工作台下方
 
   概念：
-  - 活跃池（待分配~待签收）在上方 KPI/task-pool 处理；本区域承载「终态」任务的查看入口。
-  - 3 个 Tab：已签收(5) / 已关闭(7) / 已取消(9)，计数来自工作台 KPI 统计。
+  - 活跃池（待分配~待交车）在上方 KPI/task-pool 处理；本区域承载「终态」任务的查看入口。
+  - 3 个 Tab：已交车(5) / 已关闭(7) / 已取消(9)，计数来自工作台 KPI 统计。
 
   逆向（严格按《02.计划与任务单状态机联动设计.md》§4.5.1）：
-  - 仅「已签收(5)」可逆——通过 item 级「撤销签收」(item 3→2) 反向聚合驱动 task 5→4；
+  - 仅「已交车(5)」可逆——通过 item 级「撤销交车」(item 3→2) 反向聚合驱动 task 5→4；
     入口由 task-actions 的 revert-sign 动作（dialog=revert-sign）提供。
   - 「已关闭(7)/已取消(9)」为终态，本区域仅提供「详情」查看，不暴露任何逆向入口。
 -->
@@ -84,47 +84,12 @@
 
       <template #action="{ row }">
         <div class="action-cell">
-          <el-link
-            type="primary"
-            :underline="false"
-            @click="emit('open-detail', row)"
-          >
-            详情
-          </el-link>
-          <!-- 仅「已签收」可逆：展示主动作（关闭任务）+ 更多（撤销签收） -->
-          <template v-if="activeTab === 'signed'">
-            <template v-if="getRowPrimary(row)">
-              <el-divider direction="vertical" />
-              <el-link
-                :type="getRowPrimary(row)!.buttonType as any"
-                :underline="false"
-                v-permission="getRowPrimary(row)!.permission"
-                @click="emit('action', row, getRowPrimary(row)!)"
-              >
-                {{ getRowPrimary(row)!.label }}
-              </el-link>
-            </template>
-            <template v-if="getRowMore(row).length">
-              <el-divider direction="vertical" />
-              <el-dropdown trigger="click">
-                <el-link type="info" :underline="false">
-                  更多<el-icon style="margin-left: 2px"><ArrowDown /></el-icon>
-                </el-link>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item
-                      v-for="act in getRowMore(row)"
-                      :key="act.key"
-                      v-permission="act.permission"
-                      @click="emit('action', row, act)"
-                    >
-                      {{ act.label }}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </template>
-          </template>
+          <btn-items
+            divider
+            type="link"
+            :wrap="false"
+            :items="actionItems(row)"
+          />
         </div>
       </template>
     </ele-pro-table>
@@ -138,7 +103,8 @@
     DatasourceFunction,
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
-  import { ArrowDown, Right } from '@element-plus/icons-vue';
+  import type { ButtonItem } from 'ele-admin-plus/es/ele-buttons/types';
+  import { Right } from '@element-plus/icons-vue';
   import { pageTasks } from '@/api/operation/task';
   import type {
     Task,
@@ -152,8 +118,12 @@
     TASK_STATUS,
     TASK_STATUS_MAP
   } from '../../task/status-config';
-  import { getTaskRowActions } from '../../task/task-actions';
+  import {
+    buildTaskListActionItems,
+    resolveTaskListActionColumnMinWidth
+  } from '../../task/task-actions';
   import type { TaskActionConfig } from '../../task/task-actions';
+  import { usePermission } from '@/utils/use-permission';
 
   type CompletedTabKey = 'signed' | 'closed' | 'cancelled';
 
@@ -172,10 +142,13 @@
   }>();
 
   const TABS: Array<{ key: CompletedTabKey; label: string; status: number }> = [
-    { key: 'signed', label: '已签收', status: TASK_STATUS.SIGNED },
+    { key: 'signed', label: '已交车', status: TASK_STATUS.SIGNED },
     { key: 'closed', label: '已关闭', status: TASK_STATUS.CLOSED },
     { key: 'cancelled', label: '已取消', status: TASK_STATUS.CANCELLED }
   ];
+
+  const { hasPermission } = usePermission();
+  const actionColumnMinWidth = resolveTaskListActionColumnMinWidth();
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const activeTab = ref<CompletedTabKey>('signed');
@@ -207,11 +180,11 @@
       { columnKey: 'route', label: '运输线路', minWidth: 220, slot: 'route' },
       {
         columnKey: 'carrierResource',
-        label: '司机 / 车牌 / 承运商',
+        label: '承运运力',
         minWidth: 170,
         slot: 'carrierResource'
       },
-      { prop: 'totalQuantity', label: '台数', width: 70, align: 'center' },
+      { prop: 'totalQuantity', label: '台数', width: 80, align: 'center' },
       {
         prop: 'actualArriveTime',
         label: '实际到货',
@@ -236,20 +209,27 @@
       {
         columnKey: 'action',
         label: '操作',
-        width: 180,
+        minWidth: actionColumnMinWidth,
+        width: actionColumnMinWidth,
         align: 'center',
         fixed: 'right',
+        resizable: false,
         slot: 'action'
       }
     ];
     return cols as Columns;
   });
 
-  const getRowPrimary = (row: Task): TaskActionConfig | null =>
-    getTaskRowActions(row).primary;
-
-  const getRowMore = (row: Task): TaskActionConfig[] =>
-    getTaskRowActions(row).more;
+  /**
+   * 操作列：与任务单台账、任务池共用槽位算法（开发手册 17）。
+   * 已关闭 / 已取消 行没有可用动作，过滤后只剩「详情」平铺。
+   */
+  const actionItems = (row: Task): ButtonItem[] =>
+    buildTaskListActionItems(row, {
+      hasPermission,
+      onDetail: () => emit('open-detail', row),
+      onAction: (act) => emit('action', row, act)
+    });
 
   const filterParamsWithoutKeyword = (): Omit<
     Partial<TaskParam>,

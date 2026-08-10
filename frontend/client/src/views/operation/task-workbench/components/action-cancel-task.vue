@@ -7,7 +7,7 @@
   - 关联计划聚合允许下降（详见 02.计划与任务单状态机联动设计.md §4.5）。
 
   与强制取消（force_cancel）的区别：本动作仅作用于 2 之前 / 已装车的常规闭环，
-  ≥3 在途 / 4 已到达 走「强制取消」走专项通道；≥ 5 已签收 一律不允许。
+  ≥3 在途 / 4 已到达 走「强制取消」走专项通道；≥ 5 已交车 一律不允许。
 -->
 <template>
   <el-dialog
@@ -24,7 +24,7 @@
       :closable="false"
       show-icon
       title="取消任务单将释放该任务下的所有计划挂接"
-      description="未支付的费用单会被自动撤销；已支付费用单需财务侧另行处理。已签收 / 已关闭 任务请勿使用此入口。"
+      description="未支付的费用单会被自动撤销；已支付费用单需财务侧另行处理。已交车 / 已关闭 任务请勿使用此入口。"
       style="margin-bottom: 12px"
     />
     <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">

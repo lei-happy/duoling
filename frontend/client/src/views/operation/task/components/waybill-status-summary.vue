@@ -2,7 +2,7 @@
   任务侧「关联计划状态分布」只读展示
 
   与任务状态机彼此独立：任务仅展示其下计划的状态分布（例如 3 张计划中
-  2 张已签收、1 张已回单），不改变任务状态，也不出现"回单"等计划专属动作。
+  2 张已交车、1 张已回单），不改变任务状态，也不出现"回单"等计划专属动作。
   数据来源：TaskOut / TaskListItemOut 的 waybillStatusSummary 字段。
 -->
 <template>
@@ -36,8 +36,8 @@
     1: { label: '待调度', type: 'primary' },
     2: { label: '调度中', type: 'warning' },
     3: { label: '运输中', type: 'warning' },
-    4: { label: '待签收', type: 'success' },
-    5: { label: '已签收', type: 'success' },
+    4: { label: '待交车', type: 'success' },
+    5: { label: '已交车', type: 'success' },
     6: { label: '已回单', type: 'success' },
     7: { label: '已关闭', type: 'danger' }
   };

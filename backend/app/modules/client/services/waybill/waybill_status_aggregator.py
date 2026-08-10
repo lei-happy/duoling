@@ -12,10 +12,10 @@
 
 - 若没有任何活跃 item（is_deleted=0 且 status != 9）：
     → 运单回到 ``1 待调度``
-- 若全部 cargo 已签收（sum(item.q where status=3) >= sum(cargo.q)）：
-    → ``5 已完成``（完成门槛）
+- 若全部 cargo 已交车（sum(item.q where status=3) >= sum(cargo.q)）：
+    → ``5 已交车``（完成门槛）
 - 若全部 cargo 已到达（sum(item.q where status in {2,3}) >= sum(cargo.q)）：
-    → ``4 已送达``（到达门槛）
+    → ``4 待交车``（到达门槛）
 - 若任意 item 进入 status >= 1：
     → ``3 运输中``（最大推进策略）
 - 否则（已挂接但尚未装车）：
@@ -23,7 +23,7 @@
 
 注意：
 - ``status = 0 草稿``、``6 已回单``、``7 已关闭`` 不被聚合器覆盖（人工/终态），需走显式 API。
-- ``allow_downgrade=True`` 允许从高位回退到低位（撤销签收 / 撤销到达 / 取消挂接等场景）。
+- ``allow_downgrade=True`` 允许从高位回退到低位（撤销交车 / 撤销到达 / 取消挂接等场景）。
 - 状态变更受 ``WaybillStateMachine.assert_transition`` 约束，遇到非法跳转抛出 BizException。
 """
 
@@ -170,8 +170,8 @@ async def _gather_metrics(
     返回字段：
     - total_cargo_quantity：所有 cargo 行台数之和（基准）
     - active_quantity：active item（is_deleted=0 且 status != 9）的台数总和
-    - loaded_plus_quantity：item.status >= 1 的台数总和（已装车 + 在途 + 已签收）
-    - arrived_plus_quantity：item.status >= 2 的台数总和（在途/到达 + 已签收）
+    - loaded_plus_quantity：item.status >= 1 的台数总和（已装车 + 在途 + 已交车）
+    - arrived_plus_quantity：item.status >= 2 的台数总和（在途/到达 + 已交车）
     - signed_quantity：item.status == 3 的台数
     """
     # 基准：cargo 总台数

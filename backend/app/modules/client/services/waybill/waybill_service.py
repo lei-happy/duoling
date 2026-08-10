@@ -512,7 +512,7 @@ class WaybillService:
         """计划工作台 KPI 聚合：按 status 0~7 计数（可选叠加与列表相同的筛选条件）。
 
         8 个卡片：
-            0 待确认 / 1 待调度 / 2 调度中 / 3 运输中 / 4 待签收 / 5 已签收 / 6 已回单 / 7 已关闭
+            0 待确认 / 1 待调度 / 2 调度中 / 3 运输中 / 4 待交车 / 5 已交车 / 6 已回单 / 7 已关闭
         """
         use_pinyin_filters = any(
             [
@@ -935,7 +935,7 @@ class WaybillService:
             raise BizException("仅草稿、待调度或已关闭的计划可以删除")
         if await WaybillStatusAggregator.has_active_task_items(db, waybill_id):
             raise BizException(
-                "存在已挂接到任务单的活跃货物（含未签收 / 未取消），不允许删除计划。"
+                "存在已挂接到任务单的活跃货物（含未交车 / 未取消），不允许删除计划。"
                 "请先取消相关任务单的挂接。"
             )
         waybill.is_deleted = 1

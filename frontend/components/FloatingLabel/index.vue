@@ -40,6 +40,7 @@
       :format="format"
       :start-placeholder="startPlaceholder"
       :end-placeholder="endPlaceholder"
+      :shortcuts="shortcuts"
       class="ele-fluid"
       @focus="handleFocus"
       @blur="handleBlur"
@@ -151,6 +152,8 @@
       startPlaceholder?: string;
       /** 日期范围结束占位符 */
       endPlaceholder?: string;
+      /** 日期面板左侧快捷选项（如近 7 天、近 30 天） */
+      shortcuts?: Array<{ text: string; value: Date[] | (() => Date[]) }>;
       /** 下拉选择器是否多选 */
       multiple?: boolean;
       /** 多选时是否折叠标签 */

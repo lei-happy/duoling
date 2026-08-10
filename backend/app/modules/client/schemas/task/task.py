@@ -28,7 +28,7 @@ class WaybillStatusCount(BaseModel):
 class WaybillStatusSummary(BaseModel):
     """任务关联运单的状态分布（只读视图，与任务状态机彼此独立）。
 
-    例如 1 个任务挂接 3 张运单，其中 1 张「已回单(6)」、2 张「已签收(5)」，
+    例如 1 个任务挂接 3 张运单，其中 1 张「已回单(6)」、2 张「已交车(5)」，
     则 total=3，items=[{5,2},{6,1}]。前端据此展示"部分回单/全部回单"等提示，
     但**不改变任务状态**。
     """
@@ -175,7 +175,7 @@ class TaskStatusUpdate(BaseModel):
     actualArriveTime: Optional[datetime] = None
     signedAt: Optional[datetime] = Field(
         default=None,
-        description="客户签收时间（仅 status=5 时生效；用于 propagate 到 item.signed_at）",
+        description="客户交车时间（仅 status=5 时生效；用于 propagate 到 item.signed_at）",
     )
     remark: Optional[str] = None
 
@@ -254,6 +254,50 @@ class TaskBatchCarrierAssignmentRequest(BaseModel):
         return self
 
 
+class TaskStatusEventOut(BaseModel):
+    """任务时间流的一个节点（状态事件）"""
+    id: int
+    eventType: int
+    eventTypeLabel: str
+    fromStatus: Optional[int] = None
+    toStatus: Optional[int] = None
+    toStatusLabel: Optional[str] = None
+    source: int
+    sourceLabel: str
+    operatorId: Optional[int] = None
+    operatorName: Optional[str] = None
+    reason: Optional[str] = None
+    payload: Optional[dict] = None
+    eventTime: datetime
+
+    @classmethod
+    def from_model(cls, m) -> "TaskStatusEventOut":
+        from app.modules.client.models.task.task_status_event import (
+            TASK_EVENT_LABELS, TASK_EVENT_SOURCE_LABELS,
+        )
+        from app.modules.client.services.state_machine.task_state_machine import (
+            TASK_STATUS_LABELS,
+        )
+        return cls(
+            id=m.id,
+            eventType=m.event_type,
+            eventTypeLabel=TASK_EVENT_LABELS.get(int(m.event_type), "状态变更"),
+            fromStatus=m.from_status,
+            toStatus=m.to_status,
+            toStatusLabel=(
+                TASK_STATUS_LABELS.get(int(m.to_status))
+                if m.to_status is not None else None
+            ),
+            source=m.source,
+            sourceLabel=TASK_EVENT_SOURCE_LABELS.get(int(m.source), "未知来源"),
+            operatorId=m.operator_id,
+            operatorName=m.operator_name,
+            reason=m.reason,
+            payload=m.payload_snapshot,
+            eventTime=m.event_time,
+        )
+
+
 class TaskListItemOut(BaseModel):
     """列表行（不含 segments / items 详情）"""
     id: int
@@ -277,6 +321,13 @@ class TaskListItemOut(BaseModel):
     plannedArriveTime: Optional[datetime] = None
     actualLoadTime: Optional[datetime] = None
     actualArriveTime: Optional[datetime] = None
+    assignedAt: Optional[datetime] = Field(
+        default=None, description="承运分配完成时间"
+    )
+    dispatchedAt: Optional[datetime] = Field(default=None, description="派车完成时间")
+    stageEnteredAt: Optional[datetime] = Field(
+        default=None, description="进入当前状态的时间，用于计算本阶段停留时长"
+    )
     carrierCostAmount: Optional[float] = None
     prepaidAmount: float
     supplementAmount: float
@@ -323,6 +374,9 @@ class TaskListItemOut(BaseModel):
             plannedArriveTime=m.planned_arrive_time,
             actualLoadTime=m.actual_load_time,
             actualArriveTime=m.actual_arrive_time,
+            assignedAt=m.assigned_at,
+            dispatchedAt=m.dispatched_at,
+            stageEnteredAt=m.stage_entered_at,
             carrierCostAmount=(
                 float(m.carrier_cost_amount)
                 if m.carrier_cost_amount is not None else None
@@ -370,6 +424,13 @@ class TaskOut(BaseModel):
     plannedArriveTime: Optional[datetime] = None
     actualLoadTime: Optional[datetime] = None
     actualArriveTime: Optional[datetime] = None
+    assignedAt: Optional[datetime] = Field(
+        default=None, description="承运分配完成时间"
+    )
+    dispatchedAt: Optional[datetime] = Field(default=None, description="派车完成时间")
+    stageEnteredAt: Optional[datetime] = Field(
+        default=None, description="进入当前状态的时间，用于计算本阶段停留时长"
+    )
     carrierCostAmount: Optional[float] = None
     carrierCostType: Optional[int] = None
     costRemark: Optional[str] = None
@@ -432,6 +493,9 @@ class TaskOut(BaseModel):
             plannedArriveTime=m.planned_arrive_time,
             actualLoadTime=m.actual_load_time,
             actualArriveTime=m.actual_arrive_time,
+            assignedAt=m.assigned_at,
+            dispatchedAt=m.dispatched_at,
+            stageEnteredAt=m.stage_entered_at,
             carrierCostAmount=(
                 float(m.carrier_cost_amount)
                 if m.carrier_cost_amount is not None else None

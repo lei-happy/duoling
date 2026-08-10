@@ -41,14 +41,14 @@ export type TaskActionKey =
   | 'confirm-load' // 确认装车 (1 → 2)
   | 'depart' // 标记出发 (2 → 3)
   | 'confirm-arrive' // 确认到达 (3 → 4)
-  | 'confirm-sign' // 确认签收：item 级签收，全部签收后聚合驱动 task 4→5
+  | 'confirm-sign' // 确认交车：item 级交车，全部交车后聚合驱动 task 4→5
   | 'close' // 关闭任务 (5 → 7)
   // —— 逆向通道（参考 02.计划与任务单状态机联动设计.md §4.5）
   | 'revert-dispatch' // 撤回派车 (1 → 0)
   | 'revert-load' // 撤销装车 (2 → 1)
   | 'revert-depart' // 撤回出发 (3 → 2)
   | 'revert-arrive' // 撤回到达 (4 → 3)
-  | 'revert-sign' // 撤销签收（5 → 4，item 级 3→2 反向聚合驱动）
+  | 'revert-sign' // 撤销交车（5 → 4，item 级 3→2 反向聚合驱动）
   | 'force-cancel' // 强制取消（2/3/4 → 9，线下取消）
   // —— 常规辅助通道
   | 'cancel-task' // 常规取消（-1/0/1/2 → 9，释放计划挂接 + 撤销未支付费用单）
@@ -138,7 +138,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
   },
   'confirm-sign': {
     key: 'confirm-sign',
-    label: '确认签收',
+    label: '确认交车',
     buttonType: 'success',
     permission: 'operation:task:confirm-sign',
     icon: CircleCheck,
@@ -195,7 +195,7 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
   },
   'revert-sign': {
     key: 'revert-sign',
-    label: '撤销签收',
+    label: '撤销交车',
     buttonType: 'warning',
     permission: 'operation:task:revert-sign',
     icon: ArrowLeft,
@@ -247,9 +247,9 @@ export const TASK_ACTION_CONFIGS: Record<TaskActionKey, TaskActionConfig> = {
 
 /**
  * 根据 status 取下一步主动作。
- * - -1,0,1,2,3,4：分别对应分配承运 / 派车 / 装车 / 出发 / 到达 / 签收。
- * - 4→5 已签收：由 item 全签收聚合触发，"确认签收"在 status=4 阶段操作。
- * - 5 (已签收)：主动作是「关闭任务」；结算单走财务工作台，不在主动作中暴露。
+ * - -1,0,1,2,3,4：分别对应分配承运 / 派车 / 装车 / 出发 / 到达 / 交车。
+ * - 4→5 已交车：由 item 全交车聚合触发，"确认交车"在 status=4 阶段操作。
+ * - 5 (已交车)：主动作是「关闭任务」；结算单走财务工作台，不在主动作中暴露。
  * - 7,9：无主动作。
  */
 const PRIMARY_BY_STATUS: Record<number, TaskActionKey | null> = {
@@ -290,9 +290,9 @@ export const getSecondaryTaskActions = (
  * - 2 → 撤销装车；强制取消
  * - 3 → 撤回出发；强制取消
  * - 4 → 撤回到达；强制取消
- * - 5 → 撤销签收（避免误签收后流程卡死）
+ * - 5 → 撤销交车（避免误交车后流程卡死）
  *
- * 说明：5 已签收 由 item 全签收聚合驱动；"撤销签收" 走 item 级
+ * 说明：5 已交车 由 item 全交车聚合驱动；"撤销交车" 走 item 级
  * （修改对应 item.status 3→2，后端 _aggregate_task_status_from_items
  * 自动把 task 5→4、计划 5→4），不走任务级 revert-status 接口。
  * 已关闭(7)/已取消(9) 为终态，不放开任何逆向。

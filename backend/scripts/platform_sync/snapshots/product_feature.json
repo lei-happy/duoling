@@ -264,7 +264,8 @@
       "biz_task",
       "biz_task_segment",
       "biz_task_waybill_item",
-      "biz_task_receipt"
+      "biz_task_receipt",
+      "biz_task_status_event"
     ],
     "sort_order": 34,
     "status": 1

@@ -2,7 +2,7 @@
  * 任务状态配置（与后端 task.status 一致）
  *
  * -1 待分配 → 0 待派车 → 1 已派车 → 2 已装车 → 3 在途 → 4 已到达
- *                                                          → 5 已签收（聚合态）→ 7 已关闭
+ *                                                          → 5 已交车（聚合态）→ 7 已关闭
  *                                                                               9 已取消
  *
  * v2：5 由聚合驱动（不接受 4→5 外部推进）；6 已结算枚举已下线
@@ -22,7 +22,7 @@ const STATUS_MAP: Record<number, TaskStatusInfo> = {
   2: { label: '已装车', level: 'primary' },
   3: { label: '在途', level: 'info' },
   4: { label: '已到达', level: 'info' },
-  5: { label: '已签收', level: 'success' },
+  5: { label: '已交车', level: 'success' },
   7: { label: '已关闭', level: 'default' },
   9: { label: '已取消', level: 'danger' }
 };
@@ -38,7 +38,7 @@ export const VISIBLE_STATUS_TABS: { label: string; value?: number }[] = [
   { label: '已装车', value: 2 },
   { label: '在途', value: 3 },
   { label: '已到达', value: 4 },
-  { label: '已签收', value: 5 }
+  { label: '已交车', value: 5 }
 ];
 
 /**
@@ -62,7 +62,7 @@ const ITEM_STATUS_MAP: Record<number, TaskStatusInfo> = {
   0: { label: '待装车', level: 'warning' },
   1: { label: '已装车', level: 'primary' },
   2: { label: '已卸车', level: 'info' },
-  3: { label: '已签收', level: 'success' }
+  3: { label: '已交车', level: 'success' }
 };
 
 export function getItemStatusInfo(status: number): TaskStatusInfo {
@@ -103,7 +103,7 @@ export function getAvailableActions(
     case 3:
       return [{ key: 'confirm-arrive', label: '确认到达', level: 'primary' }];
     case 4:
-      return [{ key: 'sign-items', label: '逐单签收', level: 'success' }];
+      return [{ key: 'sign-items', label: '逐台交车', level: 'success' }];
     default:
       return [];
   }

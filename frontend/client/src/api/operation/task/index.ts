@@ -2,7 +2,7 @@ import request from '@/utils/request';
 import type { ApiResult, PageResult } from '@/api';
 import type {
   BatchActionResult,
-  CandidateCargo,
+  CandidateCargoListResult,
   RouteDistanceLookup,
   Task,
   TaskBatchStatusPayload,
@@ -12,6 +12,7 @@ import type {
   TaskFinanceSummaryItem,
   TaskParam,
   TaskSegment,
+  TaskStatusEvent,
   TaskUpdatePayload,
   TaskWaybillItem,
   TaskWorkbenchStats
@@ -32,6 +33,15 @@ export async function getTask(id: number) {
   if (res.data.code === 0) {
     return res.data.data;
   }
+  return Promise.reject(new Error(res.data.message));
+}
+
+/** 任务时间流：按时间正序的全部状态事件 */
+export async function listTaskStatusEvents(taskId: number) {
+  const res = await request.get<ApiResult<TaskStatusEvent[]>>(
+    `/business/task/${taskId}/status-events`
+  );
+  if (res.data.code === 0) return res.data.data || [];
   return Promise.reject(new Error(res.data.message));
 }
 

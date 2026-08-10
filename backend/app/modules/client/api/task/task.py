@@ -35,6 +35,7 @@ from app.modules.client.schemas.task.task import (
     TaskOut,
     TaskPlanRouteRequest,
     TaskRevertStatusRequest,
+    TaskStatusEventOut,
     TaskStatusUpdate,
     TaskUpdate,
 )
@@ -61,6 +62,9 @@ from app.modules.client.services.task.task_loading_record_service import (
     TaskLoadingRecordService,
 )
 from app.modules.client.services.task.task_service import TaskService
+from app.modules.client.services.task.task_status_event_service import (
+    TaskStatusEventService,
+)
 from app.modules.client.services.task.task_waybill_item_service import (
     TaskWaybillItemService,
 )
@@ -100,7 +104,7 @@ async def _task_detail_dump(
 _TASK_STATUS_LABELS = {
     -1: "待分配",
     0: "待派车", 1: "已派车", 2: "已装车", 3: "在途",
-    4: "已到达", 5: "已签收", 7: "已关闭", 9: "已取消",
+    4: "已到达", 5: "已交车", 7: "已关闭", 9: "已取消",
 }
 
 
@@ -129,7 +133,12 @@ async def page_tasks(
     createdAtEnd: Optional[date] = None,
     timeField: Optional[str] = Query(
         None,
-        description="时间维度：createdAt|assignedAt|dispatchedAt|actualLoadTime|signedAt",
+        description=(
+            "时间维度："
+            "stageEnteredAt(进入当前阶段) | createdAt(制单)"
+            " | assignedAt | dispatchedAt | actualLoadTime | signedAt；"
+            "后四个为节点维度，会排除尚未走到该节点的任务"
+        ),
     ),
     timeStart: Optional[date] = None,
     timeEnd: Optional[date] = None,
@@ -146,6 +155,15 @@ async def page_tasks(
         False,
         description="在途正常列表：status∈{2,3} 且（无计划到货或计划到货未过）",
     ),
+    plateNumber: Optional[str] = Query(None, description="车牌号（模糊匹配主车牌）"),
+    sortField: Optional[str] = Query(
+        None,
+        description=(
+            "排序字段白名单：createdAt|plannedLoadTime|plannedArriveTime"
+            "|actualLoadTime|dispatchedAt|stageEnteredAt；非法值回落创建时间倒序"
+        ),
+    ),
+    sortOrder: Optional[str] = Query(None, description="排序方向 asc|desc，默认 asc"),
     db: AsyncSession = Depends(get_tenant_db),
     _: TokenData = Depends(get_current_user),
 ):
@@ -169,6 +187,9 @@ async def page_tasks(
         in_transit_overdue=inTransitOverdue,
         only_normal=onlyNormal,
         in_transit_only_normal=inTransitOnlyNormal,
+        plate_number=plateNumber,
+        sort_field=sortField,
+        sort_order=sortOrder,
     )
     task_ids = [t.id for t in items]
     qty_map = await TaskService.aggregate_loaded_unloaded(db, task_ids)
@@ -217,10 +238,16 @@ async def get_workbench_stats(
     createdAtEnd: Optional[date] = None,
     timeField: Optional[str] = Query(
         None,
-        description="时间维度：createdAt|assignedAt|dispatchedAt|actualLoadTime|signedAt",
+        description=(
+            "时间维度："
+            "stageEnteredAt(进入当前阶段) | createdAt(制单)"
+            " | assignedAt | dispatchedAt | actualLoadTime | signedAt；"
+            "后四个为节点维度，会排除尚未走到该节点的任务"
+        ),
     ),
     timeStart: Optional[date] = None,
     timeEnd: Optional[date] = None,
+    plateNumber: Optional[str] = Query(None, description="车牌号（模糊匹配主车牌）"),
     db: AsyncSession = Depends(get_tenant_db),
     _: TokenData = Depends(get_current_user),
 ):
@@ -239,6 +266,7 @@ async def get_workbench_stats(
         time_field=timeField,
         time_start=timeStart,
         time_end=timeEnd,
+        plate_number=plateNumber,
     )
     return success(data=stats)
 
@@ -375,7 +403,9 @@ async def update_task_status(
     current_user: TokenData = Depends(get_current_user),
 ):
     _require_tenant(current_user)
-    task = await TaskService.update_status(db, task_id, data)
+    task = await TaskService.update_status(
+        db, task_id, data, current_user_id=current_user.user_id,
+    )
     return success(data=await _task_detail_dump(db, task))
 
 
@@ -405,7 +435,9 @@ async def assign_carrier(
     current_user: TokenData = Depends(get_current_user),
 ):
     _require_tenant(current_user)
-    task = await TaskService.assign_carrier(db, task_id, data)
+    task = await TaskService.assign_carrier(
+        db, task_id, data, current_user_id=current_user.user_id,
+    )
     return success(data=await _task_detail_dump(db, task))
 
 
@@ -423,7 +455,9 @@ async def complete_carrier_assignment(
     current_user: TokenData = Depends(get_current_user),
 ):
     _require_tenant(current_user)
-    task = await TaskService.complete_carrier_assignment(db, task_id, data)
+    task = await TaskService.complete_carrier_assignment(
+        db, task_id, data, current_user_id=current_user.user_id,
+    )
     return success(data=await _task_detail_dump(db, task))
 
 
@@ -441,7 +475,7 @@ async def batch_complete_carrier_assignment(
 ):
     _require_tenant(current_user)
     result = await TaskService.batch_complete_carrier_assignment(
-        db, data.ids, data.carrier,
+        db, data.ids, data.carrier, current_user_id=current_user.user_id,
     )
     return success(data=result)
 
@@ -457,7 +491,9 @@ async def cancel_task(
 ):
     _require_tenant(current_user)
     reason = data.reason if data else None
-    task = await TaskService.cancel_task(db, task_id, reason=reason)
+    task = await TaskService.cancel_task(
+        db, task_id, reason=reason, current_user_id=current_user.user_id,
+    )
     return success(data=await _task_detail_dump(db, task))
 
 
@@ -513,6 +549,24 @@ async def force_cancel_task(
         cancel_unpaid_finance_docs=bool(data.cancelUnpaidFinanceDocs),
     )
     return success(data=await _task_detail_dump(db, task))
+
+
+# ============================================================
+# 状态事件（时间流）
+# ============================================================
+
+@router.get("/{task_id}/status-events")
+async def list_task_status_events(
+    task_id: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """任务时间流：按时间正序返回全部状态事件（含撤销、取消与操作人）。"""
+    await TaskService.get_or_404(db, task_id)
+    events = await TaskStatusEventService.list_events(db, task_id)
+    return success(
+        data=[TaskStatusEventOut.from_model(e).model_dump() for e in events]
+    )
 
 
 # ============================================================

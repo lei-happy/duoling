@@ -2,11 +2,11 @@
 
 Task.status 状态空间（已与"财务结算"解耦）：
     -1 待分配 → 0 待派车 → 1 已派车 → 2 已装车 → 3 在途 → 4 已到达
-    → 5 已签收（聚合态） → 7 已关闭
+    → 5 已交车（聚合态） → 7 已关闭
     9 已取消（终态，可从 -1/0/1/2 进入）
 
 设计要点：
-- 5 已签收 = 聚合态：当任务下所有未取消的 TaskWaybillItem.status=3 时，
+- 5 已交车 = 聚合态：当任务下所有未取消的 TaskWaybillItem.status=3 时，
   由 ``TaskWaybillItemService._aggregate_task_status_from_items`` 自动 4→5；
   不接受外部 ``update_status(4→5)`` 人工跳转。
 - 6 已结算 已彻底移除：财务单据（task_finance_doc）的支付/撤销不再驱动 task.status；
@@ -43,7 +43,7 @@ TASK_STATUS_LABELS: dict[int, str] = {
     2: "已装车",
     3: "在途",
     4: "已到达",
-    5: "已签收",
+    5: "已交车",
     7: "已关闭",
     9: "已取消",
 }
@@ -51,7 +51,7 @@ TASK_STATUS_LABELS: dict[int, str] = {
 
 # 正向合法跳转
 # - 4→5 由 item 聚合驱动写入，不在此表内对外暴露；外部 update_status 进入 4 后
-#   不能再人工推进，必须靠 item 全签收触发聚合
+#   不能再人工推进，必须靠 item 全交车触发聚合
 # - 1→2 / 3→4 同样下沉为 *聚合态*：装车记录 / 卸车记录创建后由
 #   ``_aggregate_load_status_from_items`` 写入，不接受外部 update_status 推进；
 #   防止跳过装卸记录直接置任务为已装车/已到达
@@ -61,8 +61,8 @@ TASK_VALID_TRANS: dict[int, Set[int]] = {
     1: {0, 9},       # 已派车 → 回退待派车（撤回派车）/ 已取消（1→2 走聚合）
     2: {3, 9},       # 已装车 → 在途 / 已取消
     3: set(),        # 在途 → 已到达 仅由装卸记录聚合驱动
-    4: set(),        # 已到达 → 已签收 仅由 item 聚合驱动
-    5: {7},          # 已签收 → 已关闭
+    4: set(),        # 已到达 → 已交车 仅由 item 聚合驱动
+    5: {7},          # 已交车 → 已关闭
     7: set(),
     9: set(),
 }
@@ -70,7 +70,7 @@ TASK_VALID_TRANS: dict[int, Set[int]] = {
 
 # 反向跳转（专项撤销）
 # - 1→0 「撤回派车」也保留在正向表里，是历史兼容；优先走 revert
-# - 5→4 仅通过 item 反向聚合触发（撤销最后一条签收 item），不通过 revert_status
+# - 5→4 仅通过 item 反向聚合触发（撤销最后一条交车 item），不通过 revert_status
 TASK_REVERSE_TRANS: dict[int, Set[int]] = {
     1: {0},   # 撤回派车
     2: {1},   # 撤销装车
@@ -119,7 +119,7 @@ class TaskStateMachine:
         if old not in TASK_FORCE_CANCEL_FROM:
             raise BizException(
                 "仅「已装车 / 在途 / 已到达」可强制取消；"
-                "「已签收 / 已关闭」请走客户差异处理流程"
+                "「已交车 / 已关闭」请走客户差异处理流程"
             )
 
     @staticmethod

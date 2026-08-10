@@ -51,3 +51,16 @@ export function getLast3DaysDateRange(): [string, string] {
   const start = dayjs().subtract(2, 'day').format('YYYY-MM-DD');
   return [start, end];
 }
+
+/**
+ * 含今天在内涵盖 N 个自然日，返回 Date 元组。
+ * 供 el-date-picker 的 `shortcuts` 使用（由组件按 value-format 自行格式化）。
+ */
+export function getLastNDaysDates(days: number): [Date, Date] {
+  const n = Math.max(1, Math.floor(days));
+  const end = dayjs().endOf('day');
+  const start = dayjs()
+    .subtract(n - 1, 'day')
+    .startOf('day');
+  return [start.toDate(), end.toDate()];
+}

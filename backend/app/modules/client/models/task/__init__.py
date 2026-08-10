@@ -8,6 +8,7 @@
 - biz_task_loading_record_item      装卸事件 ↔ 挂接行桥接表
 - biz_task_finance_doc              财务费用单（预付/补款/结算）
 - biz_task_finance_item             费用单费用项明细
+- biz_task_status_event             状态事件流水（时间流 / 审计）
 """
 
 from app.modules.client.models.task.task import Task
@@ -20,6 +21,7 @@ from app.modules.client.models.task.task_loading_record import (
 from app.modules.client.models.task.task_finance_doc import TaskFinanceDoc
 from app.modules.client.models.task.task_finance_item import TaskFinanceItem
 from app.modules.client.models.task.task_receipt import TaskReceipt
+from app.modules.client.models.task.task_status_event import TaskStatusEvent
 
 __all__ = [
     "Task",
@@ -30,4 +32,5 @@ __all__ = [
     "TaskFinanceDoc",
     "TaskFinanceItem",
     "TaskReceipt",
+    "TaskStatusEvent",
 ]

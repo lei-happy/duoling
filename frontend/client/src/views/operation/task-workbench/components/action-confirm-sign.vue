@@ -1,12 +1,12 @@
 <!--
-  确认签收弹窗（item 级签收）
+  确认交车弹窗（item 级交车）
 
   说明：
-  - 签收语义已下沉到「任务-计划挂接行（TaskWaybillItem）」维度，由调度员勾选具体
+  - 交车语义已下沉到「任务-计划挂接行（TaskWaybillItem）」维度，由调度员勾选具体
     item 触发 ``updateTaskWaybillItem(status=3)``；后端 ``_aggregate_task_status_from_items``
-    在 item 全部签收后自动把 task.status 4→5。
-  - 单任务场景：拉取该任务下的所有 item 让用户逐行勾选/批量签收；
-  - 批量任务场景：仅做"对每张任务下所有未签收 item 一键签收"，不展示明细。
+    在 item 全部交车后自动把 task.status 4→5。
+  - 单任务场景：拉取该任务下的所有 item 让用户逐行勾选/批量交车；
+  - 批量任务场景：仅做"对每张任务下所有未交车 item 一键交车"，不展示明细。
 
   详见《02.计划与任务单状态机联动设计.md》。
 -->
@@ -29,26 +29,26 @@
     >
       <el-form-item v-if="!isSingleTask" label="任务单">
         <el-tag type="success" size="small">
-          批量签收 {{ tasks.length }} 张任务
+          批量交车 {{ tasks.length }} 张任务
         </el-tag>
         <span class="action-sign__hint">
-          将把每张任务下所有未签收的挂接货物一并签收
+          将把每张任务下所有未交车的挂接货物一并交车
         </span>
       </el-form-item>
 
-      <el-form-item label="签收时间" prop="signedAt" required>
+      <el-form-item label="交车时间" prop="signedAt" required>
         <el-date-picker
           v-model="form.signedAt"
           type="datetime"
           value-format="YYYY-MM-DDTHH:mm:ss"
-          placeholder="选择客户签收时间"
+          placeholder="选择客户交车时间"
           style="width: 320px"
         />
       </el-form-item>
-      <el-form-item label="签收人">
+      <el-form-item label="交接人">
         <el-input
           v-model="form.signedBy"
-          placeholder="客户签收人姓名（可选）"
+          placeholder="客户接车人姓名（可选）"
           style="width: 320px"
         />
       </el-form-item>
@@ -57,13 +57,13 @@
           v-model="form.remark"
           type="textarea"
           :rows="2"
-          placeholder="签收过程中的其他信息（可选）"
+          placeholder="交车过程中的其他信息（可选）"
         />
       </el-form-item>
 
       <el-form-item
         v-if="isSingleTask"
-        label="待签收挂接货物"
+        label="待交车挂接货物"
         prop="selectedItemIds"
         :rules="[
           {
@@ -85,8 +85,8 @@
             type="warning"
             :closable="false"
             show-icon
-            title="该任务下没有待签收的挂接货物"
-            description="可能已全部签收（任务将自动进入「已签收」），或挂接货物未到达。"
+            title="该任务下没有待交车的挂接货物"
+            description="可能已全部交车（任务将自动进入「已交车」），或挂接货物未到达。"
           />
           <el-table
             v-else
@@ -188,16 +188,16 @@
   });
 
   const rules: FormRules = {
-    signedAt: [{ required: true, message: '请选择签收时间' }]
+    signedAt: [{ required: true, message: '请选择交车时间' }]
   };
 
   const isSingleTask = computed(() => props.tasks.length === 1);
 
   const title = computed(() =>
-    isSingleTask.value ? '确认签收' : '批量确认签收'
+    isSingleTask.value ? '确认交车' : '批量确认交车'
   );
 
-  /** 未签收 = status < 已签收 且未取消 */
+  /** 未交车 = status < 已交车 且未取消 */
   const unsignedItems = computed(() =>
     items.value.filter(
       (it) =>
@@ -215,10 +215,10 @@
 
   const submitLabel = computed(() => {
     if (!isSingleTask.value) {
-      return `批量签收 (${props.tasks.length})`;
+      return `批量交车 (${props.tasks.length})`;
     }
     const n = selectedItemIds.value.length;
-    return n > 0 ? `确认签收 (${n} 行)` : '确认签收';
+    return n > 0 ? `确认交车 (${n} 行)` : '确认交车';
   });
 
   const validateSelected = (
@@ -228,7 +228,7 @@
   ) => {
     if (!isSingleTask.value) return cb();
     if (selectedItemIds.value.length === 0) {
-      return cb(new Error('请至少勾选一行待签收的挂接货物'));
+      return cb(new Error('请至少勾选一行待交车的挂接货物'));
     }
     cb();
   };
@@ -242,7 +242,7 @@
       case 2:
         return '已卸车';
       case 3:
-        return '已签收';
+        return '已交车';
       case 9:
         return '已取消';
       default:
@@ -310,8 +310,8 @@
 
   const buildRemark = () => {
     const parts: string[] = [];
-    parts.push(`[签收] ${form.signedAt}`);
-    if (form.signedBy.trim()) parts.push(`签收人：${form.signedBy.trim()}`);
+    parts.push(`[交车] ${form.signedAt}`);
+    if (form.signedBy.trim()) parts.push(`交接人：${form.signedBy.trim()}`);
     if (form.remark.trim()) parts.push(form.remark.trim());
     return parts.join(' / ');
   };
@@ -332,7 +332,7 @@
       let total = 0;
       let failed = 0;
       if (isSingleTask.value) {
-        // 单任务：直接对勾选的 item 批量签收
+        // 单任务：直接对勾选的 item 批量交车
         for (const id of selectedItemIds.value) {
           total += 1;
           try {
@@ -346,7 +346,7 @@
           }
         }
       } else {
-        // 批量任务：每张任务取所有未签收 item 一并签收
+        // 批量任务：每张任务取所有未交车 item 一并交车
         for (const t of props.tasks) {
           if (!t.id) continue;
           let taskItems: TaskWaybillItem[] = [];
@@ -377,15 +377,15 @@
         }
       }
       if (total === 0) {
-        EleMessage.warning({ message: '没有可签收的挂接货物', plain: true });
+        EleMessage.warning({ message: '没有可交车的挂接货物', plain: true });
       } else if (failed > 0) {
         EleMessage.warning({
-          message: `已签收 ${total - failed} 行，失败 ${failed} 行`,
+          message: `已交车 ${total - failed} 行，失败 ${failed} 行`,
           plain: true
         });
       } else {
         EleMessage.success({
-          message: `已签收 ${total} 行挂接货物`,
+          message: `已交车 ${total} 行挂接货物`,
           plain: true
         });
       }

@@ -80,6 +80,25 @@ export interface TaskLoadingRecordPayload {
   remark?: string;
 }
 
+/** 任务状态事件（时间流节点） */
+export interface TaskStatusEvent {
+  id: number;
+  /** 1-创建 2-分配承运 3-派车 4-装车 5-出发 6-到达 7-交车 8-关闭 9-取消 11~16 逆向 */
+  eventType: number;
+  eventTypeLabel: string;
+  fromStatus?: number | null;
+  toStatus?: number | null;
+  toStatusLabel?: string | null;
+  /** 1-企业端 2-驾驶员端 3-承运商端 4-系统聚合 5-历史回填 */
+  source: number;
+  sourceLabel: string;
+  operatorId?: number | null;
+  operatorName?: string | null;
+  reason?: string | null;
+  payload?: Record<string, any> | null;
+  eventTime: string;
+}
+
 /** 任务单货物挂接项（M:N 按台数） */
 export interface TaskWaybillItem {
   id?: number;
@@ -208,6 +227,12 @@ export interface Task {
   settledAmount?: number;
   financeDocCount?: number;
   status?: number;
+  /** 分配承运方时间 */
+  assignedAt?: string;
+  /** 派车时间 */
+  dispatchedAt?: string;
+  /** 进入当前状态的时间（用于「本阶段停留」列与滞留预警） */
+  stageEnteredAt?: string;
   dispatcherId?: number | null;
   dispatcherName?: string;
   remark?: string;
@@ -258,8 +283,14 @@ export interface TaskCreatePayload {
 
 export type TaskUpdatePayload = Partial<TaskCreatePayload>;
 
-/** 任务列表/工作台时间筛选维度 */
+/**
+ * 任务列表/工作台时间筛选维度。
+ *
+ * `stageEnteredAt` / `createdAt` 对每条任务都有值（稳定维度）；
+ * 其余为节点维度，筛选时会排除尚未走到该节点的任务。
+ */
 export type TaskTimeField =
+  | 'stageEnteredAt'
   | 'createdAt'
   | 'assignedAt'
   | 'dispatchedAt'
@@ -291,6 +322,12 @@ export interface TaskParam extends PageParam {
   inTransitOverdue?: boolean;
   /** 工作台：在途正常（status∈{2,3} 且计划到货未触发逾期） */
   inTransitOnlyNormal?: boolean;
+  /** 车牌号精确筛选（主车牌，前后模糊匹配） */
+  plateNumber?: string;
+  /** 服务端排序字段（白名单外的取值后端会忽略） */
+  sortField?: string;
+  /** 排序方向 */
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface TaskFinanceSummaryItem {
@@ -330,8 +367,11 @@ export interface TaskWorkbenchStats {
   alerts: {
     overdueAssignment: number;
     overdueDispatch: number;
+    /** 已装车但计划到货已过、仍未出发 */
+    overdueDepart?: number;
+    /** 在途且计划到货已过 */
     overdueArrive: number;
-    /** 待装车 / 待签收 预警数（占位，规则接入后由后端统计） */
+    /** 待装车 / 待交车 预警数（占位，规则接入后由后端统计） */
     pendingLoadAlert?: number;
     pendingSignAlert?: number;
   };

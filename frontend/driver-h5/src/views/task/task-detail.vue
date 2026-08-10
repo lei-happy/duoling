@@ -49,7 +49,7 @@
             size="small"
             type="success"
             @click="onSignItem(it.id)"
-          >签收</van-button>
+          >交车</van-button>
         </div>
       </div>
 
@@ -287,7 +287,7 @@ function onAction(key: DriverAction['key']) {
   if (key === 'sign-items') {
     const next = task.value?.items.find((it) => it.status < 3);
     if (next) onSignItem(next.id);
-    else showToast('暂无可签收的运单');
+    else showToast('暂无可交车的计划');
     return;
   }
   if (key === 'reject') {
@@ -361,7 +361,7 @@ async function onSignItem(itemId: number) {
   acting.value = true;
   try {
     await signItem(itemId);
-    showToast({ message: '签收成功', type: 'success' });
+    showToast({ message: '交车成功', type: 'success' });
     await load();
   } finally {
     acting.value = false;

@@ -123,7 +123,7 @@ async def confirm_arrive(
     return success(data=detail.model_dump(), message="到达确认成功")
 
 
-@router.post("/items/{item_id}/sign", summary="挂接行签收")
+@router.post("/items/{item_id}/sign", summary="挂接行交车")
 async def sign_item(
     item_id: int,
     payload: DriverSignItemRequest,
@@ -132,10 +132,10 @@ async def sign_item(
 ):
     ctx = await get_current_driver(tenant_db, current_user)
     await DriverTaskService.sign_item(tenant_db, ctx, item_id, payload)
-    return success(message="签收成功")
+    return success(message="交车成功")
 
 
-@router.post("/items/{item_id}/revert-sign", summary="撤销签收（受限）")
+@router.post("/items/{item_id}/revert-sign", summary="撤销交车（受限）")
 async def revert_sign_item(
     item_id: int,
     payload: DriverRevertSignRequest,
@@ -146,4 +146,4 @@ async def revert_sign_item(
     await DriverTaskService.revert_sign_item(
         tenant_db, ctx, item_id, payload, actor=current_user
     )
-    return success(message="已撤销签收")
+    return success(message="已撤销交车")

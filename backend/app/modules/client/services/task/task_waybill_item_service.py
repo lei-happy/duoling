@@ -46,6 +46,18 @@ from app.modules.client.services.state_machine.task_state_machine import (
     TASK_ON_WAY,
     TASK_SIGNED,
 )
+from app.modules.client.models.task.task_status_event import (
+    TASK_EVENT_ARRIVE,
+    TASK_EVENT_DELIVER,
+    TASK_EVENT_LOAD,
+    TASK_EVENT_REVERT_ARRIVE,
+    TASK_EVENT_REVERT_DELIVER,
+    TASK_EVENT_REVERT_LOAD,
+    TASK_EVENT_SOURCE_SYSTEM,
+)
+from app.modules.client.services.task.task_status_event_service import (
+    TaskStatusEventService,
+)
 from app.modules.client.services.waybill.waybill_service import WaybillService
 from app.modules.client.services.waybill.waybill_status_aggregator import (
     WaybillStatusAggregator,
@@ -371,7 +383,7 @@ class TaskWaybillItemService:
         task: Task,
         items_in: List[TaskWaybillItemIn],
     ) -> List[TaskWaybillItem]:
-        """整单替换：先释放所有未签收的挂接，再批量挂接"""
+        """整单替换：先释放所有未交车的挂接，再批量挂接"""
         existing = await TaskWaybillItemService.list_items_of_task(db, task.id)
         affected_wb: set[int] = set()
         for old in existing:
@@ -404,7 +416,7 @@ class TaskWaybillItemService:
         if not item:
             raise BizException("挂接记录不存在")
         if int(item.status) >= UNFINISHED_THRESHOLD:
-            raise BizException("已签收的货物不可取消挂接")
+            raise BizException("已交车的货物不可取消挂接")
         waybill_id = int(item.waybill_id)
         await TaskWaybillItemService._bump_cargo_allocated(
             db, item.waybill_cargo_id, -int(item.quantity)
@@ -445,14 +457,14 @@ class TaskWaybillItemService:
         new_status = int(data.status)
 
         # 独立性防护：计划已进入「已回单(6)」后，底单已交付货主，
-        # 禁止 item 级"撤销签收"（3→2）直接回退，必须先在计划侧撤销回单。
+        # 禁止 item 级"撤销交车"（3→2）直接回退，必须先在计划侧撤销回单。
         if old_status == ITEM_SIGNED and new_status < ITEM_SIGNED:
             wb_r = await db.execute(
                 select(Waybill.status).where(Waybill.id == item.waybill_id)
             )
             wb_status = wb_r.scalar_one_or_none()
             if wb_status is not None and int(wb_status) >= WAYBILL_RECEIPTED:
-                raise BizException("计划已回单，请先在计划侧撤销回单后再撤销签收")
+                raise BizException("计划已回单，请先在计划侧撤销回单后再撤销交车")
 
         await TaskWaybillItemService._switch_item_status(
             db, item, new_status,
@@ -469,7 +481,7 @@ class TaskWaybillItemService:
         # 聚合上推：
         # - item 全装车 / 撤销最后一条装车 → task.status 1↔2
         # - item 全卸车 / 撤销最后一条卸车 → task.status 3↔4
-        # - item 全签收 / 撤销签收 → task.status 4↔5
+        # - item 全交车 / 撤销交车 → task.status 4↔5
         task_res = await db.execute(
             select(Task).where(
                 Task.id == item.task_id,
@@ -525,28 +537,48 @@ class TaskWaybillItemService:
 
         changed = False
         if cur == TASK_DISPATCHED and all_loaded:
-            task.status = TASK_LOADED
             loaded_times = [it.loaded_at for it in active if it.loaded_at is not None]
             if loaded_times:
                 task.actual_load_time = max(loaded_times)
+            TaskStatusEventService.apply_status(
+                db, task, TASK_LOADED,
+                event_type=TASK_EVENT_LOAD,
+                source=TASK_EVENT_SOURCE_SYSTEM,
+                reason="全部挂接货物已装车",
+            )
             changed = True
         elif cur == TASK_LOADED and not all_loaded:
             # 撤销最后一条装车（item 1→0），任务回退到已派车
-            task.status = TASK_DISPATCHED
             task.actual_load_time = None
+            TaskStatusEventService.apply_status(
+                db, task, TASK_DISPATCHED,
+                event_type=TASK_EVENT_REVERT_LOAD,
+                source=TASK_EVENT_SOURCE_SYSTEM,
+                reason="装车记录被撤回",
+            )
             changed = True
         elif cur == TASK_ON_WAY and all_unloaded:
-            task.status = TASK_ARRIVED
             unloaded_times = [
                 it.unloaded_at for it in active if it.unloaded_at is not None
             ]
             if unloaded_times:
                 task.actual_arrive_time = max(unloaded_times)
+            TaskStatusEventService.apply_status(
+                db, task, TASK_ARRIVED,
+                event_type=TASK_EVENT_ARRIVE,
+                source=TASK_EVENT_SOURCE_SYSTEM,
+                reason="全部挂接货物已卸车",
+            )
             changed = True
         elif cur == TASK_ARRIVED and not all_unloaded:
             # 撤销最后一条卸车（item 2→1），任务回退到在途
-            task.status = TASK_ON_WAY
             task.actual_arrive_time = None
+            TaskStatusEventService.apply_status(
+                db, task, TASK_ON_WAY,
+                event_type=TASK_EVENT_REVERT_ARRIVE,
+                source=TASK_EVENT_SOURCE_SYSTEM,
+                reason="卸车记录被撤回",
+            )
             changed = True
 
         if changed:
@@ -561,7 +593,7 @@ class TaskWaybillItemService:
 
         规则：
         - task.status == 4 且所有活跃 item.status == 3 → 自动 4→5（写 task.signed_at）
-        - task.status == 5 且存在任一活跃 item.status < 3（撤销签收）→ 自动 5→4
+        - task.status == 5 且存在任一活跃 item.status < 3（撤销交车）→ 自动 5→4
 
         其他状态不在此聚合范围；6 已结算/7 已关闭 不再由此触发。
         """
@@ -576,10 +608,20 @@ class TaskWaybillItemService:
         all_signed = all(s == 3 for s in active)
 
         if cur == TASK_ARRIVED and all_signed:
-            task.status = TASK_SIGNED
+            TaskStatusEventService.apply_status(
+                db, task, TASK_SIGNED,
+                event_type=TASK_EVENT_DELIVER,
+                source=TASK_EVENT_SOURCE_SYSTEM,
+                reason="全部挂接货物已交车",
+            )
             await db.flush()
         elif cur == TASK_SIGNED and not all_signed:
-            task.status = TASK_ARRIVED
+            TaskStatusEventService.apply_status(
+                db, task, TASK_ARRIVED,
+                event_type=TASK_EVENT_REVERT_DELIVER,
+                source=TASK_EVENT_SOURCE_SYSTEM,
+                reason="存在被撤销交车的挂接货物",
+            )
             await db.flush()
 
     # ------------------------------------------------------------------
@@ -606,7 +648,7 @@ class TaskWaybillItemService:
             await TaskWaybillItemService._bump_cargo_allocated(
                 db, item.waybill_cargo_id, -int(item.quantity)
             )
-        # 重新占用：完结 → 未完结（撤销签收）
+        # 重新占用：完结 → 未完结（撤销交车）
         elif old_status >= UNFINISHED_THRESHOLD > new_status:
             await TaskWaybillItemService._bump_cargo_allocated(
                 db, item.waybill_cargo_id, int(item.quantity)
@@ -805,7 +847,7 @@ class TaskWaybillItemService:
     async def release_all_items_of_task(
         db: AsyncSession, task: Task,
     ) -> None:
-        """取消任务单时调用：释放所有未签收挂接占用的台数并软删
+        """取消任务单时调用：释放所有未交车挂接占用的台数并软删
 
         软删后调用 aggregator 让对应计划回退到合理状态（待调度 / 调度中）。
         """

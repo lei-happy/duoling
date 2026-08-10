@@ -8,7 +8,7 @@
 4. 主表冗余聚合（prepaid / supplement / settled / finance_doc_count）
 
 注：财务单据与 ``task.status`` 已彻底解耦。
-- 任务 5 已签收 = item 全签收聚合驱动；
+- 任务 5 已交车 = item 全交车聚合驱动；
 - "已结算" 不再是任务状态机的一部分，财务侧只维护 ``task.settled_amount`` 等冗余金额。
 """
 

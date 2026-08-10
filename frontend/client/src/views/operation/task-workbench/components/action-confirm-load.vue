@@ -163,7 +163,7 @@
           </el-scrollbar>
 
           <div v-else class="ele-text-secondary mt-8">
-            当前调令下已无可装车的挂接行（全部已装或已签收）。
+            当前调令下已无可装车的挂接行（全部已装或已交车）。
           </div>
         </div>
       </el-form-item>

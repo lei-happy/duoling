@@ -40,14 +40,14 @@ class DriverConfirmArriveRequest(BaseModel):
 
 
 class DriverSignItemRequest(BaseModel):
-    """单条挂接行签收（item 2/1/0→3，聚合驱动 task 4→5）。"""
+    """单条挂接行交车（item 2/1/0→3，聚合驱动 task 4→5）。"""
 
-    signedAt: Optional[datetime] = Field(default=None, description="签收时间")
+    signedAt: Optional[datetime] = Field(default=None, description="交车时间")
     remark: Optional[str] = Field(default=None, max_length=255)
 
 
 class DriverRevertSignRequest(BaseModel):
-    """撤销签收（item 3→2）；reason 必填。"""
+    """撤销交车（item 3→2）；reason 必填。"""
 
     reason: str = Field(min_length=1, max_length=255, description="撤销原因")
 

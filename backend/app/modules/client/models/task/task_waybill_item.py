@@ -69,7 +69,7 @@ class TaskWaybillItem(TenantModelBase):
 
     status: Mapped[int] = mapped_column(
         SmallInteger, default=0, server_default="0",
-        comment="状态 0-待装车 1-已装车 2-已卸车 3-已签收",
+        comment="状态 0-待装车 1-已装车 2-已卸车 3-已交车",
     )
     loaded_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime, nullable=True, comment="装车时间"
@@ -78,7 +78,7 @@ class TaskWaybillItem(TenantModelBase):
         DateTime, nullable=True, comment="卸车时间"
     )
     signed_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, nullable=True, comment="签收时间"
+        DateTime, nullable=True, comment="交车时间"
     )
     remark: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True, comment="备注"

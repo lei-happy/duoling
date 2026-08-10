@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 
 class WaybillReceiptConfirm(BaseModel):
-    """确认回单入参（运单 5 已签收 → 6 已回单）"""
+    """确认回单入参（运单 5 已交车 → 6 已回单）"""
 
     fileUrls: List[str] = Field(
         default_factory=list, description="回单底单文件 URL 数组（OSS 路径，最多 9 张）",

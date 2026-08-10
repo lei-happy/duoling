@@ -32,7 +32,7 @@
           </div>
           <div class="kpi" @click="goTask('4')">
             <div class="kpi-value">{{ kpi.waitSign }}</div>
-            <div class="kpi-label">待签收</div>
+            <div class="kpi-label">待交车</div>
           </div>
           <div class="kpi" @click="goFinance">
             <div class="kpi-value">¥{{ formatMoney(kpi.monthlyIncome) }}</div>

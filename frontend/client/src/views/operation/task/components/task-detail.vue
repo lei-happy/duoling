@@ -113,22 +113,17 @@
           </div>
         </div>
 
-        <!-- 状态时间轴 -->
-        <el-divider content-position="left">状态时间轴</el-divider>
-        <el-steps
-          :active="statusStep"
-          align-center
-          finish-status="success"
-          class="task-detail__steps"
-        >
-          <el-step title="待分配" />
-          <el-step title="待派车" />
-          <el-step title="已派车" />
-          <el-step title="已装车" />
-          <el-step title="在途" />
-          <el-step title="已到达" />
-          <el-step title="已签收" />
-        </el-steps>
+        <!-- 当前阶段摘要（完整流转见下方「时间流」页签） -->
+        <el-divider content-position="left">当前阶段</el-divider>
+        <div class="task-detail__stage">
+          <el-tag :type="(currentStatusMeta?.type as any) || 'info'">
+            {{ currentStatusMeta?.label || '未知状态' }}
+          </el-tag>
+          <span class="ele-text-secondary">
+            自 {{ formatDateTime(task.stageEnteredAt) || '未知时间' }} 起，已停留
+            {{ stageDurationText }}
+          </span>
+        </div>
 
         <!-- 基础信息 -->
         <el-divider content-position="left">基础信息</el-divider>
@@ -278,79 +273,10 @@
           </el-tab-pane>
 
           <el-tab-pane
-            name="loading-records"
-            :label="`装卸记录 (${loadingRecords.length})`"
+            name="timeline"
+            :label="`时间流 (${statusEvents.length})`"
           >
-            <el-empty
-              v-if="!loadingRecords.length"
-              description="暂无装卸记录"
-              :image-size="80"
-            />
-            <el-timeline v-else class="loading-records-timeline">
-              <el-timeline-item
-                v-for="rec in loadingRecords"
-                :key="rec.id"
-                :type="rec.eventType === 1 ? 'warning' : 'success'"
-                :timestamp="formatDateTime(rec.happenedAt) || '--'"
-                placement="top"
-              >
-                <div class="loading-rec-card">
-                  <div class="loading-rec-card__head">
-                    <el-tag
-                      size="small"
-                      :type="rec.eventType === 1 ? 'warning' : 'success'"
-                    >
-                      {{ rec.eventType === 1 ? '装车' : '卸车' }}
-                    </el-tag>
-                    <span class="loading-rec-card__loc">
-                      {{ rec.location || '--' }}
-                    </span>
-                    <span class="ele-text-secondary loading-rec-card__qty">
-                      {{ rec.quantity || 0 }} 台 ·
-                      {{ rec.operatorName || '--' }}
-                    </span>
-                    <el-tag
-                      v-if="rec.dispatchOrderId"
-                      type="info"
-                      effect="plain"
-                      size="small"
-                    >
-                      调令 #{{ orderNoOf(rec.dispatchOrderId) }}
-                    </el-tag>
-                  </div>
-                  <div
-                    v-if="rec.items && rec.items.length"
-                    class="loading-rec-card__items"
-                  >
-                    <span
-                      v-for="it in rec.items"
-                      :key="it.id"
-                      class="ele-text-secondary"
-                    >
-                      {{ it.waybillNo || '--' }} · {{ it.vehicleBrand || '--' }}
-                      {{ it.vehicleModel || '' }} ({{ it.quantity }} 台)
-                    </span>
-                  </div>
-                  <div
-                    v-if="rec.photoUrls && rec.photoUrls.length"
-                    class="loading-rec-card__photos"
-                  >
-                    <el-image
-                      v-for="(url, idx) in rec.photoUrls"
-                      :key="url"
-                      :src="url"
-                      fit="cover"
-                      class="loading-rec-card__photo"
-                      :preview-src-list="rec.photoUrls"
-                      :initial-index="idx"
-                    />
-                  </div>
-                  <div v-if="rec.remark" class="loading-rec-card__remark">
-                    备注：{{ rec.remark }}
-                  </div>
-                </div>
-              </el-timeline-item>
-            </el-timeline>
+            <task-timeline :events="statusEvents" :records="loadingRecords" />
           </el-tab-pane>
 
           <el-tab-pane name="cargoes" :label="`挂接货物 (${items.length})`">
@@ -758,6 +684,7 @@
     getTask,
     listTaskFinanceSummary,
     listTaskSegments,
+    listTaskStatusEvents,
     listTaskWaybillItems,
     updateTaskStatus
   } from '@/api/operation/task';
@@ -780,7 +707,8 @@
     TaskSegment,
     TaskWaybillItem,
     TaskFinanceSummaryItem,
-    TaskLoadingRecord
+    TaskLoadingRecord,
+    TaskStatusEvent
   } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
   import {
@@ -790,7 +718,6 @@
     DISPATCH_TYPE_MAP,
     ITEM_STATUS_MAP,
     SEGMENT_STATUS_MAP,
-    TASK_STATUS,
     TASK_STATUS_MAP
   } from '../status-config';
   import {
@@ -813,6 +740,7 @@
   import ActionRevertSign from '../../task-workbench/components/action-revert-sign.vue';
   import ActionForceCancel from '../../task-workbench/components/action-force-cancel.vue';
   import WaybillStatusSummary from './waybill-status-summary.vue';
+  import TaskTimeline from './task-timeline.vue';
 
   const props = defineProps<{ visible: boolean; taskId: number | null }>();
   const emit = defineEmits<{
@@ -825,6 +753,7 @@
   const segments = ref<TaskSegment[]>([]);
   const items = ref<TaskWaybillItem[]>([]);
   const loadingRecords = ref<TaskLoadingRecord[]>([]);
+  const statusEvents = ref<TaskStatusEvent[]>([]);
   const financeDocs = ref<TaskFinanceSummaryItem[]>([]);
   const activeTab = ref('segments');
 
@@ -943,12 +872,13 @@
   const load = async (id: number) => {
     loading.value = true;
     try {
-      const [t, segs, its, fins, recs, creatable] = await Promise.all([
+      const [t, segs, its, fins, recs, events, creatable] = await Promise.all([
         getTask(id),
         listTaskSegments(id),
         listTaskWaybillItems(id),
         listTaskFinanceSummary(id),
         listLoadingRecords(id).catch(() => [] as TaskLoadingRecord[]),
+        listTaskStatusEvents(id).catch(() => [] as TaskStatusEvent[]),
         getCreatableDocTypes(id).catch(() => null)
       ]);
       task.value = t;
@@ -956,6 +886,7 @@
       items.value = its;
       financeDocs.value = fins;
       loadingRecords.value = recs;
+      statusEvents.value = events;
       creatableFinanceTypes.value = creatable?.docTypes ?? null;
       loadCostResult(id);
       if (t?.carrierType === CARRIER_TYPE.CARRIER) {
@@ -971,22 +902,27 @@
     }
   };
 
-  const statusStep = computed(() => {
-    const s = task.value?.status ?? TASK_STATUS.PENDING_DISPATCH;
-    if (s === TASK_STATUS.CANCELLED) return 0;
-    // 7 步：待分配 / 待派车 / 已派车 / 已装车 / 在途 / 已到达 / 已签收
-    // 已关闭：超过已签收，整条时间轴标 finish
-    const map: Record<number, number> = {
-      [TASK_STATUS.PENDING_ASSIGN]: 0,
-      [TASK_STATUS.PENDING_DISPATCH]: 1,
-      [TASK_STATUS.DISPATCHED]: 2,
-      [TASK_STATUS.LOADED]: 3,
-      [TASK_STATUS.ON_WAY]: 4,
-      [TASK_STATUS.ARRIVED]: 5,
-      [TASK_STATUS.SIGNED]: 6,
-      [TASK_STATUS.CLOSED]: 7
-    };
-    return map[s] ?? 0;
+  const currentStatusMeta = computed(() => {
+    const s = task.value?.status;
+    return s == null ? null : TASK_STATUS_MAP[s];
+  });
+
+  /** 当前阶段已停留时长 */
+  const stageDurationText = computed(() => {
+    const enteredAt = task.value?.stageEnteredAt;
+    if (!enteredAt) return '--';
+    const start = Date.parse(enteredAt);
+    if (Number.isNaN(start)) return '--';
+    const minutes = Math.max(0, Math.floor((Date.now() - start) / 60000));
+    if (minutes < 60) return `${minutes} 分钟`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+      const rest = minutes % 60;
+      return rest ? `${hours} 小时 ${rest} 分` : `${hours} 小时`;
+    }
+    const days = Math.floor(hours / 24);
+    const restHours = hours % 24;
+    return restHours ? `${days} 天 ${restHours} 小时` : `${days} 天`;
   });
 
   // ============================================
@@ -1166,8 +1102,12 @@
       flex-wrap: wrap;
       justify-content: flex-end;
     }
-    &__steps {
+    &__stage {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       margin: 8px 0 16px;
+      flex-wrap: wrap;
     }
   }
 
@@ -1193,57 +1133,4 @@
     font-size: 12px;
   }
 
-  .loading-records-timeline {
-    padding: 8px 0;
-  }
-
-  .loading-rec-card {
-    background: var(--el-fill-color-light);
-    padding: 8px 12px;
-    border-radius: 4px;
-
-    &__head {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    &__loc {
-      font-weight: 500;
-    }
-
-    &__qty {
-      flex: 1;
-    }
-
-    &__items {
-      margin-top: 6px;
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      font-size: 12px;
-    }
-
-    &__photos {
-      margin-top: 8px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    &__photo {
-      width: 64px;
-      height: 64px;
-      border-radius: 4px;
-      overflow: hidden;
-      border: 1px solid var(--el-border-color);
-    }
-
-    &__remark {
-      margin-top: 6px;
-      font-size: 12px;
-      color: var(--el-text-color-regular);
-    }
-  }
 </style>

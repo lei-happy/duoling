@@ -2,7 +2,7 @@
  * 任务单状态配置（与后端 task.status 保持一致）
  *
  * 注：6 已结算 已下线（财务结算与 task.status 解耦）；
- * 5 已签收 由 item 全签收聚合驱动，不接受人工 4→5 推进。
+ * 5 已交车 由 item 全交车聚合驱动，不接受人工 4→5 推进。
  */
 /** 任务状态码（与后端 task_state_machine 保持一致） */
 export const TASK_STATUS = {
@@ -24,7 +24,7 @@ export const TASK_STATUS_OPTIONS = [
   { value: TASK_STATUS.LOADED, label: '已装车', type: 'warning' },
   { value: TASK_STATUS.ON_WAY, label: '在途', type: 'warning' },
   { value: TASK_STATUS.ARRIVED, label: '已到达', type: 'success' },
-  { value: TASK_STATUS.SIGNED, label: '已签收', type: 'success' },
+  { value: TASK_STATUS.SIGNED, label: '已交车', type: 'success' },
   { value: TASK_STATUS.CLOSED, label: '已关闭', type: 'info' },
   { value: TASK_STATUS.CANCELLED, label: '已取消', type: 'danger' }
 ] as const;
@@ -139,7 +139,7 @@ export const ITEM_STATUS_OPTIONS = [
   { value: ITEM_STATUS.PENDING_LOAD, label: '待装车', type: 'info' },
   { value: ITEM_STATUS.LOADED, label: '已装车', type: 'warning' },
   { value: ITEM_STATUS.UNLOADED, label: '已卸车', type: 'primary' },
-  { value: ITEM_STATUS.SIGNED, label: '已签收', type: 'success' }
+  { value: ITEM_STATUS.SIGNED, label: '已交车', type: 'success' }
 ] as const;
 
 export const ITEM_STATUS_MAP: Record<number, { label: string; type: string }> =

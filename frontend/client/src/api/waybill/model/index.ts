@@ -41,7 +41,7 @@ export interface Waybill {
   contractId?: number;
   rateId?: number;
   status?: number;
-  /** 回单确认时间（签收底单返还货主；status=6 已回单时有值） */
+  /** 回单确认时间（交车回单返还货主；status=6 已回单时有值） */
   receiptAt?: string | null;
   remark?: string;
   createdBy?: number;
@@ -102,7 +102,7 @@ export interface WaybillWorkbenchStats {
   };
 }
 
-/** 计划回单凭证（签收底单返还货主） */
+/** 计划回单凭证（交车回单返还货主） */
 export interface WaybillReceipt {
   id: number;
   waybillId: number;
@@ -116,7 +116,7 @@ export interface WaybillReceipt {
   createdAt: string;
 }
 
-/** 确认回单入参（计划 5 已签收 → 6 已回单） */
+/** 确认回单入参（计划 5 已交车 → 6 已回单） */
 export interface WaybillReceiptConfirmPayload {
   fileUrls: string[];
   fileType?: number;

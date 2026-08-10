@@ -3,7 +3,7 @@
 
   布局（对齐计划工作台）：
     1. 顶部 统一筛选栏（任务单号/计划号/线路/承运方式等，切换阶段时不重建）
-    2. 中部 5 张阶段卡（待分配 / 待派车 / 待装车 / 在途中 / 待签收）
+    2. 中部 5 张阶段卡（待分配 / 待派车 / 待装车 / 在途中 / 待交车）
        输入任务单号搜索时跨状态匹配并自动切到对应阶段
     3. 下部 列表 + 行内主按钮 + 批量主按钮
 -->
@@ -70,7 +70,10 @@
   import WorkbenchActionModals from './components/workbench-action-modals.vue';
   import TaskDetail from '../task/components/task-detail.vue';
   import { WORKBENCH_POOLS, getWorkbenchPool } from './workbench-pool-registry';
-  import type { WorkbenchPool } from './workbench-pool-registry';
+  import type {
+    WorkbenchListSubset,
+    WorkbenchPool
+  } from './workbench-pool-registry';
   import {
     batchUpdateTaskStatus,
     getTask,
@@ -88,8 +91,6 @@
   import { getCreatableDocTypes } from '@/api/operation/task-finance';
   import { usePermission } from '@/utils/use-permission';
 
-  type WorkbenchListSubset = 'all' | 'normal' | 'alert';
-
   defineOptions({ name: 'OperationTaskWorkbench' });
 
   const route = useRoute();
@@ -101,10 +102,8 @@
 
   const resolveInitialTab = (): string => {
     const tab = route.query.tab;
-    if (typeof tab === 'string' && getWorkbenchPool(tab)) {
-      return tab;
-    }
-    return WORKBENCH_POOLS[0]!.key;
+    const pool = typeof tab === 'string' ? getWorkbenchPool(tab) : undefined;
+    return pool?.key ?? WORKBENCH_POOLS[0]!.key;
   };
 
   const activeTab = ref<string>(resolveInitialTab());
@@ -136,12 +135,10 @@
     return rest;
   };
 
-  /** 筛选重置：恢复默认阶段卡 + 全部子集 + 默认筛选条件 */
+  /** 筛选重置：保留当前阶段卡，仅清空筛选条件并回到「全部」子集 */
   const onFilterReset = (where: Partial<TaskParam>) => {
     searchWhere.value = where;
-    const defaultKey = WORKBENCH_POOLS[0]!.key;
-    activeTab.value = defaultKey;
-    selectedPoolKey.value = defaultKey;
+    selectedPoolKey.value = activeTab.value;
     listSubset.value = 'all';
   };
 
@@ -185,17 +182,12 @@
 
   const onSelectCard = (payload: {
     cardKey: string;
-    status: number | number[];
+    status: number;
     subset: WorkbenchListSubset;
   }) => {
     selectedPoolKey.value = payload.cardKey;
     listSubset.value = payload.subset;
-    const status = payload.status;
-    const targetTab = WORKBENCH_POOLS.find((t) => {
-      const a = Array.isArray(t.status) ? t.status : [t.status];
-      const b = Array.isArray(status) ? status : [status];
-      return a.every((s) => b.includes(s)) && b.every((s) => a.includes(s));
-    });
+    const targetTab = WORKBENCH_POOLS.find((t) => t.status === payload.status);
     if (targetTab) activeTab.value = targetTab.key;
   };
 

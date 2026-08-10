@@ -1,10 +1,10 @@
 <!--
-  调度工作台 KPI：五阶段卡片（待分配 / 待派车 / 待装车 / 在途中 / 待签收）
+  调度工作台 KPI：六阶段卡片（待分配 / 待派车 / 待装车 / 待发车 / 在途 / 待交车）
 
   - 置于页面背景之上（由 index.vue 外层挂载），与下方筛选/列表白卡片区隔
   - 主区点击 = 本阶段全部任务
   - 标题同行右侧「常 / 警」药丸 = 正常 / 预警快速筛选
-  - 栅格固定 5 列、永远单行（对齐计划工作台卡片布局）
+  - 每个卡片对应单一 task.status，与 workbench-pool-registry 的池一一对应
 
   阶段「待结算」已下线：财务结算与 task.status 解耦，结算单走财务工作台。
   详见《02.计划与任务单状态机联动设计.md》。
@@ -92,7 +92,7 @@
       e: 'selectCard',
       payload: {
         cardKey: string;
-        status: number | number[];
+        status: number;
         subset: WorkbenchListSubset;
       }
     ): void;
@@ -101,7 +101,7 @@
   interface KpiCard {
     key: string;
     label: string;
-    status: number | number[];
+    status: number;
     total: number;
     normal: number;
     alert: number;
@@ -118,17 +118,23 @@
     const aa = a?.overdueAssignment ?? 0;
     const pd = t?.pendingDispatch ?? 0;
     const ad = a?.overdueDispatch ?? 0;
-    const onWay = (t?.loading ?? 0) + (t?.onWay ?? 0);
-    const aTransit = a?.overdueArrive ?? 0;
     const pl = t?.pendingLoad ?? 0;
     const al = a?.pendingLoadAlert ?? 0;
+    const loaded = t?.loading ?? 0;
+    const aLoaded = a?.overdueDepart ?? 0;
+    const onWay = t?.onWay ?? 0;
+    const aTransit = a?.overdueArrive ?? 0;
     const ps = t?.pendingSign ?? 0;
     const as = a?.pendingSignAlert ?? 0;
 
+    /**
+     * `sub` 是标题下方那行小字。原先几乎都写「本阶段任务合计」——数字本身已经说明
+     * 是合计，这行等于没信息。改成说清**这批单子卡在等什么**，一眼判断该找谁推进。
+     */
     const mk = (
       key: string,
       label: string,
-      status: number | number[],
+      status: number,
       total: number,
       alert: number,
       alertHint: string,
@@ -152,7 +158,7 @@
         pa,
         aa,
         '当前：计划装车时间已过，任务仍处于待分配。后续可扩展更多预警规则。',
-        '本阶段任务合计'
+        '待指定承运方'
       ),
       mk(
         'pending-dispatch',
@@ -161,7 +167,7 @@
         pd,
         ad,
         '当前：计划装车时间已过仍未派车。后续可扩展更多预警规则。',
-        '本阶段任务合计'
+        '待安排车辆司机'
       ),
       mk(
         'pending-load',
@@ -170,25 +176,34 @@
         pl,
         al,
         '待装车环节预警规则开发中；接入后将在此汇总需关注的任务。',
-        '本阶段任务合计'
+        '等承运方装车'
+      ),
+      mk(
+        'pending-depart',
+        '待发车',
+        2,
+        loaded,
+        aLoaded,
+        '当前：已装车但计划到货时间已过，仍未标记出发。后续可扩展更多预警规则。',
+        '装车完毕待发车'
       ),
       mk(
         'on-way',
-        '在途中',
-        [2, 3],
+        '在途',
+        3,
         onWay,
         aTransit,
-        '当前：计划到货时间已过，任务仍处于在途/已装车。后续可扩展更多预警规则。',
-        '本阶段任务合计'
+        '当前：计划到货时间已过，任务仍在途未到达。后续可扩展更多预警规则。',
+        '运输中待到达'
       ),
       mk(
-        'pending-sign',
-        '待签收',
+        'pending-deliver',
+        '待交车',
         4,
         ps,
         as,
-        '已到达目的地、等待逐计划签收。签收完成后任务自动进入「已签收」。',
-        '已到达待签收'
+        '已到达目的地、等待逐台验车交接。全部交车后任务自动进入「已交车」。',
+        '待逐台验车交接'
       )
     ];
   });
@@ -215,8 +230,21 @@
 <style lang="scss" scoped>
   .kpi-cards {
     display: grid;
-    grid-template-columns: repeat(var(--kpi-cards-count, 5), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--kpi-cards-count, 6), minmax(0, 1fr));
     gap: 10px;
+  }
+
+  /* 阶段增加到 6 个后，窄屏单行会挤压数字，折成两行更易读 */
+  @media (max-width: 1400px) {
+    .kpi-cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .kpi-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
   .kpi-card {
@@ -236,7 +264,7 @@
     --kpi-soft-bg: var(--el-color-primary-light-9);
     --kpi-soft-ring: var(--el-color-primary-light-7);
 
-    /* 五阶段配色：琥珀 / 蓝 / 靛 / 橙 / 绿 */
+    /* 六阶段配色：琥珀 / 蓝 / 靛 / 青 / 橙 / 绿 */
     &--pending-assign {
       --kpi-accent: var(--el-color-warning);
       --kpi-soft-bg: var(--el-color-warning-light-9);
@@ -252,12 +280,17 @@
       --kpi-soft-bg: rgba(91, 98, 230, 0.1);
       --kpi-soft-ring: rgba(91, 98, 230, 0.32);
     }
+    &--pending-depart {
+      --kpi-accent: #0f9e8e;
+      --kpi-soft-bg: rgba(15, 158, 142, 0.1);
+      --kpi-soft-ring: rgba(15, 158, 142, 0.32);
+    }
     &--on-way {
       --kpi-accent: #ea6a1f;
       --kpi-soft-bg: rgba(234, 106, 31, 0.11);
       --kpi-soft-ring: rgba(234, 106, 31, 0.35);
     }
-    &--pending-sign {
+    &--pending-deliver {
       --kpi-accent: var(--el-color-success);
       --kpi-soft-bg: var(--el-color-success-light-9);
       --kpi-soft-ring: var(--el-color-success-light-7);
@@ -348,6 +381,10 @@
       font-size: 11px;
       color: var(--el-text-color-secondary);
       line-height: 1.3;
+      /* 各阶段说明字数不等，禁止换行以保证六张卡等高 */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .kpi-pill--normal .kpi-pill__letter {

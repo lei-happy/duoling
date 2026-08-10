@@ -69,6 +69,23 @@ from app.modules.client.services.task.task_code_name_generator import (
     build_task_no,
     legacy_default_task_name,
 )
+from app.modules.client.models.task.task_status_event import (
+    TASK_EVENT_ASSIGN_CARRIER,
+    TASK_EVENT_CANCEL,
+    TASK_EVENT_CLOSE,
+    TASK_EVENT_CREATE,
+    TASK_EVENT_DEPART,
+    TASK_EVENT_DISPATCH,
+    TASK_EVENT_FORCE_CANCEL,
+    TASK_EVENT_REVERT_ARRIVE,
+    TASK_EVENT_REVERT_DEPART,
+    TASK_EVENT_REVERT_DISPATCH,
+    TASK_EVENT_REVERT_LOAD,
+    TASK_EVENT_SOURCE_CLIENT,
+)
+from app.modules.client.services.task.task_status_event_service import (
+    TaskStatusEventService,
+)
 from app.modules.client.services.task.task_waybill_item_service import (
     TaskWaybillItemService,
 )
@@ -78,6 +95,12 @@ from app.modules.client.services.waybill.waybill_status_aggregator import (
 
 
 # 列表/工作台时间筛选字段（与 API timeField 一致）
+#
+# 分为两类，语义差别很大：
+# - **稳定维度**（createdAt / stageEnteredAt）：每条任务都有值，任何阶段筛选都成立，
+#   适合作为工作台默认值——否则「按尚未到达的节点筛选」会把前置阶段的任务整体排除。
+# - **节点维度**（assignedAt / dispatchedAt / actualLoadTime / signedAt）：任务未走到
+#   该节点时字段为 NULL，筛选即等价于「只看已经走到该节点的任务」，仅作高级筛选。
 _TASK_TIME_FIELD_MAP = {
     "createdAt": "created_at",
     "assignedAt": "assigned_at",
@@ -86,8 +109,27 @@ _TASK_TIME_FIELD_MAP = {
     "signedAt": "signed_at",
 }
 
+# 进入当前状态的时间。历史任务回填缺失时回落到制单时间，避免被静默过滤掉。
+TASK_TIME_FIELD_STAGE_ENTERED = "stageEnteredAt"
+
 # 兼容旧引用（其它模块可能直接 import _STATUS_LABELS）
 _STATUS_LABELS = TASK_STATUS_LABELS
+
+# update_status 的目标状态 → 事件类型（1→2 / 3→4 / 4→5 走聚合，不在此表）
+_FORWARD_EVENT_TYPES = {
+    TASK_DISPATCHED: TASK_EVENT_DISPATCH,
+    TASK_ON_WAY: TASK_EVENT_DEPART,
+    TASK_CLOSED: TASK_EVENT_CLOSE,
+    TASK_CANCELLED: TASK_EVENT_CANCEL,
+}
+
+# revert_status 的来源状态 → 事件类型
+_REVERT_EVENT_TYPES = {
+    TASK_DISPATCHED: TASK_EVENT_REVERT_DISPATCH,
+    TASK_LOADED: TASK_EVENT_REVERT_LOAD,
+    TASK_ON_WAY: TASK_EVENT_REVERT_DEPART,
+    TASK_ARRIVED: TASK_EVENT_REVERT_ARRIVE,
+}
 
 
 class TaskService:
@@ -588,6 +630,31 @@ class TaskService:
             assert last_err is not None
             raise BizException("任务单号生成冲突，请重试") from last_err
 
+        # 3.5 落建单事件；建单时直接带承运方的，额外记一条派车事件，时间流才连贯
+        created_at = datetime.now()
+        task.stage_entered_at = created_at
+        TaskStatusEventService.record(
+            db, task,
+            event_type=TASK_EVENT_CREATE,
+            from_status=None,
+            to_status=TASK_PENDING_ASSIGN,
+            operator_id=current_user_id,
+            operator_name=dispatcher_name,
+            event_time=created_at,
+        )
+        if int(task.status) == TASK_DISPATCHED:
+            TaskStatusEventService.record(
+                db, task,
+                event_type=TASK_EVENT_DISPATCH,
+                from_status=TASK_PENDING_ASSIGN,
+                to_status=TASK_DISPATCHED,
+                operator_id=current_user_id,
+                operator_name=dispatcher_name,
+                reason="建单时同步指派承运方",
+                payload=TaskService._carrier_payload(task),
+                event_time=created_at,
+            )
+
         # 4. 调令（允许为空：表示"配载草稿"，由 _fill_route_from_waybills 兜底起终）
         await TaskService._replace_dispatch_orders(db, task, data.segments)
 
@@ -641,8 +708,14 @@ class TaskService:
             for k, v in snap.items():
                 setattr(task, k, v)
             if int(task.status) == TASK_PENDING_DISPATCH:
-                task.status = TASK_DISPATCHED
                 TaskService._stamp_dispatched(task)
+                TaskStatusEventService.apply_status(
+                    db, task, TASK_DISPATCHED,
+                    event_type=TASK_EVENT_DISPATCH,
+                    operator_id=current_user_id,
+                    reason="编辑任务时补录承运方",
+                    payload=TaskService._carrier_payload(task),
+                )
 
         if data.segments is not None:
             if data.segments:
@@ -690,10 +763,16 @@ class TaskService:
         db: AsyncSession,
         task_id: int,
         reason: Optional[str] = None,
+        current_user_id: Optional[int] = None,
     ) -> Task:
         task = await TaskService.get_or_404(db, task_id)
         TaskStateMachine.assert_cancellable(int(task.status))
-        task.status = TASK_CANCELLED
+        TaskStatusEventService.apply_status(
+            db, task, TASK_CANCELLED,
+            event_type=TASK_EVENT_CANCEL,
+            operator_id=current_user_id,
+            reason=reason,
+        )
         if reason:
             existing = (task.remark or "").rstrip()
             task.remark = (existing + "\n" if existing else "") + f"[取消原因] {reason}"
@@ -729,7 +808,12 @@ class TaskService:
         old = int(task.status)
         TaskStateMachine.assert_force_cancellable(old)
 
-        task.status = TASK_CANCELLED
+        TaskStatusEventService.apply_status(
+            db, task, TASK_CANCELLED,
+            event_type=TASK_EVENT_FORCE_CANCEL,
+            operator_id=current_user_id,
+            reason=reason.strip(),
+        )
         existing = (task.remark or "").rstrip()
         actor = f"#{current_user_id}" if current_user_id else "system"
         task.remark = (
@@ -762,6 +846,8 @@ class TaskService:
         db: AsyncSession,
         task_id: int,
         data: TaskStatusUpdate,
+        current_user_id: Optional[int] = None,
+        source: int = TASK_EVENT_SOURCE_CLIENT,
     ) -> Task:
         """状态推进的人工入口。
 
@@ -777,9 +863,15 @@ class TaskService:
         new = int(data.status)
         TaskStateMachine.assert_transition(old, new)
 
-        task.status = new
         if old == TASK_PENDING_DISPATCH and new == TASK_DISPATCHED:
             TaskService._stamp_dispatched(task)
+        TaskStatusEventService.apply_status(
+            db, task, new,
+            event_type=_FORWARD_EVENT_TYPES.get(new, TASK_EVENT_DISPATCH),
+            source=source,
+            operator_id=current_user_id,
+            reason=data.remark,
+        )
         if data.actualLoadTime is not None and new == TASK_ON_WAY:
             # 出发动作携带的"实际装车时间"用于补录历史装车数据兜底；
             # 正常流程已由装车记录写入。
@@ -790,7 +882,7 @@ class TaskService:
         await db.flush()
 
         # 正向推进：Task → Item 同步 → 聚合 Waybill
-        # - 4→5（已签收）由 item 全签收聚合自动写入，不在此处理
+        # - 4→5（已交车）由 item 全交车聚合自动写入，不在此处理
         # - 1→2 / 3→4 已经被 assert_transition 拦截，不会到这里
         if new == TASK_CANCELLED:
             # 走 cancel 路径不应进到这里；保底兜底
@@ -819,6 +911,7 @@ class TaskService:
         target_status: int,
         reason: str,
         current_user_id: Optional[int] = None,
+        source: int = TASK_EVENT_SOURCE_CLIENT,
     ) -> Task:
         """撤销至上一态（专项接口）。
 
@@ -833,7 +926,13 @@ class TaskService:
         target = int(target_status)
         TaskStateMachine.assert_revert(old, target)
 
-        task.status = target
+        TaskStatusEventService.apply_status(
+            db, task, target,
+            event_type=_REVERT_EVENT_TYPES.get(old, TASK_EVENT_REVERT_DISPATCH),
+            source=source,
+            operator_id=current_user_id,
+            reason=reason.strip(),
+        )
         existing = (task.remark or "").rstrip()
         actor = f"#{current_user_id}" if current_user_id else "system"
         task.remark = (
@@ -861,8 +960,18 @@ class TaskService:
         task.dispatched_at = datetime.now()
 
     @staticmethod
+    def _carrier_payload(task: Task) -> dict:
+        """事件快照：承运方与车辆信息，便于事后追溯当时派的是谁。"""
+        return {
+            "carrierType": task.carrier_type,
+            "carrierName": task.carrier_name,
+            "mainDriverName": task.main_driver_name,
+            "plateNumber": task.plate_number,
+        }
+
+    @staticmethod
     def _task_signed_at_subquery():
-        """任务维度签收时间：挂接项 signed_at 最大值。"""
+        """任务维度交车时间：挂接项 signed_at 最大值。"""
         return (
             select(
                 TaskWaybillItem.task_id.label("task_id"),
@@ -900,6 +1009,8 @@ class TaskService:
             sq = TaskService._task_signed_at_subquery()
             stmt = stmt.join(sq, Task.id == sq.c.task_id)
             col = sq.c.max_signed_at
+        elif field == TASK_TIME_FIELD_STAGE_ENTERED:
+            col = func.coalesce(Task.stage_entered_at, Task.created_at)
         else:
             col_name = _TASK_TIME_FIELD_MAP.get(field)
             if not col_name:
@@ -991,6 +1102,7 @@ class TaskService:
         db: AsyncSession,
         task_id: int,
         data: TaskCarrierAssignmentInfo,
+        current_user_id: Optional[int] = None,
     ) -> Task:
         """待分配：确认承运方式。
 
@@ -1008,9 +1120,17 @@ class TaskService:
             setattr(task, k, v)
         TaskService._stamp_assigned(task)
         target = TaskService._assignment_target_status(data)
-        task.status = target
         if target == TASK_DISPATCHED:
             TaskService._stamp_dispatched(task)
+        TaskStatusEventService.apply_status(
+            db, task, target,
+            event_type=(
+                TASK_EVENT_DISPATCH if target == TASK_DISPATCHED
+                else TASK_EVENT_ASSIGN_CARRIER
+            ),
+            operator_id=current_user_id,
+            payload=TaskService._carrier_payload(task),
+        )
         await db.flush()
         await db.refresh(task)
         if target == TASK_DISPATCHED:
@@ -1022,6 +1142,7 @@ class TaskService:
         db: AsyncSession,
         ids: List[int],
         data: TaskCarrierAssignmentInfo,
+        current_user_id: Optional[int] = None,
     ) -> dict:
         """批量待分配 → 待派车：逐条复用 complete_carrier_assignment。"""
         if int(data.carrierType) == CarrierType.SOCIAL:
@@ -1033,7 +1154,7 @@ class TaskService:
         for task_id in ids:
             try:
                 await TaskService.complete_carrier_assignment(
-                    db, int(task_id), data,
+                    db, int(task_id), data, current_user_id=current_user_id,
                 )
                 success += 1
             except Exception as e:  # noqa: BLE001
@@ -1049,6 +1170,8 @@ class TaskService:
         db: AsyncSession,
         task_id: int,
         data: TaskAssignCarrierRequest,
+        current_user_id: Optional[int] = None,
+        source: int = TASK_EVENT_SOURCE_CLIENT,
     ) -> Task:
         task = await TaskService.get_or_404(db, task_id)
         if int(task.status) not in (TASK_PENDING_DISPATCH, TASK_DISPATCHED):
@@ -1064,8 +1187,26 @@ class TaskService:
             task.cost_remark = data.costRemark
         became_dispatched = int(task.status) == TASK_PENDING_DISPATCH
         if became_dispatched:
-            task.status = TASK_DISPATCHED
             TaskService._stamp_dispatched(task)
+            TaskStatusEventService.apply_status(
+                db, task, TASK_DISPATCHED,
+                event_type=TASK_EVENT_DISPATCH,
+                source=source,
+                operator_id=current_user_id,
+                payload=TaskService._carrier_payload(task),
+            )
+        else:
+            # 已派车状态下改派：状态不变，但承运方换了人，仍需留痕
+            TaskStatusEventService.record(
+                db, task,
+                event_type=TASK_EVENT_DISPATCH,
+                from_status=TASK_DISPATCHED,
+                to_status=TASK_DISPATCHED,
+                source=source,
+                operator_id=current_user_id,
+                reason="重新派车",
+                payload=TaskService._carrier_payload(task),
+            )
         await db.flush()
         await db.refresh(task)
         if int(task.status) == TASK_DISPATCHED:
@@ -1097,6 +1238,9 @@ class TaskService:
         in_transit_overdue: bool = False,
         only_normal: bool = False,
         in_transit_only_normal: bool = False,
+        plate_number: Optional[str] = None,
+        sort_field: Optional[str] = None,
+        sort_order: Optional[str] = None,
     ) -> Tuple[List[Task], int]:
         base = select(Task).where(Task.is_deleted == 0)
         cnt = select(func.count(Task.id)).where(Task.is_deleted == 0)
@@ -1192,6 +1336,11 @@ class TaskService:
             kw = f"%{destination_keyword.strip()}%"
             base = base.where(Task.destination.like(kw))
             cnt = cnt.where(Task.destination.like(kw))
+        if plate_number and plate_number.strip():
+            # 车牌常被简写（沪A 123 / A12345），统一按前后模糊匹配主车牌
+            kw = f"%{plate_number.strip()}%"
+            base = base.where(Task.plate_number.like(kw))
+            cnt = cnt.where(Task.plate_number.like(kw))
         base = TaskService._apply_task_time_range(
             base,
             time_field=time_field,
@@ -1220,10 +1369,37 @@ class TaskService:
         total = int((await db.execute(cnt)).scalar() or 0)
         offset = max(0, (page - 1) * page_size)
         items_r = await db.execute(
-            base.order_by(Task.created_at.desc(), Task.id.desc())
+            base.order_by(*TaskService._build_task_order_by(sort_field, sort_order))
             .offset(offset).limit(page_size)
         )
         return list(items_r.scalars().all()), total
+
+    # 前端可排序字段白名单：调度工作台各阶段列表的时间列
+    _SORTABLE_COLUMNS = {
+        "createdAt": Task.created_at,
+        "plannedLoadTime": Task.planned_load_time,
+        "plannedArriveTime": Task.planned_arrive_time,
+        "actualLoadTime": Task.actual_load_time,
+        "dispatchedAt": Task.dispatched_at,
+        "stageEnteredAt": Task.stage_entered_at,
+    }
+
+    @staticmethod
+    def _build_task_order_by(
+        sort_field: Optional[str], sort_order: Optional[str]
+    ) -> list:
+        """构造排序子句；字段不在白名单时回落「最新创建优先」。"""
+        column = TaskService._SORTABLE_COLUMNS.get((sort_field or "").strip())
+        if column is None:
+            return [Task.created_at.desc(), Task.id.desc()]
+        ascending = (sort_order or "").strip().lower() != "desc"
+        # 空值恒排在末尾，避免「未填计划到货」的任务霸占列表头部
+        null_last = column.is_(None)
+        return [
+            null_last.asc(),
+            column.asc() if ascending else column.desc(),
+            Task.id.desc(),
+        ]
 
     @staticmethod
     async def check_task_no(
@@ -1241,8 +1417,8 @@ class TaskService:
     ) -> dict[int, tuple[int, int]]:
         """聚合给定任务的 已装/已卸 台数，返回 {task_id: (loaded, unloaded)}。
 
-        - loaded   = SUM(item.quantity) WHERE item.status >= 1（已装/已卸/已签收）
-        - unloaded = SUM(item.quantity) WHERE item.status >= 2（已卸/已签收）
+        - loaded   = SUM(item.quantity) WHERE item.status >= 1（已装/已卸/已交车）
+        - unloaded = SUM(item.quantity) WHERE item.status >= 2（已卸/已交车）
 
         供 TaskListItemOut 列表行 / 状态 Tag 进度 (X/Y) 文案使用。
         """
@@ -1340,6 +1516,7 @@ class TaskService:
         time_field: Optional[str] = None,
         time_start: Optional[ddate] = None,
         time_end: Optional[ddate] = None,
+        plate_number: Optional[str] = None,
     ):
         """工作台 KPI / 列表共用的筛选（不含 status 与 常/警 子集）。"""
         if keyword:
@@ -1375,6 +1552,8 @@ class TaskService:
         if destination_keyword:
             kw = f"%{destination_keyword.strip()}%"
             stmt = stmt.where(Task.destination.like(kw))
+        if plate_number and plate_number.strip():
+            stmt = stmt.where(Task.plate_number.like(f"%{plate_number.strip()}%"))
         if customer_id is not None:
             sub = select(TaskWaybillItem.task_id).where(
                 TaskWaybillItem.is_deleted == 0,
@@ -1405,6 +1584,7 @@ class TaskService:
         time_field: Optional[str] = None,
         time_start: Optional[ddate] = None,
         time_end: Optional[ddate] = None,
+        plate_number: Optional[str] = None,
     ) -> dict:
         """返回各状态计数 + 关键异常计数（用于调度工作台 KPI，支持与列表相同的筛选）。"""
         base = select(Task).where(Task.is_deleted == 0)
@@ -1422,6 +1602,7 @@ class TaskService:
             time_field=time_field,
             time_start=time_start,
             time_end=time_end,
+            plate_number=plate_number,
         )
 
         subq = base.subquery()
@@ -1450,6 +1631,7 @@ class TaskService:
                 time_field=time_field,
                 time_start=time_start,
                 time_end=time_end,
+                plate_number=plate_number,
             )
             return int((await db.execute(stmt)).scalar() or 0)
 
@@ -1467,9 +1649,17 @@ class TaskService:
                 Task.planned_load_time < now,
             )
         )
+        # 「待发车」与「在途」已拆成两张阶段卡，预警数也按状态分开统计
+        overdue_depart = await _alert_count(
+            (
+                Task.status == TASK_LOADED,
+                Task.planned_arrive_time.isnot(None),
+                Task.planned_arrive_time < now,
+            )
+        )
         overdue_arrive = await _alert_count(
             (
-                Task.status.in_([TASK_LOADED, TASK_ON_WAY]),
+                Task.status == TASK_ON_WAY,
                 Task.planned_arrive_time.isnot(None),
                 Task.planned_arrive_time < now,
             )
@@ -1492,6 +1682,7 @@ class TaskService:
             "alerts": {
                 "overdueAssignment": overdue_assignment,
                 "overdueDispatch": overdue_dispatch,
+                "overdueDepart": overdue_depart,
                 "overdueArrive": overdue_arrive,
                 "pendingLoadAlert": 0,
                 "pendingSignAlert": 0,

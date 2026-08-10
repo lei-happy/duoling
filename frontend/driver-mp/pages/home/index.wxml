@@ -22,7 +22,7 @@
       </view>
       <view class="kpi" data-status="4" bindtap="goTask">
         <view class="kpi-value">{{kpi.waitSign}}</view>
-        <view class="kpi-label">待签收</view>
+        <view class="kpi-label">待交车</view>
       </view>
       <view class="kpi" bindtap="goFinance">
         <view class="kpi-value money">¥{{monthlyIncomeText}}</view>

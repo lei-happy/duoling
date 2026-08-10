@@ -42,7 +42,7 @@
         loading="{{acting}}"
         data-id="{{item.id}}"
         bind:tap="onSignItem"
-      >签收</t-button>
+      >交车</t-button>
     </view>
   </view>
 
@@ -150,12 +150,12 @@
   </view>
 </t-dialog>
 
-<!-- 签收确认 -->
+<!-- 交车确认 -->
 <t-dialog
   visible="{{signVisible}}"
-  title="确认签收"
-  content="确认该运单已签收？"
-  confirm-btn="确认签收"
+  title="确认交车"
+  content="确认该计划已完成交车？"
+  confirm-btn="确认交车"
   cancel-btn="取消"
   bind:confirm="submitSign"
   bind:cancel="closeSign"

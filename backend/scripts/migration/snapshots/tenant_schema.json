@@ -14982,13 +14982,22 @@
           "comment": "来源 1-手动 2-AI智能调度 3-导入"
         },
         {
+          "name": "stage_entered_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "进入当前状态的时间（每次状态变更同步物化，用于阶段停留时长与滞留预警）"
+        },
+        {
           "name": "status",
           "type": "SMALLINT",
           "nullable": false,
           "primary_key": false,
           "autoincrement": null,
           "server_default": "0",
-          "comment": "状态 0-待派车 1-已派车 2-已装车 3-在途 4-已到达 5-已签收(聚合态) 7-已关闭 9-已取消"
+          "comment": "状态 0-待派车 1-已派车 2-已装车 3-在途 4-已到达 5-已交车(聚合态) 7-已关闭 9-已取消"
         },
         {
           "name": "supplement_amount",
@@ -16831,6 +16840,171 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_task_status_event",
+      "comment": "任务单状态事件表（时间流 / 审计）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "event_time",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "事件时间"
+        },
+        {
+          "name": "event_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "事件类型 1-创建 2-分配承运 3-派车 4-装车 5-出发 6-到达 7-交车 8-关闭 9-取消 11-撤回派车 12-撤销装车 13-撤回出发 14-撤回到达 15-撤销交车 16-强制取消"
+        },
+        {
+          "name": "from_status",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变更前状态"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "operator_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人 user_id"
+        },
+        {
+          "name": "operator_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人姓名（冗余）"
+        },
+        {
+          "name": "payload_snapshot",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关键字段快照（车牌、司机、台数等）"
+        },
+        {
+          "name": "reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "原因 / 备注"
+        },
+        {
+          "name": "source",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "来源 1-企业端 2-驾驶员端 3-承运商端 4-系统聚合 5-历史回填"
+        },
+        {
+          "name": "task_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务单 ID"
+        },
+        {
+          "name": "task_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务单号（冗余）"
+        },
+        {
+          "name": "to_status",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "变更后状态"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_tse_task_time",
+          "columns": [
+            "task_id",
+            "event_time"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_tse_task_to_status",
+          "columns": [
+            "task_id",
+            "to_status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_task_waybill_item",
       "comment": "任务单-运单货物挂接表",
       "table_tier": "business",
@@ -16932,7 +17106,7 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "签收时间"
+          "comment": "交车时间"
         },
         {
           "name": "status",
@@ -16941,7 +17115,7 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": "0",
-          "comment": "状态 0-待装车 1-已装车 2-已卸车 3-已签收"
+          "comment": "状态 0-待装车 1-已装车 2-已卸车 3-已交车"
         },
         {
           "name": "task_id",
@@ -18542,7 +18716,7 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "回单确认时间（签收底单返还货主）"
+          "comment": "回单确认时间（交车回单返还货主）"
         },
         {
           "name": "remark",
@@ -18578,7 +18752,7 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "状态 0-待确认 1-待调度 2-调度中 3-运输中 4-待签收 5-已签收 6-已回单 7-已关闭"
+          "comment": "状态 0-待确认 1-待调度 2-调度中 3-运输中 4-待交车 5-已交车 6-已回单 7-已关闭"
         },
         {
           "name": "updated_at",

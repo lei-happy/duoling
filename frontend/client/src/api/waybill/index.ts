@@ -110,7 +110,7 @@ export async function listWaybillReceipts(id: number) {
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 确认回单：计划 5 已签收 → 6 已回单 */
+/** 确认回单：计划 5 已交车 → 6 已回单 */
 export async function confirmWaybillReceipt(
   id: number,
   data: WaybillReceiptConfirmPayload
@@ -125,7 +125,7 @@ export async function confirmWaybillReceipt(
   return Promise.reject(new Error(res.data.message));
 }
 
-/** 撤销回单：计划 6 已回单 → 5 已签收 */
+/** 撤销回单：计划 6 已回单 → 5 已交车 */
 export async function revokeWaybillReceipt(id: number) {
   const res = await request.delete<ApiResult<Waybill>>(
     `/business/waybill/${id}/receipt`

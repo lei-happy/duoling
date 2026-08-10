@@ -298,7 +298,7 @@ async def confirm_waybill_receipt(
     current_user: TokenData = Depends(get_current_user),
     _: None = Depends(ensure_biz_company_activity_table),
 ):
-    """确认回单：计划 5 已签收 → 6 已回单。"""
+    """确认回单：计划 5 已交车 → 6 已回单。"""
     _require_tenant_for_activity(current_user)
     op_name = await CompanyActivityService.actor_display_name(
         db, current_user.user_id
@@ -342,7 +342,7 @@ async def revoke_waybill_receipt(
     current_user: TokenData = Depends(get_current_user),
     _: None = Depends(ensure_biz_company_activity_table),
 ):
-    """撤销回单：计划 6 已回单 → 5 已签收。"""
+    """撤销回单：计划 6 已回单 → 5 已交车。"""
     _require_tenant_for_activity(current_user)
     await WaybillReceiptService.revoke(db, waybill_id)
     waybill = await WaybillService.get_waybill(db, waybill_id)

@@ -1,7 +1,7 @@
 """
 运单回单凭证表（租户库）
 
-业务语义：运单全量签收（waybill.status=5 已签收）后，把签收底单返还货主即"回单"。
+业务语义：运单全量交车（waybill.status=5 已交车）后，把交车回单返还货主即"回单"。
 每次确认回单产出一条 ``biz_waybill_receipt``（含底单图片、回收时间、操作人）。
 
 设计要点：
@@ -22,7 +22,7 @@ from app.modules.client.models.base import TenantModelBase
 
 
 class WaybillReceipt(TenantModelBase):
-    """运单回单凭证（签收底单返还记录）"""
+    """运单回单凭证（交车回单返还记录）"""
 
     __tablename__ = "biz_waybill_receipt"
     __table_args__ = (

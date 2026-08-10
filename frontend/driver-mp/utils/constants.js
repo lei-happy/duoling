@@ -7,7 +7,7 @@ const STATUS_MAP = {
   2: { label: '已装车', level: 'primary' },
   3: { label: '在途', level: 'info' },
   4: { label: '已到达', level: 'info' },
-  5: { label: '已签收', level: 'success' },
+  5: { label: '已交车', level: 'success' },
   7: { label: '已关闭', level: 'default' },
   9: { label: '已取消', level: 'danger' }
 };
@@ -31,14 +31,14 @@ const VISIBLE_STATUS_TABS = [
   { label: '已装车', value: '2' },
   { label: '在途', value: '3' },
   { label: '已到达', value: '4' },
-  { label: '已签收', value: '5' }
+  { label: '已交车', value: '5' }
 ];
 
 const ITEM_STATUS_MAP = {
   0: { label: '待装车', level: 'warning' },
   1: { label: '已装车', level: 'primary' },
   2: { label: '已卸车', level: 'info' },
-  3: { label: '已签收', level: 'success' }
+  3: { label: '已交车', level: 'success' }
 };
 
 function getItemStatusInfo(status) {
@@ -59,7 +59,7 @@ function getAvailableActions(status, accepted) {
     case 3:
       return [{ key: 'confirm-arrive', label: '确认到达', level: 'primary' }];
     case 4:
-      return [{ key: 'sign-items', label: '逐单签收', level: 'success' }];
+      return [{ key: 'sign-items', label: '逐台交车', level: 'success' }];
     default:
       return [];
   }

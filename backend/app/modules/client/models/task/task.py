@@ -194,7 +194,11 @@ class Task(TenantModelBase):
     status: Mapped[int] = mapped_column(
         SmallInteger, default=0, server_default="0",
         comment="状态 0-待派车 1-已派车 2-已装车 3-在途 4-已到达 "
-                "5-已签收(聚合态) 7-已关闭 9-已取消",
+                "5-已交车(聚合态) 7-已关闭 9-已取消",
+    )
+    stage_entered_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True,
+        comment="进入当前状态的时间（每次状态变更同步物化，用于阶段停留时长与滞留预警）",
     )
     dispatcher_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, nullable=True, comment="调度员 user_id"

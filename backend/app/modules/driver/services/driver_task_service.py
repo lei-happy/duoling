@@ -39,6 +39,9 @@ from app.modules.client.schemas.task.task_waybill_item import (
 from app.modules.client.services.task.task_loading_record_service import (
     TaskLoadingRecordService,
 )
+from app.modules.client.models.task.task_status_event import (
+    TASK_EVENT_SOURCE_DRIVER,
+)
 from app.modules.client.services.task.task_service import TaskService
 from app.modules.client.services.task.task_waybill_item_service import (
     TaskWaybillItemService,
@@ -285,6 +288,7 @@ class DriverTaskService:
             target_status=0,
             reason=f"[司机拒单] {data.reason}（driver={ctx.driver.name}#{ctx.driver_id}）",
             current_user_id=ctx.user_id,
+            source=TASK_EVENT_SOURCE_DRIVER,
         )
 
     # ------------------------------------------------------------------
@@ -345,6 +349,8 @@ class DriverTaskService:
                 actualLoadTime=data.actualLoadTime,
                 remark=data.remark,
             ),
+            current_user_id=ctx.user_id,
+            source=TASK_EVENT_SOURCE_DRIVER,
         )
         return await DriverTaskService.get_my_task(db, ctx, task.id)
 
@@ -384,7 +390,7 @@ class DriverTaskService:
         return await DriverTaskService.get_my_task(db, ctx, task.id)
 
     # ------------------------------------------------------------------
-    # 动作：item 签收 → item.status=3，聚合驱动 task 4→5
+    # 动作：item 交车 → item.status=3，聚合驱动 task 4→5
     # ------------------------------------------------------------------
     @staticmethod
     async def sign_item(
@@ -396,7 +402,7 @@ class DriverTaskService:
         item = await DriverTaskService._get_visible_item_or_404(db, ctx, item_id)
         cur = int(item.status)
         if cur >= 3:
-            raise BizException("该运单已签收")
+            raise BizException("该计划已交车")
         await TaskWaybillItemService.update_item_status(
             db, item.id,
             TaskWaybillItemStatusUpdate(
@@ -421,15 +427,15 @@ class DriverTaskService:
         )
         if not allowed:
             raise PermissionException(
-                f"当前用户缺少权限码 {_REVERT_SIGN_PERMISSION}，无法撤销签收"
+                f"当前用户缺少权限码 {_REVERT_SIGN_PERMISSION}，无法撤销交车"
             )
         if int(item.status) != 3:
-            raise BizException("仅「已签收」的运单可撤销签收")
+            raise BizException("仅「已交车」的计划可撤销交车")
         await TaskWaybillItemService.update_item_status(
             db, item.id,
             TaskWaybillItemStatusUpdate(
                 status=2,
-                remark=f"[司机撤销签收] {data.reason}",
+                remark=f"[司机撤销交车] {data.reason}",
             ),
         )
 

@@ -26,6 +26,9 @@ from app.modules.client.schemas.task.task import (
     TaskAssignCarrierRequest,
     TaskCarrierInfo,
 )
+from app.modules.client.models.task.task_status_event import (
+    TASK_EVENT_SOURCE_CARRIER,
+)
 from app.modules.client.services.task.task_service import TaskService
 
 
@@ -131,7 +134,9 @@ async def _dispatch_on_tenant_db(
         ),
         isProxy=False,
     )
-    updated = await TaskService.assign_carrier(db, task_id, payload)
+    updated = await TaskService.assign_carrier(
+        db, task_id, payload, source=TASK_EVENT_SOURCE_CARRIER,
+    )
     return success(data={
         "taskId": updated.id,
         "taskNo": updated.task_no,
