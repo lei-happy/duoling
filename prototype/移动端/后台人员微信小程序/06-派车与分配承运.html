@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 派车与分配承运</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .tksum { margin: 0 var(--pad); padding: 13px 15px; border-radius: 14px; color: #fff;
+    background: linear-gradient(140deg, #1a2a7a, #2f54eb); box-shadow: 0 14px 26px -18px rgba(29,50,140,.9); }
+  .tksum__t { display: flex; align-items: center; gap: 8px; font: 600 11.5px/1 var(--mono); letter-spacing: .05em; color: rgba(206,224,255,.8); }
+  .tksum__r { display: flex; align-items: center; gap: 9px; margin-top: 10px; }
+  .tksum__r b { font-size: 16px; font-weight: 650; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tksum__r i { flex: 1; height: 1px; border-top: 1.5px dashed rgba(255,255,255,.34); }
+  .tksum__m { display: flex; flex-wrap: wrap; gap: 5px 14px; margin-top: 11px; font-size: 12px; color: rgba(206,224,255,.84); }
+  .tksum__m em { font-style: normal; display: inline-flex; align-items: center; gap: 4px; }
+  .tksum__m svg { width: 13px; height: 13px; }
+  /* 运力候选卡 */
+  .cap {
+    position: relative; width: 100%; text-align: left; border: 0; cursor: pointer;
+    background: #fff; border-radius: 14px; box-shadow: var(--sh-card); padding: 13px 14px;
+    display: flex; gap: 12px; align-items: flex-start;
+    transition: transform .14s cubic-bezier(.32,.72,0,1), box-shadow .2s ease;
+  }
+  .cap + .cap { margin-top: 10px; }
+  .cap:active { transform: scale(.985); }
+  .cap__a { width: 40px; height: 40px; border-radius: 12px; flex: none; display: grid; place-items: center;
+    background: var(--primary-soft); color: var(--primary); font: 700 13px/1 var(--mono); }
+  .cap__a svg { width: 19px; height: 19px; }
+  .cap__b { flex: 1; min-width: 0; }
+  .cap__n { display: flex; align-items: center; gap: 7px; }
+  .cap__n b { font-size: 15px; font-weight: 650; letter-spacing: -.006em; }
+  .cap__s { font-size: 12.2px; color: var(--ink-3); margin-top: 5px; line-height: 1.5; }
+  .cap__f { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 11.8px; color: var(--ink-2); }
+  .cap__f em { font-style: normal; display: inline-flex; align-items: center; gap: 4px; }
+  .cap__f svg { width: 12px; height: 12px; color: var(--ink-3); }
+  .cap__k { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #ccd4e0; flex: none; display: grid; place-items: center; margin-top: 2px; }
+  .cap__k svg { width: 12px; height: 12px; stroke-width: 3; opacity: 0; color: #fff; }
+  .cap[aria-selected="true"] { box-shadow: 0 0 0 2px var(--primary), var(--sh-card); }
+  .cap[aria-selected="true"] .cap__k { background: var(--primary); border-color: var(--primary); }
+  .cap[aria-selected="true"] .cap__k svg { opacity: 1; }
+  .cap.is-off { opacity: .58; }
+  /* 毛利即时反馈条 */
+  .margin {
+    position: sticky; bottom: 0; z-index: 4; margin: 14px calc(var(--pad) * -1) 0;
+    padding: 12px var(--pad) 14px; background: rgba(255,255,255,.94);
+    backdrop-filter: saturate(180%) blur(18px); border-top: .5px solid var(--line);
+  }
+  .margin__r { display: flex; align-items: baseline; gap: 8px; }
+  .margin__r span { font-size: 12.5px; color: var(--ink-2); }
+  .margin__v { font-size: 22px; font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .margin__k { height: 7px; border-radius: 999px; background: var(--line-soft); overflow: hidden; margin-top: 9px; position: relative; }
+  .margin__f { display: block; height: 100%; border-radius: 999px; width: var(--v); background: var(--success);
+    transition: width .5s cubic-bezier(.32,.72,0,1), background .3s ease; }
+  .margin__line { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 2px; left: var(--m);
+    background: #334155; box-shadow: 0 0 0 1.5px rgba(255,255,255,.75); }
+  .tksum__tag { margin-left: auto; padding: 3px 8px; border-radius: 7px; font: 600 11px/1.35 var(--font);
+    letter-spacing: 0; background: rgba(255,255,255,.2); color: #ffd0cd; }
+  .margin__c { margin-top: 8px; font-size: 11.8px; color: var(--ink-3); line-height: 1.5; }
+  .quote { display: flex; align-items: baseline; gap: 6px; margin-top: 7px; }
+  .quote b { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .quote span { font-size: 11.5px; color: var(--ink-3); }
+  .quote .best { color: var(--success); font-weight: 600; font-size: 11.5px; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 06</p>
+    <h1 class="stage__title">派车与分配承运</h1>
+    <p class="stage__desc">调度在手机上最常做、也最怕做错的一件事。这一屏要在 15 秒内让人做出判断：<b style="color:#e2e8f0">用哪台车、赶不赶得上、这单还赚不赚钱。</b></p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>顶部<b>任务摘要条</b>常驻，防止选到一半忘了这单是去哪、几台车、什么时候要装。</li>
+        <li><b>毛利即时反馈条</b>是这页的记忆点：选哪个承运方，底部毛利率立刻跟着变，灰色刻度是公司底线 12%。低于底线时变红并提示要走特价审批——把"事后被财务追问"提前到决策当下。</li>
+        <li>候选运力<b>系统已排好序</b>，第一张标「最合适」并说清理由（空闲、距离近、载得下）。赶不上装车时间的车不隐藏，而是灰掉并写明原因，避免调度反复找。</li>
+        <li>承运商列表直接给<b>历史报价与准点率</b>。便宜但老晚点的，红字标出来。</li>
+        <li>确认前有一次<b>二次确认弹窗</b>，把车、司机、时间三个关键信息复述一遍。派车会立刻推给司机，改起来麻烦，值得多按一次。</li>
+        <li>批量派车走同一套界面，只是顶部摘要变成「3 单 · 共 17 台」。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <!-- 派车主屏 -->
+        <section class="screen" data-screen="assign" data-title="派车 · 选运力" data-nav="派车" data-start>
+          <div class="scroll">
+            <div class="tksum">
+              <div class="tksum__t">TK2608090061<span class="tksum__tag">2 小时内要装车</span></div>
+              <div class="tksum__r"><b>上汽仪征基地</b><i></i><b>合肥包河仓</b></div>
+              <div class="tksum__m">
+                <em><span data-icon="box"></span>8 台 荣威 D5X</em>
+                <em><span data-icon="route"></span>412 km</em>
+                <em><span data-icon="clock"></span>今日 16:00 装车</em>
+                <em><span data-icon="wallet"></span>应收 ¥18,400</em>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="seg" data-seg>
+                <button aria-selected="true">自有车</button>
+                <button>承运商</button>
+                <button>社会运力</button>
+                <i class="seg__thumb"></i>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="sec-title" style="margin-top:0"><h2>可用车辆</h2><span>按合适程度排</span></div>
+
+              <button class="cap" aria-selected="true" data-mv="24.3" data-mm="¥4,472" data-label="派给 苏A·6H128"
+                      data-mc="应收 ¥18,400 − 司机结算 ¥9,600 − 预估油气 ¥4,328。灰线是公司底线 12%。">
+                <span class="cap__a">苏A</span>
+                <span class="cap__b">
+                  <span class="cap__n"><b>苏A·6H128</b><span class="tag tag--ok">最合适</span></span>
+                  <span class="cap__s">张伟 · 138****3201 · 8 位板 · 现在空闲</span>
+                  <span class="cap__f">
+                    <em><span data-icon="pin"></span>距基地 18 km</em>
+                    <em><span data-icon="clock"></span>预计 15:20 到场</em>
+                    <em><span data-icon="box"></span>可载 8 台</em>
+                  </span>
+                </span>
+                <span class="cap__k"><span data-icon="check"></span></span>
+              </button>
+
+              <button class="cap" data-mv="21.8" data-mm="¥4,011" data-label="派给 苏B·4M772"
+                      data-mc="周海东跑这条线要多绕 46 km，油气成本高 ¥461。">
+                <span class="cap__a">苏B</span>
+                <span class="cap__b">
+                  <span class="cap__n"><b>苏B·4M772</b></span>
+                  <span class="cap__s">周海东 · 8 位板 · 12:40 已卸完</span>
+                  <span class="cap__f">
+                    <em><span data-icon="pin"></span>距基地 64 km</em>
+                    <em><span data-icon="clock"></span>预计 16:10 到场</em>
+                    <em class="late"><span data-icon="warn"></span>可能晚 10 分钟</em>
+                  </span>
+                </span>
+                <span class="cap__k"><span data-icon="check"></span></span>
+              </button>
+
+              <button class="cap is-off" data-why="苏A·8F236 最早 17:30 才能装车，会晚 1 小时 30 分">
+                <span class="cap__a">苏A</span>
+                <span class="cap__b">
+                  <span class="cap__n"><b>苏A·8F236</b><span class="tag tag--warn">赶不上</span></span>
+                  <span class="cap__s">王建国 · 8 位板 · 在途，16:00 才回场</span>
+                  <span class="cap__f"><em><span data-icon="clock"></span>最早 17:30 才能装车，晚 1 小时 30 分</em></span>
+                </span>
+                <span class="cap__k"><span data-icon="check"></span></span>
+              </button>
+
+              <button class="cap is-off" data-why="苏C·9J065 是 6 位板，这单 8 台装不下">
+                <span class="cap__a">苏C</span>
+                <span class="cap__b">
+                  <span class="cap__n"><b>苏C·9J065</b><span class="tag tag--danger">载不下</span></span>
+                  <span class="cap__s">李国庆 · 6 位板 · 现在空闲</span>
+                  <span class="cap__f"><em><span data-icon="box"></span>只能载 6 台，还差 2 台</em></span>
+                </span>
+                <span class="cap__k"><span data-icon="check"></span></span>
+              </button>
+
+              <div class="sec-title"><h2>装车安排</h2></div>
+              <div class="card">
+                <div class="field">
+                  <div class="field__l">装车时间</div>
+                  <div class="picker" data-sheet="time">今日 16:00<span data-icon="down"></span></div>
+                </div>
+                <div class="field">
+                  <div class="field__l">挂车</div>
+                  <div class="picker" data-sheet="trailer">苏A·H8821 挂 · 8 位板<span data-icon="down"></span></div>
+                </div>
+                <div class="field">
+                  <div class="field__l">给司机的话<span class="dim3" style="font-weight:400">（选填）</span></div>
+                  <textarea class="textarea" rows="2" placeholder="比如：客户要求先卸后排的两台白色">仪征 3 号门进，找李班长要提车单</textarea>
+                </div>
+              </div>
+
+              <!-- 毛利即时反馈 -->
+              <div class="margin">
+                <div class="margin__r">
+                  <span>这一单毛利率</span>
+                  <b class="margin__v" style="color:var(--success)">24.3%</b>
+                  <span class="ml-auto" data-margin-sum>毛利 ¥4,472</span>
+                </div>
+                <div class="margin__k">
+                  <i class="margin__f" style="--v:81%"></i>
+                  <i class="margin__line" style="--m:40%"></i>
+                </div>
+                <div class="margin__c">应收 ¥18,400 − 司机结算 ¥9,600 − 预估油气 ¥4,328。灰线是公司底线 12%。</div>
+              </div>
+            </div>
+
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost is-narrow" data-toast="已保存为草稿，回来接着派" aria-label="存草稿"><span data-icon="file"></span></button>
+            <button class="btn btn--primary" data-dialog="confirm" data-cap-label><span data-icon="truck"></span>派给 苏A·6H128</button>
+          </div>
+        </section>
+
+        <!-- 承运商分配 -->
+        <section class="screen" data-screen="carrier" data-title="分配承运商" data-nav="分配承运商" data-parent="assign">
+          <div class="scroll">
+            <div class="tksum">
+              <div class="tksum__t">TK2608090065</div>
+              <div class="tksum__r"><b>上汽仪征基地</b><i></i><b>温州瓯海 4S 店</b></div>
+              <div class="tksum__m">
+                <em><span data-icon="box"></span>4 台</em>
+                <em><span data-icon="route"></span>586 km</em>
+                <em><span data-icon="wallet"></span>应收 ¥12,800</em>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="notice notice--info">
+                <span data-icon="info"></span>
+                <div>自有车今天全排满了。这条线路合作过的承运商有 3 家，报价与准点率如下。</div>
+              </div>
+
+              <div class="sec-title"><h2>承运商报价</h2><span>近 3 个月同线路</span></div>
+
+              <button class="cap" aria-selected="true" data-mv="15.2" data-mm="¥1,946" data-label="分配给鑫达"
+                      data-mc="外包单毛利普遍在 12%～16%，高于底线但明显低于自有车的 24%。">
+                <span class="cap__a" style="background:var(--success-soft);color:var(--success)"><span data-icon="users"></span></span>
+                <span class="cap__b">
+                  <span class="cap__n"><b>鑫达商品车运输</b><span class="tag tag--ok">推荐</span></span>
+                  <span class="cap__s">合作 3 年 · 该线路跑过 42 趟</span>
+                  <span class="quote"><b>¥9,800</b><span>含税</span><span class="best">准点率 97.6%</span></span>
+                </span>
+                <span class="cap__k"><span data-icon="check"></span></span>
+              </button>
+
+              <button class="cap" data-mv="19.9" data-mm="¥2,546" data-label="分配给顺捷"
+                      data-mc="顺捷便宜 ¥600，毛利更好看，但准点率只有 84.1%，这单客户要求 08-12 前必到。">
+                <span class="cap__a" style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="users"></span></span>
+                <span class="cap__b">
+                  <span class="cap__n"><b>顺捷社会运力池</b></span>
+                  <span class="cap__s">合作 1 年 · 该线路跑过 8 趟</span>
+                  <span class="quote"><b>¥9,200</b><span>含税</span><span style="color:var(--danger);font-weight:600;font-size:11.5px">准点率 84.1%</span></span>
+                </span>
+                <span class="cap__k"><span data-icon="check"></span></span>
+              </button>
+
+              <button class="cap" data-mv="10.6" data-mm="¥1,357" data-label="分配给浙运达"
+                      data-mc="报价高于底价线，毛利率跌到 10.6%，低于公司底线 12%，提交后需要走特价审批。">
+                <span class="cap__a" style="background:var(--info-soft);color:#0369a1"><span data-icon="users"></span></span>
+                <span class="cap__b">
+                  <span class="cap__n"><b>浙运达汽车物流</b></span>
+                  <span class="cap__s">合作 2 年 · 该线路跑过 15 趟</span>
+                  <span class="quote"><b>¥10,400</b><span>含税</span><span class="best">准点率 95.2%</span></span>
+                </span>
+                <span class="cap__k"><span data-icon="check"></span></span>
+              </button>
+
+              <p class="t-cap mt-12">顺捷便宜 ¥600，但每 6 趟就有 1 趟晚点。这单客户要求 08-12 前必须到，不建议冒险。</p>
+
+              <div class="margin">
+                <div class="margin__r">
+                  <span>这一单毛利率</span>
+                  <b class="margin__v" style="color:var(--accent-deep)">15.2%</b>
+                  <span class="ml-auto" data-margin-sum>毛利 ¥1,946</span>
+                </div>
+                <div class="margin__k">
+                  <i class="margin__f" style="--v:51%;background:var(--accent)"></i>
+                  <i class="margin__line" style="--m:40%"></i>
+                </div>
+                <div class="margin__c">外包单毛利普遍在 12%～16%，高于底线但明显低于自有车的 24%。</div>
+              </div>
+            </div>
+
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost is-narrow" data-toast="已拨号给 鑫达 张经理 139****8802" aria-label="打电话"><span data-icon="phone"></span></button>
+            <button class="btn btn--primary" data-dialog="confirm2" data-cap-label><span data-icon="users"></span>分配给鑫达</button>
+          </div>
+        </section>
+
+        <!-- 派车成功 -->
+        <section class="screen" data-screen="done" data-title="派车成功" data-nav="派车结果" data-parent="assign">
+          <div class="scroll">
+            <div class="pad">
+              <div class="card center" style="padding:30px 20px 24px">
+                <div class="empty__ico" style="background:var(--success-soft);color:var(--success);margin:0 auto 14px"><span data-icon="checkc"></span></div>
+                <h3 style="margin:0 0 7px;font-size:18px;font-weight:650">已派给 苏A·6H128</h3>
+                <p class="t-cap" style="line-height:1.7">张伟已经收到微信通知，他确认后你会收到消息。<br>如果 30 分钟内没确认，系统会再提醒一次。</p>
+              </div>
+
+              <div class="sec-title"><h2>派车信息</h2></div>
+              <div class="card">
+                <dl class="kv"><dt>任务号</dt><dd class="t-mono">TK2608090061</dd></dl>
+                <dl class="kv"><dt>车辆 / 挂车</dt><dd>苏A·6H128 / 苏A·H8821 挂</dd></dl>
+                <dl class="kv"><dt>司机</dt><dd>张伟 138****3201</dd></dl>
+                <dl class="kv"><dt>装车时间</dt><dd>今日 16:00</dd></dl>
+                <dl class="kv"><dt>司机结算</dt><dd>¥9,600（按线路标准价）</dd></dl>
+                <dl class="kv"><dt>状态</dt><dd><span class="tag tag--info">已派车</span></dd></dl>
+              </div>
+
+              <div class="sec-title"><h2>接下来</h2></div>
+              <div class="card card--plain">
+                <div class="cell" data-toast="已拨号给 张伟 138****3201">
+                  <div class="cell__ico"><span data-icon="phone"></span></div>
+                  <div class="cell__main"><div class="cell__t">打个电话交代一下</div><div class="cell__s">今天时间紧，建议口头确认</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-root="pool">
+                  <div class="cell__ico is-amber"><span data-icon="route"></span></div>
+                  <div class="cell__main"><div class="cell__t">继续派下一单</div><div class="cell__s">待派车还有 13 单，2 单临期</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="btnrow mt-16">
+                <button class="btn btn--ghost btn--block" data-root="pool">回调度台</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" data-screen="pool" data-title="调度台（见 05）" data-nav="调度工作台">
+          <div class="scroll"><p class="t-cap center mt-20">五阶段调度工作台的完整设计见 05</p></div>
+        </section>
+      </div>
+
+      <div class="mp__home"><i></i></div>
+
+      <!-- 装车时间 -->
+      <div class="sheet" data-sheet-id="time">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>什么时候装车</h3><p>客户要求 08-12 前到货，留足在途时间</p></div>
+        <div class="sheet__body">
+          <div class="radios">
+            <div class="radio" role="radio" aria-checked="true"><span class="radio__m"></span><div><b>今日 16:00</b><span>按计划约定时间，最稳</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>今日 18:00</b><span>晚 2 小时，仍能按时到货</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>明日 08:00</b><span>会晚到货半天，需要跟客户说一声</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>自己选时间</b><span>打开时间选择器</span></div></div>
+          </div>
+        </div>
+        <div class="sheet__foot"><button class="btn btn--primary btn--block" data-sheet-close data-toast="装车时间已设为今日 16:00">确定</button></div>
+      </div>
+
+      <!-- 挂车 -->
+      <div class="sheet" data-sheet-id="trailer">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>选挂车</h3><p>只列出与苏A·6H128 匹配的空闲挂车</p></div>
+        <div class="sheet__body">
+          <div class="radios">
+            <div class="radio" role="radio" aria-checked="true"><span class="radio__m"></span><div><b>苏A·H8821 挂</b><span>8 位板 · 常用组合 · 年检有效期至 2027-03</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>苏A·H9034 挂</b><span>8 位板 · 空闲 · 上次保养 07-28</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>苏A·H7712 挂</b><span>6 位板 · 载不下 8 台</span></div></div>
+          </div>
+        </div>
+        <div class="sheet__foot"><button class="btn btn--primary btn--block" data-sheet-close data-toast="挂车已选 苏A·H8821 挂">确定</button></div>
+      </div>
+
+      <!-- 二次确认 -->
+      <div class="dialog" data-dialog-id="confirm">
+        <div class="dialog__body">
+          <h3>确认派车？</h3>
+          <p><b>苏A·6H128 · 张伟</b><br>今日 16:00 在上汽仪征基地装 8 台<br>派出后会立刻通知司机</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>再看看</button>
+          <button class="is-main" data-sheet-close data-then="done" data-toast="已派车，正在通知张伟">确认派车</button>
+        </div>
+      </div>
+
+      <div class="dialog" data-dialog-id="confirm2">
+        <div class="dialog__body">
+          <h3>确认分配给鑫达？</h3>
+          <p>承运费 ¥9,800，这一单毛利率 15.2%。<br>分配后会生成待审批的承运商结算单。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>再看看</button>
+          <button class="is-main" data-sheet-close data-then="done" data-toast="已分配给鑫达商品车运输">确认分配</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

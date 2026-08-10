@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 调度工作台五阶段</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .poolbar { padding: 10px var(--pad) 0; display: flex; gap: 9px; align-items: center; }
+  .poolbar .searchbar { flex: 1; }
+  .iconbtn {
+    width: 38px; height: 38px; border-radius: 11px; border: 0; background: #fff; box-shadow: var(--sh-card);
+    display: grid; place-items: center; color: var(--ink-2); cursor: pointer; flex: none;
+    transition: transform .12s ease-out;
+  }
+  .iconbtn:active { transform: scale(.93); }
+  .iconbtn svg { width: 18px; height: 18px; }
+  .iconbtn.is-on { background: var(--primary); color: #fff; }
+  .iconbtn b {
+    position: absolute; transform: translate(13px,-13px); min-width: 15px; height: 15px; border-radius: 999px;
+    background: var(--accent); color: #3b2500; font-size: 9.5px; font-weight: 700; display: grid; place-items: center; padding: 0 3px;
+  }
+  .bandwrap { position: sticky; top: 0; z-index: 6; background: var(--bg); padding-top: 10px; }
+  .bandwrap::after { content: ""; position: absolute; left: 0; right: 0; bottom: -14px; height: 14px;
+    background: linear-gradient(rgba(240,243,248,1), rgba(240,243,248,0)); pointer-events: none; }
+  .poolhint { display: flex; align-items: center; gap: 6px; padding: 12px var(--pad) 2px; font-size: 12.5px; color: var(--ink-3); }
+  .poolhint svg { width: 13px; height: 13px; }
+  .poolhint .more { margin-left: auto; color: var(--primary); font-weight: 500; display: inline-flex; align-items: center; gap: 2px; }
+  .poolhint .more svg { width: 13px; height: 13px; }
+  /* 批量选择 */
+  .pick { display: none; width: 21px; height: 21px; border-radius: 7px; border: 1.5px solid #c3ccda; flex: none;
+    place-items: center; background: #fff; color: #fff; margin-right: 11px; }
+  .pick svg { width: 13px; height: 13px; stroke-width: 3; opacity: 0; }
+  .pick[aria-checked="true"] { background: var(--primary); border-color: var(--primary); }
+  .pick[aria-checked="true"] svg { opacity: 1; }
+  .screen.is-pick .pick { display: grid; }
+  .rowpick { display: flex; align-items: center; padding-left: 15px; }
+  .rowpick > .row { flex: 1; padding-left: 0; }
+  .rowpick + .rowpick::before { content: ""; position: absolute; left: 15px; right: 0; top: 0; height: 1px; background: var(--line-soft); }
+  .rowpick { position: relative; }
+  .screen.is-pick .swipe__acts { display: none; }
+  .pickbar {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 20; transform: translateY(110%);
+    background: rgba(255,255,255,.92); backdrop-filter: saturate(180%) blur(20px);
+    border-top: .5px solid var(--line); padding: 11px var(--pad) 14px;
+    display: flex; align-items: center; gap: 10px;
+    transition: transform .34s cubic-bezier(.32,.72,0,1);
+  }
+  .screen.is-pick .pickbar { transform: none; }
+  .pickbar__n { font-size: 13px; color: var(--ink-2); flex: none; }
+  .pickbar__n b { font-size: 17px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; margin: 0 2px; }
+  .screen.is-pick .scroll { padding-bottom: 84px; }
+  /* 阶段小结条 */
+  .digest { margin: 0 var(--pad); padding: 11px 13px; border-radius: 12px; display: flex; align-items: center; gap: 9px;
+    background: linear-gradient(120deg, #eef2ff, #f6f8ff); font-size: 12.5px; color: #35408a; line-height: 1.55; }
+  .digest svg { width: 15px; height: 15px; flex: none; color: var(--primary); }
+  .digest b { font-weight: 650; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 05</p>
+    <h1 class="stage__title">调度工作台 · 五阶段</h1>
+    <p class="stage__desc">调度的一天就是把任务从左往右推。<b style="color:#e2e8f0">待分配 → 待派车 → 待装车 → 在途 → 待签收</b>，卡在哪一档一眼看到，手指点一下就切过去。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li><b>五阶段泳道卡带</b>横向滑动、吸顶常驻。选中档位是深蓝实心 + 琥珀左标，超时数字缓慢呼吸——不用红点轰炸，但绝不让人漏掉。</li>
+        <li>阶段名与状态机严格对齐：<b>待分配 / 待派车 / 已派车（待装车）/ 在途 / 待签收</b>，不在手机上另起一套叫法。</li>
+        <li>每档列表的<b>第一行操作不一样</b>：待派车给「派车」，在途给「催位置」，待签收给「催回单」。同一个列表组件，动作跟着阶段变。</li>
+        <li><b>批量模式</b>是调度的效率关键：勾选多单一次派给同一辆车 / 同一家承运商。进入批量时左滑操作自动禁用，避免误触。</li>
+        <li>每档顶部有<b>一句话小结</b>，说清这一档现在最该处理什么，而不是让人自己数。</li>
+        <li>下拉刷新用橡皮筋阻尼；切档列表做 6px 上浮淡入，让"换了一批数据"这件事被看见。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <!-- 调度工作台 -->
+        <section class="screen" data-screen="pool" data-title="五阶段任务池" data-tabroot data-nav="调度工作台" data-start>
+          <div class="scroll is-flush" data-refresh>
+            <div class="poolbar">
+              <div class="searchbar"><span data-icon="search"></span>搜任务号、车牌、客户、线路</div>
+              <button class="iconbtn" data-sheet="filter" aria-label="筛选"><span data-icon="filter"></span><b>2</b></button>
+              <button class="iconbtn" data-mode="pick" aria-label="批量"><span data-icon="checkc"></span></button>
+            </div>
+
+            <div class="bandwrap">
+              <div class="band">
+                <button class="bcard" style="--c:var(--s0)" data-stage="s0">
+                  <span class="bcard__l">待分配</span><span class="bcard__n">6</span>
+                  <span class="bcard__w">计划待配载</span>
+                </button>
+                <button class="bcard" style="--c:var(--s1)" data-stage="s1" aria-selected="true">
+                  <span class="bcard__l">待派车</span><span class="bcard__n">14</span>
+                  <span class="bcard__w is-alert"><span data-icon="warn"></span>2 单临期</span>
+                </button>
+                <button class="bcard" style="--c:var(--s2)" data-stage="s2">
+                  <span class="bcard__l">待装车</span><span class="bcard__n">9</span>
+                  <span class="bcard__w">今日 5 单</span>
+                </button>
+                <button class="bcard" style="--c:var(--s3)" data-stage="s3">
+                  <span class="bcard__l">在途</span><span class="bcard__n">23</span>
+                  <span class="bcard__w is-alert"><span data-icon="warn"></span>3 单超时</span>
+                </button>
+                <button class="bcard" style="--c:var(--s4)" data-stage="s4">
+                  <span class="bcard__l">待签收</span><span class="bcard__n">11</span>
+                  <span class="bcard__w">4 单已到达</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 待派车 -->
+            <div data-stage-panel="s1">
+              <div class="poolhint">
+                <span data-icon="filter"></span>已筛：今日装车 · 全部基地
+                <span class="more" data-sheet="sort">按装车时间排 <span data-icon="down"></span></span>
+              </div>
+              <div class="pad" style="margin-bottom:12px">
+                <div class="digest">
+                  <span data-icon="info"></span>
+                  <div><b>2 单必须在 2 小时内派出去</b>，否则赶不上客户要求的到货时间。可派自有车只剩 6 台。</div>
+                </div>
+              </div>
+              <div class="pad">
+                <div class="card card--plain">
+                  <div class="swipe" data-swipe>
+                    <div class="swipe__acts">
+                      <button class="a-primary" data-push="assign"><span data-icon="truck"></span>派车</button>
+                      <button class="a-amber" data-toast="已把这单置顶，其他调度也能看到"><span data-icon="pin"></span>置顶</button>
+                      <button class="a-grey" data-push="detail"><span data-icon="file"></span>详情</button>
+                    </div>
+                    <div class="swipe__body">
+                      <div class="rowpick">
+                        <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                        <button class="row" data-push="detail">
+                          <div class="row__t"><span class="row__no">TK2608090061</span><span class="tag tag--danger ml-auto">2 小时内要装车</span></div>
+                          <div class="row__m"><b>上汽仪征基地 → 合肥包河仓</b></div>
+                          <div class="row__f">
+                            <em><span data-icon="box"></span>8 台</em>
+                            <em><span data-icon="building"></span>苏南汽贸</em>
+                            <em class="late"><span data-icon="warn"></span>还没派车</em>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-push="detail">
+                      <div class="row__t"><span class="row__no">TK2608090062</span><span class="tag tag--danger ml-auto">2 小时内要装车</span></div>
+                      <div class="row__m"><b>上汽仪征基地 → 合肥新站仓</b></div>
+                      <div class="row__f"><em><span data-icon="box"></span>4 台</em><em><span data-icon="building"></span>苏南汽贸</em><em class="late"><span data-icon="warn"></span>还没派车</em></div>
+                    </button>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-push="detail">
+                      <div class="row__t"><span class="row__no">TK2608090063</span><span class="tag tag--warn ml-auto">明日装车</span></div>
+                      <div class="row__m"><b>杭州萧山中转库 → 宁波北仑港</b></div>
+                      <div class="row__f"><em><span data-icon="box"></span>6 台</em><em><span data-icon="clock"></span>08-10 07:30</em><em><span data-icon="truck"></span>建议 苏A·8F236</em></div>
+                    </button>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-push="detail">
+                      <div class="row__t"><span class="row__no">TK2608090064</span><span class="tag ml-auto">待派车</span></div>
+                      <div class="row__m"><b>南京江宁库 → 徐州云龙仓</b></div>
+                      <div class="row__f"><em><span data-icon="box"></span>5 台</em><em><span data-icon="clock"></span>08-10 09:00</em></div>
+                    </button>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-push="detail">
+                      <div class="row__t"><span class="row__no">TK2608090065</span><span class="tag ml-auto">待派车</span></div>
+                      <div class="row__m"><b>上汽仪征基地 → 温州瓯海 4S 店</b></div>
+                      <div class="row__f"><em><span data-icon="box"></span>4 台</em><em><span data-icon="clock"></span>08-11 08:00</em><em><span data-icon="users"></span>建议外包</em></div>
+                    </button>
+                  </div>
+                  <div class="cell" data-toast="已加载全部 14 单"><div class="cell__main center" style="color:var(--primary);font-size:13.5px">加载剩余 9 单</div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 待分配 -->
+            <div data-stage-panel="s0" hidden>
+              <div class="poolhint"><span data-icon="filter"></span>计划已确认、还没拆成任务</div>
+              <div class="pad" style="margin-bottom:12px">
+                <div class="digest">
+                  <span data-icon="info"></span>
+                  <div><b>6 个计划等着配载</b>，其中 2 个客户要求 08-12 前到货，今天不排就来不及了。</div>
+                </div>
+              </div>
+              <div class="pad">
+                <div class="card card--plain">
+                  <div class="swipe" data-swipe>
+                    <div class="swipe__acts">
+                      <button class="a-primary" data-toast="配载建议：4 台可与 WB26080032 拼一车"><span data-icon="grid"></span>配载</button>
+                      <button class="a-grey" data-push="detail"><span data-icon="file"></span>详情</button>
+                    </div>
+                    <div class="swipe__body">
+                      <div class="rowpick">
+                        <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                        <button class="row" data-push="detail">
+                          <div class="row__t"><span class="row__no">WB26080031</span><span class="tag tag--warn ml-auto">08-12 前到货</span></div>
+                          <div class="row__m"><b>上汽仪征基地 → 温州瓯海 4S 店</b></div>
+                          <div class="row__f"><em><span data-icon="box"></span>4 台</em><em><span data-icon="building"></span>浙南汽贸</em><em><span data-icon="wallet"></span>¥12,800</em></div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-push="detail">
+                      <div class="row__t"><span class="row__no">WB26080032</span><span class="tag ml-auto">待调度</span></div>
+                      <div class="row__m"><b>南京江宁库 → 金华婺城仓</b></div>
+                      <div class="row__f"><em><span data-icon="box"></span>3 台</em><em><span data-icon="building"></span>金华恒达</em><em><span data-icon="wallet"></span>¥8,600</em></div>
+                    </button>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-push="detail">
+                      <div class="row__t"><span class="row__no">WB26080033</span><span class="tag ml-auto">待调度</span></div>
+                      <div class="row__m"><b>上汽仪征基地 → 苏州吴中 4S 店</b></div>
+                      <div class="row__f"><em><span data-icon="box"></span>6 台</em><em><span data-icon="building"></span>苏南汽贸</em><em><span data-icon="wallet"></span>¥15,200</em></div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 待装车（已派车） -->
+            <div data-stage-panel="s2" hidden>
+              <div class="poolhint"><span data-icon="filter"></span>已派车、司机还没点装车完成</div>
+              <div class="pad" style="margin-bottom:12px">
+                <div class="digest">
+                  <span data-icon="info"></span>
+                  <div><b>1 单超过约定装车时间 40 分钟</b>还没动。刘强的电话是 138****6621，要不要先催一下？</div>
+                </div>
+              </div>
+              <div class="pad">
+                <div class="card card--plain">
+                  <div class="swipe" data-swipe>
+                    <div class="swipe__acts">
+                      <button class="a-amber" data-dialog="urge"><span data-icon="bell"></span>催装车</button>
+                      <button class="a-grey" data-toast="已拨号给 刘强 138****6621"><span data-icon="phone"></span>打电话</button>
+                    </div>
+                    <div class="swipe__body">
+                      <div class="rowpick">
+                        <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                        <button class="row" data-push="detail">
+                          <div class="row__t"><span class="row__no">TK2608090058</span><span class="tag tag--danger ml-auto">晚了 40 分钟</span></div>
+                          <div class="row__m"><b>上汽仪征基地 → 苏州吴中 4S 店</b></div>
+                          <div class="row__f"><em><span data-icon="truck"></span>苏B·2K901 刘强</em><em class="late"><span data-icon="clock"></span>约定 14:00 装车</em></div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-push="detail">
+                      <div class="row__t"><span class="row__no">TK2608090052</span><span class="tag tag--info ml-auto">已派车</span></div>
+                      <div class="row__m"><b>杭州萧山中转库 → 宁波北仑港</b></div>
+                      <div class="row__f"><em><span data-icon="truck"></span>苏A·8F236 王建国</em><em><span data-icon="clock"></span>明早 07:30 装车</em></div>
+                    </button>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-push="detail">
+                      <div class="row__t"><span class="row__no">TK2608090055</span><span class="tag tag--info ml-auto">已派车</span></div>
+                      <div class="row__m"><b>南京江宁库 → 常州武进库</b></div>
+                      <div class="row__f"><em><span data-icon="users"></span>鑫达商品车运输</em><em><span data-icon="clock"></span>明早 09:00 装车</em></div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 在途 -->
+            <div data-stage-panel="s3" hidden>
+              <div class="poolhint"><span data-icon="filter"></span>按超时程度排 <span class="more" data-push="track">看地图 <span data-icon="right"></span></span></div>
+              <div class="pad" style="margin-bottom:12px">
+                <div class="digest" style="background:linear-gradient(120deg,#fff1f0,#fff7f6);color:#a8071a">
+                  <span data-icon="warn"></span>
+                  <div><b>3 单超过约定到货时间</b>，最久的一单超了 4 小时 20 分，客户已经打过一次电话了。</div>
+                </div>
+              </div>
+              <div class="pad">
+                <div class="card card--plain">
+                  <div class="swipe" data-swipe>
+                    <div class="swipe__acts">
+                      <button class="a-amber" data-dialog="urge"><span data-icon="pin"></span>催位置</button>
+                      <button class="a-primary" data-push="track"><span data-icon="map"></span>看地图</button>
+                      <button class="a-grey" data-toast="已拨号给 刘强 138****6621"><span data-icon="phone"></span>电话</button>
+                    </div>
+                    <div class="swipe__body">
+                      <div class="rowpick">
+                        <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                        <button class="row" data-push="track">
+                          <div class="row__t"><span class="row__no">TK2608080077</span><span class="tag tag--danger ml-auto pulse">超时 4 小时 20 分</span></div>
+                          <div class="row__m"><b>南京江宁库 → 苏州吴中 4S 店</b></div>
+                          <div class="row__f"><em><span data-icon="truck"></span>苏B·2K901 刘强</em><em class="late"><span data-icon="pin"></span>4 小时没更新位置</em></div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-push="track">
+                      <div class="row__t"><span class="row__no">TK2608090012</span><span class="tag tag--danger ml-auto">超时 1 小时 05 分</span></div>
+                      <div class="row__m"><b>上汽仪征基地 → 合肥包河仓</b></div>
+                      <div class="row__f"><em><span data-icon="users"></span>鑫达商品车运输</em><em><span data-icon="pin"></span>距目的地 32 km</em></div>
+                    </button>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-push="track">
+                      <div class="row__t"><span class="row__no">TK2608090037</span><span class="tag tag--info ml-auto">在途</span></div>
+                      <div class="row__m"><b>上汽仪征基地 → 杭州萧山中转库</b></div>
+                      <div class="row__f"><em><span data-icon="truck"></span>苏A·8F236 王建国</em><em><span data-icon="pin"></span>距目的地 86 km · 预计 17:40 到</em></div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 待签收 -->
+            <div data-stage-panel="s4" hidden>
+              <div class="poolhint"><span data-icon="filter"></span>已到达未签收 + 回单待审</div>
+              <div class="pad" style="margin-bottom:12px">
+                <div class="digest">
+                  <span data-icon="info"></span>
+                  <div><b>4 单车已经到了但没签收</b>。其中 2 单是收货方今天下班了，明早再催。</div>
+                </div>
+              </div>
+              <div class="pad">
+                <div class="card card--plain">
+                  <div class="swipe" data-swipe>
+                    <div class="swipe__acts">
+                      <button class="a-primary" data-toast="回单签收的完整设计见 08"><span data-icon="camera"></span>审回单</button>
+                      <button class="a-amber" data-dialog="urge"><span data-icon="bell"></span>催签收</button>
+                    </div>
+                    <div class="swipe__body">
+                      <div class="rowpick">
+                        <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                        <button class="row" data-toast="回单签收的完整设计见 08">
+                          <div class="row__t"><span class="row__no">TK2608070008</span><span class="tag tag--warn ml-auto">回单待审</span></div>
+                          <div class="row__m"><b>上汽仪征基地 → 常州武进库</b></div>
+                          <div class="row__f"><em><span data-icon="camera"></span>司机传了 3 张</em><em><span data-icon="clock"></span>等了 6 小时</em></div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-toast="回单签收的完整设计见 08">
+                      <div class="row__t"><span class="row__no">TK2608090044</span><span class="tag tag--ok ml-auto">已到达</span></div>
+                      <div class="row__m"><b>南京江宁库 → 苏州吴中 4S 店</b></div>
+                      <div class="row__f"><em><span data-icon="box"></span>3 台待签</em><em><span data-icon="clock"></span>13:20 到达</em></div>
+                    </button>
+                  </div>
+                  <div class="rowpick">
+                    <span class="pick" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                    <button class="row" data-toast="回单签收的完整设计见 08">
+                      <div class="row__t"><span class="row__no">TK2608090041</span><span class="tag tag--ok ml-auto">已到达</span></div>
+                      <div class="row__m"><b>杭州萧山中转库 → 宁波北仑港</b></div>
+                      <div class="row__f"><em><span data-icon="box"></span>6 台待签</em><em><span data-icon="user"></span>收货方今天已下班</em></div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 批量操作条 -->
+          <div class="pickbar">
+            <span class="pickbar__n">已选 <b data-pick-count>0</b> 单</span>
+            <button class="btn btn--ghost btn--sm" data-mode="!pick">取消</button>
+            <button class="btn btn--primary grow" data-pick-disable data-push="assign" disabled><span data-icon="truck"></span>批量派车</button>
+          </div>
+        </section>
+
+        <!-- 任务详情（简版，完整见 06/07） -->
+        <section class="screen" data-screen="detail" data-title="任务详情" data-nav="TK2608090061" data-parent="pool">
+          <div class="scroll">
+            <div class="pad">
+              <div class="card">
+                <div class="hstack">
+                  <span class="tag tag--danger">2 小时内要装车</span>
+                  <span class="tag">待派车</span>
+                  <span class="t-cap ml-auto">08-09 09:12 创建</span>
+                </div>
+                <div class="ticket__route" style="margin-top:14px">
+                  <div class="ticket__place"><b>上汽仪征基地</b><span>江苏省扬州市仪征市汽车工业园</span></div>
+                  <div class="ticket__arrow"></div>
+                  <div class="ticket__place right"><b>合肥包河仓</b><span>安徽省合肥市包河区</span></div>
+                </div>
+                <div class="ticket__meta">
+                  <i><span data-icon="box"></span>8 台 · 荣威 D5X</i>
+                  <i><span data-icon="building"></span>苏南汽贸</i>
+                  <i><span data-icon="route"></span>412 km</i>
+                  <i><span data-icon="wallet"></span>¥18,400</i>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>为什么还没派出去</h2></div>
+              <div class="card">
+                <div class="tl">
+                  <div class="tl__i is-done"><div class="tl__t">09:12 计划确认</div><div class="tl__s">李敏 从客户订单导入</div></div>
+                  <div class="tl__i is-done"><div class="tl__t">09:40 配载完成</div><div class="tl__s">8 台并为一车，生成任务 TK2608090061</div></div>
+                  <div class="tl__i is-now"><div class="tl__t">等待派车</div><div class="tl__s">已等 4 小时 28 分。系统建议苏A·8F236，但这台车 16:00 才回场，赶不上装车时间。</div></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>可用运力</h2><span>系统按距离与空闲排的</span></div>
+              <div class="card card--plain">
+                <div class="cell" data-push="assign">
+                  <div class="cell__ico"><span data-icon="truck"></span></div>
+                  <div class="cell__main"><div class="cell__t">苏A·6H128 · 张伟</div><div class="cell__s">现在空闲 · 距基地 18 km · 可载 8 台</div></div>
+                  <div class="cell__x"><span class="tag tag--ok">最合适</span></div>
+                </div>
+                <div class="cell" data-push="assign">
+                  <div class="cell__ico"><span data-icon="truck"></span></div>
+                  <div class="cell__main"><div class="cell__t">苏A·8F236 · 王建国</div><div class="cell__s">16:00 回场 · 赶不上 16:00 装车</div></div>
+                  <div class="cell__x"><span class="tag tag--warn">时间紧</span></div>
+                </div>
+                <div class="cell" data-push="assign">
+                  <div class="cell__ico is-amber"><span data-icon="users"></span></div>
+                  <div class="cell__main"><div class="cell__t">鑫达商品车运输</div><div class="cell__s">合作 3 年 · 该线路报价 ¥15,600 · 毛利 15.2%</div></div>
+                  <div class="cell__x"><span class="tag tag--amber">外包</span></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost is-narrow" data-toast="已拨号给客户 苏南汽贸 王经理" aria-label="联系客户"><span data-icon="phone"></span></button>
+            <button class="btn btn--primary" data-push="assign"><span data-icon="truck"></span>去派车</button>
+          </div>
+        </section>
+
+        <section class="screen" data-screen="assign" data-title="派车（见 06）" data-nav="派车" data-parent="pool">
+          <div class="scroll"><p class="t-cap center mt-20">派车与分配承运的完整设计见 06</p></div>
+        </section>
+        <section class="screen" data-screen="track" data-title="在途（见 07）" data-nav="在途监控" data-parent="pool">
+          <div class="scroll"><p class="t-cap center mt-20">在途监控与预警的完整设计见 07</p></div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="home" data-title="工作台 tab" data-tabroot data-nav="工作台">
+          <div class="scroll"><p class="t-cap center mt-20">角色自适应工作台的完整设计见 02</p></div>
+        </section>
+        <section class="screen" data-screen="data" data-title="数据 tab" data-tabroot data-nav="数据">
+          <div class="scroll"><p class="t-cap center mt-20">经营驾驶舱见 03，运营看板见 11</p></div>
+        </section>
+        <section class="screen" data-screen="msgtab" data-title="消息 tab" data-tabroot data-nav="消息">
+          <div class="scroll"><p class="t-cap center mt-20">消息中心的完整设计见 13</p></div>
+        </section>
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll"><p class="t-cap center mt-20">个人中心与设置的完整设计见 14</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="home"><span data-icon="grid"></span>工作台</button>
+        <button class="tabi" data-tab="pool"><span data-icon="route"></span>调度</button>
+        <button class="tabi" data-tab="data"><span data-icon="chart"></span>数据</button>
+        <button class="tabi" data-tab="msgtab"><span data-icon="msg"></span>消息<i class="tabi__dot">7</i></button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+      <!-- 筛选 -->
+      <div class="sheet" data-sheet-id="filter">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>筛选任务</h3><p>只影响当前档位的列表</p></div>
+        <div class="sheet__body">
+          <div class="field">
+            <div class="field__l">装车时间</div>
+            <div class="chipbar">
+              <button class="chip">不限</button>
+              <button class="chip" aria-selected="true">今日</button>
+              <button class="chip">明日</button>
+              <button class="chip">本周</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">发运基地</div>
+            <div class="chipbar">
+              <button class="chip" aria-selected="true">全部</button>
+              <button class="chip">上汽仪征</button>
+              <button class="chip">南京江宁</button>
+              <button class="chip">杭州萧山</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">承运方式</div>
+            <div class="chipbar">
+              <button class="chip" aria-selected="true">全部</button>
+              <button class="chip">自有车</button>
+              <button class="chip">承运商</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">只看</div>
+            <div class="vstack">
+              <label class="cell cell--static" style="padding-left:0">
+                <div class="cell__main"><div class="cell__t">临期与超时</div><div class="cell__s">距约定时间不足 2 小时</div></div>
+                <button class="switch" role="switch" aria-checked="true"></button>
+              </label>
+              <label class="cell cell--static" style="padding-left:0">
+                <div class="cell__main"><div class="cell__t">我负责的</div><div class="cell__s">只看分给陈涛的任务</div></div>
+                <button class="switch" role="switch" aria-checked="false"></button>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close data-toast="已清空筛选">重置</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已按新条件筛选">看结果</button>
+        </div>
+      </div>
+
+      <!-- 排序 -->
+      <div class="sheet" data-sheet-id="sort">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>怎么排</h3></div>
+        <div class="sheet__body">
+          <div class="radios">
+            <div class="radio" role="radio" aria-checked="true"><span class="radio__m"><i></i></span><div><b>按装车时间</b><span>最急的排最前</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"><i></i></span><div><b>按创建时间</b><span>先来先派</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"><i></i></span><div><b>按运费从高到低</b><span>先保大单</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"><i></i></span><div><b>按发运基地</b><span>同一个基地的排一起，方便凑车</span></div></div>
+          </div>
+        </div>
+        <div class="sheet__foot"><button class="btn btn--primary btn--block" data-sheet-close data-toast="已按装车时间重新排序">确定</button></div>
+      </div>
+
+      <!-- 催办 -->
+      <div class="dialog" data-dialog-id="urge">
+        <div class="dialog__body">
+          <h3>给司机发个提醒？</h3>
+          <p>会通过微信服务通知发给刘强，内容是「TK2608080077 已超过约定到货时间，请更新位置或说明情况」。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>再等等</button>
+          <button class="is-main" data-sheet-close data-toast="提醒已发出，司机看到后会回复">发提醒</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

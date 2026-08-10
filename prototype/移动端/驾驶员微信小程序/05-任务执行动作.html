@@ -1,536 +1,344 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>05 任务执行动作 · 驾驶员微信小程序</title>
-<link rel="stylesheet" href="assets/mp.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>驾驶员微信小程序 · 任务执行动作</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .step { display: flex; gap: 13px; padding: 15px 0; position: relative; }
+  .step + .step::before { content: ""; position: absolute; left: 17px; top: -14px; height: 14px; width: 2px; background: var(--line); }
+  .step__n {
+    width: 36px; height: 36px; border-radius: 12px; flex: none; display: grid; place-items: center;
+    font: 600 14px/1 var(--font); background: #eef2f9; color: #8d9bb0;
+  }
+  .step.is-done .step__n { background: var(--success-soft); color: var(--success); }
+  .step.is-now .step__n { background: var(--accent); color: #3b2500; box-shadow: 0 0 0 4px var(--accent-soft); }
+  .step__b { flex: 1; min-width: 0; }
+  .step__t { font-size: 15.5px; font-weight: 600; letter-spacing: -.006em; }
+  .step__s { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; line-height: 1.55; }
+  .step__a { margin-top: 11px; }
+  .countbox { display: flex; align-items: center; gap: 14px; }
+  .countbox button {
+    width: 46px; height: 46px; border-radius: 14px; border: 1.5px solid var(--line); background: #fff;
+    display: grid; place-items: center; cursor: pointer; color: var(--ink);
+  }
+  .countbox button:active { background: #f2f5fa; }
+  .countbox b { flex: 1; text-align: center; font-size: 30px; font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .gpsbox {
+    display: flex; gap: 10px; align-items: flex-start; padding: 12px 13px; border-radius: 12px;
+    background: var(--info-soft); color: #075985; font-size: 13px; line-height: 1.55;
+  }
+  .gpsbox svg { width: 17px; height: 17px; flex: none; margin-top: 1px; }
+  .vcheck { display: flex; align-items: center; gap: 11px; padding: 12px 0; }
+  .vcheck + .vcheck { border-top: 1px solid var(--line-soft); }
+  .vcheck__box { width: 24px; height: 24px; border-radius: 8px; border: 1.6px solid #c3ccda; flex: none; display: grid; place-items: center; cursor: pointer; }
+  .vcheck[aria-checked="true"] .vcheck__box { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .vcheck[aria-checked="true"] .vcheck__box svg { width: 14px; height: 14px; stroke-width: 3; }
+  .vcheck[aria-checked="false"] .vcheck__box svg { display: none; }
+  .vcheck b { display: block; font-size: 14.8px; font-weight: 550; }
+  .vcheck span { display: block; font-size: 12px; color: var(--ink-3); margin-top: 2px; font-family: var(--mono); }
+</style>
 </head>
-<body data-app="driver">
-
-<header class="pt-head">
-  <div class="pt-head-inner">
-    <div class="pt-kicker"><i></i><b>驾驶员微信小程序</b><span>模块 05</span></div>
-    <div class="pt-title">
-      <h1>任务执行动作</h1>
-      <span class="badge p0">P0 已有能力</span>
-      <span class="badge p1">含定位打卡 P1</span>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Driver Mini Program · 05</p>
+    <h1 class="stage__title">任务执行动作</h1>
+    <p class="stage__desc">从接调令到签收，司机要按的五颗按钮。每一步只问必须问的：台数对不对、拍没拍照、人在不在现场。能自动填的绝不让他填。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>五步对应后端 <b>accept / confirm-load / depart / confirm-arrive / items sign</b>，一步一个接口，中途断网可重试，不会把状态跳过去。</li>
+        <li><b>台数用加减按钮，不用键盘</b>。手套、颠簸、强光下，数字键盘是灾难。默认值等于调令台数，改了才要写原因。</li>
+        <li>定位<b>自动抓取并显示地址</b>，只在偏离装卸点超过 2 公里时提示确认，避免误操作也避免烦人。</li>
+        <li>货损走<span class="new">独立分支</span>：签收时发现问题不能硬签，转「报货损」拍照留证，任务不卡在这台车上。</li>
+        <li>危险操作（撤销装车）不给司机直接权限，只能<b>发起申请</b>由调度确认。</li>
+      </ul>
     </div>
-    <p class="pt-intent">
-      这是整个产品<em>唯一不可绕过</em>的一段：司机不点，任务状态就不动，运单不能签收，财务不能结算。
-      所以每一个动作都必须做到三件事——<em>点之前说清后果</em>、<em>点之后有明确反馈</em>、<em>失败了不丢东西</em>。
-      本模块把 6 个动作的确认层、三态反馈、校验规则一次定完。
-    </p>
+  </section>
 
-    <dl class="pt-meta">
-      <div><dt>覆盖屏数</dt><dd>6 屏</dd></div>
-      <div><dt>使用角色</dt><dd>驾驶员</dd></div>
-      <div><dt>数据来源</dt><dd><code>POST /api/driver/task/*</code><span class="sep">·</span><code>POST /api/driver/file/upload</code></dd></div>
-      <div><dt>调用位置</dt><dd>任务详情底部动作条（模块 04）</dd></div>
-    </dl>
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
 
-    <nav class="pt-rail">
-      <a href="#s1"><span class="n">ACTION 1</span><span class="t">接收调令</span></a>
-      <a href="#s2"><span class="n">ACTION 2</span><span class="t">拒绝调令</span></a>
-      <a href="#s3"><span class="n">ACTION 3</span><span class="t">确认装车</span></a>
-      <a href="#s4"><span class="n">FEEDBACK</span><span class="t">提交三态</span></a>
-      <a href="#s5"><span class="n">ACTION 4</span><span class="t">逐单签收</span></a>
-      <a href="#s6"><span class="n">EDGE</span><span class="t">撤销签收</span></a>
-    </nav>
-  </div>
-</header>
+      <div class="mp__body">
 
-<main class="pt-body">
+        <!-- 执行流程 -->
+        <section class="screen" data-screen="flow" data-title="执行流程" data-nav="TK2608090037 执行" data-start>
+          <div class="scroll">
+            <div class="card mt-8">
+              <div class="hstack"><b style="font-size:15px">上汽仪征基地 → 杭州萧山中转库</b></div>
+              <div class="road mt-12">
+                <div class="road__track">
+                  <div class="road__fill" style="--p:62%"></div>
+                  <div class="road__truck" style="--p:62%"><span data-icon="truck"></span></div>
+                </div>
+                <div class="road__stops"><span class="is-done">装车</span><span class="is-done">出发</span><span class="is-now">到达</span><span>签收</span></div>
+              </div>
+            </div>
 
-  <div class="pt-group">
-    <div class="pt-group-head">
-      <h2>一、表态：接还是不接</h2>
-      <span class="sub">接单是承诺，拒单要留痕，两者都要能追溯到人和时间</span>
+            <div class="sec-title"><h2>执行步骤</h2><span>点任意一步查看交互</span></div>
+            <div class="card">
+              <div class="step is-done">
+                <div class="step__n"><span data-icon="check"></span></div>
+                <div class="step__b">
+                  <div class="step__t">接收调令</div>
+                  <div class="step__s">08-08 20:31 已接收 · 也可以在这一步拒绝并说明原因</div>
+                  <div class="step__a"><button class="btn btn--ghost btn--sm" data-dialog="accept">看这一步</button></div>
+                </div>
+              </div>
+
+              <div class="step is-done">
+                <div class="step__n"><span data-icon="check"></span></div>
+                <div class="step__b">
+                  <div class="step__t">确认装车</div>
+                  <div class="step__s">08-09 07:12 装 8 台 · 现场照片 4 张</div>
+                  <div class="step__a"><button class="btn btn--ghost btn--sm" data-push="load">看这一步</button></div>
+                </div>
+              </div>
+
+              <div class="step is-done">
+                <div class="step__n"><span data-icon="check"></span></div>
+                <div class="step__b">
+                  <div class="step__t">确认出发</div>
+                  <div class="step__s">08-09 09:52 从南京江宁库出发</div>
+                  <div class="step__a"><button class="btn btn--ghost btn--sm" data-sheet="depart">看这一步</button></div>
+                </div>
+              </div>
+
+              <div class="step is-now">
+                <div class="step__n">4</div>
+                <div class="step__b">
+                  <div class="step__t">确认到达</div>
+                  <div class="step__s">到卸货点后按这里，任务推进到「已到达」</div>
+                  <div class="step__a"><button class="btn btn--accent btn--sm" data-sheet="arrive">现在就做</button></div>
+                </div>
+              </div>
+
+              <div class="step">
+                <div class="step__n">5</div>
+                <div class="step__b">
+                  <div class="step__t">逐台签收</div>
+                  <div class="step__s">收货方确认哪台就签哪台，8 台可以分批签</div>
+                  <div class="step__a"><button class="btn btn--ghost btn--sm" data-push="sign">看这一步</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="notice notice--info mt-12">
+              <span data-icon="info"></span>
+              <div>每一步都会记到流转记录里，带上时间、定位和操作人。<b>做错了别慌</b>，撤回要调度同意，不会自己消失。</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 确认装车 -->
+        <section class="screen" data-screen="load" data-title="确认装车" data-nav="确认装车" data-parent="flow">
+          <div class="scroll">
+            <div class="gpsbox mt-8">
+              <span data-icon="pin"></span>
+              <div>当前定位：江苏省扬州市仪征市上汽大道 88 号<br><b>在装车点范围内</b>，可以直接确认。</div>
+            </div>
+
+            <div class="sec-title"><h2>实际装车台数</h2><span>调令 8 台</span></div>
+            <div class="card">
+              <div class="countbox">
+                <button aria-label="减少"><span data-icon="minus"></span></button>
+                <b>8</b>
+                <button aria-label="增加"><span data-icon="plus"></span></button>
+              </div>
+              <p class="t-cap center" style="margin:12px 0 0">和调令一致，不用填原因</p>
+            </div>
+
+            <div class="sec-title"><h2>装车现场照片</h2><span class="dim3">至少 1 张</span></div>
+            <div class="card">
+              <div class="photos">
+                <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+                <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+                <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+                <div class="photo photo--add"><span data-icon="camera"></span><span>拍照</span></div>
+              </div>
+              <p class="t-cap" style="margin:12px 0 0;line-height:1.65">建议拍：整车全景、车头车牌、绑扎固定处。这几张照片是后面出货损争议时的唯一凭据。</p>
+            </div>
+
+            <div class="sec-title"><h2>逐台核对</h2><span>已勾 8 / 8</span></div>
+            <div class="card">
+              <div class="vcheck" role="checkbox" aria-checked="true"><i class="vcheck__box"><span data-icon="check"></span></i><div class="grow"><b>别克昂科威 PLUS 2.0T</b><span>VIN 尾号 8823</span></div></div>
+              <div class="vcheck" role="checkbox" aria-checked="true"><i class="vcheck__box"><span data-icon="check"></span></i><div class="grow"><b>别克昂科威 S</b><span>VIN 尾号 4471</span></div></div>
+              <div class="vcheck" role="checkbox" aria-checked="true"><i class="vcheck__box"><span data-icon="check"></span></i><div class="grow"><b>别克昂科威 PLUS 2.0T</b><span>VIN 尾号 9106</span></div></div>
+              <div class="vcheck" role="checkbox" aria-checked="true"><i class="vcheck__box"><span data-icon="check"></span></i><div class="grow"><b>别克昂科威 S</b><span>VIN 尾号 2258</span></div></div>
+              <button class="btn btn--ghost btn--sm btn--block mt-12">展开其余 4 台</button>
+            </div>
+
+            <div class="field mt-12">
+              <div class="field__l">备注<span class="dim3">（选填）</span></div>
+              <textarea class="textarea" rows="2" placeholder="例如：3 号位车辆左前保险杠出厂即有轻微擦痕，已拍照"></textarea>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--primary btn--lg" data-toast="已确认装车 8 台，任务进入「已装车」" data-toast-icon="ok">确认装车 8 台</button>
+          </div>
+        </section>
+
+        <!-- 逐台签收 -->
+        <section class="screen" data-screen="sign" data-title="逐台签收" data-nav="逐台签收" data-parent="flow">
+          <div class="scroll">
+            <div class="notice notice--info mt-8">
+              <span data-icon="info"></span>
+              <div>勾选收货方已确认的车，一次提交。<b>有问题的车别勾</b>，走下面的「报货损」。</div>
+            </div>
+
+            <div class="sec-title"><h2>本车 8 台</h2><span>已勾 6 台</span></div>
+            <div class="card">
+              <div class="vcheck" role="checkbox" aria-checked="true"><i class="vcheck__box"><span data-icon="check"></span></i><div class="grow"><b>别克昂科威 PLUS 2.0T</b><span>VIN 8823 · 苏南汽贸</span></div></div>
+              <div class="vcheck" role="checkbox" aria-checked="true"><i class="vcheck__box"><span data-icon="check"></span></i><div class="grow"><b>别克昂科威 S</b><span>VIN 4471 · 苏南汽贸</span></div></div>
+              <div class="vcheck" role="checkbox" aria-checked="true"><i class="vcheck__box"><span data-icon="check"></span></i><div class="grow"><b>别克昂科威 PLUS 2.0T</b><span>VIN 9106 · 浙杭之星</span></div></div>
+              <div class="vcheck" role="checkbox" aria-checked="false">
+                <i class="vcheck__box"><span data-icon="check"></span></i>
+                <div class="grow"><b>别克昂科威 S</b><span>VIN 2258 · 浙杭之星</span></div>
+                <button class="btn btn--danger btn--sm" data-sheet="damage">报货损</button>
+              </div>
+              <div class="vcheck" role="checkbox" aria-checked="true"><i class="vcheck__box"><span data-icon="check"></span></i><div class="grow"><b>别克昂科威 PLUS 2.0T</b><span>VIN 6640 · 浙杭之星</span></div></div>
+              <div class="vcheck" role="checkbox" aria-checked="true"><i class="vcheck__box"><span data-icon="check"></span></i><div class="grow"><b>别克昂科威 S</b><span>VIN 3317 · 萧山恒信</span></div></div>
+              <div class="vcheck" role="checkbox" aria-checked="true"><i class="vcheck__box"><span data-icon="check"></span></i><div class="grow"><b>别克昂科威 PLUS 2.0T</b><span>VIN 7702 · 萧山恒信</span></div></div>
+              <div class="vcheck" role="checkbox" aria-checked="false"><i class="vcheck__box"><span data-icon="check"></span></i><div class="grow"><b>别克昂科威 S</b><span>VIN 5194 · 萧山恒信</span></div></div>
+            </div>
+
+            <div class="sec-title"><h2>收货方签字</h2></div>
+            <div class="card">
+              <div class="hstack" style="align-items:flex-start;gap:12px">
+                <div class="cell__ico"><span data-icon="sign"></span></div>
+                <div class="grow">
+                  <div class="cell__t">让收货人在屏幕上签名</div>
+                  <div class="cell__s" style="margin-top:4px">签名会和回单一起归档。收货方不方便签也可以只拍纸质回单。</div>
+                </div>
+              </div>
+              <button class="btn btn--ghost btn--block mt-12" data-toast="请把手机递给收货人签名">去签名</button>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost is-narrow" data-toast="正在呼叫收货方 张主管"><span data-icon="phone"></span></button>
+            <button class="btn btn--primary btn--lg" data-dialog="signok">签收 6 台</button>
+          </div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab" style="display:none"></nav>
+      <div class="mp__home"><i></i></div>
+
+      <!-- 接收调令 -->
+      <div class="dialog" data-dialog-id="accept">
+        <div class="dialog__body">
+          <h3>接收这张调令？</h3>
+          <p>TK2608090037<br>上汽仪征基地 → 杭州萧山中转库<br>计划 08-09 07:30 装车，8 台</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>再想想</button>
+          <button class="is-main" data-sheet-close data-toast="已接收，记得按时到装车点" data-toast-icon="ok">接收</button>
+        </div>
+      </div>
+
+      <!-- 确认出发 -->
+      <div class="sheet" data-sheet-id="depart">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>确认出发</h3><p>按下之后任务变成「在途」，调度和客户都能看到你在路上。</p></div>
+        <div class="sheet__body">
+          <div class="gpsbox"><span data-icon="pin"></span><div>出发地：江苏省南京市江宁区将军大道 · 已自动记录</div></div>
+          <div class="card card--flat mt-12">
+            <dl class="kvlist">
+              <div class="kv"><dt>下一站</dt><dd>杭州萧山中转库</dd></div>
+              <div class="kv"><dt>约定到货</dt><dd>08-09 18:00</dd></div>
+              <div class="kv"><dt>预计里程</dt><dd>约 286 公里</dd></div>
+            </dl>
+          </div>
+          <div class="hstack mt-12" style="justify-content:space-between">
+            <div><div class="cell__t">在途自动上报位置</div><div class="cell__s" style="margin-top:3px">每 10 分钟一次，到站自动停止</div></div>
+            <button class="switch" role="switch" aria-checked="true"></button>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已出发，一路平安" data-toast-icon="ok">确认出发</button>
+        </div>
+      </div>
+
+      <!-- 确认到达 -->
+      <div class="sheet" data-sheet-id="arrive">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>确认到达卸货点</h3><p>到达后就能逐台签收。没到就别点，位置对不上调度那边会看到提醒。</p></div>
+        <div class="sheet__body">
+          <div class="gpsbox"><span data-icon="pin"></span><div>当前定位：浙江省杭州市萧山区新街街道东复线<br><b>距卸货点 380 米</b>，判定为已到达。</div></div>
+          <div class="field">
+            <div class="field__l">现场照片<span class="dim3">（选填）</span></div>
+            <div class="photos">
+              <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+              <div class="photo photo--add"><span data-icon="camera"></span><span>拍照</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">备注<span class="dim3">（选填）</span></div>
+            <textarea class="textarea" rows="2" placeholder="例如：卸货区排队，预计 40 分钟后开始卸车"></textarea>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>再等等</button>
+          <button class="btn btn--accent" data-sheet-close data-then="sign" data-toast="已确认到达，可以逐台签收了" data-toast-icon="ok">确认到达</button>
+        </div>
+      </div>
+
+      <!-- 报货损 -->
+      <div class="sheet" data-sheet-id="damage">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>报货损 · 别克昂科威 S</h3><p>VIN 尾号 2258。这台车会单独挂起，不影响其余 7 台签收。</p></div>
+        <div class="sheet__body">
+          <div class="field">
+            <div class="field__l">损伤部位<span class="req">*</span></div>
+            <div class="chipbar" style="padding:0;flex-wrap:wrap">
+              <button class="chip" aria-selected="true">车门</button>
+              <button class="chip">保险杠</button>
+              <button class="chip">前后盖</button>
+              <button class="chip">轮毂</button>
+              <button class="chip">玻璃</button>
+              <button class="chip">内饰</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">损伤照片<span class="req">*</span><span class="dim3">近景 + 远景各一张</span></div>
+            <div class="photos">
+              <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+              <div class="photo photo--add"><span data-icon="camera"></span><span>拍照</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">情况说明<span class="req">*</span></div>
+            <textarea class="textarea" rows="3" placeholder="例如：左后门有一道 15 公分划痕，收货方拒收，已请其在纸质回单上备注"></textarea>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--danger" data-sheet-close data-toast="已上报货损，调度和安全员会马上联系你">提交货损</button>
+        </div>
+      </div>
+
+      <!-- 签收确认 -->
+      <div class="dialog" data-dialog-id="signok">
+        <div class="dialog__body">
+          <h3>签收 6 台？</h3>
+          <p>剩余 2 台：1 台已报货损，1 台未勾选。<br>它们会留在任务里，等下次一起签。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>再看看</button>
+          <button class="is-main" data-sheet-close data-toast="已签收 6 台，记得上传回单" data-toast-icon="ok">确认签收</button>
+        </div>
+      </div>
+
     </div>
   </div>
-
-  <div class="pt-gallery">
-
-    <!-- 1 -->
-    <section class="board" id="s1">
-      <div class="board-cap"><span class="n">01</span><h3>接收调令 · 二次确认</h3></div>
-
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
-        </div>
-
-        <div class="wx-body scroll">
-          <div class="banner" style="filter:blur(1px)">
-            <div class="top"><span class="stat warning">待接收</span><span class="no">TK202607290031</span></div>
-            <div class="nm">上海嘉定 → 合肥包河</div>
-            <div class="sub">上汽安吉物流<span class="mut">·</span>8 台 / 3 单</div>
-          </div>
-          <div class="card" style="filter:blur(1px)">
-            <div class="sk" style="width:120px;height:14px"></div>
-            <div class="sk mt10" style="width:100%;height:12px"></div>
-          </div>
-
-          <div class="mask">
-            <div class="dialog rel">
-              <div class="dh">接下这趟活儿？</div>
-              <div class="db left">
-                <div class="kv c1" style="gap:9px">
-                  <div><div class="k">线路</div><div class="v">上海嘉定 → 合肥包河<span class="t3"> · 468 km</span></div></div>
-                  <div><div class="k">装车时间</div><div class="v">今天 08:30<span class="red"> · 还有 15 分钟</span></div></div>
-                  <div><div class="k">车辆</div><div class="v">8 台 / 3 单<span class="t3"> · 上层 6 台，下层 2 台</span></div></div>
-                  <div><div class="k">运费</div><div class="v money blue"><span class="cur">¥</span>4,860.00</div></div>
-                </div>
-                <div class="notice blue mt12" style="margin:12px -20px -8px;border-radius:0">
-                  <svg class="ico"><use href="#i-info"></use></svg>
-                  <span>接单后这趟车就归你了，改派要联系调度</span>
-                </div>
-              </div>
-              <div class="df">
-                <a>再看看</a>
-                <a>确认接单</a>
-              </div>
-              <i class="pin in">1</i>
-            </div>
-          </div>
-        </div>
-
-        <div class="wx-foot">
-          <div class="action-bar">
-            <a class="btn line">拒绝</a>
-            <a class="btn grow">接收调令</a>
-          </div>
-        </div>
-      </div>
-
-      <ol class="notes">
-        <li>确认弹窗不是"你确定吗"，而是把<b>司机接单要看的四项关键信息复述一遍</b>：线路、时间、台数、运费。装车时间紧迫时标红提示剩余时间。</li>
-        <li>底部两个按钮的文案对应两种真实心理："再看看"（回详情继续读）而不是"取消"；"确认接单"与页面按钮"接收调令"保持同一个动词概念。</li>
-        <li>调 <code>POST /task/{id}/accept</code>，成功后当前页原地刷新为「待装车」形态（模块 04 第 2 屏），不跳转。</li>
-      </ol>
-    </section>
-
-    <!-- 2 -->
-    <section class="board" id="s2">
-      <div class="board-cap"><span class="n">02</span><h3>拒绝调令 · 原因必填与校验</h3></div>
-
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
-        </div>
-
-        <div class="wx-body scroll">
-          <div class="banner" style="filter:blur(1px)">
-            <div class="top"><span class="stat warning">待接收</span><span class="no">TK202607290031</span></div>
-            <div class="nm">上海嘉定 → 合肥包河</div>
-          </div>
-
-          <div class="mask bottom">
-            <div class="sheet">
-              <div class="sh">拒绝这个调令<span class="x"><svg class="ico"><use href="#i-close"></use></svg></span></div>
-              <div class="sb">
-                <div class="notice rel" style="margin:0">
-                  <svg class="ico"><use href="#i-warning"></use></svg>
-                  <span>拒单后这趟车会退回调度台重新派人，调度会看到你写的原因</span>
-                  <i class="pin in">1</i>
-                </div>
-
-                <div class="card">
-                  <div class="sec-t bare t3" style="font-size:12px">选一个原因<span class="red">*</span></div>
-                  <div class="fx wrap g8 rel">
-                    <span class="chip">车在修</span>
-                    <span class="chip on">时间来不及</span>
-                    <span class="chip">路线不熟</span>
-                    <span class="chip">身体不舒服</span>
-                    <span class="chip">已有其他任务</span>
-                    <span class="chip">其他</span>
-                    <i class="pin">2</i>
-                  </div>
-                </div>
-
-                <div class="card rel">
-                  <div class="sec-t bare t3" style="font-size:12px">补充说明<span class="red">*</span></div>
-                  <div class="ta">说清楚一点，调度能更快给你换合适的活儿</div>
-                  <div class="counter">0 / 255</div>
-                  <div class="t3 mt6" style="font-size:11.5px;color:var(--danger)">请写一句具体原因，比如「上一趟 10 点才能卸完」</div>
-                  <i class="pin">3</i>
-                </div>
-              </div>
-              <div class="sf">
-                <a class="btn line" style="flex:0 0 88px">取消</a>
-                <a class="btn danger grow dis">确认拒单</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ol class="notes">
-        <li>拒单会打断调度计划，所以要把后果写在最上面，而且明确告知<b>调度能看到原因</b>——这一句能显著减少敷衍的理由。</li>
-        <li>预设原因用 chip 而不是下拉，一次点中。选项来自真实拒单场景，不是"其他原因"一个兜底。</li>
-        <li><code>DriverRejectTaskRequest.reason</code> 是必填且限 255 字。前端在<b>补充说明写满一句之前禁用提交按钮</b>，并把校验提示写成示范句式，而不是「原因不能为空」。</li>
-      </ol>
-    </section>
-
-  </div>
-
-  <div class="pt-group">
-    <div class="pt-group-head">
-      <h2>二、现场动作：装车、出发、到达</h2>
-      <span class="sub">这三步都在车库或站台完成，戴手套、逆光、单手操作，交互必须极简</span>
-    </div>
-  </div>
-
-  <div class="pt-gallery">
-
-    <!-- 3 -->
-    <section class="board" id="s3">
-      <div class="board-cap"><span class="n">03</span><h3>确认装车 · 定位 + 拍照 + 备注</h3></div>
-
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
-        </div>
-
-        <div class="wx-body scroll">
-          <div class="banner" style="filter:blur(1px)">
-            <div class="top"><span class="stat primary">待装车</span><span class="no">TK202607290031</span></div>
-            <div class="nm">上海嘉定 → 合肥包河</div>
-          </div>
-
-          <div class="mask bottom">
-            <div class="sheet">
-              <div class="sh">确认装车<span class="x"><svg class="ico"><use href="#i-close"></use></svg></span></div>
-              <div class="sb">
-                <div class="cells flush rel">
-                  <div class="cell">
-                    <span class="lead g"><svg class="ico"><use href="#i-location"></use></svg></span>
-                    <span class="k">安亭商品车库<span class="sub">定位已核对 · 距装车点 60 m 内</span></span>
-                    <span class="v"><span class="tag success sm">已打卡</span></span>
-                  </div>
-                  <div class="cell">
-                    <span class="lead n"><svg class="ico"><use href="#i-clock"></use></svg></span>
-                    <span class="k">装车时间</span>
-                    <span class="v">今天 08:46</span>
-                    <svg class="ico arrow"><use href="#i-right"></use></svg>
-                  </div>
-                  <i class="pin in">1</i>
-                </div>
-
-                <div class="card rel">
-                  <div class="fx between mb12">
-                    <span class="sec-t bare mb0" style="font-size:13.5px">装车照片</span>
-                    <span class="t3" style="font-size:11.5px">建议每层一张全景 + 车架号特写</span>
-                  </div>
-                  <div class="ups">
-                    <div class="ph"><span class="mk">上层全景</span><span class="del"><svg class="ico"><use href="#i-close"></use></svg></span></div>
-                    <div class="ph b"><span class="mk">下层全景</span><span class="del"><svg class="ico"><use href="#i-close"></use></svg></span></div>
-                    <div class="ph c"><span class="bar">62%</span></div>
-                    <div class="add"><svg class="ico"><use href="#i-camera"></use></svg><span class="n">3/9</span></div>
-                  </div>
-                  <i class="pin">2</i>
-                </div>
-
-                <div class="card rel">
-                  <div class="sec-t bare t3" style="font-size:12px">备注（选填）</div>
-                  <div class="ta filled">下层左侧一台 MG7 前保险杠有一道旧划痕，已拍照</div>
-                  <div class="counter">28 / 255</div>
-                  <i class="pin">3</i>
-                </div>
-
-                <div class="notice rel" style="margin:0 12px 10px;border-radius:10px">
-                  <svg class="ico"><use href="#i-info"></use></svg>
-                  <span>确认后 8 台车全部变成「已装车」，改不了了</span>
-                  <i class="pin in">4</i>
-                </div>
-              </div>
-              <div class="sf">
-                <a class="btn line" style="flex:0 0 88px">取消</a>
-                <a class="btn grow">确认装车（8 台）</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ol class="notes">
-        <li><span class="flag">P1</span>定位打卡：进面板时自动取 <code>wx.getLocation</code> 与装车点比对，命中围栏显示「已打卡」。<b>不在围栏内不拦截</b>，改为标黄「定位离装车点 3.2 km，确认后会记录这个位置」——真实车库常有信号盲区，硬拦会把司机堵死。定位文本回填 <code>confirm-load</code> 的 <code>location</code> 字段。</li>
-        <li>照片一次最多 9 张（后端 <code>photoUrls</code> 上限），走 <code>wx.chooseMedia</code>，压缩后传 <code>/file/upload?scene=task_loading</code>。<b>拍照引导写在标题右侧</b>而不是弹提示，避免多一次点击。上传中显示百分比，失败的那张单独重传，不影响其他。</li>
-        <li>备注是车损免责的第一道保险，给出示例场景引导司机写有用的内容。</li>
-        <li>提交前明确说清不可逆后果，并把台数写进按钮里，避免司机以为只装了部分。</li>
-      </ol>
-    </section>
-
-    <!-- 4 -->
-    <section class="board" id="s4">
-      <div class="board-cap"><span class="n">04</span><h3>提交三态 · 进行中 / 成功 / 失败</h3></div>
-
-      <div class="dev auto">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
-        </div>
-
-        <div class="wx-body scroll" style="min-height:0">
-          <div class="pad" style="padding-bottom:0">
-            <div class="t3 mb8" style="font-size:11.5px">① 提交中：按钮禁用 + 遮罩，防止重复提交</div>
-            <div style="position:relative;height:190px;overflow:hidden;border-radius:10px;background:var(--page);box-shadow:inset 0 0 0 1px var(--line)">
-              <div class="card" style="margin:10px">
-                <div class="sk" style="width:110px;height:13px"></div>
-                <div class="sk mt10" style="width:100%;height:11px"></div>
-              </div>
-              <div class="mask">
-                <div class="toast rel">
-                  <span class="spin"></span>
-                  正在确认装车，请稍候…
-                  <i class="pin in">1</i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="pad" style="padding-bottom:0">
-            <div class="t3 mb8" style="font-size:11.5px">② 成功：轻提示 + 页面原地切换到下一状态</div>
-            <div style="position:relative;height:190px;overflow:hidden;border-radius:10px;background:var(--page);box-shadow:inset 0 0 0 1px var(--line)">
-              <div class="banner" style="padding:10px 14px 16px">
-                <div class="top"><span class="stat primary">已装车</span><span class="no">TK202607290031</span></div>
-                <div class="nm" style="font-size:16px;margin-top:8px">上海嘉定 → 合肥包河</div>
-              </div>
-              <div class="card">
-                <div class="fx between">
-                  <span class="t2" style="font-size:13px">下一步：确认出发</span>
-                  <a class="btn xs">确认出发</a>
-                </div>
-              </div>
-              <div class="toast rel" style="top:40%">
-                <svg class="ico"><use href="#i-approve"></use></svg>
-                8 台车已装车<br />出发前记得确认出发
-                <i class="pin in">2</i>
-              </div>
-            </div>
-          </div>
-
-          <div class="pad">
-            <div class="t3 mb8" style="font-size:11.5px">③ 失败：说清怎么办，且不丢已填内容</div>
-            <div style="position:relative;height:230px;overflow:hidden;border-radius:10px;background:var(--page);box-shadow:inset 0 0 0 1px var(--line)">
-              <div class="mask">
-                <div class="dialog rel">
-                  <div class="dh">装车没提交成功</div>
-                  <div class="db">
-                    刚才网络断了一下。你填的照片和备注都<b>还在手机里</b>，没有丢。<br />
-                    等信号恢复后点重试，或者先出车，路上再补提交。
-                  </div>
-                  <div class="df">
-                    <a>稍后再说</a>
-                    <a>重试提交</a>
-                  </div>
-                  <i class="pin in">3</i>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ol class="notes">
-        <li>进行中必须<b>锁住整屏</b>（遮罩 + 按钮禁用）。装车、签收这类状态推进接口重复提交会产生重复装卸记录，前端防抖是第一道闸。文案带业务动作而不是「提交中」。</li>
-        <li>成功后<b>页面原地变形</b>成下一个状态，并在轻提示里点出下一步动作。司机不需要理解"状态机"，只需要知道"接下来点哪儿"。</li>
-        <li>失败弹窗回答三个问题：发生了什么（网络断了）、我的东西还在不在（照片和备注都还在）、现在怎么办（重试 / 先出车路上补）。<b>不出现状态码、接口名、异常类名</b>。未提交内容进本地暂存队列，见模块 06 与 07。</li>
-      </ol>
-    </section>
-
-  </div>
-
-  <div class="pt-gallery">
-
-    <!-- 5 -->
-    <section class="board" id="s5">
-      <div class="board-cap"><span class="n">05</span><h3>逐单签收 · 单签与批量</h3></div>
-
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
-        </div>
-
-        <div class="wx-body scroll">
-          <div class="banner" style="filter:blur(1px)">
-            <div class="top"><span class="stat info">已到达</span><span class="no">TK202607290031</span></div>
-            <div class="nm">合肥包河 · 徽通汽车城</div>
-          </div>
-
-          <div class="mask bottom">
-            <div class="sheet">
-              <div class="sh">签收<span class="act">全选</span></div>
-              <div class="sb">
-                <div class="notice blue rel" style="margin:0">
-                  <svg class="ico"><use href="#i-info"></use></svg>
-                  <span>签收表示车已交给收货人，签完这单运单就进结算</span>
-                  <i class="pin in">1</i>
-                </div>
-
-                <div class="cells flush rel">
-                  <div class="cell">
-                    <span class="ck sq on"><svg class="ico"><use href="#i-check"></use></svg></span>
-                    <span class="k">MG7 1.5T · 3 台<span class="sub">合肥包河旗舰店 · WB202607280119</span></span>
-                  </div>
-                  <div class="cell">
-                    <span class="ck sq on"><svg class="ico"><use href="#i-check"></use></svg></span>
-                    <span class="k">智己 LS6 · 2 台<span class="sub">合肥政务区店 · WB202607280124</span></span>
-                  </div>
-                  <div class="cell">
-                    <span class="ck sq"></span>
-                    <span class="k mut">荣威 D5X DMH · 3 台<span class="sub">合肥庐阳店 · 13:31 已签收</span></span>
-                  </div>
-                  <i class="pin tl">2</i>
-                </div>
-
-                <div class="card rel">
-                  <div class="sec-t bare t3" style="font-size:12px">收货人签字（选填）</div>
-                  <div style="height:96px;border-radius:10px;background:#f6f7f9;position:relative;overflow:hidden">
-                    <svg viewBox="0 0 300 96" style="width:100%;height:100%">
-                      <path d="M40 62 C 58 30, 70 74, 88 48 S 112 22, 128 58 128 66 146 40 168 70 190 44" fill="none" stroke="#1d4ed8" stroke-width="2.4" stroke-linecap="round" />
-                    </svg>
-                    <span class="t3" style="position:absolute;right:10px;bottom:6px;font-size:11px">周经理 · 13:52</span>
-                  </div>
-                  <div class="fx g8 mt10">
-                    <a class="btn line wide sm">重签</a>
-                    <a class="btn line wide sm"><svg class="ico"><use href="#i-camera"></use></svg>拍纸质回单</a>
-                  </div>
-                  <i class="pin">3</i>
-                </div>
-
-                <div class="card rel">
-                  <div class="sec-t bare t3" style="font-size:12px">签收备注（选填）</div>
-                  <div class="ta">车况有问题、少交了台数，都写在这里</div>
-                  <i class="pin">4</i>
-                </div>
-              </div>
-              <div class="sf">
-                <div class="sum" style="flex:none;padding-right:4px">
-                  <div class="k">本次签收</div>
-                  <div class="v" style="color:var(--success)">5 台</div>
-                </div>
-                <a class="btn success grow">确认签收 2 单</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ol class="notes">
-        <li>签收的后果是"车交出去了、运单进结算"，必须在面板顶部说清。这是司机端后果最重的一个动作。</li>
-        <li>面板里同时支持勾选多单和单击一单。已签收的行<b>保留在列表里但置灰不可勾</b>，让司机确认自己没漏，而不是把它藏起来。每单单独调 <code>POST /task/items/{item_id}/sign</code>，一单失败不影响其他，失败的那单回到未勾选状态并标红。</li>
-        <li><span class="flag">P1</span>电子签字与纸质回单二选一皆可。电子签字需新增签名图上传（<code>scene=task_sign</code>）；纸质回单走模块 06 的现有 <code>/task-receipt/upload</code>。</li>
-        <li>签收备注是少交台数、车损争议的关键留痕，提示语直接告诉司机什么情况该写。</li>
-      </ol>
-    </section>
-
-    <!-- 6 -->
-    <section class="board" id="s6">
-      <div class="board-cap"><span class="n">06</span><h3>撤销签收 · 无权限时的处理</h3></div>
-
-      <div class="dev auto">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">任务详情</span></div>
-        </div>
-
-        <div class="wx-body scroll">
-          <div class="pad">
-            <div class="t3 mb8" style="font-size:11.5px">① 司机无撤销权限（默认）</div>
-            <div style="position:relative;height:250px;overflow:hidden;border-radius:10px;background:var(--page);box-shadow:inset 0 0 0 1px var(--line)">
-              <div class="mask">
-                <div class="dialog rel">
-                  <div class="dh">签错了要改，得让调度来</div>
-                  <div class="db left">
-                    签收会带动运单进入结算，所以撤销要调度确认。<br /><br />
-                    点下面的按钮会把这条消息发给调度 <b>张敏</b>，她处理完你会收到微信通知。
-                  </div>
-                  <div class="df">
-                    <a>先不用</a>
-                    <a>通知张敏来撤销</a>
-                  </div>
-                  <i class="pin in">1</i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="pad" style="padding-top:0">
-            <div class="t3 mb8" style="font-size:11.5px">② 司机有 <code>operation:task:revert-sign</code> 权限（少数车队长兼司机）</div>
-            <div style="position:relative;height:290px;overflow:hidden;border-radius:10px;background:var(--page);box-shadow:inset 0 0 0 1px var(--line)">
-              <div class="mask bottom">
-                <div class="sheet">
-                  <div class="sh">撤销签收<span class="x"><svg class="ico"><use href="#i-close"></use></svg></span></div>
-                  <div class="sb">
-                    <div class="notice red rel" style="margin:0">
-                      <svg class="ico"><use href="#i-warning"></use></svg>
-                      <span>撤销后这单退回「已卸车」，任务从「已签收」回到「已到达」</span>
-                      <i class="pin in">2</i>
-                    </div>
-                    <div class="cells flush">
-                      <div class="cell">
-                        <span class="k">荣威 D5X DMH · 3 台<span class="sub">合肥庐阳店 · 13:31 由我签收</span></span>
-                      </div>
-                    </div>
-                    <div class="card rel">
-                      <div class="sec-t bare t3" style="font-size:12px">撤销原因<span class="red">*</span></div>
-                      <div class="ta filled">庐阳店只收了 2 台，第 3 台漆面破损当场退回</div>
-                      <div class="counter">24 / 255</div>
-                      <i class="pin">3</i>
-                    </div>
-                  </div>
-                  <div class="sf">
-                    <a class="btn line" style="flex:0 0 88px">取消</a>
-                    <a class="btn danger grow">确认撤销</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ol class="notes">
-        <li><b>默认司机看不到撤销入口。</b> 后端 <code>/task/items/{id}/revert-sign</code> 需要 PC 权限码 <code>operation:task:revert-sign</code>，绝大多数司机没有。与其让他点了报「无权限」，不如把入口做成「通知调度来撤销」，把求助路径产品化（<span class="flag">P1</span>需新增司机求助消息）。</li>
-        <li>有权限时必须写清状态回退链条：单据回「已卸车」、任务回「已到达」。这是产品里唯一的状态回退动作，风险最高。</li>
-        <li>撤销原因必填，会写进操作日志供事后追责。</li>
-      </ol>
-    </section>
-
-  </div>
-
-  <div class="pt-rules">
-    <h4>六个动作的确认层规格</h4>
-    <table>
-      <thead><tr><th>动作</th><th>确认形态</th><th>必填项</th><th>提交接口</th></tr></thead>
-      <tbody>
-        <tr><td>接收调令</td><td>居中弹窗（复述关键信息）</td><td>无</td><td><code>/task/{id}/accept</code></td></tr>
-        <tr><td>拒绝调令</td><td>底部面板</td><td>原因 chip + 补充说明</td><td><code>/task/{id}/reject</code></td></tr>
-        <tr><td>确认装车</td><td>底部面板（定位 + 照片 + 备注）</td><td>无，照片强建议</td><td><code>/task/{id}/confirm-load</code></td></tr>
-        <tr><td>确认出发</td><td>居中弹窗（一句确认）</td><td>无</td><td><code>/task/{id}/depart</code></td></tr>
-        <tr><td>确认到达</td><td>底部面板（定位 + 卸车照片）</td><td>无，围栏外需二次确认</td><td><code>/task/{id}/confirm-arrive</code></td></tr>
-        <tr><td>逐单签收</td><td>底部面板（多选 + 签字）</td><td>至少勾一单</td><td><code>/task/items/{id}/sign</code></td></tr>
-        <tr><td>撤销签收</td><td>底部面板（受权限）</td><td>撤销原因</td><td><code>/task/items/{id}/revert-sign</code></td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="pt-rules">
-    <h4>三态与容错约定</h4>
-    <ul>
-      <li><b>进行中</b>：整屏遮罩 + 按钮禁用 + 业务化 loading 文案（正在确认装车 / 正在签收）。禁止裸「提交中」。</li>
-      <li><b>成功</b>：轻提示 1.5 秒自动消失，页面原地刷新到下一状态，并提示下一步动作。不弹「操作成功」。</li>
-      <li><b>失败</b>：弹窗说明原因 + 已填内容是否保留 + 明确的下一步。<b>照片与表单进本地暂存</b>，重试时不用重拍。</li>
-      <li><b>幂等</b>：状态推进接口按当前 <code>status</code> 前置校验；若后端返回状态已变（例如调度已代操作），提示「这一步调度已经帮你做了」并刷新页面，而不是报错。</li>
-      <li><b>离线</b>：无网络时不禁用按钮，允许填完入队，恢复网络后自动提交并推送结果。</li>
-    </ul>
-  </div>
-
 </main>
-
-<footer class="pt-foot">
-  智途 · 驾驶员微信小程序原型 · 模块 05 任务执行动作
-</footer>
-
 <script src="assets/mp.js"></script>
 </body>
 </html>

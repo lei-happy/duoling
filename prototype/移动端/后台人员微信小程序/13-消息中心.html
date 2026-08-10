@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 消息中心</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .mgrp { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+  .mgrp button { border: 0; cursor: pointer; background: #fff; box-shadow: var(--sh-card); border-radius: 13px;
+    padding: 12px 6px; display: flex; flex-direction: column; align-items: center; gap: 7px; position: relative;
+    transition: transform .12s ease-out; }
+  .mgrp button:active { transform: scale(.95); }
+  .mgrp i { width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); }
+  .mgrp svg { width: 17px; height: 17px; }
+  .mgrp span { font-size: 11.5px; color: var(--ink-2); }
+  .mgrp b { position: absolute; top: 7px; right: 12px; min-width: 17px; height: 17px; border-radius: 999px;
+    background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; padding: 0 4px; }
+  .msg { position: relative; width: 100%; text-align: left; border: 0; background: var(--card); cursor: pointer;
+    padding: 13px 15px; display: flex; gap: 11px; }
+  .msg + .msg::before { content: ""; position: absolute; left: 15px; right: 0; top: 0; height: 1px; background: var(--line-soft); }
+  .msg:active { background: #f6f8fc; }
+  .msg__i { width: 36px; height: 36px; border-radius: 12px; flex: none; display: grid; place-items: center;
+    background: var(--primary-soft); color: var(--primary); }
+  .msg__i svg { width: 17px; height: 17px; }
+  .msg__b { flex: 1; min-width: 0; }
+  .msg__t { display: flex; align-items: baseline; gap: 8px; }
+  .msg__t b { font-size: 14.5px; font-weight: 600; letter-spacing: -.006em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .msg__t span { margin-left: auto; font-size: 11px; color: var(--ink-3); flex: none; }
+  .msg__s { font-size: 12.8px; color: var(--ink-2); margin-top: 6px; line-height: 1.55; }
+  .msg__a { display: flex; gap: 8px; margin-top: 10px; }
+  .msg__a button { border: 0; cursor: pointer; height: 30px; padding: 0 12px; border-radius: 9px;
+    font: 500 12.5px/1 var(--font); background: var(--primary-soft); color: var(--primary); }
+  .msg__a .g { background: #f2f5fa; color: var(--ink-2); }
+  .msg.unread .msg__t b::after { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--danger); margin-left: 6px; vertical-align: 2px; }
+  /* 微信服务通知还原 */
+  .wxn { background: #ededed; border-radius: 14px; padding: 14px; }
+  .wxn__c { background: #fff; border-radius: 8px; overflow: hidden; }
+  .wxn__h { padding: 13px 14px 10px; border-bottom: .5px solid #ececec; }
+  .wxn__h b { display: block; font-size: 15px; font-weight: 500; color: #111; }
+  .wxn__l { padding: 11px 14px; display: grid; gap: 9px; }
+  .wxn__l div { display: flex; gap: 12px; font-size: 13px; line-height: 1.5; }
+  .wxn__l dt { color: #999; flex: none; width: 60px; margin: 0; }
+  .wxn__l dd { margin: 0; color: #333; flex: 1; }
+  .wxn__f { padding: 10px 14px 12px; border-top: .5px solid #ececec; display: flex; align-items: center;
+    font-size: 12.5px; color: #7d8590; }
+  .wxn__f svg { width: 13px; height: 13px; margin-left: auto; }
+  .wxn__time { text-align: center; font-size: 11.5px; color: #9a9a9a; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 13</p>
+    <h1 class="stage__title">消息中心</h1>
+    <p class="stage__desc">后台人员一天能收几十条通知。这一屏的重点不是"都推给你"，而是<b style="color:#e2e8f0">分清哪些必须现在处理，哪些看一眼就行</b>。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>消息分四类：<b>要我处理 / 异常预警 / 状态变更 / 系统公告</b>。「要我处理」永远排最前，其余可以折叠。</li>
+        <li>可以直接处理的消息<b>带行动按钮</b>（去派车、批一下、看回单）。看完还要自己找入口，等于没提醒。</li>
+        <li><b>微信服务通知</b>按真实样式还原。老板不会常开小程序，真正到达他的是微信里那条卡片，所以这条卡片的文案比小程序内的更重要。</li>
+        <li>免打扰按角色设默认值：老板只收超额审批和重大异常，调度收全部在途预警，财务收逾期与审批。<b>不让人自己从 20 个开关里配。</b></li>
+        <li>已读未读用<b>标题后小红点</b>而不是整行变色，避免列表看起来花。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <section class="screen" data-screen="msg" data-title="消息中心" data-nav="消息" data-tabroot data-start>
+          <div class="scroll" data-refresh>
+            <div class="pad mt-16">
+              <div class="mgrp">
+                <button data-toast="已筛出 4 条要你处理的"><i><span data-icon="checkc"></span></i><span>要我处理</span><b>4</b></button>
+                <button data-toast="已筛出 3 条异常预警"><i style="background:var(--danger-soft);color:var(--danger)"><span data-icon="warn"></span></i><span>异常预警</span><b>3</b></button>
+                <button data-toast="状态变更共 18 条"><i style="background:var(--info-soft);color:#0369a1"><span data-icon="route"></span></i><span>状态变更</span></button>
+                <button data-toast="系统公告共 2 条"><i style="background:var(--success-soft);color:var(--success)"><span data-icon="bell"></span></i><span>公告</span></button>
+              </div>
+
+              <div class="sec-title"><h2>要我处理</h2><span class="more" data-toast="已全部标为已读">全部已读</span></div>
+              <div class="card card--plain">
+                <div class="swipe" data-swipe>
+                  <div class="swipe__acts">
+                    <button class="a-grey" data-toast="已标为已读"><span data-icon="check"></span>已读</button>
+                    <button class="a-danger" data-toast="已删除这条消息"><span data-icon="trash"></span>删除</button>
+                  </div>
+                  <div class="swipe__body">
+                    <div class="msg unread">
+                      <span class="msg__i" style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="wallet"></span></span>
+                      <div class="msg__b">
+                        <div class="msg__t"><b>一张超额度的结算单等你批</b><span>6 小时前</span></div>
+                        <div class="msg__s">FD26080900341 · 鑫达商品车运输 ¥42,600，超过赵倩的审批额度。</div>
+                        <div class="msg__a">
+                          <button data-toast="审批中心的完整设计见 10">去批一下</button>
+                          <button class="g" data-toast="已延后 1 小时再提醒">晚点再说</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="msg unread">
+                  <span class="msg__i" style="background:var(--danger-soft);color:var(--danger)"><span data-icon="truck"></span></span>
+                  <div class="msg__b">
+                    <div class="msg__t"><b>2 单还有 2 小时就要装车，还没派车</b><span>25 分钟前</span></div>
+                    <div class="msg__s">TK2608090061、TK2608090062 都是苏南汽贸的，装车时间今日 16:00。</div>
+                    <div class="msg__a"><button data-toast="调度台的完整设计见 05">去派车</button></div>
+                  </div>
+                </div>
+
+                <div class="msg unread">
+                  <span class="msg__i"><span data-icon="camera"></span></span>
+                  <div class="msg__b">
+                    <div class="msg__t"><b>5 张回单等你审</b><span>1 小时前</span></div>
+                    <div class="msg__s">最久的一张等了 6 小时。审完司机的结算才能生成。</div>
+                    <div class="msg__a"><button data-toast="回单签收的完整设计见 08">去审回单</button></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>异常预警</h2></div>
+              <div class="card card--plain">
+                <div class="msg unread">
+                  <span class="msg__i" style="background:var(--danger-soft);color:var(--danger)"><span data-icon="warn"></span></span>
+                  <div class="msg__b">
+                    <div class="msg__t"><b>TK2608080077 超时 4 小时 20 分</b><span>10 分钟前</span></div>
+                    <div class="msg__s">刘强 苏B·2K901，已经 4 小时没更新位置，电话也没接通。</div>
+                    <div class="msg__a">
+                      <button data-toast="在途监控的完整设计见 07">看位置</button>
+                      <button class="g" data-toast="已拨号给 刘强 138****6621">打电话</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="msg">
+                  <span class="msg__i" style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="fuel"></span></span>
+                  <div class="msg__b">
+                    <div class="msg__t"><b>苏B·2K901 油卡只剩 620 元</b><span>2 小时前</span></div>
+                    <div class="msg__s">车还在途中，可能不够加一次油。</div>
+                    <div class="msg__a"><button data-toast="费用工作台的完整设计见 09">去充值</button></div>
+                  </div>
+                </div>
+                <div class="msg">
+                  <span class="msg__i" style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="shield"></span></span>
+                  <div class="msg__b">
+                    <div class="msg__t"><b>苏C·9J065 年检还有 7 天到期</b><span>今日 08:00</span></div>
+                    <div class="msg__s">8 月 16 日到期，到期后不能安排出车。</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>状态变更</h2><span>只保留 7 天</span></div>
+              <div class="card card--plain">
+                <div class="msg">
+                  <span class="msg__i" style="background:var(--success-soft);color:var(--success)"><span data-icon="check"></span></span>
+                  <div class="msg__b">
+                    <div class="msg__t"><b>张伟已接单</b><span>14:22</span></div>
+                    <div class="msg__s">TK2608090061 · 苏A·6H128，预计 15:20 到仪征装车。</div>
+                  </div>
+                </div>
+                <div class="msg">
+                  <span class="msg__i" style="background:var(--info-soft);color:#0369a1"><span data-icon="box"></span></span>
+                  <div class="msg__b">
+                    <div class="msg__t"><b>TK2608090044 已到达</b><span>13:20</span></div>
+                    <div class="msg__s">南京江宁库 → 苏州吴中 4S 店，3 台待签收。</div>
+                  </div>
+                </div>
+                <div class="msg">
+                  <span class="msg__i" style="background:var(--info-soft);color:#0369a1"><span data-icon="file"></span></span>
+                  <div class="msg__b">
+                    <div class="msg__t"><b>苏南汽贸推送了 4 个新计划</b><span>08:40</span></div>
+                    <div class="msg__s">共 21 台，其中 1 个要求明天到货。</div>
+                    <div class="msg__a"><button data-toast="计划中心的完整设计见 04">去确认</button></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="btnrow mt-16">
+                <button class="btn btn--ghost btn--block" data-push="wx"><span data-icon="msg"></span>看微信里长什么样</button>
+                <button class="btn btn--ghost btn--block" data-push="set"><span data-icon="settings"></span>通知设置</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 微信服务通知还原 -->
+        <section class="screen" data-screen="wx" data-title="微信服务通知" data-nav="服务通知" data-parent="msg">
+          <div class="scroll">
+            <div class="pad">
+              <p class="t-cap" style="padding:0 2px 12px;line-height:1.6">这是消息在微信「服务通知」里的真实样子。老板一天可能不打开小程序，但一定会看这条卡片，所以文案要能独立成立。</p>
+
+              <div class="wxn">
+                <div class="wxn__time">今天 09:12</div>
+                <div class="wxn__c">
+                  <div class="wxn__h"><b>有一笔付款需要你审批</b></div>
+                  <div class="wxn__l">
+                    <div><dt>单据</dt><dd>承运商结算单 FD26080900341</dd></div>
+                    <div><dt>收款方</dt><dd>鑫达商品车运输有限公司</dd></div>
+                    <div><dt>金额</dt><dd>¥42,600.00</dd></div>
+                    <div><dt>提交人</dt><dd>赵倩（财务）</dd></div>
+                    <div><dt>说明</dt><dd>超过提交人审批额度，等你放行</dd></div>
+                  </div>
+                  <div class="wxn__f">点击查看详情<span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="wxn mt-16">
+                <div class="wxn__time">今天 16:35</div>
+                <div class="wxn__c">
+                  <div class="wxn__h"><b>有一单已经超过约定到货时间</b></div>
+                  <div class="wxn__l">
+                    <div><dt>任务</dt><dd>TK2608080077</dd></div>
+                    <div><dt>线路</dt><dd>南京江宁库 → 苏州吴中 4S 店</dd></div>
+                    <div><dt>司机</dt><dd>刘强 苏B·2K901</dd></div>
+                    <div><dt>情况</dt><dd>已超时 4 小时 20 分，4 小时没更新位置</dd></div>
+                  </div>
+                  <div class="wxn__f">点击查看详情<span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="notice notice--info mt-16">
+                <span data-icon="info"></span>
+                <div>微信一次订阅消息每授权一次只能发一条。所以只有<b>要人处理</b>和<b>重大异常</b>两类走服务通知，状态变更只在小程序内提示。</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 通知设置 -->
+        <section class="screen" data-screen="set" data-title="通知设置" data-nav="通知设置" data-parent="msg">
+          <div class="scroll">
+            <div class="pad">
+              <div class="notice notice--info">
+                <span data-icon="info"></span>
+                <div>你现在的角色是<b>调度</b>，下面这套是按调度默认配好的。不习惯可以改。</div>
+              </div>
+
+              <div class="sec-title"><h2>微信服务通知</h2><span>会推到微信里</span></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">要我处理的</div><div class="cell__s">审批、派车、审回单</div></div><button class="switch" role="switch" aria-checked="true"></button></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">在途超时与失联</div><div class="cell__s">超过约定时间或 3 小时没位置</div></div><button class="switch" role="switch" aria-checked="true"></button></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">司机上报异常</div><div class="cell__s">故障、事故、货损</div></div><button class="switch" role="switch" aria-checked="true"></button></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">状态变更</div><div class="cell__s">接单、装车、到达、签收</div></div><button class="switch" role="switch" aria-checked="false"></button></div>
+              </div>
+              <p class="t-cap" style="margin:10px 2px 0">状态变更关掉了也不会漏——小程序里还是会显示，只是不打扰你。</p>
+
+              <div class="sec-title"><h2>免打扰</h2></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">夜间免打扰</div><div class="cell__s">22:00 – 07:00 只推重大异常</div></div><button class="switch" role="switch" aria-checked="true"></button></div>
+                <div class="cell" data-sheet="quiet"><div class="cell__main"><div class="cell__t">时间段</div></div><div class="cell__x">22:00 – 07:00<span data-icon="right"></span></div></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">周末只推异常</div><div class="cell__s">常规待办周一早上一起给你</div></div><button class="switch" role="switch" aria-checked="false"></button></div>
+              </div>
+
+              <div class="sec-title"><h2>其他角色的默认配置</h2><span>切角色时自动套用</span></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__ico"><span data-icon="user"></span></div><div class="cell__main"><div class="cell__t">老板</div><div class="cell__s">只推超额审批、重大异常、日报</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-amber"><span data-icon="wallet"></span></div><div class="cell__main"><div class="cell__t">财务</div><div class="cell__s">推逾期付款、待审批、大额支付</div></div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 空态 -->
+        <section class="screen" data-screen="empty" data-title="没有新消息" data-nav="消息" data-parent="msg">
+          <div class="scroll">
+            <div class="empty">
+              <div class="empty__ico" style="background:var(--success-soft);color:var(--success)"><span data-icon="checkc"></span></div>
+              <h3>都看完了</h3>
+              <p>没有需要你处理的事，在途也一切正常。<br>有新情况会第一时间推给你。</p>
+              <button class="btn btn--ghost" data-push="set">调整通知设置</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="home" data-title="工作台 tab" data-tabroot data-nav="工作台">
+          <div class="scroll"><p class="t-cap center mt-20">角色自适应工作台的完整设计见 02</p></div>
+        </section>
+        <section class="screen" data-screen="pool" data-title="调度 tab" data-tabroot data-nav="调度工作台">
+          <div class="scroll"><p class="t-cap center mt-20">五阶段调度工作台的完整设计见 05</p></div>
+        </section>
+        <section class="screen" data-screen="data" data-title="数据 tab" data-tabroot data-nav="数据">
+          <div class="scroll"><p class="t-cap center mt-20">经营驾驶舱见 03，运营看板见 11</p></div>
+        </section>
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll"><p class="t-cap center mt-20">个人中心与设置的完整设计见 14</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="home"><span data-icon="grid"></span>工作台</button>
+        <button class="tabi" data-tab="pool"><span data-icon="route"></span>调度</button>
+        <button class="tabi" data-tab="data"><span data-icon="chart"></span>数据</button>
+        <button class="tabi" data-tab="msg"><span data-icon="msg"></span>消息<i class="tabi__dot">7</i></button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+      <div class="sheet" data-sheet-id="quiet">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>免打扰时间段</h3><p>这段时间只有重大异常会响</p></div>
+        <div class="sheet__body">
+          <div class="radios">
+            <div class="radio" role="radio" aria-checked="true"><span class="radio__m"></span><div><b>22:00 – 07:00</b><span>默认，适合大多数人</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>23:00 – 06:00</b><span>晚睡的人</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>21:00 – 08:00</b><span>希望清静一点</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>不设免打扰</b><span>随时都推</span></div></div>
+          </div>
+        </div>
+        <div class="sheet__foot"><button class="btn btn--primary btn--block" data-sheet-close data-toast="免打扰已设为 22:00 – 07:00">确定</button></div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

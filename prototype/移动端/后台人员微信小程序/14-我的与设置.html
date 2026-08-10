@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 我的与设置</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .me { padding: 20px var(--pad) 26px; color: #fff; position: relative; overflow: hidden;
+    background: linear-gradient(150deg, #16226b, #2f54eb 68%, #3f74f7); }
+  .me::before { content: ""; position: absolute; inset: 0;
+    background: radial-gradient(280px 190px at 88% -14%, rgba(250,140,22,.26), transparent 62%); }
+  .me__r { position: relative; display: flex; align-items: center; gap: 13px; padding-right: 96px; }
+  .me__a { width: 54px; height: 54px; border-radius: 17px; background: rgba(255,255,255,.2); display: grid; place-items: center;
+    font-size: 20px; font-weight: 700; flex: none; }
+  .me__n h2 { margin: 0; font-size: 19px; font-weight: 650; letter-spacing: -.014em; }
+  .me__n p { margin: 6px 0 0; font-size: 12.5px; color: rgba(206,224,255,.8); }
+  .me__org { position: relative; margin-top: 18px; padding: 12px 14px; border-radius: 13px; background: rgba(255,255,255,.14);
+    display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .me__org svg { width: 18px; height: 18px; flex: none; }
+  .me__org b { display: block; font-size: 14px; font-weight: 600; }
+  .me__org span { display: block; font-size: 11.5px; color: rgba(206,224,255,.76); margin-top: 4px; }
+  .me__org .arr { margin-left: auto; opacity: .7; }
+  .mystat { margin: -18px var(--pad) 0; position: relative; z-index: 2; background: #fff; border-radius: 16px;
+    box-shadow: var(--sh-card); padding: 15px 12px; }
+  .roleline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .roleline span { font-size: 11.5px; padding: 5px 9px; border-radius: 8px; background: rgba(255,255,255,.16); color: #e8eeff; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 14</p>
+    <h1 class="stage__title">我的与设置</h1>
+    <p class="stage__desc">后台人员的"我的"页要回答三件事：<b style="color:#e2e8f0">我是谁、我在哪家企业、我能干什么。</b>多企业、多角色是这类 SaaS 的常态，切换必须一眼可见。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li><b>企业切换放在最显眼的位置</b>，不是埋进设置里。服务商、集团下多个公司的人每天要切好几次。</li>
+        <li>把<b>我的角色与权限</b>直接列出来。用户遇到"点不动"时的第一反应是系统坏了，写清楚就少一半客服。</li>
+        <li>「我今天干了多少」不是 KPI 考核，而是<b>给自己的交代</b>——处理了多少单、平均响应多久。数据来自真实操作日志。</li>
+        <li>设置项按<b>使用频率</b>排，不按功能模块排。免打扰在最上面，关于我们在最下面。</li>
+        <li>退出登录做二次确认，并说明<b>退出后会收不到服务通知</b>，避免有人误退之后错过审批。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <section class="screen" data-screen="mine" data-title="我的" data-tabroot data-nav-hide="1"
+                 data-status-light="1" data-mpbg="#16226b" data-start>
+          <div class="scroll is-flush">
+            <div class="me">
+              <div class="me__r">
+                <span class="me__a">陈</span>
+                <div class="me__n grow">
+                  <h2>陈涛</h2>
+                  <p>138****5120 · 工号 A0231</p>
+                </div>
+              </div>
+              <div class="roleline">
+                <span>调度主管</span><span>可派车</span><span>可确认计划</span><span>可审回单</span><span>额度 ¥10,000</span>
+              </div>
+              <div class="me__org" data-push="org">
+                <span data-icon="building"></span>
+                <div class="grow">
+                  <b>远洋汽车物流有限公司</b>
+                  <span>你在 3 家企业有账号 · 点这里切换</span>
+                </div>
+                <span class="arr" data-icon="right"></span>
+              </div>
+            </div>
+
+            <div class="mystat">
+              <div class="stats">
+                <div class="stat"><b data-count-to="46">0</b><span>今日处理</span></div>
+                <div class="stat"><b data-count-to="12">0</b><span>今日派车</span></div>
+                <div class="stat"><b data-count-to="8">0</b><span>平均响应 分</span></div>
+                <div class="stat is-amber"><b data-count-to="4">0</b><span>还没处理</span></div>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="sec-title" style="margin-top:0"><h2>常用</h2></div>
+              <div class="card card--plain">
+                <div class="cell" data-toast="审批中心的完整设计见 10">
+                  <div class="cell__ico"><span data-icon="checkc"></span></div>
+                  <div class="cell__main"><div class="cell__t">我的待办</div><div class="cell__s">4 件等你处理</div></div>
+                  <div class="cell__x"><span class="tag tag--danger">4</span><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-push="log">
+                  <div class="cell__ico is-green"><span data-icon="file"></span></div>
+                  <div class="cell__main"><div class="cell__t">我的操作记录</div><div class="cell__s">本月 892 次，可追溯</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-push="perm">
+                  <div class="cell__ico is-amber"><span data-icon="shieldok"></span></div>
+                  <div class="cell__main"><div class="cell__t">我的角色与权限</div><div class="cell__s">调度主管 · 12 项功能权限</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>设置</h2></div>
+              <div class="card card--plain">
+                <div class="cell" data-toast="消息中心的完整设计见 13">
+                  <div class="cell__ico"><span data-icon="bell"></span></div>
+                  <div class="cell__main"><div class="cell__t">消息与免打扰</div><div class="cell__s">夜间 22:00 – 07:00 只推重大异常</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell cell--static">
+                  <div class="cell__ico"><span data-icon="eye"></span></div>
+                  <div class="cell__main"><div class="cell__t">默认打开的角色视图</div><div class="cell__s">进小程序先看调度视图</div></div>
+                  <div class="cell__x">调度</div>
+                </div>
+                <div class="cell cell--static">
+                  <div class="cell__ico"><span data-icon="wallet"></span></div>
+                  <div class="cell__main"><div class="cell__t">金额脱敏显示</div><div class="cell__s">在公共场合打开，金额显示为 ***</div></div>
+                  <button class="switch" role="switch" aria-checked="false"></button>
+                </div>
+                <div class="cell cell--static">
+                  <div class="cell__ico"><span data-icon="settings"></span></div>
+                  <div class="cell__main"><div class="cell__t">大字模式</div><div class="cell__s">正文放大到 17px</div></div>
+                  <button class="switch" role="switch" aria-checked="false"></button>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>帮助</h2></div>
+              <div class="card card--plain">
+                <div class="cell" data-sheet="help">
+                  <div class="cell__ico"><span data-icon="info"></span></div>
+                  <div class="cell__main"><div class="cell__t">手机上做不了的事</div><div class="cell__s">哪些必须回电脑，说清楚</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-toast="已拨号给客服 400-820-1188">
+                  <div class="cell__ico"><span data-icon="phone"></span></div>
+                  <div class="cell__main"><div class="cell__t">联系客服</div><div class="cell__s">工作日 8:30 – 18:00</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell cell--static">
+                  <div class="cell__ico"><span data-icon="shield"></span></div>
+                  <div class="cell__main"><div class="cell__t">版本</div><div class="cell__s">智图物流 · 移动调度台 2.4.1</div></div>
+                </div>
+              </div>
+
+              <div class="btnrow mt-16">
+                <button class="btn btn--ghost btn--block" data-dialog="out"><span data-icon="logout"></span>退出登录</button>
+              </div>
+              <p class="t-cap center" style="margin:14px 0 0">运价配置、审批流设计、批量档案维护、开放平台请在电脑端操作</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 企业切换 -->
+        <section class="screen" data-screen="org" data-title="切换企业" data-nav="切换企业" data-parent="mine">
+          <div class="scroll">
+            <div class="pad">
+              <p class="t-cap" style="padding:0 2px 12px;line-height:1.6">你的手机号在 3 家企业有员工账号。切换后数据、角色、待办都会跟着换。</p>
+              <div class="card card--plain">
+                <div class="cell" data-toast="当前就在这家">
+                  <div class="cell__ico"><span data-icon="building"></span></div>
+                  <div class="cell__main"><div class="cell__t">远洋汽车物流有限公司</div><div class="cell__s">调度主管 · 4 件待办</div></div>
+                  <div class="cell__x"><span class="tag tag--solid">当前</span></div>
+                </div>
+                <div class="cell" data-dialog="switch">
+                  <div class="cell__ico is-amber"><span data-icon="building"></span></div>
+                  <div class="cell__main"><div class="cell__t">远洋供应链（华南）有限公司</div><div class="cell__s">调度 · 2 件待办</div></div>
+                  <div class="cell__x"><span class="tag tag--danger">2</span><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-dialog="switch">
+                  <div class="cell__ico is-green"><span data-icon="building"></span></div>
+                  <div class="cell__main"><div class="cell__t">江苏捷运汽车服务</div><div class="cell__s">只读 · 无待办</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="notice notice--info mt-16">
+                <span data-icon="info"></span>
+                <div>每家企业的数据是隔离的。切过去之后，这边的消息还是会推给你，不会漏。</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 权限 -->
+        <section class="screen" data-screen="perm" data-title="我的权限" data-nav="角色与权限" data-parent="mine">
+          <div class="scroll">
+            <div class="pad">
+              <div class="card">
+                <div class="hstack">
+                  <span class="tag tag--solid tag--lg">调度主管</span>
+                  <span class="t-cap ml-auto">由 李敏 在 2026-03-12 授予</span>
+                </div>
+                <p class="t-cap" style="margin:12px 0 0;line-height:1.65">审批额度 ¥10,000。超过这个金额的单据会自动往上走到陈总。</p>
+              </div>
+
+              <div class="sec-title"><h2>你能做的</h2></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__ico is-green"><span data-icon="check"></span></div><div class="cell__main"><div class="cell__t">确认计划、退回计划</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-green"><span data-icon="check"></span></div><div class="cell__main"><div class="cell__t">派车、分配承运商、改派</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-green"><span data-icon="check"></span></div><div class="cell__main"><div class="cell__t">审回单、确认签收</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-green"><span data-icon="check"></span></div><div class="cell__main"><div class="cell__t">看运营看板与在途监控</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-green"><span data-icon="check"></span></div><div class="cell__main"><div class="cell__t">审批 ¥10,000 以内的费用单</div></div></div>
+              </div>
+
+              <div class="sec-title"><h2>你看不到的</h2><span>不是坏了，是没开权限</span></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__ico is-red"><span data-icon="lock"></span></div><div class="cell__main"><div class="cell__t">经营驾驶舱与毛利数据</div><div class="cell__s">需要「经营数据查看」权限</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-red"><span data-icon="lock"></span></div><div class="cell__main"><div class="cell__t">费用工作台与资金账户</div><div class="cell__s">需要「资金查看」权限</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-red"><span data-icon="lock"></span></div><div class="cell__main"><div class="cell__t">运价与合同</div><div class="cell__s">需要「运价管理」权限</div></div></div>
+              </div>
+
+              <div class="btnrow mt-16">
+                <button class="btn btn--ghost btn--block" data-toast="已把申请发给管理员 李敏">申请开通权限</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 操作记录 -->
+        <section class="screen" data-screen="log" data-title="操作记录" data-nav="我的操作记录" data-parent="mine">
+          <div class="scroll">
+            <div class="pad">
+              <div class="card">
+                <div class="stats">
+                  <div class="stat"><b>892</b><span>本月操作</span></div>
+                  <div class="stat"><b>214</b><span>派车</span></div>
+                  <div class="stat"><b>386</b><span>审回单</span></div>
+                  <div class="stat"><b>8</b><span>平均响应 分</span></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>今天</h2></div>
+              <div class="card">
+                <div class="tl">
+                  <div class="tl__i is-now"><div class="tl__t">16:42 派车 TK2608090061</div><div class="tl__s">派给 苏A·6H128 张伟</div></div>
+                  <div class="tl__i is-done"><div class="tl__t">16:20 审回单通过 ×4</div><div class="tl__s">TK2608070008 等 4 单</div></div>
+                  <div class="tl__i is-done"><div class="tl__t">15:38 确认计划 ×6</div><div class="tl__s">苏南汽贸推送的批次</div></div>
+                  <div class="tl__i is-done"><div class="tl__t">14:10 催位置</div><div class="tl__s">TK2608080077 刘强</div></div>
+                  <div class="tl__i is-done"><div class="tl__t">09:12 登录</div><div class="tl__s">微信手机号快捷登录</div></div>
+                </div>
+              </div>
+              <p class="t-cap" style="margin:12px 2px 0">操作记录保留 12 个月，出问题时能追溯到人和时间。完整日志在电脑端。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="home" data-title="工作台 tab" data-tabroot data-nav="工作台">
+          <div class="scroll"><p class="t-cap center mt-20">角色自适应工作台的完整设计见 02</p></div>
+        </section>
+        <section class="screen" data-screen="pool" data-title="调度 tab" data-tabroot data-nav="调度工作台">
+          <div class="scroll"><p class="t-cap center mt-20">五阶段调度工作台的完整设计见 05</p></div>
+        </section>
+        <section class="screen" data-screen="data" data-title="数据 tab" data-tabroot data-nav="数据">
+          <div class="scroll"><p class="t-cap center mt-20">经营驾驶舱见 03，运营看板见 11</p></div>
+        </section>
+        <section class="screen" data-screen="msgtab" data-title="消息 tab" data-tabroot data-nav="消息">
+          <div class="scroll"><p class="t-cap center mt-20">消息中心的完整设计见 13</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="home"><span data-icon="grid"></span>工作台</button>
+        <button class="tabi" data-tab="pool"><span data-icon="route"></span>调度</button>
+        <button class="tabi" data-tab="data"><span data-icon="chart"></span>数据</button>
+        <button class="tabi" data-tab="msgtab"><span data-icon="msg"></span>消息<i class="tabi__dot">7</i></button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+      <div class="dialog" data-dialog-id="switch">
+        <div class="dialog__body">
+          <h3>切到远洋供应链（华南）？</h3>
+          <p>切换后看到的是华南公司的数据，你在那边的角色是「调度」，有 2 件待办。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>不切了</button>
+          <button class="is-main" data-sheet-close data-toast="已切到 远洋供应链（华南）">切过去</button>
+        </div>
+      </div>
+
+      <div class="dialog" data-dialog-id="out">
+        <div class="dialog__body">
+          <h3>退出登录？</h3>
+          <p>退出后收不到微信服务通知，审批和超时预警都会漏。<br>下次要重新用手机号登录。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>不退了</button>
+          <button class="is-main" style="color:var(--danger)" data-sheet-close data-toast="已退出登录">退出</button>
+        </div>
+      </div>
+
+      <div class="sheet" data-sheet-id="help">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>手机上做不了的事</h3><p>不是没做，是电脑上做更合适</p></div>
+        <div class="sheet__body">
+          <div class="card card--flat">
+            <dl class="kv"><dt>运价与合同</dt><dd>字段多、要对照条款，手机填容易错</dd></dl>
+            <dl class="kv"><dt>审批流设计</dt><dd>流程画布需要大屏拖拽</dd></dl>
+            <dl class="kv"><dt>批量档案维护</dt><dd>几百行表格，手机翻不动</dd></dl>
+            <dl class="kv"><dt>智能配载</dt><dd>要对着车位图排，小屏看不清</dd></dl>
+            <dl class="kv"><dt>对账与开票</dt><dd>要逐笔核对，需要双屏</dd></dl>
+            <dl class="kv"><dt>开放平台与接口</dt><dd>配置类工作，不适合手机</dd></dl>
+          </div>
+          <p class="t-cap mt-12">手机端专注三件事：盯进度、做决策、处理临时状况。剩下的回工位做更快。</p>
+        </div>
+        <div class="sheet__foot"><button class="btn btn--primary btn--block" data-sheet-close>知道了</button></div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

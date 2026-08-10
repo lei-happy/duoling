@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>驾驶员微信小程序 · 我的收入</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .wallethd {
+    position: relative; margin: 0 var(--pad); padding: 22px 20px 20px; border-radius: 20px; color: #fff; overflow: hidden;
+    background: radial-gradient(320px 200px at 88% -10%, rgba(245,165,36,.3), transparent 62%),
+                linear-gradient(155deg, #14306e, #0d1b3e 62%, #1a3d86);
+    box-shadow: 0 18px 34px -20px rgba(13,27,62,.9);
+  }
+  .wallethd::after { content: ""; position: absolute; right: -40px; bottom: -60px; width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(circle, rgba(245,165,36,.26), transparent 66%); }
+  .wallethd__l { position: relative; font-size: 12.5px; color: rgba(206,224,255,.72); }
+  .wallethd__v { position: relative; margin-top: 8px; }
+  .wallethd__sp { position: relative; display: grid; grid-template-columns: repeat(3,1fr); margin-top: 20px; gap: 10px; }
+  .wallethd__sp div span { display: block; font-size: 11.5px; color: rgba(206,224,255,.62); }
+  .wallethd__sp div b { display: block; font-size: 16px; font-weight: 650; margin-top: 5px; font-variant-numeric: tabular-nums; }
+  .mbars { display: flex; align-items: flex-end; gap: 9px; height: 108px; }
+  .mbars > div { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .mbars i { width: 100%; border-radius: 6px 6px 3px 3px; background: var(--primary-soft); height: var(--v); }
+  .mbars .hi i { background: linear-gradient(180deg, var(--primary), #3b6ff0); }
+  .mbars span { font-size: 11px; color: var(--ink-3); }
+  .mbars .hi span { color: var(--primary); font-weight: 600; }
+  .mbars b { font-size: 10.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Driver Mini Program · 09</p>
+    <h1 class="stage__title">我的收入</h1>
+    <p class="stage__desc">司机留不留在这家公司，很大程度上取决于「钱清不清楚」。这一屏要让每一笔都能追到具体哪一趟车，以及现在卡在哪个环节。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>金额<b>永远挂着任务单号</b>。司机对账的方式是「这趟车给了多少」，不是看一堆流水。</li>
+        <li>单据类型沿用后台：<b>预付单 / 补款单 / 结算单</b>；状态沿用 草稿 / 待审批 / 已审批 / 已支付 / 已撤销。司机端把「草稿、待审批」翻译成「还没算完、在审批」。</li>
+        <li>没到账的钱要说清楚<b>卡在谁那里</b>——是回单没传（我的问题），还是在等财务打款（不是我的问题）。这一句话能省掉大量电话。</li>
+        <li>油卡、油气款属于<b>公司代付</b>，不计入司机收入，单独放到 10 的资金账户里，避免把两笔账混在一起。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <!-- 收入首页 -->
+        <section class="screen" data-screen="income" data-title="我的收入" data-tabroot data-nav="我的收入" data-start>
+          <div class="scroll is-flush" data-refresh>
+            <div style="padding-top:12px"></div>
+            <div class="wallethd">
+              <div class="wallethd__l">2026 年 8 月累计收入（元）</div>
+              <div class="wallethd__v money" style="font-size:36px"><small>¥</small><span data-count-to="8600" data-count-sep="1">0</span></div>
+              <div class="wallethd__sp">
+                <div><span>预付</span><b>3,200</b></div>
+                <div><span>补款</span><b>600</b></div>
+                <div><span>结算</span><b>4,800</b></div>
+              </div>
+            </div>
+
+            <div class="pad" style="margin-top:14px">
+              <div class="notice">
+                <span data-icon="clock"></span>
+                <div><b>还有 ¥4,250 没到账</b><br>其中 ¥1,850 在等你传回单，¥2,400 已提交审批。</div>
+              </div>
+
+              <div class="sec-title"><h2>快捷</h2></div>
+              <div class="card card--plain">
+                <div class="cell" data-push="fund">
+                  <div class="cell__ico is-amber"><span data-icon="fuel"></span></div>
+                  <div class="cell__main"><div class="cell__t">资金账户与油卡</div><div class="cell__s">往来账、油卡余额、加油记录</div></div>
+                  <div class="cell__x">余额 1,240<span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-push="summary">
+                  <div class="cell__ico is-green"><span data-icon="chart"></span></div>
+                  <div class="cell__main"><div class="cell__t">收入汇总</div><div class="cell__s">近 6 个月趋势与趟均收入</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-push="account">
+                  <div class="cell__ico"><span data-icon="card"></span></div>
+                  <div class="cell__main"><div class="cell__t">我的收款账户</div><div class="cell__s">工商银行 尾号 4218</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>费用单</h2><span class="more" data-push="list">全部 <span data-icon="right"></span></span></div>
+              <div class="card card--plain">
+                <div class="cell" data-push="detail">
+                  <div class="cell__ico is-green"><span data-icon="checkc"></span></div>
+                  <div class="cell__main">
+                    <div class="cell__t">结算单 · TK2608080019</div>
+                    <div class="cell__s">08-09 09:12 已到账</div>
+                  </div>
+                  <div class="cell__x"><span class="money" style="color:var(--success);font-size:15.5px">+2,400</span></div>
+                </div>
+                <div class="cell" data-push="detail">
+                  <div class="cell__ico is-amber"><span data-icon="clock"></span></div>
+                  <div class="cell__main">
+                    <div class="cell__t">结算单 · TK2608090037</div>
+                    <div class="cell__s">在审批，李敏已提交给财务</div>
+                  </div>
+                  <div class="cell__x"><span class="money" style="font-size:15.5px">2,400</span></div>
+                </div>
+                <div class="cell" data-push="detail">
+                  <div class="cell__ico is-green"><span data-icon="fuel"></span></div>
+                  <div class="cell__main">
+                    <div class="cell__t">预付单 · TK2608090037</div>
+                    <div class="cell__s">08-09 07:30 充到油卡</div>
+                  </div>
+                  <div class="cell__x"><span class="money" style="color:var(--success);font-size:15.5px">+1,200</span></div>
+                </div>
+                <div class="cell" data-push="detail">
+                  <div class="cell__ico is-red"><span data-icon="camera"></span></div>
+                  <div class="cell__main">
+                    <div class="cell__t">结算单 · TK2608090044</div>
+                    <div class="cell__s" style="color:var(--danger)">回单没传，还没开始算</div>
+                  </div>
+                  <div class="cell__x"><span class="money dim3" style="font-size:15.5px">1,850</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 费用单列表 -->
+        <section class="screen" data-screen="list" data-title="费用单列表" data-nav="费用单" data-parent="income">
+          <div class="scroll">
+            <div class="sticky">
+              <div class="chipbar">
+                <button class="chip" aria-selected="true">全部 <span class="chip__n">18</span></button>
+                <button class="chip">预付单 <span class="chip__n">6</span></button>
+                <button class="chip">补款单 <span class="chip__n">2</span></button>
+                <button class="chip">结算单 <span class="chip__n">10</span></button>
+              </div>
+            </div>
+            <div class="card card--plain">
+              <div class="cell" data-push="detail"><div class="cell__ico is-green"><span data-icon="checkc"></span></div><div class="cell__main"><div class="cell__t">结算单 · TK2608080019</div><div class="cell__s t-mono">08-09 09:12 · 银行转账</div></div><div class="cell__x"><span class="money" style="color:var(--success);font-size:15.5px">+2,400</span></div></div>
+              <div class="cell" data-push="detail"><div class="cell__ico is-amber"><span data-icon="clock"></span></div><div class="cell__main"><div class="cell__t">结算单 · TK2608090037</div><div class="cell__s">待审批</div></div><div class="cell__x"><span class="money" style="font-size:15.5px">2,400</span></div></div>
+              <div class="cell" data-push="detail"><div class="cell__ico is-green"><span data-icon="fuel"></span></div><div class="cell__main"><div class="cell__t">预付单 · TK2608090037</div><div class="cell__s t-mono">08-09 07:30 · 油卡</div></div><div class="cell__x"><span class="money" style="color:var(--success);font-size:15.5px">+1,200</span></div></div>
+              <div class="cell" data-push="detail"><div class="cell__ico is-green"><span data-icon="checkc"></span></div><div class="cell__main"><div class="cell__t">补款单 · TK2608070008</div><div class="cell__s t-mono">08-08 16:20 · 高速费补差</div></div><div class="cell__x"><span class="money" style="color:var(--success);font-size:15.5px">+600</span></div></div>
+              <div class="cell" data-push="detail"><div class="cell__ico is-green"><span data-icon="checkc"></span></div><div class="cell__main"><div class="cell__t">结算单 · TK2608070008</div><div class="cell__s t-mono">08-08 16:20 · 银行转账</div></div><div class="cell__x"><span class="money" style="color:var(--success);font-size:15.5px">+3,100</span></div></div>
+              <div class="cell" data-push="detail"><div class="cell__ico"><span data-icon="x"></span></div><div class="cell__main"><div class="cell__t">预付单 · TK2608050031</div><div class="cell__s">已撤销 · 任务改派</div></div><div class="cell__x"><span class="money dim3" style="font-size:15.5px;text-decoration:line-through">800</span></div></div>
+            </div>
+            <p class="t-cap center mt-16">只显示近 6 个月，更早的找财务导</p>
+          </div>
+        </section>
+
+        <!-- 费用单详情 -->
+        <section class="screen" data-screen="detail" data-title="费用单详情" data-nav="结算单详情" data-parent="income">
+          <div class="scroll">
+            <div class="card mt-8 center" style="padding:24px 16px">
+              <div class="t-cap">结算单金额（元）</div>
+              <div class="money" style="font-size:38px;margin-top:8px;color:var(--success)"><small>¥</small>2,400.00</div>
+              <span class="tag tag--ok tag--lg mt-12" style="display:inline-flex">已支付</span>
+            </div>
+
+            <div class="card mt-12">
+              <dl class="kvlist">
+                <div class="kv"><dt>单据编号</dt><dd class="t-mono">FD26080900287</dd></div>
+                <div class="kv"><dt>关联任务单</dt><dd class="t-mono">TK2608080019</dd></div>
+                <div class="kv"><dt>运输线路</dt><dd>南京江宁库 → 无锡新吴 4S 店</dd></div>
+                <div class="kv"><dt>收款人</dt><dd>王建国</dd></div>
+                <div class="kv"><dt>支付方式</dt><dd>银行转账 · 工商银行 尾号 4218</dd></div>
+                <div class="kv"><dt>计划支付</dt><dd>08-09 09:00</dd></div>
+                <div class="kv"><dt>实际支付</dt><dd>08-09 09:12</dd></div>
+              </dl>
+            </div>
+
+            <div class="sec-title"><h2>费用明细</h2></div>
+            <div class="card">
+              <dl class="kvlist">
+                <div class="kv"><dt>运输费 5 台 × 450</dt><dd class="money">2,250.00</dd></div>
+                <div class="kv"><dt>装卸费</dt><dd class="money">150.00</dd></div>
+                <div class="kv" style="border-top:1px solid var(--line);padding-top:12px;margin-top:4px"><dt class="strong" style="color:var(--ink)">合计</dt><dd class="money" style="font-size:17px">2,400.00</dd></div>
+              </dl>
+            </div>
+
+            <div class="sec-title"><h2>流转</h2></div>
+            <div class="card">
+              <div class="tl">
+                <div class="tl__i is-done"><div class="tl__t">已支付</div><div class="tl__s">08-09 09:12 · 赵倩（财务）· 银行转账</div></div>
+                <div class="tl__i is-done"><div class="tl__t">审批通过</div><div class="tl__s">08-08 20:05 · 陈涛（运营主管）</div></div>
+                <div class="tl__i is-done"><div class="tl__t">提交审批</div><div class="tl__s">08-08 18:30 · 李敏（调度）</div></div>
+                <div class="tl__i is-done"><div class="tl__t">回单审核通过，自动生成结算单</div><div class="tl__s">08-08 18:02 · 系统</div></div>
+              </div>
+            </div>
+            <p class="t-cap center mt-16" style="padding-bottom:6px">金额有疑问先找调度核对，再由财务处理</p>
+          </div>
+        </section>
+
+        <!-- 收入汇总 -->
+        <section class="screen" data-screen="summary" data-title="收入汇总" data-nav="收入汇总" data-parent="income">
+          <div class="scroll">
+            <div class="card mt-8">
+              <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+                <div class="stat"><b class="money" style="font-size:22px">48,200</b><span>近 6 月累计</span></div>
+                <div class="stat"><b class="money" style="font-size:22px">8,033</b><span>月均</span></div>
+                <div class="stat"><b class="money" style="font-size:22px">372</b><span>趟均</span></div>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>近 6 个月</h2><span>单位：元</span></div>
+            <div class="card">
+              <div class="mbars">
+                <div><b>6,400</b><i style="--v:52%"></i><span>3月</span></div>
+                <div><b>7,900</b><i style="--v:66%"></i><span>4月</span></div>
+                <div><b>8,750</b><i style="--v:74%"></i><span>5月</span></div>
+                <div><b>7,200</b><i style="--v:60%"></i><span>6月</span></div>
+                <div><b>9,350</b><i style="--v:80%"></i><span>7月</span></div>
+                <div class="hi"><b>8,600</b><i style="--v:73%"></i><span>8月</span></div>
+              </div>
+              <p class="t-cap" style="margin:14px 0 0">8 月还没走完，按目前进度预计能到 ¥9,800 左右。</p>
+            </div>
+
+            <div class="sec-title"><h2>构成</h2></div>
+            <div class="card">
+              <div class="bars">
+                <div>
+                  <div class="bar__top"><span>结算单</span><span class="money">28,600</span></div>
+                  <div class="bar__track"><i class="bar__fill" style="--v:100%"></i></div>
+                </div>
+                <div>
+                  <div class="bar__top"><span>预付单</span><span class="money">16,200</span></div>
+                  <div class="bar__track"><i class="bar__fill" style="--v:57%;background:#3b6ff0"></i></div>
+                </div>
+                <div>
+                  <div class="bar__top"><span>补款单</span><span class="money">3,400</span></div>
+                  <div class="bar__track"><i class="bar__fill" style="--v:12%;background:var(--accent)"></i></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 收款账户 -->
+        <section class="screen" data-screen="account" data-title="收款账户" data-nav="我的收款账户" data-parent="income">
+          <div class="scroll">
+            <div class="card mt-8" style="background:linear-gradient(150deg,#1e3a8a,#1d4ed8);color:#fff;padding:20px">
+              <div class="hstack">
+                <span style="font-size:13px;color:rgba(219,232,255,.78)">工商银行 · 储蓄卡</span>
+                <span class="tag ml-auto" style="background:rgba(255,255,255,.18);color:#fff">默认</span>
+              </div>
+              <div class="t-mono" style="font-size:22px;letter-spacing:.14em;margin-top:18px">6222 **** **** 4218</div>
+              <div style="font-size:12.5px;color:rgba(219,232,255,.7);margin-top:12px">户名 王建国 · 江苏南京江宁支行</div>
+            </div>
+
+            <div class="notice notice--info mt-12">
+              <span data-icon="info"></span>
+              <div>账户由企业财务维护，改卡要走「个人信息变更」，审核通过后才生效。这是为了防止工资被改到别人卡上。</div>
+            </div>
+
+            <div class="sec-title"><h2>其他账户</h2></div>
+            <div class="card card--plain">
+              <div class="cell cell--static">
+                <div class="cell__ico is-amber"><span data-icon="fuel"></span></div>
+                <div class="cell__main"><div class="cell__t">油气款账户</div><div class="cell__s">公司代付，不计入个人收入</div></div>
+                <div class="cell__x"><span class="money">1,240</span></div>
+              </div>
+              <div class="cell cell--static">
+                <div class="cell__ico"><span data-icon="star"></span></div>
+                <div class="cell__main"><div class="cell__t">积分账户</div><div class="cell__s">安全行驶与准点率累计</div></div>
+                <div class="cell__x"><span class="money">3,860</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost btn--lg" data-toast="变更申请已发给车管，审核通过后生效">申请变更收款卡</button>
+          </div>
+        </section>
+
+        <!-- 资金账户占位 -->
+        <section class="screen" data-screen="fund" data-title="资金账户（见 10）" data-nav="资金账户" data-parent="income">
+          <div class="scroll"><p class="t-cap center mt-20">往来账、油卡与加油记录的完整设计见 10</p></div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="home" data-title="工作台 tab" data-tabroot data-nav="工作台">
+          <div class="scroll"><p class="t-cap center mt-20">工作台首页的完整设计见 02</p></div>
+        </section>
+        <section class="screen" data-screen="task" data-title="任务 tab" data-tabroot data-nav="我的任务">
+          <div class="scroll"><p class="t-cap center mt-20">任务列表的完整设计见 03</p></div>
+        </section>
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll"><p class="t-cap center mt-20">个人中心与设置的完整设计见 13</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="home"><span data-icon="home"></span>工作台</button>
+        <button class="tabi" data-tab="task"><span data-icon="list"></span>任务</button>
+        <button class="tabi" data-tab="income"><span data-icon="wallet"></span>收入</button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

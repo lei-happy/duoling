@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 费用工作台</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .fhd { padding: 18px var(--pad) 20px; color: #fff; position: relative; overflow: hidden;
+    background: linear-gradient(158deg, #16226b, #2f54eb 66%, #3f74f7); }
+  .fhd::before { content: ""; position: absolute; inset: 0;
+    background: radial-gradient(280px 190px at 90% -18%, rgba(250,140,22,.28), transparent 62%); }
+  .fhd__l { position: relative; font-size: 12.5px; color: rgba(206,224,255,.8); }
+  .fhd__v { position: relative; font-size: 36px; font-weight: 700; letter-spacing: -.035em; font-variant-numeric: tabular-nums; margin-top: 6px; }
+  .fhd__v small { font-size: .36em; font-weight: 600; margin-left: 5px; color: rgba(206,224,255,.82); letter-spacing: 0; }
+  /* 付款时间轴：本周每天要付多少 */
+  .paybar { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 66px; margin-top: 18px; }
+  .paybar > button { flex: 1; border: 0; background: none; cursor: pointer; padding: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; justify-content: flex-end; height: 100%; }
+  .paybar i { display: block; width: 100%; border-radius: 5px 5px 2px 2px; height: var(--v);
+    background: rgba(255,255,255,.26); transition: background .2s ease; }
+  .paybar b { font-size: 10.5px; color: rgba(206,224,255,.7); font-weight: 500; }
+  .paybar .od i { background: #ff7875; }
+  .paybar .today i { background: linear-gradient(180deg,#ffd591,#fa8c16); }
+  .paybar .today b { color: #ffd591; font-weight: 700; }
+  .paybar button[aria-selected="true"] i { box-shadow: 0 0 0 2px rgba(255,255,255,.8); }
+  .fhd__note { position: relative; margin-top: 12px; font-size: 11.8px; color: rgba(206,224,255,.76); line-height: 1.55; }
+  /* 费用单行 */
+  .fee { position: relative; width: 100%; text-align: left; border: 0; background: var(--card); cursor: pointer; padding: 13px 15px; }
+  .fee + .fee::before { content: ""; position: absolute; left: 15px; right: 0; top: 0; height: 1px; background: var(--line-soft); }
+  .fee:active { background: #f6f8fc; }
+  .fee__t { display: flex; align-items: center; gap: 8px; }
+  .fee__no { font: 600 11.5px/1 var(--mono); letter-spacing: .05em; color: var(--ink-3); }
+  .fee__m { display: flex; align-items: baseline; gap: 10px; margin-top: 8px; }
+  .fee__m b { font-size: 14.8px; font-weight: 600; letter-spacing: -.008em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fee__amt { margin-left: auto; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; flex: none; }
+  .fee__f { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 9px; font-size: 12px; color: var(--ink-2); }
+  .fee__f em { font-style: normal; display: inline-flex; align-items: center; gap: 4px; }
+  .fee__f svg { width: 12px; height: 12px; color: var(--ink-3); }
+  .fee__f .od { color: var(--danger); font-weight: 600; }
+  .paycode { text-align: center; padding: 4px 0 6px; }
+  .paycode__q { width: 148px; height: 148px; margin: 0 auto; border-radius: 14px; background: #fff;
+    box-shadow: 0 0 0 1px var(--line); display: grid; place-items: center; }
+  .money-in { display: flex; align-items: baseline; gap: 6px; border-bottom: 1.5px solid var(--primary); padding-bottom: 8px; }
+  .money-in span { font-size: 20px; font-weight: 600; }
+  .money-in b { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 09</p>
+    <h1 class="stage__title">费用工作台</h1>
+    <p class="stage__desc">财务在手机上做的不是记账，是<b style="color:#e2e8f0">别让该付的钱逾期、别让不该付的钱付出去</b>。所以这一屏的主角是「什么时候要付多少」，不是科目明细。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li><b>付款日历条</b>是这页的记忆点：本周每天要付多少一目了然，红柱是已逾期，琥珀柱是今天。点某天列表跟着跳过去，比翻筛选器快得多。</li>
+        <li>单据类型与状态严格对齐后台：<b>预付单 / 补款单 / 结算单</b>，状态 <b>草稿 / 待审批 / 已审批 / 已支付 / 已撤销</b>。支付方式含<b>油卡、油气款</b>。</li>
+        <li>手机只做「<b>标记已支付</b>」和「审批」两个动作，不做开票、对账、导出。真金白银的转账仍在银行系统里完成，这里只记录。</li>
+        <li>标记支付要填<b>实付金额与支付方式</b>，与应付不一致时必须写原因——这是财务最怕的对不上账。</li>
+        <li>逾期用<b>红字加天数</b>，不用小红点。财务需要知道逾期几天，不是知道"有事"。</li>
+        <li>权限收得很紧：没有资金权限的人进来看到的是空态说明，而不是一堆数字加报错。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <!-- 费用工作台 -->
+        <section class="screen" data-screen="fee" data-title="费用工作台" data-tabroot data-nav-hide="1"
+                 data-status-light="1" data-mpbg="#16226b" data-start>
+          <div class="scroll is-flush" data-refresh>
+            <div class="fhd">
+              <div class="fhd__l" style="padding-right:96px">待付总额 · 含逾期</div>
+              <div class="fhd__v"><span data-count-to="128.6" data-count-dec="1">0</span><small>万元</small></div>
+              <div class="paybar">
+                <button class="od"><i style="--v:64%"></i><b>逾期</b></button>
+                <button class="today" aria-selected="true"><i style="--v:88%"></i><b>今日</b></button>
+                <button><i style="--v:34%"></i><b>周一</b></button>
+                <button><i style="--v:52%"></i><b>周二</b></button>
+                <button><i style="--v:20%"></i><b>周三</b></button>
+                <button><i style="--v:46%"></i><b>周四</b></button>
+                <button><i style="--v:12%"></i><b>周五</b></button>
+              </div>
+              <div class="fhd__note">今日应付 42.8 万，已逾期 31.2 万（4 张）。本周剩余 54.6 万。</div>
+            </div>
+
+            <div class="pad" style="margin-top:16px">
+              <div class="notice notice--danger">
+                <span data-icon="warn"></span>
+                <div><b>4 张单据已过约定付款日</b><br>最久的一张逾期 6 天，收款方是鑫达商品车运输，他们昨天问过一次。</div>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="chipbar">
+                <button class="chip" aria-selected="true">待付 <span class="chip__n">17</span></button>
+                <button class="chip">待审批 <span class="chip__n">9</span></button>
+                <button class="chip">已支付</button>
+                <button class="chip">草稿 <span class="chip__n">3</span></button>
+                <button class="chip">已撤销</button>
+              </div>
+            </div>
+
+            <div class="pad mt-12">
+              <div class="card card--plain">
+                <div class="swipe" data-swipe>
+                  <div class="swipe__acts">
+                    <button class="a-primary" data-sheet="pay"><span data-icon="check"></span>标记<br>已付</button>
+                    <button class="a-grey" data-push="detail"><span data-icon="file"></span>详情</button>
+                  </div>
+                  <div class="swipe__body">
+                    <button class="fee" data-push="detail">
+                      <div class="fee__t"><span class="fee__no">FD26080300221</span><span class="tag tag--danger ml-auto">逾期 6 天</span></div>
+                      <div class="fee__m"><b>鑫达商品车运输</b><i class="fee__amt" style="color:var(--danger)">¥42,600</i></div>
+                      <div class="fee__f">
+                        <em><span data-icon="file"></span>结算单 · 已审批</em>
+                        <em class="od"><span data-icon="calendar"></span>应付 08-03</em>
+                        <em><span data-icon="card"></span>银行转账</em>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <button class="fee" data-push="detail">
+                  <div class="fee__t"><span class="fee__no">FD26080900287</span><span class="tag tag--warn ml-auto">今日应付</span></div>
+                  <div class="fee__m"><b>司机结算 · 8 月上半月批次</b><i class="fee__amt">¥28,400</i></div>
+                  <div class="fee__f">
+                    <em><span data-icon="users"></span>12 位司机</em>
+                    <em><span data-icon="card"></span>银行代发</em>
+                    <em><span data-icon="check"></span>李总已批</em>
+                  </div>
+                </button>
+
+                <button class="fee" data-push="detail">
+                  <div class="fee__t"><span class="fee__no">FD26080900295</span><span class="tag tag--warn ml-auto">今日应付</span></div>
+                  <div class="fee__m"><b>中石化江苏 · 油气款充值</b><i class="fee__amt">¥14,400</i></div>
+                  <div class="fee__f">
+                    <em><span data-icon="fuel"></span>预付单 · 油气款</em>
+                    <em><span data-icon="truck"></span>覆盖 8 台车</em>
+                  </div>
+                </button>
+
+                <button class="fee" data-push="detail">
+                  <div class="fee__t"><span class="fee__no">FD26080900301</span><span class="tag ml-auto">08-12 应付</span></div>
+                  <div class="fee__m"><b>顺捷社会运力池</b><i class="fee__amt">¥18,900</i></div>
+                  <div class="fee__f">
+                    <em><span data-icon="file"></span>结算单 · 已审批</em>
+                    <em><span data-icon="calendar"></span>还有 3 天</em>
+                    <em><span data-icon="fuel"></span>油气款抵扣 ¥3,200</em>
+                  </div>
+                </button>
+
+                <button class="fee" data-push="detail">
+                  <div class="fee__t"><span class="fee__no">FD26080900308</span><span class="tag tag--amber ml-auto">待审批</span></div>
+                  <div class="fee__m"><b>王建国 · 高速费补款</b><i class="fee__amt">¥1,860</i></div>
+                  <div class="fee__f">
+                    <em><span data-icon="file"></span>补款单 · 待审批</em>
+                    <em><span data-icon="camera"></span>附 3 张票据</em>
+                    <em><span data-icon="clock"></span>等了 1 天</em>
+                  </div>
+                </button>
+
+                <div class="cell" data-toast="已加载全部 17 张"><div class="cell__main center" style="color:var(--primary);font-size:13.5px">加载剩余 12 张</div></div>
+              </div>
+
+              <div class="sec-title"><h2>快捷入口</h2></div>
+              <div class="todos">
+                <button class="todo" data-push="approve"><i style="background:var(--primary-soft);color:var(--primary)"><span data-icon="checkc"></span></i><div><b>9</b><span>待我审批</span></div></button>
+                <button class="todo" data-sheet="batch"><i style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="card"></span></i><div><b>12</b><span>批量代发</span></div></button>
+                <button class="todo" data-push="oil"><i style="background:var(--info-soft);color:#0369a1"><span data-icon="fuel"></span></i><div><b>6.2</b><span>油卡余额 万</span></div></button>
+                <button class="todo" data-toast="对账与开票请在电脑上做，数据量大"><i style="background:var(--success-soft);color:var(--success)"><span data-icon="file"></span></i><div><b>28</b><span>本月已付</span></div></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 费用单详情 -->
+        <section class="screen" data-screen="detail" data-title="费用单详情" data-nav="FD26080300221" data-parent="fee">
+          <div class="scroll">
+            <div class="pad">
+              <div class="card">
+                <div class="hstack">
+                  <span class="tag tag--danger">逾期 6 天</span>
+                  <span class="tag tag--ok">已审批</span>
+                  <span class="t-cap ml-auto t-mono">FD26080300221</span>
+                </div>
+                <div class="hstack" style="align-items:baseline;gap:8px;margin-top:14px">
+                  <span class="money" style="font-size:32px;color:var(--danger)"><small>¥</small>42,600</span>
+                  <span class="t-cap">应付 2026-08-03</span>
+                </div>
+                <p class="t-cap" style="margin:10px 0 0;line-height:1.6">对方财务昨天来问过一次。这张单 7 月 28 日就审批完了，卡在这周资金排期上。</p>
+              </div>
+
+              <div class="sec-title"><h2>单据信息</h2></div>
+              <div class="card">
+                <dl class="kv"><dt>单据类型</dt><dd>承运商结算单</dd></dl>
+                <dl class="kv"><dt>收款方</dt><dd>鑫达商品车运输有限公司</dd></dl>
+                <dl class="kv"><dt>收款账户</dt><dd>工商银行 ****8842</dd></dl>
+                <dl class="kv"><dt>结算周期</dt><dd>2026-07-01 至 2026-07-31</dd></dl>
+                <dl class="kv"><dt>覆盖任务</dt><dd>18 单 · 共 126 台</dd></dl>
+                <dl class="kv"><dt>支付方式</dt><dd>银行转账</dd></dl>
+                <dl class="kv"><dt>发票</dt><dd>已收专票 ¥42,600（税率 9%）</dd></dl>
+              </div>
+
+              <div class="sec-title"><h2>金额怎么来的</h2><span>点任务看明细</span></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">运费小计</div><div class="cell__s">18 单按合同价</div></div><div class="cell__x"><b class="money">¥40,120</b></div></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">高速与过路费</div><div class="cell__s">凭票据实报</div></div><div class="cell__x"><b class="money">¥3,280</b></div></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">货损扣款</div><div class="cell__s">TK2607220031 划痕一处</div></div><div class="cell__x"><b class="money" style="color:var(--danger)">−¥800</b></div></div>
+                <div class="cell" data-toast="18 单明细请在电脑端查看"><div class="cell__main center" style="color:var(--primary);font-size:13.5px">看 18 单任务明细</div></div>
+              </div>
+
+              <div class="sec-title"><h2>流转记录</h2></div>
+              <div class="card">
+                <div class="tl">
+                  <div class="tl__i is-done"><div class="tl__t">07-31 赵倩 提交</div><div class="tl__s">按 7 月对账单生成</div></div>
+                  <div class="tl__i is-done"><div class="tl__t">08-01 李敏 复核通过</div><div class="tl__s">与承运商对账一致</div></div>
+                  <div class="tl__i is-done"><div class="tl__t">08-02 陈总 审批通过</div><div class="tl__s">超 3 万，走了一级审批</div></div>
+                  <div class="tl__i is-now"><div class="tl__t">等待支付</div><div class="tl__s">应付 08-03，已逾期 6 天</div></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost is-narrow" data-toast="已拨号给 鑫达 张经理 139****8802" aria-label="联系收款方"><span data-icon="phone"></span></button>
+            <button class="btn btn--primary" data-sheet="pay"><span data-icon="check"></span>标记已支付</button>
+          </div>
+        </section>
+
+        <!-- 油卡账户 -->
+        <section class="screen" data-screen="oil" data-title="油卡与油气款" data-nav="油卡与油气款" data-parent="fee">
+          <div class="scroll">
+            <div class="pad">
+              <div class="card">
+                <div class="t-cap">公司油卡总余额</div>
+                <div class="hstack" style="align-items:baseline;gap:8px;margin-top:8px">
+                  <span class="money" style="font-size:30px"><small>¥</small>62,480</span>
+                  <span class="tag tag--warn ml-auto">3 张卡余额偏低</span>
+                </div>
+                <div class="bars mt-16">
+                  <div>
+                    <div class="bar__top"><span>本月已用</span><span class="strong">¥51,320</span></div>
+                    <div class="bar__track"><i class="bar__fill" style="--v:68%"></i></div>
+                  </div>
+                  <div>
+                    <div class="bar__top"><span>本月预算</span><span class="strong">¥75,000</span></div>
+                    <div class="bar__track"><i class="bar__fill" style="--v:100%;background:var(--line)"></i></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>余额偏低的卡</h2><span>低于 2,000 元提醒</span></div>
+              <div class="card card--plain">
+                <div class="cell" data-sheet="topup">
+                  <div class="cell__ico is-red"><span data-icon="fuel"></span></div>
+                  <div class="cell__main"><div class="cell__t">苏B·2K901 · 刘强</div><div class="cell__s">余额 ¥620 · 在途中，可能不够加油</div></div>
+                  <div class="cell__x"><span class="tag tag--danger">急</span></div>
+                </div>
+                <div class="cell" data-sheet="topup">
+                  <div class="cell__ico is-amber"><span data-icon="fuel"></span></div>
+                  <div class="cell__main"><div class="cell__t">苏A·8F236 · 王建国</div><div class="cell__s">余额 ¥1,480 · 明早出车</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-sheet="topup">
+                  <div class="cell__ico is-amber"><span data-icon="fuel"></span></div>
+                  <div class="cell__main"><div class="cell__t">苏A·6H128 · 张伟</div><div class="cell__s">余额 ¥1,860</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>今日油气支出</h2></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__ico"><span data-icon="fuel"></span></div><div class="cell__main"><div class="cell__t">中石化 宁沪高速仪征站</div><div class="cell__s">苏A·8F236 · 13:42 · 柴油 240 L</div></div><div class="cell__x"><b class="money">¥1,872</b></div></div>
+                <div class="cell cell--static"><div class="cell__ico"><span data-icon="fuel"></span></div><div class="cell__main"><div class="cell__t">中石油 沪宁常州服务区</div><div class="cell__s">苏B·2K901 · 11:20 · 柴油 180 L</div></div><div class="cell__x"><b class="money">¥1,404</b></div></div>
+              </div>
+
+              <div class="btnrow mt-16">
+                <button class="btn btn--primary btn--block" data-sheet="topup"><span data-icon="plus"></span>给油卡充值</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" data-screen="approve" data-title="审批（见 10）" data-nav="审批中心" data-parent="fee">
+          <div class="scroll"><p class="t-cap center mt-20">审批中心的完整设计见 10</p></div>
+        </section>
+
+        <!-- 无权限空态 -->
+        <section class="screen" data-screen="noauth" data-title="没有资金权限" data-nav="费用工作台" data-parent="fee">
+          <div class="scroll">
+            <div class="empty">
+              <div class="empty__ico"><span data-icon="lock"></span></div>
+              <h3>这里只有财务能看</h3>
+              <p>费用与资金数据涉及公司经营机密，需要「资金查看」权限。<br>如果工作需要，请让管理员在电脑端给你开通。</p>
+              <button class="btn btn--ghost" data-toast="已把申请发给管理员 李敏">申请开通</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="data" data-title="数据 tab" data-tabroot data-nav="数据">
+          <div class="scroll"><p class="t-cap center mt-20">经营驾驶舱见 03，运营看板见 11</p></div>
+        </section>
+        <section class="screen" data-screen="pool" data-title="调度 tab" data-tabroot data-nav="调度工作台">
+          <div class="scroll"><p class="t-cap center mt-20">五阶段调度工作台的完整设计见 05</p></div>
+        </section>
+        <section class="screen" data-screen="msgtab" data-title="消息 tab" data-tabroot data-nav="消息">
+          <div class="scroll"><p class="t-cap center mt-20">消息中心的完整设计见 13</p></div>
+        </section>
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll"><p class="t-cap center mt-20">个人中心与设置的完整设计见 14</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="fee"><span data-icon="grid"></span>工作台</button>
+        <button class="tabi" data-tab="pool"><span data-icon="route"></span>调度</button>
+        <button class="tabi" data-tab="data"><span data-icon="chart"></span>数据</button>
+        <button class="tabi" data-tab="msgtab"><span data-icon="msg"></span>消息<i class="tabi__dot">7</i></button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+      <!-- 标记已支付 -->
+      <div class="sheet" data-sheet-id="pay">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>标记已支付</h3><p>这里只做记录，转账请在网银完成</p></div>
+        <div class="sheet__body">
+          <div class="field">
+            <div class="field__l">实付金额<span class="req">*</span></div>
+            <div class="money-in"><span>¥</span><b>42,600</b><span class="ml-auto t-cap" style="font-size:12px">应付 ¥42,600</span></div>
+          </div>
+          <div class="field">
+            <div class="field__l">支付方式<span class="req">*</span></div>
+            <div class="chipbar">
+              <button class="chip" aria-selected="true">银行转账</button>
+              <button class="chip">银行代发</button>
+              <button class="chip">油卡</button>
+              <button class="chip">油气款抵扣</button>
+              <button class="chip">现金</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">支付日期</div>
+            <div class="picker">2026-08-09<span data-icon="calendar"></span></div>
+          </div>
+          <div class="field">
+            <div class="field__l">付款凭证<span class="dim3" style="font-weight:400">（选填，建议传）</span></div>
+            <div class="photos">
+              <div class="photo photo--add"><span data-icon="camera"></span><span>加图</span></div>
+            </div>
+          </div>
+          <div class="notice notice--info mt-12">
+            <span data-icon="info"></span>
+            <div>标记后单据变成「已支付」，会通知提交人赵倩和收款方联系人。</div>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>再等等</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已标记为已支付，赵倩会收到通知">确认已付</button>
+        </div>
+      </div>
+
+      <!-- 批量代发 -->
+      <div class="sheet" data-sheet-id="batch">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>批量代发司机结算</h3><p>8 月上半月批次 · 12 位司机</p></div>
+        <div class="sheet__body">
+          <div class="card card--flat">
+            <div class="hstack" style="align-items:baseline">
+              <span class="t-label dim">合计</span>
+              <span class="money ml-auto" style="font-size:24px"><small>¥</small>28,400</span>
+            </div>
+            <dl class="kv" style="margin-top:8px"><dt>人数</dt><dd>12 人</dd></dl>
+            <dl class="kv"><dt>最高一笔</dt><dd>王建国 ¥3,860</dd></dl>
+            <dl class="kv"><dt>最低一笔</dt><dd>李国庆 ¥1,240</dd></dl>
+            <dl class="kv"><dt>审批状态</dt><dd><span class="tag tag--ok">陈总已批</span></dd></dl>
+          </div>
+          <div class="notice mt-12">
+            <span data-icon="warn"></span>
+            <div>其中 <b>2 位司机的银行卡信息还没补全</b>，代发时会被银行退回。要不要先跳过他们？</div>
+          </div>
+          <div class="card card--plain mt-12">
+            <div class="cell cell--static"><div class="cell__ico is-amber"><span data-icon="user"></span></div><div class="cell__main"><div class="cell__t">周海东</div><div class="cell__s">缺开户行信息</div></div><div class="cell__x"><b class="money">¥2,140</b></div></div>
+            <div class="cell cell--static"><div class="cell__ico is-amber"><span data-icon="user"></span></div><div class="cell__main"><div class="cell__t">李国庆</div><div class="cell__s">银行卡号与姓名不符</div></div><div class="cell__x"><b class="money">¥1,240</b></div></div>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已导出 10 人代发清单，2 人已跳过">跳过 2 人并导出</button>
+        </div>
+      </div>
+
+      <!-- 油卡充值 -->
+      <div class="sheet" data-sheet-id="topup">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>给油卡充值</h3><p>苏B·2K901 · 刘强 · 当前余额 ¥620</p></div>
+        <div class="sheet__body">
+          <div class="field">
+            <div class="field__l">充值金额<span class="req">*</span></div>
+            <div class="money-in"><span>¥</span><b>3,000</b></div>
+            <div class="chipbar" style="margin-top:12px">
+              <button class="chip">1,000</button>
+              <button class="chip" aria-selected="true">3,000</button>
+              <button class="chip">5,000</button>
+              <button class="chip">10,000</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">资金来源</div>
+            <div class="picker">公司油气款账户 · 余额 ¥62,480<span data-icon="down"></span></div>
+          </div>
+          <div class="notice notice--info">
+            <span data-icon="info"></span>
+            <div>刘强正在跑 TK2608080077，充值一般 5 分钟内到账，他会收到微信通知。</div>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已充 ¥3,000，刘强会收到通知">确认充值</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

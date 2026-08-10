@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 资源与客商速查</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .qbar { padding: 10px var(--pad) 0; }
+  .hot { display: flex; flex-wrap: wrap; gap: 7px; padding: 12px var(--pad) 0; }
+  .hot button {
+    border: 0; cursor: pointer; height: 30px; padding: 0 11px; border-radius: 9px; background: #fff;
+    box-shadow: var(--sh-card); font: 500 12.5px/1 var(--font); color: var(--ink-2);
+    display: inline-flex; align-items: center; gap: 5px; transition: transform .12s ease-out;
+  }
+  .hot button:active { transform: scale(.94); }
+  .hot svg { width: 13px; height: 13px; color: var(--ink-3); }
+  /* 资源卡 */
+  .res { position: relative; width: 100%; text-align: left; border: 0; background: var(--card); cursor: pointer; padding: 12px 15px; display: flex; gap: 11px; align-items: center; }
+  .res + .res::before { content: ""; position: absolute; left: 15px; right: 0; top: 0; height: 1px; background: var(--line-soft); }
+  .res:active { background: #f6f8fc; }
+  .res__a { width: 40px; height: 40px; border-radius: 12px; flex: none; display: grid; place-items: center;
+    background: var(--primary-soft); color: var(--primary); font: 600 12.5px/1 var(--font); }
+  .res__a svg { width: 18px; height: 18px; }
+  .res__b { flex: 1; min-width: 0; }
+  .res__n { display: flex; align-items: center; gap: 7px; }
+  .res__n b { font-size: 14.8px; font-weight: 600; letter-spacing: -.006em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res__s { display: block; font-size: 12px; color: var(--ink-3); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res__c { width: 34px; height: 34px; border-radius: 11px; flex: none; display: grid; place-items: center;
+    background: var(--success-soft); color: var(--success); }
+  .res__c svg { width: 16px; height: 16px; }
+  /* 名片头 */
+  .cardhd { margin: 0 var(--pad); padding: 18px 18px 16px; border-radius: 18px; color: #fff; position: relative; overflow: hidden;
+    background: linear-gradient(148deg, #16226b, #2f54eb 70%, #3f74f7); box-shadow: 0 18px 32px -20px rgba(22,34,107,.9); }
+  .cardhd::after { content: ""; position: absolute; right: -46px; bottom: -66px; width: 190px; height: 190px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(250,140,22,.28), transparent 66%); }
+  .cardhd__n { position: relative; display: flex; align-items: center; gap: 11px; }
+  .cardhd__a { width: 46px; height: 46px; border-radius: 14px; background: rgba(255,255,255,.18); display: grid; place-items: center;
+    font-size: 17px; font-weight: 700; flex: none; }
+  .cardhd__n h2 { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -.012em; }
+  .cardhd__n p { margin: 5px 0 0; font-size: 12px; color: rgba(206,224,255,.8); }
+  .cardhd__s { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+  .cardhd__s div span { display: block; font-size: 11px; color: rgba(206,224,255,.7); }
+  .cardhd__s div b { display: block; font-size: 17px; font-weight: 700; margin-top: 5px; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .qacts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+  .qact { border: 0; cursor: pointer; background: #fff; box-shadow: var(--sh-card); border-radius: 13px; padding: 12px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 7px; transition: transform .12s ease-out; }
+  .qact:active { transform: scale(.95); }
+  .qact i { width: 32px; height: 32px; border-radius: 11px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); }
+  .qact svg { width: 16px; height: 16px; }
+  .qact span { font-size: 11.5px; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 12</p>
+    <h1 class="stage__title">资源与客商速查</h1>
+    <p class="stage__desc">在外面接到电话："苏A·8F236 是谁在开？""鑫达那边联系人电话多少？"这一屏就是为这种时刻存在的——<b style="color:#e2e8f0">查到、能打、看得懂</b>。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>入口是<b>一个搜索框</b>，不是四个分类 tab。人在着急时不想先想"这属于哪一类"，直接搜车牌、人名、公司名都能命中。</li>
+        <li>结果<b>右侧永远是拨号按钮</b>。速查的终点九成是打电话，不该让人再点进详情才找到号码。</li>
+        <li>最近查过的<b>自动置顶</b>，因为同一天往往会查同一个人好几次。</li>
+        <li>详情页做成<b>名片式</b>：三个最关键的数（在途单量 / 本月合作 / 待结算）放在头图，剩下的往下折。</li>
+        <li>档案维护（新增车辆、改联系人、改合同）留在电脑端。这里只读 + 打电话 + 复制。</li>
+        <li>证照临期在列表上就标出来，避免调度派了一台明天年检到期的车。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <section class="screen" data-screen="search" data-title="速查" data-nav="速查" data-tabroot data-start>
+          <div class="scroll is-flush">
+            <div class="qbar">
+              <div class="searchbar"><span data-icon="search"></span>车牌 / 司机 / 客户 / 承运商 / 仓库</div>
+            </div>
+
+            <div class="hot">
+              <button data-push="driver"><span data-icon="truck"></span>苏A·8F236</button>
+              <button data-push="customer"><span data-icon="building"></span>苏南汽贸</button>
+              <button data-push="carrier"><span data-icon="users"></span>鑫达商品车运输</button>
+              <button data-toast="上汽仪征基地 · 江苏扬州仪征汽车工业园"><span data-icon="warehouse"></span>上汽仪征基地</button>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="sec-title" style="margin-top:0"><h2>最近查过</h2><span>本机记录，不同步</span></div>
+              <div class="card card--plain">
+                <button class="res" data-push="driver">
+                  <span class="res__a">苏A</span>
+                  <span class="res__b">
+                    <span class="res__n"><b>苏A·8F236 · 王建国</b><span class="tag tag--info">在途</span></span>
+                    <span class="res__s">8 位板 · 正跑 TK2608090037</span>
+                  </span>
+                  <span class="res__c" data-toast="已拨号给 王建国 138****3877"><span data-icon="phone"></span></span>
+                </button>
+                <button class="res" data-push="customer">
+                  <span class="res__a" style="background:var(--info-soft);color:#0369a1"><span data-icon="building"></span></span>
+                  <span class="res__b">
+                    <span class="res__n"><b>苏南汽贸有限公司</b></span>
+                    <span class="res__s">王经理 · 本月 32 车 · 无逾期</span>
+                  </span>
+                  <span class="res__c" data-toast="已拨号给 苏南汽贸 王经理 137****2280"><span data-icon="phone"></span></span>
+                </button>
+                <button class="res" data-push="carrier">
+                  <span class="res__a" style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="users"></span></span>
+                  <span class="res__b">
+                    <span class="res__n"><b>鑫达商品车运输</b><span class="tag tag--ok">A 级</span></span>
+                    <span class="res__s">张经理 · 在途 4 单 · 待结算 ¥42,600</span>
+                  </span>
+                  <span class="res__c" data-toast="已拨号给 鑫达 张经理 139****8802"><span data-icon="phone"></span></span>
+                </button>
+              </div>
+
+              <div class="sec-title"><h2>需要留意的资源</h2><span>派车前先看一眼</span></div>
+              <div class="card card--plain">
+                <div class="cell" data-push="driver">
+                  <div class="cell__ico is-red"><span data-icon="shield"></span></div>
+                  <div class="cell__main"><div class="cell__t">苏C·9J065 年检 8 月 16 日到期</div><div class="cell__s">还有 7 天，到期后不能上路</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-push="driver">
+                  <div class="cell__ico is-amber"><span data-icon="user"></span></div>
+                  <div class="cell__main"><div class="cell__t">周海东 从业资格证 9 月 2 日到期</div><div class="cell__s">还有 24 天，提醒他去换证</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-push="carrier">
+                  <div class="cell__ico is-amber"><span data-icon="users"></span></div>
+                  <div class="cell__main"><div class="cell__t">顺捷社会运力池 考核 C 级</div><div class="cell__s">准点率 84.1%，建议减量或先谈整改</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>按类别浏览</h2></div>
+              <div class="qacts">
+                <button class="qact" data-toast="自有车 32 台 · 可派 6 台"><i><span data-icon="truck"></span></i><span>车辆 32</span></button>
+                <button class="qact" data-toast="在职司机 32 人 · 今日出车 23 人"><i style="background:var(--info-soft);color:#0369a1"><span data-icon="user"></span></i><span>司机 32</span></button>
+                <button class="qact" data-toast="合作客商 28 家"><i style="background:var(--success-soft);color:var(--success)"><span data-icon="building"></span></i><span>客商 28</span></button>
+                <button class="qact" data-toast="承运商 9 家 · A 级 5 家"><i style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="users"></span></i><span>承运 9</span></button>
+              </div>
+
+              <p class="t-cap center mt-20">新增与修改档案请在电脑端做，这里只查不改</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 司机 / 车辆名片 -->
+        <section class="screen" data-screen="driver" data-title="车辆与司机名片" data-nav="苏A·8F236" data-parent="search">
+          <div class="scroll">
+            <div class="cardhd">
+              <div class="cardhd__n">
+                <span class="cardhd__a">王</span>
+                <div class="grow">
+                  <h2>王建国 · 苏A·8F236</h2>
+                  <p>8 位板 · 挂 苏A·H8821 · 入职 3 年 2 个月</p>
+                </div>
+              </div>
+              <div class="cardhd__s">
+                <div><span>当前状态</span><b>在途</b></div>
+                <div><span>本月趟数</span><b>24</b></div>
+                <div><span>综合分</span><b>100</b></div>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="qacts">
+                <button class="qact" data-toast="已拨号给 王建国 138****3877"><i><span data-icon="phone"></span></i><span>打电话</span></button>
+                <button class="qact" data-toast="已复制 138****3877"><i style="background:var(--info-soft);color:#0369a1"><span data-icon="file"></span></i><span>复制号码</span></button>
+                <button class="qact" data-toast="在途监控的完整设计见 07"><i style="background:var(--success-soft);color:var(--success)"><span data-icon="pin"></span></i><span>看位置</span></button>
+                <button class="qact" data-toast="派车的完整设计见 06"><i style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="truck"></span></i><span>派这台</span></button>
+              </div>
+
+              <div class="sec-title"><h2>现在在干什么</h2></div>
+              <div class="card card--plain">
+                <div class="cell" data-toast="在途监控的完整设计见 07">
+                  <div class="cell__ico"><span data-icon="route"></span></div>
+                  <div class="cell__main"><div class="cell__t">TK2608090037 在途</div><div class="cell__s">仪征 → 杭州萧山 · 距目的地 86 km · 预计 17:40 到</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>车与证</h2></div>
+              <div class="card">
+                <dl class="kv"><dt>牵引车</dt><dd>苏A·8F236 · 解放 J7 · 2023 年上牌</dd></dl>
+                <dl class="kv"><dt>挂车</dt><dd>苏A·H8821 挂 · 8 位板</dd></dl>
+                <dl class="kv"><dt>行驶证</dt><dd>有效期至 2027-05-18</dd></dl>
+                <dl class="kv"><dt>年检</dt><dd>2027-03-20 <span class="tag tag--ok">正常</span></dd></dl>
+                <dl class="kv"><dt>营运证</dt><dd>2026-12-01 <span class="tag tag--ok">正常</span></dd></dl>
+                <dl class="kv"><dt>司机驾驶证</dt><dd>A2 · 有效期至 2029-04-11</dd></dl>
+                <dl class="kv"><dt>从业资格证</dt><dd>2028-06-30 <span class="tag tag--ok">正常</span></dd></dl>
+              </div>
+
+              <div class="sec-title"><h2>最近 5 趟</h2></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">08-09 仪征 → 杭州萧山</div><div class="cell__s">8 台 · 在途中</div></div><div class="cell__x"><span class="tag tag--info">在途</span></div></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">08-07 仪征 → 常州武进</div><div class="cell__s">6 台 · 准点 · 回单当天传</div></div><div class="cell__x"><span class="tag tag--ok">已签收</span></div></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">08-05 南京江宁 → 苏州吴中</div><div class="cell__s">5 台 · 准点</div></div><div class="cell__x"><span class="tag tag--ok">已签收</span></div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 客商名片 -->
+        <section class="screen" data-screen="customer" data-title="客商名片" data-nav="苏南汽贸" data-parent="search">
+          <div class="scroll">
+            <div class="cardhd">
+              <div class="cardhd__n">
+                <span class="cardhd__a"><span data-icon="building"></span></span>
+                <div class="grow">
+                  <h2>苏南汽贸有限公司</h2>
+                  <p>合作 4 年 · 华东第 2 大客户 · 结算周期 月结 30 天</p>
+                </div>
+              </div>
+              <div class="cardhd__s">
+                <div><span>本月运费</span><b>412 万</b></div>
+                <div><span>在途</span><b>6 单</b></div>
+                <div><span>待回款</span><b>86 万</b></div>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="qacts">
+                <button class="qact" data-toast="已拨号给 王经理 137****2280"><i><span data-icon="phone"></span></i><span>打电话</span></button>
+                <button class="qact" data-toast="已复制客户地址"><i style="background:var(--info-soft);color:#0369a1"><span data-icon="pin"></span></i><span>复制地址</span></button>
+                <button class="qact" data-toast="计划中心的完整设计见 04"><i style="background:var(--success-soft);color:var(--success)"><span data-icon="file"></span></i><span>看计划</span></button>
+                <button class="qact" data-toast="运价合同请在电脑端查看"><i style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="wallet"></span></i><span>看运价</span></button>
+              </div>
+
+              <div class="sec-title"><h2>联系人</h2></div>
+              <div class="card card--plain">
+                <div class="cell" data-toast="已拨号给 王经理 137****2280">
+                  <div class="cell__ico"><span data-icon="user"></span></div>
+                  <div class="cell__main"><div class="cell__t">王经理 · 物流对接</div><div class="cell__s">137****2280 · 日常发运沟通</div></div>
+                  <div class="cell__x"><span data-icon="phone"></span></div>
+                </div>
+                <div class="cell" data-toast="已拨号给 陈会计 138****9014">
+                  <div class="cell__ico"><span data-icon="wallet"></span></div>
+                  <div class="cell__main"><div class="cell__t">陈会计 · 结算对账</div><div class="cell__s">138****9014 · 每月 5 号前对账</div></div>
+                  <div class="cell__x"><span data-icon="phone"></span></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>合作情况</h2></div>
+              <div class="card">
+                <dl class="kv"><dt>本月计划</dt><dd>32 个 · 218 台</dd></dl>
+                <dl class="kv"><dt>常跑线路</dt><dd>仪征 → 合肥 / 苏州 / 温州</dd></dl>
+                <dl class="kv"><dt>计价方式</dt><dd>按台计价，按线路分档</dd></dl>
+                <dl class="kv"><dt>回款情况</dt><dd><span style="color:var(--success);font-weight:600">近 6 个月无逾期</span></dd></dl>
+                <dl class="kv"><dt>本月投诉</dt><dd>1 起（08-03 晚点 4 小时，已致歉）</dd></dl>
+                <dl class="kv"><dt>上次拜访</dt><dd>2026-06-12 陈总</dd></dl>
+              </div>
+
+              <div class="notice mt-16">
+                <span data-icon="info"></span>
+                <div>这个客户本月有 1 起晚点投诉，且有一单在途已超时 4 小时。如果接到电话，先说这个。</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 承运商名片 -->
+        <section class="screen" data-screen="carrier" data-title="承运商名片" data-nav="鑫达商品车运输" data-parent="search">
+          <div class="scroll">
+            <div class="cardhd">
+              <div class="cardhd__n">
+                <span class="cardhd__a"><span data-icon="users"></span></span>
+                <div class="grow">
+                  <h2>鑫达商品车运输</h2>
+                  <p>合作 3 年 · 考核 A 级 · 自有 18 台板车</p>
+                </div>
+              </div>
+              <div class="cardhd__s">
+                <div><span>本月单量</span><b>62</b></div>
+                <div><span>准点率</span><b>97.6%</b></div>
+                <div><span>待结算</span><b>4.3 万</b></div>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="qacts">
+                <button class="qact" data-toast="已拨号给 张经理 139****8802"><i><span data-icon="phone"></span></i><span>打电话</span></button>
+                <button class="qact" data-toast="派车的完整设计见 06"><i style="background:var(--info-soft);color:#0369a1"><span data-icon="truck"></span></i><span>分配单</span></button>
+                <button class="qact" data-toast="费用工作台的完整设计见 09"><i style="background:var(--success-soft);color:var(--success)"><span data-icon="wallet"></span></i><span>看结算</span></button>
+                <button class="qact" data-toast="运营看板的完整设计见 11"><i style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="chart"></span></i><span>看考核</span></button>
+              </div>
+
+              <div class="sec-title"><h2>报价（近 3 个月同线路）</h2></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">仪征 → 温州瓯海</div><div class="cell__s">跑过 42 趟 · 586 km</div></div><div class="cell__x"><b class="money">¥9,800</b></div></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">仪征 → 合肥包河</div><div class="cell__s">跑过 28 趟 · 412 km</div></div><div class="cell__x"><b class="money">¥7,200</b></div></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">南京江宁 → 徐州云龙</div><div class="cell__s">跑过 16 趟 · 328 km</div></div><div class="cell__x"><b class="money">¥6,400</b></div></div>
+              </div>
+
+              <div class="sec-title"><h2>在途与待结</h2></div>
+              <div class="card">
+                <dl class="kv"><dt>在途单</dt><dd>4 单 · 其中 1 单超时 1 小时 05 分</dd></dl>
+                <dl class="kv"><dt>待签收</dt><dd>2 单</dd></dl>
+                <dl class="kv"><dt>待结算</dt><dd><span style="color:var(--danger);font-weight:650">¥42,600 已逾期 6 天</span></dd></dl>
+                <dl class="kv"><dt>资质</dt><dd>道路运输经营许可证 有效期至 2028-09</dd></dl>
+                <dl class="kv"><dt>保险</dt><dd>承运人责任险 500 万 · 有效期至 2027-01</dd></dl>
+              </div>
+
+              <div class="notice notice--danger mt-16">
+                <span data-icon="warn"></span>
+                <div>他们有一张 ¥42,600 的结算单逾期 6 天了，昨天问过一次。打电话前最好先看下费用工作台。</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll"><p class="t-cap center mt-20">个人中心与设置的完整设计见 14</p></div>
+        </section>
+        <section class="screen" data-screen="pool" data-title="调度 tab" data-tabroot data-nav="调度工作台">
+          <div class="scroll"><p class="t-cap center mt-20">五阶段调度工作台的完整设计见 05</p></div>
+        </section>
+        <section class="screen" data-screen="data" data-title="数据 tab" data-tabroot data-nav="数据">
+          <div class="scroll"><p class="t-cap center mt-20">经营驾驶舱见 03，运营看板见 11</p></div>
+        </section>
+        <section class="screen" data-screen="msgtab" data-title="消息 tab" data-tabroot data-nav="消息">
+          <div class="scroll"><p class="t-cap center mt-20">消息中心的完整设计见 13</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="search"><span data-icon="grid"></span>工作台</button>
+        <button class="tabi" data-tab="pool"><span data-icon="route"></span>调度</button>
+        <button class="tabi" data-tab="data"><span data-icon="chart"></span>数据</button>
+        <button class="tabi" data-tab="msgtab"><span data-icon="msg"></span>消息<i class="tabi__dot">7</i></button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

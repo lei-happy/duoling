@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>驾驶员微信小程序 · 我的与设置</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .prof {
+    position: relative; padding: 40px var(--pad) 44px; color: #fff; overflow: hidden;
+    background: radial-gradient(400px 240px at 88% -12%, rgba(245,165,36,.24), transparent 62%),
+                linear-gradient(160deg, #0d1b3e, #16306e 60%, #12275a);
+  }
+  .prof::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(148,180,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(148,180,255,.07) 1px, transparent 1px);
+    background-size: 30px 30px;
+    mask-image: radial-gradient(260px 170px at 26% 0%, #000, transparent 82%);
+  }
+  .prof__r { position: relative; display: flex; align-items: center; gap: 14px; }
+  .prof__av { width: 58px; height: 58px; border-radius: 19px; background: rgba(255,255,255,.15); display: grid; place-items: center; font-size: 21px; font-weight: 600; flex: none; }
+  .prof__n { font-size: 22px; font-weight: 650; letter-spacing: -.018em; }
+  .prof__s { font-size: 12.5px; color: rgba(206,224,255,.72); margin-top: 6px; }
+  .prof__badges { position: relative; display: flex; gap: 7px; margin-top: 18px; flex-wrap: wrap; }
+  .pbadge { font-size: 11.5px; padding: 5px 9px; border-radius: 7px; background: rgba(255,255,255,.13); color: rgba(226,238,255,.92); display: inline-flex; align-items: center; gap: 5px; }
+  .pbadge svg { width: 12px; height: 12px; }
+  .pbadge.gold { background: rgba(245,165,36,.22); color: #ffd591; }
+  .honor { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
+  .honor > div { text-align: center; padding: 4px 2px; position: relative; }
+  .honor > div + div::before { content: ""; position: absolute; left: 0; top: 20%; bottom: 20%; width: 1px; background: var(--line); }
+  .honor b { display: block; font-size: 23px; font-weight: 700; letter-spacing: -.028em; font-variant-numeric: tabular-nums; }
+  .honor span { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 5px; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Driver Mini Program · 13</p>
+    <h1 class="stage__title">我的与设置</h1>
+    <p class="stage__desc">个人中心不做成一长串灰色列表。司机在这里最常做的两件事是切企业和查自己的成绩单，那就把这两件放到最显眼的地方。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li><b>准点率、安全天数、服务评分</b>做成成绩单。这是司机唯一能看到自己"干得怎么样"的地方，也是留人的抓手。</li>
+        <li>切换企业放在<b>页头一行以内</b>可达。挂靠司机一天可能切两次，藏在三级页面里是折磨。</li>
+        <li>设置项<b>只留司机真会改的</b>：字号、通知、位置、缓存。多语言、主题色这类没人用的一律不做。</li>
+        <li>字号提供<b>标准 / 大 / 特大</b>三档。这是驾驶员端最有价值的无障碍设置，不是可选项。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <!-- 我的 -->
+        <section class="screen" data-screen="mine" data-title="我的" data-tabroot data-nav-hide="1"
+                 data-status-light="1" data-mpbg="#0d1b3e" data-start>
+          <div class="scroll is-flush">
+            <header class="prof">
+              <div class="prof__r">
+                <div class="prof__av">王</div>
+                <div class="grow">
+                  <div class="prof__n">王建国</div>
+                  <div class="prof__s">A2 · 苏A·8F236 · 工号 D2019036</div>
+                </div>
+                <span data-icon="right" style="color:rgba(206,224,255,.6)"></span>
+              </div>
+              <div class="prof__badges">
+                <span class="pbadge gold"><span data-icon="star"></span>金牌司机</span>
+                <span class="pbadge"><span data-icon="shieldok"></span>安全行驶 412 天</span>
+                <span class="pbadge"><span data-icon="clock"></span>准点率 96%</span>
+              </div>
+            </header>
+
+            <div class="overcard">
+              <div class="honor">
+                <div><b data-count-to="412">0</b><span>安全行驶天</span></div>
+                <div><b data-count-to="96">0</b><span>准点率 %</span></div>
+                <div><b>4.9</b><span>服务评分</span></div>
+              </div>
+            </div>
+
+            <div class="pad" style="margin-top:16px">
+              <div class="card card--plain">
+                <div class="cell" data-push="switch">
+                  <div class="cell__ico"><span data-icon="building"></span></div>
+                  <div class="cell__main"><div class="cell__t">当前企业</div><div class="cell__s">远洋汽车物流有限公司 · 自有车司机</div></div>
+                  <div class="cell__x">切换<span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>我的资料</h2></div>
+              <div class="card card--plain">
+                <div class="cell" data-push="profile">
+                  <div class="cell__ico"><span data-icon="user"></span></div>
+                  <div class="cell__main"><div class="cell__t">个人信息</div><div class="cell__s">手机号、紧急联系人、收款卡</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-toast="我的车与证照的完整设计见 11">
+                  <div class="cell__ico is-amber"><span data-icon="truck"></span></div>
+                  <div class="cell__main"><div class="cell__t">我的车与证照</div><div class="cell__s">苏A·8F236 + 苏A·H7712挂</div></div>
+                  <div class="cell__x"><span class="tag tag--warn">2 项将到期</span><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-push="honor">
+                  <div class="cell__ico is-green"><span data-icon="star"></span></div>
+                  <div class="cell__main"><div class="cell__t">我的成绩单</div><div class="cell__s">准点率、安全记录、客户评价</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>设置</h2></div>
+              <div class="card card--plain">
+                <div class="cell" data-push="setting">
+                  <div class="cell__ico"><span data-icon="settings"></span></div>
+                  <div class="cell__main"><div class="cell__t">通用设置</div><div class="cell__s">字号、通知、位置、缓存</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-toast="消息与订阅的完整设计见 12">
+                  <div class="cell__ico"><span data-icon="bell"></span></div>
+                  <div class="cell__main"><div class="cell__t">通知设置</div><div class="cell__s">派车、到账、证照提醒</div></div>
+                  <div class="cell__x">已开 4 项<span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-sheet="help">
+                  <div class="cell__ico"><span data-icon="info"></span></div>
+                  <div class="cell__main"><div class="cell__t">帮助与反馈</div><div class="cell__s">常见问题、联系公司</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <p class="t-cap center mt-20" style="padding-bottom:4px">智图司机端 v2.6.0 · 远洋汽车物流</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 切换企业 -->
+        <section class="screen" data-screen="switch" data-title="切换企业" data-nav="切换企业" data-parent="mine">
+          <div class="scroll">
+            <div class="notice notice--info mt-8">
+              <span data-icon="info"></span>
+              <div>任务和收入按企业分开算。切换后看到的都是那家公司的数据，<b>不会串</b>。</div>
+            </div>
+            <div class="card card--plain mt-12">
+              <div class="cell">
+                <div class="cell__ico" style="background:linear-gradient(145deg,#2f5fe0,#1d4ed8);color:#fff;font-weight:600">远</div>
+                <div class="cell__main"><div class="cell__t">远洋汽车物流有限公司</div><div class="cell__s">自有车司机 · 在跑 2 单</div></div>
+                <span class="tag tag--primary">当前</span>
+              </div>
+              <div class="cell">
+                <div class="cell__ico" style="background:linear-gradient(145deg,#0ea5e9,#0369a1);color:#fff;font-weight:600">鑫</div>
+                <div class="cell__main"><div class="cell__t">鑫达商品车运输</div><div class="cell__s">承运商司机 · 暂无在跑任务</div></div>
+                <div class="cell__x"><span data-icon="right"></span></div>
+              </div>
+              <div class="cell">
+                <div class="cell__ico" style="background:linear-gradient(145deg,#f5a524,#c97c00);color:#fff;font-weight:600">顺</div>
+                <div class="cell__main"><div class="cell__t">顺捷社会运力池</div><div class="cell__s">社会运力 · 准入审核中</div></div>
+                <span class="tag tag--warn">待审核</span>
+              </div>
+            </div>
+            <button class="btn btn--ghost btn--block mt-12"><span data-icon="qr"></span>扫码加入新企业</button>
+          </div>
+        </section>
+
+        <!-- 个人信息 -->
+        <section class="screen" data-screen="profile" data-title="个人信息" data-nav="个人信息" data-parent="mine">
+          <div class="scroll">
+            <div class="card mt-8">
+              <dl class="kvlist">
+                <div class="kv"><dt>姓名</dt><dd>王建国</dd></div>
+                <div class="kv"><dt>手机号</dt><dd class="t-mono">138****6721</dd></div>
+                <div class="kv"><dt>身份证</dt><dd class="t-mono">3201**********1234</dd></div>
+                <div class="kv"><dt>准驾车型</dt><dd>A2</dd></div>
+                <div class="kv"><dt>入职时间</dt><dd>2019-03-11</dd></div>
+                <div class="kv"><dt>所属车队</dt><dd>华东一队</dd></div>
+              </dl>
+            </div>
+
+            <div class="sec-title"><h2>紧急联系人</h2></div>
+            <div class="card">
+              <dl class="kvlist">
+                <div class="kv"><dt>姓名</dt><dd>王慧（女儿）</dd></div>
+                <div class="kv"><dt>手机号</dt><dd class="t-mono">159****3308</dd></div>
+              </dl>
+            </div>
+
+            <div class="sec-title"><h2>收款账户</h2></div>
+            <div class="card">
+              <dl class="kvlist">
+                <div class="kv"><dt>开户行</dt><dd>工商银行 江宁支行</dd></div>
+                <div class="kv"><dt>卡号</dt><dd class="t-mono">6222 **** **** 4218</dd></div>
+              </dl>
+            </div>
+
+            <div class="notice notice--info mt-12">
+              <span data-icon="lock"></span>
+              <div>这些信息由公司车管维护。要改的话在下面提交变更申请，<b>审核通过才生效</b> —— 主要是防止收款卡被冒改。</div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--primary btn--lg" data-sheet="change">提交变更申请</button>
+          </div>
+        </section>
+
+        <!-- 成绩单 -->
+        <section class="screen" data-screen="honor" data-title="我的成绩单" data-nav="我的成绩单" data-parent="mine">
+          <div class="scroll">
+            <div class="card mt-8" style="background:linear-gradient(150deg,#b45309,#f5a524);color:#fff;padding:20px">
+              <div class="hstack" style="gap:10px">
+                <span data-icon="star"></span>
+                <b style="font-size:17px">金牌司机 · 华东一队第 3 名</b>
+              </div>
+              <p style="margin:12px 0 0;font-size:13px;line-height:1.6;color:rgba(255,255,255,.86)">连续 412 天无事故，8 月准点率 96%，客户评价 4.9 分。<br>再保持 88 天可以拿到年度安全奖。</p>
+            </div>
+
+            <div class="sec-title"><h2>本月表现</h2></div>
+            <div class="card">
+              <div class="bars">
+                <div>
+                  <div class="bar__top"><span>准点率</span><span class="strong">96% <span class="dim3" style="font-weight:400">目标 92%</span></span></div>
+                  <div class="bar__track"><i class="bar__fill" style="--v:96%;background:var(--success)"></i></div>
+                </div>
+                <div>
+                  <div class="bar__top"><span>回单及时率</span><span class="strong">81% <span class="dim3" style="font-weight:400">目标 90%</span></span></div>
+                  <div class="bar__track"><i class="bar__fill" style="--v:81%;background:var(--warning)"></i></div>
+                </div>
+                <div>
+                  <div class="bar__top"><span>货损率</span><span class="strong">0.4% <span class="dim3" style="font-weight:400">目标 &lt;1%</span></span></div>
+                  <div class="bar__track"><i class="bar__fill" style="--v:12%;background:var(--success)"></i></div>
+                </div>
+                <div>
+                  <div class="bar__top"><span>百公里油耗</span><span class="strong">32.4L <span class="dim3" style="font-weight:400">队均 33.8L</span></span></div>
+                  <div class="bar__track"><i class="bar__fill" style="--v:72%"></i></div>
+                </div>
+              </div>
+              <div class="notice mt-16">
+                <span data-icon="camera"></span>
+                <div><b>回单及时率是你唯一的短板</b><br>签收后当天传完就能上 90%。现在有 3 单还欠着。</div>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>客户评价</h2><span>近 3 条</span></div>
+            <div class="card card--plain">
+              <div class="cell cell--static">
+                <div class="cell__ico is-green"><span data-icon="star"></span></div>
+                <div class="cell__main"><div class="cell__t">苏南汽贸 · 5.0 分</div><div class="cell__s">师傅很守时，卸车也帮着一起弄</div></div>
+              </div>
+              <div class="cell cell--static">
+                <div class="cell__ico is-green"><span data-icon="star"></span></div>
+                <div class="cell__main"><div class="cell__t">浙杭之星 · 5.0 分</div><div class="cell__s">车况干净，交接单填得清楚</div></div>
+              </div>
+              <div class="cell cell--static">
+                <div class="cell__ico is-amber"><span data-icon="star"></span></div>
+                <div class="cell__main"><div class="cell__t">萧山恒信 · 4.5 分</div><div class="cell__s">到得晚了半小时，提前打电话说明了</div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 通用设置 -->
+        <section class="screen" data-screen="setting" data-title="通用设置" data-nav="通用设置" data-parent="mine">
+          <div class="scroll">
+            <div class="sec-title" style="margin-top:8px"><h2>字号</h2><span>影响全部页面</span></div>
+            <div class="card">
+              <div class="seg">
+                <button>标准</button>
+                <button aria-selected="true">大</button>
+                <button>特大</button>
+              </div>
+              <div class="card card--flat mt-12" style="padding:14px">
+                <div style="font-size:17px;font-weight:600">上汽仪征基地 → 杭州萧山中转库</div>
+                <div style="font-size:14px;color:var(--ink-2);margin-top:6px">8 台 · 别克昂科威 · 18:00 前到货</div>
+              </div>
+              <p class="t-cap" style="margin:11px 0 0">上面是当前字号的实际效果</p>
+            </div>
+
+            <div class="sec-title"><h2>权限</h2></div>
+            <div class="card">
+              <div class="hstack" style="justify-content:space-between;padding:11px 0">
+                <div class="grow"><div class="cell__t">位置</div><div class="cell__s" style="margin-top:3px">仅在途任务期间采集</div></div>
+                <button class="switch" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="hstack" style="justify-content:space-between;padding:11px 0;border-top:1px solid var(--line-soft)">
+                <div class="grow"><div class="cell__t">相机与相册</div><div class="cell__s" style="margin-top:3px">用于拍装车照与回单</div></div>
+                <button class="switch" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="hstack" style="justify-content:space-between;padding:11px 0;border-top:1px solid var(--line-soft)">
+                <div class="grow"><div class="cell__t">通知</div><div class="cell__s" style="margin-top:3px">派车、到账、证照提醒</div></div>
+                <button class="switch" role="switch" aria-checked="true"></button>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>其他</h2></div>
+            <div class="card card--plain">
+              <div class="cell" data-toast="已清理 28.4 MB 缓存">
+                <div class="cell__main"><div class="cell__t">清理缓存</div></div>
+                <div class="cell__x">28.4 MB<span data-icon="right"></span></div>
+              </div>
+              <div class="cell" data-toast="当前已是最新版本 v2.6.0">
+                <div class="cell__main"><div class="cell__t">检查更新</div></div>
+                <div class="cell__x">v2.6.0<span data-icon="right"></span></div>
+              </div>
+              <div class="cell"><div class="cell__main"><div class="cell__t">服务协议与隐私政策</div></div><div class="cell__x"><span data-icon="right"></span></div></div>
+            </div>
+
+            <button class="btn btn--danger btn--block mt-16" data-dialog="logout"><span data-icon="logout"></span>退出登录</button>
+            <p class="t-cap center mt-12" style="padding-bottom:6px">退出后需要重新用微信手机号登录</p>
+          </div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="home" data-title="工作台 tab" data-tabroot data-nav="工作台">
+          <div class="scroll"><p class="t-cap center mt-20">工作台首页的完整设计见 02</p></div>
+        </section>
+        <section class="screen" data-screen="task" data-title="任务 tab" data-tabroot data-nav="我的任务">
+          <div class="scroll"><p class="t-cap center mt-20">任务列表的完整设计见 03</p></div>
+        </section>
+        <section class="screen" data-screen="income" data-title="收入 tab" data-tabroot data-nav="我的收入">
+          <div class="scroll"><p class="t-cap center mt-20">收入与费用单的完整设计见 09</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="home"><span data-icon="home"></span>工作台</button>
+        <button class="tabi" data-tab="task"><span data-icon="list"></span>任务</button>
+        <button class="tabi" data-tab="income"><span data-icon="wallet"></span>收入</button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+      <div class="dialog" data-dialog-id="logout">
+        <div class="dialog__body">
+          <h3>退出登录？</h3>
+          <p>退出后不会再收到派车通知。<br>下次要重新用微信手机号登录。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>取消</button>
+          <button class="is-main" data-sheet-close data-toast="已退出登录">退出</button>
+        </div>
+      </div>
+
+      <div class="sheet" data-sheet-id="help">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>帮助与反馈</h3><p>先看看常见问题，解决不了直接找人。</p></div>
+        <div class="sheet__body">
+          <div class="card card--plain" style="box-shadow:none">
+            <div class="cell"><div class="cell__main"><div class="cell__t">回单传上去多久能到账？</div></div><div class="cell__x"><span data-icon="right"></span></div></div>
+            <div class="cell"><div class="cell__main"><div class="cell__t">调令接错了怎么撤回？</div></div><div class="cell__x"><span data-icon="right"></span></div></div>
+            <div class="cell"><div class="cell__main"><div class="cell__t">油卡刷不了怎么办？</div></div><div class="cell__x"><span data-icon="right"></span></div></div>
+            <div class="cell"><div class="cell__main"><div class="cell__t">换手机号了还能登录吗？</div></div><div class="cell__x"><span data-icon="right"></span></div></div>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close data-toast="正在呼叫调度员 李敏">打给调度</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="正在呼叫公司客服 400-820-1234">打给公司</button>
+        </div>
+      </div>
+
+      <div class="sheet" data-sheet-id="change">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>提交变更申请</h3><p>选一项要改的，车管核对后生效。</p></div>
+        <div class="sheet__body">
+          <div class="radios">
+            <div class="radio" role="radio" aria-checked="true"><i class="radio__m"></i><div><div class="radio__t">手机号</div><div class="radio__s">换号后要重新绑定微信</div></div></div>
+            <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">收款银行卡</div><div class="radio__s">需要上传新卡正面照片</div></div></div>
+            <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">紧急联系人</div></div></div>
+          </div>
+          <div class="field mt-8">
+            <div class="field__l">新的值<span class="req">*</span></div>
+            <input class="input" placeholder="请填写变更后的内容">
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已提交，车管审核后生效" data-toast-icon="ok">提交</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

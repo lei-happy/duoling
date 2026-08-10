@@ -1,0 +1,84 @@
+=== MENU PAGES (path + name) ===
+OK	/approval/history	审批记录	/approval/history/index
+OK	/approval/initiated	我的申请	/approval/initiated/index
+OK	/approval/pending	我的待办	/approval/pending/index
+OK	/billing/carrier-contract	承运商合同	/billing/carrier-contract/index
+OK	/billing/contract	运价合同	/billing/contract/index
+OK	/billing/cost-policy	成本政策	/billing/cost-policy/index
+OK	/billing/fee-template	费用模板	/billing/fee-template/index
+OK	/billing/route	路线管理	/billing/route/index
+OK	/capacity/carrier-capacity/capacity-approval	运力审批	/capacity/carrier-capacity/capacity-approval/index
+OK	/capacity/carrier-capacity/list	运力列表	/capacity/carrier-capacity/list/index
+OK	/capacity/compliance	证照监控	/capacity/compliance/index
+OK	/capacity/maintenance	维修保养	/capacity/maintenance/index
+OK	/capacity/self-capacity/driver	驾驶员管理	/capacity/self-capacity/driver/index
+OK	/capacity/self-capacity/group	运力分组	/capacity/self-capacity/group/index
+OK	/capacity/self-capacity/list	运力列表	/capacity/self-capacity/list/index
+OK	/capacity/self-capacity/log	变更记录	/capacity/self-capacity/log/index
+OK	/capacity/self-capacity/trailer	挂车管理	/capacity/self-capacity/trailer/index
+OK	/capacity/self-capacity/vehicle	车辆管理	/capacity/self-capacity/vehicle/index
+OK	/capacity/social-capacity/capacity-approval	运力审批	/capacity/social-capacity/capacity-approval/index
+OK	/capacity/social-capacity/list	运力列表	/capacity/social-capacity/list/index
+OK	/capacity/vehicle-asset/cost	资产成本	/capacity/vehicle-asset/cost/index
+OK	/capacity/vehicle-asset/parts	备件库存	/capacity/vehicle-asset/parts/index
+OK	/dashboard/workplace	工作台	/dashboard/workplace/index
+OK	/ecosystem/capacity-hall	运力大厅	/ecosystem/capacity-hall/index
+OK	/ecosystem/cargo-hall	货源大厅	/ecosystem/cargo-hall/index
+OK	/ecosystem/deals	我的合作	/ecosystem/deals/index
+OK	/ecosystem/profile	企业名片	/ecosystem/profile/index
+OK	/ecosystem/service-hall	服务大厅	/ecosystem/service-hall/index
+OK	/enterprise/approval-config	审批配置	/enterprise/approval-config/index
+OK	/enterprise/basic-data/brand-series	品牌车型	/enterprise/basic-data/brand-series/index
+OK	/enterprise/basic-data/regional	地区数据	/enterprise/basic-data/regional/index
+OK	/enterprise/business-entity	经营主体	/enterprise/business-entity/index
+OK	/enterprise/config	系统设置	/enterprise/config/index
+OK	/enterprise/dictionary	数据字典	/enterprise/dictionary/index
+OK	/enterprise/organization	组织架构	/enterprise/organization/index
+OK	/enterprise/role	角色权限	/enterprise/role/index
+OK	/enterprise/user	员工管理	/enterprise/user/index
+OK	/finance/invoice	发票管理	/finance/invoice/index
+OK	/finance/payable	应付管理	/finance/payable/index
+OK	/finance/profit	利润分析	/finance/profit/index
+OK	/finance/receivable	应收管理	/finance/receivable/index
+OK	/finance/reconciliation	对账中心	/finance/reconciliation/index
+OK	/insight/cockpit/overview	计划总览	/insight/cockpit/overview/index
+OK	/insight/cockpit/profit	利润总览	/insight/cockpit/profit/index
+OK	/insight/overview	运营看板	/insight/overview/index
+OK	/insight/prediction	智能预测	/insight/prediction/index
+OK	/insight/report	数据报表	/insight/report/index
+OK	/log-center/login-log	登录记录	/log-center/login-log/index
+OK	/log-center/operation-log	操作记录	/log-center/operation-log/index
+OK	/open-platform/apps	接入应用	/open-platform/apps/index
+OK	/open-platform/capabilities	能力目录	/open-platform/capabilities/index
+OK	/open-platform/docs	接口文档	/open-platform/docs/index
+OK	/open-platform/logs	调用记录	/open-platform/logs/index
+OK	/operation/completed-task	已完成任务	/operation/completed-task/index
+OK	/operation/receipt	回单签收	/operation/receipt/index
+OK	/operation/smart-stowage	智能配载	/operation/smart-stowage/index
+OK	/operation/task	任务单列表	/operation/task/index
+OK	/operation/task-create	手动配载	/operation/task-create/index
+OK	/operation/task-finance	费用单台账	/operation/task-finance/index
+OK	/operation/task-finance-workbench	费用工作台	/operation/task-finance-workbench/index
+OK	/operation/task-workbench	调度工作台	/operation/task-workbench/index
+OK	/operation/tracking	在途监控	/operation/tracking/index
+OK	/operation/waybill	计划中心	/operation/waybill/index
+OK	/partner/carrier	承运商管理	/partner/carrier/index
+OK	/partner/customer	客户管理	/partner/customer/index
+OK	/partner/dealer	经销商门店	/partner/dealer/index
+OK	/partner/inbound	互联客户	/partner/inbound/index
+OK	/partner/supplier	供应商管理	/partner/supplier/index
+OK	/user/message	消息中心	/user/message/index
+OK	/user/profile	个人中心	/user/profile/index
+
+=== EXTRA STATIC ROUTES ===
+/billing/contract/detail/:id
+/billing/carrier-contract/detail/:id
+/operation/waybill/import
+/operation/task-create
+/operation/smart-stowage
+/enterprise/approval-config/flow/:id
+/enterprise/manage
+/invite-landing/:code
+/upgrade-plans
+
+=== BIZ VIEW PAGES COUNT === 319

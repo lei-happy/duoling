@@ -1,147 +1,274 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>01 登录与企业切换 · 后台人员微信小程序</title>
-<link rel="stylesheet" href="assets/mp.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 登录与企业切换</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .login { background: #0b132e; }
+  .login__hero {
+    position: relative; flex: none; padding: 44px 26px 0; height: 356px; overflow: hidden; color: #fff;
+    background:
+      radial-gradient(520px 320px at 84% -10%, rgba(250,140,22,.2), transparent 62%),
+      radial-gradient(620px 400px at 8% 0%, rgba(47,84,235,.44), transparent 62%),
+      linear-gradient(180deg, #0b132e 0%, #14205a 60%, #0e1740 100%);
+  }
+  .login__hero::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(148,170,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,170,255,.08) 1px, transparent 1px);
+    background-size: 30px 30px;
+    mask-image: radial-gradient(340px 250px at 46% 16%, #000, transparent 80%);
+  }
+  .brand { position: relative; }
+  .brand__mark {
+    width: 52px; height: 52px; border-radius: 17px;
+    background: linear-gradient(150deg, #6b8bff, #2f54eb);
+    color: #fff; display: grid; place-items: center; font: 700 24px/1 var(--font);
+    box-shadow: 0 10px 26px -8px rgba(47,84,235,.9);
+  }
+  .brand h1 { margin: 20px 0 10px; font-size: 28px; font-weight: 700; letter-spacing: -.03em; }
+  .brand p { margin: 0; font-size: 14.5px; line-height: 1.65; color: rgba(210,222,255,.76); max-width: 18em; }
+  .stack { position: absolute; right: 22px; width: 226px; bottom: 64px; }
+  .stack svg { width: 100%; height: auto; display: block; }
+  /* 五阶段泳道条：把后台端的记忆点提前到登录页 */
+  .lanes { position: absolute; left: 26px; right: 26px; bottom: 26px; display: flex; gap: 7px; }
+  .lanes div { flex: 1; }
+  .lanes i { display: block; height: 5px; border-radius: 999px; }
+  .lanes b { display: block; margin-top: 9px; font-size: 10.5px; font-weight: 500; color: rgba(200,214,255,.62); letter-spacing: .02em; }
+  .login__panel {
+    flex: 1; margin-top: -24px; position: relative; z-index: 2;
+    background: #fff; border-radius: 24px 24px 0 0; padding: 24px 22px 0;
+    display: flex; flex-direction: column;
+  }
+  .wx-btn {
+    height: 48px; border: 0; border-radius: 13px; width: 100%;
+    background: #07c160; color: #fff; font: 600 16px/1 var(--font);
+    display: flex; align-items: center; justify-content: center; gap: 9px; cursor: pointer;
+    box-shadow: 0 6px 18px -6px rgba(7,193,96,.6); transition: transform .1s ease-out;
+  }
+  .wx-btn:active { transform: scale(.975); }
+  .agree { display: flex; gap: 9px; align-items: flex-start; margin-top: 16px; font-size: 12px; color: var(--ink-3); line-height: 1.6; }
+  .agree i { width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid #cbd5e1; flex: none; margin-top: 1px; display: grid; place-items: center; cursor: pointer; }
+  .agree i[aria-checked="true"] { background: var(--primary); border-color: var(--primary); }
+  .agree i[aria-checked="true"]::after { content: ""; width: 8px; height: 5px; border: 1.6px solid #fff; border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px,-1px); }
+  .agree a { color: var(--primary); text-decoration: none; }
+  .altrow { margin-top: auto; padding: 16px 0 24px; display: flex; justify-content: center; gap: 22px; font-size: 13px; color: var(--ink-2); }
+  .org { display: flex; align-items: center; gap: 12px; padding: 14px 15px; background: #fff; border-radius: var(--r-card); box-shadow: var(--sh-card); cursor: pointer; border: 1.5px solid transparent; }
+  .org + .org { margin-top: 10px; }
+  .org[aria-checked="true"] { border-color: var(--primary); background: var(--primary-soft); }
+  .org__l { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; color: #fff; font: 600 15px/1 var(--font); flex: none; }
+  .rolecard {
+    border: 1.5px solid var(--line); border-radius: 15px; padding: 15px 14px; background: #fff; cursor: pointer;
+    display: flex; gap: 12px; align-items: flex-start; transition: border-color .15s ease, background .15s ease, transform .1s ease-out;
+  }
+  .rolecard + .rolecard { margin-top: 10px; }
+  .rolecard:active { transform: scale(.985); }
+  .rolecard[aria-checked="true"] { border-color: var(--primary); background: var(--primary-soft); }
+  .rolecard i { width: 38px; height: 38px; border-radius: 13px; display: grid; place-items: center; flex: none; }
+  .rolecard b { display: block; font-size: 15.5px; font-weight: 600; }
+  .rolecard span { display: block; font-size: 12.2px; color: var(--ink-3); margin-top: 5px; line-height: 1.55; }
+</style>
 </head>
-<body data-app="admin">
-
-<header class="pt-head">
-  <div class="pt-head-inner">
-    <div class="pt-kicker"><i></i><b>后台人员微信小程序</b><span>模块 01</span></div>
-    <div class="pt-title">
-      <h1>登录与企业切换</h1>
-      <span class="badge p0">密码登录可对接</span><span class="badge p1">微信登录 P1</span>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 01</p>
+    <h1 class="stage__title">登录与企业切换</h1>
+    <p class="stage__desc">后台人员的手机端不是「PC 装进手机」，而是<b style="color:#e2e8f0">离位补位</b>的工具。所以登录后第一件事不是显示菜单树，而是确认你是谁、你现在要盯哪家公司的哪件事。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>手机号快捷登录反查<b>员工档案</b>（user_type=2）。PC 端的账号密码保留为备用入口，手机上不做主路径。</li>
+        <li>一个人可能在<b>多家租户</b>下有账号（集团 / 子公司 / 代运营）。企业选择页给出角色与今日待办数，选错的成本很高。</li>
+        <li>角色不是自己挑的，是<b>后台授的</b>。这一页只在一人多角色时出现，用来决定进哪个默认工作台，不改变权限。</li>
+        <li>登录页底部就出现<b>五阶段泳道条</b>，把后台端的核心心智模型提前建立起来。</li>
+      </ul>
     </div>
-    <p class="pt-intent">后台人员小程序服务老板、调度、车队长、财务。登录要快，角色要一眼可见，没有权限要说清找谁开。</p>
-    <dl class="pt-meta"><div><dt>覆盖屏数</dt><dd>5 屏</dd></div><div><dt>产品名</dt><dd>智途管理</dd></div><div><dt>账号</dt><dd>租户端用户 sys_user</dd></div></dl>
-    <nav class="pt-rail"><a href="#s1"><span class="n">1</span><span class="t">微信登录</span></a><a href="#s2"><span class="n">2</span><span class="t">密码登录</span></a><a href="#s3"><span class="n">3</span><span class="t">选企业</span></a><a href="#s4"><span class="n">4</span><span class="t">无权限</span></a><a href="#s5"><span class="n">5</span><span class="t">登录中</span></a></nav>
-  </div>
-</header>
+  </section>
 
-<main class="pt-body">
-  <div class="pt-gallery">
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
 
-    <section class="board" id="s1">
-      <div class="board-cap"><span class="n">01</span><h3>微信一键登录</h3><span class="tip">P1</span></div>
-      <div class="dev">
-        <div class="wx-head onpage">
-          <div class="wx-nav"><span class="ttl">智途管理</span></div>
-        </div>
-        <div class="wx-body scroll">
-          <div class="pad" style="padding-top:var(--space-8)">
-            <div class="fx g10 mb16">
-              <div style="width:48px;height:48px;border-radius:14px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px">智</div>
-              <div><div class="t1 strong" style="font-size:20px">智途管理</div><div class="t3" style="font-size:12px">老板 / 调度 / 车队长 / 财务</div></div>
+      <div class="mp__body">
+
+        <!-- 登录 -->
+        <section class="screen login" data-screen="welcome" data-title="授权登录" data-nav-hide="1"
+                 data-status-light="1" data-mpbg="#0b132e" data-start>
+          <div class="login__hero">
+            <div class="brand">
+              <div class="brand__mark">智</div>
+              <h1>智图移动调度台</h1>
+              <p>人不在工位，事也不能等</p>
             </div>
-            <div class="t1" style="font-size:20px;font-weight:600;line-height:1.45;margin:28px 0 10px">手机办公，批得快、看得清</div>
-            <div class="t3" style="font-size:13px;line-height:1.65;margin-bottom:var(--space-8)">用微信手机号登录你所在的运输公司。复杂配置仍在电脑上完成。</div>
-            <a class="btn block">微信一键登录</a>
-            <a class="btn line block mt12">手机号密码登录</a>
-          </div>
-        </div>
-
-      </div>
-      <ol class="notes"><li><span class="flag">P1</span>复用租户账号体系；当前 admin-mp 仅为演示登录。正式对接 <code>/api/client</code> 鉴权。</li>
-<li>移动端不做注册，账号由企业在 PC 开通。</li></ol>
-    </section>
-
-
-    <section class="board" id="s2">
-      <div class="board-cap"><span class="n">02</span><h3>手机号密码登录</h3><span class="tip">P0</span></div>
-      <div class="dev">
-        <div class="wx-head onpage">
-          <div class="wx-nav" data-back><span class="ttl">密码登录</span></div>
-        </div>
-        <div class="wx-body scroll">
-          <div class="pad stack-lg" style="padding-top:var(--space-6)">
-            <div class="field"><div class="lab">手机号</div><div class="inp">138 1234 5678</div></div>
-            <div class="field"><div class="lab">密码</div><div class="inp">••••••••</div></div>
-            <a class="btn block section-gap">登录</a>
-            <div class="caption" style="text-align:center">忘记密码？联系企业管理员重置</div>
-          </div>
-        </div>
-      </div>
-      <ol class="notes"><li>失败：账号或密码不对 / 登录失败，请稍后重试。</li></ol>
-    </section>
-
-
-    <section class="board" id="s3">
-      <div class="board-cap"><span class="n">03</span><h3>选择企业与角色</h3><span class="tip">P0</span></div>
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">选择企业</span></div>
-        </div>
-        <div class="wx-body scroll">
-          <div class="pad"><div class="stack-lg"><div class="t3 mb12" style="font-size:12px">你的账号属于多家企业，请选择本次要进入的</div>
-            <div class="card" style="border:1.5px solid var(--brand)">
-              <div class="strong">皖通汽车物流</div>
-              <div class="fx g6 mt8"><span class="chip primary">调度</span><span class="chip muted">车队长</span></div>
+            <div class="stack" aria-hidden="true">
+              <svg viewBox="0 0 300 150" fill="none">
+                <g opacity=".24">
+                  <rect x="44" y="6" width="212" height="34" rx="9" fill="#a5b8ff"/>
+                  <rect x="60" y="17" width="86" height="6" rx="3" fill="#0b132e" opacity=".45"/>
+                  <rect x="196" y="17" width="44" height="6" rx="3" fill="#0b132e" opacity=".3"/>
+                </g>
+                <g opacity=".46">
+                  <rect x="26" y="42" width="248" height="40" rx="11" fill="#c3d0ff"/>
+                  <rect x="44" y="55" width="104" height="7" rx="3.5" fill="#0b132e" opacity=".5"/>
+                  <rect x="44" y="68" width="62" height="5" rx="2.5" fill="#0b132e" opacity=".28"/>
+                  <rect x="212" y="57" width="44" height="14" rx="7" fill="#fa8c16" opacity=".85"/>
+                </g>
+                <g>
+                  <rect x="8" y="84" width="284" height="52" rx="13" fill="#fff" opacity=".96"/>
+                  <rect x="8" y="84" width="4" height="52" rx="2" fill="#2f54eb"/>
+                  <rect x="28" y="98" width="124" height="8" rx="4" fill="#1a2f7a" opacity=".82"/>
+                  <rect x="28" y="114" width="80" height="6" rx="3" fill="#1a2f7a" opacity=".34"/>
+                  <rect x="222" y="100" width="52" height="20" rx="10" fill="#2f54eb"/>
+                  <path d="M238 110h20M252 104l6 6-6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+              </svg>
             </div>
-            <div class="card">
-              <div class="strong">合众轿运</div>
-              <div class="fx g6 mt8"><span class="chip muted">老板</span></div>
+            <div class="lanes" aria-hidden="true">
+              <div><i style="background:#8c8cf0"></i><b>待分配</b></div>
+              <div><i style="background:#2f54eb"></i><b>待派车</b></div>
+              <div><i style="background:#0ea5e9"></i><b>待装车</b></div>
+              <div><i style="background:#14b8a6"></i><b>在途</b></div>
+              <div><i style="background:#16a34a"></i><b>待签收</b></div>
             </div>
           </div>
+          <div class="login__panel">
+            <button class="wx-btn" data-dialog="wxphone">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.2 3C5 3 1.6 5.9 1.6 9.5c0 2 1.1 3.8 2.9 5l-.7 2.2 2.6-1.3c.9.2 1.8.4 2.8.4h.6a5.7 5.7 0 0 1-.2-1.5c0-3.4 3.3-6.1 7.4-6.1h.6C17.1 5.2 13.6 3 9.2 3Zm-2.5 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm5 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/><path d="M22.4 14.3c0-2.9-2.8-5.2-6.3-5.2s-6.3 2.3-6.3 5.2 2.8 5.2 6.3 5.2c.8 0 1.5-.1 2.2-.3l2.1 1.1-.6-1.8c1.6-1 2.6-2.5 2.6-4.2Zm-8.3-1.6a.85.85 0 1 1 0 1.7.85.85 0 0 1 0-1.7Zm4.1 0a.85.85 0 1 1 0 1.7.85.85 0 0 1 0-1.7Z"/></svg>
+              微信手机号快捷登录
+            </button>
+            <div class="agree">
+              <i role="checkbox" aria-checked="true" tabindex="0"></i>
+              <span>已阅读并同意 <a>服务协议</a> 与 <a>隐私政策</a>。手机号仅用于匹配你在企业里的员工账号</span>
+            </div>
+            <div class="notice notice--info mt-16">
+              <span data-icon="info"></span>
+              <div>手机端只做<b>盯进度、派车、审批、看数</b>。运价配置、审批流设计、批量档案维护请在电脑上操作。</div>
+            </div>
+            <div class="altrow">
+              <span data-toast="账号密码登录仅作备用，建议用手机号">账号密码登录</span>
+              <span data-toast="联系企业管理员在「组织与权限」里添加你">登录遇到问题</span>
+            </div>
           </div>
-        </div>
+        </section>
+
+        <!-- 选择企业 -->
+        <section class="screen" data-screen="org" data-title="选择企业" data-nav="选择企业" data-parent="welcome">
+          <div class="scroll">
+            <div style="padding:6px 2px 16px">
+              <div class="t-h1">你在 2 家企业有账号</div>
+              <p class="t-cap" style="margin:8px 0 0;font-size:13px">数据完全隔离，进错了会白忙。可以随时在「我的」里切。</p>
+            </div>
+
+            <div class="org" aria-checked="true">
+              <div class="org__l" style="background:linear-gradient(145deg,#4a6cf5,#2f54eb)">远</div>
+              <div class="grow">
+                <b style="font-size:15.5px;letter-spacing:-.01em">远洋汽车物流有限公司</b>
+                <div class="t-cap" style="margin-top:5px">调度 / 运营主管 · 今日 12 件待办</div>
+              </div>
+              <span class="tag tag--primary">常用</span>
+            </div>
+
+            <div class="org">
+              <div class="org__l" style="background:linear-gradient(145deg,#0ea5e9,#0369a1)">远</div>
+              <div class="grow">
+                <b style="font-size:15.5px;letter-spacing:-.01em">远洋物流（华南）分公司</b>
+                <div class="t-cap" style="margin-top:5px">只读 · 今日 0 件待办</div>
+              </div>
+              <span data-icon="right" style="color:#c3ccda;display:flex"></span>
+            </div>
+
+            <div class="sec-title"><h2>最近访问</h2></div>
+            <div class="card card--plain">
+              <div class="cell cell--static">
+                <div class="cell__ico"><span data-icon="clock"></span></div>
+                <div class="cell__main"><div class="cell__t">远洋汽车物流 · 调度工作台</div><div class="cell__s">今天 08:12 · 派出 6 张调令</div></div>
+              </div>
+              <div class="cell cell--static">
+                <div class="cell__ico"><span data-icon="clock"></span></div>
+                <div class="cell__main"><div class="cell__t">远洋汽车物流 · 审批中心</div><div class="cell__s">昨天 21:40 · 通过 3 张费用单</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--primary btn--lg" data-push="role">进入远洋汽车物流</button>
+          </div>
+        </section>
+
+        <!-- 选择角色视图 -->
+        <section class="screen" data-screen="role" data-title="选择默认视图" data-nav="进入哪个视图" data-parent="org">
+          <div class="scroll">
+            <div style="padding:6px 2px 16px">
+              <div class="t-h1">陈涛，你有 2 个角色</div>
+              <p class="t-cap" style="margin:8px 0 0;font-size:13px">选一个作为默认首页。权限不受影响，随时能在工作台顶部切换。</p>
+            </div>
+
+            <div class="rolecard" role="radio" aria-checked="true">
+              <i style="background:var(--primary-soft);color:var(--primary)"><span data-icon="route"></span></i>
+              <div class="grow">
+                <b>调度视图</b>
+                <span>五阶段任务池、派车分配、在途盯梢、回单签收。<br>今日 8 件待办，3 单超时。</span>
+              </div>
+              <span class="tag tag--danger">3 超时</span>
+            </div>
+
+            <div class="rolecard" role="radio" aria-checked="false">
+              <i style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="gauge"></span></i>
+              <div class="grow">
+                <b>老板视图</b>
+                <span>经营驾驶舱、异常预警、审批放行。<br>今日 4 件待批，涉及 ¥86,400。</span>
+              </div>
+              <span class="tag tag--warn">4 待批</span>
+            </div>
+
+            <div class="rolecard" role="radio" aria-checked="false" style="opacity:.55">
+              <i style="background:#eef2f9;color:#8d9bb0"><span data-icon="wallet"></span></i>
+              <div class="grow">
+                <b>财务视图</b>
+                <span>费用工作台、待付台账、标记支付。<br>你没有这个角色，由赵倩负责。</span>
+              </div>
+              <span class="tag">无权限</span>
+            </div>
+
+            <div class="notice notice--info mt-16">
+              <span data-icon="shield"></span>
+              <div>视图只决定<b>先看到什么</b>，不放大权限。看不到财务金额是因为角色没授权，不是页面没做。</div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--primary btn--lg" data-toast="正在进入调度工作台，请稍候…">以调度视图进入</button>
+          </div>
+        </section>
 
       </div>
-      <ol class="notes"><li>角色标签来自租户权限；进入后工作台按角色裁剪。</li></ol>
-    </section>
 
+      <nav class="mp__tab" style="display:none"></nav>
+      <div class="mp__home"><i></i></div>
 
-    <section class="board" id="s4">
-      <div class="board-cap"><span class="n">04</span><h3>无权限空态</h3><span class="tip">P0</span></div>
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">智途管理</span></div>
+      <div class="dialog" data-dialog-id="wxphone" style="width:312px">
+        <div class="auth__app">
+          <div class="auth__logo" style="background:linear-gradient(140deg,#4a6cf5,#2f54eb)">智</div>
+          <div><b>智图移动调度台</b><span>申请获取你的手机号</span></div>
         </div>
-        <div class="wx-body scroll">
-          <div class="empty" style="padding-top:var(--space-8)">
-            <div class="t">当前账号暂无移动端权限</div>
-            <div class="d">请联系企业管理员，在电脑端「角色权限」里开通调度、财务或审批相关权限后再试。</div>
-            <a class="btn line" style="margin-top:var(--space-5)">切换企业</a>
+        <div class="auth__req">
+          <p>用于匹配你在企业里的员工账号与角色权限。</p>
+          <div class="pick">
+            <span class="t-mono">137****5580</span>
+            <span class="tag tag--primary">微信绑定号</span>
           </div>
         </div>
-
-      </div>
-      <ol class="notes"><li>无菜单权限时不进空工作台，直接说明怎么办。</li></ol>
-    </section>
-
-
-    <section class="board" id="s5">
-      <div class="board-cap"><span class="n">05</span><h3>登录中</h3><span class="tip">P0</span></div>
-      <div class="dev">
-        <div class="wx-head onpage"><div class="wx-nav"><span class="ttl">智途管理</span></div></div>
-        <div class="wx-body scroll white">
-          <div class="empty" style="padding-top:120px">
-            <div style="width:36px;height:36px;border:3px solid var(--brand-soft);border-top-color:var(--brand);border-radius:50%;margin:0 auto var(--space-4)"></div>
-            <div class="t">正在登录，请稍候…</div>
-            <div class="d">验证账号与企业权限</div>
-          </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>拒绝</button>
+          <button class="is-main" data-sheet-close data-then="org">允许</button>
         </div>
       </div>
-      <ol class="notes"><li>Loading 带业务动作。</li></ol>
-    </section>
 
+    </div>
   </div>
-
-
-  <div class="pt-rules">
-    <h4>登录规则</h4>
-    <ul>
-      <li>复用租户 PC 账号体系，JWT 含 <code>tenant_code</code>。</li>
-      <li>多企业用户登录后必选企业；切换企业重签 token 并清空缓存。</li>
-      <li>失败文案：账号或密码不对 / 登录失败，请稍后重试。</li>
-    </ul>
-  </div>
-
 </main>
-
-<footer class="pt-foot">智途 · 后台人员微信小程序原型 · 模块 01 登录与企业切换</footer>
 <script src="assets/mp.js"></script>
 </body>
 </html>

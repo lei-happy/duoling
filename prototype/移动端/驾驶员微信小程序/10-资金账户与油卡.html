@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>驾驶员微信小程序 · 资金账户与油卡</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .fuelcard {
+    position: relative; padding: 20px; border-radius: 20px; color: #fff; overflow: hidden;
+    background: linear-gradient(150deg, #b45309 0%, #f5a524 58%, #d97706 100%);
+    box-shadow: 0 16px 32px -18px rgba(180,83,9,.9);
+  }
+  .fuelcard::after {
+    content: ""; position: absolute; right: -30px; top: -40px; width: 150px; height: 150px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.24), transparent 66%);
+  }
+  .fuelcard__t { position: relative; display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 600; }
+  .fuelcard__v { position: relative; margin-top: 14px; font-variant-numeric: tabular-nums; }
+  .fuelcard__no { position: relative; margin-top: 16px; font: 600 13px/1 var(--mono); letter-spacing: .14em; color: rgba(255,255,255,.86); }
+  .flow { display: flex; align-items: center; gap: 12px; padding: 13px 0; }
+  .flow + .flow { border-top: 1px solid var(--line-soft); }
+  .flow__i { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+  .flow b { display: block; font-size: 14.8px; font-weight: 550; }
+  .flow span { display: block; font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+  .flow em { font-style: normal; font-variant-numeric: tabular-nums; font-weight: 650; font-size: 15.5px; letter-spacing: -.01em; }
+  .station { display: flex; align-items: center; gap: 12px; padding: 13px 0; }
+  .station + .station { border-top: 1px solid var(--line-soft); }
+  .station__d { font-size: 13px; color: var(--primary); font-weight: 600; flex: none; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Driver Mini Program · 10</p>
+    <h1 class="stage__title">资金账户与油卡</h1>
+    <p class="stage__desc">这是「公司的钱」，不是司机的收入，所以必须和 09 分开。司机在这里只关心三件事：卡里还有多少、能去哪加、这笔扣的对不对。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>对应后端 <b>DriverFundAccount</b> 与资金流水，账户类型含银行卡、油气款、积分。油卡余额是<b>公司预置额度</b>，不能提现，界面上必须写明白。</li>
+        <li>油卡用<b>橙色实体卡</b>，和蓝色的收入卡在视觉上彻底区分开。颜色在这里承担的是「这是两本账」的语义，不是装饰。</li>
+        <li>流水按<b>任务单聚合</b>，不是按时间平铺。司机质疑扣款时问的是「这趟车怎么扣这么多」。</li>
+        <li>附近加油站带<b>距离与油价</b>。司机真会为了几毛钱差价多开两公里，这是刚需信息不是锦上添花。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <!-- 账户总览 -->
+        <section class="screen" data-screen="fund" data-title="资金账户" data-nav="资金账户" data-start>
+          <div class="scroll" data-refresh>
+            <div class="fuelcard mt-8">
+              <div class="fuelcard__t"><span data-icon="fuel"></span>中石化 车队油卡</div>
+              <div class="fuelcard__v"><span style="font-size:13px;opacity:.8">可用余额（元）</span>
+                <div class="money" style="font-size:34px;margin-top:5px">1,240.00</div>
+              </div>
+              <div class="fuelcard__no">1001 **** **** 7736</div>
+              <div class="hstack" style="position:relative;margin-top:16px;gap:9px">
+                <button class="btn btn--sm" style="background:rgba(255,255,255,.2);color:#fff" data-dialog="qr"><span data-icon="qr"></span>出示付款码</button>
+                <button class="btn btn--sm" style="background:rgba(255,255,255,.2);color:#fff" data-push="stations"><span data-icon="pin"></span>附近加油站</button>
+              </div>
+            </div>
+
+            <div class="notice mt-12">
+              <span data-icon="info"></span>
+              <div><b>油卡余额是公司额度，不能提现</b><br>低于 300 元时会自动提醒车管充值，你也可以在下面直接申请。</div>
+            </div>
+
+            <div class="sec-title"><h2>我的账户</h2></div>
+            <div class="card card--plain">
+              <div class="cell" data-push="flow">
+                <div class="cell__ico is-amber"><span data-icon="fuel"></span></div>
+                <div class="cell__main"><div class="cell__t">油气款账户</div><div class="cell__s">本月已用 ¥2,860 · 公司代付</div></div>
+                <div class="cell__x"><span class="money">1,240</span><span data-icon="right"></span></div>
+              </div>
+              <div class="cell" data-push="flow">
+                <div class="cell__ico"><span data-icon="swap"></span></div>
+                <div class="cell__main"><div class="cell__t">往来账</div><div class="cell__s">借支、罚款、报销的挂账</div></div>
+                <div class="cell__x"><span class="money" style="color:var(--danger)">-500</span><span data-icon="right"></span></div>
+              </div>
+              <div class="cell" data-push="flow">
+                <div class="cell__ico is-green"><span data-icon="star"></span></div>
+                <div class="cell__main"><div class="cell__t">积分账户</div><div class="cell__s">安全行驶 + 准点率累计</div></div>
+                <div class="cell__x"><span class="money">3,860</span><span data-icon="right"></span></div>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>最近发生</h2><span class="more" data-push="flow">全部 <span data-icon="right"></span></span></div>
+            <div class="card">
+              <div class="flow">
+                <div class="flow__i" style="background:var(--danger-soft);color:var(--danger)"><span data-icon="fuel"></span></div>
+                <div class="grow"><b>中石化 G25 德清服务区</b><span>08-09 14:30 · TK2608090037 · 加柴油 82L</span></div>
+                <em style="color:var(--danger)">-620</em>
+              </div>
+              <div class="flow">
+                <div class="flow__i" style="background:var(--success-soft);color:var(--success)"><span data-icon="plus"></span></div>
+                <div class="grow"><b>车管充值</b><span>08-08 09:00 · 李敏操作</span></div>
+                <em style="color:var(--success)">+2,000</em>
+              </div>
+              <div class="flow">
+                <div class="flow__i" style="background:var(--danger-soft);color:var(--danger)"><span data-icon="fuel"></span></div>
+                <div class="grow"><b>中石油 沪宁高速仙人山站</b><span>08-07 11:12 · TK2608070008 · 加柴油 95L</span></div>
+                <em style="color:var(--danger)">-712</em>
+              </div>
+              <div class="flow">
+                <div class="flow__i" style="background:var(--warning-soft);color:#b45309"><span data-icon="warn"></span></div>
+                <div class="grow"><b>违章罚款代扣</b><span>08-05 · 苏A·8F236 超速 10% 以内</span></div>
+                <em style="color:var(--danger)">-200</em>
+              </div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost" data-sheet="recharge">申请充值</button>
+            <button class="btn btn--primary" data-dialog="qr"><span data-icon="qr"></span>加油付款码</button>
+          </div>
+        </section>
+
+        <!-- 流水 -->
+        <section class="screen" data-screen="flow" data-title="账户流水" data-nav="油气款流水" data-parent="fund">
+          <div class="scroll">
+            <div class="sticky">
+              <div class="seg" style="margin:0 var(--pad)">
+                <button aria-selected="true">全部</button>
+                <button>加油</button>
+                <button>充值</button>
+                <button>扣款</button>
+              </div>
+            </div>
+            <div class="card mt-8">
+              <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+                <div class="stat"><b class="money" style="font-size:20px">2,000</b><span>本月充值</span></div>
+                <div class="stat is-alert"><b class="money" style="font-size:20px">2,860</b><span>本月消耗</span></div>
+                <div class="stat"><b class="money" style="font-size:20px">1,240</b><span>当前余额</span></div>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>按任务归集</h2><span>方便对账</span></div>
+            <div class="card">
+              <div class="flow">
+                <div class="flow__i" style="background:var(--primary-soft);color:var(--primary)"><span data-icon="truck"></span></div>
+                <div class="grow"><b>TK2608090037</b><span>上汽仪征基地 → 杭州萧山中转库 · 1 笔</span></div>
+                <em style="color:var(--danger)">-620</em>
+              </div>
+              <div class="flow">
+                <div class="flow__i" style="background:var(--primary-soft);color:var(--primary)"><span data-icon="truck"></span></div>
+                <div class="grow"><b>TK2608070008</b><span>上汽仪征基地 → 常州武进库 · 2 笔</span></div>
+                <em style="color:var(--danger)">-1,140</em>
+              </div>
+              <div class="flow">
+                <div class="flow__i" style="background:var(--primary-soft);color:var(--primary)"><span data-icon="truck"></span></div>
+                <div class="grow"><b>TK2608050031</b><span>上汽仪征基地 → 扬州邗江仓 · 1 笔</span></div>
+                <em style="color:var(--danger)">-560</em>
+              </div>
+              <div class="flow">
+                <div class="flow__i" style="background:#eef2f9;color:#8d9bb0"><span data-icon="dots"></span></div>
+                <div class="grow"><b>未关联任务</b><span>违章代扣、日常杂项 · 2 笔</span></div>
+                <em style="color:var(--danger)">-540</em>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>明细</h2><span>08-09</span></div>
+            <div class="card">
+              <div class="flow">
+                <div class="flow__i" style="background:var(--danger-soft);color:var(--danger)"><span data-icon="fuel"></span></div>
+                <div class="grow"><b>中石化 G25 德清服务区</b><span>14:30 · 柴油 82L · 单价 7.56</span></div>
+                <em style="color:var(--danger)">-620</em>
+              </div>
+            </div>
+            <p class="t-cap center mt-16">对某一笔有疑问，长按可以发起复核</p>
+          </div>
+        </section>
+
+        <!-- 附近加油站 -->
+        <section class="screen" data-screen="stations" data-title="附近加油站" data-nav="附近加油站" data-parent="fund">
+          <div class="scroll">
+            <div class="notice notice--info mt-8">
+              <span data-icon="pin"></span>
+              <div>按你当前位置（德清 G25 长深高速）排的，只显示<b>能用公司油卡</b>的合作站点。</div>
+            </div>
+
+            <div class="sec-title"><h2>沿途站点</h2><span>6 座</span></div>
+            <div class="card">
+              <div class="station">
+                <div class="cell__ico is-amber"><span data-icon="fuel"></span></div>
+                <div class="grow">
+                  <b style="font-size:15px;font-weight:600">中石化 G25 德清服务区站</b>
+                  <div class="t-cap" style="margin-top:4px">柴油 0# ¥7.56 / L · 顺路，不用下高速</div>
+                </div>
+                <div class="station__d">2.4 km</div>
+              </div>
+              <div class="station">
+                <div class="cell__ico is-amber"><span data-icon="fuel"></span></div>
+                <div class="grow">
+                  <b style="font-size:15px;font-weight:600">中石油 长深高速余杭站</b>
+                  <div class="t-cap" style="margin-top:4px">柴油 0# ¥7.48 / L · 便宜 0.08，再开 28 公里</div>
+                </div>
+                <div class="station__d">30 km</div>
+              </div>
+              <div class="station">
+                <div class="cell__ico is-amber"><span data-icon="fuel"></span></div>
+                <div class="grow">
+                  <b style="font-size:15px;font-weight:600">中石化 萧山新街站</b>
+                  <div class="t-cap" style="margin-top:4px">柴油 0# ¥7.52 / L · 就在卸货点旁边</div>
+                </div>
+                <div class="station__d">84 km</div>
+              </div>
+            </div>
+            <button class="btn btn--ghost btn--block mt-12" data-toast="正在打开地图查看全部站点，请稍候…"><span data-icon="nav"></span>在地图上看全部</button>
+          </div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab" style="display:none"></nav>
+      <div class="mp__home"><i></i></div>
+
+      <!-- 付款码 -->
+      <div class="dialog" data-dialog-id="qr" style="width:300px">
+        <div class="dialog__body" style="padding:24px 22px 20px">
+          <h3>加油付款码</h3>
+          <p style="margin-bottom:16px">给加油站工作人员扫，60 秒后自动刷新</p>
+          <div style="width:172px;height:172px;margin:0 auto;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px var(--line);display:grid;place-items:center;color:#0f172a">
+            <svg width="132" height="132" viewBox="0 0 21 21" shape-rendering="crispEdges" aria-label="付款码示意">
+              <rect width="21" height="21" fill="#fff"/>
+              <g fill="#0f172a">
+                <path d="M0 0h7v7H0zM2 2h3v3H2zM14 0h7v7h-7zM16 2h3v3h-3zM0 14h7v7H0zM2 16h3v3H2z"/>
+                <path d="M9 0h1v2H9zM11 1h1v1h-1zM9 3h2v1H9zM12 3h1v2h-1zM9 5h1v1H9zM10 6h2v1h-2zM8 8h1v1H8zM10 8h1v1h-1zM12 8h2v1h-2zM15 8h1v1h-1zM17 9h1v1h-1zM19 8h1v2h-1zM8 10h2v1H8zM11 10h1v1h-1zM13 10h1v2h-1zM15 10h2v1h-2zM18 11h2v1h-2zM8 12h1v2H8zM10 12h2v1h-2zM14 12h1v1h-1zM16 12h1v2h-1zM19 13h1v1h-1zM9 14h2v1H9zM12 14h1v1h-1zM14 15h1v1h-1zM17 14h2v1h-2zM8 16h1v1H8zM10 16h1v2h-1zM12 16h2v1h-2zM15 17h2v1h-2zM18 16h1v2h-1zM9 18h1v1H9zM11 18h2v1h-2zM14 19h2v1h-2zM17 19h1v1h-1zM8 19h1v2H8zM12 20h1v1h-1zM19 18h1v3h-1z"/>
+              </g>
+            </svg>
+          </div>
+          <div class="t-mono center" style="margin-top:14px;font-size:15px;letter-spacing:.18em">1001 7736</div>
+        </div>
+        <div class="dialog__acts">
+          <button class="is-main" data-sheet-close>收起</button>
+        </div>
+      </div>
+
+      <!-- 申请充值 -->
+      <div class="sheet" data-sheet-id="recharge">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>申请给油卡充值</h3><p>申请会发给车管李敏，通过后额度直接到卡，一般当天到。</p></div>
+        <div class="sheet__body">
+          <div class="field">
+            <div class="field__l">充多少<span class="req">*</span></div>
+            <div class="chipbar" style="padding:0;flex-wrap:wrap">
+              <button class="chip">1,000</button>
+              <button class="chip" aria-selected="true">2,000</button>
+              <button class="chip">3,000</button>
+              <button class="chip">其他金额</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">为什么要充</div>
+            <div class="radios">
+              <div class="radio" role="radio" aria-checked="true"><i class="radio__m"></i><div><div class="radio__t">余额不够跑下一趟</div><div class="radio__s">当前 ¥1,240，下一趟预计要 ¥1,800</div></div></div>
+              <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">长途任务提前备额度</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已提交，车管审核后额度到卡" data-toast-icon="ok">提交申请</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

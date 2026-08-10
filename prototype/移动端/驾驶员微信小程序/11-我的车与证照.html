@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>驾驶员微信小程序 · 我的车与证照</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .rig { display: flex; align-items: stretch; gap: 0; }
+  .rig__u {
+    flex: 1; padding: 15px 14px; border-radius: 14px; background: #f5f7fb; position: relative;
+  }
+  .rig__u + .rig__u { margin-left: 26px; }
+  .rig__u + .rig__u::before {
+    content: ""; position: absolute; left: -22px; top: 50%; width: 18px; height: 2px;
+    background: repeating-linear-gradient(90deg, #b9c4d6 0 4px, transparent 4px 8px); transform: translateY(-50%);
+  }
+  .rig__u b { display: block; font-size: 12px; color: var(--ink-3); font-weight: 500; }
+  .rig__u .pl { margin-top: 9px; }
+  .rig__u span { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 9px; line-height: 1.5; }
+  .lic { display: flex; align-items: center; gap: 12px; padding: 13px 0; }
+  .lic + .lic { border-top: 1px solid var(--line-soft); }
+  .lic__b { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; flex: none; }
+  .lic b { display: block; font-size: 14.8px; font-weight: 550; }
+  .lic span { display: block; font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+  .gauge { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+  .gauge > div { text-align: center; padding: 14px 6px; border-radius: 13px; background: #f5f7fb; }
+  .gauge b { display: block; font-size: 21px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .gauge > div > span { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 5px; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Driver Mini Program · 11</p>
+    <h1 class="stage__title">我的车与证照</h1>
+    <p class="stage__desc">证照过期被查，罚的是司机，耽误的是公司。这一屏把「什么时候到期、还剩几天、该找谁」摆在明面上，而不是等车管在群里喊。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>牵引车 + 挂车用<b>实体编组图</b>表达，而不是两行文字。司机脑子里的「我的车」就是这一组，图形比字段更贴近他的心智。</li>
+        <li>证照到期用<b>剩余天数</b>而不是到期日期。「28 天后到期」比「2026-09-06」触发行动的力度大得多。</li>
+        <li>对应后端 <b>BizComplianceAlert</b> 的证照监控。车管在 PC 端看全车队，司机在这里只看自己这一组，同一份数据两个视角。</li>
+        <li>维修保养做成<b>发起申请</b>，不给司机改档案的权限。数据归口仍在车管，避免两头维护。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <!-- 我的车 -->
+        <section class="screen" data-screen="rig" data-title="我的车" data-nav="我的车" data-start>
+          <div class="scroll" data-refresh>
+            <div class="notice mt-8">
+              <span data-icon="warn"></span>
+              <div><b>2 项证照快到期了</b><br>从业资格证还剩 28 天，挂车年检还剩 41 天。把材料交给车管李敏就行。</div>
+            </div>
+
+            <div class="sec-title"><h2>当前编组</h2><span>自有车</span></div>
+            <div class="card">
+              <div class="rig">
+                <div class="rig__u">
+                  <b>牵引车</b>
+                  <div class="pl"><span class="plate">苏A·8F236</span></div>
+                  <span>解放 J7 · 6×4<br>2023 年上牌</span>
+                </div>
+                <div class="rig__u">
+                  <b>挂车</b>
+                  <div class="pl"><span class="plate plate--yellow">苏A·H7712挂</span></div>
+                  <span>中集 8 位商品车半挂<br>核定 8 台</span>
+                </div>
+              </div>
+              <hr class="sep">
+              <div class="gauge">
+                <div><b>18.6<span style="font-size:12px;font-weight:500"> 万</span></b><span>累计里程 km</span></div>
+                <div><b>32.4</b><span>百公里油耗 L</span></div>
+                <div><b>96<span style="font-size:12px;font-weight:500">%</span></b><span>准点率</span></div>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>证照状态</h2><span class="more" data-push="lic">全部 <span data-icon="right"></span></span></div>
+            <div class="card">
+              <div class="lic">
+                <div class="lic__b" style="background:var(--warning-soft);color:#b45309"><span data-icon="file"></span></div>
+                <div class="grow"><b>道路运输从业资格证</b><span>2026-09-06 到期 · 本人</span></div>
+                <span class="tag tag--warn">28 天</span>
+              </div>
+              <div class="lic">
+                <div class="lic__b" style="background:var(--warning-soft);color:#b45309"><span data-icon="shield"></span></div>
+                <div class="grow"><b>挂车年检</b><span>2026-09-19 到期 · 苏A·H7712挂</span></div>
+                <span class="tag tag--warn">41 天</span>
+              </div>
+              <div class="lic">
+                <div class="lic__b" style="background:var(--success-soft);color:var(--success)"><span data-icon="shieldok"></span></div>
+                <div class="grow"><b>机动车驾驶证 A2</b><span>2029-04-12 到期 · 本人</span></div>
+                <span class="tag tag--ok">正常</span>
+              </div>
+              <div class="lic">
+                <div class="lic__b" style="background:var(--success-soft);color:var(--success)"><span data-icon="shieldok"></span></div>
+                <div class="grow"><b>交强险 + 商业险</b><span>2027-01-30 到期 · 苏A·8F236</span></div>
+                <span class="tag tag--ok">正常</span>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>车况</h2></div>
+            <div class="card card--plain">
+              <div class="cell" data-push="maint">
+                <div class="cell__ico is-amber"><span data-icon="wrench"></span></div>
+                <div class="cell__main"><div class="cell__t">保养提醒</div><div class="cell__s">距下次保养还有 1,400 公里</div></div>
+                <div class="cell__x"><span data-icon="right"></span></div>
+              </div>
+              <div class="cell" data-push="maint">
+                <div class="cell__ico"><span data-icon="file"></span></div>
+                <div class="cell__main"><div class="cell__t">维修记录</div><div class="cell__s">近 6 个月 3 次 · 最近 07-28 换胎</div></div>
+                <div class="cell__x"><span data-icon="right"></span></div>
+              </div>
+              <div class="cell" data-toast="违章由车管统一处理，扣款走往来账">
+                <div class="cell__ico is-red"><span data-icon="warn"></span></div>
+                <div class="cell__main"><div class="cell__t">违章记录</div><div class="cell__s">1 条待处理 · 08-05 超速 10% 以内</div></div>
+                <div class="cell__x"><span class="tag tag--danger">1</span><span data-icon="right"></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost is-narrow" data-toast="正在呼叫车管 李敏"><span data-icon="phone"></span></button>
+            <button class="btn btn--primary btn--lg" data-sheet="repair">报修 / 申请保养</button>
+          </div>
+        </section>
+
+        <!-- 证照全部 -->
+        <section class="screen" data-screen="lic" data-title="证照明细" data-nav="证照明细" data-parent="rig">
+          <div class="scroll">
+            <div class="sticky">
+              <div class="seg" style="margin:0 var(--pad)">
+                <button aria-selected="true">全部</button>
+                <button>我的证</button>
+                <button>车的证</button>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>需要处理</h2><span>2 项</span></div>
+            <div class="card">
+              <div class="lic">
+                <div class="lic__b" style="background:var(--warning-soft);color:#b45309"><span data-icon="file"></span></div>
+                <div class="grow">
+                  <b>道路运输从业资格证</b>
+                  <span>证号 3201****8821 · 2026-09-06 到期</span>
+                  <div class="bar__track" style="margin-top:9px"><i class="bar__fill" style="--v:23%;background:var(--warning)"></i></div>
+                </div>
+                <span class="tag tag--warn">28 天</span>
+              </div>
+              <div class="lic">
+                <div class="lic__b" style="background:var(--warning-soft);color:#b45309"><span data-icon="shield"></span></div>
+                <div class="grow">
+                  <b>挂车年检</b>
+                  <span>苏A·H7712挂 · 2026-09-19 到期</span>
+                  <div class="bar__track" style="margin-top:9px"><i class="bar__fill" style="--v:34%;background:var(--warning)"></i></div>
+                </div>
+                <span class="tag tag--warn">41 天</span>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>正常</h2><span>4 项</span></div>
+            <div class="card">
+              <div class="lic"><div class="lic__b" style="background:var(--success-soft);color:var(--success)"><span data-icon="shieldok"></span></div><div class="grow"><b>机动车驾驶证 A2</b><span>2029-04-12 到期 · 还有 976 天</span></div><span class="tag tag--ok">正常</span></div>
+              <div class="lic"><div class="lic__b" style="background:var(--success-soft);color:var(--success)"><span data-icon="shieldok"></span></div><div class="grow"><b>牵引车行驶证</b><span>苏A·8F236 · 2027-03-15 年检</span></div><span class="tag tag--ok">正常</span></div>
+              <div class="lic"><div class="lic__b" style="background:var(--success-soft);color:var(--success)"><span data-icon="shieldok"></span></div><div class="grow"><b>交强险 + 商业险</b><span>2027-01-30 到期</span></div><span class="tag tag--ok">正常</span></div>
+              <div class="lic"><div class="lic__b" style="background:var(--success-soft);color:var(--success)"><span data-icon="shieldok"></span></div><div class="grow"><b>年度安全培训</b><span>2026-03-18 完成复训</span></div><span class="tag tag--ok">正常</span></div>
+            </div>
+
+            <div class="notice notice--info mt-12">
+              <span data-icon="info"></span>
+              <div>证照原件由车管统一保管与更新。你在这里只能看和提醒，<b>改不了</b>，这是为了避免档案两头对不上。</div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--primary btn--lg" data-sheet="renew">提交换证材料</button>
+          </div>
+        </section>
+
+        <!-- 维修保养 -->
+        <section class="screen" data-screen="maint" data-title="维修保养" data-nav="维修保养" data-parent="rig">
+          <div class="scroll">
+            <div class="card mt-8">
+              <div class="hstack">
+                <div class="grow">
+                  <div class="cell__t">下次保养</div>
+                  <div class="hstack" style="gap:7px;align-items:baseline;margin-top:6px">
+                    <span class="money" style="font-size:26px">1,400</span><span class="t-label dim">公里后</span>
+                  </div>
+                </div>
+                <span class="tag tag--warn">建议本月内</span>
+              </div>
+              <div class="bar__track" style="margin-top:12px"><i class="bar__fill" style="--v:86%;background:var(--warning)"></i></div>
+              <p class="t-cap" style="margin:9px 0 0">上次保养 07-02 · 18.46 万公里 · 按 2 万公里周期</p>
+            </div>
+
+            <div class="sec-title"><h2>维修记录</h2><span>近 6 个月</span></div>
+            <div class="card card--plain">
+              <div class="cell cell--static">
+                <div class="cell__ico is-amber"><span data-icon="wrench"></span></div>
+                <div class="cell__main"><div class="cell__t">更换左后轮胎</div><div class="cell__s">07-28 · 常州顺通修理厂 · 工单 WO26072800031</div></div>
+                <div class="cell__x"><span class="money">1,280</span></div>
+              </div>
+              <div class="cell cell--static">
+                <div class="cell__ico"><span data-icon="wrench"></span></div>
+                <div class="cell__main"><div class="cell__t">常规保养（机油三滤）</div><div class="cell__s">07-02 · 公司自有车间 · 工单 WO26070200012</div></div>
+                <div class="cell__x"><span class="money">960</span></div>
+              </div>
+              <div class="cell cell--static">
+                <div class="cell__ico"><span data-icon="wrench"></span></div>
+                <div class="cell__main"><div class="cell__t">挂车气路检修</div><div class="cell__s">05-19 · 公司自有车间 · 工单 WO26051900008</div></div>
+                <div class="cell__x"><span class="money">420</span></div>
+              </div>
+            </div>
+            <p class="t-cap center mt-16">费用由公司承担，不从你的收入里扣</p>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--primary btn--lg" data-sheet="repair">发起报修</button>
+          </div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab" style="display:none"></nav>
+      <div class="mp__home"><i></i></div>
+
+      <!-- 报修 -->
+      <div class="sheet" data-sheet-id="repair">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>报修 / 申请保养</h3><p>提交给车管，会生成维修工单。急修请先打电话，再补这张单。</p></div>
+        <div class="sheet__body">
+          <div class="field">
+            <div class="field__l">哪辆车<span class="req">*</span></div>
+            <div class="chipbar" style="padding:0;flex-wrap:wrap">
+              <button class="chip" aria-selected="true">苏A·8F236 牵引车</button>
+              <button class="chip">苏A·H7712挂</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">什么问题<span class="req">*</span></div>
+            <div class="chipbar" style="padding:0;flex-wrap:wrap">
+              <button class="chip">常规保养</button>
+              <button class="chip" aria-selected="true">轮胎</button>
+              <button class="chip">刹车 / 气路</button>
+              <button class="chip">电路 / 灯光</button>
+              <button class="chip">发动机</button>
+              <button class="chip">车厢 / 绑扎</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">还能不能继续跑<span class="req">*</span></div>
+            <div class="radios">
+              <div class="radio" role="radio" aria-checked="true"><i class="radio__m"></i><div><div class="radio__t">能跑，跑完这趟再修</div></div></div>
+              <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">不能跑，需要马上安排</div><div class="radio__s">会同时通知调度改派任务</div></div></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">照片<span class="dim3">（选填）</span></div>
+            <div class="photos">
+              <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+              <div class="photo photo--add"><span data-icon="camera"></span><span>拍照</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">说明</div>
+            <textarea class="textarea" rows="2" placeholder="例如：右后第二轴外胎磨损见线，建议换胎"></textarea>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已提交，车管会安排修理厂并通知你" data-toast-icon="ok">提交报修</button>
+        </div>
+      </div>
+
+      <!-- 换证 -->
+      <div class="sheet" data-sheet-id="renew">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>提交换证材料</h3><p>拍清楚新证正反面，车管核对后更新档案，你不用跑一趟公司。</p></div>
+        <div class="sheet__body">
+          <div class="field">
+            <div class="field__l">哪一项<span class="req">*</span></div>
+            <div class="radios">
+              <div class="radio" role="radio" aria-checked="true"><i class="radio__m"></i><div><div class="radio__t">道路运输从业资格证</div><div class="radio__s">28 天后到期</div></div></div>
+              <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">挂车年检</div><div class="radio__s">41 天后到期</div></div></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">新证照片<span class="req">*</span><span class="dim3">正反面各一张</span></div>
+            <div class="photos">
+              <div class="photo photo--add"><span data-icon="camera"></span><span>正面</span></div>
+              <div class="photo photo--add"><span data-icon="camera"></span><span>反面</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">新的到期日<span class="req">*</span></div>
+            <div class="picker is-empty">选择日期 <span data-icon="calendar"></span></div>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已提交，车管核对后档案就更新了" data-toast-icon="ok">提交材料</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

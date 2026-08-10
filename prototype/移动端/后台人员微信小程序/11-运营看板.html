@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 运营看板</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  /* 健康度环 */
+  .health { display: flex; align-items: center; gap: 16px; }
+  .health__g { position: relative; width: 96px; height: 96px; flex: none; }
+  .health__g svg { transform: rotate(-90deg); }
+  .health__c { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .health__c b { display: block; font-size: 27px; font-weight: 700; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+  .health__c span { display: block; font-size: 10.5px; color: var(--ink-3); margin-top: 1px; }
+  .health__t { flex: 1; min-width: 0; }
+  .health__t h3 { margin: 0 0 6px; font-size: 15.5px; font-weight: 650; }
+  .health__t p { margin: 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.6; }
+  /* 指标行 */
+  .mrow { display: flex; align-items: center; gap: 11px; padding: 12px 0; }
+  .mrow + .mrow { border-top: 1px dashed var(--line); }
+  .mrow__l { flex: 1; min-width: 0; }
+  .mrow__l b { display: block; font-size: 14px; font-weight: 550; }
+  .mrow__l span { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 4px; }
+  .mrow__k { width: 82px; height: 6px; border-radius: 999px; background: var(--line-soft); overflow: hidden; flex: none; }
+  .mrow__f { display: block; height: 100%; border-radius: 999px; width: var(--v); background: var(--primary); }
+  .mrow__v { width: 62px; text-align: right; flex: none; }
+  .mrow__v b { display: block; font-size: 15.5px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .mrow__v em { font-style: normal; font-size: 10.5px; font-weight: 600; }
+  .good { color: var(--success); } .bad { color: var(--danger); } .warnc { color: var(--accent-deep); }
+  /* 人员绩效 */
+  .prow { display: flex; align-items: center; gap: 11px; padding: 11px 0; }
+  .prow + .prow { border-top: 1px solid var(--line-soft); }
+  .prow__a { width: 34px; height: 34px; border-radius: 11px; background: var(--primary-soft); color: var(--primary);
+    display: grid; place-items: center; font: 600 13px/1 var(--font); flex: none; }
+  .prow__b { flex: 1; min-width: 0; }
+  .prow__b b { display: block; font-size: 14px; font-weight: 550; }
+  .prow__b span { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 4px; }
+  .prow__v { text-align: right; flex: none; font-variant-numeric: tabular-nums; }
+  .prow__v b { display: block; font-size: 15px; font-weight: 700; letter-spacing: -.02em; }
+  .prow__v em { font-style: normal; font-size: 10.5px; color: var(--ink-3); }
+  /* 热力：一周每天准点率 */
+  .heat { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .heat > div { text-align: center; }
+  .heat i { display: block; height: 34px; border-radius: 8px; background: var(--l); }
+  .heat span { display: block; font-size: 10.5px; color: var(--ink-3); margin-top: 5px; }
+  .heat b { display: block; font-size: 10.5px; font-weight: 600; margin-top: 3px; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 11</p>
+    <h1 class="stage__title">运营看板</h1>
+    <p class="stage__desc">03 驾驶舱回答"赚不赚钱"，这一屏回答"<b style="color:#e2e8f0">跑得好不好</b>"。看的是准点、利用率、司机与承运商表现——运营主管每天开例会要用的那几个数。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>顶部<b>运营健康度</b>把五个指标折成一个分数，先给结论再给细节。分数下面直接写"最拖后腿的是哪一项"。</li>
+        <li>每个指标都带<b>目标线</b>。没有目标的数字不叫指标，只是数字。达标绿、临界琥珀、掉线红。</li>
+        <li><b>一周准点率热力条</b>：哪天出问题一眼看见，比看折线更快。周三那格明显浅色，点开是那天的暴雨。</li>
+        <li>司机与承运商排行给的是<b>可动作的结论</b>：谁该表扬、谁该谈话、哪家承运商该减量。</li>
+        <li>不放"总计 / 平均"这种没有对照的数。所有数字都有对比对象——目标、上周、或同行。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <section class="screen" data-screen="ops" data-title="运营看板" data-nav="运营看板" data-tabroot data-start>
+          <div class="scroll" data-refresh>
+            <div class="sticky" style="padding-top:10px">
+              <div class="seg" data-seg>
+                <button aria-selected="true">本周</button>
+                <button>本月</button>
+                <button>本季</button>
+                <i class="seg__thumb"></i>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="card">
+                <div class="health">
+                  <div class="health__g">
+                    <svg width="96" height="96" viewBox="0 0 42 42">
+                      <circle cx="21" cy="21" r="16" fill="none" stroke="#eff2f7" stroke-width="6"/>
+                      <circle cx="21" cy="21" r="16" fill="none" stroke="#fa8c16" stroke-width="6" stroke-dasharray="78 100" stroke-linecap="round"/>
+                    </svg>
+                    <div class="health__c"><b data-count-to="78">0</b><span>健康度</span></div>
+                  </div>
+                  <div class="health__t">
+                    <h3>比上周低了 6 分</h3>
+                    <p>五项指标里<b style="color:var(--danger)">准点率</b>掉得最多。周三暴雨影响了 11 单，之后没恢复到之前水平。</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>五项指标</h2><span>灰条是目标线</span></div>
+              <div class="card">
+                <div class="mrow">
+                  <div class="mrow__l"><b>准点交付率</b><span>目标 95%</span></div>
+                  <span class="mrow__k"><i class="mrow__f" style="--v:91%;background:var(--danger)"></i></span>
+                  <div class="mrow__v"><b class="bad">91.2%</b><em class="bad">−3.1</em></div>
+                </div>
+                <div class="mrow">
+                  <div class="mrow__l"><b>车辆利用率</b><span>目标 80% · 自有车 32 台</span></div>
+                  <span class="mrow__k"><i class="mrow__f" style="--v:86%;background:var(--success)"></i></span>
+                  <div class="mrow__v"><b class="good">86.4%</b><em class="good">+2.2</em></div>
+                </div>
+                <div class="mrow">
+                  <div class="mrow__l"><b>回单及时率</b><span>目标 95% · 到达后 24 小时内</span></div>
+                  <span class="mrow__k"><i class="mrow__f" style="--v:97%;background:var(--success)"></i></span>
+                  <div class="mrow__v"><b class="good">96.8%</b><em class="good">+1.2</em></div>
+                </div>
+                <div class="mrow">
+                  <div class="mrow__l"><b>空驶率</b><span>目标 ≤ 18% · 越低越好</span></div>
+                  <span class="mrow__k"><i class="mrow__f" style="--v:71%;background:var(--accent)"></i></span>
+                  <div class="mrow__v"><b class="warnc">21.3%</b><em class="bad">+1.8</em></div>
+                </div>
+                <div class="mrow">
+                  <div class="mrow__l"><b>货损率</b><span>目标 ≤ 0.5‰</span></div>
+                  <span class="mrow__k"><i class="mrow__f" style="--v:42%;background:var(--success)"></i></span>
+                  <div class="mrow__v"><b class="good">0.42‰</b><em class="good">−0.08</em></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>一周准点率</h2><span>点某天看那天出了什么</span></div>
+              <div class="card">
+                <div class="heat">
+                  <div><i style="--l:#86efac"></i><span>周一</span><b class="good">97%</b></div>
+                  <div><i style="--l:#86efac"></i><span>周二</span><b class="good">96%</b></div>
+                  <div><i style="--l:#fca5a5"></i><span>周三</span><b class="bad">74%</b></div>
+                  <div><i style="--l:#fed7aa"></i><span>周四</span><b class="warnc">88%</b></div>
+                  <div><i style="--l:#fed7aa"></i><span>周五</span><b class="warnc">90%</b></div>
+                  <div><i style="--l:#bbf7d0"></i><span>周六</span><b class="good">94%</b></div>
+                  <div><i style="--l:#e2e8f0"></i><span>今日</span><b class="dim3">进行中</b></div>
+                </div>
+                <div class="notice notice--info mt-16" style="align-items:center">
+                  <span data-icon="info"></span>
+                  <div>周三沪宁沿线暴雨，11 单延误。周四周五没完全恢复，是因为积压订单往后顺。</div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>司机表现</h2><span class="more" data-push="drivers">看全部 32 人 <span data-icon="right"></span></span></div>
+              <div class="card">
+                <div class="prow">
+                  <span class="prow__a">王</span>
+                  <div class="prow__b"><b>王建国 · 苏A·8F236</b><span>本周 6 趟 · 准点 6 · 回单都当天传</span></div>
+                  <div class="prow__v"><b class="good">100</b><em>分</em></div>
+                </div>
+                <div class="prow">
+                  <span class="prow__a">张</span>
+                  <div class="prow__b"><b>张伟 · 苏A·6H128</b><span>本周 5 趟 · 准点 5 · 客户点名表扬 1 次</span></div>
+                  <div class="prow__v"><b class="good">98</b><em>分</em></div>
+                </div>
+                <div class="prow">
+                  <span class="prow__a" style="background:var(--danger-soft);color:var(--danger)">刘</span>
+                  <div class="prow__b"><b>刘强 · 苏B·2K901</b><span>本周 5 趟 · 晚点 2 · 位置上报断过 3 次</span></div>
+                  <div class="prow__v"><b class="bad">72</b><em>分</em></div>
+                </div>
+                <div class="prow">
+                  <span class="prow__a" style="background:var(--accent-soft);color:var(--accent-deep)">李</span>
+                  <div class="prow__b"><b>李国庆 · 苏C·9J065</b><span>本周 4 趟 · 回单平均隔 1.8 天才传</span></div>
+                  <div class="prow__v"><b class="warnc">81</b><em>分</em></div>
+                </div>
+              </div>
+              <p class="t-cap" style="margin:10px 2px 0">刘强这周两次晚点都跟位置上报断了有关。建议先了解是手机问题还是习惯问题，再谈考核。</p>
+
+              <div class="sec-title"><h2>承运商考核</h2></div>
+              <div class="card">
+                <div class="prow">
+                  <span class="prow__a" style="background:var(--success-soft);color:var(--success)"><span data-icon="users"></span></span>
+                  <div class="prow__b"><b>鑫达商品车运输</b><span>本周 18 单 · 准点 97.6% · 无货损</span></div>
+                  <div class="prow__v"><b class="good">A</b><em>可加量</em></div>
+                </div>
+                <div class="prow">
+                  <span class="prow__a" style="background:var(--info-soft);color:#0369a1"><span data-icon="users"></span></span>
+                  <div class="prow__b"><b>浙运达汽车物流</b><span>本周 9 单 · 准点 95.2% · 无货损</span></div>
+                  <div class="prow__v"><b class="good">A</b><em>维持</em></div>
+                </div>
+                <div class="prow">
+                  <span class="prow__a" style="background:var(--danger-soft);color:var(--danger)"><span data-icon="users"></span></span>
+                  <div class="prow__b"><b>顺捷社会运力池</b><span>本周 7 单 · 准点 84.1% · 货损 1 起</span></div>
+                  <div class="prow__v"><b class="bad">C</b><em>该减量</em></div>
+                </div>
+              </div>
+
+              <div class="btnrow mt-16">
+                <button class="btn btn--ghost btn--block" data-sheet="share"><span data-icon="send"></span>发到运营群</button>
+              </div>
+              <p class="t-cap center" style="margin-top:10px">明细报表与自定义维度请在电脑端看</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 司机全量 -->
+        <section class="screen" data-screen="drivers" data-title="司机排行" data-nav="司机表现 · 32 人" data-parent="ops">
+          <div class="scroll">
+            <div class="sticky" style="padding-top:10px">
+              <div class="chipbar" style="padding:0 var(--pad)">
+                <button class="chip" aria-selected="true">综合分</button>
+                <button class="chip">准点率</button>
+                <button class="chip">趟数</button>
+                <button class="chip">回单及时</button>
+              </div>
+            </div>
+            <div class="pad mt-16">
+              <div class="card">
+                <div class="prow"><span class="prow__a">王</span><div class="prow__b"><b>王建国</b><span>6 趟 · 准点 100% · 回单当天</span></div><div class="prow__v"><b class="good">100</b><em>第 1</em></div></div>
+                <div class="prow"><span class="prow__a">张</span><div class="prow__b"><b>张伟</b><span>5 趟 · 准点 100% · 表扬 1 次</span></div><div class="prow__v"><b class="good">98</b><em>第 2</em></div></div>
+                <div class="prow"><span class="prow__a">周</span><div class="prow__b"><b>周海东</b><span>6 趟 · 准点 83% · 回单当天</span></div><div class="prow__v"><b>92</b><em>第 3</em></div></div>
+                <div class="prow"><span class="prow__a">陈</span><div class="prow__b"><b>陈立军</b><span>4 趟 · 准点 100% · 回单隔天</span></div><div class="prow__v"><b>90</b><em>第 4</em></div></div>
+                <div class="prow"><span class="prow__a" style="background:var(--accent-soft);color:var(--accent-deep)">李</span><div class="prow__b"><b>李国庆</b><span>4 趟 · 回单平均 1.8 天</span></div><div class="prow__v"><b class="warnc">81</b><em>第 28</em></div></div>
+                <div class="prow"><span class="prow__a" style="background:var(--danger-soft);color:var(--danger)">刘</span><div class="prow__b"><b>刘强</b><span>5 趟 · 晚点 2 · 位置断 3 次</span></div><div class="prow__v"><b class="bad">72</b><em>第 32</em></div></div>
+              </div>
+              <div class="notice mt-16">
+                <span data-icon="info"></span>
+                <div>综合分 = 准点 40% + 回单及时 25% + 货损 20% + 客户评价 15%。权重由运营在电脑端配。</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="home" data-title="工作台 tab" data-tabroot data-nav="工作台">
+          <div class="scroll"><p class="t-cap center mt-20">角色自适应工作台的完整设计见 02</p></div>
+        </section>
+        <section class="screen" data-screen="pool" data-title="调度 tab" data-tabroot data-nav="调度工作台">
+          <div class="scroll"><p class="t-cap center mt-20">五阶段调度工作台的完整设计见 05</p></div>
+        </section>
+        <section class="screen" data-screen="msgtab" data-title="消息 tab" data-tabroot data-nav="消息">
+          <div class="scroll"><p class="t-cap center mt-20">消息中心的完整设计见 13</p></div>
+        </section>
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll"><p class="t-cap center mt-20">个人中心与设置的完整设计见 14</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="home"><span data-icon="grid"></span>工作台</button>
+        <button class="tabi" data-tab="pool"><span data-icon="route"></span>调度</button>
+        <button class="tabi" data-tab="ops"><span data-icon="chart"></span>数据</button>
+        <button class="tabi" data-tab="msgtab"><span data-icon="msg"></span>消息<i class="tabi__dot">7</i></button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+      <div class="sheet" data-sheet-id="share">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>发到运营群</h3><p>会生成一张图片，直接转发到微信群</p></div>
+        <div class="sheet__body">
+          <div class="card card--flat">
+            <div class="t-cap">预览</div>
+            <h3 style="margin:8px 0 6px;font-size:16px;font-weight:650">本周运营健康度 78 分</h3>
+            <p style="margin:0;font-size:13px;line-height:1.7;color:var(--ink-2)">准点率 91.2%（低于目标 3.8 个点）· 车辆利用率 86.4%（达标）· 回单及时率 96.8%（达标）· 空驶率 21.3%（超标）· 货损率 0.42‰（达标）。<br>周三暴雨影响 11 单，是本周准点率下滑的主因。</p>
+          </div>
+          <div class="field">
+            <div class="field__l">要不要带明细</div>
+            <div class="vstack">
+              <label class="cell cell--static" style="padding-left:0">
+                <div class="cell__main"><div class="cell__t">带司机排行</div><div class="cell__s">前 3 名与后 3 名</div></div>
+                <button class="switch" role="switch" aria-checked="true"></button>
+              </label>
+              <label class="cell cell--static" style="padding-left:0">
+                <div class="cell__main"><div class="cell__t">带承运商考核</div><div class="cell__s">含评级与建议</div></div>
+                <button class="switch" role="switch" aria-checked="false"></button>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="图片已生成，去群里发就行">生成图片</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 角色自适应工作台</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .hd__roles { position: relative; margin-top: 16px; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 02</p>
+    <h1 class="stage__title">角色自适应工作台</h1>
+    <p class="stage__desc">同一个入口，三种人看到三件不同的事。老板看水位与放行，调度看任务池与超时，财务看待付与审批。<b style="color:#e2e8f0">不做一个所有人都用不顺手的通用首页。</b></p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>顶部<b>角色切换器</b>可实时切三个视图（点一下看效果）。多角色的人（比如运营主管兼调度）不用退出重登。</li>
+        <li>调度视图的<b>五阶段泳道卡带</b>是后台端的记忆点：待分配 / 待派车 / 待装车 / 在途 / 待签收 横向滑动，选中档位下方列表跟着换，超时数缓慢呼吸。</li>
+        <li>每个视图<b>只有一个强调色动作</b>：调度是「去派车」，老板是「批」，财务是「标记支付」。</li>
+        <li>KPI 口径与 PC 驾驶舱一致：<b>计划运费、计划数、商品车数量、服务客户数、毛利率</b>，不在手机上另造一套指标。</li>
+        <li>财务视图对没有权限的人<b>连数字都不显示</b>，而不是显示后再报错。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <!-- 工作台 -->
+        <section class="screen" data-screen="home" data-title="工作台" data-tabroot data-nav-hide="1"
+                 data-status-light="1" data-mpbg="#0b132e" data-start>
+          <div class="scroll is-flush" data-refresh>
+            <header class="hd">
+              <div class="hd__row">
+                <div class="grow">
+                  <div class="hd__hi">陈涛，上午好</div>
+                  <div class="hd__org">远洋汽车物流有限公司 <span data-icon="down"></span></div>
+                </div>
+                <button class="hd__bell" data-push="msg" aria-label="消息"><span data-icon="bell"></span><b>7</b></button>
+              </div>
+              <div class="hd__roles">
+                <div class="roles" role="tablist">
+                  <button data-role="disp" aria-selected="true">调度</button>
+                  <button data-role="boss" aria-selected="false">老板</button>
+                  <button data-role="fin" aria-selected="false">财务</button>
+                </div>
+              </div>
+            </header>
+
+            <!-- ===== 调度视图 ===== -->
+            <div data-role-panel="disp">
+              <div class="overcard">
+                <div class="stats">
+                  <div class="stat"><b data-count-to="14">0</b><span>待派车</span></div>
+                  <div class="stat"><b data-count-to="9">0</b><span>待装车</span></div>
+                  <div class="stat"><b data-count-to="23">0</b><span>在途</span></div>
+                  <div class="stat is-alert"><b data-count-to="3">0</b><span>已超时</span></div>
+                </div>
+              </div>
+
+              <div class="pad" style="margin-top:16px">
+                <div class="notice notice--danger">
+                  <span data-icon="warn"></span>
+                  <div><b>3 单已超过约定到货时间</b><br>最久的一单超了 4 小时 20 分，客户是苏南汽贸。<a style="color:inherit;text-decoration:underline">先看这 3 单</a></div>
+                </div>
+              </div>
+
+              <div class="sec-title" style="margin-left:var(--pad);margin-right:var(--pad)">
+                <h2>任务池</h2><span>点档位切列表</span>
+                <span class="more" data-push="pool">进调度台 <span data-icon="right"></span></span>
+              </div>
+              <div class="band">
+                <button class="bcard" style="--c:var(--s0)" data-stage="s0">
+                  <span class="bcard__l">待分配</span><span class="bcard__n">6</span>
+                  <span class="bcard__w">计划待配载</span>
+                </button>
+                <button class="bcard" style="--c:var(--s1)" data-stage="s1" aria-selected="true">
+                  <span class="bcard__l">待派车</span><span class="bcard__n">14</span>
+                  <span class="bcard__w is-alert"><span data-icon="warn"></span>2 单临期</span>
+                </button>
+                <button class="bcard" style="--c:var(--s2)" data-stage="s2">
+                  <span class="bcard__l">待装车</span><span class="bcard__n">9</span>
+                  <span class="bcard__w">今日 5 单</span>
+                </button>
+                <button class="bcard" style="--c:var(--s3)" data-stage="s3">
+                  <span class="bcard__l">在途</span><span class="bcard__n">23</span>
+                  <span class="bcard__w is-alert"><span data-icon="warn"></span>3 单超时</span>
+                </button>
+                <button class="bcard" style="--c:var(--s4)" data-stage="s4">
+                  <span class="bcard__l">待签收</span><span class="bcard__n">11</span>
+                  <span class="bcard__w">4 单已到达</span>
+                </button>
+              </div>
+
+              <div class="pad" style="margin-top:12px">
+                <div class="card card--plain" data-stage-panel="s1">
+                  <div class="swipe" data-swipe>
+                    <div class="swipe__acts">
+                      <button class="a-primary" data-push="assign"><span data-icon="truck"></span>派车</button>
+                      <button class="a-grey" data-toast="已复制任务单号"><span data-icon="file"></span>详情</button>
+                    </div>
+                    <div class="swipe__body">
+                      <button class="row" data-push="assign">
+                        <div class="row__t"><span class="row__no">TK2608090061</span><span class="tag tag--danger ml-auto">2 小时内要装车</span></div>
+                        <div class="row__m"><b>上汽仪征基地 → 合肥包河仓</b></div>
+                        <div class="row__f">
+                          <em><span data-icon="box"></span>8 台</em>
+                          <em><span data-icon="clock"></span>今日 16:00 装车</em>
+                          <em class="late"><span data-icon="warn"></span>还没派车</em>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                  <button class="row" data-push="assign">
+                    <div class="row__t"><span class="row__no">TK2608090063</span><span class="tag tag--warn ml-auto">明日装车</span></div>
+                    <div class="row__m"><b>杭州萧山中转库 → 宁波北仑港</b></div>
+                    <div class="row__f">
+                      <em><span data-icon="box"></span>6 台</em>
+                      <em><span data-icon="clock"></span>08-10 07:30</em>
+                      <em><span data-icon="users"></span>建议 苏A·8F236</em>
+                    </div>
+                  </button>
+                  <button class="row" data-push="assign">
+                    <div class="row__t"><span class="row__no">TK2608090064</span><span class="tag ml-auto">待派车</span></div>
+                    <div class="row__m"><b>南京江宁库 → 徐州云龙仓</b></div>
+                    <div class="row__f">
+                      <em><span data-icon="box"></span>5 台</em>
+                      <em><span data-icon="clock"></span>08-10 09:00</em>
+                    </div>
+                  </button>
+                  <div class="cell" data-push="pool">
+                    <div class="cell__main center" style="color:var(--primary);font-size:13.5px">还有 11 单待派车，去调度台看全部</div>
+                  </div>
+                </div>
+
+                <div class="card card--plain" data-stage-panel="s0" hidden>
+                  <button class="row">
+                    <div class="row__t"><span class="row__no">WB26080031</span><span class="tag tag--warn ml-auto">待调度</span></div>
+                    <div class="row__m"><b>上汽仪征基地 → 温州瓯海 4S 店</b></div>
+                    <div class="row__f"><em><span data-icon="box"></span>4 台</em><em><span data-icon="building"></span>浙南汽贸</em><em><span data-icon="clock"></span>要求 08-12 到货</em></div>
+                  </button>
+                  <button class="row">
+                    <div class="row__t"><span class="row__no">WB26080032</span><span class="tag tag--warn ml-auto">待调度</span></div>
+                    <div class="row__m"><b>南京江宁库 → 金华婺城仓</b></div>
+                    <div class="row__f"><em><span data-icon="box"></span>3 台</em><em><span data-icon="building"></span>金华恒达</em></div>
+                  </button>
+                  <div class="cell" data-push="pool"><div class="cell__main center" style="color:var(--primary);font-size:13.5px">还有 4 个计划待配载</div></div>
+                </div>
+
+                <div class="card card--plain" data-stage-panel="s2" hidden>
+                  <button class="row">
+                    <div class="row__t"><span class="row__no">TK2608090052</span><span class="tag tag--info ml-auto">已派车</span></div>
+                    <div class="row__m"><b>杭州萧山中转库 → 宁波北仑港</b></div>
+                    <div class="row__f"><em><span data-icon="truck"></span>苏A·8F236 王建国</em><em><span data-icon="clock"></span>明早 07:30</em></div>
+                  </button>
+                  <button class="row">
+                    <div class="row__t"><span class="row__no">TK2608090058</span><span class="tag tag--info ml-auto">已派车</span></div>
+                    <div class="row__m"><b>上汽仪征基地 → 苏州吴中 4S 店</b></div>
+                    <div class="row__f"><em><span data-icon="truck"></span>苏B·2K901 刘强</em><em><span data-icon="clock"></span>今日 15:00</em></div>
+                  </button>
+                </div>
+
+                <div class="card card--plain" data-stage-panel="s3" hidden>
+                  <button class="row" data-push="track">
+                    <div class="row__t"><span class="row__no">TK2608080077</span><span class="tag tag--danger ml-auto">超时 4 小时 20 分</span></div>
+                    <div class="row__m"><b>南京江宁库 → 苏州吴中 4S 店</b></div>
+                    <div class="row__f"><em><span data-icon="truck"></span>苏B·2K901 刘强</em><em class="late"><span data-icon="warn"></span>4 小时没更新位置</em></div>
+                  </button>
+                  <button class="row" data-push="track">
+                    <div class="row__t"><span class="row__no">TK2608090037</span><span class="tag tag--info ml-auto">在途</span></div>
+                    <div class="row__m"><b>上汽仪征基地 → 杭州萧山中转库</b></div>
+                    <div class="row__f"><em><span data-icon="truck"></span>苏A·8F236 王建国</em><em><span data-icon="pin"></span>距目的地 86 km</em></div>
+                  </button>
+                </div>
+
+                <div class="card card--plain" data-stage-panel="s4" hidden>
+                  <button class="row">
+                    <div class="row__t"><span class="row__no">TK2608090044</span><span class="tag tag--ok ml-auto">已到达</span></div>
+                    <div class="row__m"><b>南京江宁库 → 苏州吴中 4S 店</b></div>
+                    <div class="row__f"><em><span data-icon="box"></span>3 台待签</em><em><span data-icon="clock"></span>13:20 到达</em></div>
+                  </button>
+                  <button class="row">
+                    <div class="row__t"><span class="row__no">TK2608070008</span><span class="tag tag--warn ml-auto">回单待审</span></div>
+                    <div class="row__m"><b>上汽仪征基地 → 常州武进库</b></div>
+                    <div class="row__f"><em><span data-icon="camera"></span>3 张待审核</em></div>
+                  </button>
+                </div>
+
+                <div class="sec-title"><h2>今日待办</h2><span>8 件</span></div>
+                <div class="todos">
+                  <button class="todo" data-push="assign"><i style="background:var(--primary-soft);color:var(--primary)"><span data-icon="truck"></span></i><div><b>14</b><span>待派车</span></div></button>
+                  <button class="todo" data-toast="回单签收的完整设计见 08"><i style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="camera"></span></i><div><b>5</b><span>回单待审</span></div></button>
+                  <button class="todo" data-push="track"><i style="background:var(--danger-soft);color:var(--danger)"><span data-icon="warn"></span></i><div><b>3</b><span>在途超时</span></div></button>
+                  <button class="todo" data-toast="审批中心的完整设计见 10"><i style="background:var(--success-soft);color:var(--success)"><span data-icon="checkc"></span></i><div><b>4</b><span>待我审批</span></div></button>
+                </div>
+
+                <div class="sec-title"><h2>运力空闲情况</h2><span>自有车 32 台</span></div>
+                <div class="card">
+                  <div class="bars">
+                    <div>
+                      <div class="bar__top"><span>在途中</span><span class="strong">23 台</span></div>
+                      <div class="bar__track"><i class="bar__fill" style="--v:72%"></i></div>
+                    </div>
+                    <div>
+                      <div class="bar__top"><span>今日可派</span><span class="strong" style="color:var(--success)">6 台</span></div>
+                      <div class="bar__track"><i class="bar__fill" style="--v:19%;background:var(--success)"></i></div>
+                    </div>
+                    <div>
+                      <div class="bar__top"><span>维修 / 停用</span><span class="strong">3 台</span></div>
+                      <div class="bar__track"><i class="bar__fill" style="--v:9%;background:#94a3b8"></i></div>
+                    </div>
+                  </div>
+                  <p class="t-cap" style="margin:12px 0 0">可派运力只剩 6 台，14 单待派车。缺口部分建议走承运商。</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== 老板视图 ===== -->
+            <div data-role-panel="boss" hidden>
+              <div class="overcard">
+                <div class="stats">
+                  <div class="stat"><b data-count-to="86.4" data-count-dec="1">0</b><span>今日运费 万</span></div>
+                  <div class="stat"><b data-count-to="63">0</b><span>今日计划</span></div>
+                  <div class="stat"><b data-count-to="412">0</b><span>商品车 台</span></div>
+                  <div class="stat is-amber"><b data-count-to="18.6" data-count-dec="1">0</b><span>毛利率 %</span></div>
+                </div>
+              </div>
+
+              <div class="pad" style="margin-top:16px">
+                <div class="notice">
+                  <span data-icon="warn"></span>
+                  <div><b>毛利率比上月低 2.4 个百分点</b><br>外包比例从 31% 涨到 44%。<a style="color:inherit;text-decoration:underline">看驾驶舱</a></div>
+                </div>
+
+                <div class="sec-title"><h2>本月经营水位</h2><span class="more" data-push="cockpit">驾驶舱 <span data-icon="right"></span></span></div>
+                <div class="card">
+                  <div class="hstack" style="align-items:baseline;gap:9px">
+                    <span class="money" style="font-size:30px">1,842</span>
+                    <span class="t-label dim">万元 计划运费</span>
+                    <span class="kpi__d up ml-auto"><span data-icon="trend"></span>同比 +12.4%</span>
+                  </div>
+                  <div class="trend mt-12">
+                    <svg viewBox="0 0 320 110" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0" stop-color="#2f54eb" stop-opacity=".26"/>
+                          <stop offset="1" stop-color="#2f54eb" stop-opacity="0"/>
+                        </linearGradient>
+                      </defs>
+                      <g stroke="#eff2f7" stroke-width="1">
+                        <line x1="0" y1="12" x2="320" y2="12"/><line x1="0" y1="45" x2="320" y2="45"/>
+                        <line x1="0" y1="78" x2="320" y2="78"/><line x1="0" y1="106" x2="320" y2="106"/>
+                      </g>
+                      <path d="M4 84 L50 72 L96 78 L142 52 L188 58 L234 34 L280 40 L316 20 L316 106 L4 106 Z" fill="url(#g1)"/>
+                      <path d="M4 84 L50 72 L96 78 L142 52 L188 58 L234 34 L280 40 L316 20" fill="none" stroke="#2f54eb" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="316" cy="20" r="4.5" fill="#2f54eb" stroke="#fff" stroke-width="2.5"/>
+                    </svg>
+                  </div>
+                  <div class="trend__x"><span>08-02</span><span>08-04</span><span>08-06</span><span>08-08</span></div>
+                </div>
+
+                <div class="sec-title"><h2>要你放行的</h2><span>4 件 · ¥86,400</span></div>
+                <div class="card card--plain">
+                  <div class="swipe" data-swipe>
+                    <div class="swipe__acts">
+                      <button class="a-primary" data-toast="已通过"><span data-icon="check"></span>通过</button>
+                      <button class="a-danger" data-toast="已驳回，会通知提交人"><span data-icon="x"></span>驳回</button>
+                    </div>
+                    <div class="swipe__body">
+                      <button class="row" data-push="approve">
+                        <div class="row__t"><span class="row__no">FD26080900341</span><span class="tag tag--warn ml-auto">超额度</span></div>
+                        <div class="row__m"><b>承运商结算单 · 鑫达商品车运输</b><i class="money ml-auto">¥42,600</i></div>
+                        <div class="row__f"><em><span data-icon="user"></span>赵倩 提交</em><em><span data-icon="clock"></span>已等 6 小时</em></div>
+                      </button>
+                    </div>
+                  </div>
+                  <button class="row" data-push="approve">
+                    <div class="row__t"><span class="row__no">FD26080900338</span><span class="tag ml-auto">常规</span></div>
+                    <div class="row__m"><b>司机结算单 · 8 月上半月批次</b><i class="money ml-auto">¥28,400</i></div>
+                    <div class="row__f"><em><span data-icon="user"></span>赵倩 提交</em><em><span data-icon="clock"></span>已等 2 小时</em></div>
+                  </button>
+                  <button class="row" data-push="approve">
+                    <div class="row__t"><span class="row__no">PR26080900012</span><span class="tag tag--warn ml-auto">低于底价</span></div>
+                    <div class="row__m"><b>特价审批 · 苏南汽贸临时线路</b><i class="money ml-auto">¥15,400</i></div>
+                    <div class="row__f"><em><span data-icon="user"></span>李敏 提交</em><em><span data-icon="clock"></span>已等 1 天</em></div>
+                  </button>
+                </div>
+
+                <div class="sec-title"><h2>值得看一眼的</h2></div>
+                <div class="card card--plain">
+                  <div class="cell" data-push="cockpit">
+                    <div class="cell__ico is-red"><span data-icon="trend"></span></div>
+                    <div class="cell__main"><div class="cell__t">承运商外包比例升到 44%</div><div class="cell__s">自有车不够用，毛利被吃掉 2.4 个点</div></div>
+                    <div class="cell__x"><span data-icon="right"></span></div>
+                  </div>
+                  <div class="cell" data-push="cockpit">
+                    <div class="cell__ico is-amber"><span data-icon="clock"></span></div>
+                    <div class="cell__main"><div class="cell__t">准点率跌到 91.2%</div><div class="cell__s">低于承诺的 95%，集中在华东线路</div></div>
+                    <div class="cell__x"><span data-icon="right"></span></div>
+                  </div>
+                  <div class="cell" data-push="cockpit">
+                    <div class="cell__ico is-green"><span data-icon="building"></span></div>
+                    <div class="cell__main"><div class="cell__t">新增 3 家服务客户</div><div class="cell__s">本月累计 28 家，创年内新高</div></div>
+                    <div class="cell__x"><span data-icon="right"></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== 财务视图 ===== -->
+            <div data-role-panel="fin" hidden>
+              <div class="overcard">
+                <div class="stats">
+                  <div class="stat is-alert"><b data-count-to="128.6" data-count-dec="1">0</b><span>待付 万</span></div>
+                  <div class="stat"><b data-count-to="17">0</b><span>待审批单</span></div>
+                  <div class="stat"><b data-count-to="42.3" data-count-dec="1">0</b><span>今日已付 万</span></div>
+                  <div class="stat is-amber"><b data-count-to="4">0</b><span>逾期未付</span></div>
+                </div>
+              </div>
+
+              <div class="pad" style="margin-top:16px">
+                <div class="notice notice--danger">
+                  <span data-icon="warn"></span>
+                  <div><b>4 张单据已过约定付款日</b><br>最久的一张逾期 6 天，收款方是鑫达商品车运输。<a style="color:inherit;text-decoration:underline">先处理这 4 张</a></div>
+                </div>
+
+                <div class="sec-title"><h2>待付台账</h2><span class="more" data-push="fee">费用工作台 <span data-icon="right"></span></span></div>
+                <div class="card card--plain">
+                  <div class="swipe" data-swipe>
+                    <div class="swipe__acts">
+                      <button class="a-primary" data-toast="已标记为已支付"><span data-icon="check"></span>标记<br>已付</button>
+                      <button class="a-grey" data-toast="已复制单号"><span data-icon="file"></span>详情</button>
+                    </div>
+                    <div class="swipe__body">
+                      <button class="row" data-push="fee">
+                        <div class="row__t"><span class="row__no">FD26080300221</span><span class="tag tag--danger ml-auto">逾期 6 天</span></div>
+                        <div class="row__m"><b>鑫达商品车运输</b><i class="money ml-auto" style="color:var(--danger)">¥42,600</i></div>
+                        <div class="row__f"><em><span data-icon="calendar"></span>应付 08-03</em><em><span data-icon="card"></span>银行转账</em></div>
+                      </button>
+                    </div>
+                  </div>
+                  <button class="row" data-push="fee">
+                    <div class="row__t"><span class="row__no">FD26080900287</span><span class="tag tag--warn ml-auto">今日应付</span></div>
+                    <div class="row__m"><b>司机结算 · 8 月上半月</b><i class="money ml-auto">¥28,400</i></div>
+                    <div class="row__f"><em><span data-icon="users"></span>12 人</em><em><span data-icon="card"></span>银行代发</em></div>
+                  </button>
+                  <button class="row" data-push="fee">
+                    <div class="row__t"><span class="row__no">FD26080900301</span><span class="tag ml-auto">08-12 应付</span></div>
+                    <div class="row__m"><b>顺捷社会运力池</b><i class="money ml-auto">¥18,900</i></div>
+                    <div class="row__f"><em><span data-icon="calendar"></span>还有 3 天</em><em><span data-icon="fuel"></span>油气款抵扣 ¥3,200</em></div>
+                  </button>
+                </div>
+
+                <div class="sec-title"><h2>本月资金</h2></div>
+                <div class="card">
+                  <div class="donut">
+                    <div class="donut__g">
+                      <svg width="106" height="106" viewBox="0 0 42 42">
+                        <circle cx="21" cy="21" r="16" fill="none" stroke="#eff2f7" stroke-width="7"/>
+                        <circle cx="21" cy="21" r="16" fill="none" stroke="#2f54eb" stroke-width="7" stroke-dasharray="47 100" stroke-linecap="round"/>
+                        <circle cx="21" cy="21" r="16" fill="none" stroke="#0ea5e9" stroke-width="7" stroke-dasharray="26 100" stroke-dashoffset="-48" stroke-linecap="round"/>
+                        <circle cx="21" cy="21" r="16" fill="none" stroke="#fa8c16" stroke-width="7" stroke-dasharray="18 100" stroke-dashoffset="-75" stroke-linecap="round"/>
+                      </svg>
+                      <div class="donut__c"><b>281</b><span>万元支出</span></div>
+                    </div>
+                    <div class="legend">
+                      <div><i style="background:#2f54eb"></i><span>承运商运费</span><b>132 万</b></div>
+                      <div><i style="background:#0ea5e9"></i><span>司机结算</span><b>73 万</b></div>
+                      <div><i style="background:#fa8c16"></i><span>油气款</span><b>51 万</b></div>
+                      <div><i style="background:#e5e9f2"></i><span>其他</span><b>25 万</b></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="sec-title"><h2>待我审批</h2><span>17 张</span></div>
+                <div class="todos">
+                  <button class="todo" data-push="approve"><i style="background:var(--primary-soft);color:var(--primary)"><span data-icon="file"></span></i><div><b>9</b><span>结算单</span></div></button>
+                  <button class="todo" data-push="approve"><i style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="fuel"></span></i><div><b>5</b><span>预付单</span></div></button>
+                  <button class="todo" data-push="approve"><i style="background:var(--info-soft);color:#0369a1"><span data-icon="plus"></span></i><div><b>3</b><span>补款单</span></div></button>
+                  <button class="todo" data-push="fee"><i style="background:var(--success-soft);color:var(--success)"><span data-icon="checkc"></span></i><div><b>28</b><span>今日已付</span></div></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 其余 tab 与二级页 -->
+        <section class="screen" data-screen="pool" data-title="调度 tab" data-tabroot data-nav="调度工作台">
+          <div class="scroll"><p class="t-cap center mt-20">五阶段调度工作台的完整设计见 05</p></div>
+        </section>
+        <section class="screen" data-screen="data" data-title="数据 tab" data-tabroot data-nav="数据">
+          <div class="scroll"><p class="t-cap center mt-20">经营驾驶舱见 03，运营看板见 11</p></div>
+        </section>
+        <section class="screen" data-screen="msgtab" data-title="消息 tab" data-tabroot data-nav="消息">
+          <div class="scroll"><p class="t-cap center mt-20">消息中心的完整设计见 13</p></div>
+        </section>
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll"><p class="t-cap center mt-20">个人中心与设置的完整设计见 14</p></div>
+        </section>
+
+        <section class="screen" data-screen="assign" data-title="派车（见 06）" data-nav="派车" data-parent="home">
+          <div class="scroll"><p class="t-cap center mt-20">派车与分配承运的完整设计见 06</p></div>
+        </section>
+        <section class="screen" data-screen="track" data-title="在途（见 07）" data-nav="在途监控" data-parent="home">
+          <div class="scroll"><p class="t-cap center mt-20">在途监控与预警的完整设计见 07</p></div>
+        </section>
+        <section class="screen" data-screen="approve" data-title="审批（见 10）" data-nav="审批" data-parent="home">
+          <div class="scroll"><p class="t-cap center mt-20">审批中心的完整设计见 10</p></div>
+        </section>
+        <section class="screen" data-screen="fee" data-title="费用（见 09）" data-nav="费用工作台" data-parent="home">
+          <div class="scroll"><p class="t-cap center mt-20">费用工作台的完整设计见 09</p></div>
+        </section>
+        <section class="screen" data-screen="cockpit" data-title="驾驶舱（见 03）" data-nav="经营驾驶舱" data-parent="home">
+          <div class="scroll"><p class="t-cap center mt-20">经营驾驶舱的完整设计见 03</p></div>
+        </section>
+        <section class="screen" data-screen="msg" data-title="消息（见 13）" data-nav="消息" data-parent="home">
+          <div class="scroll"><p class="t-cap center mt-20">消息中心的完整设计见 13</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="home"><span data-icon="grid"></span>工作台</button>
+        <button class="tabi" data-tab="pool"><span data-icon="route"></span>调度</button>
+        <button class="tabi" data-tab="data"><span data-icon="chart"></span>数据</button>
+        <button class="tabi" data-tab="msgtab"><span data-icon="msg"></span>消息<i class="tabi__dot">7</i></button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

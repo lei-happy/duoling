@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 计划中心与确认</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .plan { position: relative; width: 100%; text-align: left; border: 0; background: var(--card); cursor: pointer; padding: 13px 15px; display: flex; gap: 11px; }
+  .plan + .plan::before { content: ""; position: absolute; left: 15px; right: 0; top: 0; height: 1px; background: var(--line-soft); }
+  .plan:active { background: #f6f8fc; }
+  .plan__k { display: none; width: 21px; height: 21px; border-radius: 7px; border: 1.5px solid #c3ccda; flex: none;
+    place-items: center; background: #fff; color: #fff; margin-top: 2px; }
+  .plan__k svg { width: 13px; height: 13px; stroke-width: 3; opacity: 0; }
+  .plan__k[aria-checked="true"] { background: var(--primary); border-color: var(--primary); }
+  .plan__k[aria-checked="true"] svg { opacity: 1; }
+  .screen.is-pick .plan__k { display: grid; }
+  .plan__b { flex: 1; min-width: 0; }
+  .plan__t { display: flex; align-items: center; gap: 8px; }
+  .plan__no { font: 600 11.5px/1 var(--mono); letter-spacing: .05em; color: var(--ink-3); }
+  .plan__r { display: flex; align-items: center; gap: 9px; margin-top: 8px; }
+  .plan__r b { font-size: 14.8px; font-weight: 600; letter-spacing: -.008em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .plan__r i { flex: 1; min-width: 12px; height: 1px; border-top: 1.5px dashed #cfd8e6; font-style: normal; }
+  .plan__f { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 9px; font-size: 12px; color: var(--ink-2); }
+  .plan__f em { font-style: normal; display: inline-flex; align-items: center; gap: 4px; }
+  .plan__f svg { width: 12px; height: 12px; color: var(--ink-3); }
+  .plan__f .warn { color: var(--accent-deep); font-weight: 600; }
+  .pickbar {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 20; transform: translateY(110%);
+    background: rgba(255,255,255,.92); backdrop-filter: saturate(180%) blur(20px);
+    border-top: .5px solid var(--line); padding: 11px var(--pad) 14px; display: flex; align-items: center; gap: 10px;
+    transition: transform .34s cubic-bezier(.32,.72,0,1);
+  }
+  .screen.is-pick .pickbar { transform: none; }
+  .pickbar__n { font-size: 13px; color: var(--ink-2); flex: none; }
+  .pickbar__n b { font-size: 17px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; margin: 0 2px; }
+  .screen.is-pick .scroll { padding-bottom: 84px; }
+  .screen.is-pick .swipe__acts { display: none; }
+  .vlist { display: grid; gap: 1px; background: var(--line); border-radius: 12px; overflow: hidden; }
+  .vlist__r { background: #fff; padding: 11px 13px; display: flex; align-items: center; gap: 10px; font-size: 13.5px; }
+  .vlist__r span.vin { font: 500 11.5px/1 var(--mono); color: var(--ink-3); margin-left: auto; }
+  .vlist__h { background: #f7f9fd; font-size: 11.5px; color: var(--ink-3); padding: 8px 13px; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 04</p>
+    <h1 class="stage__title">计划中心与确认</h1>
+    <p class="stage__desc">计划是所有事情的起点。手机上不做录入，只做<b style="color:#e2e8f0">确认</b>——客户传来的计划对不对、能不能接、什么时候能到，点头之后才进调度池。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>名字统一叫<b>计划</b>，不叫运单、不叫订单。与后台域模型一致，减少口头沟通歧义。</li>
+        <li>确认是<b>批量场景</b>：客户一次传 20 个计划很常见。批量勾选一次确认，是这一页存在的主要理由。</li>
+        <li>确认前系统<b>先替人检查</b>：运价缺失、要求到货时间过近、车架号重复，这三类问题在列表上就标出来，不用点进去才发现。</li>
+        <li>有问题的计划<b>不允许批量确认</b>，会被单独拎出来提示——宁可慢一步，也不要把脏数据放进调度池。</li>
+        <li>车架号列表按<b>等宽字体</b>排版，方便与客户单据逐条核对。</li>
+        <li>新建计划、批量导入、运价配置留在电脑端，这里给明确的说明而不是残缺的表单。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <section class="screen" data-screen="plans" data-title="计划中心" data-nav="计划中心" data-tabroot data-start>
+          <div class="scroll is-flush" data-refresh>
+            <div class="sticky" style="padding-top:10px">
+              <div class="seg" data-seg>
+                <button aria-selected="true">待确认 9</button>
+                <button>已确认 32</button>
+                <button>全部</button>
+                <i class="seg__thumb"></i>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="notice">
+                <span data-icon="warn"></span>
+                <div><b>3 个计划有问题，确认前要处理</b><br>2 个缺运价，1 个车架号和上周的计划重复了。</div>
+              </div>
+            </div>
+
+            <div class="pad mt-12">
+              <div class="hstack" style="padding:0 2px 10px">
+                <span class="t-cap">共 9 个计划 · 62 台 · 应收 ¥184,600</span>
+                <button class="btn btn--sm btn--ghost ml-auto" data-mode="pick"><span data-icon="checkc"></span>批量确认</button>
+              </div>
+
+              <div class="card card--plain">
+                <div class="swipe" data-swipe>
+                  <div class="swipe__acts">
+                    <button class="a-primary" data-dialog="ok1"><span data-icon="check"></span>确认</button>
+                    <button class="a-danger" data-sheet="reject"><span data-icon="x"></span>退回</button>
+                  </div>
+                  <div class="swipe__body">
+                    <div class="plan">
+                      <span class="plan__k" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                      <div class="plan__b" data-push="detail">
+                        <div class="plan__t"><span class="plan__no">WB26080931</span><span class="tag tag--warn ml-auto">待确认</span></div>
+                        <div class="plan__r"><b>上汽仪征基地</b><i></i><b>温州瓯海 4S 店</b></div>
+                        <div class="plan__f">
+                          <em><span data-icon="box"></span>4 台 荣威 D5X</em>
+                          <em><span data-icon="building"></span>浙南汽贸</em>
+                          <em><span data-icon="wallet"></span>¥12,800</em>
+                          <em><span data-icon="clock"></span>要求 08-12 到货</em>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="plan">
+                  <span class="plan__k" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                  <div class="plan__b" data-push="detail">
+                    <div class="plan__t"><span class="plan__no">WB26080932</span><span class="tag tag--danger ml-auto">缺运价</span></div>
+                    <div class="plan__r"><b>南京江宁库</b><i></i><b>金华婺城仓</b></div>
+                    <div class="plan__f">
+                      <em><span data-icon="box"></span>3 台</em>
+                      <em><span data-icon="building"></span>金华恒达</em>
+                      <em class="warn"><span data-icon="warn"></span>这条线路没配运价</em>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="plan">
+                  <span class="plan__k" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                  <div class="plan__b" data-push="detail">
+                    <div class="plan__t"><span class="plan__no">WB26080933</span><span class="tag tag--danger ml-auto">车架号重复</span></div>
+                    <div class="plan__r"><b>上汽仪征基地</b><i></i><b>苏州吴中 4S 店</b></div>
+                    <div class="plan__f">
+                      <em><span data-icon="box"></span>6 台</em>
+                      <em><span data-icon="building"></span>苏南汽贸</em>
+                      <em class="warn"><span data-icon="warn"></span>1 台与 WB26080712 重复</em>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="plan">
+                  <span class="plan__k" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                  <div class="plan__b" data-push="detail">
+                    <div class="plan__t"><span class="plan__no">WB26080934</span><span class="tag tag--warn ml-auto">待确认</span></div>
+                    <div class="plan__r"><b>杭州萧山中转库</b><i></i><b>宁波北仑港</b></div>
+                    <div class="plan__f">
+                      <em><span data-icon="box"></span>8 台</em>
+                      <em><span data-icon="building"></span>上汽集团</em>
+                      <em><span data-icon="wallet"></span>¥16,400</em>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="plan">
+                  <span class="plan__k" role="checkbox" aria-checked="false"><span data-icon="check"></span></span>
+                  <div class="plan__b" data-push="detail">
+                    <div class="plan__t"><span class="plan__no">WB26080935</span><span class="tag tag--warn ml-auto">时间紧</span></div>
+                    <div class="plan__r"><b>上汽仪征基地</b><i></i><b>合肥包河仓</b></div>
+                    <div class="plan__f">
+                      <em><span data-icon="box"></span>8 台</em>
+                      <em><span data-icon="building"></span>苏南汽贸</em>
+                      <em class="warn"><span data-icon="clock"></span>要求明天到，只剩 26 小时</em>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="cell" data-toast="已加载全部 9 个计划"><div class="cell__main center" style="color:var(--primary);font-size:13.5px">加载剩余 4 个</div></div>
+              </div>
+
+              <div class="notice notice--info mt-16">
+                <span data-icon="info"></span>
+                <div>新建计划、Excel 批量导入、运价合同配置请在电脑端做。表格宽、字段多，手机上填容易出错。</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pickbar">
+            <span class="pickbar__n">已选 <b data-pick-count>0</b> 个</span>
+            <button class="btn btn--ghost btn--sm" data-mode="!pick">取消</button>
+            <button class="btn btn--primary grow" data-pick-disable data-dialog="okmany" disabled><span data-icon="checkc"></span>批量确认</button>
+          </div>
+        </section>
+
+        <!-- 计划详情 -->
+        <section class="screen" data-screen="detail" data-title="计划详情" data-nav="WB26080931" data-parent="plans">
+          <div class="scroll">
+            <div class="pad">
+              <div class="card">
+                <div class="hstack">
+                  <span class="tag tag--warn">待确认</span>
+                  <span class="t-cap ml-auto">08-09 08:40 由客户系统推送</span>
+                </div>
+                <div class="ticket__route" style="margin-top:14px">
+                  <div class="ticket__place"><b>上汽仪征基地</b><span>江苏省扬州市仪征市汽车工业园</span></div>
+                  <div class="ticket__arrow"></div>
+                  <div class="ticket__place right"><b>温州瓯海 4S 店</b><span>浙江省温州市瓯海区娄桥街道</span></div>
+                </div>
+                <div class="ticket__meta">
+                  <i><span data-icon="box"></span>4 台 荣威 D5X</i>
+                  <i><span data-icon="route"></span>586 km</i>
+                  <i><span data-icon="clock"></span>要求 08-12 到货</i>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>运价与金额</h2><span>按合同自动带出</span></div>
+              <div class="card">
+                <dl class="kv"><dt>客商</dt><dd>浙南汽贸集团</dd></dl>
+                <dl class="kv"><dt>合同</dt><dd>2026 年度商品车运输框架协议</dd></dl>
+                <dl class="kv"><dt>计价方式</dt><dd>按台计价 · ¥3,200 / 台</dd></dl>
+                <dl class="kv"><dt>应收运费</dt><dd><b class="money" style="font-size:17px">¥12,800</b></dd></dl>
+                <dl class="kv"><dt>预估成本</dt><dd>¥9,800（走承运商）</dd></dl>
+                <dl class="kv"><dt>预估毛利率</dt><dd><span style="color:var(--accent-deep);font-weight:650">15.2%</span></dd></dl>
+              </div>
+
+              <div class="sec-title"><h2>商品车明细</h2><span>4 台 · 可与客户单据逐条核对</span></div>
+              <div class="vlist">
+                <div class="vlist__h">车型 / 颜色 · 车架号后 8 位</div>
+                <div class="vlist__r"><span>荣威 D5X · 珠光白</span><span class="vin">…8HK20341</span></div>
+                <div class="vlist__r"><span>荣威 D5X · 珠光白</span><span class="vin">…8HK20342</span></div>
+                <div class="vlist__r"><span>荣威 D5X · 星耀黑</span><span class="vin">…8HK20388</span></div>
+                <div class="vlist__r"><span>荣威 D5X · 星耀黑</span><span class="vin">…8HK20391</span></div>
+              </div>
+
+              <div class="sec-title"><h2>确认前检查</h2></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__ico is-green"><span data-icon="check"></span></div><div class="cell__main"><div class="cell__t">运价已配置</div><div class="cell__s">按台 ¥3,200，与合同一致</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-green"><span data-icon="check"></span></div><div class="cell__main"><div class="cell__t">车架号无重复</div><div class="cell__s">与近 30 天计划比对通过</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-green"><span data-icon="check"></span></div><div class="cell__main"><div class="cell__t">时间来得及</div><div class="cell__s">586 km 约需 1.5 天，还有 3 天</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-amber"><span data-icon="warn"></span></div><div class="cell__main"><div class="cell__t">自有车紧张</div><div class="cell__s">这两天可派运力只剩 6 台，大概率要走外包</div></div></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost" data-sheet="reject"><span data-icon="x"></span>退回客户</button>
+            <button class="btn btn--primary" data-dialog="ok1"><span data-icon="check"></span>确认计划</button>
+          </div>
+        </section>
+
+        <!-- 确认结果 -->
+        <section class="screen" data-screen="done" data-title="确认结果" data-nav="确认完成" data-parent="plans">
+          <div class="scroll">
+            <div class="pad">
+              <div class="card center" style="padding:30px 20px 24px">
+                <div class="empty__ico" style="background:var(--success-soft);color:var(--success);margin:0 auto 14px"><span data-icon="checkc"></span></div>
+                <h3 style="margin:0 0 7px;font-size:18px;font-weight:650">已确认 6 个计划</h3>
+                <p class="t-cap" style="line-height:1.7">共 33 台、应收 ¥98,400，已经进入待分配。<br>另外 3 个有问题的计划留在待确认里，需要单独处理。</p>
+              </div>
+
+              <div class="sec-title"><h2>没能一起确认的</h2></div>
+              <div class="card card--plain">
+                <div class="cell" data-push="detail">
+                  <div class="cell__ico is-red"><span data-icon="wallet"></span></div>
+                  <div class="cell__main"><div class="cell__t">WB26080932 缺运价</div><div class="cell__s">南京江宁库 → 金华婺城仓，这条线路没配价</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-push="detail">
+                  <div class="cell__ico is-red"><span data-icon="box"></span></div>
+                  <div class="cell__main"><div class="cell__t">WB26080933 车架号重复</div><div class="cell__s">1 台与 WB26080712 重复，要跟客户核实</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+                <div class="cell" data-push="detail">
+                  <div class="cell__ico is-amber"><span data-icon="clock"></span></div>
+                  <div class="cell__main"><div class="cell__t">WB26080935 时间太紧</div><div class="cell__s">只剩 26 小时，确认前建议先跟客户确认能否延</div></div>
+                  <div class="cell__x"><span data-icon="right"></span></div>
+                </div>
+              </div>
+
+              <div class="btnrow mt-16">
+                <button class="btn btn--ghost btn--block" data-root="plans">回计划中心</button>
+                <button class="btn btn--primary btn--block" data-toast="调度台的完整设计见 05">去派车</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="pool" data-title="调度 tab" data-tabroot data-nav="调度工作台">
+          <div class="scroll"><p class="t-cap center mt-20">五阶段调度工作台的完整设计见 05</p></div>
+        </section>
+        <section class="screen" data-screen="data" data-title="数据 tab" data-tabroot data-nav="数据">
+          <div class="scroll"><p class="t-cap center mt-20">经营驾驶舱见 03，运营看板见 11</p></div>
+        </section>
+        <section class="screen" data-screen="msgtab" data-title="消息 tab" data-tabroot data-nav="消息">
+          <div class="scroll"><p class="t-cap center mt-20">消息中心的完整设计见 13</p></div>
+        </section>
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll"><p class="t-cap center mt-20">个人中心与设置的完整设计见 14</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="plans"><span data-icon="grid"></span>工作台</button>
+        <button class="tabi" data-tab="pool"><span data-icon="route"></span>调度</button>
+        <button class="tabi" data-tab="data"><span data-icon="chart"></span>数据</button>
+        <button class="tabi" data-tab="msgtab"><span data-icon="msg"></span>消息<i class="tabi__dot">7</i></button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+      <div class="dialog" data-dialog-id="ok1">
+        <div class="dialog__body">
+          <h3>确认这个计划？</h3>
+          <p>WB26080931 · 4 台 · 应收 ¥12,800<br>确认后进入待分配，调度就能开始配载了。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>再看看</button>
+          <button class="is-main" data-sheet-close data-toast="已确认，计划进入待分配">确认</button>
+        </div>
+      </div>
+
+      <div class="dialog" data-dialog-id="okmany">
+        <div class="dialog__body">
+          <h3>批量确认 6 个计划？</h3>
+          <p>共 33 台、应收 ¥98,400。<br>你勾选的另外 3 个有问题（缺运价 / 车架号重复 / 时间太紧），这次会跳过。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>再看看</button>
+          <button class="is-main" data-sheet-close data-then="done" data-toast="已确认 6 个计划">确认 6 个</button>
+        </div>
+      </div>
+
+      <div class="sheet" data-sheet-id="reject">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>退回给客户</h3><p>会通过对接系统回传，并通知客户对接人</p></div>
+        <div class="sheet__body">
+          <div class="field">
+            <div class="field__l">退回原因<span class="req">*</span></div>
+            <div class="radios">
+              <div class="radio" role="radio" aria-checked="true"><span class="radio__m"></span><div><b>要求到货时间太紧</b><span>按现有运力赶不上，请客户放宽或加价走专车</span></div></div>
+              <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>车架号信息有误</b><span>与既有计划重复或格式不对</span></div></div>
+              <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>收货地址不清楚</b><span>缺联系人或详细门牌</span></div></div>
+              <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>其他原因</b><span>自己写</span></div></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">给客户的说明</div>
+            <textarea class="textarea" rows="3">这单要求 08-10 到货，仪征到温州 586 km 正常需要 1.5 天，加上装卸时间来不及。能否延到 08-12？如果确实急，可以走专车但运费会上浮。</textarea>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--danger" data-sheet-close data-toast="已退回，客户对接人会收到通知">确认退回</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

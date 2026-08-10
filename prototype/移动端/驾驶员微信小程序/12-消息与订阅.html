@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>驾驶员微信小程序 · 消息与订阅通知</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .wxmsg {
+    background: #fff; border-radius: 14px; padding: 16px; box-shadow: var(--sh-card);
+    border-left: 3px solid #07c160;
+  }
+  .wxmsg__h { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-3); }
+  .wxmsg__h i { width: 18px; height: 18px; border-radius: 5px; background: #07c160; display: grid; place-items: center; color: #fff; font-size: 10px; font-weight: 700; font-style: normal; }
+  .wxmsg h4 { margin: 12px 0 12px; font-size: 16px; font-weight: 600; letter-spacing: -.008em; }
+  .wxmsg dl { margin: 0; display: grid; gap: 9px; }
+  .wxmsg .r { display: flex; gap: 12px; font-size: 13.5px; }
+  .wxmsg .r dt { color: var(--ink-3); flex: none; width: 5em; }
+  .wxmsg .r dd { margin: 0; color: var(--ink); flex: 1; }
+  .wxmsg__f { margin-top: 14px; padding-top: 11px; border-top: 1px solid var(--line-soft); display: flex; align-items: center; font-size: 13px; color: var(--ink-3); }
+  .wxmsg__f svg { width: 14px; height: 14px; margin-left: auto; }
+  .subrow { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; }
+  .subrow + .subrow { border-top: 1px solid var(--line-soft); }
+  .subrow__i { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+  .subrow b { display: block; font-size: 15px; font-weight: 550; }
+  .subrow span { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 4px; line-height: 1.55; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Driver Mini Program · 12</p>
+    <h1 class="stage__title">消息与订阅通知</h1>
+    <p class="stage__desc">司机不会主动开小程序刷新任务。真正把调令送达的是微信服务通知，所以订阅授权不是设置项里的一个开关，而是产品能不能跑起来的前提。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>微信订阅消息是<b>一次授权一条</b>的机制。所以在派车、签收等关键动作后要顺势续订，而不是只在首次登录求一次授权。</li>
+        <li>页面里<b>1:1 还原了服务通知卡片</b>的样子，评审时能直接确认模板字段够不够、点进去落在哪一页。</li>
+        <li>站内消息只做三类：<b>任务、资金、提醒</b>。分类太多司机不会切，太少又会互相淹没。</li>
+        <li>已读未读用<b>红点 + 加粗</b>双重编码，不只靠颜色，强光下和色觉障碍都能分辨。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <!-- 消息列表 -->
+        <section class="screen" data-screen="msg" data-title="消息列表" data-nav="消息" data-start>
+          <div class="scroll" data-refresh>
+            <div class="sticky">
+              <div class="seg" style="margin:0 var(--pad)">
+                <button aria-selected="true">全部</button>
+                <button>任务</button>
+                <button>资金</button>
+                <button>提醒</button>
+              </div>
+            </div>
+
+            <div class="card card--plain">
+              <div class="swipe" data-swipe>
+                <div class="swipe__acts">
+                  <button class="a-grey" data-toast="已标记为已读"><span data-icon="check"></span>已读</button>
+                  <button class="a-danger" data-toast="已删除这条消息"><span data-icon="trash"></span>删除</button>
+                </div>
+                <div class="swipe__body">
+                  <div class="cell" data-push="detail">
+                    <div class="cell__ico is-amber"><span data-icon="truck"></span></div>
+                    <div class="cell__main">
+                      <div class="cell__t strong">新调令 TK2608090052</div>
+                      <div class="cell__s">李敏派给你 · 明日 07:30 萧山中转库装车 · 6 台</div>
+                    </div>
+                    <div class="cell__x"><span class="t-cap">12 分钟前</span><i class="dot" style="background:var(--danger)"></i></div>
+                  </div>
+                </div>
+              </div>
+              <div class="cell">
+                <div class="cell__ico is-green"><span data-icon="wallet"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t strong">结算单已支付 ¥2,400</div>
+                  <div class="cell__s">TK2608080019 · 已转入工商银行 尾号 4218</div>
+                </div>
+                <div class="cell__x"><span class="t-cap">09:12</span><i class="dot" style="background:var(--danger)"></i></div>
+              </div>
+              <div class="cell">
+                <div class="cell__ico is-red"><span data-icon="file"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t strong">从业资格证 28 天后到期</div>
+                  <div class="cell__s">把新证拍给车管李敏就行，别等到路上被查</div>
+                </div>
+                <div class="cell__x"><span class="t-cap">08:00</span><i class="dot" style="background:var(--danger)"></i></div>
+              </div>
+              <div class="cell">
+                <div class="cell__ico is-green"><span data-icon="checkc"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t">回单已通过审核</div>
+                  <div class="cell__s">TK2608070008 · 结算单已生成，等财务打款</div>
+                </div>
+                <div class="cell__x"><span class="t-cap">昨天</span></div>
+              </div>
+              <div class="cell">
+                <div class="cell__ico is-amber"><span data-icon="fuel"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t">油卡余额低于 1,500 元</div>
+                  <div class="cell__s">当前 ¥1,240，长途前记得申请充值</div>
+                </div>
+                <div class="cell__x"><span class="t-cap">昨天</span></div>
+              </div>
+              <div class="cell">
+                <div class="cell__ico"><span data-icon="msg"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t">调度 李敏</div>
+                  <div class="cell__s">明天那单客户要求早点到，你看着安排</div>
+                </div>
+                <div class="cell__x"><span class="t-cap">08-08</span></div>
+              </div>
+            </div>
+
+            <p class="t-cap center mt-16">左滑可以标记已读或删除 · 只保留近 30 天</p>
+          </div>
+        </section>
+
+        <!-- 服务通知还原 -->
+        <section class="screen" data-screen="wx" data-title="微信服务通知" data-nav="微信里长什么样" data-parent="msg">
+          <div class="scroll" style="background:#ededed">
+            <p class="t-cap center" style="margin:12px 0 14px">这是司机在微信「服务通知」里实际看到的卡片</p>
+
+            <div class="wxmsg">
+              <div class="wxmsg__h"><i>智</i>智图司机端 · 派车通知</div>
+              <h4>你有一张新调令待接收</h4>
+              <dl>
+                <div class="r"><dt>任务单号</dt><dd class="t-mono">TK2608090052</dd></div>
+                <div class="r"><dt>运输线路</dt><dd>杭州萧山中转库 → 宁波北仑港</dd></div>
+                <div class="r"><dt>装车时间</dt><dd>2026-08-10 07:30</dd></div>
+                <div class="r"><dt>商品车</dt><dd>别克君威 6 台</dd></div>
+                <div class="r"><dt>派单调度</dt><dd>李敏 138****2043</dd></div>
+              </dl>
+              <div class="wxmsg__f">点击接收调令<span data-icon="right"></span></div>
+            </div>
+
+            <div class="wxmsg mt-12">
+              <div class="wxmsg__h"><i>智</i>智图司机端 · 到账通知</div>
+              <h4>你的运费已到账</h4>
+              <dl>
+                <div class="r"><dt>到账金额</dt><dd class="money">¥2,400.00</dd></div>
+                <div class="r"><dt>单据类型</dt><dd>结算单</dd></div>
+                <div class="r"><dt>关联任务</dt><dd class="t-mono">TK2608080019</dd></div>
+                <div class="r"><dt>到账时间</dt><dd>2026-08-09 09:12</dd></div>
+              </dl>
+              <div class="wxmsg__f">查看费用单详情<span data-icon="right"></span></div>
+            </div>
+
+            <div class="wxmsg mt-12">
+              <div class="wxmsg__h"><i>智</i>智图司机端 · 证照提醒</div>
+              <h4>你的从业资格证快到期了</h4>
+              <dl>
+                <div class="r"><dt>证照名称</dt><dd>道路运输从业资格证</dd></div>
+                <div class="r"><dt>到期日期</dt><dd>2026-09-06</dd></div>
+                <div class="r"><dt>剩余天数</dt><dd>28 天</dd></div>
+                <div class="r"><dt>联系人</dt><dd>车管 李敏</dd></div>
+              </dl>
+              <div class="wxmsg__f">去提交换证材料<span data-icon="right"></span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 订阅设置 -->
+        <section class="screen" data-screen="sub" data-title="订阅设置" data-nav="通知设置" data-parent="msg">
+          <div class="scroll">
+            <div class="notice notice--info mt-8">
+              <span data-icon="info"></span>
+              <div>微信规定<b>每授权一次只能发一条</b>。所以在接单、签收之后我们会顺手帮你续订，你不用反复来这里开。</div>
+            </div>
+
+            <div class="sec-title"><h2>通知类型</h2></div>
+            <div class="card">
+              <div class="subrow">
+                <div class="subrow__i" style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="truck"></span></div>
+                <div class="grow">
+                  <b>派车通知</b>
+                  <span>新调令、改派、取消。<b style="color:var(--danger)">强烈建议开着</b>，关了就只能自己进来刷。</span>
+                </div>
+                <button class="switch" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="subrow">
+                <div class="subrow__i" style="background:var(--primary-soft);color:var(--primary)"><span data-icon="clock"></span></div>
+                <div class="grow">
+                  <b>装车 / 到达提醒</b>
+                  <span>计划时间前 1 小时提醒一次，避免睡过头或忘了。</span>
+                </div>
+                <button class="switch" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="subrow">
+                <div class="subrow__i" style="background:var(--success-soft);color:var(--success)"><span data-icon="wallet"></span></div>
+                <div class="grow">
+                  <b>费用到账通知</b>
+                  <span>预付、补款、结算到账时提醒，附金额与任务单号。</span>
+                </div>
+                <button class="switch" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="subrow">
+                <div class="subrow__i" style="background:var(--danger-soft);color:var(--danger)"><span data-icon="file"></span></div>
+                <div class="grow">
+                  <b>证照到期提醒</b>
+                  <span>到期前 60 / 30 / 7 天各提醒一次。</span>
+                </div>
+                <button class="switch" role="switch" aria-checked="true"></button>
+              </div>
+              <div class="subrow">
+                <div class="subrow__i" style="background:#eef2f9;color:#8d9bb0"><span data-icon="msg"></span></div>
+                <div class="grow">
+                  <b>公司公告</b>
+                  <span>制度调整、节假日安排。不影响跑车，可以关。</span>
+                </div>
+                <button class="switch" role="switch" aria-checked="false"></button>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>免打扰</h2></div>
+            <div class="card">
+              <div class="hstack" style="justify-content:space-between">
+                <div class="grow">
+                  <div class="cell__t">夜间免打扰</div>
+                  <div class="cell__s" style="margin-top:4px">23:00 – 06:00 只推派车通知，其余次日再发</div>
+                </div>
+                <button class="switch" role="switch" aria-checked="true"></button>
+              </div>
+            </div>
+            <p class="t-cap center mt-16">派车通知不受免打扰限制。任务是要过夜的，漏了没法补。</p>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--primary btn--lg" data-dialog="wxsub">重新授权微信通知</button>
+          </div>
+        </section>
+
+        <!-- 消息详情 -->
+        <section class="screen" data-screen="detail" data-title="消息详情" data-nav="新调令" data-parent="msg">
+          <div class="scroll">
+            <div class="card mt-8">
+              <div class="hstack"><span class="ticket__no">TK2608090052</span><span class="tag tag--amber ml-auto">待接收</span></div>
+              <hr class="sep">
+              <dl class="kvlist">
+                <div class="kv"><dt>运输线路</dt><dd>杭州萧山中转库 → 宁波北仑港</dd></div>
+                <div class="kv"><dt>商品车</dt><dd>别克君威 6 台</dd></div>
+                <div class="kv"><dt>计划装车</dt><dd>2026-08-10 07:30</dd></div>
+                <div class="kv"><dt>计划到货</dt><dd>2026-08-10 13:00</dd></div>
+                <div class="kv"><dt>里程</dt><dd>约 168 公里</dd></div>
+                <div class="kv"><dt>派单调度</dt><dd>李敏 · 12 分钟前</dd></div>
+              </dl>
+            </div>
+            <div class="notice mt-12">
+              <span data-icon="clock"></span>
+              <div><b>2 小时内没接收会自动退回调度</b><br>跑不了就点拒绝并说明原因，别让它挂着。</div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost" data-toast="已拒绝，调度会重新安排">拒绝</button>
+            <button class="btn btn--primary" data-toast="已接收调令，明早 07:30 别迟到" data-toast-icon="ok">接收调令</button>
+          </div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab" style="display:none"></nav>
+      <div class="mp__home"><i></i></div>
+
+      <div class="dialog" data-dialog-id="wxsub" style="width:312px">
+        <div class="auth__app">
+          <div class="auth__logo">智</div>
+          <div><b>智图司机端</b><span>申请发送以下消息</span></div>
+        </div>
+        <div class="auth__req">
+          <div style="display:grid;gap:10px">
+            <label class="pick"><span>新调令派车通知</span><span class="tag tag--ok">总是保持以上选择</span></label>
+            <label class="pick"><span>装车 / 到达提醒</span></label>
+            <label class="pick"><span>费用到账通知</span></label>
+          </div>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>取消</button>
+          <button class="is-main" data-sheet-close data-toast="已重新授权，通知会正常发给你" data-toast-icon="ok">允许</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

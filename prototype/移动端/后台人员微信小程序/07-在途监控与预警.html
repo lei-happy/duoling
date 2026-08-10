@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 在途监控与预警</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .map {
+    position: relative; height: 320px; overflow: hidden;
+    background: radial-gradient(320px 220px at 70% 34%, rgba(47,84,235,.12), transparent 70%),
+                linear-gradient(160deg, #e8eef7, #dbe3ef);
+  }
+  .map svg.roads { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .truck {
+    position: absolute; transform: translate(-50%,-50%); display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer; border: 0; background: none; padding: 0;
+  }
+  .truck i {
+    width: 26px; height: 26px; border-radius: 9px; display: grid; place-items: center;
+    background: var(--primary); color: #fff; border: 2px solid #fff; box-shadow: 0 3px 9px rgba(15,23,42,.32);
+  }
+  .truck svg { width: 14px; height: 14px; }
+  .truck b { font-size: 10.5px; font-weight: 600; background: rgba(15,23,42,.86); color: #fff; padding: 3px 6px; border-radius: 6px; white-space: nowrap; }
+  .truck.late i { background: var(--danger); }
+  .truck.late::after {
+    content: ""; position: absolute; top: -7px; left: 50%; transform: translateX(-50%); width: 40px; height: 40px;
+    border-radius: 50%; border: 2px solid var(--danger); opacity: .4; animation: pulse 2.2s cubic-bezier(.4,0,.6,1) infinite;
+  }
+  .truck.stale i { background: #64748b; }
+  .map__ctl { position: absolute; right: 12px; bottom: 14px; display: grid; gap: 8px; }
+  .map__ctl button {
+    width: 38px; height: 38px; border-radius: 12px; border: 0; background: rgba(255,255,255,.94);
+    backdrop-filter: blur(10px); box-shadow: var(--sh-card); display: grid; place-items: center; color: var(--ink-2); cursor: pointer;
+  }
+  .map__ctl svg { width: 17px; height: 17px; }
+  .maplg {
+    position: absolute; left: 12px; bottom: 14px; display: flex; gap: 10px; padding: 7px 10px; border-radius: 10px;
+    background: rgba(255,255,255,.9); backdrop-filter: blur(10px); box-shadow: var(--sh-card); font-size: 11px; color: var(--ink-2);
+  }
+  .maplg span { display: inline-flex; align-items: center; gap: 4px; }
+  .maplg i { width: 8px; height: 8px; border-radius: 3px; }
+  /* 预警等级条 */
+  .alv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  .alv button {
+    border: 0; cursor: pointer; text-align: left; padding: 12px 13px; border-radius: 13px; background: #fff;
+    box-shadow: var(--sh-card); position: relative; overflow: hidden; transition: transform .12s ease-out;
+  }
+  .alv button:active { transform: scale(.96); }
+  .alv button::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c); }
+  .alv b { display: block; font-size: 22px; font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1; color: var(--c); }
+  .alv span { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 6px; }
+  .alv button[aria-selected="true"] { box-shadow: 0 0 0 2px var(--c), var(--sh-card); }
+  /* 车辆在途卡 */
+  .eta { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .eta__k { flex: 1; height: 6px; border-radius: 999px; background: var(--line-soft); overflow: hidden; }
+  .eta__f { display: block; height: 100%; border-radius: 999px; width: var(--v); background: var(--primary); }
+  .eta__t { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; flex: none; }
+  .late .eta__f { background: var(--danger); }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 07</p>
+    <h1 class="stage__title">在途监控与预警</h1>
+    <p class="stage__desc">客户打电话问"我的车到哪了"，调度要在 10 秒内答上来。这一屏解决两件事：<b style="color:#e2e8f0">车在哪、哪些要出事了。</b></p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>地图只是<b>入口不是主体</b>。手机屏幕小，地图看清 23 台车不现实，所以上面放缩略地图，下面用列表承载判断信息。</li>
+        <li>预警分三级：<b>已超时 / 临期 / 位置失联</b>。位置失联单独成一级，因为它最容易被忽略——车没超时不代表一切正常，也可能是司机关了定位。</li>
+        <li>超时车辆的地图图标用<b>缓慢脉冲</b>而不是闪烁。闪烁让人焦虑，脉冲让人注意。</li>
+        <li>每辆车给<b>剩余里程进度条 + 预计到达</b>，这是回答客户问题最直接的两个数。</li>
+        <li>处理动作就三个：<b>催位置、打电话、告知客户</b>。「告知客户」会生成一段可以直接复制发给客户的话，省掉调度自己组织语言。</li>
+        <li>轨迹回放这种重功能留在电脑端，手机上只给最近 5 个位置点。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <section class="screen" data-screen="track" data-title="在途监控" data-nav="在途监控 · 23 台" data-tabroot data-start>
+          <div class="scroll is-flush" data-refresh>
+            <div class="map">
+              <svg class="roads" viewBox="0 0 390 320" fill="none">
+                <path d="M-10 240 C 80 210, 140 250, 210 200 S 330 130, 400 96" stroke="#c3cfe0" stroke-width="12" stroke-linecap="round"/>
+                <path d="M-10 240 C 80 210, 140 250, 210 200 S 330 130, 400 96" stroke="#eef2f8" stroke-width="4" stroke-dasharray="9 11" stroke-linecap="round"/>
+                <path d="M40 -10 C 70 70, 130 110, 150 200 S 190 300, 210 330" stroke="#ccd7e6" stroke-width="9" stroke-linecap="round"/>
+                <path d="M400 250 C 330 240, 290 210, 250 240 S 180 296, 120 320" stroke="#ccd7e6" stroke-width="9" stroke-linecap="round"/>
+                <circle cx="72" cy="228" r="5" fill="#94a3b8"/><circle cx="332" cy="120" r="5" fill="#94a3b8"/>
+                <text x="62" y="252" font-size="10" fill="#7c8aa0">南京</text>
+                <text x="322" y="144" font-size="10" fill="#7c8aa0">上海</text>
+                <text x="150" y="120" font-size="10" fill="#7c8aa0">仪征</text>
+                <text x="238" y="288" font-size="10" fill="#7c8aa0">杭州</text>
+              </svg>
+              <button class="truck late" style="left:47%;top:52%">
+                <b>苏B·2K901 · 超时 4h20m</b><i><span data-icon="truck"></span></i>
+              </button>
+              <button class="truck" style="left:80%;top:23%">
+                <b>苏A·8F236</b><i><span data-icon="truck"></span></i>
+              </button>
+              <button class="truck stale" style="left:23%;top:26%">
+                <b>苏C·9J065 位置旧</b><i><span data-icon="truck"></span></i>
+              </button>
+              <div class="maplg">
+                <span><i style="background:var(--primary)"></i>正常 19</span>
+                <span><i style="background:var(--danger)"></i>超时 3</span>
+                <span><i style="background:#64748b"></i>失联 1</span>
+              </div>
+              <div class="map__ctl">
+                <button data-toast="已定位到全部在途车辆" aria-label="全览"><span data-icon="map"></span></button>
+                <button data-toast="地图已刷新，最近更新 1 分钟前" aria-label="刷新"><span data-icon="refresh"></span></button>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="alv">
+                <button style="--c:var(--danger)" aria-selected="true"><b>3</b><span>已超时</span></button>
+                <button style="--c:var(--accent-deep)"><b>5</b><span>临期</span></button>
+                <button style="--c:#64748b"><b>1</b><span>位置失联</span></button>
+              </div>
+
+              <div class="sec-title"><h2>已超时</h2><span>按超时时长排</span></div>
+              <div class="card card--plain">
+                <div class="swipe" data-swipe>
+                  <div class="swipe__acts">
+                    <button class="a-amber" data-dialog="urge"><span data-icon="bell"></span>催位置</button>
+                    <button class="a-primary" data-sheet="notify"><span data-icon="msg"></span>告知<br>客户</button>
+                    <button class="a-grey" data-toast="已拨号给 刘强 138****6621"><span data-icon="phone"></span>电话</button>
+                  </div>
+                  <div class="swipe__body">
+                    <button class="row late" data-push="detail">
+                      <div class="row__t"><span class="row__no">TK2608080077</span><span class="tag tag--danger ml-auto pulse">超时 4 小时 20 分</span></div>
+                      <div class="row__m"><b>南京江宁库 → 苏州吴中 4S 店</b></div>
+                      <div class="row__f"><em><span data-icon="truck"></span>苏B·2K901 刘强</em><em class="late"><span data-icon="pin"></span>4 小时没更新位置</em></div>
+                      <div class="eta">
+                        <span class="eta__k"><i class="eta__f" style="--v:78%"></i></span>
+                        <span class="eta__t">剩 42 km · 预计 18:10 到</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <button class="row" data-push="detail">
+                  <div class="row__t"><span class="row__no">TK2608090012</span><span class="tag tag--danger ml-auto">超时 1 小时 05 分</span></div>
+                  <div class="row__m"><b>上汽仪征基地 → 合肥包河仓</b></div>
+                  <div class="row__f"><em><span data-icon="users"></span>鑫达商品车运输</em><em><span data-icon="pin"></span>10 分钟前更新</em></div>
+                  <div class="eta">
+                    <span class="eta__k"><i class="eta__f" style="--v:92%;background:var(--danger)"></i></span>
+                    <span class="eta__t">剩 32 km · 预计 17:20 到</span>
+                  </div>
+                </button>
+
+                <button class="row" data-push="detail">
+                  <div class="row__t"><span class="row__no">TK2608090021</span><span class="tag tag--danger ml-auto">超时 35 分</span></div>
+                  <div class="row__m"><b>杭州萧山中转库 → 宁波北仑港</b></div>
+                  <div class="row__f"><em><span data-icon="truck"></span>苏A·6H128 张伟</em><em><span data-icon="warn"></span>杭甬高速拥堵</em></div>
+                  <div class="eta">
+                    <span class="eta__k"><i class="eta__f" style="--v:64%;background:var(--danger)"></i></span>
+                    <span class="eta__t">剩 68 km · 预计 18:40 到</span>
+                  </div>
+                </button>
+              </div>
+
+              <div class="sec-title"><h2>位置失联</h2><span>超过 3 小时没上报</span></div>
+              <div class="card card--plain">
+                <button class="row" data-push="detail">
+                  <div class="row__t"><span class="row__no">TK2608090033</span><span class="tag ml-auto">位置旧</span></div>
+                  <div class="row__m"><b>南京江宁库 → 常州武进库</b></div>
+                  <div class="row__f"><em><span data-icon="truck"></span>苏C·9J065 李国庆</em><em><span data-icon="clock"></span>最后位置 11:20 · 溧阳服务区</em></div>
+                </button>
+              </div>
+              <p class="t-cap" style="margin:10px 2px 0">位置失联多半是司机关了小程序定位授权，先打电话确认人和车没事，再让他重新授权。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 单车详情 -->
+        <section class="screen" data-screen="detail" data-title="单车在途详情" data-nav="TK2608080077" data-parent="track">
+          <div class="scroll">
+            <div class="map" style="height:220px">
+              <svg class="roads" viewBox="0 0 390 220" fill="none">
+                <path d="M-10 170 C 90 150, 150 170, 220 128 S 330 70, 400 48" stroke="#c3cfe0" stroke-width="12" stroke-linecap="round"/>
+                <path d="M-10 170 C 90 150, 150 170, 220 128" stroke="#2f54eb" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="46" cy="164" r="5" fill="#64748b"/><circle cx="344" cy="60" r="5" fill="#fa8c16"/>
+                <text x="36" y="188" font-size="10" fill="#7c8aa0">南京江宁库</text>
+                <text x="286" y="84" font-size="10" fill="#7c8aa0">苏州吴中 4S 店</text>
+              </svg>
+              <button class="truck late" style="left:57%;top:58%"><b>4 小时前经过</b><i><span data-icon="truck"></span></i></button>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="notice notice--danger">
+                <span data-icon="warn"></span>
+                <div><b>已超过约定到货时间 4 小时 20 分</b><br>最后一次位置更新是 13:40 无锡东服务区，之后没有新数据。</div>
+              </div>
+
+              <div class="sec-title"><h2>这一单</h2></div>
+              <div class="card">
+                <dl class="kv"><dt>司机 / 车辆</dt><dd>刘强 138****6621 · 苏B·2K901</dd></dl>
+                <dl class="kv"><dt>货物</dt><dd>6 台 荣威 D5X</dd></dl>
+                <dl class="kv"><dt>客户</dt><dd>苏南汽贸（王经理 137****2280）</dd></dl>
+                <dl class="kv"><dt>约定到货</dt><dd>今日 13:30</dd></dl>
+                <dl class="kv"><dt>当前进度</dt><dd>已走 165 km / 207 km，剩 42 km</dd></dl>
+              </div>
+
+              <div class="sec-title"><h2>最近位置</h2><span>只显示最近 5 个点</span></div>
+              <div class="card">
+                <div class="tl">
+                  <div class="tl__i is-now"><div class="tl__t">13:40 无锡东服务区</div><div class="tl__s">之后没有新位置，已 4 小时</div></div>
+                  <div class="tl__i is-done"><div class="tl__t">12:10 沪宁高速常州段</div><div class="tl__s">时速 78 km/h</div></div>
+                  <div class="tl__i is-done"><div class="tl__t">10:35 沪宁高速丹阳段</div><div class="tl__s">时速 82 km/h</div></div>
+                  <div class="tl__i is-done"><div class="tl__t">09:20 南京江宁库出发</div><div class="tl__s">装车完成，6 台</div></div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>已经做过的</h2></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__ico is-amber"><span data-icon="bell"></span></div><div class="cell__main"><div class="cell__t">15:20 系统自动提醒</div><div class="cell__s">超时 30 分自动发了服务通知，司机没回</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico"><span data-icon="phone"></span></div><div class="cell__main"><div class="cell__t">16:40 陈涛 拨打电话</div><div class="cell__s">未接通</div></div></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost is-narrow" data-toast="已拨号给 刘强 138****6621" aria-label="打电话"><span data-icon="phone"></span></button>
+            <button class="btn btn--ghost" data-sheet="notify"><span data-icon="msg"></span>告知客户</button>
+            <button class="btn btn--primary" data-dialog="urge"><span data-icon="bell"></span>催位置</button>
+          </div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="home" data-title="工作台 tab" data-tabroot data-nav="工作台">
+          <div class="scroll"><p class="t-cap center mt-20">角色自适应工作台的完整设计见 02</p></div>
+        </section>
+        <section class="screen" data-screen="data" data-title="数据 tab" data-tabroot data-nav="数据">
+          <div class="scroll"><p class="t-cap center mt-20">经营驾驶舱见 03，运营看板见 11</p></div>
+        </section>
+        <section class="screen" data-screen="msgtab" data-title="消息 tab" data-tabroot data-nav="消息">
+          <div class="scroll"><p class="t-cap center mt-20">消息中心的完整设计见 13</p></div>
+        </section>
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll"><p class="t-cap center mt-20">个人中心与设置的完整设计见 14</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="home"><span data-icon="grid"></span>工作台</button>
+        <button class="tabi" data-tab="track"><span data-icon="route"></span>调度</button>
+        <button class="tabi" data-tab="data"><span data-icon="chart"></span>数据</button>
+        <button class="tabi" data-tab="msgtab"><span data-icon="msg"></span>消息<i class="tabi__dot">7</i></button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+      <div class="dialog" data-dialog-id="urge">
+        <div class="dialog__body">
+          <h3>给刘强发个提醒？</h3>
+          <p>会通过微信服务通知发出：「TK2608080077 已超过约定到货时间，请更新位置或说明情况」。他上一次提醒没回。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>先打电话</button>
+          <button class="is-main" data-sheet-close data-toast="提醒已发出">发提醒</button>
+        </div>
+      </div>
+
+      <div class="sheet" data-sheet-id="notify">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>告知客户</h3><p>发给 苏南汽贸 王经理 137****2280</p></div>
+        <div class="sheet__body">
+          <div class="field">
+            <div class="field__l">给客户的话<span class="dim3" style="font-weight:400">（可以改）</span></div>
+            <textarea class="textarea" rows="4">王经理您好，您 6 台荣威 D5X（TK2608080077）目前在无锡东附近，因沪宁高速拥堵会晚到约 4 小时，预计今晚 18:10 送达。车辆和货物都正常，到了我们第一时间联系您。</textarea>
+          </div>
+          <div class="field">
+            <div class="field__l">怎么发</div>
+            <div class="radios">
+              <div class="radio" role="radio" aria-checked="true"><span class="radio__m"></span><div><b>复制文字，我自己发微信</b><span>最常用，客户群里直接粘贴</span></div></div>
+              <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>系统发短信</b><span>发到客户预留手机号，会计入沟通记录</span></div></div>
+            </div>
+          </div>
+          <div class="notice notice--info">
+            <span data-icon="info"></span>
+            <div>不管选哪种，这次沟通都会记到任务的流转记录里，事后有据可查。</div>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已复制，去客户群粘贴就行">复制这段话</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

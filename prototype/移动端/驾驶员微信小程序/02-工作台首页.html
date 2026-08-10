@@ -1,496 +1,390 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>02 工作台首页 · 驾驶员微信小程序</title>
-<link rel="stylesheet" href="assets/mp.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>驾驶员微信小程序 · 工作台首页</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .quick button {
+    border: 0; background: none; cursor: pointer; padding: 12px 2px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    font: 500 12.5px/1 var(--font); color: var(--ink-2);
+    transition: transform .1s ease-out;
+  }
+  .quick button:active { transform: scale(.93); }
+  .quick i { width: 44px; height: 44px; border-radius: 15px; display: grid; place-items: center; }
+  .quick i svg { width: 21px; height: 21px; }
+  .q1 { background: var(--primary-soft); color: var(--primary); }
+  .q2 { background: var(--accent-soft); color: var(--accent-deep); }
+  .q3 { background: var(--success-soft); color: var(--success); }
+  .q4 { background: var(--info-soft); color: #0369a1; }
+  .minical { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+  .minical div { padding: 8px 0 9px; border-radius: 10px; background: #f5f7fb; }
+  .minical span { display: block; font-size: 11px; color: var(--ink-3); }
+  .minical b { display: block; font-size: 15px; font-weight: 650; margin-top: 4px; }
+  .minical .on { background: var(--primary); color: #fff; }
+  .minical .on span { color: rgba(255,255,255,.75); }
+  .minical .has::after { content: ""; display: block; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); margin: 4px auto 0; }
+  .minical .on.has::after { background: #fff; }
+</style>
 </head>
-<body data-app="driver">
-
-<header class="pt-head">
-  <div class="pt-head-inner">
-    <div class="pt-kicker"><i></i><b>驾驶员微信小程序</b><span>模块 02</span></div>
-    <div class="pt-title">
-      <h1>工作台首页</h1>
-      <span class="badge p0">P0 已有能力</span>
-      <span class="badge p1">含 3 处 P1 增量</span>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Driver Mini Program · 02</p>
+    <h1 class="stage__title">工作台首页</h1>
+    <p class="stage__desc">司机一天要打开几十次的那一屏。它只回答一个问题：<b style="color:#e2e8f0">我现在该干什么</b>。所以在途任务被提到最上面，主动作是一颗按钮，其余全部往后排。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li><b>公路进度线</b>是全套原型的记忆点：装车 → 出发 → 到达 → 签收 四个路标，卡车图标停在当前节点。司机不用读状态名词，看一眼就知道跑到哪了。</li>
+        <li><b>一屏一个强调色动作</b>。警示黄只给「当前任务的下一步」，其余按钮全部收敛成蓝或灰。</li>
+        <li>tabBar 只放 4 个：工作台 / 任务 / 收入 / 我的。<span class="new">消息不进 tabBar</span> —— 微信服务通知本身就是推送渠道，重复放一个 tab 是浪费，改为页头铃铛带角标。</li>
+        <li>顶部带<b>天气与限行尾号</b>。这是司机每天真实要查的信息，放这里比放天气 App 有用。</li>
+        <li>下拉刷新走橡皮筋阻尼 + 动量回弹，松手文案是「正在刷新，请稍候…」。</li>
+      </ul>
     </div>
-    <p class="pt-intent">
-      司机打开小程序的第一屏。它不是数据看板，而是<em>今天的活儿清单</em>。
-      设计判断：把"现在最该处理的那一件事"顶到首屏第一张卡——新调令待接、回单没传、证照要过期，
-      都是<em>会卡住业务或者卡住司机拿钱</em>的事，比四个统计数字更值得占据首屏。
-    </p>
+  </section>
 
-    <dl class="pt-meta">
-      <div><dt>覆盖屏数</dt><dd>5 屏（默认态 / 待办置顶 / 空态 / 刷新 / 多企业）</dd></div>
-      <div><dt>使用角色</dt><dd>驾驶员</dd></div>
-      <div><dt>数据来源</dt><dd><code>GET /api/driver/task/my</code><span class="sep">·</span><code>GET /api/driver/finance/summary</code></dd></div>
-      <div><dt>tabBar 位置</dt><dd>第 1 个 · 工作台</dd></div>
-    </dl>
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
 
-    <nav class="pt-rail parallel">
-      <a href="#s1"><span class="t">有活儿的一天</span></a>
-      <a href="#s2"><span class="t">新调令待接</span></a>
-      <a href="#s3"><span class="t">今天没活儿</span></a>
-      <a href="#s4"><span class="t">下拉刷新与骨架屏</span></a>
-      <a href="#s5"><span class="t">多企业司机</span></a>
-    </nav>
-  </div>
-</header>
+      <div class="mp__body">
 
-<main class="pt-body">
-
-  <div class="pt-gallery">
-
-    <!-- 1 -->
-    <section class="board" id="s1">
-      <div class="board-cap">
-        <span class="n">01</span>
-        <h3>有活儿的一天 · 默认态</h3>
-        <span class="tip">整页拼接</span>
-      </div>
-
-      <div class="dev auto">
-        <div class="wx-head">
-          <div class="wx-nav"><span class="ttl">智途司机</span></div>
-        </div>
-
-        <div class="wx-body scroll">
-          <div class="hero pad-b">
-            <div class="hr" style="height:0;margin:0"></div>
-            <div class="fx g10" style="padding-top:6px">
-              <div class="grow">
-                <div style="font-size:20px;font-weight:600;letter-spacing:-.01em">早上好，王建军</div>
-                <div class="fx g4 mt4" style="font-size:12.5px;opacity:.86">
-                  <svg class="ico" style="width:13px;height:13px"><use href="#i-building"></use></svg>
-                  皖通汽车物流
-                  <svg class="ico" style="width:12px;height:12px"><use href="#i-swap"></use></svg>
+        <!-- 工作台 -->
+        <section class="screen" data-screen="home" data-title="工作台" data-tabroot data-nav-hide="1"
+                 data-status-light="1" data-mpbg="#0d1b3e" data-start>
+          <div class="scroll is-flush" data-refresh>
+            <header class="hd">
+              <div class="hd__row">
+                <div class="grow">
+                  <div class="hd__hi">王师傅，早上好</div>
+                  <div class="hd__org">远洋汽车物流有限公司 <span data-icon="down"></span></div>
                 </div>
+                <button class="hd__bell" data-push="msg" aria-label="消息"><span data-icon="bell"></span><b>3</b></button>
               </div>
-              <span class="ava rel">王<i class="pin">1</i></span>
+              <div class="hd__strip">
+                <i><span data-icon="pin"></span>南京 · 多云 26℃</i>
+                <span class="sepdot"></span>
+                <i class="limit"><span data-icon="warn"></span>今日限行尾号 3 和 8</i>
+              </div>
+            </header>
+
+            <div class="overcard">
+              <div class="stats">
+                <div class="stat is-amber" data-toast="1 张新调令等你接收"><b data-count-to="1">0</b><span>待接收</span></div>
+                <div class="stat" data-tabgo="task"><b data-count-to="2">0</b><span>待装车</span></div>
+                <div class="stat" data-tabgo="task"><b data-count-to="1">0</b><span>在途</span></div>
+                <div class="stat" data-tabgo="task"><b data-count-to="3">0</b><span>待签收</span></div>
+              </div>
             </div>
 
-            <div class="kpis mt16 rel">
-              <div class="kpi"><div class="v">1</div><div class="k">待装车</div></div>
-              <div class="kpi"><div class="v">1</div><div class="k">在途</div></div>
-              <div class="kpi"><div class="v">2</div><div class="k">待签收</div></div>
-              <div class="kpi"><div class="v sm">1.86 万</div><div class="k">本月收入</div></div>
-              <i class="pin">2</i>
-            </div>
-          </div>
+            <div class="pad">
+              <div class="sec-title">
+                <h2>正在跑的任务</h2>
+                <span>1 单</span>
+                <span class="more" data-tabgo="task">全部任务 <span data-icon="right"></span></span>
+              </div>
 
-          <div class="card pull-up rel">
-            <div class="fx between mb12">
-              <span class="tag danger">最该先干这件</span>
-              <span class="t3" style="font-size:11.5px">还差 2 单回单</span>
-            </div>
-            <div class="t1 strong" style="font-size:15px">合肥的两家门店回单还没传</div>
-            <div class="t2 mt4" style="font-size:12.5px">TK202607290031 已签收 · 回单齐了财务才能出结算单，涉及 ¥3,660.00</div>
-            <a class="btn block mt12"><svg class="ico"><use href="#i-camera"></use></svg>现在去拍回单</a>
-            <i class="pin">3</i>
-          </div>
-
-          <div class="card tight rel">
-            <div class="grid">
-              <a><span class="ib"><svg class="ico"><use href="#i-list"></use></svg></span><span class="lb">我的任务</span></a>
-              <a><span class="ib g"><svg class="ico"><use href="#i-money"></use></svg></span><span class="lb">我的收入</span></a>
-              <a><span class="ib o"><svg class="ico"><use href="#i-warning"></use></svg></span><span class="lb">上报异常</span></a>
-              <a><span class="ib i"><svg class="ico"><use href="#i-gas"></use></svg></span><span class="lb">加油记录</span></a>
-              <a><span class="ib"><svg class="ico"><use href="#i-shield"></use></svg></span><span class="lb">我的证照</span></a>
-              <a><span class="ib g"><svg class="ico"><use href="#i-card"></use></svg></span><span class="lb">收款账户</span></a>
-              <a><span class="ib i"><svg class="ico"><use href="#i-calendar"></use></svg></span><span class="lb">排班请假</span></a>
-              <a><span class="ib"><svg class="ico"><use href="#i-help"></use></svg></span><span class="lb">找调度</span></a>
-            </div>
-            <i class="pin">4</i>
-          </div>
-
-          <div class="sec-h">今天的活儿<span class="more">全部 3 个</span></div>
-
-          <div class="item rel">
-            <div class="item-top">
-              <span class="no">TK202607300044</span>
-              <span class="tag primary">待装车</span>
-            </div>
-            <div class="route-h">
-              <span>上海嘉定</span>
-              <span class="mid"><span class="km">468 km</span></span>
-              <span>合肥包河</span>
-            </div>
-            <div class="t3 mt8" style="font-size:12px">上汽安吉物流<span class="mut"> · </span>8 台 / 3 单<span class="mut"> · </span>计划装车 今天 08:30</div>
-            <div class="item-foot">
-              <span class="meta">沪B·D7392</span>
-              <a class="btn sm">去装车</a>
-            </div>
-            <i class="pin">5</i>
-          </div>
-
-          <div class="item">
-            <div class="item-top">
-              <span class="no">TK202607280019</span>
-              <span class="tag info">在途</span>
-            </div>
-            <div class="route-h">
-              <span>南京江宁</span>
-              <span class="mid"><span class="km">312 km</span></span>
-              <span>徐州铜山</span>
-            </div>
-            <div class="t3 mt8" style="font-size:12px">奇瑞徽银<span class="mut"> · </span>6 台 / 2 单<span class="mut"> · </span>预计到达 明天 09:20</div>
-            <div class="item-foot">
-              <span class="meta">已跑 198 km</span>
-              <a class="btn sm ghost">查看</a>
-            </div>
-          </div>
-
-          <div class="end">下拉可以刷新</div>
-        </div>
-
-        <div class="wx-foot">
-          <div class="wx-foot">
-
-            <div class="tabbar" data-tab="home" data-badge="task:3,me:dot"></div>
-        </div>
-      </div>
-
-      <ol class="notes">
-        <li>问候语按时段变化（早上好 / 中午好 / 下午好 / 晚上好），企业名可点，多企业司机在这里切换，不用绕去「我的」。</li>
-        <li>四个数字取 <code>/task/my</code> 按 <code>status</code> 分组统计 + <code>/finance/summary</code> 本月金额。收入用「1.86 万」而不是「18,640.00」——首屏只要量级，明细在收入页。</li>
-        <li><b>本模块最重要的设计判断</b>：首屏第一张卡是「最该先干这件」，由规则挑出唯一一条最紧急待办（新调令 &gt; 回单缺失 &gt; 证照过期 &gt; 待装车超时）。只显示一条，不做待办列表——司机在驾驶室里没耐心做优先级排序。</li>
-        <li><span class="flag">P1</span>快捷入口里的上报异常、加油记录、排班请假是新增能力（模块 08 / 11 / 12）。入口按企业开通的功能裁剪，未开通不显示，不做灰色占位。</li>
-        <li>任务卡的主按钮直接写<b>下一步动作</b>（去装车 / 去签收 / 传回单），点了直接进详情并自动展开对应操作面板，少一次跳转。</li>
-      </ol>
-    </section>
-
-    <!-- 2 -->
-    <section class="board" id="s2">
-      <div class="board-cap">
-        <span class="n">02</span>
-        <h3>新调令待接 · 置顶提醒</h3>
-      </div>
-
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav"><span class="ttl">智途司机</span></div>
-        </div>
-
-        <div class="wx-body scroll">
-          <div class="hero pad-b">
-            <div class="fx g10" style="padding-top:6px">
-              <div class="grow">
-                <div style="font-size:20px;font-weight:600;letter-spacing:-.01em">早上好，王建军</div>
-                <div class="fx g4 mt4" style="font-size:12.5px;opacity:.86">
-                  <svg class="ico" style="width:13px;height:13px"><use href="#i-building"></use></svg>
-                  皖通汽车物流
+              <article class="ticket" style="--stub:#f5a524" data-push="detail">
+                <div class="ticket__head">
+                  <span class="ticket__no">TK2608090037</span>
+                  <span class="ticket__type">重驶调令</span>
+                  <span class="tag tag--info ml-auto"><i class="dot pulse"></i>在途</span>
                 </div>
-              </div>
-              <span class="ava">王</span>
-            </div>
-            <div class="kpis mt16">
-              <div class="kpi"><div class="v">0</div><div class="k">待装车</div></div>
-              <div class="kpi"><div class="v">0</div><div class="k">在途</div></div>
-              <div class="kpi"><div class="v">0</div><div class="k">待签收</div></div>
-              <div class="kpi"><div class="v sm">1.86 万</div><div class="k">本月收入</div></div>
-            </div>
-          </div>
-
-          <div class="alert-card pull-up rel">
-            <div class="fx between mb12">
-              <span class="tag danger"><svg class="ico" style="width:11px;height:11px"><use href="#i-bell"></use></svg>新调令</span>
-              <span class="red strong num" style="font-size:12.5px">还剩 23:41 确认</span>
-            </div>
-            <div class="ttl">上海嘉定 → 合肥包河</div>
-            <div class="sub">TK202607290031 · 8 台 / 3 单 · 468 km · 运费 ¥4,860</div>
-            <div class="sub" style="margin-top:6px">计划装车 今天 08:30 · 调度 张敏 派单</div>
-            <div class="fx g10 mt12">
-              <a class="btn line" style="flex:0 0 88px">拒绝</a>
-              <a class="btn grow">接收调令</a>
-            </div>
-            <i class="pin">1</i>
-          </div>
-
-          <div class="card tight">
-            <div class="grid">
-              <a><span class="ib"><svg class="ico"><use href="#i-list"></use></svg></span><span class="lb">我的任务</span></a>
-              <a><span class="ib g"><svg class="ico"><use href="#i-money"></use></svg></span><span class="lb">我的收入</span></a>
-              <a><span class="ib o"><svg class="ico"><use href="#i-warning"></use></svg></span><span class="lb">上报异常</span></a>
-              <a><span class="ib i"><svg class="ico"><use href="#i-gas"></use></svg></span><span class="lb">加油记录</span></a>
-            </div>
-          </div>
-
-          <div class="sec-h">今天的活儿</div>
-          <div class="empty" style="padding:34px 30px">
-            <div class="tt">接了这个调令就有活儿了</div>
-          </div>
-        </div>
-
-        <div class="wx-foot">
-          <div class="wx-foot">
-
-            <div class="tabbar" data-tab="home" data-badge="task:1"></div>
-        </div>
-      </div>
-
-      <ol class="notes">
-        <li><span class="flag">P1</span>调令卡直接把<b>接单/拒绝按钮放在首屏</b>，司机不用进详情。倒计时与超时退回需要后端补 <code>dispatched_at</code> 与超时任务（见模块 04 说明）。运费金额必须出现在这里——司机接不接单，先看钱和距离。</li>
-        <li>同时来多个调令时按计划装车时间排序，最多展示 2 张，第 3 张起收成「还有 2 个调令待确认」一行入口，避免首屏被淹。</li>
-        <li>订阅消息推送点进来直接定位到这张卡（模块 13）。</li>
-      </ol>
-    </section>
-
-  </div>
-
-  <div class="pt-gallery">
-
-    <!-- 3 -->
-    <section class="board" id="s3">
-      <div class="board-cap">
-        <span class="n">03</span>
-        <h3>今天没活儿 · 空态</h3>
-      </div>
-
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav"><span class="ttl">智途司机</span></div>
-        </div>
-
-        <div class="wx-body scroll">
-          <div class="hero pad-b">
-            <div class="fx g10" style="padding-top:6px">
-              <div class="grow">
-                <div style="font-size:20px;font-weight:600;letter-spacing:-.01em">下午好，王建军</div>
-                <div class="fx g4 mt4" style="font-size:12.5px;opacity:.86">
-                  <svg class="ico" style="width:13px;height:13px"><use href="#i-building"></use></svg>
-                  皖通汽车物流
+                <div class="ticket__route">
+                  <div class="ticket__place"><b>上汽仪征基地</b><span>江苏 扬州 仪征</span></div>
+                  <div class="ticket__arrow"></div>
+                  <div class="ticket__place right"><b>杭州萧山中转库</b><span>浙江 杭州 萧山</span></div>
                 </div>
-              </div>
-              <span class="ava">王</span>
-            </div>
-            <div class="kpis mt16">
-              <div class="kpi"><div class="v">0</div><div class="k">待装车</div></div>
-              <div class="kpi"><div class="v">0</div><div class="k">在途</div></div>
-              <div class="kpi"><div class="v">0</div><div class="k">待签收</div></div>
-              <div class="kpi"><div class="v sm">1.86 万</div><div class="k">本月收入</div></div>
-            </div>
-          </div>
-
-          <div class="card pull-up rel">
-            <div class="fx between mb12">
-              <span class="tag warning">该处理一下</span>
-            </div>
-            <div class="t1 strong" style="font-size:15px">行驶证 18 天后到期</div>
-            <div class="t2 mt4" style="font-size:12.5px">沪B·D7392<span class="mut"> · </span>2026-08-16 到期，过期后不能派车</div>
-            <a class="btn ghost block mt12">上传新的行驶证</a>
-            <i class="pin">1</i>
-          </div>
-
-          <div class="card tight">
-            <div class="grid">
-              <a><span class="ib"><svg class="ico"><use href="#i-list"></use></svg></span><span class="lb">我的任务</span></a>
-              <a><span class="ib g"><svg class="ico"><use href="#i-money"></use></svg></span><span class="lb">我的收入</span></a>
-              <a><span class="ib i"><svg class="ico"><use href="#i-calendar"></use></svg></span><span class="lb">排班请假</span></a>
-              <a><span class="ib"><svg class="ico"><use href="#i-help"></use></svg></span><span class="lb">找调度</span></a>
-            </div>
-          </div>
-
-          <div class="sec-h">今天的活儿</div>
-          <div class="empty rel">
-            <div class="ib"><svg class="ico"><use href="#i-truck"></use></svg></div>
-            <div class="tt">今天还没派活儿给你</div>
-            <div class="hint">调度派单后会用微信消息通知你<br />空车期间可以把证照和加油记录补齐</div>
-            <a class="btn ghost sm">告诉调度我现在空车</a>
-            <i class="pin">2</i>
-          </div>
-        </div>
-
-        <div class="wx-foot">
-          <div class="wx-foot">
-
-            <div class="tabbar" data-tab="home"></div>
-        </div>
-      </div>
-
-      <ol class="notes">
-        <li>没活儿的时候首屏的"最该先干这件"降级到证照、加油、请假这类后勤事项，让空车时间也有事可做。规则按顺序取第一条命中项，取不到就整卡不显示。</li>
-        <li>空态不是一块空白，而是<b>行动邀请</b>：说清"派单后会微信通知你"（消除反复刷新的焦虑），再给一个「告诉调度我现在空车」的动作（<span class="flag">P1</span>写入司机可用状态，见模块 12）。</li>
-      </ol>
-    </section>
-
-    <!-- 4 -->
-    <section class="board" id="s4">
-      <div class="board-cap">
-        <span class="n">04</span>
-        <h3>下拉刷新与首次加载</h3>
-      </div>
-
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav"><span class="ttl">智途司机</span></div>
-        </div>
-
-        <div class="wx-body scroll">
-          <div class="hero pad-b">
-            <div class="fx g10" style="padding-top:6px">
-              <div class="grow">
-                <div style="font-size:20px;font-weight:600;letter-spacing:-.01em">早上好，王建军</div>
-                <div class="fx g4 mt4" style="font-size:12.5px;opacity:.86">
-                  <svg class="ico" style="width:13px;height:13px"><use href="#i-building"></use></svg>
-                  皖通汽车物流
-                </div>
-              </div>
-              <span class="ava">王</span>
-            </div>
-            <div class="kpis mt16">
-              <div class="kpi"><div class="v sk" style="width:24px;height:22px"></div><div class="k">待装车</div></div>
-              <div class="kpi"><div class="v sk" style="width:24px;height:22px"></div><div class="k">在途</div></div>
-              <div class="kpi"><div class="v sk" style="width:24px;height:22px"></div><div class="k">待签收</div></div>
-              <div class="kpi"><div class="v sk" style="width:52px;height:22px"></div><div class="k">本月收入</div></div>
-            </div>
-          </div>
-
-          <div class="refresh pull-up rel" style="margin-top:-14px">
-            <span class="spin"></span>正在刷新今天的活儿，请稍候…
-            <i class="pin in">1</i>
-          </div>
-
-          <div class="card rel">
-            <div class="sk" style="width:120px;height:14px"></div>
-            <div class="sk mt10" style="width:100%;height:12px"></div>
-            <div class="sk mt6" style="width:60%;height:12px"></div>
-            <i class="pin">2</i>
-          </div>
-
-          <div class="card">
-            <div class="sk" style="width:96px;height:14px"></div>
-            <div class="sk mt10" style="width:100%;height:12px"></div>
-            <div class="sk mt6" style="width:72%;height:12px"></div>
-          </div>
-
-          <div class="mask" style="background:none;align-items:flex-end;padding-bottom:26px">
-            <div class="toast rel" style="position:static;transform:none;max-width:250px">
-              <span class="ico" style="display:block;width:26px;height:26px;margin:0 auto 8px;border:0">
-                <svg class="ico"><use href="#i-warning"></use></svg>
-              </span>
-              信号不太好，先显示上次的记录<br />恢复网络后会自动更新
-              <i class="pin in">3</i>
-            </div>
-          </div>
-        </div>
-
-        <div class="wx-foot">
-          <div class="wx-foot">
-
-            <div class="tabbar" data-tab="home"></div>
-        </div>
-      </div>
-
-      <ol class="notes">
-        <li>下拉文案带上业务动作：「正在刷新今天的活儿，请稍候…」，不写「加载中」。司机常在地下车库、高速服务区打开，等待感需要被解释。</li>
-        <li>首次进入用骨架屏而不是整屏转圈，KPI 的数字位单独占位——布局不跳动，视觉上比 loading 遮罩稳。</li>
-        <li>拉取失败<b>不清空已有数据</b>，改为降级提示「先显示上次的记录，恢复网络后会自动更新」。弱网是司机的常态，不能让页面变空。</li>
-      </ol>
-    </section>
-
-    <!-- 5 -->
-    <section class="board" id="s5">
-      <div class="board-cap">
-        <span class="n">05</span>
-        <h3>多企业司机 · 切换企业</h3>
-      </div>
-
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav"><span class="ttl">智途司机</span></div>
-        </div>
-
-        <div class="wx-body scroll">
-          <div class="hero pad-b" style="filter:blur(1px);opacity:.55">
-            <div class="fx g10" style="padding-top:6px">
-              <div class="grow">
-                <div style="font-size:20px;font-weight:600">早上好，王建军</div>
-                <div class="mt4" style="font-size:12.5px;opacity:.86">皖通汽车物流</div>
-              </div>
-              <span class="ava">王</span>
-            </div>
-            <div class="kpis mt16">
-              <div class="kpi"><div class="v">1</div><div class="k">待装车</div></div>
-              <div class="kpi"><div class="v">1</div><div class="k">在途</div></div>
-              <div class="kpi"><div class="v">2</div><div class="k">待签收</div></div>
-              <div class="kpi"><div class="v sm">1.86 万</div><div class="k">本月收入</div></div>
-            </div>
-          </div>
-
-          <div class="mask bottom">
-            <div class="sheet">
-              <div class="sh">切换企业<span class="x"><svg class="ico"><use href="#i-close"></use></svg></span></div>
-              <div class="sb">
-                <div class="notice blue" style="margin:0">
-                  <svg class="ico"><use href="#i-info"></use></svg>
-                  <span>切换后只看得到这家企业的任务和收入</span>
-                </div>
-                <div class="cells rel">
-                  <div class="cell">
-                    <span class="lead"><svg class="ico"><use href="#i-building"></use></svg></span>
-                    <span class="k">皖通汽车物流<span class="sub">主驾 · 沪B·D7392 · 在职</span></span>
-                    <span class="v"><span class="tag primary sm">当前</span></span>
+                <div class="road">
+                  <div class="road__track">
+                    <div class="road__fill" style="--p:62%"></div>
+                    <div class="road__truck" style="--p:62%"><span data-icon="truck"></span></div>
                   </div>
-                  <div class="cell">
-                    <span class="lead n"><svg class="ico"><use href="#i-building"></use></svg></span>
-                    <span class="k">徽通商品车运输<span class="sub">主驾 · 皖A·L2288 · 在职</span></span>
-                    <span class="v"><span class="tag warning sm">2 个待接</span></span>
-                    <svg class="ico arrow"><use href="#i-right"></use></svg>
+                  <div class="road__stops">
+                    <span class="is-done">装车</span><span class="is-done">出发</span>
+                    <span class="is-now">到达</span><span>签收</span>
                   </div>
-                  <div class="cell">
-                    <span class="lead n"><svg class="ico"><use href="#i-building"></use></svg></span>
-                    <span class="k">长风物流（合肥）<span class="sub">已离职 · 仅可查历史收入</span></span>
-                    <svg class="ico arrow"><use href="#i-right"></use></svg>
-                  </div>
-                  <i class="pin tl">1</i>
                 </div>
-                <div class="t3" style="padding:10px 14px 4px;font-size:11.5px;line-height:1.7">
-                  同一个手机号可以在多家企业当司机。企业把你从运力里解绑后，这里会变成「已离职」，历史收入仍然可以查。
+                <div class="ticket__meta">
+                  <i><span data-icon="box"></span>8 台 · 别克昂科威</i>
+                  <i><span data-icon="clock"></span>要求 08-09 18:00 前到货</i>
+                </div>
+                <div class="ticket__foot">
+                  <span class="plate">苏A·8F236</span>
+                  <span class="t-cap">距目的地约 86 公里</span>
+                  <span class="tag tag--amber ml-auto">还剩 2 小时 40 分</span>
+                </div>
+              </article>
+
+              <div class="btnrow mt-12">
+                <button class="btn btn--ghost" data-toast="正在打开导航，请稍候…"><span data-icon="nav"></span>导航去卸货点</button>
+                <button class="btn btn--accent" data-sheet="arrive"><span data-icon="pin"></span>确认到达</button>
+              </div>
+
+              <div class="sec-title"><h2>常用操作</h2></div>
+              <div class="card card--tight">
+                <div class="quick">
+                  <button data-toast="选择任务后即可拍照上传回单"><i class="q1"><span data-icon="camera"></span></i>上传回单</button>
+                  <button data-sheet="excp"><i class="q2"><span data-icon="warn"></span></i>异常上报</button>
+                  <button data-tabgo="income"><i class="q3"><span data-icon="wallet"></span></i>我的收入</button>
+                  <button data-toast="油卡余额 1,240 元，可在附近 6 座合作加油站使用"><i class="q4"><span data-icon="fuel"></span></i>油卡加油</button>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>要你处理的</h2><span>2 条</span></div>
+
+              <article class="ticket" style="--stub:#1d4ed8" data-push="detail">
+                <div class="ticket__head">
+                  <span class="ticket__no">TK2608090052</span>
+                  <span class="tag tag--amber">新调令</span>
+                  <span class="t-cap ml-auto">李敏 12 分钟前派给你</span>
+                </div>
+                <div class="ticket__route">
+                  <div class="ticket__place"><b>杭州萧山中转库</b><span>浙江 杭州 萧山</span></div>
+                  <div class="ticket__arrow"></div>
+                  <div class="ticket__place right"><b>宁波北仑港</b><span>浙江 宁波 北仑</span></div>
+                </div>
+                <div class="ticket__meta">
+                  <i><span data-icon="box"></span>6 台 · 别克君威</i>
+                  <i><span data-icon="clock"></span>计划装车 08-10 07:30</i>
+                  <i><span data-icon="route"></span>约 168 公里</i>
+                </div>
+                <div class="ticket__foot">
+                  <button class="btn btn--ghost btn--sm grow" data-sheet="reject">拒绝</button>
+                  <button class="btn btn--primary btn--sm grow" data-toast="已接收调令，记得按时到装车点" data-toast-icon="ok">接收调令</button>
+                </div>
+              </article>
+
+              <div class="notice mt-12">
+                <span data-icon="warn"></span>
+                <div><b>TK2608090021 的回单还没传</b><br>昨天 16:40 已签收。回单不传，这一单的结算就卡着。<a style="color:inherit;text-decoration:underline;margin-left:2px">去补传</a></div>
+              </div>
+
+              <div class="sec-title"><h2>本周排班</h2><span>08-05 至 08-11</span></div>
+              <div class="card card--tight">
+                <div class="minical">
+                  <div class="has"><span>一</span><b>5</b></div>
+                  <div class="has"><span>二</span><b>6</b></div>
+                  <div><span>三</span><b>7</b></div>
+                  <div class="has"><span>四</span><b>8</b></div>
+                  <div class="on has"><span>五</span><b>9</b></div>
+                  <div class="has"><span>六</span><b>10</b></div>
+                  <div><span>日</span><b>11</b></div>
+                </div>
+                <div class="hstack mt-12" style="justify-content:space-between">
+                  <span class="t-cap">本周已跑 5 趟 · 累计 1,842 公里</span>
+                  <span class="t-cap" style="color:var(--primary)">周日休息</span>
                 </div>
               </div>
             </div>
           </div>
+        </section>
+
+        <!-- 任务（简版，完整见 03） -->
+        <section class="screen" data-screen="task" data-title="任务 tab" data-tabroot data-nav="我的任务">
+          <div class="scroll">
+            <div class="sticky">
+              <div class="chipbar">
+                <button class="chip" aria-selected="true">全部 <span class="chip__n">7</span></button>
+                <button class="chip">待接收 <span class="chip__n">1</span></button>
+                <button class="chip">待装车 <span class="chip__n">2</span></button>
+                <button class="chip">在途 <span class="chip__n">1</span></button>
+                <button class="chip">待签收 <span class="chip__n">3</span></button>
+              </div>
+            </div>
+            <article class="ticket" style="--stub:#f5a524" data-push="detail">
+              <div class="ticket__head"><span class="ticket__no">TK2608090037</span><span class="tag tag--info ml-auto"><i class="dot"></i>在途</span></div>
+              <div class="ticket__route">
+                <div class="ticket__place"><b>上汽仪征基地</b><span>江苏 扬州</span></div>
+                <div class="ticket__arrow"></div>
+                <div class="ticket__place right"><b>杭州萧山中转库</b><span>浙江 杭州</span></div>
+              </div>
+              <div class="ticket__meta"><i><span data-icon="box"></span>8 台</i><i><span data-icon="clock"></span>18:00 前到货</i></div>
+            </article>
+            <article class="ticket" style="--stub:#1d4ed8">
+              <div class="ticket__head"><span class="ticket__no">TK2608090052</span><span class="tag tag--amber ml-auto">待接收</span></div>
+              <div class="ticket__route">
+                <div class="ticket__place"><b>杭州萧山中转库</b><span>浙江 杭州</span></div>
+                <div class="ticket__arrow"></div>
+                <div class="ticket__place right"><b>宁波北仑港</b><span>浙江 宁波</span></div>
+              </div>
+              <div class="ticket__meta"><i><span data-icon="box"></span>6 台</i><i><span data-icon="clock"></span>明日 07:30 装车</i></div>
+            </article>
+            <p class="t-cap center mt-16">任务列表与筛选的完整设计见 03</p>
+          </div>
+        </section>
+
+        <!-- 收入（简版，完整见 09） -->
+        <section class="screen" data-screen="income" data-title="收入 tab" data-tabroot data-nav="我的收入">
+          <div class="scroll">
+            <div class="card mt-8" style="background:linear-gradient(150deg,#14306e,#0d1b3e);color:#fff">
+              <div style="font-size:12.5px;color:rgba(206,224,255,.7)">本月累计收入（元）</div>
+              <div class="money" style="font-size:34px;margin-top:8px"><small>¥</small><span data-count-to="8600" data-count-sep="1">0</span></div>
+              <div class="hstack mt-16" style="gap:22px;font-size:12.5px;color:rgba(206,224,255,.78)">
+                <span>预付 ¥3,200</span><span>补款 ¥600</span><span>结算 ¥4,800</span>
+              </div>
+            </div>
+            <p class="t-cap center mt-16">收入、费用单与油卡账户的完整设计见 09 / 10</p>
+          </div>
+        </section>
+
+        <!-- 我的（简版，完整见 13） -->
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll">
+            <div class="card mt-8 hstack" style="gap:13px">
+              <div class="avatar">王</div>
+              <div class="grow">
+                <div class="t-h2">王建国</div>
+                <div class="t-cap" style="margin-top:4px">远洋汽车物流 · 自有车司机 · 苏A·8F236</div>
+              </div>
+              <span data-icon="right" style="color:#c3ccda;display:flex"></span>
+            </div>
+            <p class="t-cap center mt-16">个人信息、切换企业与设置的完整设计见 13</p>
+          </div>
+        </section>
+
+        <!-- 消息 -->
+        <section class="screen" data-screen="msg" data-title="消息（页头铃铛）" data-nav="消息" data-parent="home">
+          <div class="scroll">
+            <div class="card card--plain mt-8">
+              <div class="cell">
+                <div class="cell__ico is-amber"><span data-icon="truck"></span></div>
+                <div class="cell__main"><div class="cell__t">新调令 TK2608090052</div><div class="cell__s">李敏派给你，明日 07:30 在萧山中转库装车</div></div>
+                <div class="cell__x"><i class="dot" style="background:var(--danger)"></i></div>
+              </div>
+              <div class="cell">
+                <div class="cell__ico is-green"><span data-icon="wallet"></span></div>
+                <div class="cell__main"><div class="cell__t">结算单已支付 ¥2,400</div><div class="cell__s">TK2608080019 · 08-09 09:12 到账</div></div>
+                <div class="cell__x"><i class="dot" style="background:var(--danger)"></i></div>
+              </div>
+              <div class="cell">
+                <div class="cell__ico is-red"><span data-icon="file"></span></div>
+                <div class="cell__main"><div class="cell__t">从业资格证 28 天后到期</div><div class="cell__s">请把新证交给车管李敏更新档案</div></div>
+                <div class="cell__x"><i class="dot" style="background:var(--danger)"></i></div>
+              </div>
+              <div class="cell">
+                <div class="cell__ico"><span data-icon="checkc"></span></div>
+                <div class="cell__main"><div class="cell__t">回单已通过审核</div><div class="cell__s">TK2608070008 · 08-08 17:20</div></div>
+                <div class="cell__x t-cap">昨天</div>
+              </div>
+            </div>
+            <p class="t-cap center mt-16">消息分类与订阅设置的完整设计见 12</p>
+          </div>
+        </section>
+
+        <!-- 任务详情（简版，完整见 04） -->
+        <section class="screen" data-screen="detail" data-title="任务详情（简）" data-nav="任务详情" data-parent="home">
+          <div class="scroll">
+            <div class="card mt-8">
+              <div class="hstack"><span class="ticket__no">TK2608090037</span><span class="tag tag--info ml-auto"><i class="dot"></i>在途</span></div>
+              <div class="road mt-16">
+                <div class="road__track">
+                  <div class="road__fill" style="--p:62%"></div>
+                  <div class="road__truck" style="--p:62%"><span data-icon="truck"></span></div>
+                </div>
+                <div class="road__stops"><span class="is-done">装车</span><span class="is-done">出发</span><span class="is-now">到达</span><span>签收</span></div>
+              </div>
+              <hr class="sep">
+              <dl class="kvlist">
+                <div class="kv"><dt>运输线路</dt><dd>上汽仪征基地 → 杭州萧山中转库</dd></div>
+                <div class="kv"><dt>商品车</dt><dd>别克昂科威 8 台</dd></div>
+                <div class="kv"><dt>计划到货</dt><dd>08-09 18:00</dd></div>
+              </dl>
+            </div>
+            <p class="t-cap center mt-16">货物明细、分段、费用与操作的完整设计见 04 / 05</p>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--accent btn--lg" data-sheet="arrive">确认到达</button>
+          </div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="home"><span data-icon="home"></span>工作台</button>
+        <button class="tabi" data-tab="task"><span data-icon="list"></span>任务</button>
+        <button class="tabi" data-tab="income"><span data-icon="wallet"></span>收入</button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+      <!-- 确认到达 -->
+      <div class="sheet" data-sheet-id="arrive">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head">
+          <h3>确认到达卸货点</h3>
+          <p>到达后系统会把任务推进到「已到达」，接着就可以逐台签收。</p>
+        </div>
+        <div class="sheet__body">
+          <div class="notice notice--info"><span data-icon="pin"></span><div>当前定位：浙江省杭州市萧山区新街街道东复线 · 距卸货点 380 米</div></div>
+          <div class="field">
+            <div class="field__l">现场照片<span class="dim3">（选填，建议拍一张车头照）</span></div>
+            <div class="photos">
+              <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+              <div class="photo photo--add"><span data-icon="camera"></span><span>拍照</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">备注<span class="dim3">（选填）</span></div>
+            <textarea class="textarea" rows="2" placeholder="例如：卸货区排队，预计 40 分钟后开始卸车"></textarea>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>再等等</button>
+          <button class="btn btn--accent" data-sheet-close data-toast="已确认到达，可以开始逐台签收了" data-toast-icon="ok">确认到达</button>
         </div>
       </div>
 
-      <ol class="notes">
-        <li>切换用底部面板而不是跳独立页面，切完直接回到工作台。企业列表取 <code>GET /api/driver/auth/user-tenants</code>，切换调 <code>POST /auth/switch-tenant</code> 换 Token。每家企业带上<b>本人在该企业的车牌与在职状态</b>，同名企业才分得清。</li>
-        <li>已离职企业保留入口但只读，这是司机最在意的诉求——离职了工资还能不能查。文案直接把规则讲清楚，不藏在帮助里。</li>
-      </ol>
-    </section>
+      <!-- 拒绝调令 -->
+      <div class="sheet" data-sheet-id="reject">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>拒绝这张调令</h3><p>调度会立刻收到通知并重新派车，请说明原因。</p></div>
+        <div class="sheet__body">
+          <div class="radios">
+            <div class="radio" role="radio" aria-checked="true"><i class="radio__m"></i><div><div class="radio__t">车辆维修中</div><div class="radio__s">车在修理厂，出不了车</div></div></div>
+            <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">时间冲突</div><div class="radio__s">和已接的任务撞车了</div></div></div>
+            <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">身体不适 / 请假</div></div></div>
+            <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">其他原因</div></div></div>
+          </div>
+          <div class="field mt-8">
+            <div class="field__l">补充说明<span class="req">*</span></div>
+            <textarea class="textarea" rows="3" placeholder="写清楚原因，调度好安排别的车"></textarea>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--danger" data-sheet-close data-toast="已拒绝，调度会重新安排">提交拒绝</button>
+        </div>
+      </div>
 
+      <!-- 异常上报入口 -->
+      <div class="sheet" data-sheet-id="excp">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>上报什么异常？</h3><p>选一类，后面只填必要的几项。紧急情况先打电话，再补录。</p></div>
+        <div class="sheet__body">
+          <div class="radios">
+            <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">车辆故障</div><div class="radio__s">抛锚、爆胎、亮故障灯</div></div></div>
+            <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">交通事故</div><div class="radio__s">需要立刻通知调度和安全员</div></div></div>
+            <div class="radio" role="radio" aria-checked="true"><i class="radio__m"></i><div><div class="radio__t">延误</div><div class="radio__s">堵车、排队、天气，到不了约定时间</div></div></div>
+            <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">货损 / 数量不符</div><div class="radio__s">商品车划伤、少台数</div></div></div>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="正在打开上报表单，请稍候…">下一步</button>
+        </div>
+      </div>
+
+    </div>
   </div>
-
-  <div class="pt-rules">
-    <h4>「最该先干这件」的规则优先级</h4>
-    <ul>
-      <li><b>1 新调令待接收</b> — 有 <code>status=1</code> 且未 <code>accepted</code> 的任务。业务卡在司机表态上，最高优先。</li>
-      <li><b>2 回单缺失</b> — 有 <code>status=5</code> 但回单未齐的任务。卡住司机自己拿钱。</li>
-      <li><b>3 装车超时</b> — <code>plannedLoadTime</code> 已过且仍未装车。</li>
-      <li><b>4 证照将过期</b> — 30 天内到期的驾驶证 / 从业资格 / 行驶证 / 保险。过期直接影响能不能派车。</li>
-      <li><b>5 加油或维修单据待补</b> — 有垫付未提交报销。</li>
-      <li>全部不命中则整卡不渲染，首屏直接进快捷入口。<b>永远只显示一条</b>，不做待办列表。</li>
-    </ul>
-  </div>
-
-  <div class="pt-rules">
-    <h4>本模块的边界与约定</h4>
-    <ul>
-      <li>KPI 数字点击带状态参数跳任务 Tab（<code>?status=1</code> 等），与模块 03 的状态 Tab 一一对应。</li>
-      <li>快捷入口按企业开通功能与司机角色裁剪，<b>不显示无权限的灰色占位</b>。</li>
-      <li>金额一律显示司机<b>自己的</b>收入，绝不出现企业毛利、客户运价等经营数据。</li>
-      <li>tabBar 角标：任务 Tab 显示待处理任务数（待接 + 待装 + 待签），「我的」有证照预警时显示小红点。</li>
-    </ul>
-  </div>
-
 </main>
-
-<footer class="pt-foot">
-  智途 · 驾驶员微信小程序原型 · 模块 02 工作台首页
-</footer>
-
 <script src="assets/mp.js"></script>
 </body>
 </html>

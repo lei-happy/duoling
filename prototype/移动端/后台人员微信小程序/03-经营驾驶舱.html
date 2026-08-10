@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 经营驾驶舱</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .ck { padding: 20px var(--pad) 18px; color: #fff; position: relative; overflow: hidden;
+    background: linear-gradient(160deg, #16226b 0%, #2f54eb 58%, #3b6bf5 100%); }
+  .ck::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(300px 200px at 88% -20%, rgba(250,140,22,.3), transparent 62%);
+  }
+  .ck__row { position: relative; display: flex; align-items: center; gap: 10px; }
+  .ck__l { font-size: 12.5px; color: rgba(206,224,255,.78); }
+  .ck__v { font-size: 40px; font-weight: 700; letter-spacing: -.035em; font-variant-numeric: tabular-nums; line-height: 1.05; margin-top: 6px; }
+  .ck__v small { font-size: .38em; font-weight: 600; margin-left: 5px; color: rgba(206,224,255,.8); letter-spacing: 0; }
+  .ck__d { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; margin-top: 10px;
+    background: rgba(255,255,255,.16); padding: 5px 9px; border-radius: 8px; }
+  .ck__d svg { width: 13px; height: 13px; }
+  .ck__d.up { color: #b7f7c9; }
+  .ck__d.down { color: #ffc9c9; }
+  /* 目标水位条：本月完成度 */
+  .gauge { position: relative; margin-top: 18px; }
+  .gauge__t { display: flex; justify-content: space-between; font-size: 12px; color: rgba(206,224,255,.82); margin-bottom: 7px; }
+  .gauge__t b { color: #fff; font-weight: 650; }
+  .gauge__k { height: 10px; border-radius: 999px; background: rgba(255,255,255,.16); overflow: hidden; position: relative; }
+  .gauge__f { display: block; height: 100%; border-radius: 999px; width: var(--v); background: linear-gradient(90deg, #ffd591, #fa8c16);
+    transition: width .9s cubic-bezier(.32,.72,0,1); }
+  .gauge__mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: rgba(255,255,255,.85); left: var(--m); border-radius: 2px; }
+  .gauge__note { margin-top: 8px; font-size: 11.5px; color: rgba(206,224,255,.72); }
+  .segwrap { padding: 12px var(--pad) 0; }
+  /* Top 排行 */
+  .rank { display: grid; gap: 13px; }
+  .rank__i { display: grid; grid-template-columns: 20px 1fr auto; gap: 10px; align-items: center; }
+  .rank__n { font: 700 12.5px/1 var(--mono); color: var(--ink-3); text-align: center; }
+  .rank__i:nth-child(1) .rank__n { color: var(--accent-deep); }
+  .rank__b { min-width: 0; }
+  .rank__b > span { display: block; font-size: 13.5px; font-weight: 500; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rank__k { height: 7px; border-radius: 999px; background: var(--line-soft); overflow: hidden; }
+  .rank__f { display: block; height: 100%; border-radius: 999px; background: var(--primary); width: var(--v); }
+  .rank__i:nth-child(1) .rank__f { background: linear-gradient(90deg, #2f54eb, #fa8c16); }
+  .rank__v { font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .rank__v em { display: block; font-style: normal; font-size: 11px; color: var(--ink-3); font-weight: 400; margin-top: 3px; text-align: right; }
+  .matrix { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border-radius: 12px; overflow: hidden; }
+  .matrix > div { background: #fff; padding: 13px 14px; }
+  .matrix span { display: block; font-size: 11.8px; color: var(--ink-3); }
+  .matrix b { display: block; font-size: 19px; font-weight: 700; letter-spacing: -.03em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .matrix i { font-style: normal; font-size: 11px; font-weight: 600; margin-left: 5px; }
+  .up-c { color: var(--success); } .down-c { color: var(--danger); }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 03</p>
+    <h1 class="stage__title">经营驾驶舱</h1>
+    <p class="stage__desc">老板在车上、在客户那儿、在饭桌上掏出手机想知道的三件事：<b style="color:#e2e8f0">这个月做了多少、赚不赚钱、哪儿出问题了。</b>不是把 PC 报表缩小塞进来。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>头图只放<b>一个数</b>——计划运费。其余指标退到下面，避免老板要在 8 个数字里找重点。</li>
+        <li><b>目标水位条</b>是这页的记忆点：本月完成度对比"按日进度应达线"（白色刻度），一眼看出是超前还是落后。</li>
+        <li>指标口径与 PC 驾驶舱完全一致：<b>计划运费、计划数、商品车数量、服务客户数、毛利率</b>。每个指标可点「口径」看定义，避免老板和财务对不上账。</li>
+        <li>趋势图<b>可点选某天</b>看当日明细，手指点得到（触点 ≥ 36px）。</li>
+        <li>排行榜给的是<b>结论不是表格</b>：客户 Top5 直接标出谁在涨谁在跌。</li>
+        <li>不做导出、不做多维度自由钻取——那是 PC 的事。手机上给"看一眼就懂"。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <!-- 驾驶舱主屏 -->
+        <section class="screen" data-screen="ck" data-title="驾驶舱" data-tabroot data-nav-hide="1"
+                 data-status-light="1" data-mpbg="#16226b" data-start>
+          <div class="scroll is-flush" data-refresh>
+            <div class="ck">
+              <div class="ck__row" style="padding-right:96px">
+                <div class="grow">
+                  <div class="ck__l">2026 年 8 月 · 计划运费 <span data-sheet="cal" style="text-decoration:underline;text-underline-offset:2px">口径</span></div>
+                  <div class="ck__v"><span data-count-to="1842" data-count-dec="0">0</span><small>万元</small></div>
+                  <span class="ck__d up"><span data-icon="trend"></span>同比 +12.4%　环比 +3.1%</span>
+                </div>
+              </div>
+
+              <div class="gauge">
+                <div class="gauge__t"><span>本月目标 2,400 万</span><span>已完成 <b>76.8%</b></span></div>
+                <div class="gauge__k">
+                  <i class="gauge__f" style="--v:76.8%"></i>
+                  <i class="gauge__mark" style="--m:29%"></i>
+                </div>
+                <div class="gauge__note">今天 8 月 9 日，按天数进度应到 29%，实际 76.8%——本月开局很猛，主要是上汽仪征基地的批量发运。</div>
+              </div>
+            </div>
+
+            <div class="segwrap">
+              <div class="seg" data-seg>
+                <button aria-selected="true">本月</button>
+                <button>本季</button>
+                <button>今年</button>
+                <i class="seg__thumb"></i>
+              </div>
+            </div>
+
+            <div class="pad" style="margin-top:16px">
+              <div class="kpis">
+                <div class="kpi" data-push="detail">
+                  <div class="kpi__l"><span data-icon="file"></span>计划数</div>
+                  <div class="kpi__v" data-count-to="1246">0</div>
+                  <span class="kpi__d up"><span data-icon="trend"></span>+8.6%</span>
+                </div>
+                <div class="kpi" data-push="detail">
+                  <div class="kpi__l"><span data-icon="box"></span>商品车数量</div>
+                  <div class="kpi__v"><span data-count-to="8342">0</span><small>台</small></div>
+                  <span class="kpi__d up"><span data-icon="trend"></span>+11.2%</span>
+                </div>
+                <div class="kpi" data-push="detail">
+                  <div class="kpi__l"><span data-icon="building"></span>服务客户数</div>
+                  <div class="kpi__v" data-count-to="28">0</div>
+                  <span class="kpi__d up"><span data-icon="trend"></span>+3 家</span>
+                </div>
+                <div class="kpi" data-sheet="gross">
+                  <div class="kpi__l"><span data-icon="wallet"></span>毛利率</div>
+                  <div class="kpi__v"><span data-count-to="18.6" data-count-dec="1">0</span><small>%</small></div>
+                  <span class="kpi__d down"><span data-icon="trend"></span>−2.4 个点</span>
+                </div>
+              </div>
+
+              <div class="notice mt-16">
+                <span data-icon="warn"></span>
+                <div><b>毛利率连续两个月下滑</b><br>承运商外包比例从 31% 涨到 44%，外包单的毛利只有自有车的一半。<a data-sheet="gross" style="color:inherit;text-decoration:underline">看拆解</a></div>
+              </div>
+
+              <div class="sec-title"><h2>运费日趋势</h2><span>点柱看当日</span></div>
+              <div class="card">
+                <div class="trend">
+                  <svg viewBox="0 0 320 110" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stop-color="#2f54eb" stop-opacity=".24"/>
+                        <stop offset="1" stop-color="#2f54eb" stop-opacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    <g stroke="#eff2f7" stroke-width="1">
+                      <line x1="0" y1="10" x2="320" y2="10"/><line x1="0" y1="42" x2="320" y2="42"/>
+                      <line x1="0" y1="74" x2="320" y2="74"/><line x1="0" y1="104" x2="320" y2="104"/>
+                    </g>
+                    <path d="M6 86 L50 74 L94 80 L138 54 L182 60 L226 36 L270 44 L314 18 L314 104 L6 104 Z" fill="url(#ga)"/>
+                    <path d="M6 86 L50 74 L94 80 L138 54 L182 60 L226 36 L270 44 L314 18" fill="none" stroke="#2f54eb" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="314" cy="18" r="4.5" fill="#2f54eb" stroke="#fff" stroke-width="2.5"/>
+                    <circle cx="226" cy="36" r="3.4" fill="#fff" stroke="#2f54eb" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="trend__x"><span>08-02</span><span>08-04</span><span>08-06</span><span>08-08</span><span>今日</span></div>
+                <div class="hstack mt-12" style="gap:14px;font-size:12px;color:var(--ink-2)">
+                  <span><b class="money" style="font-size:14px;color:var(--ink)">86.4</b> 万 今日</span>
+                  <span><b class="money" style="font-size:14px;color:var(--ink)">72.3</b> 万 日均</span>
+                  <span class="ml-auto" style="color:var(--success);font-weight:600">今日为本月最高</span>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>运力结构</h2><span class="more" data-sheet="gross">影响毛利 <span data-icon="right"></span></span></div>
+              <div class="card">
+                <div class="donut">
+                  <div class="donut__g">
+                    <svg width="106" height="106" viewBox="0 0 42 42">
+                      <circle cx="21" cy="21" r="16" fill="none" stroke="#eff2f7" stroke-width="7"/>
+                      <circle cx="21" cy="21" r="16" fill="none" stroke="#2f54eb" stroke-width="7" stroke-dasharray="56 100" stroke-linecap="round"/>
+                      <circle cx="21" cy="21" r="16" fill="none" stroke="#fa8c16" stroke-width="7" stroke-dasharray="44 100" stroke-dashoffset="-57" stroke-linecap="round"/>
+                    </svg>
+                    <div class="donut__c"><b>1246</b><span>计划数</span></div>
+                  </div>
+                  <div class="legend">
+                    <div><i style="background:#2f54eb"></i><span>自有车承运</span><b>56%</b></div>
+                    <div><i style="background:#fa8c16"></i><span>承运商外包</span><b>44%</b></div>
+                    <div style="font-size:11.8px;color:var(--ink-3);display:block;line-height:1.6">外包比例上月 31%。自有车 32 台已接近满负荷，再涨单量只能继续外包。</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>客户 Top 5</h2><span>按计划运费</span></div>
+              <div class="card">
+                <div class="rank">
+                  <div class="rank__i">
+                    <span class="rank__n">1</span>
+                    <div class="rank__b"><span>上汽集团乘用车公司</span><div class="rank__k"><i class="rank__f" style="--v:100%"></i></div></div>
+                    <div class="rank__v">642 万<em class="up-c">+18%</em></div>
+                  </div>
+                  <div class="rank__i">
+                    <span class="rank__n">2</span>
+                    <div class="rank__b"><span>苏南汽贸有限公司</span><div class="rank__k"><i class="rank__f" style="--v:64%"></i></div></div>
+                    <div class="rank__v">412 万<em class="up-c">+6%</em></div>
+                  </div>
+                  <div class="rank__i">
+                    <span class="rank__n">3</span>
+                    <div class="rank__b"><span>浙南汽贸集团</span><div class="rank__k"><i class="rank__f" style="--v:47%"></i></div></div>
+                    <div class="rank__v">301 万<em class="down-c">−9%</em></div>
+                  </div>
+                  <div class="rank__i">
+                    <span class="rank__n">4</span>
+                    <div class="rank__b"><span>金华恒达汽车销售</span><div class="rank__k"><i class="rank__f" style="--v:31%"></i></div></div>
+                    <div class="rank__v">198 万<em class="up-c">+22%</em></div>
+                  </div>
+                  <div class="rank__i">
+                    <span class="rank__n">5</span>
+                    <div class="rank__b"><span>常州武进汽车城</span><div class="rank__k"><i class="rank__f" style="--v:23%"></i></div></div>
+                    <div class="rank__v">146 万<em style="color:var(--ink-3)">持平</em></div>
+                  </div>
+                </div>
+                <div class="notice notice--info mt-16" style="align-items:center">
+                  <span data-icon="info"></span>
+                  <div>浙南汽贸掉了 9%，是唯一下滑的大客户。上次拜访是 6 月 12 日。</div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>服务质量</h2><span>客户看得见的指标</span></div>
+              <div class="matrix">
+                <div><span>准点交付率</span><b>91.2<i class="down-c">−3.1</i></b></div>
+                <div><span>回单及时率</span><b>96.8<i class="up-c">+1.2</i></b></div>
+                <div><span>货损率 ‰</span><b>0.42<i class="up-c">−0.08</i></b></div>
+                <div><span>客户投诉</span><b>3<i class="down-c">+1</i></b></div>
+              </div>
+              <p class="t-cap" style="margin:10px 2px 0">准点率跌破承诺的 95%，集中在华东线路的外包单。建议先看承运商考核。</p>
+
+              <div class="btnrow mt-16">
+                <button class="btn btn--ghost" data-sheet="cal"><span data-icon="info"></span>指标口径</button>
+                <button class="btn btn--ghost" data-toast="完整报表请在电脑上查看，手机只给结论"><span data-icon="file"></span>完整报表</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 指标下钻 -->
+        <section class="screen" data-screen="detail" data-title="指标下钻" data-nav="计划数 · 本月" data-parent="ck">
+          <div class="scroll">
+            <div class="pad">
+              <div class="card">
+                <div class="hstack" style="align-items:baseline;gap:9px">
+                  <span class="money" style="font-size:32px">1,246</span>
+                  <span class="t-label dim">个计划</span>
+                  <span class="kpi__d up ml-auto"><span data-icon="trend"></span>+8.6%</span>
+                </div>
+                <div class="bars mt-16">
+                  <div>
+                    <div class="bar__top"><span>已签收</span><span class="strong">1,058 个</span></div>
+                    <div class="bar__track"><i class="bar__fill" style="--v:85%;background:var(--success)"></i></div>
+                  </div>
+                  <div>
+                    <div class="bar__top"><span>在途 / 已到达</span><span class="strong">142 个</span></div>
+                    <div class="bar__track"><i class="bar__fill" style="--v:11%"></i></div>
+                  </div>
+                  <div>
+                    <div class="bar__top"><span>待派车 / 待装车</span><span class="strong">46 个</span></div>
+                    <div class="bar__track"><i class="bar__fill" style="--v:4%;background:var(--accent)"></i></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>按发运基地</h2></div>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">上汽仪征基地</div><div class="cell__s">542 个计划 · 3,684 台</div></div><div class="cell__x"><b class="money">43.5%</b></div></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">南京江宁库</div><div class="cell__s">318 个计划 · 2,102 台</div></div><div class="cell__x"><b class="money">25.5%</b></div></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">杭州萧山中转库</div><div class="cell__s">246 个计划 · 1,588 台</div></div><div class="cell__x"><b class="money">19.7%</b></div></div>
+                <div class="cell cell--static"><div class="cell__main"><div class="cell__t">其他</div><div class="cell__s">140 个计划 · 968 台</div></div><div class="cell__x"><b class="money">11.3%</b></div></div>
+              </div>
+
+              <p class="t-cap center mt-20">更细的维度拆分请在电脑端驾驶舱查看</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="home" data-title="工作台 tab" data-tabroot data-nav="工作台">
+          <div class="scroll"><p class="t-cap center mt-20">角色自适应工作台的完整设计见 02</p></div>
+        </section>
+        <section class="screen" data-screen="pool" data-title="调度 tab" data-tabroot data-nav="调度工作台">
+          <div class="scroll"><p class="t-cap center mt-20">五阶段调度工作台的完整设计见 05</p></div>
+        </section>
+        <section class="screen" data-screen="msgtab" data-title="消息 tab" data-tabroot data-nav="消息">
+          <div class="scroll"><p class="t-cap center mt-20">消息中心的完整设计见 13</p></div>
+        </section>
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll"><p class="t-cap center mt-20">个人中心与设置的完整设计见 14</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="home"><span data-icon="grid"></span>工作台</button>
+        <button class="tabi" data-tab="pool"><span data-icon="route"></span>调度</button>
+        <button class="tabi" data-tab="ck"><span data-icon="chart"></span>数据</button>
+        <button class="tabi" data-tab="msgtab"><span data-icon="msg"></span>消息<i class="tabi__dot">7</i></button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+      <!-- 口径说明 -->
+      <div class="sheet" data-sheet-id="cal">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head">
+          <h3>指标怎么算的</h3>
+          <p>和电脑端驾驶舱同一套口径，对账不会打架</p>
+        </div>
+        <div class="sheet__body">
+          <div class="card card--flat">
+            <dl class="kv"><dt>计划运费</dt><dd>计划上的应收运费合计，含税，不含代垫</dd></dl>
+            <dl class="kv"><dt>计划数</dt><dd>状态不是「已撤销」的计划个数</dd></dl>
+            <dl class="kv"><dt>商品车数量</dt><dd>计划明细里的车辆台数合计</dd></dl>
+            <dl class="kv"><dt>服务客户数</dt><dd>本期有过发运的客商去重数</dd></dl>
+            <dl class="kv"><dt>毛利率</dt><dd>（计划运费 − 承运成本 − 司机结算 − 油气款）÷ 计划运费</dd></dl>
+            <dl class="kv"><dt>统计时点</dt><dd>按计划创建日期归期，每 10 分钟刷新一次</dd></dl>
+          </div>
+          <p class="t-cap mt-12">口径由财务负责人在电脑端维护，改动会同步到所有人。</p>
+        </div>
+        <div class="sheet__foot"><button class="btn btn--primary btn--block" data-sheet-close>知道了</button></div>
+      </div>
+
+      <!-- 毛利拆解 -->
+      <div class="sheet" data-sheet-id="gross">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head">
+          <h3>毛利率少的 2.4 个点去哪了</h3>
+          <p>本月 18.6%，上月 21.0%</p>
+        </div>
+        <div class="sheet__body">
+          <div class="card card--flat">
+            <div class="bars">
+              <div>
+                <div class="bar__top"><span>外包比例上升（31% → 44%）</span><span class="strong" style="color:var(--danger)">−1.8 个点</span></div>
+                <div class="bar__track"><i class="bar__fill" style="--v:75%;background:var(--danger)"></i></div>
+              </div>
+              <div>
+                <div class="bar__top"><span>油价上涨</span><span class="strong" style="color:var(--danger)">−0.4 个点</span></div>
+                <div class="bar__track"><i class="bar__fill" style="--v:17%;background:var(--danger)"></i></div>
+              </div>
+              <div>
+                <div class="bar__top"><span>空驶率提高</span><span class="strong" style="color:var(--danger)">−0.3 个点</span></div>
+                <div class="bar__track"><i class="bar__fill" style="--v:13%;background:var(--danger)"></i></div>
+              </div>
+              <div>
+                <div class="bar__top"><span>单价小幅上调</span><span class="strong" style="color:var(--success)">+0.1 个点</span></div>
+                <div class="bar__track"><i class="bar__fill" style="--v:5%;background:var(--success)"></i></div>
+              </div>
+            </div>
+          </div>
+          <div class="notice notice--info mt-12">
+            <span data-icon="info"></span>
+            <div>自有车单毛利 24.3%，外包单只有 11.8%。要么加车，要么把外包价压下来。</div>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>关闭</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已把这段拆解发给赵倩">发给财务</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

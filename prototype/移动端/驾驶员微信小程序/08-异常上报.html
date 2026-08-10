@@ -1,169 +1,295 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>08 异常上报 · 驾驶员微信小程序</title>
-<link rel="stylesheet" href="assets/mp.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>驾驶员微信小程序 · 异常上报</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .type {
+    border: 1.5px solid var(--line); background: #fff; border-radius: 15px;
+    padding: 15px 13px; cursor: pointer; text-align: left;
+    transition: transform .1s ease-out, border-color .15s ease, background .15s ease;
+  }
+  .type:active { transform: scale(.97); }
+  .type i { width: 38px; height: 38px; border-radius: 13px; display: grid; place-items: center; margin-bottom: 11px; }
+  .type b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -.006em; }
+  .type span { display: block; font-size: 11.8px; color: var(--ink-3); margin-top: 4px; line-height: 1.45; }
+  .type[aria-checked="true"] { border-color: var(--primary); background: var(--primary-soft); }
+  .t-fault i { background: var(--warning-soft); color: #b45309; }
+  .t-crash i { background: var(--danger-soft); color: var(--danger); }
+  .t-delay i { background: var(--accent-soft); color: var(--accent-deep); }
+  .t-damage i { background: var(--info-soft); color: #0369a1; }
+  .sos {
+    display: flex; align-items: center; gap: 13px; padding: 15px 16px; border-radius: 16px;
+    background: linear-gradient(150deg, #7f1d1d, #b91c1c); color: #fff; cursor: pointer;
+    box-shadow: 0 10px 26px -12px rgba(185,28,28,.9);
+  }
+  .sos i { width: 42px; height: 42px; border-radius: 14px; background: rgba(255,255,255,.16); display: grid; place-items: center; flex: none; }
+  .sos b { display: block; font-size: 16px; font-weight: 650; }
+  .sos span { display: block; font-size: 12.5px; color: rgba(255,255,255,.78); margin-top: 3px; }
+</style>
 </head>
-<body data-app="driver">
-
-<header class="pt-head">
-  <div class="pt-head-inner">
-    <div class="pt-kicker"><i></i><b>驾驶员微信小程序</b><span>模块 08</span></div>
-    <div class="pt-title">
-      <h1>异常上报</h1>
-      <span class="badge p1">P1 需后端新增</span>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Driver Mini Program · 08 <span style="color:#f5a524">· 新增能力</span></p>
+    <h1 class="stage__title">异常上报</h1>
+    <p class="stage__desc">后端目前<b style="color:#e2e8f0">还没有</b>驾驶员侧的运输异常上报接口。但这是路上真实发生、且必须被系统记录的事，所以原型先把它设计出来，作为待建能力的输入。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li><span class="new">这是新增能力</span>。现有系统里的「异常」指的是计费异常、成本计算异常，属于后台概念，不是现场事故。两者不要混用一个词。</li>
+        <li><b>紧急优先于表单</b>。事故场景下第一动作是打电话，不是填字段。所以一键呼叫常驻顶部，表单可以事后补。</li>
+        <li>四类异常<b>字段各不相同</b>：延误问的是新的到达时间，货损问的是哪台车哪个部位，车辆故障问的是能不能自己走。不用一张万能表单糊弄所有场景。</li>
+        <li>上报后<b>同步影响任务</b>：延误会改预计到达并通知客户，货损会把那台车挂起，事故会拉起安全员。上报不是写日记。</li>
+      </ul>
     </div>
-    <p class="pt-intent">路上出状况时，司机需要一条「一键喊调度」的通路。异常不是工单系统，而是让调度在 5 分钟内知道并回应。</p>
-    <dl class="pt-meta"><div><dt>覆盖屏数</dt><dd>5 屏</dd></div><div><dt>使用角色</dt><dd>驾驶员</dd></div><div><dt>关联</dt><dd>任务详情<span class="sep">·</span>后台在途监控</dd></div></dl>
-    <nav class="pt-rail"><a href="#s1"><span class="n">1</span><span class="t">类型</span></a><a href="#s2"><span class="n">2</span><span class="t">填写</span></a><a href="#s3"><span class="n">3</span><span class="t">成功</span></a><a href="#s4"><span class="n">4</span><span class="t">记录</span></a><a href="#s5"><span class="n">5</span><span class="t">回执</span></a></nav>
-  </div>
-</header>
+  </section>
 
-<main class="pt-body">
-  <div class="pt-gallery">
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
 
-    <section class="board" id="s1">
-      <div class="board-cap"><span class="n">01</span><h3>选择异常类型</h3><span class="tip">P1</span></div>
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">上报异常</span></div>
-        </div>
-        <div class="wx-body scroll">
-          <div class="pad">
-            <div class="t1 strong" style="font-size:16px;margin-bottom:6px">这趟活出了什么情况？</div>
-            <div class="t3" style="font-size:12px;margin-bottom:14px">选一个最贴近的，调度能更快帮你处理。</div>
-            <div class="chips" style="padding:0;flex-wrap:wrap"><div class="chip">等货</div><div class="chip">堵车</div><div class="chip">故障</div><div class="chip">事故</div><div class="chip">货损</div><div class="chip">超时</div></div>
+      <div class="mp__body">
+
+        <!-- 选择类型 -->
+        <section class="screen" data-screen="pick" data-title="选择异常类型" data-nav="上报异常" data-start>
+          <div class="scroll">
+            <div class="sos mt-8" data-dialog="callsos">
+              <i><span data-icon="phone"></span></i>
+              <div class="grow"><b>出事了？先打电话</b><span>一键呼叫调度 李敏 · 安全员 陈刚</span></div>
+              <span data-icon="right"></span>
+            </div>
+
+            <div class="sec-title"><h2>发生了什么</h2><span>选一类，只填必要的</span></div>
+            <div class="types">
+              <button class="type t-fault" role="radio" aria-checked="false" data-push="form">
+                <i><span data-icon="wrench"></span></i>
+                <b>车辆故障</b><span>抛锚、爆胎、仪表报警</span>
+              </button>
+              <button class="type t-crash" role="radio" aria-checked="false" data-push="form">
+                <i><span data-icon="warn"></span></i>
+                <b>交通事故</b><span>刮碰、追尾，需要立刻通知</span>
+              </button>
+              <button class="type t-delay" role="radio" aria-checked="true" data-push="form">
+                <i><span data-icon="clock"></span></i>
+                <b>运输延误</b><span>堵车、排队、恶劣天气</span>
+              </button>
+              <button class="type t-damage" role="radio" aria-checked="false" data-push="form">
+                <i><span data-icon="box"></span></i>
+                <b>货损 / 数量不符</b><span>商品车受损或台数对不上</span>
+              </button>
+            </div>
+
+            <div class="sec-title"><h2>我报过的</h2><span>近 30 天 2 条</span></div>
+            <div class="card card--plain">
+              <div class="cell" data-push="track">
+                <div class="cell__ico is-amber"><span data-icon="clock"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t">长深高速堵车，延误约 1 小时</div>
+                  <div class="cell__s t-mono">TK2608060015 · 08-06 15:22 上报</div>
+                </div>
+                <div class="cell__x"><span class="tag tag--ok">已处理</span></div>
+              </div>
+              <div class="cell" data-push="track">
+                <div class="cell__ico is-red"><span data-icon="wrench"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t">左后轮胎压报警，已换备胎</div>
+                  <div class="cell__s t-mono">TK2607280042 · 07-28 09:05 上报</div>
+                </div>
+                <div class="cell__x"><span class="tag tag--ok">已处理</span></div>
+              </div>
+            </div>
+
+            <p class="t-cap center mt-20">上报后调度会立刻看到，客户那边由调度去说，你专心开车</p>
           </div>
-        </div>
+        </section>
 
-      </div>
-      <ol class="notes"><li><span class="flag">P1</span>异常类型枚举与后台告警（admin 06）共用；提交后任务详情出现「处理中」标记。</li></ol>
-    </section>
+        <!-- 延误表单 -->
+        <section class="screen" data-screen="form" data-title="填写延误" data-nav="上报延误" data-parent="pick">
+          <div class="scroll">
+            <div class="card mt-8">
+              <div class="hstack">
+                <div class="grow">
+                  <div class="cell__t">TK2608090037</div>
+                  <div class="cell__s t-mono" style="margin-top:4px">上汽仪征基地 → 杭州萧山中转库</div>
+                </div>
+                <span class="tag tag--info">在途</span>
+              </div>
+            </div>
 
+            <div class="card mt-12">
+              <div class="field">
+                <div class="field__l">延误原因<span class="req">*</span></div>
+                <div class="chipbar" style="padding:0;flex-wrap:wrap">
+                  <button class="chip" aria-selected="true">高速堵车</button>
+                  <button class="chip">前方事故封路</button>
+                  <button class="chip">恶劣天气</button>
+                  <button class="chip">装卸排队</button>
+                  <button class="chip">限行管制</button>
+                  <button class="chip">其他</button>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field__l">预计还要多久<span class="req">*</span></div>
+                <div class="chipbar" style="padding:0;flex-wrap:wrap">
+                  <button class="chip">30 分钟内</button>
+                  <button class="chip" aria-selected="true">1 小时左右</button>
+                  <button class="chip">2 小时以上</button>
+                  <button class="chip">说不好</button>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field__l">新的预计到达</div>
+                <div class="picker">今天 17:20 <span data-icon="right"></span></div>
+              </div>
+              <div class="field">
+                <div class="field__l">当前位置</div>
+                <div class="picker">浙江省湖州市德清县 G25 长深高速 <span data-icon="refresh"></span></div>
+              </div>
+              <div class="field">
+                <div class="field__l">现场照片<span class="dim3">（选填）</span></div>
+                <div class="photos">
+                  <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+                  <div class="photo photo--add"><span data-icon="camera"></span><span>拍照</span></div>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field__l">说明<span class="dim3">（选填）</span></div>
+                <textarea class="textarea" rows="3" placeholder="例如：德清收费站前 3 公里排队，交警在疏导"></textarea>
+              </div>
+            </div>
 
-    <section class="board" id="s2">
-      <div class="board-cap"><span class="n">02</span><h3>填写异常详情</h3><span class="tip">P1</span></div>
-      <div class="dev auto">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">上报异常</span></div>
-        </div>
-        <div class="wx-body scroll">
-          <div class="pad">
-            <div class="chip danger mb12">故障</div>
-            <div class="field"><div class="lab">发生位置</div><div class="inp">沪陕高速 K326 · 已定位</div></div>
-            <div class="field"><div class="lab">情况说明 <span class="req">*</span></div><div class="ta">右后轮胎爆胎，已靠边。预计换胎 40 分钟，可能晚到 1 小时。</div></div>
-            <div class="field"><div class="lab">现场照片</div>
-              <div class="photos">
-                <div class="slot filled">1</div>
-                <div class="slot filled">2</div>
-                <div class="slot"><span class="add">+</span>添加</div>
+            <div class="notice notice--info mt-12">
+              <span data-icon="info"></span>
+              <div>提交后会做三件事：改这一单的预计到达、通知调度李敏、把变更同步给客户。<b>你不用再挨个打电话。</b></div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost is-narrow" data-dialog="callsos"><span data-icon="phone"></span></button>
+            <button class="btn btn--primary btn--lg" data-push="track" data-toast="已上报延误，调度和客户都收到了" data-toast-icon="ok">提交上报</button>
+          </div>
+        </section>
+
+        <!-- 事故表单 -->
+        <section class="screen" data-screen="crash" data-title="事故上报（对照）" data-nav="上报交通事故" data-parent="pick">
+          <div class="scroll">
+            <div class="notice notice--danger mt-8">
+              <span data-icon="warn"></span>
+              <div><b>先确认人是否安全，再填表</b><br>有人伤先打 120 和 122。系统这边不着急，能补录。</div>
+            </div>
+            <div class="card mt-12">
+              <div class="field">
+                <div class="field__l">有没有人受伤<span class="req">*</span></div>
+                <div class="radios">
+                  <div class="radio" role="radio" aria-checked="true"><i class="radio__m"></i><div><div class="radio__t">没有人受伤</div></div></div>
+                  <div class="radio" role="radio" aria-checked="false"><i class="radio__m"></i><div><div class="radio__t">有人受伤，已叫救护车</div></div></div>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field__l">车还能不能开<span class="req">*</span></div>
+                <div class="chipbar" style="padding:0;flex-wrap:wrap">
+                  <button class="chip" aria-selected="true">能继续开</button>
+                  <button class="chip">要拖车</button>
+                  <button class="chip">等交警处理</button>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field__l">商品车有没有损伤<span class="req">*</span></div>
+                <div class="chipbar" style="padding:0;flex-wrap:wrap">
+                  <button class="chip" aria-selected="true">没有</button>
+                  <button class="chip">有，1 台</button>
+                  <button class="chip">有，多台</button>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field__l">现场照片<span class="req">*</span><span class="dim3">远景 + 近景 + 对方车牌</span></div>
+                <div class="photos">
+                  <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+                  <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+                  <div class="photo photo--add"><span data-icon="camera"></span><span>拍照</span></div>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field__l">经过说明<span class="req">*</span></div>
+                <textarea class="textarea" rows="3" placeholder="时间、地点、怎么发生的，写清楚就行"></textarea>
               </div>
             </div>
           </div>
-        </div>
-        <div class="action-bar"><a class="btn wide">提交给调度</a></div>
-
-      </div>
-      <ol class="notes"><li>说明必填；照片最多 6 张。提交中文案：「正在通知调度，请稍候…」</li></ol>
-    </section>
-
-
-    <section class="board" id="s3">
-      <div class="board-cap"><span class="n">03</span><h3>提交成功</h3><span class="tip">P1</span></div>
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">上报异常</span></div>
-        </div>
-        <div class="wx-body scroll">
-          <div class="pad" style="padding-top:60px;text-align:center">
-            <div style="width:64px;height:64px;border-radius:50%;background:var(--success-soft);color:var(--success);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px">✓</div>
-            <div class="t1 strong" style="font-size:18px">调度已收到</div>
-            <div class="t3 mt8" style="font-size:13px;line-height:1.6;padding:0 20px">我们会尽快联系你。也可以在「我的异常」里看处理进度。</div>
-            <a class="btn block" style="margin:28px 12px 10px">返回任务</a>
-            <a class="btn line block" style="margin:0 12px">查看异常记录</a>
+          <div class="actionbar">
+            <button class="btn btn--danger btn--lg" data-toast="已上报，安全员陈刚正在联系你" data-toast-icon="warn">提交并通知安全员</button>
           </div>
-        </div>
+        </section>
 
-      </div>
-      <ol class="notes"><li>成功页给出路：回任务或看记录，不停留在空白成功态。</li></ol>
-    </section>
-
-
-    <section class="board" id="s4">
-      <div class="board-cap"><span class="n">04</span><h3>我的异常记录</h3><span class="tip">P1</span></div>
-      <div class="dev">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">我的异常</span></div>
-        </div>
-        <div class="wx-body scroll">
-          <div class="pad">
-            <div class="task">
-              <div class="top"><span class="chip danger">故障</span><span class="chip muted">处理中</span></div>
-              <div class="nm" style="font-size:14px">TK202607290031 · 爆胎靠边</div>
-              <div class="meta"><span>今日 15:22</span><span>沪陕高速 K326</span></div>
+        <!-- 处理进度 -->
+        <section class="screen" data-screen="track" data-title="处理进度" data-nav="上报进度" data-parent="pick">
+          <div class="scroll">
+            <div class="card mt-8">
+              <div class="hstack">
+                <div class="grow">
+                  <div class="cell__t">高速堵车，延误约 1 小时</div>
+                  <div class="cell__s t-mono" style="margin-top:4px">TK2608090037 · 刚刚上报</div>
+                </div>
+                <span class="tag tag--warn">调度跟进中</span>
+              </div>
+              <hr class="sep">
+              <dl class="kvlist">
+                <div class="kv"><dt>原到达时间</dt><dd>08-09 18:00</dd></div>
+                <div class="kv"><dt>新到达时间</dt><dd style="color:var(--accent-deep)">08-09 17:20</dd></div>
+                <div class="kv"><dt>上报位置</dt><dd>德清县 G25 长深高速</dd></div>
+              </dl>
             </div>
-            <div class="task">
-              <div class="top"><span class="chip warning">等货</span><span class="chip success">已完结</span></div>
-              <div class="nm" style="font-size:14px">TK202607250018 · 厂家晚放行</div>
-              <div class="meta"><span>07-25 09:40</span><span>等了 2.5 小时</span></div>
-            </div>
-          </div>
-        </div>
 
-      </div>
-      <ol class="notes"><li>列表按时间倒序；「处理中 / 已完结」状态与后台回执同步。</li></ol>
-    </section>
-
-
-    <section class="board" id="s5">
-      <div class="board-cap"><span class="n">05</span><h3>处理结果回执</h3><span class="tip">P1</span></div>
-      <div class="dev auto">
-        <div class="wx-head">
-          <div class="wx-nav" data-back><span class="ttl">异常详情</span></div>
-        </div>
-        <div class="wx-body scroll">
-          <div class="pad">
+            <div class="sec-title"><h2>系统做了什么</h2></div>
             <div class="card">
-              <div class="fx between mb8"><span class="chip danger">故障</span><span class="chip success">已完结</span></div>
-              <div class="t1 strong">右后轮胎爆胎</div>
-              <div class="t3 mt8" style="font-size:12px">TK202607290031 · 今日 15:22</div>
+              <div class="tl">
+                <div class="tl__i is-done"><div class="tl__t">你上报了延误</div><div class="tl__s">刚刚 · 王建国（我）</div></div>
+                <div class="tl__i is-done"><div class="tl__t">任务预计到达已更新</div><div class="tl__s">刚刚 · 系统自动 · 18:00 → 17:20</div></div>
+                <div class="tl__i is-done"><div class="tl__t">已通知调度 李敏</div><div class="tl__s">刚刚 · 微信服务通知</div></div>
+                <div class="tl__i is-now"><div class="tl__t">等调度确认是否通知客户</div><div class="tl__s">影响约定到货时间，需要人工判断</div></div>
+              </div>
             </div>
-            <div class="card">
-              <div class="hd">调度回复</div>
-              <div style="font-size:13px;line-height:1.65">已安排附近救援换胎，费用公司承担。晚到已跟客户报备，你安心处理。</div>
-              <div class="t3 mt10" style="font-size:11px">调度 · 李敏 16:05</div>
-            </div>
-            <div class="card">
-              <div class="hd">处理时间线</div>
-              <div class="steps">
-                <div class="s done"><div class="t">你已上报</div><div class="d">15:22</div></div>
-                <div class="s done"><div class="t">调度已接单</div><div class="d">15:28</div></div>
-                <div class="s done"><div class="t">已完结</div><div class="d">16:05 · 救援到位</div></div>
+
+            <div class="card mt-12">
+              <div class="hstack" style="align-items:flex-start;gap:11px">
+                <div class="avatar" style="width:38px;height:38px;border-radius:12px;font-size:14px">李</div>
+                <div class="grow">
+                  <div class="cell__t">李敏（调度）</div>
+                  <div class="cell__s" style="margin-top:5px;line-height:1.6">收到，我跟客户说一声。你安全第一，别抢时间。</div>
+                  <div class="t-cap" style="margin-top:6px">刚刚</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost" data-toast="正在呼叫调度员 李敏"><span data-icon="phone"></span>联系调度</button>
+            <button class="btn btn--primary" data-toast="情况有变可以随时补充">补充新情况</button>
+          </div>
+        </section>
 
       </div>
-      <ol class="notes"><li>回执必须让司机看见「公司知道了、怎么处理的」，否则上报意愿会掉。</li></ol>
-    </section>
 
+      <nav class="mp__tab" style="display:none"></nav>
+      <div class="mp__home"><i></i></div>
+
+      <div class="asheet" data-dialog-id="callsos">
+        <div class="asheet__g">
+          <button class="is-head">紧急联系</button>
+          <button data-sheet-close data-toast="正在呼叫调度员 李敏 138****2043">调度 李敏</button>
+          <button data-sheet-close data-toast="正在呼叫安全员 陈刚 139****7710">安全员 陈刚</button>
+          <button data-sheet-close data-toast="正在呼叫 24 小时救援 400-820-1234">公司 24 小时救援</button>
+          <button class="is-danger" data-sheet-close data-toast="正在呼叫 122 交通事故报警">122 交通事故报警</button>
+        </div>
+        <div class="asheet__c asheet__g"><button data-sheet-close>取消</button></div>
+      </div>
+
+    </div>
   </div>
-
-
-  <div class="pt-rules">
-    <h4>异常上报</h4>
-    <ul>
-      <li>P1 增量：结构化类型（车辆/道路/货损/其他）+ 描述 + 照片。</li>
-      <li>提交后后台模块 06 在途监控可见，调度可联系处理。</li>
-    </ul>
-  </div>
-
 </main>
-
-<footer class="pt-foot">智途 · 驾驶员微信小程序原型 · 模块 08 异常上报</footer>
 <script src="assets/mp.js"></script>
 </body>
 </html>

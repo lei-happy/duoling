@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后台人员微信小程序 · 审批中心</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .ap { position: relative; border-radius: 16px; background: #fff; box-shadow: var(--sh-card); overflow: hidden; }
+  .ap + .ap { margin-top: 12px; }
+  .ap__band { height: 3px; background: var(--c, var(--primary)); }
+  .ap__h { padding: 13px 15px 0; display: flex; align-items: center; gap: 8px; }
+  .ap__no { font: 600 11.5px/1 var(--mono); letter-spacing: .05em; color: var(--ink-3); }
+  .ap__m { padding: 10px 15px 0; display: flex; align-items: baseline; gap: 10px; }
+  .ap__m b { font-size: 15px; font-weight: 650; letter-spacing: -.008em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ap__amt { margin-left: auto; font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.025em; flex: none; }
+  .ap__f { padding: 9px 15px 0; display: flex; flex-wrap: wrap; gap: 5px 12px; font-size: 12px; color: var(--ink-2); }
+  .ap__f em { font-style: normal; display: inline-flex; align-items: center; gap: 4px; }
+  .ap__f svg { width: 12px; height: 12px; color: var(--ink-3); }
+  .ap__why { margin: 11px 15px 0; padding: 9px 11px; border-radius: 10px; font-size: 12.2px; line-height: 1.55;
+    background: var(--warning-soft); color: #92400e; display: flex; gap: 7px; }
+  .ap__why svg { width: 14px; height: 14px; flex: none; margin-top: 1px; }
+  .ap__a { display: flex; border-top: .5px solid var(--line); margin-top: 13px; }
+  .ap__a button { flex: 1; height: 44px; border: 0; background: none; cursor: pointer; font: 500 14px/1 var(--font);
+    color: var(--ink-2); display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+  .ap__a button + button { border-left: .5px solid var(--line); }
+  .ap__a button:active { background: #f2f5fa; }
+  .ap__a .ok { color: var(--primary); font-weight: 600; }
+  .ap__a .no { color: var(--danger); }
+  .ap__a svg { width: 16px; height: 16px; }
+  /* 审批链 */
+  .flow { display: flex; align-items: center; gap: 0; margin-top: 4px; }
+  .flow__n { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: none; width: 62px; }
+  .flow__d { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--line-soft); color: var(--ink-3); font-size: 11px; font-weight: 600; }
+  .flow__d svg { width: 14px; height: 14px; }
+  .flow__n span { font-size: 11px; color: var(--ink-3); text-align: center; line-height: 1.3; }
+  .flow__l { flex: 1; height: 2px; background: var(--line); margin-bottom: 22px; }
+  .flow__n.done .flow__d { background: var(--success); color: #fff; }
+  .flow__n.done span { color: var(--ink-2); }
+  .flow__n.now .flow__d { background: var(--primary); color: #fff; box-shadow: 0 0 0 4px var(--primary-soft); }
+  .flow__n.now span { color: var(--primary); font-weight: 600; }
+  .flow__l.done { background: var(--success); }
+  .cmp { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
+  .cmp > div { text-align: center; }
+  .cmp span { display: block; font-size: 11.5px; color: var(--ink-3); }
+  .cmp b { display: block; font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.025em; margin-top: 5px; }
+  .cmp em { font-style: normal; font-size: 11px; color: var(--ink-3); }
+  .cmp__g { color: var(--ink-3); }
+  .cmp__g svg { width: 18px; height: 18px; }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Admin Mini Program · 10</p>
+    <h1 class="stage__title">审批中心</h1>
+    <p class="stage__desc">审批是老板最典型的"离位场景"——人在外面，事不能等。这一屏要在手机上把<b style="color:#e2e8f0">该批的批掉，该问的问清楚</b>，而不是回到公司再说。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>每张审批卡<b>顶部有一条色带</b>：蓝色是常规、琥珀是超额度、红色是低于底价。不看文字也知道这张要不要仔细看。</li>
+        <li>卡片上直接写<b>为什么需要你批</b>（「超过赵倩 3 万额度」「低于底价 8%」），而不是让人自己去猜规则。</li>
+        <li>通过 / 驳回<b>就在卡片上</b>。常规单据一秒一张，特殊的才点进去。</li>
+        <li>详情页给<b>对比数字</b>：申请金额 vs 参考标准，差多少、差百分之几，一眼判断。</li>
+        <li><b>审批链可视化</b>：谁批过、卡在谁那儿、后面还有谁。老板常问的「这单为什么还没走完」在这里有答案。</li>
+        <li>驳回必须写理由，理由会直接发给提交人；「转交他人」是常用出口——老板不确定时甩给财务，比一直挂着强。</li>
+        <li>审批流的设计与配置在电脑端，这里只做执行。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <section class="screen" data-screen="list" data-title="待我审批" data-nav="审批中心" data-tabroot data-start>
+          <div class="scroll" data-refresh>
+            <div class="sticky" style="padding-top:10px">
+              <div class="seg" data-seg>
+                <button aria-selected="true">待我批 4</button>
+                <button>我发起的</button>
+                <button>已处理</button>
+                <i class="seg__thumb"></i>
+              </div>
+            </div>
+
+            <div class="pad mt-16">
+              <div class="hstack" style="padding:0 2px 4px">
+                <span class="t-cap">4 件待批 · 合计 ¥86,400</span>
+                <span class="t-cap ml-auto" style="color:var(--danger)">1 件已等超过 6 小时</span>
+              </div>
+
+              <div class="ap mt-12" style="--c:var(--accent)">
+                <div class="ap__band"></div>
+                <div class="ap__h"><span class="ap__no">FD26080900341</span><span class="tag tag--amber ml-auto">超额度</span><span class="tag tag--danger">等了 6 小时</span></div>
+                <div class="ap__m"><b>承运商结算单 · 鑫达商品车运输</b><i class="ap__amt">¥42,600</i></div>
+                <div class="ap__f">
+                  <em><span data-icon="user"></span>赵倩 提交</em>
+                  <em><span data-icon="calendar"></span>7 月结算周期</em>
+                  <em><span data-icon="file"></span>18 单 · 126 台</em>
+                </div>
+                <div class="ap__why"><span data-icon="info"></span><div>超过赵倩 ¥30,000 的审批额度，需要你放行。金额与 7 月对账单一致。</div></div>
+                <div class="ap__a">
+                  <button class="no" data-sheet="reject"><span data-icon="x"></span>驳回</button>
+                  <button data-push="detail"><span data-icon="eye"></span>看详情</button>
+                  <button class="ok" data-dialog="pass"><span data-icon="check"></span>通过</button>
+                </div>
+              </div>
+
+              <div class="ap" style="--c:var(--danger)">
+                <div class="ap__band"></div>
+                <div class="ap__h"><span class="ap__no">PR26080900012</span><span class="tag tag--danger ml-auto">低于底价</span></div>
+                <div class="ap__m"><b>特价审批 · 苏南汽贸临时线路</b><i class="ap__amt">¥15,400</i></div>
+                <div class="ap__f">
+                  <em><span data-icon="user"></span>李敏 提交</em>
+                  <em><span data-icon="route"></span>仪征 → 温州瓯海</em>
+                  <em><span data-icon="clock"></span>已等 1 天</em>
+                </div>
+                <div class="ap__why" style="background:var(--danger-soft);color:#a8071a"><span data-icon="warn"></span><div>报价比底价低 8%，毛利率只有 10.6%，低于公司底线 12%。客户说别家报了 15,000。</div></div>
+                <div class="ap__a">
+                  <button class="no" data-sheet="reject"><span data-icon="x"></span>驳回</button>
+                  <button data-push="detail"><span data-icon="eye"></span>看详情</button>
+                  <button class="ok" data-dialog="pass"><span data-icon="check"></span>通过</button>
+                </div>
+              </div>
+
+              <div class="ap">
+                <div class="ap__band"></div>
+                <div class="ap__h"><span class="ap__no">FD26080900338</span><span class="tag ml-auto">常规</span></div>
+                <div class="ap__m"><b>司机结算单 · 8 月上半月批次</b><i class="ap__amt">¥28,400</i></div>
+                <div class="ap__f">
+                  <em><span data-icon="user"></span>赵倩 提交</em>
+                  <em><span data-icon="users"></span>12 位司机</em>
+                  <em><span data-icon="clock"></span>已等 2 小时</em>
+                </div>
+                <div class="ap__a">
+                  <button class="no" data-sheet="reject"><span data-icon="x"></span>驳回</button>
+                  <button data-push="detail"><span data-icon="eye"></span>看详情</button>
+                  <button class="ok" data-dialog="pass"><span data-icon="check"></span>通过</button>
+                </div>
+              </div>
+
+              <div class="ap">
+                <div class="ap__band"></div>
+                <div class="ap__h"><span class="ap__no">FD26080900308</span><span class="tag ml-auto">常规</span></div>
+                <div class="ap__m"><b>补款单 · 王建国 高速费</b><i class="ap__amt">¥1,860</i></div>
+                <div class="ap__f">
+                  <em><span data-icon="user"></span>王建国 提交</em>
+                  <em><span data-icon="camera"></span>附 3 张票据</em>
+                  <em><span data-icon="clock"></span>已等 1 天</em>
+                </div>
+                <div class="ap__a">
+                  <button class="no" data-sheet="reject"><span data-icon="x"></span>驳回</button>
+                  <button data-push="detail"><span data-icon="eye"></span>看详情</button>
+                  <button class="ok" data-dialog="pass"><span data-icon="check"></span>通过</button>
+                </div>
+              </div>
+
+              <div class="btnrow mt-16">
+                <button class="btn btn--ghost btn--block" data-dialog="passall"><span data-icon="checkc"></span>常规的 2 件一起批</button>
+              </div>
+              <p class="t-cap center" style="margin-top:10px">超额度和低于底价的两件需要单独看</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 审批详情 -->
+        <section class="screen" data-screen="detail" data-title="审批详情" data-nav="PR26080900012" data-parent="list">
+          <div class="scroll">
+            <div class="pad">
+              <div class="card">
+                <div class="hstack">
+                  <span class="tag tag--danger">低于底价</span>
+                  <span class="t-cap ml-auto">李敏 08-08 16:20 提交</span>
+                </div>
+                <h2 style="margin:12px 0 0;font-size:17px;font-weight:650">特价审批 · 苏南汽贸临时线路</h2>
+                <p class="t-cap" style="margin:7px 0 0;line-height:1.6">上汽仪征基地 → 温州瓯海 4S 店 · 4 台 · 586 km</p>
+
+                <div class="cmp mt-16">
+                  <div><span>客户能给</span><b style="color:var(--danger)">¥15,400</b><em>¥3,850 / 台</em></div>
+                  <div class="cmp__g"><span data-icon="arrowl"></span></div>
+                  <div><span>我们的底价</span><b>¥16,800</b><em>¥4,200 / 台</em></div>
+                </div>
+                <p class="t-cap center" style="margin:12px 0 0">差 ¥1,400，低 8.3%。按这个价这一单毛利率 10.6%。</p>
+              </div>
+
+              <div class="sec-title"><h2>李敏为什么要批这个价</h2></div>
+              <div class="card">
+                <p style="margin:0;font-size:14.5px;line-height:1.7">苏南汽贸这个月发了 32 车，是我们华东第二大客户。这条温州线是他们临时加的，说浙运达报了 15,000。如果这单不接，担心影响后面常规线路的合作。建议这一单让一步，下个月合同续签时把温州线的价格谈进去。</p>
+              </div>
+
+              <div class="sec-title"><h2>参考信息</h2><span>系统自动带出</span></div>
+              <div class="card">
+                <dl class="kv"><dt>客户本月贡献</dt><dd>412 万运费 · 排第 2</dd></dl>
+                <dl class="kv"><dt>客户回款情况</dt><dd>近 6 个月无逾期</dd></dl>
+                <dl class="kv"><dt>这条线路历史</dt><dd>跑过 3 次，均价 ¥4,180 / 台</dd></dl>
+                <dl class="kv"><dt>预计承运成本</dt><dd>¥13,760（走鑫达）</dd></dl>
+                <dl class="kv"><dt>这一单毛利</dt><dd><span style="color:var(--danger);font-weight:650">¥1,640 · 10.6%</span></dd></dl>
+                <dl class="kv"><dt>同类特价</dt><dd>本月已批 2 单，平均让价 6.2%</dd></dl>
+              </div>
+
+              <div class="sec-title"><h2>审批链</h2></div>
+              <div class="card">
+                <div class="flow">
+                  <div class="flow__n done"><span class="flow__d"><span data-icon="check"></span></span><span>李敏<br>提交</span></div>
+                  <i class="flow__l done"></i>
+                  <div class="flow__n done"><span class="flow__d"><span data-icon="check"></span></span><span>赵倩<br>财务复核</span></div>
+                  <i class="flow__l"></i>
+                  <div class="flow__n now"><span class="flow__d">你</span><span>陈总<br>放行</span></div>
+                  <i class="flow__l"></i>
+                  <div class="flow__n"><span class="flow__d"><span data-icon="file"></span></span><span>生成<br>特价合同</span></div>
+                </div>
+                <p class="t-cap" style="margin:14px 0 0">赵倩 08-09 09:10 复核意见：客户资信没问题，价格确实偏低，请陈总定。</p>
+              </div>
+            </div>
+
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost is-narrow" data-sheet="transfer" aria-label="转交"><span data-icon="swap"></span></button>
+            <button class="btn btn--danger" data-sheet="reject"><span data-icon="x"></span>驳回</button>
+            <button class="btn btn--primary" data-dialog="pass"><span data-icon="check"></span>通过</button>
+          </div>
+        </section>
+
+        <!-- 已处理 -->
+        <section class="screen" data-screen="done" data-title="已处理记录" data-nav="已处理" data-parent="list">
+          <div class="scroll">
+            <div class="pad">
+              <p class="t-cap" style="padding:0 2px 10px">本月你处理了 68 件，平均响应 42 分钟</p>
+              <div class="card card--plain">
+                <div class="cell cell--static"><div class="cell__ico is-green"><span data-icon="check"></span></div><div class="cell__main"><div class="cell__t">FD26080900297 承运商结算</div><div class="cell__s">今日 10:20 通过 · ¥18,900</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-red"><span data-icon="x"></span></div><div class="cell__main"><div class="cell__t">PR26080800009 特价审批</div><div class="cell__s">昨日 17:40 驳回 · 让价 12% 太多</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-green"><span data-icon="check"></span></div><div class="cell__main"><div class="cell__t">FD26080800271 司机结算</div><div class="cell__s">昨日 09:15 通过 · ¥26,800</div></div></div>
+                <div class="cell cell--static"><div class="cell__ico is-amber"><span data-icon="swap"></span></div><div class="cell__main"><div class="cell__t">FD26080700188 补款单</div><div class="cell__s">08-07 转交给赵倩处理</div></div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 空态 -->
+        <section class="screen" data-screen="empty" data-title="没有待批" data-nav="审批中心" data-parent="list">
+          <div class="scroll">
+            <div class="empty">
+              <div class="empty__ico" style="background:var(--success-soft);color:var(--success)"><span data-icon="checkc"></span></div>
+              <h3>没有等你的事</h3>
+              <p>待审批都处理完了。<br>有新的会推微信服务通知给你，不用一直开着看。</p>
+              <button class="btn btn--ghost" data-push="done">看已处理的</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 其余 tab -->
+        <section class="screen" data-screen="msgtab" data-title="消息 tab" data-tabroot data-nav="消息">
+          <div class="scroll"><p class="t-cap center mt-20">消息中心的完整设计见 13</p></div>
+        </section>
+        <section class="screen" data-screen="pool" data-title="调度 tab" data-tabroot data-nav="调度工作台">
+          <div class="scroll"><p class="t-cap center mt-20">五阶段调度工作台的完整设计见 05</p></div>
+        </section>
+        <section class="screen" data-screen="data" data-title="数据 tab" data-tabroot data-nav="数据">
+          <div class="scroll"><p class="t-cap center mt-20">经营驾驶舱见 03，运营看板见 11</p></div>
+        </section>
+        <section class="screen" data-screen="mine" data-title="我的 tab" data-tabroot data-nav="我的">
+          <div class="scroll"><p class="t-cap center mt-20">个人中心与设置的完整设计见 14</p></div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab">
+        <button class="tabi" data-tab="list"><span data-icon="grid"></span>工作台</button>
+        <button class="tabi" data-tab="pool"><span data-icon="route"></span>调度</button>
+        <button class="tabi" data-tab="data"><span data-icon="chart"></span>数据</button>
+        <button class="tabi" data-tab="msgtab"><span data-icon="msg"></span>消息<i class="tabi__dot">7</i></button>
+        <button class="tabi" data-tab="mine"><span data-icon="user"></span>我的</button>
+      </nav>
+      <div class="mp__home"><i></i></div>
+
+      <div class="dialog" data-dialog-id="pass">
+        <div class="dialog__body">
+          <h3>通过这一单特价？</h3>
+          <p>¥15,400，比底价低 8.3%，毛利率 10.6%。<br>通过后会生成特价记录，下次同线路报价会参考这一次。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>再想想</button>
+          <button class="is-main" data-sheet-close data-toast="已通过，李敏会收到通知">通过</button>
+        </div>
+      </div>
+
+      <div class="dialog" data-dialog-id="passall">
+        <div class="dialog__body">
+          <h3>一起批 2 件常规单？</h3>
+          <p>司机结算 ¥28,400 + 补款单 ¥1,860，合计 ¥30,260。<br>都在你的额度内，也都有财务复核过。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>我再看看</button>
+          <button class="is-main" data-sheet-close data-toast="2 件已通过，赵倩会收到通知">一起批</button>
+        </div>
+      </div>
+
+      <div class="sheet" data-sheet-id="reject">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>驳回</h3><p>理由会直接发给提交人，写清楚能少一轮来回</p></div>
+        <div class="sheet__body">
+          <div class="field">
+            <div class="field__l">常用理由</div>
+            <div class="chipbar">
+              <button class="chip" aria-selected="true">让价太多</button>
+              <button class="chip">先跟客户再谈谈</button>
+              <button class="chip">缺附件</button>
+              <button class="chip">金额对不上</button>
+              <button class="chip">走错流程</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field__l">说明<span class="req">*</span></div>
+            <textarea class="textarea" rows="3">让 8% 太多了。跟客户说这条线我们最多让到 4,050 一台，也就是 16,200。如果客户坚持 15,000，让他把常规线路的量再加两车，我们打包算。</textarea>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--danger" data-sheet-close data-toast="已驳回，李敏会收到你的说明">确认驳回</button>
+        </div>
+      </div>
+
+      <div class="sheet" data-sheet-id="transfer">
+        <div class="sheet__grab"><i></i></div>
+        <div class="sheet__head"><h3>转交给别人</h3><p>转交后这一件不再占你的待办</p></div>
+        <div class="sheet__body">
+          <div class="radios">
+            <div class="radio" role="radio" aria-checked="true"><span class="radio__m"></span><div><b>赵倩 · 财务负责人</b><span>有全额审批权限</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>孙志强 · 运营总监</b><span>管华东线路定价</span></div></div>
+            <div class="radio" role="radio" aria-checked="false"><span class="radio__m"></span><div><b>加签给赵倩，我最后批</b><span>她先看，再回到你这里</span></div></div>
+          </div>
+          <div class="field">
+            <div class="field__l">给对方留句话</div>
+            <textarea class="textarea" rows="2" placeholder="比如：你先看下客户资信，没问题就批">你先跟李敏确认下浙运达是不是真报了 15,000，是的话我再定。</textarea>
+          </div>
+        </div>
+        <div class="sheet__foot">
+          <button class="btn btn--ghost" data-sheet-close>取消</button>
+          <button class="btn btn--primary" data-sheet-close data-toast="已转交给赵倩">确认转交</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>

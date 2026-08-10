@@ -1,199 +1,198 @@
-# 智途移动端微信小程序 · 高保真原型设计规范（v2）
+# 移动端高保真原型规范
 
-> 本规范在 v1（pt-head 文档壳 + TDesign 色板）基础上，融合 [apple-design](.cursor/skills/apple-design) 的物理交互与材质语言，以及 [frontend-design](.cursor/skills/frontend-design) 的业务扎根审美要求。  
-> 实现载体：`assets/mp.css` + `assets/mp.js`，双端通过 `body[data-app="driver|admin"]` 换肤。
-
----
-
-## 1. 设计前提
-
-| 维度 | 驾驶员端 | 后台人员端 |
-|------|----------|------------|
-| 用户 | 户外作业的司机，单手、强光、网络不稳 | 老板/调度/财务/车队长，碎片时间移动办公 |
-| 页面唯一任务 | **现在最该处理的那一件事**（接调令、装车、看钱） | **按角色看最痛的三指标 + 一键进深页** |
-| 气质关键词 | 可靠、清晰、行动导向、不花哨 | 专业、克制、数据可信、权限可理解 |
-
----
-
-## 2. 设计 Token
-
-### 2.1 色彩 Color
-
-**驾驶员端（driver）** — 公路与调度蓝 + 暖橙 urgency
-
-| Token | 色值 | 用途 |
-|-------|------|------|
-| `--brand` | `#1d4ed8` | 主操作、导航、链接（对齐 `driver-mp/app.json`） |
-| `--brand-deep` | `#1e3a8a` | Hero 渐变深部 |
-| `--accent-warm` | `#e8871e` | **记忆点**：待办置顶、紧急调令、需立即处理 |
-| `--accent-warm-soft` | `#fef3e2` | 暖色提示背景 |
-| `--page` | `#f1f4f9` | 页面底色（微冷灰，户外可读） |
-| `--card` | `#ffffff` | 卡片表面 |
-| `--line` | `rgba(15,23,42,0.06)` | 发丝分割线 |
-
-**后台人员端（admin）** — TDesign 企业蓝 + 中性办公灰
-
-| Token | 色值 | 用途 |
-|-------|------|------|
-| `--brand` | `#0052d9` | 主色（对齐 TDesign / admin-mp） |
-| `--page` | `#f3f3f3` | 页面底 |
-| KPI 正/警示 | `--success` / `--warning` / `--danger` | 角色首屏指标语义色 |
-
-**共用语义色**：success / warning / danger / info 仅用于状态，不做装饰渐变。
-
-### 2.2 字体 Type
-
-| 角色 | 字体 | 字号 | 字距 | 行高 |
-|------|------|------|------|------|
-| 展示（金额、大 KPI） | `--mono`（DIN Alternate / SF Mono） | 28–32px | `-0.02em` | 1.1 |
-| 标题（任务名、模块 hd） | `--font` PingFang SC | 16–18px | `-0.015em` | 1.25 |
-| 正文 | `--font` | 14px | `0` | 1.55 |
-| 标签/Tab/chip | `--font` | 11–12px | `+0.02em` | 1.35 |
-
-原则（apple-design §15）：**大字收紧、小字略放**，禁止全局统一 `letter-spacing`。
-
-### 2.3 间距与圆角
-
-| Token | 值 | 说明 |
-|-------|-----|------|
-| `--r` | 14px | 卡片 |
-| `--r-s` | 10px | 按钮、输入 |
-| `--r-xs` | 6px | chip |
-| 页面水平边距 | 12px | 与微信小程序惯例一致 |
-| 卡片间距 | 10px | 列表密度适中 |
-
-### 2.4 阴影与材质（apple-design §12）
-
-| 层级 | 样式 |
-|------|------|
-| 卡片 | 轻阴影 + 1px 发丝描边，避免「重 SaaS 阴影」 |
-| tabBar / action-bar | **半透明材质**：`backdrop-filter: blur(20px) saturate(180%)` + 白色 78% 透明度 |
-| Hero | 165deg 渐变 + 径向深部，内容滚动于其下时 tabBar 仍可读 |
-| Sheet / Modal | 背景 dim +  sheet 从底部同路径进出（spatial consistency） |
-
-### 2.5 动效 Motion
-
-| 场景 | 实现 | 参数 |
-|------|------|------|
-| 按钮/Cell 按下 | `transform: scale(0.97)` | 120ms，`ease-out`，**pointer-down 即反馈** |
-| 默认过渡 | opacity / transform | 280ms，`cubic-bezier(0.16,1,0.3,1)` 近似 critically damped |
-| 抽屉/Sheet | translateY | 禁止仅 end-state 动画；原型用 CSS 示意 |
-| 画廊切屏 | `scrollIntoView smooth` | 键盘 ← → |
-| 减少动效 | `@media (prefers-reduced-motion: reduce)` | 改 cross-fade，去掉 scale |
-
----
-
-## 3. 记忆点 Signature（frontend-design §2.1）
-
-### 驾驶员端：**「待办置顶卡」**
-
-- 左侧 4px `--accent-warm` 竖条 + 白卡片
-- 文案直接说业务动作：「新调令待接 · TK031」「回单还没传」
-- 不是四个 KPI 数字墙——**一件事比四个数更重要**
-
-### 后台端：**「角色玻璃 KPI 带」**
-
-- Hero 内 KPI 使用半透明白底 + blur（`.kpis .kpi`）
-- 调度/老板/财务/车队长四套首屏，同一 tabBar、不同信息优先级
-- 老板看风险清单，财务看金额队列，调度看待派与异常
-
----
-
-## 4. 组件规范
-
-### 4.1 导航
-
-- **tabBar**：4 项固定；未授权 tab 置灰（opacity 0.35），不可进入空白页
-- **二级页**：浅色导航 `wx-head.onpage`，返回 ‹ + 标题居中
-- **wx-body**：可滚动区；内容与 floating tabBar 之间留 safe-area
-
-### 4.2 反馈四类型（apple-design §16）
-
-| 类型 | 示例 |
-|------|------|
-| status | 正在确认装车，请稍候… |
-| completion | 已成功签收 3 单 |
-| warning | 余额为负，请联系财务核对 |
-| error | 登记失败，请稍后重试（无 HTTP/字段名） |
-
-### 4.3 任务卡 / 列表
-
-- 状态 chip + 任务号（mono）+ 路线 meta 同行
-- 列表默认「进行中」Tab；空态给下一步行动
-
-### 4.4 Sheet / ActionSheet
-
-- 从底弹出，带 handle；驳回/拒单原因必填
-- 背景内容 dim + blur，mask 可点关闭
-
----
-
-## 5. 避免的模板化倾向（frontend-design §3.1）
-
-- ❌ 大渐变 + 三栏统计 + 玻璃拟态到处滥用
-- ❌ 纯英文/技术错误码直出
-- ❌ 所有模块同一套 KPI 四宫格
-- ❌ 无来源的装饰编号
-- ✅ 每个模块 `pt-intent` 写清**设计判断**
-- ✅ P0/P1/P2 badge 标注与代码差距
-- ✅ 演示数据统一：TK031、王建军、皖通汽车物流、李敏/张总/赵倩/陈队
-
----
-
-## 6. 模块与文件
+本目录下两个微信小程序原型的统一设计与实现规范。融合 `apple-design`（流体交互、材质与排版）与 `frontend-design`（视觉完成度、文案）两套方法。
 
 ```text
-prototype/移动端/
-├── DESIGN.md          ← 本文件
-├── 驾驶员微信小程序/   ← 14 × HTML + assets
-└── 后台人员微信小程序/ ← 12 × HTML + assets
+移动端/
+  DESIGN.md
+  驾驶员微信小程序/   assets/{mp.css,mp.js} + 01…13.html
+  后台人员微信小程序/ assets/{mp.css,mp.js} + 01…14.html
 ```
 
-HTML 结构不变：`pt-head` → `pt-gallery`（board × N）→ `pt-rules` → `assets/mp.js`。
+每个 HTML 是一条可独立预览的原型（Console「文档中心 → 设计对接」按文件预览）。两端各自持有一份 assets，互不依赖，可离线打开。
 
 ---
 
-## 7. 自检清单（交付前）
+## 一、产品分工
 
-1. 首屏是否有明确视觉重心？
-2. tabBar / action-bar 是否材质化（blur）？
-3. 按钮是否有按下缩放反馈？
-4. 大字 KPI 是否 negative tracking？
-5. 是否支持 `prefers-reduced-motion`？
-6. 26 个 HTML 是否均可引用 `assets/mp.css|js`？
-7. 驾驶员待办卡是否有暖色左条记忆点？
-8. 后台四套角色首屏是否信息优先级不同？
+移动端不是 PC 的缩小版。PC 租户端 11 个一级模块 / 68 页，手机只承接三件事：
 
----
+| 场景 | 人群 | 手机的不可替代性 |
+|---|---|---|
+| 现场作业 | 驾驶员 | 拍照、定位、随手上报，手机是唯一终端 |
+| 离位补位 | 调度、审批人 | 人不在工位但事不能等：派车、催单、放行 |
+| 随时看数 | 老板、财务 | 只读为主，动作极轻 |
 
-## 8. 参考
-
-- 产品需求：`doc/02.需求文档/03.移动端/02.驾驶员H5端/`
-- 实现对照：`frontend/driver-mp/`、`frontend/admin-mp/`
-- 交互技能：`.cursor/skills/apple-design/SKILL.md`
-- 视觉技能：`.cursor/skills/frontend-design/SKILL.md`
+留在 PC：运价合同配置、审批流画布、智能配载、开放平台、批量档案维护、完整对账开票。
 
 ---
 
-## 9. 设备壳 v3（iPhone 15 + 微信官方顶栏）
+## 二、设计 Token
 
-| 组件 | 规格 |
-|------|------|
-| 外框 | 钛金属渐变 bezel，54px 圆角，侧键/电源键伪元素 |
-| 内屏 | 375×812，46px 圆角 |
-| Dynamic Island | 122×34px，居中，含摄像头点缀 |
-| Home Indicator | 134×5px 底部横条 |
-| 状态栏 | 高 47px，SF Pro 时间 + 信号/WiFi/电池 SVG |
-| 微信胶囊 | 87×32px，0.5px 描边，三点 + 分隔 + 关闭圆环 |
-| 导航栏 | 高 44px，标题 17px/600，返回 ‹ 左对齐 |
+两端共用间距 / 圆角 / 字阶 / 状态色；主色与信息密度按人群分化。
 
-运行时由 `assets/mp.js` 的 `wrapDevices()` + `buildChrome()` 自动注入，HTML 只需保留：
+### 色彩
 
-```html
-<div class="dev">
-  <div class="wx-head onpage">
-    <div class="wx-nav" data-back><span class="ttl">页面标题</span></div>
-  </div>
-  <div class="wx-body scroll">...</div>
-</div>
-```
+| 角色 | 驾驶员端 | 后台人员端 | 用途 |
+|---|---|---|---|
+| 主色 primary | `#1D4ED8` | `#2F54EB` | 主按钮、选中态、进度填充 |
+| 主色浅 soft | `#EAF0FF` | `#EEF2FF` | 主色背景块、选中底 |
+| 主色深 deep | `#1B3BA3` | `#1F3BC4` | 按下态、深色标题 |
+| 强调 accent | `#F5A524` 工程警示黄 | `#FA8C16` 预警橙 | 唯一的行动/预警强调色 |
+| 成功 | `#16A34A` | `#16A34A` | 已完成、已签收 |
+| 警告 | `#F59E0B` | `#F59E0B` | 临期、待处理 |
+| 危险 | `#DC2626` | `#DC2626` | 超时、拒绝、删除 |
+| 信息 | `#0EA5E9` | `#0EA5E9` | 在途、进行中 |
+| 墨色 ink | `#0F172A` | `#0F172A` | 标题、关键数字 |
+| 次级文字 | `#5A6779` | `#5A6779` | 说明、字段名 |
+| 弱文字 | `#94A3B8` | `#94A3B8` | 时间戳、占位 |
+| 分割线 | `#E7EBF3` | `#E5E9F2` | 1px 描边 |
+| 页面底 | `#F4F6FB` | `#F1F4F9` | 小程序页面背景 |
+| 卡片 | `#FFFFFF` | `#FFFFFF` | 内容承载 |
+
+强调色只做一件事：把当前唯一该做的动作推到眼前。一屏最多出现一处。
+
+### 字阶
+
+驾驶员端整体上浮一档（人群年龄偏大、户外强光、戴手套）：
+
+| 名称 | 驾驶员 | 后台 | 字重 | 字距 | 用途 |
+|---|---|---|---|---|---|
+| display | 32px | 28px | 700 | -0.02em | 金额、核心数字 |
+| h1 | 22px | 20px | 650 | -0.01em | 页面主标题 |
+| h2 | 18px | 17px | 600 | -0.005em | 区块标题 |
+| body | 16px | 15px | 400 | 0 | 正文 |
+| label | 14px | 13px | 500 | 0 | 字段名、按钮 |
+| caption | 12px | 12px | 400 | +0.01em | 时间、辅助 |
+
+行高：大字紧（1.15–1.25），正文松（1.55）。所有数字加 `font-variant-numeric: tabular-nums`，保证跳变时不抖。
+
+字体栈：`-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif`；单号、车牌用 `ui-monospace, "SF Mono", Menlo` 增强识别。
+
+### 间距 / 圆角 / 阴影
+
+- 间距梯度：`4 / 8 / 12 / 16 / 20 / 24 / 32`，页面左右安全边距 16px
+- 圆角：控件 10px，卡片 16px，大卡与弹层 20px，胶囊 999px
+- 阴影分三层，越大的面越"厚"：
+  - `card` `0 1px 2px rgba(15,23,42,.04), 0 6px 16px -8px rgba(15,23,42,.10)`
+  - `float` `0 2px 6px rgba(15,23,42,.06), 0 16px 32px -12px rgba(15,23,42,.16)`
+  - `sheet` `0 -8px 40px rgba(15,23,42,.18)`
+
+---
+
+## 三、微信小程序结构规范
+
+原型基于 iPhone 14 Pro 逻辑分辨率 **393×852**，设计稿基准 750rpx（1rpx ≈ 0.524px）。
+
+| 层 | 高度 | 规则 |
+|---|---|---|
+| 状态栏 | 54px | 灵动岛居中，左时间右信号/电量 |
+| 导航栏 | 44px | 标题居中，最多 8 个中文字；一级页无返回箭头 |
+| 胶囊按钮 | 32×87px | 右边距 7px，垂直居中于导航栏。**禁触区**，任何内容不得压入 |
+| 页面内容 | 自适应 | 背景 `--bg`，纵向滚动 |
+| tabBar | 50px | ≤5 项，图标 24px，文字 10px，选中主色 |
+| Home Indicator | 34px | 安全区，底部固定操作条必须避让 |
+
+其他约束：
+
+- 页面栈最多 10 层；原型内 push 深度不超过 3 层
+- 半屏弹层高度 ≤ 屏高 90%，顶部留 24px 拖拽把手
+- 授权行为（手机号、位置、相机、订阅消息）一律走微信原生样式弹窗，不自造
+- 最小点击区 44×44px；驾驶员端主动作按钮高度 52px
+
+---
+
+## 四、动效规范
+
+一切可被手指碰到的东西用弹簧，不用固定时长的 transition。
+
+| 场景 | damping | response | 说明 |
+|---|---|---|---|
+| 默认 UI（页面进出、展开） | 1.0 | 0.35s | 临界阻尼，不过冲 |
+| 手势释放（sheet、左滑、卡带） | 0.8 | 0.32s | 只有手势带了动量才允许回弹 |
+| 位移 / 重定位 | 1.0 | 0.40s | |
+| 按压反馈 | — | 100ms ease-out | `scale(.97)`，**pointerdown 即触发**，不等 click |
+
+铁律：
+
+1. **动画永远从当前呈现值开始**，不是从目标值。中断时读实时 transform 续接，杜绝跳变。
+2. **拖拽 1:1 跟手**，尊重抓取偏移；用 `setPointerCapture`，记录最近几帧速度。
+3. **松手用动量投射决定落点**：`end = current + (v/1000)·0.998/(1−0.998)`，再对最近吸附点做弹簧，并把释放速度作为初速传入。
+4. **边界橡皮筋**，不硬停：`(overshoot·d·0.55)/(d + 0.55·|overshoot|)`。
+5. **进出同路径**：右侧推入的页面必须向右退出；弹层从触发元素的方向生长。
+6. 只动 `transform` 与 `opacity`。
+
+降级：`prefers-reduced-motion` 下全部改为 160ms 透明度渐变、取消位移与回弹；`prefers-reduced-transparency` 下毛玻璃改为实色；`prefers-contrast: more` 下加实描边。
+
+---
+
+## 五、组件清单
+
+运行时 `mp.js` 提供的声明式行为（写在 HTML 属性上，无需写脚本）：
+
+| 属性 | 行为 |
+|---|---|
+| `data-screen="id"` `data-title="名"` | 声明一屏，自动进入顶部屏幕索引 |
+| `data-tab="id"` | tabBar 切换（交叉淡入，无位移） |
+| `data-push="id"` | 入栈，右侧推入 + 左边缘手势返回 |
+| `data-back` | 出栈 |
+| `data-sheet="id"` / `data-sheet-close` | 半屏弹层，可拖拽下拉关闭 |
+| `data-dialog="id"` | 居中对话框 / 微信授权弹窗 |
+| `data-toast="文案"` `data-toast-icon="ok\|warn"` | 轻提示 |
+| `data-refresh` | 下拉刷新（橡皮筋 + 动量） |
+| `data-swipe` | 列表行左滑露出操作 |
+| `data-icon="name"` | 注入描边图标（`mp.js` 内置 60+ 个） |
+| `data-count-to="1280"` `data-count-dec="1"` | 数字滚动 |
+| `data-root="id"` | 直接换根屏（用于「回调度台」这类收尾动作） |
+| `data-then="id"` / `data-then-root="id"` | 弹层关闭后再跳转 |
+| `data-nav-hide="1"` `data-status-light="1"` `data-mpbg="#0b132e"` | 沉浸式页头：隐藏导航栏、状态栏文字反白、顶部底色与头图同色 |
+| `data-seg` | 分段器滑块跟随 |
+| `data-stage="s1"` + `data-stage-panel="s1"` | 五阶段卡带切档，列表 6px 上浮淡入 |
+| `data-role="disp\|boss\|fin"` + `data-role-panel` | 角色视图切换，切换后重跑数字滚动 |
+| `data-mode="pick"` / `data-mode="!pick"` | 进出批量选择模式（自动禁用左滑操作） |
+| `data-pick-count` / `data-pick-disable` | 批量已选计数、无选中时禁用主操作 |
+| `.cap` + `data-mv/-mm/-mc/-label` | 运力候选单选，联动底部毛利即时反馈条 |
+
+视觉组件：
+
+- **两端共用**：`card` / `cell` / `tag` / `btn` / `seg` / `chipbar` / `sticky` / `stat` / `kv` / `tl`（时间轴）/ `photos` / `empty` / `notice` / `bars` / `donut` / `trend` / `spark` / `sheet` / `dialog` / `asheet` / `toast` / `swipe`
+- **驾驶员端专属**：`ticket`（票据质感调令卡）/ `road`（公路进度线）/ `countbox` / `wallethd` / `mbars`
+- **后台端专属**：`band` + `bcard`（五阶段泳道卡带）/ `row`（高密度任务行）/ `kpis` / `roles`（角色切换器）/ `todos` / `cap`（运力候选卡）/ `margin`（毛利即时反馈条）/ `pickbar`（批量操作条）/ `ap`（审批卡）/ `fee`（费用单行）/ `rank`（排行条）/ `health`（健康度环）/ `flow`（审批链）/ `cardhd`（名片头）/ `wxn`（微信服务通知还原）
+
+### 两个记忆点
+
+| | 驾驶员端 | 后台人员端 |
+|---|---|---|
+| 形态 | 票据质感调令卡 + 公路进度线 | 五阶段泳道卡带 |
+| 内容 | 钢印式任务号、齿孔上边缘，装车 → 出发 → 到达 → 签收四个路标点随状态弹簧点亮 | 待分配 / 待派车 / 待装车 / 在途 / 待签收 横向滑动，选中档深蓝实心 + 琥珀左标，超时数缓慢呼吸 |
+| 为什么是它 | 司机认「派车单」这个实物，数字化不该丢掉这个心智 | 调度的一天就是把任务从左往右推，界面应该长得像这件事 |
+
+派车页还有一个次级记忆点：**毛利即时反馈条**。选哪个承运方，底部毛利率立刻跟着变，灰刻度是公司底线 12%，低于底线变红并提示要走特价审批。
+
+---
+
+## 六、文案
+
+遵循 `.cursor/rules/humanized-ux-copy.mdc`。原型里的业务术语一律取自代码，不自造：
+
+- 计划域叫**计划**（waybill），执行域叫**任务单**（task），不混称"运单/订单"
+- 任务状态：待分配 / 待派车 / 已派车 / 已装车 / 在途 / 已到达 / 已签收 / 已关闭 / 已取消
+- 计划状态：待确认 / 待调度 / 调度中 / 运输中 / 待签收 / 已签收 / 已回单 / 已关闭
+- 费用单状态：草稿 / 待审批 / 已审批 / 已支付 / 已撤销；支付方式含油卡、油气款
+- 承运方式：自有车 / 承运商 / 社会运力
+- 经营指标：计划运费、计划数、商品车数量、服务客户数、毛利率
+
+等待用「请稍候」；失败必须给下一步，不写"系统异常""请求失败"。
+
+---
+
+## 七、验收清单
+
+- 首屏有明确视觉重心，不像默认组件堆叠
+- 一屏只有一个强调色动作
+- 所有交互在 pointerdown 就有反馈
+- 任何动画都能被中途抓住并反向
+- 空状态、错误态、加载态都有设计
+- reduced-motion 下仍然可用且不突兀
+- 胶囊按钮禁触区无内容侵入
+- 底部固定操作条已避让 Home Indicator

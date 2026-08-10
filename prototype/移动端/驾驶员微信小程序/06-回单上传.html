@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>驾驶员微信小程序 · 回单上传</title>
+<link rel="stylesheet" href="assets/mp.css">
+<style>
+  .upitem { display: flex; gap: 11px; align-items: center; padding: 11px 0; }
+  .upitem + .upitem { border-top: 1px solid var(--line-soft); }
+  .upthumb { width: 46px; height: 46px; border-radius: 10px; background: linear-gradient(135deg,#dfe6f2,#c9d4e6); display: grid; place-items: center; color: #7d8ba1; flex: none; }
+  .upbar { height: 4px; border-radius: 999px; background: var(--line-soft); overflow: hidden; margin-top: 7px; }
+  .upbar i { display: block; height: 100%; background: var(--primary); border-radius: 999px; }
+  .tipcard { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; }
+  .tipcard div { text-align: center; padding: 13px 6px; border-radius: 12px; background: #f5f7fb; }
+  .tipcard i { display: grid; place-items: center; width: 34px; height: 34px; margin: 0 auto 8px; border-radius: 11px; background: #fff; color: var(--primary); }
+  .tipcard b { display: block; font-size: 12.5px; font-weight: 600; }
+  .tipcard span { display: block; font-size: 11px; color: var(--ink-3); margin-top: 3px; line-height: 1.4; }
+  .tipcard .bad i { color: var(--danger); }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="stage__info">
+    <p class="stage__eyebrow">Driver Mini Program · 06</p>
+    <h1 class="stage__title">回单上传</h1>
+    <p class="stage__desc">纸质回单是这条链上最后一块拼图。传不上来，计划走不到「已回单」，结算单也生不出来，司机的钱就卡着。所以这一屏要做到：拍完就传，传失败自动重试。</p>
+    <div class="stage__chips" data-screen-index></div>
+    <div class="stage__notes">
+      <h3>设计说明</h3>
+      <ul>
+        <li>把「传回单」和「拿到钱」<b>直接挂钩</b>写在页面上。司机不是不愿传，是不知道传了有什么用。</li>
+        <li>上传<b>逐张显示进度</b>，失败单独标红并给「重传」，不因为一张失败就整批回滚。工地、地库信号差是常态。</li>
+        <li>拍照示例做成<b>正例 / 反例对照</b>，比写一段"请确保清晰完整"有用得多。</li>
+        <li>审核结果回到<b>消息 + 任务详情</b>两个地方，被打回时写清楚打回原因和要怎么补。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="device">
+    <div class="mp">
+      <div class="mp__status"></div>
+      <div class="mp__nav"></div>
+
+      <div class="mp__body">
+
+        <!-- 待传列表 -->
+        <section class="screen" data-screen="todo" data-title="待传回单" data-nav="上传回单" data-start>
+          <div class="scroll" data-refresh>
+            <div class="notice mt-8">
+              <span data-icon="warn"></span>
+              <div><b>3 单还没传回单，涉及 ¥7,900 结算</b><br>回单到位后结算单才会生成，最快当天就能走审批。</div>
+            </div>
+
+            <div class="sec-title"><h2>等你上传</h2><span>3 单</span></div>
+
+            <div class="card card--plain">
+              <div class="cell" data-push="upload">
+                <div class="cell__ico is-amber"><span data-icon="camera"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t">南京江宁库 → 苏州吴中 4S 店</div>
+                  <div class="cell__s">3 台 · 今天 13:20 签收</div>
+                </div>
+                <div class="cell__x"><span class="tag tag--amber">待上传</span></div>
+              </div>
+              <div class="cell" data-push="upload">
+                <div class="cell__ico is-amber"><span data-icon="camera"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t">南京江宁库 → 镇江丹徒仓</div>
+                  <div class="cell__s">6 台 · 3 天前签收</div>
+                </div>
+                <div class="cell__x"><span class="tag tag--danger">已超 3 天</span></div>
+              </div>
+              <div class="cell" data-push="rejected">
+                <div class="cell__ico is-red"><span data-icon="warn"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t">上汽仪征基地 → 常州武进库</div>
+                  <div class="cell__s">8 台 · 回单被打回</div>
+                </div>
+                <div class="cell__x"><span class="tag tag--danger">需重传</span></div>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>已通过</h2><span>本月 20 单</span></div>
+            <div class="card card--plain">
+              <div class="cell cell--static">
+                <div class="cell__ico is-green"><span data-icon="checkc"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t">南京江宁库 → 无锡新吴 4S 店</div>
+                  <div class="cell__s">08-08 18:02 通过</div>
+                </div>
+                <div class="cell__x">4 张</div>
+              </div>
+              <div class="cell cell--static">
+                <div class="cell__ico is-green"><span data-icon="checkc"></span></div>
+                <div class="cell__main">
+                  <div class="cell__t">上汽仪征基地 → 扬州邗江仓</div>
+                  <div class="cell__s">08-05 19:40 通过</div>
+                </div>
+                <div class="cell__x">2 张</div>
+              </div>
+            </div>
+
+            <p class="t-cap center mt-20">纸质回单照样要交给车管，这里先拍一份，结算就能提前走</p>
+          </div>
+        </section>
+
+        <!-- 上传中 -->
+        <section class="screen" data-screen="upload" data-title="拍照上传" data-nav="TK2608090044 回单" data-parent="todo">
+          <div class="scroll">
+            <div class="card mt-8">
+              <div class="hstack">
+                <div class="grow">
+                  <div class="cell__t">南京江宁库 → 苏州吴中 4S 店</div>
+                  <div class="cell__s t-mono" style="margin-top:4px">3 台 · 今天 13:20 全部签收</div>
+                </div>
+                <span class="tag tag--ok">已签收</span>
+              </div>
+              <hr class="sep">
+              <div class="hstack" style="gap:8px">
+                <span data-icon="wallet" style="color:var(--success)"></span>
+                <span class="t-label">传完这单可结算 <b class="money" style="color:var(--success)">¥1,850</b></span>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>回单照片</h2><span>已选 3 / 9 张</span></div>
+            <div class="card">
+              <div class="photos">
+                <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+                <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+                <div class="photo"><span data-icon="image"></span><div class="photo__x"><span data-icon="x"></span></div></div>
+                <div class="photo photo--add"><span data-icon="camera"></span><span>拍照</span></div>
+                <div class="photo photo--add"><span data-icon="image"></span><span>从相册选</span></div>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>上传进度</h2></div>
+            <div class="card">
+              <div class="upitem">
+                <div class="upthumb"><span data-icon="image"></span></div>
+                <div class="grow">
+                  <div class="hstack"><span class="t-label">回单正面.jpg</span><span class="t-cap ml-auto" style="color:var(--success)">已上传</span></div>
+                  <div class="upbar"><i style="width:100%;background:var(--success)"></i></div>
+                </div>
+              </div>
+              <div class="upitem">
+                <div class="upthumb"><span data-icon="image"></span></div>
+                <div class="grow">
+                  <div class="hstack"><span class="t-label">签字页.jpg</span><span class="t-cap ml-auto">68%</span></div>
+                  <div class="upbar"><i style="width:68%"></i></div>
+                </div>
+              </div>
+              <div class="upitem">
+                <div class="upthumb" style="background:var(--danger-soft);color:var(--danger)"><span data-icon="warn"></span></div>
+                <div class="grow">
+                  <div class="hstack"><span class="t-label">车辆交接单.jpg</span><span class="t-cap ml-auto" style="color:var(--danger)">网络断了</span></div>
+                  <div class="t-cap" style="margin-top:4px">这张没传上去，点右边重传，不影响另外两张</div>
+                </div>
+                <button class="btn btn--sm">重传</button>
+              </div>
+            </div>
+
+            <div class="sec-title"><h2>怎么拍才不会被打回</h2></div>
+            <div class="card">
+              <div class="tipcard">
+                <div><i><span data-icon="checkc"></span></i><b>四角齐全</b><span>整张纸都在画面里</span></div>
+                <div><i><span data-icon="checkc"></span></i><b>签章清楚</b><span>收货签字和章能看清</span></div>
+                <div class="bad"><i><span data-icon="x"></span></i><b>别拍反光</b><span>避开灯和塑料膜</span></div>
+              </div>
+            </div>
+
+            <div class="field mt-12">
+              <div class="field__l">备注<span class="dim3">（选填）</span></div>
+              <textarea class="textarea" rows="2" placeholder="例如：收货方只盖了部门章，公司章周一补"></textarea>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost is-narrow" data-toast="草稿已保存，回头再传也行"><span data-icon="download"></span></button>
+            <button class="btn btn--primary btn--lg" data-dialog="confirm">提交回单（2 张）</button>
+          </div>
+        </section>
+
+        <!-- 被打回 -->
+        <section class="screen" data-screen="rejected" data-title="回单被打回" data-nav="TK2608070008 回单" data-parent="todo">
+          <div class="scroll">
+            <div class="notice notice--danger mt-8">
+              <span data-icon="warn"></span>
+              <div><b>回单被打回，需要重新拍一张</b><br>李敏（调度）08-08 09:12 备注：第 2 张签字页反光看不清收货人姓名，麻烦换个角度重拍。</div>
+            </div>
+
+            <div class="sec-title"><h2>原来上传的</h2><span>3 张 · 保留可对照</span></div>
+            <div class="card">
+              <div class="photos">
+                <div class="photo"><span data-icon="image"></span></div>
+                <div class="photo" style="outline:2px solid var(--danger);outline-offset:-2px"><span data-icon="image"></span></div>
+                <div class="photo"><span data-icon="image"></span></div>
+              </div>
+              <p class="t-cap" style="margin:11px 0 0">红框那张是被打回的，其余两张不用重传。</p>
+            </div>
+
+            <div class="sec-title"><h2>重新拍一张</h2></div>
+            <div class="card">
+              <div class="photos">
+                <div class="photo photo--add"><span data-icon="camera"></span><span>拍照</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost is-narrow" data-toast="正在呼叫调度员 李敏"><span data-icon="phone"></span></button>
+            <button class="btn btn--primary btn--lg" data-toast="已重新提交，审核通过会通知你" data-toast-icon="ok">重新提交</button>
+          </div>
+        </section>
+
+        <!-- 提交成功 -->
+        <section class="screen" data-screen="done" data-title="提交成功" data-nav="提交成功" data-parent="todo">
+          <div class="scroll">
+            <div style="padding:44px 8px 0;text-align:center">
+              <div style="width:78px;height:78px;margin:0 auto 20px;border-radius:26px;background:linear-gradient(150deg,#22c55e,#15803d);display:grid;place-items:center;color:#fff;box-shadow:0 14px 30px -12px rgba(22,163,74,.8)"><span data-icon="check"></span></div>
+              <div class="t-h1">回单已提交</div>
+              <p class="t-cap" style="margin:10px auto 0;max-width:24em;font-size:13.5px;line-height:1.7">调度审核通过后，这一单的结算单就会生成。通常当天就有结果。</p>
+            </div>
+
+            <div class="card mt-20">
+              <div class="tl">
+                <div class="tl__i is-done"><div class="tl__t">回单已提交</div><div class="tl__s">刚刚 · 3 张照片</div></div>
+                <div class="tl__i is-now"><div class="tl__t">等调度审核</div><div class="tl__s">李敏 · 一般 2 小时内</div></div>
+                <div class="tl__i"><div class="tl__t">生成结算单 ¥1,850</div><div class="tl__s">审核通过后自动生成</div></div>
+                <div class="tl__i"><div class="tl__t">财务打款</div><div class="tl__s">按公司结算周期</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn btn--ghost" data-back>返回列表</button>
+            <button class="btn btn--primary" data-toast="还有 2 单等你传">继续传下一单</button>
+          </div>
+        </section>
+
+      </div>
+
+      <nav class="mp__tab" style="display:none"></nav>
+      <div class="mp__home"><i></i></div>
+
+      <div class="dialog" data-dialog-id="confirm">
+        <div class="dialog__body">
+          <h3>还有 1 张没传上去</h3>
+          <p>「车辆交接单.jpg」上传失败。<br>现在提交就只有 2 张，调度可能会打回。</p>
+        </div>
+        <div class="dialog__acts">
+          <button data-sheet-close>先重传</button>
+          <button class="is-main" data-sheet-close data-then="done">仍然提交</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+<script src="assets/mp.js"></script>
+</body>
+</html>
