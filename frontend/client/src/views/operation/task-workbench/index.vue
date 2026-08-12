@@ -109,7 +109,7 @@
   const activeTab = ref<string>(resolveInitialTab());
   /** 与 KPI 卡片 key 一致（pending-assign、on-way 等） */
   const selectedPoolKey = ref<string>(resolveInitialTab());
-  /** KPI：全部 / 正常(常) / 预警(警) */
+  /** KPI：全部 / 常 / 关注 / 严重 */
   const listSubset = ref<WorkbenchListSubset>('all');
   const reloadToken = ref(0);
   /** 统一筛选条件（切换阶段卡时保留） */
@@ -124,14 +124,7 @@
     const search = searchWhere.value;
     const keyword = search.keyword?.trim();
     if (keyword) return { keyword };
-    const {
-      status: _s,
-      onlyOverdue: _o,
-      onlyNormal: _n,
-      inTransitOverdue: _io,
-      inTransitOnlyNormal: _in,
-      ...rest
-    } = { ...search };
+    const { status: _s, alertLevel: _a, ...rest } = { ...search };
     return rest;
   };
 

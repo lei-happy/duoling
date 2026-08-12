@@ -5,7 +5,7 @@ alwaysApply: true
 
 # 线上部署迁移对齐（deploy.sh）
 
-本地开发若涉及**数据表结构**、**迁移文件**或**系统菜单/功能/版本元数据**，合并前必须确保 `deploy/deploy.sh update` 能完整、幂等地跑通对应环节。
+本地开发若涉及**数据表结构**、**迁移文件**或**系统菜单/功能/版本元数据**，合并前必须确保 `deploy/deploy.sh update` 能完整、幂等地跑通对应环节，且**本地已实际生效**（不能只改文件不入库）。
 
 详细子规范：[database-migration.mdc](mdc:.cursor/rules/database-migration.mdc)、[backend/scripts/migration/README.md](mdc:backend/scripts/migration/README.md)、[backend/scripts/platform_sync/README.md](mdc:backend/scripts/platform_sync/README.md)。
 
@@ -22,7 +22,7 @@ drift 检查 → 平台库 alembic → 平台元数据 sync → 租户 runner �
 | 平台元数据 | `scripts.platform_sync sync` | 缺 `platform_sync/snapshots/*.json` 或未 export |
 | 租户 schema | `scripts.migration.runner` | 缺 `scripts/migration/versions/*.py` 或 `required_tables` 未配 |
 
-## 三类变更交付清单
+## 变更交付清单
 
 ### A. 建表 / 改列（ORM）
 
@@ -31,38 +31,103 @@ drift 检查 → 平台库 alembic → 平台元数据 sync → 租户 runner �
 1. `cd backend && python -m scripts.migration.check`（有 drift 才继续 2–4）
 2. autogen：`autogen tenant`（biz_*）或 `autogen platform`（sys_* / ai_* / open_*）
 3. 人工 review 迁移（NOT NULL 回填、类型截断、删列/重命名）
-4. 本地验证：`python -m scripts.dev.dev_migrate` 或 `platform_migrate` + `runner --dry-run`
+4. 本地验证：先 `runner --dry-run` 看计划，**再去掉 `--dry-run` 真正应用一次**
+   （`scripts.dev.dev_migrate` / `platform_migrate` 同理）。只跑 dry-run 等于没建表，
+   本地功能会报 `Table ... doesn't exist`；也不要手工 `create_all` 绕过，那样
+   `biz_migration_log` 不会留记录
 5. 一并提交：ORM、迁移文件、`scripts/migration/snapshots/*.json`
 
-**新增整表**：还要在 dev console 把表名写入对应 feature 的 `required_tables`，再 `platform_sync export`（runner Phase1 据此补表）。
+**新增整表**：还要把表名写入对应 feature 的 `required_tables`（runner Phase1 据此补表），走下面 B 节的同一套流程。
 
 ### B. 系统菜单 / 功能 / 版本
 
 事实源 = `backend/scripts/platform_sync/snapshots/*.json`（prod 靠 deploy 读仓库，不会读本地 console）。
 
-1. 在 dev console 配菜单 / feature / 版本关联
+> 注意与 A 节的 `scripts/migration/snapshots/`（drift 快照，禁止手编）区分：
+> 这里的 `platform_sync/snapshots/` 是菜单元数据事实源，允许手编，但**手编后必须入库**。
+
+**`platform_sync` 只负责「把 dev 库已有的搬到 prod」，不负责新功能首次入库。**
+快照里有、dev 库里没有 = 侧边栏永远不显示。两条路径二选一：
+
+**路径 1 — 有 dev console 权限（推荐）**
+
+1. console 配菜单 / feature / 版本关联
 2. `cd backend && python -m scripts.platform_sync export`
 3. 确认 export 校验通过（feature_code 存在、主键唯一）
-4. 一并提交 snapshots/ 变更
-5. 前端路由、总览页（如 `module-overview`、`routes.ts`）须与菜单 path/component 一致，**但不能替代 export**
 
-新模块若同时有新表：先完成 A，再 export。
+**路径 2 — 直接改快照（Agent 无 console 时走这条）**
 
-### C. 合并前自检（Agent 必做）
+1. 手工编辑 `platform_sync/snapshots/client_menu.json` / `product_feature.json`
+   - **id 必须先查空档**：`SELECT MAX(id) FROM sys_menu` 并确认目标区间无占用（含 `is_deleted=1` 的墓碑），撞号会让 seed 报错或抢占他人菜单
+   - 页面（`menu_type=0`）与权限点（`menu_type=1`）要一并补全
+2. 入库前先比对快照与库的差异，确认只多出自己新增的那几条，再执行：
+
+   ```bash
+   cd backend
+   python scripts/seed/seed_client_menus.py --insert-only  # 只插缺失，不覆盖 UI 配置、不软删
+   python scripts/seed/seed_product_features.py            # feature/required_tables，并自动 menu_version+1
+   ```
+
+3. 自检：seed 末尾「前端页面校验」须 0 缺失；`sys_menu` 中新菜单 `is_deleted=0`
+
+两条路径最后都要：**一并提交 snapshots/ 变更**，并按 C 节补齐前端配套。
+
+新模块若同时有新表：先完成 A，再做 B。
+
+> 可见性：租户管理员（`sys_user_tenant.user_type=1`）与超管走全量菜单，入库即可见；
+> 其余角色需要 `sys_role_menu` 授权，属运营配置，不要在代码里擅自分配。
+
+### C. 前端菜单配套（新增二级菜单必做）
+
+后端入库只保证「能打开」，还要这几处登记才不突兀：
+
+| 项 | 位置 | 必需性 |
+|------|------|--------|
+| 页面文件 | `frontend/client/src/views/<component>.vue` | 必需，路径与菜单 `component` 完全一致 |
+| 侧边栏图标 | `src/assets/menu-icons/sub-<name>.svg` + `src/utils/menu-util.ts` 的 `SUBMENU_ICON_BY_PATH` | 必需，缺则显示默认图标，与同级菜单不齐 |
+| 总览页卡片 | `src/config/module-overview/<module>.ts` 的 `moduleCards` | 建议，缺则无描述、图标为 default |
+
+**不需要**在 `router/routes.ts` 加静态路由——业务菜单页由后端菜单 + `import.meta.glob` 动态生成。
+
+缺图标时用 [svg-design](mdc:.cursor/skills/svg-design/SKILL.md) 技能绘制，并对齐本仓库既有规范：
+
+- 24×24 viewBox，`fill="none"`、`stroke="currentColor"`、`stroke-width="1.8"`、`stroke-linecap/linejoin="round"`
+- 元素控制在 2–4 个：侧边栏实际渲染约 18px，元素多了会糊成一团
+- 文件名统一 `sub-` 前缀；图标经 `mask-image` 渲染，**不要写死颜色**
+- 交付前按真实尺寸看一眼，别只在放大图上判断
+
+### D. 新增常驻进程 / worker
+
+`deploy.sh` 跑的是 `docker compose up -d --build`，**不枚举 service 名**——
+新 worker 只要写进 compose 就会被拉起，`deploy.sh` 本身不用改。反过来说，
+漏了 compose 注册，线上就永远不会跑这个进程：
+
+1. `backend/app/modules/<mod>/workers/<x>_worker.py` + `backend/app/workers/<x>_main.py`
+2. **`deploy/docker/docker-compose.yml` 注册 service**（漏这步 = 线上不生效）
+3. 开关与周期走环境变量（如 `<X>_WORKER_ENABLED` / `_INTERVAL`），默认值要安全
+4. 若还需随 API 进程启动，在 `app/core/events.py` 的 lifespan 里挂 setup/shutdown
+
+### E. 合并前自检（Agent 必做）
 
 ```bash
 cd backend
 python -m scripts.migration.check          # 退出码须为 0
-# 有本地 DB 时追加：
+# 有本地 DB 时追加（此处用 dry-run 确认无遗漏；A 节要求的实际应用应已在开发时做过）：
 python -m scripts.migration.runner --dry-run
 python -m scripts.migration.platform_migrate --status
 ```
 
-涉及菜单时确认 `git diff` 含对应 `platform_sync/snapshots/*.json`。
+涉及菜单时另外确认：
+
+- `git diff` 含对应 `platform_sync/snapshots/*.json`
+- 菜单已入本地库（路径 2 必查），且新增二级菜单已有 SVG 图标
 
 ## 禁止
 
 - 只改本地 console / 只改前端路由，不 export snapshot
+- **只改 `platform_sync/snapshots/` 却不跑 seed 入库** —— 本地看不到菜单，等于没做
+- 手编快照时不查空档就随意分配菜单 id
+- 新增二级菜单不补 SVG 图标
 - 只改 ORM 不 autogen、不更新 migration snapshot
 - 把 `--skip-drift-check` / `--skip-sync` 当常规发版手段
 - 修改已合并 master 的历史 migration 文件

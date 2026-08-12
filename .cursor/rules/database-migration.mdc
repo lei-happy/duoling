@@ -44,8 +44,11 @@ alwaysApply: false
   `biz_migration_log` 的记录，下次 runner 跑会重复检测
 - **不要修改/删除已合并到 master 的 versioned migration 文件** ——
   即使写错了，也只能加新文件做反向修正
-- **不要手编 `snapshots/*.json`** —— 必须由 `dump_snapshots.py` 或
-  `autogen.py` 生成；手编会导致 diff 算法误报
+- **不要手编 `scripts/migration/snapshots/*.json`** —— 必须由 `dump_snapshots.py`
+  或 `autogen.py` 生成；手编会导致 diff 算法误报。
+  （注意别与 `scripts/platform_sync/snapshots/` 混淆：那是菜单元数据事实源，
+  允许手编，但手编后必须跑 seed 入库，见
+  [deploy-migration-guard.mdc](mdc:.cursor/rules/deploy-migration-guard.mdc)）
 - **不要把 `backend/migrations/` 改回 `backend/alembic/`** —— 会与已安装的
   `alembic` Python 包重名导致 import 失败（详见 alembic.ini 注释）
 - **不要绕过 drift check 直接部署** —— `--skip-drift-check` 是应急口子，

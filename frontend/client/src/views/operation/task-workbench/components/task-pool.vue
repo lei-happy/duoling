@@ -3,7 +3,7 @@
 
   Props:
     - tabKey: 状态池 key（与 workbench-pool-registry 中配置一致，决定列、排序、status、
-      子集查询、预警规则、工具栏形态）
+      工具栏形态）
     - searchWhere: 父级统一筛选条件（切换阶段卡时保留公共字段）
     - reloadToken: caller 通过修改这个值触发列表重新加载
 
@@ -53,6 +53,18 @@
             @click="onBatch"
           >
             批量{{ primaryAction!.label }} ({{ selections.length }})
+          </el-button>
+          <el-button
+            v-if="showBatchDismiss"
+            plain
+            type="info"
+            class="ele-btn-icon"
+            :icon="Bell"
+            :disabled="selections.length === 0"
+            v-permission="'operation:task:alert-handle'"
+            @click="onBatchDismissAlerts"
+          >
+            批量忽略预警 ({{ selections.length }})
           </el-button>
           <el-button
             v-if="pool.toolbar?.refresh"
@@ -172,28 +184,32 @@
             >
               {{ loadProgressText(row) }}
             </span>
-            <el-tag
-              v-if="isAlertRow(row)"
-              type="warning"
-              size="small"
-              effect="plain"
-              class="status-cell__overdue"
+            <el-tooltip
+              v-if="alertLevel(row) > 0"
+              :content="alertTooltip(row)"
+              placement="top"
+              :show-after="200"
             >
-              预警
-            </el-tag>
+              <el-tag
+                :type="alertTag(row).type"
+                size="small"
+                effect="plain"
+                class="status-cell__overdue"
+              >
+                {{ alertTag(row).label }}
+              </el-tag>
+            </el-tooltip>
           </div>
         </template>
 
         <template #plannedLoadTime="{ row }">
-          <span :class="{ 'is-overdue': isAlertColumn('plannedLoadTime', row) }">
+          <span :class="timeCellClass(row)">
             {{ formatDateTime(row.plannedLoadTime) || '--' }}
           </span>
         </template>
 
         <template #plannedArriveTime="{ row }">
-          <span
-            :class="{ 'is-overdue': isAlertColumn('plannedArriveTime', row) }"
-          >
+          <span :class="timeCellClass(row)">
             {{ formatDateTime(row.plannedArriveTime) || '--' }}
           </span>
         </template>
@@ -204,16 +220,28 @@
 
         <template #stageDuration="{ row }">
           <el-tooltip
-            v-if="stageDuration(row).text !== '--'"
-            :content="`进入「${pool.label}」：${formatDateTime(row.stageEnteredAt) || '未知'}`"
+            v-if="row.stageEnteredAt"
+            :content="`进入「${pool.label}」：${formatDateTime(row.stageEnteredAt)}`"
             placement="top"
             :show-after="350"
           >
-            <span :class="{ 'is-overdue': stageDuration(row).overLimit }">
-              {{ stageDuration(row).text }}
-            </span>
+            <span>{{ stageDuration(row) }}</span>
           </el-tooltip>
           <span v-else>--</span>
+        </template>
+
+        <template #alertOverdue="{ row }">
+          <el-tooltip
+            v-if="(row.alertOverdueMinutes ?? 0) > 0"
+            :content="alertTooltip(row)"
+            placement="top"
+            :show-after="200"
+          >
+            <span :class="timeCellClass(row)">
+              {{ formatDurationMinutes(row.alertOverdueMinutes) }}
+            </span>
+          </el-tooltip>
+          <span v-else class="ele-text-secondary">--</span>
         </template>
 
         <!-- 带说明的表头：短词 + 问号提示，避免在 label 里写括号被截断 -->
@@ -259,11 +287,14 @@
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import type { ButtonItem } from 'ele-admin-plus/es/ele-buttons/types';
   import {
+    Bell,
     Operation,
     QuestionFilled,
     Refresh,
     Right
   } from '@element-plus/icons-vue';
+  import { ElMessageBox } from 'element-plus';
+  import { batchDismissTaskAlerts } from '@/api/operation/task-alert';
   import { pageTasks, listTaskWaybillItems } from '@/api/operation/task';
   import type { Task, TaskParam } from '@/api/operation/task/model';
   import type { Waybill } from '@/api/waybill/model';
@@ -284,17 +315,21 @@
   import WaybillCargoesDetail from '../../waybill/components/waybill-cargoes-detail.vue';
   import { buildWaybillShapeForTaskCargoDetail } from '../task-cargo-detail-adapter';
   import {
+    ALERT_LEVEL,
+    ALERT_LEVEL_MAP,
+    alertRuleName,
+    formatDurationMinutes
+  } from '../../task/alert-config';
+  import {
     WORKBENCH_POOLS,
     buildColumnTipMap,
+    buildSubsetQuery,
     buildWorkbenchTableColumns,
     getWorkbenchPool,
     isSortableProp,
     resolveWorkbenchPoolKey
   } from '../workbench-pool-registry';
-  import type {
-    WorkbenchColumnId,
-    WorkbenchListSubset
-  } from '../workbench-pool-registry';
+  import type { WorkbenchListSubset } from '../workbench-pool-registry';
 
   const props = defineProps<{
     /** 状态池 key（列、排序、筛选用 status 均来自注册表） */
@@ -303,7 +338,7 @@
     searchWhere?: Partial<TaskParam>;
     /** 通过修改此值触发外部强制刷新 */
     reloadToken?: number;
-    /** KPI 子集：全部 / 正常(常) / 预警(警) */
+    /** KPI 子集：全部 / 常 / 关注 / 严重 */
     listSubset?: WorkbenchListSubset;
   }>();
 
@@ -329,28 +364,24 @@
 
   const listSubset = computed(() => props.listSubset ?? 'all');
 
-  /** 本池是否支持服务端「常 / 警」子集筛选 */
-  const supportsSubset = computed(() => typeof pool.value.subsetQuery === 'function');
-
   const subsetBanner = computed(() => {
-    if (listSubset.value === 'all') {
-      return { type: 'info' as const, title: '' };
-    }
-    if (!supportsSubset.value) {
+    const stage = pool.value.label;
+    if (listSubset.value === 'critical') {
       return {
-        type: 'info' as const,
-        title: `「${pool.value.label}」阶段的独立预警规则还在建设中，当前列表与「全部」一致，数量可参考上方卡片。`
+        type: 'error' as const,
+        title: `当前只看「${stage}」里已经超时、需要马上处理的任务`
       };
     }
-    return listSubset.value === 'alert'
-      ? {
-          type: 'warning' as const,
-          title: `当前列表：仅展示「${pool.value.label}」阶段的预警任务`
-        }
-      : {
-          type: 'success' as const,
-          title: `当前列表：仅展示「${pool.value.label}」阶段未触发预警的任务`
-        };
+    if (listSubset.value === 'warn') {
+      return {
+        type: 'warning' as const,
+        title: `当前只看「${stage}」里快要超时、建议提前介入的任务`
+      };
+    }
+    return {
+      type: 'success' as const,
+      title: `当前只看「${stage}」里节奏正常、暂时不用管的任务`
+    };
   });
 
   const columns = computed(() => buildWorkbenchTableColumns(pool.value));
@@ -367,6 +398,47 @@
   const showBatchToolbar = computed(() =>
     Boolean(primaryAction.value && pool.value.toolbar?.batchPrimary)
   );
+
+  /** 只有能多选的池才谈得上批量忽略 */
+  const showBatchDismiss = computed(() =>
+    pool.value.columns.includes('selection')
+  );
+
+  const onBatchDismissAlerts = async () => {
+    const taskIds = selections.value.map((t) => t.id!).filter(Boolean);
+    if (taskIds.length === 0) return;
+    let reason = '';
+    try {
+      const res = await ElMessageBox.prompt(
+        `忽略后这 ${taskIds.length} 张任务单上的预警不再提醒，请填写原因便于后续复盘。`,
+        '批量忽略预警',
+        {
+          confirmButtonText: '确认忽略',
+          cancelButtonText: '取消',
+          inputPlaceholder: '例如：客户已同意整批延后，无需催办',
+          inputValidator: (v: string) =>
+            (v || '').trim().length > 0 || '请填写忽略原因'
+        }
+      );
+      reason = res.value.trim();
+    } catch {
+      return;
+    }
+    try {
+      const result = await batchDismissTaskAlerts({ taskIds, reason });
+      EleMessage.success({
+        message: `已忽略 ${result?.success ?? 0} 条预警`,
+        plain: true
+      });
+      selections.value = [];
+      doReload();
+      emit('syncStats');
+    } catch (e: unknown) {
+      const msg =
+        (e as { message?: string }).message || '忽略失败，请稍后重试';
+      EleMessage.error({ message: msg, plain: true });
+    }
+  };
 
   /**
    * 操作列：与任务单台账共用同一套候选与槽位算法（详见开发手册
@@ -388,32 +460,32 @@
     columnTips.value[column?.columnKey ?? ''] ??
     '';
 
-  const isAlertRow = (row: Task): boolean =>
-    pool.value.alertRule?.(row) ?? false;
+  const alertLevel = (row: Task): number => row.alertLevel ?? 0;
 
-  const isAlertColumn = (col: WorkbenchColumnId, row: Task): boolean =>
-    pool.value.alertColumn === col && isAlertRow(row);
+  const alertTag = (row: Task) =>
+    ALERT_LEVEL_MAP[alertLevel(row)] ?? ALERT_LEVEL_MAP[ALERT_LEVEL.NONE]!;
 
-  /** 本阶段停留时长；超过池配置的阈值则标红 */
-  const stageDuration = (row: Task): { text: string; overLimit: boolean } => {
-    if (!row.stageEnteredAt) return { text: '--', overLimit: false };
+  /** 悬停说明：命中了哪几条规则、拖了多久，省得再点进详情 */
+  const alertTooltip = (row: Task): string => {
+    const names = (row.alertCodes ?? []).map(alertRuleName).join('、');
+    const overdue = row.alertOverdueMinutes ?? 0;
+    const suffix = overdue > 0 ? `，已超时 ${formatDurationMinutes(overdue)}` : '';
+    return names ? `${names}${suffix}` : `已触发预警${suffix}`;
+  };
+
+  /** 计划时间列：任务处于预警中时标色，颜色跟随级别 */
+  const timeCellClass = (row: Task) => ({
+    'is-warn': alertLevel(row) === ALERT_LEVEL.WARN,
+    'is-critical': alertLevel(row) === ALERT_LEVEL.CRITICAL
+  });
+
+  /** 本阶段停留时长（纯事实展示，是否算预警由后端 STAGE_STAGNANT 规则判定） */
+  const stageDuration = (row: Task): string => {
+    if (!row.stageEnteredAt) return '--';
     const enteredAt = Date.parse(row.stageEnteredAt);
-    if (Number.isNaN(enteredAt)) return { text: '--', overLimit: false };
-    const minutes = Math.max(0, Math.floor((Date.now() - enteredAt) / 60000));
-    const limit = pool.value.stageAlertHours;
-    const overLimit = limit != null && minutes >= limit * 60;
-    if (minutes < 60) return { text: `${minutes} 分钟`, overLimit };
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) {
-      const rest = minutes % 60;
-      return { text: rest ? `${hours} 小时 ${rest} 分` : `${hours} 小时`, overLimit };
-    }
-    const days = Math.floor(hours / 24);
-    const restHours = hours % 24;
-    return {
-      text: restHours ? `${days} 天 ${restHours} 小时` : `${days} 天`,
-      overLimit
-    };
+    if (Number.isNaN(enteredAt)) return '--';
+    const minutes = Math.floor((Date.now() - enteredAt) / 60000);
+    return minutes < 1 ? '刚进入' : formatDurationMinutes(minutes);
   };
 
   /** 表头排序：透传给服务端（字段在白名单内才生效） */
@@ -494,9 +566,7 @@
     }
 
     const subset =
-      listSubset.value !== 'all' && pool.value.subsetQuery
-        ? pool.value.subsetQuery(listSubset.value)
-        : {};
+      listSubset.value === 'all' ? {} : buildSubsetQuery(listSubset.value);
 
     return fetchPage({
       ...pages,
@@ -658,7 +728,13 @@
     }
   }
 
-  .is-overdue {
+  /* 级别配色与 KPI 药丸一致：关注=黄，严重=红 */
+  .is-warn {
+    color: var(--el-color-warning);
+    font-weight: 500;
+  }
+
+  .is-critical {
     color: var(--el-color-danger);
     font-weight: 500;
   }

@@ -56,6 +56,17 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"证照监控 Worker 启动失败（不影响其他服务）：{e!r}")
 
+    # 任务预警 worker：扫调度工作台各阶段任务，生成 biz_task_alert 预警
+    # 默认在 API 进程内不启动（TASK_ALERT_WORKER_ENABLED!=1），
+    # 由独立的 backend-task-alert-worker 容器运行。
+    try:
+        from app.modules.client.workers.task_alert_worker import (
+            setup_worker_with_settings as setup_task_alert_worker,
+        )
+        setup_task_alert_worker()
+    except Exception as e:
+        logger.warning(f"任务预警 Worker 启动失败（不影响其他服务）：{e!r}")
+
     # 审批中心：注册各业务模块的审批回调（biz_type -> callback）
     try:
         _register_approval_callbacks()
@@ -93,6 +104,13 @@ async def lifespan(app: FastAPI):
         shutdown_compliance_worker()
     except Exception as e:
         logger.warning(f"证照监控 Worker 关闭异常: {e!r}")
+    try:
+        from app.modules.client.workers.task_alert_worker import (
+            shutdown_worker as shutdown_task_alert_worker,
+        )
+        shutdown_task_alert_worker()
+    except Exception as e:
+        logger.warning(f"任务预警 Worker 关闭异常: {e!r}")
     await db_manager.close_all()
     logger.info("智途(ZhiTu)后端服务已关闭")
 

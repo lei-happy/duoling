@@ -82,6 +82,8 @@ from app.modules.client.api.billing.carrier_freight_engine import (
 from app.modules.client.api.waybill.waybill import router as waybill_router
 from app.modules.client.api.task import (
     task_router,
+    task_alert_router,
+    task_alert_rule_router,
     task_finance_router,
     smart_stowage_router,
 )
@@ -322,6 +324,16 @@ router.include_router(
 )
 router.include_router(waybill_router, prefix="/business/waybill", tags=["客户端-计划管理V2"])
 router.include_router(task_router, prefix="/business/task", tags=["客户端-运输任务单"])
+router.include_router(
+    task_alert_router,
+    prefix="/business/task-alert",
+    tags=["客户端-任务预警"],
+)
+router.include_router(
+    task_alert_rule_router,
+    prefix="/business/task-alert-rule",
+    tags=["客户端-任务预警规则"],
+)
 router.include_router(
     task_finance_router,
     prefix="/business/task-finance",

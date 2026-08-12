@@ -39,6 +39,7 @@ from app.modules.client.schemas.task.task import (
     TaskStatusUpdate,
     TaskUpdate,
 )
+from app.modules.client.schemas.task.task_alert import TaskAlertOut
 from app.modules.client.schemas.task.task_dispatch_order import (
     TaskDispatchOrderOut,
     TaskDispatchOrderStatusUpdate,
@@ -61,6 +62,7 @@ from app.modules.client.services.task.task_finance_service import (
 from app.modules.client.services.task.task_loading_record_service import (
     TaskLoadingRecordService,
 )
+from app.modules.client.services.task.task_alert_service import TaskAlertService
 from app.modules.client.services.task.task_service import TaskService
 from app.modules.client.services.task.task_status_event_service import (
     TaskStatusEventService,
@@ -142,18 +144,26 @@ async def page_tasks(
     ),
     timeStart: Optional[date] = None,
     timeEnd: Optional[date] = None,
-    onlyOverdue: bool = Query(False, description="仅计划装车/到货已逾期的子集（须配合 status 或 inTransitOverdue）"),
+    alertLevel: Optional[str] = Query(
+        None,
+        description=(
+            "预警子集：normal(无活跃预警) | warn(仅关注) | critical(存在严重)"
+            " | any(存在任意预警)"
+        ),
+    ),
+    onlyOverdue: bool = Query(
+        False, description="【已废弃】等价于 alertLevel=any，请改用 alertLevel"
+    ),
     onlyNormal: bool = Query(
-        False,
-        description="仅「正常」子集：待分配/待派车为计划装车未逾期；单 status 2/3 为计划到货未逾期（与 onlyOverdue 互斥）",
+        False, description="【已废弃】等价于 alertLevel=normal，请改用 alertLevel"
     ),
     inTransitOverdue: bool = Query(
         False,
-        description="在途逾期列表：status∈{2,3} 且计划到货已过",
+        description="【已废弃】在途合并池逾期列表：status∈{2,3} 且存在活跃预警",
     ),
     inTransitOnlyNormal: bool = Query(
         False,
-        description="在途正常列表：status∈{2,3} 且（无计划到货或计划到货未过）",
+        description="【已废弃】在途合并池正常列表：status∈{2,3} 且无活跃预警",
     ),
     plateNumber: Optional[str] = Query(None, description="车牌号（模糊匹配主车牌）"),
     sortField: Optional[str] = Query(
@@ -183,6 +193,7 @@ async def page_tasks(
         time_field=timeField,
         time_start=timeStart,
         time_end=timeEnd,
+        alert_level=alertLevel,
         only_overdue=onlyOverdue,
         in_transit_overdue=inTransitOverdue,
         only_normal=onlyNormal,
@@ -196,6 +207,7 @@ async def page_tasks(
     wb_summary_map = await TaskService.aggregate_waybill_status_summary(
         db, task_ids,
     )
+    alert_map = await TaskAlertService.top_level_map(db, task_ids)
     rows = []
     for t in items:
         loaded, unloaded = qty_map.get(int(t.id), (0, 0))
@@ -203,6 +215,7 @@ async def page_tasks(
             TaskListItemOut.from_model(
                 t, loaded_quantity=loaded, unloaded_quantity=unloaded,
                 waybill_status_summary=wb_summary_map.get(int(t.id)),
+                alert=alert_map.get(int(t.id)),
             ).model_dump()
         )
     return success(data={
@@ -567,6 +580,25 @@ async def list_task_status_events(
     return success(
         data=[TaskStatusEventOut.from_model(e).model_dump() for e in events]
     )
+
+
+# ============================================================
+# 预警
+# ============================================================
+
+@router.get("/{task_id}/alerts")
+async def list_task_alerts(
+    task_id: int,
+    activeOnly: bool = Query(False, description="仅返回待处理的预警"),
+    db: AsyncSession = Depends(get_tenant_db),
+    _: TokenData = Depends(get_current_user),
+):
+    """某任务的预警列表：活跃的排在前面，已处置的保留供复盘。"""
+    await TaskService.get_or_404(db, task_id)
+    rows = await TaskAlertService.list_of_task(
+        db, task_id, active_only=activeOnly
+    )
+    return success(data=[TaskAlertOut.from_model(r).model_dump() for r in rows])
 
 
 # ============================================================

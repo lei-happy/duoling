@@ -3,7 +3,9 @@
 
   - 置于页面背景之上（由 index.vue 外层挂载），与下方筛选/列表白卡片区隔
   - 主区点击 = 本阶段全部任务
-  - 标题同行右侧「常 / 警」药丸 = 正常 / 预警快速筛选
+  - 标题同行右侧「常 / 关注 / 严重」三个药丸 = 按预警级别快速筛选
+  - 三个数字互斥且相加等于本阶段总数：一个任务同时命中多条规则时按最高级别归类
+  - 计数全部来自后端 biz_task_alert，与列表 alertLevel 过滤同源，点进去条数必然一致
   - 每个卡片对应单一 task.status，与 workbench-pool-registry 的池一一对应
 
   阶段「待结算」已下线：财务结算与 task.status 解耦，结算单走财务工作台。
@@ -26,7 +28,7 @@
           <span class="kpi-card__title">{{ card.label }}</span>
           <div class="kpi-card__pills" @click.stop>
             <el-tooltip
-              content="未触发计划类「预警」规则的任务（本阶段内）"
+              :content="`${card.label}中没有任何预警的任务，节奏正常，暂时不用管`"
               placement="top"
               :show-after="350"
             >
@@ -40,19 +42,36 @@
                 <span class="kpi-pill__num">{{ card.normal }}</span>
               </button>
             </el-tooltip>
+            <el-tooltip :content="card.warnHint" placement="top" :show-after="350">
+              <button
+                type="button"
+                class="kpi-pill kpi-pill--warn"
+                :class="{
+                  'is-active': isPillActive(card.key, 'warn'),
+                  'is-zero': card.warn === 0
+                }"
+                @click="emitSelect(card, 'warn')"
+              >
+                <span class="kpi-pill__letter">注</span>
+                <span class="kpi-pill__num">{{ card.warn }}</span>
+              </button>
+            </el-tooltip>
             <el-tooltip
-              :content="card.alertHint"
+              :content="card.criticalHint"
               placement="top"
               :show-after="350"
             >
               <button
                 type="button"
-                class="kpi-pill kpi-pill--alert"
-                :class="{ 'is-active': isPillActive(card.key, 'alert') }"
-                @click="emitSelect(card, 'alert')"
+                class="kpi-pill kpi-pill--critical"
+                :class="{
+                  'is-active': isPillActive(card.key, 'critical'),
+                  'is-zero': card.critical === 0
+                }"
+                @click="emitSelect(card, 'critical')"
               >
-                <span class="kpi-pill__letter">警</span>
-                <span class="kpi-pill__num">{{ card.alert }}</span>
+                <span class="kpi-pill__letter">急</span>
+                <span class="kpi-pill__num">{{ card.critical }}</span>
               </button>
             </el-tooltip>
           </div>
@@ -78,7 +97,7 @@
   import { computed } from 'vue';
   import type { TaskWorkbenchStats } from '@/api/operation/task/model';
 
-  type WorkbenchListSubset = 'all' | 'normal' | 'alert';
+  type WorkbenchListSubset = 'all' | 'normal' | 'warn' | 'critical';
 
   const props = defineProps<{
     stats: TaskWorkbenchStats | null;
@@ -104,8 +123,10 @@
     status: number;
     total: number;
     normal: number;
-    alert: number;
-    alertHint: string;
+    warn: number;
+    critical: number;
+    warnHint: string;
+    criticalHint: string;
     sub: string;
   }
 
@@ -113,19 +134,10 @@
 
   const cards = computed<KpiCard[]>(() => {
     const t = props.stats?.totals;
-    const a = props.stats?.alerts;
-    const pa = t?.pendingAssign ?? 0;
-    const aa = a?.overdueAssignment ?? 0;
-    const pd = t?.pendingDispatch ?? 0;
-    const ad = a?.overdueDispatch ?? 0;
-    const pl = t?.pendingLoad ?? 0;
-    const al = a?.pendingLoadAlert ?? 0;
-    const loaded = t?.loading ?? 0;
-    const aLoaded = a?.overdueDepart ?? 0;
-    const onWay = t?.onWay ?? 0;
-    const aTransit = a?.overdueArrive ?? 0;
-    const ps = t?.pendingSign ?? 0;
-    const as = a?.pendingSignAlert ?? 0;
+    const stageAlerts = props.stats?.stageAlerts ?? {};
+
+    const levels = (status: number) =>
+      stageAlerts[String(status)] ?? { warn: 0, critical: 0 };
 
     /**
      * `sub` 是标题下方那行小字。原先几乎都写「本阶段任务合计」——数字本身已经说明
@@ -136,73 +148,79 @@
       label: string,
       status: number,
       total: number,
-      alert: number,
-      alertHint: string,
+      warnHint: string,
+      criticalHint: string,
       sub: string
-    ): KpiCard => ({
-      key,
-      label,
-      status,
-      total,
-      alert,
-      normal: Math.max(0, total - alert),
-      alertHint,
-      sub
-    });
+    ): KpiCard => {
+      const { warn, critical } = levels(status);
+      return {
+        key,
+        label,
+        status,
+        total,
+        warn,
+        critical,
+        // 三个数字必须相加等于总数，否则调度员一眼就会发现对不上
+        normal: Math.max(0, total - warn - critical),
+        warnHint,
+        criticalHint,
+        sub
+      };
+    };
 
     return [
       mk(
         'pending-assign',
         '待分配',
         -1,
-        pa,
-        aa,
-        '当前：计划装车时间已过，任务仍处于待分配。后续可扩展更多预警规则。',
+        t?.pendingAssign ?? 0,
+        '快到装车时间了还没定承运方，建议尽快安排',
+        '已经超过装车时间还没定承运方，需要马上处理',
         '待指定承运方'
       ),
       mk(
         'pending-dispatch',
         '待派车',
         0,
-        pd,
-        ad,
-        '当前：计划装车时间已过仍未派车。后续可扩展更多预警规则。',
+        t?.pendingDispatch ?? 0,
+        '快到装车时间了还没派车，建议尽快安排',
+        '已经超过装车时间还没派车，需要马上处理',
         '待安排车辆司机'
       ),
       mk(
         'pending-load',
         '待装车',
         1,
-        pl,
-        al,
-        '待装车环节预警规则开发中；接入后将在此汇总需关注的任务。',
+        t?.pendingLoad ?? 0,
+        '快到装车时间了还没装车，建议联系承运方',
+        '已经超过装车时间还没装车，需要马上催办',
         '等承运方装车'
       ),
       mk(
         'pending-depart',
         '待发车',
         2,
-        loaded,
-        aLoaded,
-        '当前：已装车但计划到货时间已过，仍未标记出发。后续可扩展更多预警规则。',
+        t?.loading ?? 0,
+        '装完车压在场内有点久了，建议催促发车',
+        '装完车长时间没发车，需要马上催办',
         '装车完毕待发车'
       ),
       mk(
         'on-way',
         '在途',
         3,
-        onWay,
-        aTransit,
-        '当前：计划到货时间已过，任务仍在途未到达。后续可扩展更多预警规则。',
+        t?.onWay ?? 0,
+        '快到承诺到货时间了还没到，建议提前跟客户沟通',
+        '已经超过承诺到货时间还没到，需要马上跟进',
         '运输中待到达'
       ),
       mk(
         'pending-deliver',
         '待交车',
         4,
-        ps,
-        as,
-        '已到达目的地、等待逐台验车交接。全部交车后任务自动进入「已交车」。',
+        t?.pendingSign ?? 0,
+        '到场后交接进度偏慢，建议跟进验车',
+        '到场后长时间没完成交接，需要马上跟进',
         '待逐台验车交接'
       )
     ];
@@ -213,7 +231,7 @@
     return k === key || k.startsWith(`${key}:`);
   };
 
-  const isPillActive = (key: string, subset: 'normal' | 'alert') =>
+  const isPillActive = (key: string, subset: 'normal' | 'warn' | 'critical') =>
     activeKey.value === `${key}:${subset}`;
 
   const isMainAllActive = (key: string) => activeKey.value === key;
@@ -336,7 +354,8 @@
     &__pills {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      /* 三个药丸后横向空间变紧，间距与内边距同步收窄 */
+      gap: 4px;
       margin-left: auto;
     }
 
@@ -400,8 +419,8 @@
   .kpi-pill {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
+    gap: 3px;
+    padding: 2px 6px;
     border-radius: 999px;
     border: 1px solid transparent;
     background: var(--el-fill-color);
@@ -430,13 +449,31 @@
       color: var(--el-text-color-primary);
     }
 
-    &--alert .kpi-pill__letter {
+    &--warn .kpi-pill__letter {
+      color: var(--el-color-warning);
+    }
+
+    &--warn.is-active {
+      border-color: var(--el-color-warning-light-5);
+      box-shadow: 0 0 0 2px var(--el-color-warning-light-8);
+    }
+
+    &--critical .kpi-pill__letter {
       color: var(--el-color-danger);
     }
 
-    &--alert.is-active {
+    &--critical.is-active {
       border-color: var(--el-color-danger-light-5);
       box-shadow: 0 0 0 2px var(--el-color-danger-light-8);
+    }
+
+    /* 没有预警时压低存在感，让真正有数字的药丸先被看见 */
+    &.is-zero {
+      opacity: 0.45;
+
+      .kpi-pill__letter {
+        color: var(--el-text-color-placeholder);
+      }
     }
   }
 </style>

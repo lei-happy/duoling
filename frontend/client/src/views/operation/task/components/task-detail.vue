@@ -125,6 +125,10 @@
           </span>
         </div>
 
+        <!-- 预警：紧跟阶段摘要，先看「有没有踩线」再看明细 -->
+        <el-divider content-position="left">预警</el-divider>
+        <task-alert-panel :task-id="task.id" @changed="emit('done')" />
+
         <!-- 基础信息 -->
         <el-divider content-position="left">基础信息</el-divider>
         <el-descriptions :column="3" border size="small">
@@ -711,6 +715,7 @@
     TaskStatusEvent
   } from '@/api/operation/task/model';
   import { formatDateTime } from '@/utils/date-util';
+  import { formatDurationMinutes } from '../alert-config';
   import {
     CARRIER_TYPE,
     CARRIER_TYPE_MAP,
@@ -740,6 +745,7 @@
   import ActionRevertSign from '../../task-workbench/components/action-revert-sign.vue';
   import ActionForceCancel from '../../task-workbench/components/action-force-cancel.vue';
   import WaybillStatusSummary from './waybill-status-summary.vue';
+  import TaskAlertPanel from './task-alert-panel.vue';
   import TaskTimeline from './task-timeline.vue';
 
   const props = defineProps<{ visible: boolean; taskId: number | null }>();
@@ -914,15 +920,7 @@
     const start = Date.parse(enteredAt);
     if (Number.isNaN(start)) return '--';
     const minutes = Math.max(0, Math.floor((Date.now() - start) / 60000));
-    if (minutes < 60) return `${minutes} 分钟`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) {
-      const rest = minutes % 60;
-      return rest ? `${hours} 小时 ${rest} 分` : `${hours} 小时`;
-    }
-    const days = Math.floor(hours / 24);
-    const restHours = hours % 24;
-    return restHours ? `${days} 天 ${restHours} 小时` : `${days} 天`;
+    return minutes < 1 ? '刚进入' : formatDurationMinutes(minutes);
   });
 
   // ============================================

@@ -340,6 +340,16 @@ class TaskListItemOut(BaseModel):
     waybillStatusSummary: Optional[WaybillStatusSummary] = None
     # —— 预留：关联财务单据状态分布（后续财务模块接入时填充）
     financeStatusSummary: Optional[WaybillStatusSummary] = None
+    # —— 预警（由 biz_task_alert 聚合，前端不再自行判定）
+    alertLevel: int = Field(
+        default=0, description="活跃预警最高级别 0-无 1-关注 2-严重"
+    )
+    alertCodes: list[str] = Field(
+        default_factory=list, description="命中的预警规则码"
+    )
+    alertOverdueMinutes: int = Field(
+        default=0, description="最严重一条预警的超时分钟数，供排序与展示"
+    )
 
     model_config = {"from_attributes": True}
 
@@ -351,6 +361,7 @@ class TaskListItemOut(BaseModel):
         loaded_quantity: int = 0,
         unloaded_quantity: int = 0,
         waybill_status_summary: Optional[Mapping] = None,
+        alert: Optional[Mapping] = None,
     ) -> "TaskListItemOut":
         return cls(
             id=m.id,
@@ -391,6 +402,9 @@ class TaskListItemOut(BaseModel):
             waybillStatusSummary=WaybillStatusSummary.from_counts(
                 waybill_status_summary
             ),
+            alertLevel=int((alert or {}).get("level") or 0),
+            alertCodes=list((alert or {}).get("codes") or []),
+            alertOverdueMinutes=int((alert or {}).get("overdueMinutes") or 0),
         )
 
 

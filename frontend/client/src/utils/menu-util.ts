@@ -31,6 +31,7 @@ const SUBMENU_ICON_BY_PATH: Record<string, string> = {
   '/operation/task-create': 'sub-task-create',
   '/operation/smart-stowage': 'sub-smart-stowage',
   '/operation/task-workbench': 'sub-task-workbench',
+  '/operation/alert-rule': 'sub-alert-rule',
   '/operation/tracking': 'sub-tracking',
   '/operation/receipt': 'sub-receipt',
   '/operation/completed-task': 'sub-completed-task',

@@ -2,14 +2,18 @@
  * 调度工作台 — 按「状态池」注册列表形态
  *
  * 每个池独立配置：筛选用 status、筛选字段、行内主动作、列顺序与表头文案、默认排序、
- * 常/警子集查询、行级预警规则、工具栏形态。
+ * 工具栏形态。
+ *
+ * **预警不在这里判定**：所有阈值、级别与命中规则都由后端 `biz_task_alert` 产出，
+ * 列表行只读 `row.alertLevel`。前端曾经自带一套 `loadOverdue` / `stageAlertHours`
+ * 判定，结果是「列表标红的行，卡片可能算在常里」——两套口径必然对不上，已移除。
  *
  * task-pool.vue 只负责渲染，不再包含任何 `if (poolKey === 'xxx')` 分支；
  * 新增或调整一个状态阶段，只需要改本文件（除非引入了全新的列类型）。
  */
 
 import type { Columns } from 'ele-admin-plus/es/ele-pro-table/types';
-import type { Task, TaskParam } from '@/api/operation/task/model';
+import type { TaskAlertLevelFilter, TaskParam } from '@/api/operation/task/model';
 import type { TaskActionKey } from '../task/task-actions';
 import { resolveTaskListActionColumnMinWidth } from '../task/task-actions';
 import { TASK_STATUS } from '../task/status-config';
@@ -34,11 +38,18 @@ export type WorkbenchColumnId =
   | 'createdAt'
   /** 本阶段已停留时长（来自 stageEnteredAt） */
   | 'stageDuration'
+  /** 预警超时时长（来自后端 alertOverdueMinutes） */
+  | 'alertOverdue'
   | 'status'
   | 'action';
 
-/** KPI 卡片的「全部 / 常 / 警」子集 */
-export type WorkbenchListSubset = 'all' | 'normal' | 'alert';
+/** KPI 卡片的「全部 / 常 / 关注 / 严重」子集 */
+export type WorkbenchListSubset = 'all' | 'normal' | 'warn' | 'critical';
+
+/** 子集 → 列表查询参数。六个阶段口径一致，不需要逐池配置。 */
+export const buildSubsetQuery = (
+  subset: Exclude<WorkbenchListSubset, 'all'>
+): Partial<TaskParam> => ({ alertLevel: subset as TaskAlertLevelFilter });
 
 /** 任务 status → 工作台 pool key（用于按单号跨状态搜索后自动切换阶段卡） */
 export const TASK_STATUS_TO_POOL_KEY: Record<number, string> = {
@@ -85,18 +96,6 @@ export interface WorkbenchPool {
   /** 表头问号提示覆盖（未写的用 `COL_TIP` 默认文案） */
   columnTips?: Partial<Record<WorkbenchColumnId, string>>;
   defaultSort: { prop: string; order: 'ascending' | 'descending' };
-  /**
-   * 常/警子集 → 服务端查询参数。
-   * 返回 undefined 表示本池尚未接入子集筛选（列表退化为「全部」并给出提示）。
-   */
-  subsetQuery?: (subset: Exclude<WorkbenchListSubset, 'all'>) => Partial<TaskParam>;
-  /** 行级预警判定：命中则状态列打「预警」标、对应时间列标红 */
-  alertRule?: (row: Task) => boolean;
-  /** 预警锚定在哪一列（该列命中 alertRule 时标红） */
-  alertColumn?: Extract<
-    WorkbenchColumnId,
-    'plannedLoadTime' | 'plannedArriveTime'
-  >;
   toolbar?: {
     /** 是否展示「批量 + 主动作」按钮，默认 false */
     batchPrimary?: boolean;
@@ -107,8 +106,6 @@ export interface WorkbenchPool {
   actionColumnWidth?: number;
   /** 台数是否可点，打开与计划列表一致的商品车明细（拉取挂接明细） */
   quantityOpenCargoDetail?: boolean;
-  /** 本阶段停留超过该小时数视为滞留（stageDuration 列标红） */
-  stageAlertHours?: number;
 }
 
 /**
@@ -130,6 +127,7 @@ const COL: Record<WorkbenchColumnId, string> = {
   actualLoadTime: '实际装车',
   createdAt: '制单时间',
   stageDuration: '停留时长',
+  alertOverdue: '超时时长',
   status: '状态',
   action: '操作'
 };
@@ -141,10 +139,11 @@ const COL_TIP: Partial<Record<WorkbenchColumnId, string>> = {
   carrierResource: '自有车、社会运力显示司机与车牌；承运商显示承运商名称',
   waybillCount: '本任务关联的计划单数量',
   totalQuantity: '本任务承运的商品车总台数',
-  plannedLoadTime: '计划开始装车的时间，已超期会标红',
-  plannedArriveTime: '计划送达目的地的时间，已超期会标红',
+  plannedLoadTime: '计划开始装车的时间，已触发预警会标色',
+  plannedArriveTime: '计划送达目的地的时间，已触发预警会标色',
   actualLoadTime: '实际完成装车的时间',
-  stageDuration: '进入当前阶段至今的时长，停留过久会标红'
+  stageDuration: '进入当前阶段至今的时长',
+  alertOverdue: '已超过应完成时间多久，可排序，优先处理拖得最久的'
 };
 
 /**
@@ -152,7 +151,8 @@ const COL_TIP: Partial<Record<WorkbenchColumnId, string>> = {
  * 仅 `stageDuration` 与 id 不同（按进入阶段的时间排序），其余同名。
  */
 const COL_FIELD: Partial<Record<WorkbenchColumnId, string>> = {
-  stageDuration: 'stageEnteredAt'
+  stageDuration: 'stageEnteredAt',
+  alertOverdue: 'alertOverdueMinutes'
 };
 
 /**
@@ -174,22 +174,6 @@ export function buildColumnTipMap(pool: WorkbenchPool): Record<string, string> {
   return map;
 }
 
-const nowMs = () => Date.now();
-
-/** 计划装车已过（待分配 / 待派车 / 待装车） */
-const loadOverdue = (row: Task): boolean =>
-  !!row.plannedLoadTime && Date.parse(row.plannedLoadTime) < nowMs();
-
-/** 计划到货已过（待发车 / 在途 / 待交车） */
-const arriveOverdue = (row: Task): boolean =>
-  !!row.plannedArriveTime && Date.parse(row.plannedArriveTime) < nowMs();
-
-/** 服务端已支持 status ∈ {-1,0,2,3} 的 onlyOverdue / onlyNormal 子集过滤 */
-const overdueSubsetQuery = (
-  subset: Exclude<WorkbenchListSubset, 'all'>
-): Partial<TaskParam> =>
-  subset === 'alert' ? { onlyOverdue: true } : { onlyNormal: true };
-
 export const WORKBENCH_POOLS: WorkbenchPool[] = [
   {
     key: 'pending-assign',
@@ -205,7 +189,6 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     ],
     toolbar: { batchPrimary: true },
     quantityOpenCargoDetail: true,
-    stageAlertHours: 12,
     columns: [
       'selection',
       'taskNo',
@@ -214,15 +197,13 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'totalQuantity',
       'plannedLoadTime',
       'stageDuration',
+      'alertOverdue',
       'action'
     ],
     columnTips: {
       plannedLoadTime: '计划开始装车的时间，越近的越该优先分配运力'
     },
-    defaultSort: { prop: 'createdAt', order: 'descending' },
-    subsetQuery: overdueSubsetQuery,
-    alertRule: loadOverdue,
-    alertColumn: 'plannedLoadTime'
+    defaultSort: { prop: 'createdAt', order: 'descending' }
   },
   {
     key: 'pending-dispatch',
@@ -238,7 +219,6 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'timeRange'
     ],
     quantityOpenCargoDetail: true,
-    stageAlertHours: 12,
     columns: [
       'taskNo',
       'carrierType',
@@ -248,15 +228,13 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'totalQuantity',
       'plannedLoadTime',
       'stageDuration',
+      'alertOverdue',
       'action'
     ],
     columnTips: {
       plannedLoadTime: '计划开始装车的时间，需要在这之前派好车'
     },
-    defaultSort: { prop: 'plannedLoadTime', order: 'ascending' },
-    subsetQuery: overdueSubsetQuery,
-    alertRule: loadOverdue,
-    alertColumn: 'plannedLoadTime'
+    defaultSort: { prop: 'plannedLoadTime', order: 'ascending' }
   },
   {
     key: 'pending-load',
@@ -272,7 +250,6 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'plateNumber',
       'timeRange'
     ],
-    stageAlertHours: 24,
     columns: [
       'taskNo',
       'carrierType',
@@ -282,15 +259,14 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'totalQuantity',
       'plannedLoadTime',
       'stageDuration',
+      'alertOverdue',
       'status',
       'action'
     ],
     columnTips: {
       plannedLoadTime: '计划开始装车的时间，需要在这之前完成装车'
     },
-    defaultSort: { prop: 'plannedLoadTime', order: 'ascending' },
-    alertRule: loadOverdue,
-    alertColumn: 'plannedLoadTime'
+    defaultSort: { prop: 'plannedLoadTime', order: 'ascending' }
   },
   {
     key: 'pending-depart',
@@ -306,7 +282,6 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'timeRange'
     ],
     toolbar: { batchPrimary: true },
-    stageAlertHours: 6,
     columns: [
       'selection',
       'taskNo',
@@ -317,15 +292,13 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'actualLoadTime',
       'plannedArriveTime',
       'stageDuration',
+      'alertOverdue',
       'action'
     ],
     columnTips: {
       actualLoadTime: '实际完成装车的时间，装完越久没发车越该催'
     },
-    defaultSort: { prop: 'actualLoadTime', order: 'ascending' },
-    subsetQuery: overdueSubsetQuery,
-    alertRule: arriveOverdue,
-    alertColumn: 'plannedArriveTime'
+    defaultSort: { prop: 'actualLoadTime', order: 'ascending' }
   },
   {
     key: 'on-way',
@@ -340,7 +313,6 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'plateNumber',
       'timeRange'
     ],
-    stageAlertHours: 48,
     columns: [
       'taskNo',
       'carrierType',
@@ -350,16 +322,14 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'actualLoadTime',
       'plannedArriveTime',
       'stageDuration',
+      'alertOverdue',
       'status',
       'action'
     ],
     columnTips: {
-      plannedArriveTime: '计划送达目的地的时间，超期未到达会标红'
+      plannedArriveTime: '计划送达目的地的时间，超期未到达会标色'
     },
-    defaultSort: { prop: 'plannedArriveTime', order: 'ascending' },
-    subsetQuery: overdueSubsetQuery,
-    alertRule: arriveOverdue,
-    alertColumn: 'plannedArriveTime'
+    defaultSort: { prop: 'plannedArriveTime', order: 'ascending' }
   },
   {
     key: 'pending-deliver',
@@ -376,7 +346,6 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'timeRange'
     ],
     toolbar: { batchPrimary: true },
-    stageAlertHours: 24,
     columns: [
       'selection',
       'taskNo',
@@ -387,6 +356,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'plannedArriveTime',
       'actualLoadTime',
       'stageDuration',
+      'alertOverdue',
       'action'
     ],
     columnTips: {
@@ -408,7 +378,8 @@ export const WORKBENCH_SORTABLE_PROPS = [
   'plannedArriveTime',
   'actualLoadTime',
   'dispatchedAt',
-  'stageEnteredAt'
+  'stageEnteredAt',
+  'alertOverdueMinutes'
 ] as const;
 
 export type WorkbenchSortableProp = (typeof WORKBENCH_SORTABLE_PROPS)[number];
@@ -562,6 +533,18 @@ export function buildWorkbenchTableColumns(pool: WorkbenchPool): Columns {
             align: 'center',
             sortable: 'custom',
             slot: 'stageDuration'
+          })
+        );
+        break;
+      case 'alertOverdue':
+        cols.push(
+          withTip(id, {
+            prop: 'alertOverdueMinutes',
+            label: L.alertOverdue,
+            width: 128,
+            align: 'center',
+            sortable: 'custom',
+            slot: 'alertOverdue'
           })
         );
         break;

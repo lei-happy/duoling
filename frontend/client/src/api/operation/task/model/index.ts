@@ -242,9 +242,21 @@ export interface Task {
   waybillStatusSummary?: WaybillStatusSummary | null;
   /** 预留：关联财务单据状态分布（财务模块接入时填充） */
   financeStatusSummary?: WaybillStatusSummary | null;
+  /**
+   * 活跃预警最高级别 0-无 1-关注 2-严重。
+   * 由后端 biz_task_alert 聚合，前端不再自行判定逾期。
+   */
+  alertLevel?: TaskAlertLevel;
+  /** 命中的预警规则码 */
+  alertCodes?: string[];
+  /** 最严重一条预警的超时分钟数 */
+  alertOverdueMinutes?: number;
   segments?: TaskSegment[];
   waybillItems?: TaskWaybillItem[];
 }
+
+/** 预警级别：0-无 1-关注 2-严重 */
+export type TaskAlertLevel = 0 | 1 | 2;
 
 /** 单个计划状态计数 */
 export interface WaybillStatusCount {
@@ -297,6 +309,9 @@ export type TaskTimeField =
   | 'actualLoadTime'
   | 'signedAt';
 
+/** 列表预警子集过滤取值 */
+export type TaskAlertLevelFilter = 'normal' | 'warn' | 'critical' | 'any';
+
 export interface TaskParam extends PageParam {
   keyword?: string;
   carrierType?: number;
@@ -314,14 +329,11 @@ export interface TaskParam extends PageParam {
   timeField?: TaskTimeField;
   timeStart?: string;
   timeEnd?: string;
-  /** 工作台：仅计划装车已逾期（待分配/待派车，配合 status=-1|0） */
-  onlyOverdue?: boolean;
-  /** 工作台：仅「正常」子集（与 onlyOverdue 互斥；待分配/待派车为计划装车未逾期） */
-  onlyNormal?: boolean;
-  /** 工作台：在途逾期（已装车/在途且计划到货已过，勿传 status 或与后端约定忽略） */
-  inTransitOverdue?: boolean;
-  /** 工作台：在途正常（status∈{2,3} 且计划到货未触发逾期） */
-  inTransitOnlyNormal?: boolean;
+  /**
+   * 预警子集过滤：normal(无活跃预警) / warn(仅关注) / critical(存在严重) / any(任意预警)。
+   * 取代已废弃的 onlyOverdue / onlyNormal —— 判定口径统一在后端。
+   */
+  alertLevel?: TaskAlertLevelFilter;
   /** 车牌号精确筛选（主车牌，前后模糊匹配） */
   plateNumber?: string;
   /** 服务端排序字段（白名单外的取值后端会忽略） */
@@ -364,14 +376,18 @@ export interface TaskWorkbenchStats {
     closed: number;
     cancelled: number;
   };
+  /**
+   * 按阶段的两级预警计数，key 为任务 status 的字符串形式（'-1' ~ '4'）。
+   * warn 与 critical 互斥（同一任务按最高级别归类），
+   * 因此「常」= totals - warn - critical。
+   */
+  stageAlerts?: Record<string, { warn: number; critical: number }>;
+  /** @deprecated 旧的单级预警计数，等于 warn + critical，仅供灰度期兼容 */
   alerts: {
     overdueAssignment: number;
     overdueDispatch: number;
-    /** 已装车但计划到货已过、仍未出发 */
     overdueDepart?: number;
-    /** 在途且计划到货已过 */
     overdueArrive: number;
-    /** 待装车 / 待交车 预警数（占位，规则接入后由后端统计） */
     pendingLoadAlert?: number;
     pendingSignAlert?: number;
   };

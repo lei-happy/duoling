@@ -23,6 +23,7 @@ from sqlalchemy import text, inspect as sa_inspect
 from loguru import logger
 
 from app.core.config import get_settings
+from app.core.session_hooks import run_pre_commit_hooks
 
 
 # ============================================================
@@ -141,6 +142,9 @@ class DatabaseManager:
         async with factory() as session:
             try:
                 yield session
+                # 派生数据收尾（如任务预警重算）必须与主改动同事务，
+                # 否则接口返回成功但看板还是旧的
+                await run_pre_commit_hooks(session)
                 await session.commit()
             except Exception:
                 await session.rollback()

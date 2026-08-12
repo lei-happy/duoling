@@ -15121,6 +15121,569 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_task_alert",
+      "comment": "任务预警表（调度工作台阶段预警）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "claimed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "认领时间"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "due_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "应完成时间（时效类才有；滞留/异常类为空）"
+        },
+        {
+          "name": "escalated_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "升级为「严重」的时间"
+        },
+        {
+          "name": "handler_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "认领人 user_id"
+        },
+        {
+          "name": "handler_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "认领人姓名（冗余）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_scan_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "最近一次扫描命中时间"
+        },
+        {
+          "name": "level",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "级别 1-关注 2-严重"
+        },
+        {
+          "name": "overdue_minutes",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "超时分钟数（物化供排序；未超时为 0）"
+        },
+        {
+          "name": "resolve_remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处置说明（忽略时必填原因）"
+        },
+        {
+          "name": "resolve_type",
+          "type": "VARCHAR(16)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处置方式 manual/dismiss/auto"
+        },
+        {
+          "name": "resolved_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理/忽略/自动消除时间"
+        },
+        {
+          "name": "resolved_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理人 user_id（自动消除为空）"
+        },
+        {
+          "name": "rule_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "规则码 ASSIGN_TIMEOUT/DISPATCH_TIMEOUT/LOAD_TIMEOUT/DEPART_TIMEOUT/ARRIVE_TIMEOUT/DELIVER_TIMEOUT/STAGE_STAGNANT/CAPACITY_ABNORMAL/LOAD_MISMATCH/NO_ROUTE_PLAN"
+        },
+        {
+          "name": "rule_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "命中的覆盖规则 ID（biz_task_alert_rule.id）；空=用内置或租户默认阈值"
+        },
+        {
+          "name": "snapshot_json",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "触发时上下文快照（客户、线路、台数、基准时间来源），供阈值变更后复盘"
+        },
+        {
+          "name": "stage",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "触发时的任务状态 -1 待分配 0 待派车 1 待装车 2 待发车 3 在途 4 待交车"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "处理状态 0-待处理 1-已处理 2-已忽略 3-已自动消除"
+        },
+        {
+          "name": "task_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务单 ID（biz_task.id）"
+        },
+        {
+          "name": "task_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务单号（冗余）"
+        },
+        {
+          "name": "triggered_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "首次触发时间"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_ta_stage_level_status",
+          "columns": [
+            "stage",
+            "level",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_ta_status_level",
+          "columns": [
+            "status",
+            "level"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_ta_task_rule",
+          "columns": [
+            "task_id",
+            "rule_code"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_task_alert_rule",
+      "comment": "任务预警阈值规则表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "anchor_offset_minutes",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锚点允许时长（分钟）：DEPART/DELIVER 类以「实际装车/到达时间 + 本值」为应完成时间"
+        },
+        {
+          "name": "brand_id",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "商品车品牌 ID"
+        },
+        {
+          "name": "carrier_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运方式 1-自有车 2-承运商 3-社会运力"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "critical_after_minutes",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "相对内部计划：超时多少分钟升「严重」"
+        },
+        {
+          "name": "critical_after_required_minutes",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "相对客户要求：超时多少分钟升「严重」"
+        },
+        {
+          "name": "customer_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "客户 ID（任务任一挂接运单命中即生效）"
+        },
+        {
+          "name": "customer_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "客户类型 0-主机厂 1-贸易商 2-经销商 3-个人 4-其他"
+        },
+        {
+          "name": "destination_region_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目的地行政区 ID（支持向上匹配）"
+        },
+        {
+          "name": "distance_max",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "里程上限（公里，不含）"
+        },
+        {
+          "name": "distance_min",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "里程下限（公里，含）"
+        },
+        {
+          "name": "effective_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "生效日期（空=立即生效）"
+        },
+        {
+          "name": "expiry_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "失效日期（空=长期有效）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "origin_region_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "出发地行政区 ID（支持向上匹配）"
+        },
+        {
+          "name": "plan_enabled",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否启用内部计划时间这一路 0-关 1-开"
+        },
+        {
+          "name": "priority",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "人工优先级，直接累加到特异度得分"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "required_enabled",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否启用客户要求时间这一路 0-关 1-开"
+        },
+        {
+          "name": "rule_code",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "规则码，见 alert_rule_catalog"
+        },
+        {
+          "name": "rule_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "规则名称（便于列表识别，空则取类型名）"
+        },
+        {
+          "name": "rule_version",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "规则版本号（每次编辑 +1，同分冲突时的 tie-break 依据）"
+        },
+        {
+          "name": "series_id",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "商品车车系 ID"
+        },
+        {
+          "name": "stage",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "限定阶段（仅 STAGE_STAGNANT 需要逐阶段配置；其余规则码阶段已隐含，留空）"
+        },
+        {
+          "name": "stagnant_hours",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "阶段滞留阈值（小时，仅 STAGE_STAGNANT 使用）"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-启用"
+        },
+        {
+          "name": "time_basis",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "时间基准（派生）0-只看内部 1-只看客户 2-两路都看"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "warn_ahead_minutes",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "相对内部计划：提前多少分钟进入「关注」"
+        },
+        {
+          "name": "warn_ahead_required_minutes",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "相对客户要求：提前多少分钟进入「关注」"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_tar_code_status",
+          "columns": [
+            "rule_code",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_tar_customer",
+          "columns": [
+            "customer_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_task_cost_result",
       "comment": "任务成本计算结果主表",
       "table_tier": "business",

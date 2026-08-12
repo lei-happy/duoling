@@ -13,7 +13,7 @@
 from datetime import datetime, time as dtime, date as ddate
 from typing import List, Optional, Tuple
 
-from sqlalchemy import exists, func, or_, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -82,6 +82,15 @@ from app.modules.client.models.task.task_status_event import (
     TASK_EVENT_REVERT_DISPATCH,
     TASK_EVENT_REVERT_LOAD,
     TASK_EVENT_SOURCE_CLIENT,
+)
+from app.modules.client.services.task.task_alert_service import (
+    ALERT_LEVEL_CRITICAL,
+    LEVEL_FILTER_ANY,
+    LEVEL_FILTER_CRITICAL,
+    LEVEL_FILTER_NORMAL,
+    LEVEL_FILTER_WARN,
+    VALID_LEVEL_FILTERS,
+    TaskAlertService,
 )
 from app.modules.client.services.task.task_status_event_service import (
     TaskStatusEventService,
@@ -1234,6 +1243,7 @@ class TaskService:
         time_field: Optional[str] = None,
         time_start: Optional[ddate] = None,
         time_end: Optional[ddate] = None,
+        alert_level: Optional[str] = None,
         only_overdue: bool = False,
         in_transit_overdue: bool = False,
         only_normal: bool = False,
@@ -1276,58 +1286,23 @@ class TaskService:
         if capacity_id is not None:
             base = base.where(Task.capacity_id == capacity_id)
             cnt = cnt.where(Task.capacity_id == capacity_id)
-        now = datetime.now()
-        if in_transit_overdue:
-            od = (
-                Task.status.in_([TASK_LOADED, TASK_ON_WAY]),
-                Task.planned_arrive_time.isnot(None),
-                Task.planned_arrive_time < now,
-            )
-            base = base.where(*od)
-            cnt = cnt.where(*od)
-        elif in_transit_only_normal:
-            od = (
-                Task.status.in_([TASK_LOADED, TASK_ON_WAY]),
-                or_(
-                    Task.planned_arrive_time.is_(None),
-                    Task.planned_arrive_time >= now,
-                ),
-            )
-            base = base.where(*od)
-            cnt = cnt.where(*od)
+        if in_transit_overdue or in_transit_only_normal:
+            # 历史「在途中」合并池：状态条件保留，预警子集统一走 alert_level
+            base = base.where(Task.status.in_([TASK_LOADED, TASK_ON_WAY]))
+            cnt = cnt.where(Task.status.in_([TASK_LOADED, TASK_ON_WAY]))
         elif status is not None:
             base = base.where(Task.status == status)
             cnt = cnt.where(Task.status == status)
-            if only_overdue:
-                if status in (-1, 0):
-                    od = (
-                        Task.planned_load_time.isnot(None),
-                        Task.planned_load_time < now,
-                    )
-                    base = base.where(*od)
-                    cnt = cnt.where(*od)
-                elif status in (2, 3):
-                    od = (
-                        Task.planned_arrive_time.isnot(None),
-                        Task.planned_arrive_time < now,
-                    )
-                    base = base.where(*od)
-                    cnt = cnt.where(*od)
-            elif only_normal:
-                if status in (-1, 0):
-                    nm = or_(
-                        Task.planned_load_time.is_(None),
-                        Task.planned_load_time >= now,
-                    )
-                    base = base.where(nm)
-                    cnt = cnt.where(nm)
-                elif status in (2, 3):
-                    nm = or_(
-                        Task.planned_arrive_time.is_(None),
-                        Task.planned_arrive_time >= now,
-                    )
-                    base = base.where(nm)
-                    cnt = cnt.where(nm)
+
+        level_filter = TaskService._normalize_alert_level(
+            alert_level,
+            only_overdue=only_overdue or in_transit_overdue,
+            only_normal=only_normal or in_transit_only_normal,
+        )
+        if level_filter is not None:
+            cond = TaskService._alert_level_condition(level_filter)
+            base = base.where(cond)
+            cnt = cnt.where(cond)
         if origin_keyword:
             kw = f"%{origin_keyword.strip()}%"
             base = base.where(Task.origin.like(kw))
@@ -1374,6 +1349,47 @@ class TaskService:
         )
         return list(items_r.scalars().all()), total
 
+    @staticmethod
+    def _normalize_alert_level(
+        alert_level: Optional[str],
+        *,
+        only_overdue: bool,
+        only_normal: bool,
+    ) -> Optional[str]:
+        """归一化预警子集参数。
+
+        ``onlyOverdue`` / ``onlyNormal`` 是预警体系之前的老参数，前端已全部改用
+        ``alertLevel``，这里只为旧外链兜底：映射到新口径复用同一套判定，
+        绝不再各留一份逾期判断 —— 两套口径正是改造前的病根。
+        """
+        value = (alert_level or "").strip().lower()
+        if value in VALID_LEVEL_FILTERS:
+            return value
+        if only_overdue:
+            return LEVEL_FILTER_ANY
+        if only_normal:
+            return LEVEL_FILTER_NORMAL
+        return None
+
+    @staticmethod
+    def _alert_level_condition(level_filter: str):
+        exists_any = TaskAlertService.active_alert_exists(Task.id)
+        if level_filter == LEVEL_FILTER_NORMAL:
+            return ~exists_any
+        if level_filter == LEVEL_FILTER_CRITICAL:
+            return TaskAlertService.active_alert_exists(
+                Task.id, level=ALERT_LEVEL_CRITICAL
+            )
+        if level_filter == LEVEL_FILTER_WARN:
+            # 「关注」= 有预警但没有严重预警，与卡片按最高级别归类保持一致
+            return and_(
+                exists_any,
+                ~TaskAlertService.active_alert_exists(
+                    Task.id, level=ALERT_LEVEL_CRITICAL
+                ),
+            )
+        return exists_any
+
     # 前端可排序字段白名单：调度工作台各阶段列表的时间列
     _SORTABLE_COLUMNS = {
         "createdAt": Task.created_at,
@@ -1389,7 +1405,12 @@ class TaskService:
         sort_field: Optional[str], sort_order: Optional[str]
     ) -> list:
         """构造排序子句；字段不在白名单时回落「最新创建优先」。"""
-        column = TaskService._SORTABLE_COLUMNS.get((sort_field or "").strip())
+        field = (sort_field or "").strip()
+        if field == "alertOverdueMinutes":
+            # 超时时长不在任务主表上，用相关子查询取该任务最严重那条预警的超时分钟
+            column = TaskAlertService.overdue_minutes_expr(Task.id)
+        else:
+            column = TaskService._SORTABLE_COLUMNS.get(field)
         if column is None:
             return [Task.created_at.desc(), Task.id.desc()]
         ascending = (sort_order or "").strip().lower() != "desc"
@@ -1613,57 +1634,19 @@ class TaskService:
         )
         status_counts: dict[int, int] = {int(s): int(c) for s, c in r.all()}
 
-        now = datetime.now()
+        # 预警计数直接读 biz_task_alert，与列表 alertLevel 过滤同源，
+        # 保证「卡片上的数字」与「点进去的列表条数」永远对得上
+        scoped_task_ids = select(subq.c.id)
+        stage_alerts = await TaskAlertService.stage_level_counts(
+            db, scoped_task_ids
+        )
 
-        async def _alert_count(extra) -> int:
-            stmt = select(func.count(Task.id)).where(Task.is_deleted == 0, *extra)
-            stmt = TaskService._apply_task_workbench_filters(
-                stmt,
-                keyword=keyword,
-                carrier_type=carrier_type,
-                carrier_id=carrier_id,
-                capacity_id=capacity_id,
-                customer_id=customer_id,
-                origin_keyword=origin_keyword,
-                destination_keyword=destination_keyword,
-                created_at_start=created_at_start,
-                created_at_end=created_at_end,
-                time_field=time_field,
-                time_start=time_start,
-                time_end=time_end,
-                plate_number=plate_number,
-            )
-            return int((await db.execute(stmt)).scalar() or 0)
+        def _stage(stage: int) -> dict[str, int]:
+            return stage_alerts.get(stage, {"warn": 0, "critical": 0})
 
-        overdue_assignment = await _alert_count(
-            (
-                Task.status == TASK_PENDING_ASSIGN,
-                Task.planned_load_time.isnot(None),
-                Task.planned_load_time < now,
-            )
-        )
-        overdue_dispatch = await _alert_count(
-            (
-                Task.status == TASK_PENDING_DISPATCH,
-                Task.planned_load_time.isnot(None),
-                Task.planned_load_time < now,
-            )
-        )
-        # 「待发车」与「在途」已拆成两张阶段卡，预警数也按状态分开统计
-        overdue_depart = await _alert_count(
-            (
-                Task.status == TASK_LOADED,
-                Task.planned_arrive_time.isnot(None),
-                Task.planned_arrive_time < now,
-            )
-        )
-        overdue_arrive = await _alert_count(
-            (
-                Task.status == TASK_ON_WAY,
-                Task.planned_arrive_time.isnot(None),
-                Task.planned_arrive_time < now,
-            )
-        )
+        def _total_alert(stage: int) -> int:
+            b = _stage(stage)
+            return b["warn"] + b["critical"]
 
         return {
             "statusCounts": status_counts,
@@ -1679,13 +1662,21 @@ class TaskService:
                 "closed": status_counts.get(TASK_CLOSED, 0),
                 "cancelled": status_counts.get(TASK_CANCELLED, 0),
             },
+            "stageAlerts": {
+                str(stage): _stage(stage)
+                for stage in (
+                    TASK_PENDING_ASSIGN, TASK_PENDING_DISPATCH, TASK_DISPATCHED,
+                    TASK_LOADED, TASK_ON_WAY, TASK_ARRIVED,
+                )
+            },
+            # 旧结构保留一版做前端灰度，新代码请改读 stageAlerts
             "alerts": {
-                "overdueAssignment": overdue_assignment,
-                "overdueDispatch": overdue_dispatch,
-                "overdueDepart": overdue_depart,
-                "overdueArrive": overdue_arrive,
-                "pendingLoadAlert": 0,
-                "pendingSignAlert": 0,
+                "overdueAssignment": _total_alert(TASK_PENDING_ASSIGN),
+                "overdueDispatch": _total_alert(TASK_PENDING_DISPATCH),
+                "overdueDepart": _total_alert(TASK_LOADED),
+                "overdueArrive": _total_alert(TASK_ON_WAY),
+                "pendingLoadAlert": _total_alert(TASK_DISPATCHED),
+                "pendingSignAlert": _total_alert(TASK_ARRIVED),
             },
         }
 

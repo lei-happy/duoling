@@ -79,6 +79,11 @@ const operation: ModuleOverviewConfig = {
       path: '/operation/task',
       icon: 'task',
       desc: '查看全部调度任务单及其状态流转'
+    },
+    {
+      path: '/operation/alert-rule',
+      icon: 'bell',
+      desc: '设置各阶段超时多久提醒，可按客户、线路、车型分别放宽或收紧'
     }
   ],
   quickActions: [
