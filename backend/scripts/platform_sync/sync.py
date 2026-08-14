@@ -50,6 +50,7 @@ from scripts.platform_sync.exporters import EXPORTERS
 from scripts.platform_sync.snapshot_io import read_json
 from scripts.platform_sync.validators import validate_snapshots
 from scripts.platform_sync.diff_utils import (
+    active_snapshot_rows,
     diff_list,
     diff_version_feature,
     format_summary,
@@ -97,7 +98,33 @@ def _compare(
         if key == "version_feature":
             d = diff_version_feature(repo or {}, live.get(key) or {})
         else:
-            d = diff_list(repo or [], live.get(key) or [], KEY_FUNCS[key])
+            repo_rows = repo or []
+            live_rows = live.get(key) or []
+            if isinstance(repo_rows, list):
+                dropped = [
+                    r for r in repo_rows if int(r.get("is_deleted") or 0) != 0
+                ]
+                if dropped:
+                    names = ", ".join(
+                        str(
+                            r.get("menu_code")
+                            or r.get("feature_code")
+                            or r.get("menu_name")
+                            or "?"
+                        )
+                        for r in dropped[:10]
+                    )
+                    extra = " ..." if len(dropped) > 10 else ""
+                    print(
+                        f"[WARN] {key} 快照含 {len(dropped)} 条 is_deleted=1 记录，"
+                        f"对比时已忽略: {names}{extra}\n"
+                        f"       请从 snapshots/{filename} 删除这些墓碑"
+                        f"（export 不会写出已删菜单）。"
+                    )
+                repo_rows = active_snapshot_rows(repo_rows)
+            if isinstance(live_rows, list):
+                live_rows = active_snapshot_rows(live_rows)
+            d = diff_list(repo_rows, live_rows, KEY_FUNCS[key])
         diffs[key] = d
     return diffs
 

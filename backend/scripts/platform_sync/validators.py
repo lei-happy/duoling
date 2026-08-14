@@ -15,6 +15,7 @@
   3. 数据完整性
      - menu_code 与 feature_code 不允许首尾空白
      - menu 树不允许出现父节点缺失（parent_id 不在已知 id 集合且 != 0）
+     - client_menu / platform_menu 不允许残留 is_deleted=1 墓碑
   4. 前端组件存在性（可选，通过 frontend_dirs 开启）
      - client_menu[*].component 在 frontend/client/src/views 下确实存在
      - platform_menu[*].component 在 frontend/console/src/views 下确实存在
@@ -84,6 +85,24 @@ def _check_unique(
     return errors
 
 
+def _check_no_deleted_rows(items: List[Dict[str, Any]], label: str) -> List[str]:
+    """快照是「应存在」的事实源，不得残留 is_deleted=1 墓碑。
+
+    墓碑不会被 seed 写入，也不会出现在线上 export 结果里，但会让 sync 自检
+    永远报「新增」，从而让 deploy.sh update 以 exit=1 失败。
+    """
+    errors: List[str] = []
+    for idx, item in enumerate(items):
+        if int(item.get("is_deleted") or 0) == 0:
+            continue
+        errors.append(
+            f"{label}[{idx}] (menu_code={item.get('menu_code')!r}, "
+            f"menu_name={item.get('menu_name')!r}) is_deleted=1："
+            f"请从快照中删除该条，不要用软删标记代替移除"
+        )
+    return errors
+
+
 def validate_snapshots(
     snapshots: Dict[str, Any],
     *,
@@ -128,11 +147,13 @@ def validate_snapshots(
         report.errors.extend(
             _check_unique(client_menu, "menu_code", "client_menu", ignore_empty=True)
         )
+        report.errors.extend(_check_no_deleted_rows(client_menu, "client_menu"))
 
     if isinstance(platform_menu, list):
         report.errors.extend(
             _check_unique(platform_menu, "menu_code", "platform_menu", ignore_empty=True)
         )
+        report.errors.extend(_check_no_deleted_rows(platform_menu, "platform_menu"))
 
     # ---- 2. 引用完整性 ----
     feature_codes: Optional[set] = None

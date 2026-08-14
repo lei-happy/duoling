@@ -80,6 +80,16 @@ class ListDiff:
         return self.total == 0
 
 
+def active_snapshot_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """对比只认未删除记录。
+
+    export / 线上拉取都会丢掉 is_deleted=1；seed 也不会插入它们。
+    若手编快照把旧菜单改成墓碑却留在 JSON 里，diff 会永远显示「新增」，
+    导致 deploy.sh update 的 apply 自检失败（exit=1）。
+    """
+    return [r for r in rows if int(r.get("is_deleted") or 0) == 0]
+
+
 def diff_list(
     new_rows: List[Dict[str, Any]],
     old_rows: List[Dict[str, Any]],

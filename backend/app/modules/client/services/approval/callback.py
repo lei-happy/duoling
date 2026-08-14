@@ -55,7 +55,6 @@ class _Registry:
         if biz_type in self._callbacks:
             logger.warning(f"[审批中心] biz_type={biz_type} 的回调被重复注册，后者覆盖前者")
         self._callbacks[biz_type] = callback
-        logger.info(f"[审批中心] 已注册业务回调 biz_type={biz_type}")
 
     def get(self, biz_type: str) -> Optional[ApprovalCallback]:
         return self._callbacks.get(biz_type)
