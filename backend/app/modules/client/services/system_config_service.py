@@ -49,6 +49,18 @@ class SystemConfigService:
             STAGE_RULES_DESCRIPTION,
             default_stage_rules_json,
         )
+        from app.modules.client.services.finance.accounting.accounting_constants import (
+            DEFAULT_OUTPUT_TAX_RATE,
+            OUTPUT_TAX_RATE_CONFIG_GROUP,
+            OUTPUT_TAX_RATE_CONFIG_KEY,
+            OUTPUT_TAX_RATE_DESCRIPTION,
+        )
+        from app.modules.client.services.finance.customer.aging_service import (
+            AGING_BUCKETS_CONFIG_GROUP,
+            AGING_BUCKETS_CONFIG_KEY,
+            AGING_BUCKETS_DESCRIPTION,
+            default_aging_buckets_json,
+        )
 
         await SystemConfigService.ensure(
             db,
@@ -57,6 +69,22 @@ class SystemConfigService:
             config_group=STAGE_RULES_CONFIG_GROUP,
             description=STAGE_RULES_DESCRIPTION,
             value_type="json",
+        )
+        await SystemConfigService.ensure(
+            db,
+            AGING_BUCKETS_CONFIG_KEY,
+            default_value=default_aging_buckets_json(),
+            config_group=AGING_BUCKETS_CONFIG_GROUP,
+            description=AGING_BUCKETS_DESCRIPTION,
+            value_type="json",
+        )
+        await SystemConfigService.ensure(
+            db,
+            OUTPUT_TAX_RATE_CONFIG_KEY,
+            default_value=str(DEFAULT_OUTPUT_TAX_RATE),
+            config_group=OUTPUT_TAX_RATE_CONFIG_GROUP,
+            description=OUTPUT_TAX_RATE_DESCRIPTION,
+            value_type="number",
         )
 
     @staticmethod

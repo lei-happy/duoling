@@ -1977,6 +1977,206 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_bank_account",
+      "comment": "企业银行账户表（收付款账户主数据）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_name",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账户名称（户名）"
+        },
+        {
+          "name": "account_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "银行账号"
+        },
+        {
+          "name": "account_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "账户类型 1-基本户 2-一般户 3-专用户 4-其他"
+        },
+        {
+          "name": "balance",
+          "type": "NUMERIC(16, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "账面余额（由收付动作维护，非银行真实余额）"
+        },
+        {
+          "name": "bank_branch",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支行"
+        },
+        {
+          "name": "bank_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开户行全称"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(60)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键（账号），防同账号重复建档；软删时置 NULL 允许重建"
+        },
+        {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属经营主体ID（biz_business_entity.id）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_default_pay",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否该主体默认付款账户 0-否 1-是"
+        },
+        {
+          "name": "is_default_receive",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否该主体默认收款账户 0-否 1-是"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "sort_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "下拉排序"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-正常"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "usage_scope",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "用途 1-收付通用 2-仅收款 3-仅付款"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_bank_acct_entity",
+          "columns": [
+            "enterprise_id",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_bank_acct_no",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_business_entity",
       "comment": "经营主体表（法人/独立核算单元）",
       "table_tier": "core",
@@ -5664,6 +5864,970 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_carrier_recon",
+      "comment": "承运商对账单主表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "actual_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际金额（支付/收款后填）"
+        },
+        {
+          "name": "adjust_amount_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "行调整额合计（可负）；超过阈值需业务主管审批后才能确认"
+        },
+        {
+          "name": "adjust_approved_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "大额调整审批时间；调整额再次变动会清空，需重新审批"
+        },
+        {
+          "name": "adjust_approved_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "大额调整审批人 user_id"
+        },
+        {
+          "name": "applied_amount_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已被结算单关联的金额合计（判断还能再关联多少）"
+        },
+        {
+          "name": "approval_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "远期审批中心单号"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
+          "name": "carrier_contact_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运商对账联系人（冗余）"
+        },
+        {
+          "name": "carrier_contact_phone",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运商对账联系电话（冗余）"
+        },
+        {
+          "name": "carrier_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_carrier.id"
+        },
+        {
+          "name": "carrier_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运商名称（冗余）"
+        },
+        {
+          "name": "carrier_short_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运商简称（冗余）"
+        },
+        {
+          "name": "confirm_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运商回签凭证 URL"
+        },
+        {
+          "name": "confirmed_by_carrier_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运商确认时间"
+        },
+        {
+          "name": "confirmed_by_carrier_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运商确认人姓名（自由文本）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(80)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 carrier_id:period_start:period_end，仅非撤销且未删除时有值，撤销/软删置 NULL 释放占用"
+        },
+        {
+          "name": "diff_forced_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已强制放行差异条数（biz_recon_diff.status=3）"
+        },
+        {
+          "name": "diff_open_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "未处置差异条数（biz_recon_diff.status=0）"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "收/付方向（应付固定 2-付款）"
+        },
+        {
+          "name": "dirty_line_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "脏行数（快照与业务事实不一致的行），>0 时列表高亮"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "carrier_recon",
+          "comment": "单据大类（固定 carrier_recon）"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据编号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "成本归属经营主体ID（biz_business_entity.id），取自承运商档案"
+        },
+        {
+          "name": "gross_amount_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "毛额合计（含行调整额，未扣预付）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID（被哪个上游单据锁定）"
+        },
+        {
+          "name": "paid_amount_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已付妥金额合计（关联结算单中已支付部分的应用金额之和）"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款时间"
+        },
+        {
+          "name": "paid_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款操作人 user_id"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（应付）/ 收款方式（应收）"
+        },
+        {
+          "name": "pay_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        },
+        {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "planned_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划金额（>= 0）"
+        },
+        {
+          "name": "prepaid_offset_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "任务级预付/补款已付金额合计（自动扣减项）"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批时间"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "settle_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "关联结算单数量"
+        },
+        {
+          "name": "settlement_account_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "推荐结算账户（biz_carrier_settlement.id，写入时冻结）"
+        },
+        {
+          "name": "settlement_account_label",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "结算账户标签（冗余）"
+        },
+        {
+          "name": "settlement_type_snapshot",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运商主结算方式快照 0-月结 1-票结 2-预付 3-趟结"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-草稿 2-已确认 3-已结清 4-已撤销（对账类不走 1-待审批）"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
+        },
+        {
+          "name": "task_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "关联任务数"
+        },
+        {
+          "name": "total_quantity",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "计费数量合计（按行 quantity 求和）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "doc_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_carecon_carrier",
+          "columns": [
+            "carrier_id",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_carecon_enterprise",
+          "columns": [
+            "enterprise_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_carecon_period",
+          "columns": [
+            "period_start",
+            "period_end"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_carecon_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_carecon_period_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_carrier_recon_task_link",
+      "comment": "承运商对账单-任务单桥接表（对账行）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "adjust_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "调整额（罚款、补价、油卡核销，可负）"
+        },
+        {
+          "name": "adjust_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调整原因（有调整额时必填）"
+        },
+        {
+          "name": "billing_base",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "计费基础 1-按台 2-按吨 3-按趟 4-包车"
+        },
+        {
+          "name": "carrier_cost_snapshot",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "写入时的 task.carrier_cost_amount 快照"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(60)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 recon_id:task_id，防重复挂接；移除行（软删）时置 NULL"
+        },
+        {
+          "name": "dirty_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "置脏时间"
+        },
+        {
+          "name": "dirty_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "置脏原因"
+        },
+        {
+          "name": "gross_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "行毛额 = quantity × unit_price + adjust_amount"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "locked_snapshot_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "快照冻结时间"
+        },
+        {
+          "name": "net_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "行净额 = gross_amount - prepaid_offset_amount（结算按此付款）"
+        },
+        {
+          "name": "plate_number",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车牌号（冗余，对账时承运商按车核对）"
+        },
+        {
+          "name": "prepaid_offset_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "任务级预付/补款已支付的扣减额（写入时快照，见文档 03 §3.6）"
+        },
+        {
+          "name": "quantity",
+          "type": "NUMERIC(10, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "计费数量（按台=已交车台数 按趟/包车=1）"
+        },
+        {
+          "name": "recon_dirty",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否需重新核对 0-否 1-是（快照与业务事实已不一致）"
+        },
+        {
+          "name": "recon_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_carrier_recon.id"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "signed_at_snapshot",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "写入时任务实际到达时间快照"
+        },
+        {
+          "name": "signed_quantity_snapshot",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "写入时已交车台数快照"
+        },
+        {
+          "name": "task_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_task.id"
+        },
+        {
+          "name": "task_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务单号（冗余）"
+        },
+        {
+          "name": "unit_price",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "单价（可手工覆盖）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_crtl_dirty",
+          "columns": [
+            "recon_id",
+            "recon_dirty"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_crtl_recon",
+          "columns": [
+            "recon_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_crtl_task",
+          "columns": [
+            "task_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_crtl_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_carrier_settle_recon_link",
+      "comment": "承运商结算单-对账单桥接表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "applied_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "本结算单认领该对账单的金额（Σ 本列 = 结算单 planned_amount）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(60)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 settle_id:recon_id，防重复关联；解除关联（软删）时置 NULL"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "recon_doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "对账单号（冗余）"
+        },
+        {
+          "name": "recon_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_carrier_recon.id"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "settle_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_carrier_settlement_doc.id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_casrl_recon",
+          "columns": [
+            "recon_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_casrl_settle",
+          "columns": [
+            "settle_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_casrl_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_carrier_settlement",
       "comment": "承运商结算账户表",
       "table_tier": "business",
@@ -5876,6 +7040,478 @@
           "name": "idx_carrier_id",
           "columns": [
             "carrier_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_carrier_settlement_doc",
+      "comment": "承运商结算单主表（区别于 biz_carrier_settlement 结算账户）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "actual_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际金额（支付/收款后填）"
+        },
+        {
+          "name": "approval_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "远期审批中心单号"
+        },
+        {
+          "name": "bank_account_masked",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款账号脱敏（冗余，仅展示后四位）"
+        },
+        {
+          "name": "bank_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开户行（冗余）"
+        },
+        {
+          "name": "batch_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属打款批次ID（biz_payment_batch.id，第 4 期建表）"
+        },
+        {
+          "name": "batch_locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "入批时间（入批后不允许改金额）"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
+          "name": "carrier_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_carrier.id"
+        },
+        {
+          "name": "carrier_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运商名称（冗余）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "收/付方向（应付固定 2-付款）"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "carrier_settle",
+          "comment": "单据大类（固定 carrier_settle）"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据编号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "due_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "应付到期日（按承运商结算方式与账期推导）"
+        },
+        {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "成本归属经营主体ID"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
+        },
+        {
+          "name": "invoice_amount_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已核销进项票含税金额累计"
+        },
+        {
+          "name": "invoice_matched",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否已收齐进项票 0-未齐 1-已齐"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "is_offset_only",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否仅抵账（无实付，预付已覆盖全额）0-否 1-是"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID（被哪个上游单据锁定）"
+        },
+        {
+          "name": "paid_amount_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已付累计（打款批次分批执行时递增）"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款时间"
+        },
+        {
+          "name": "paid_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款操作人 user_id"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（应付）/ 收款方式（应收）"
+        },
+        {
+          "name": "pay_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        },
+        {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "planned_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划金额（>= 0）"
+        },
+        {
+          "name": "recon_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "关联对账单数量（冗余）"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批时间"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "settlement_account_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "承运商结算账户（biz_carrier_settlement.id）"
+        },
+        {
+          "name": "settlement_account_label",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账户标签（冗余）"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "通用状态 0-草稿 1-待审批 2-已审批 3-已支付/已收款/已开票 4-已撤销 5-已核销/已结清 6-部分核销/部分支付 9-已作废"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "doc_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_castl_carrier_status",
+          "columns": [
+            "carrier_id",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_castl_due_date",
+          "columns": [
+            "due_date"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_castl_enterprise",
+          "columns": [
+            "enterprise_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_castl_invoice",
+          "columns": [
+            "invoice_matched",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_castl_status",
+          "columns": [
+            "status"
           ],
           "unique": false
         }
@@ -7325,6 +8961,24 @@
           "comment": "统一社会信用代码"
         },
         {
+          "name": "credit_limit",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "信用额度（未收余额上限）；空=不限额。超额只预警不拦截"
+        },
+        {
+          "name": "credit_status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "信用状态 0-暂停合作 1-正常 2-重点关注（仅作提示依据，不阻断业务）"
+        },
+        {
           "name": "customer_code",
           "type": "VARCHAR(50)",
           "nullable": true,
@@ -7377,6 +9031,15 @@
           "autoincrement": null,
           "server_default": "0",
           "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "payment_days",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账期天数（配合 settlement_type 推导到期日）；空=未设置，按 0 天算"
         },
         {
           "name": "remark",
@@ -7440,6 +9103,2170 @@
           "name": "ix_biz_customer_enterprise_id",
           "columns": [
             "enterprise_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_customer_invoice",
+      "comment": "客户发票主表（销项发票）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "actual_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际金额（支付/收款后填）"
+        },
+        {
+          "name": "amount_excl_tax",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "不含税金额合计"
+        },
+        {
+          "name": "amount_incl_tax",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "含税金额合计（与基类 planned_amount 同值，报表用语义列）"
+        },
+        {
+          "name": "applicant_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "申请开票时间"
+        },
+        {
+          "name": "approval_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "远期审批中心单号"
+        },
+        {
+          "name": "buyer_account",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "购方银行账号"
+        },
+        {
+          "name": "buyer_address",
+          "type": "VARCHAR(200)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "购方地址"
+        },
+        {
+          "name": "buyer_bank",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "购方开户行"
+        },
+        {
+          "name": "buyer_phone",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "购方电话"
+        },
+        {
+          "name": "buyer_tax_no",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "购方税号"
+        },
+        {
+          "name": "buyer_title",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "购方名称（开票抬头）"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "customer_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_customer.id"
+        },
+        {
+          "name": "customer_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "客户名称（冗余）"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(90)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 invoice_code:invoice_no，防同号票重复录；未开票、作废、软删时置 NULL"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "收/付方向（销项固定 1-收款侧）"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "customer_invoice",
+          "comment": "单据大类（固定 customer_invoice）"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据编号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
+        },
+        {
+          "name": "invoice_code",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发票代码"
+        },
+        {
+          "name": "invoice_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "票面开票日期"
+        },
+        {
+          "name": "invoice_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发票号码（开票完成时录入）"
+        },
+        {
+          "name": "invoice_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "发票类型 1-普票 2-专票 3-电子普票 4-电子专票 5-其他"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "is_red_flush",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否红冲票（金额为负） 0-否 1-是"
+        },
+        {
+          "name": "issued_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开票完成时间"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID（被哪个上游单据锁定）"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款时间"
+        },
+        {
+          "name": "paid_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款操作人 user_id"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（应付）/ 收款方式（应收）"
+        },
+        {
+          "name": "pay_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        },
+        {
+          "name": "pdf_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发票 PDF / 影像 URL"
+        },
+        {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "planned_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划金额（>= 0）"
+        },
+        {
+          "name": "red_flush_from_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "红冲票指向的原发票ID；原票上反向不存，查红冲票即可"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批时间"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "seller_entity_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "销方经营主体ID（biz_business_entity.id），多主体分别申报"
+        },
+        {
+          "name": "seller_tax_no",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "票面销方税号"
+        },
+        {
+          "name": "seller_title",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "票面销方名称（冻结冗余）"
+        },
+        {
+          "name": "settle_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "关联结算单数量"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-草稿 1-申请中 3-已开票 4-已撤销 9-已作废(含红冲)"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
+        },
+        {
+          "name": "tax_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "税额合计"
+        },
+        {
+          "name": "tax_rate",
+          "type": "NUMERIC(5, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主税率 %（多税率时留空，按行明细）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "void_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "作废/红冲原因"
+        },
+        {
+          "name": "voided_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "作废时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "doc_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_cinv_customer",
+          "columns": [
+            "customer_id",
+            "issued_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cinv_entity",
+          "columns": [
+            "seller_entity_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cinv_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_cinv_no_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_customer_invoice_item",
+      "comment": "客户发票行明细表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "amount_excl_tax",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "不含税金额"
+        },
+        {
+          "name": "amount_incl_tax",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "含税金额"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "invoice_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_customer_invoice.id"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "item_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "商品/服务名称（如「汽车整车运输服务」）"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "sort_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "行序"
+        },
+        {
+          "name": "tax_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "税额"
+        },
+        {
+          "name": "tax_rate",
+          "type": "NUMERIC(5, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "税率 %"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_cii_invoice",
+          "columns": [
+            "invoice_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_customer_invoice_settle_link",
+      "comment": "客户发票-结算单桥接表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "applied_amount_incl_tax",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "本发票对该结算单的开票金额（含税，> 0）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(60)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 invoice_id:settle_id，同一对关系一条；解除（软删）时置 NULL"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "invoice_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_customer_invoice.id"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "settle_doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "结算单号（冗余）"
+        },
+        {
+          "name": "settle_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_customer_settlement.id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_cisl_invoice",
+          "columns": [
+            "invoice_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cisl_settle",
+          "columns": [
+            "settle_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_cisl_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_customer_recon",
+      "comment": "客户对账单主表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "actual_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际金额（支付/收款后填）"
+        },
+        {
+          "name": "adjust_amount_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "行调整额合计（可负）；超过阈值需业务主管审批后才能确认"
+        },
+        {
+          "name": "adjust_approved_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "大额调整审批时间；调整额再次变动会清空，需重新审批"
+        },
+        {
+          "name": "adjust_approved_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "大额调整审批人 user_id"
+        },
+        {
+          "name": "applied_amount_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已被结算单关联的金额合计（判断还能再关联多少）"
+        },
+        {
+          "name": "approval_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "远期审批中心单号"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
+          "name": "confirm_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "客户回签凭证 URL（PDF/图片）"
+        },
+        {
+          "name": "confirmed_by_customer_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "客户方确认时间"
+        },
+        {
+          "name": "confirmed_by_customer_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "客户方确认人姓名（自由文本）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "customer_contact_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "客户对账联系人（冗余）"
+        },
+        {
+          "name": "customer_contact_phone",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "客户对账联系电话（冗余）"
+        },
+        {
+          "name": "customer_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_customer.id"
+        },
+        {
+          "name": "customer_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "客户名称（冗余）"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(80)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 customer_id:period_start:period_end，仅非撤销且未删除时有值，撤销/软删置 NULL 释放占用"
+        },
+        {
+          "name": "diff_forced_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已强制放行差异条数（biz_recon_diff.status=3），>0 显示带未决差异徽章"
+        },
+        {
+          "name": "diff_open_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "未处置差异条数（biz_recon_diff.status=0）"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "收/付方向（应收固定 1-收款）"
+        },
+        {
+          "name": "dirty_line_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "脏行数（快照与业务事实不一致的行），>0 时列表高亮"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "customer_recon",
+          "comment": "单据大类（固定 customer_recon）"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据编号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收入归属经营主体ID（biz_business_entity.id），取自客户档案默认主体"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID（被哪个上游单据锁定）"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款时间"
+        },
+        {
+          "name": "paid_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款操作人 user_id"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（应付）/ 收款方式（应收）"
+        },
+        {
+          "name": "pay_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        },
+        {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "planned_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划金额（>= 0）"
+        },
+        {
+          "name": "received_amount_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已收妥金额合计（关联结算单中已收款部分的应用金额之和）"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批时间"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "settle_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "关联结算单数量"
+        },
+        {
+          "name": "settlement_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "结算方式 0-月结 1-票结 2-预付（写入时从客户档案冻结）"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-草稿 2-已确认 3-已结清 4-已撤销（对账类不走 1-待审批）"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
+        },
+        {
+          "name": "total_quantity",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "计费数量合计（按行 quantity 求和）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "waybill_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "关联运单数"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "doc_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_crecon_customer",
+          "columns": [
+            "customer_id",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_crecon_enterprise",
+          "columns": [
+            "enterprise_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_crecon_period",
+          "columns": [
+            "period_start",
+            "period_end"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_crecon_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_crecon_period_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_customer_recon_waybill_link",
+      "comment": "客户对账单-运单桥接表（对账行）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "adjust_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "调整额（差异、罚款、补价，可负）"
+        },
+        {
+          "name": "adjust_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调整原因（有调整额时必填）"
+        },
+        {
+          "name": "amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "行金额 = quantity × unit_price + adjust_amount"
+        },
+        {
+          "name": "billing_base",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "计费基础 1-按台 2-按吨 3-按趟 4-固定金额"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(60)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 recon_id:waybill_id，防重复挂接；移除行（软删）时置 NULL"
+        },
+        {
+          "name": "dirty_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "置脏时间"
+        },
+        {
+          "name": "dirty_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "置脏原因（如「签收台数由 8 变为 7」）"
+        },
+        {
+          "name": "freight_amount_snapshot",
+          "type": "NUMERIC(12, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "写入时的 waybill.freight_amount 快照"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "locked_snapshot_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "快照冻结时间"
+        },
+        {
+          "name": "quantity",
+          "type": "NUMERIC(10, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "计费数量（按台=已交车台数 按吨=吨数 按趟=1）"
+        },
+        {
+          "name": "recon_dirty",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否需重新核对 0-否 1-是（快照与业务事实已不一致）"
+        },
+        {
+          "name": "recon_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_customer_recon.id"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "signed_quantity_snapshot",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "写入时的已交车台数聚合快照"
+        },
+        {
+          "name": "unit_price",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "单价（合同冻结，可手工覆盖）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "waybill_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_waybill.id"
+        },
+        {
+          "name": "waybill_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "运单号（冗余）"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_crwl_dirty",
+          "columns": [
+            "recon_id",
+            "recon_dirty"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_crwl_recon",
+          "columns": [
+            "recon_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_crwl_waybill",
+          "columns": [
+            "waybill_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_crwl_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_customer_settle_recon_link",
+      "comment": "客户结算单-对账单桥接表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "applied_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "本结算单认领该对账单的金额（Σ 本列 = 结算单 planned_amount）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(60)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 settle_id:recon_id，防重复关联；解除关联（软删）时置 NULL"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "recon_doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "对账单号（冗余）"
+        },
+        {
+          "name": "recon_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_customer_recon.id"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "settle_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_customer_settlement.id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_csrl_recon",
+          "columns": [
+            "recon_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_csrl_settle",
+          "columns": [
+            "settle_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_csrl_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_customer_settlement",
+      "comment": "客户结算单主表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "actual_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际金额（支付/收款后填）"
+        },
+        {
+          "name": "approval_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "远期审批中心单号"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "customer_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_customer.id"
+        },
+        {
+          "name": "customer_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "客户名称（冗余）"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "收/付方向（应收固定 1-收款）"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "customer_settle",
+          "comment": "单据大类（固定 customer_settle）"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据编号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "due_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "到期日（单据级账期覆盖）。为空时按客户 settlement_type + payment_days 推导，见文档 12 §2.2"
+        },
+        {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收入归属经营主体ID（biz_business_entity.id），多主体账龄按此分列"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
+        },
+        {
+          "name": "invoice_amount_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已开发票金额合计（冗余）"
+        },
+        {
+          "name": "invoice_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已关联发票数量（冗余）"
+        },
+        {
+          "name": "invoice_required",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否需要开票 0-否 1-是"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID（被哪个上游单据锁定）"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款时间"
+        },
+        {
+          "name": "paid_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款操作人 user_id"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（应付）/ 收款方式（应收）"
+        },
+        {
+          "name": "pay_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        },
+        {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "planned_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划金额（>= 0）"
+        },
+        {
+          "name": "received_account_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款账户ID（biz_bank_account.id，该表第 4 期建，本期可空）"
+        },
+        {
+          "name": "received_account_label",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款账户标签（冗余展示，免列表 join）"
+        },
+        {
+          "name": "received_amount_total",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已收累计（每次收款核销递增；账龄的已收口径取本列）"
+        },
+        {
+          "name": "received_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收妥时间（与基类 paid_at 同值，应收语义冗余便于筛选）"
+        },
+        {
+          "name": "received_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "银行回单 URL"
+        },
+        {
+          "name": "recon_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "关联对账单数量（冗余）"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批时间"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "通用状态 0-草稿 1-待审批 2-已审批 3-已支付/已收款/已开票 4-已撤销 5-已核销/已结清 6-部分核销/部分支付 9-已作废"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "doc_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_cstl_customer_status",
+          "columns": [
+            "customer_id",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cstl_due_date",
+          "columns": [
+            "due_date"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cstl_enterprise",
+          "columns": [
+            "enterprise_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_cstl_status",
+          "columns": [
+            "status"
           ],
           "unique": false
         }
@@ -8896,6 +12723,859 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_driver_payroll",
+      "comment": "自有司机工资单主表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发薪账户（biz_driver_account.id）"
+        },
+        {
+          "name": "account_name_snapshot",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账户名快照"
+        },
+        {
+          "name": "account_no_masked",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账户号脱敏快照"
+        },
+        {
+          "name": "account_type",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账户类型快照 1-银行卡 2-油气款 3-积分"
+        },
+        {
+          "name": "actual_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际金额（支付/收款后填）"
+        },
+        {
+          "name": "approval_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "远期审批中心单号"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(80)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 driver_id:period_start:period_end，撤销/软删置 NULL 释放占用"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "收/付方向（应付固定 2-付款）"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "driver_payroll",
+          "comment": "单据大类（固定 driver_payroll）"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据编号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "driver_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_driver.id"
+        },
+        {
+          "name": "driver_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "司机姓名（冗余）"
+        },
+        {
+          "name": "driver_phone",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "司机手机号（冗余）"
+        },
+        {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "人力成本归属经营主体ID"
+        },
+        {
+          "name": "gross_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "应发合计 = total_base_amount + total_commission_amount"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID（被哪个上游单据锁定）"
+        },
+        {
+          "name": "net_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "实发合计 = 应发 - 扣减 - 预付抵扣（可为负，下期结转）"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款时间"
+        },
+        {
+          "name": "paid_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款操作人 user_id"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（应付）/ 收款方式（应收）"
+        },
+        {
+          "name": "pay_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        },
+        {
+          "name": "payroll_model",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "3",
+          "comment": "薪资模型 1-月薪固定 2-计件提成 3-混合（底薪+提成）"
+        },
+        {
+          "name": "payslip_pdf_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "工资条 PDF URL（远期自动生成）"
+        },
+        {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "period_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "发放周期 1-月薪 2-周薪 3-趟薪"
+        },
+        {
+          "name": "planned_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划金额（>= 0）"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批时间"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "通用状态 0-草稿 1-待审批 2-已审批 3-已支付/已收款/已开票 4-已撤销 5-已核销/已结清 6-部分核销/部分支付 9-已作废"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
+        },
+        {
+          "name": "task_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "关联任务数"
+        },
+        {
+          "name": "total_base_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "底薪与补贴合计（工资项 category=1 应发项，不含提成汇总项）"
+        },
+        {
+          "name": "total_commission_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "任务提成合计（来自任务提成行）"
+        },
+        {
+          "name": "total_deduction_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "扣减与抵账合计（工资项 category=2/3）"
+        },
+        {
+          "name": "total_prepaid_offset_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "本周期已发放的任务级预付/补款合计（扣减项，写入时快照）"
+        },
+        {
+          "name": "total_signed_quantity",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已交车总台数"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "doc_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_dpay_driver_status",
+          "columns": [
+            "driver_id",
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_dpay_enterprise",
+          "columns": [
+            "enterprise_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_dpay_period",
+          "columns": [
+            "period_start",
+            "period_end"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_dpay_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_dpay_period_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_driver_payroll_item",
+      "comment": "司机工资单工资项明细表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "项目金额（一律填正数，加减由 category 决定）"
+        },
+        {
+          "name": "category",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "分类 1-应发项（加项） 2-扣减项 3-抵账项"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "formula",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计算说明（如「出勤 22 天 × 150 元/天」），工资条展示用"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "item_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "工资项名称（冗余，工资条直接展示）"
+        },
+        {
+          "name": "item_type",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "工资项编码 base_salary/attendance/commission_total/oil_subsidy/meal_subsidy/safety_award/fine/social_insurance/oil_card_offset/other_deduction/other_addition"
+        },
+        {
+          "name": "payroll_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_driver_payroll.id"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "sort_order",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "排序"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_dpi_payroll",
+          "columns": [
+            "payroll_id",
+            "category"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_driver_payroll_task_link",
+      "comment": "司机工资单-任务单桥接表（任务提成行）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "adjust_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "调整额（绩效折扣、罚款，可负）"
+        },
+        {
+          "name": "adjust_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "调整原因（有调整额时必填）"
+        },
+        {
+          "name": "billing_base",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "计件基础 1-按台 2-按吨 3-按趟"
+        },
+        {
+          "name": "commission_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "该任务提成 = quantity × unit_price + adjust_amount"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(60)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 payroll_id:task_id，防重复挂接；移除行时置 NULL"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "locked_snapshot_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "快照冻结时间"
+        },
+        {
+          "name": "payroll_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_driver_payroll.id"
+        },
+        {
+          "name": "plate_number",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车牌号（冗余）"
+        },
+        {
+          "name": "quantity",
+          "type": "NUMERIC(10, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "计件数量（按台=已交车台数）"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "signed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "交车时间快照（工资条按此排序）"
+        },
+        {
+          "name": "signed_quantity_snapshot",
+          "type": "INTEGER",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "写入时已交车台数快照"
+        },
+        {
+          "name": "task_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_task.id"
+        },
+        {
+          "name": "task_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务单号（冗余）"
+        },
+        {
+          "name": "unit_price",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "计件单价"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_dptl_payroll",
+          "columns": [
+            "payroll_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_dptl_task",
+          "columns": [
+            "task_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_dptl_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_driver_route",
       "comment": "驾驶员常跑线路表",
       "table_tier": "business",
@@ -9382,7 +14062,7 @@
           "primary_key": false,
           "autoincrement": null,
           "server_default": null,
-          "comment": "事件类型 1-创建 2-提交 3-审批通过 4-审批拒绝 5-退回草稿 6-支付 7-撤销支付 8-撤销 9-强制撤销 10-核销 11-锁定 12-解锁 13-开票 14-作废 15-红冲"
+          "comment": "事件类型 1-创建 2-提交 3-审批通过 4-审批拒绝 5-退回草稿 6-支付 7-撤销支付 8-撤销 9-强制撤销 10-核销 11-锁定 12-解锁 13-开票 14-作废 15-红冲 16-金额调整 17-差异登记 18-差异关闭 19-强制确认 20-重算刷新 21-批次打款 22-到账认领 23-核销冲销 24-进项收票 25-票款核对 26-信用预警"
         },
         {
           "name": "from_status",
@@ -12113,6 +16793,1472 @@
       ],
       "unique_constraints": [],
       "indexes": [],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_payment_batch",
+      "comment": "打款批次表（批量付款执行记录）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "actual_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际金额（支付/收款后填）"
+        },
+        {
+          "name": "approval_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "远期审批中心单号"
+        },
+        {
+          "name": "bank_account_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款账户ID（biz_bank_account.id）"
+        },
+        {
+          "name": "bank_account_label",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款账户标签（冗余展示）"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "收/付方向（付款固定 2）"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "payment_batch",
+          "comment": "单据大类（固定 payment_batch）"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据编号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "enterprise_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款经营主体ID"
+        },
+        {
+          "name": "exec_finished_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "执行结束时间"
+        },
+        {
+          "name": "exec_mode",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "执行方式 1-人工登记结果 2-银企直连（远期）"
+        },
+        {
+          "name": "exec_started_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "执行开始时间"
+        },
+        {
+          "name": "fail_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "失败笔数"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "item_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "总笔数"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID（被哪个上游单据锁定）"
+        },
+        {
+          "name": "paid_amount",
+          "type": "NUMERIC(16, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "实际付出总额（= Σ 成功笔）"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款时间"
+        },
+        {
+          "name": "paid_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款操作人 user_id"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（应付）/ 收款方式（应收）"
+        },
+        {
+          "name": "pay_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        },
+        {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "plan_pay_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划付款日"
+        },
+        {
+          "name": "planned_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划金额（>= 0）"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批时间"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-草稿 1-待审批 2-已审批 3-已执行 6-部分失败 4-已撤销"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
+        },
+        {
+          "name": "success_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "成功笔数"
+        },
+        {
+          "name": "total_amount",
+          "type": "NUMERIC(16, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "计划付款总额（= Σ 明细，与基类 planned_amount 同值，报表用语义列）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "doc_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_pbatch_account",
+          "columns": [
+            "bank_account_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_pbatch_plan",
+          "columns": [
+            "status",
+            "plan_pay_date"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_payment_batch_item",
+      "comment": "打款批次明细表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "本笔金额"
+        },
+        {
+          "name": "bank_serial_no",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "银行流水号"
+        },
+        {
+          "name": "batch_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_payment_batch.id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(60)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 doc_kind:doc_id，防同一单据被两个批次重复付；失败或移出批次时置 NULL，允许重新入批"
+        },
+        {
+          "name": "doc_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被付单据ID"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被付单据大类 task_finance / carrier_settle / driver_payroll"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被付单号（冗余）"
+        },
+        {
+          "name": "exec_status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "执行状态 0-待执行 1-成功 2-失败"
+        },
+        {
+          "name": "fail_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "失败原因"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "本笔实付时间"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（默认继承批次，可单笔改）"
+        },
+        {
+          "name": "payee_bank_account",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款方账号（冗余冻结）"
+        },
+        {
+          "name": "payee_bank_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款方开户行（冗余冻结）"
+        },
+        {
+          "name": "payee_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款方ID"
+        },
+        {
+          "name": "payee_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款方名称（冗余冻结）"
+        },
+        {
+          "name": "payee_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "3",
+          "comment": "收款方类型 1-司机 2-承运商 3-其他"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_pbi_batch",
+          "columns": [
+            "batch_id",
+            "exec_status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_pbi_doc",
+          "columns": [
+            "doc_kind",
+            "doc_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_pbi_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_receipt_settle_link",
+      "comment": "收款单-客户结算单核销桥接表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "applied_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "本收款单核销到该结算单的金额（> 0）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(60)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 receipt_id:settle_id，同一对关系只一条（追加金额走更新）；撤销核销（软删）时置 NULL"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "receipt_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_receipt_voucher.id"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "settle_doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "结算单号（冗余）"
+        },
+        {
+          "name": "settle_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_customer_settlement.id"
+        },
+        {
+          "name": "settled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "核销时间"
+        },
+        {
+          "name": "settled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "核销操作人 user_id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_rsl_receipt",
+          "columns": [
+            "receipt_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_rsl_settle",
+          "columns": [
+            "settle_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_rsl_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_receipt_voucher",
+      "comment": "收款单（到账事实）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "actual_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际金额（支付/收款后填）"
+        },
+        {
+          "name": "approval_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "远期审批中心单号"
+        },
+        {
+          "name": "bank_account_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款账户ID（biz_bank_account.id，该表第 4 期建，本期可空）"
+        },
+        {
+          "name": "bank_account_label",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款账户标签（冗余展示）"
+        },
+        {
+          "name": "bank_serial_no",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "银行流水号（远期自动匹配的关键）"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "customer_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款客户ID（可空：认领前可能还不确定是谁打的）"
+        },
+        {
+          "name": "customer_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "客户名称（冗余）"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "收/付方向（收款固定 1）"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "receipt_voucher",
+          "comment": "单据大类（固定 receipt_voucher）"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据编号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID（被哪个上游单据锁定）"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款时间"
+        },
+        {
+          "name": "paid_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款操作人 user_id"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（应付）/ 收款方式（应收）"
+        },
+        {
+          "name": "pay_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        },
+        {
+          "name": "payer_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "银行回单上的付款方名称（原文，可能与客户档案名不同）"
+        },
+        {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "planned_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划金额（>= 0）"
+        },
+        {
+          "name": "receive_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收款方式 1-银行转账 2-现金 3-支票 4-承兑汇票 5-平台代收"
+        },
+        {
+          "name": "received_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "到账时间（与基类 paid_at 同值，冗余便于按到账日筛选）"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批时间"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "settled_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已核销金额"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-草稿(未核销) 3-已认领(部分核销) 5-已核销(满额) 4-已撤销"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
+        },
+        {
+          "name": "unsettled_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "未核销金额 = planned_amount - settled_amount"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "银行回单附件 URL"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "doc_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_rcpt_customer",
+          "columns": [
+            "customer_id",
+            "received_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_rcpt_serial",
+          "columns": [
+            "bank_serial_no"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_rcpt_unsettled",
+          "columns": [
+            "status",
+            "unsettled_amount"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_recon_diff",
+      "comment": "对账差异记录表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "actual_value",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "业务侧当前值"
+        },
+        {
+          "name": "biz_doc_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "业务单据 ID"
+        },
+        {
+          "name": "biz_doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "业务单号（冗余，便于列表展示与业务单软删后追溯）"
+        },
+        {
+          "name": "biz_doc_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "业务单据类型 1-运单 2-任务单"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(120)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "去重键 recon_kind:recon_id:biz_doc_id:diff_type，仅待处置(status=0)时有值，处置后置 NULL 释放占用"
+        },
+        {
+          "name": "detected_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "检出时间"
+        },
+        {
+          "name": "detected_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "检出人 user_id（定时任务为空）"
+        },
+        {
+          "name": "diff_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "金额类差异的差额（当前 - 快照，可负）"
+        },
+        {
+          "name": "diff_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "差异类型 1-漏挂 2-重挂 3-资格不符 4-台数不符 5-里程不符 6-金额不符 7-扣减不符 8-状态回退"
+        },
+        {
+          "name": "expected_value",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "财务侧快照值（对账行上写的）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_manual",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否人工登记 0-核对器检出 1-对账岗手工登记；人工登记的差异不会被下一轮核对自动置失效"
+        },
+        {
+          "name": "link_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "对账行 ID（桥接表主键；漏挂/重挂类为空）"
+        },
+        {
+          "name": "recon_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "对账单 ID（漏挂类为空，此时尚无对账单）"
+        },
+        {
+          "name": "recon_kind",
+          "type": "VARCHAR(20)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "对账单大类 customer_recon-客户对账 carrier_recon-承运商对账"
+        },
+        {
+          "name": "resolution",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处置说明"
+        },
+        {
+          "name": "resolved_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处置时间"
+        },
+        {
+          "name": "resolved_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处置人 user_id"
+        },
+        {
+          "name": "severity",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "严重度 1-提示（不阻塞确认） 2-阻塞（拒绝确认，除非强制确认）"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "处置状态 0-待处置 1-已回灌 2-已协商确认 3-已强制放行 4-已失效"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_rdiff_biz_doc",
+          "columns": [
+            "biz_doc_type",
+            "biz_doc_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_rdiff_recon",
+          "columns": [
+            "recon_kind",
+            "recon_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_rdiff_status_severity",
+          "columns": [
+            "status",
+            "severity"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_rdiff_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
       "foreign_keys": []
     },
     {
@@ -19025,6 +25171,858 @@
       ]
     },
     {
+      "name": "biz_vendor_invoice",
+      "comment": "进项发票主表（承运商及其他供应商开给我方的票）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "actual_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际金额（支付/收款后填）"
+        },
+        {
+          "name": "amount_excl_tax",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "不含税金额"
+        },
+        {
+          "name": "amount_incl_tax",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "含税金额（与基类 planned_amount 同值，报表用语义列）"
+        },
+        {
+          "name": "approval_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "远期审批中心单号"
+        },
+        {
+          "name": "attachment_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发票扫描件/PDF URL"
+        },
+        {
+          "name": "buyer_entity_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "购方经营主体ID（biz_business_entity.id），多主体分别申报"
+        },
+        {
+          "name": "buyer_tax_no",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "票面购方税号"
+        },
+        {
+          "name": "buyer_title",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "票面购方名称（冻结冗余）"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "deduct_period",
+          "type": "VARCHAR(7)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "抵扣税期 YYYY-MM（认证抵扣月份）"
+        },
+        {
+          "name": "deductible",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否可抵扣 0-否（普票通常） 1-是（专票）"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(90)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 invoice_code:invoice_no，防重复登记；撤销/作废/软删置 NULL，允许同号重录"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "收/付方向（进项固定 2-付款侧）"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "vendor_invoice",
+          "comment": "单据大类（固定 vendor_invoice）"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据编号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
+        },
+        {
+          "name": "invoice_code",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发票代码（电子票可空）"
+        },
+        {
+          "name": "invoice_date",
+          "type": "DATE",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开票日期（票面日期，非登记日期）"
+        },
+        {
+          "name": "invoice_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "发票号码"
+        },
+        {
+          "name": "invoice_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "发票类型 1-普票 2-专票 3-电子普票 4-电子专票 5-其他"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "is_multi_rate",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否多税率 0-否（用主表金额） 1-是（金额取行明细汇总）"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID（被哪个上游单据锁定）"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款时间"
+        },
+        {
+          "name": "paid_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款操作人 user_id"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（应付）/ 收款方式（应收）"
+        },
+        {
+          "name": "pay_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        },
+        {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "planned_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划金额（>= 0）"
+        },
+        {
+          "name": "received_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "收到票时间（登记时间语义）"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批时间"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "seller_tax_no",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "票面销方税号"
+        },
+        {
+          "name": "seller_title",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "票面销方名称（原文，可能与档案名不同）"
+        },
+        {
+          "name": "settle_count",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "核销的结算单数量"
+        },
+        {
+          "name": "settled_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已核销金额（= Σ 核销明细 applied_amount）"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "状态 0-草稿 3-已收票（部分核销） 4-已撤销 5-已核销 9-已作废"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
+        },
+        {
+          "name": "tax_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "税额"
+        },
+        {
+          "name": "tax_rate",
+          "type": "NUMERIC(5, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "税率 %（多税率时留空，按行明细）"
+        },
+        {
+          "name": "unsettled_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "未核销金额（= 含税金额 - 已核销）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "vendor_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商ID（vendor_type=1 时指 biz_carrier.id；其他供应商可空）"
+        },
+        {
+          "name": "vendor_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商名称（冗余）"
+        },
+        {
+          "name": "vendor_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "供应商类型 1-承运商 2-社会运力 3-其他供应商"
+        },
+        {
+          "name": "verify_status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "验真状态 0-未验 1-已验通过 2-验真不符（远期对接查验平台）"
+        },
+        {
+          "name": "void_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "作废/退票原因"
+        },
+        {
+          "name": "voided_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "作废时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "doc_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_vinv_deduct",
+          "columns": [
+            "deduct_period"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_vinv_entity",
+          "columns": [
+            "buyer_entity_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_vinv_status",
+          "columns": [
+            "status",
+            "unsettled_amount"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_vinv_vendor",
+          "columns": [
+            "vendor_id",
+            "invoice_date"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_vinv_no_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_vendor_invoice_item",
+      "comment": "进项发票行明细表（多税率场景）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "amount_excl_tax",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "不含税金额"
+        },
+        {
+          "name": "amount_incl_tax",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "含税金额"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "invoice_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_vendor_invoice.id"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "item_name",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "品名（如「运输服务」）"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "tax_amount",
+          "type": "NUMERIC(12, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "税额"
+        },
+        {
+          "name": "tax_rate",
+          "type": "NUMERIC(5, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "税率 %"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_vii_invoice",
+          "columns": [
+            "invoice_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_vendor_invoice_settle_link",
+      "comment": "进项发票-承运商结算单核销桥接表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "applied_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "本票核销到该结算单的含税金额（> 0）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dedup_key",
+          "type": "VARCHAR(60)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "唯一键 invoice_id:settle_id，同一对关系一条；撤销核销时置 NULL"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "invoice_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_vendor_invoice.id"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "matched_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "核销时间"
+        },
+        {
+          "name": "matched_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "核销操作人 user_id"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "settle_doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "结算单号（冗余）"
+        },
+        {
+          "name": "settle_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "关联 biz_carrier_settlement_doc.id"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_visl_invoice",
+          "columns": [
+            "invoice_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_visl_settle",
+          "columns": [
+            "settle_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_visl_dedup",
+          "columns": [
+            "dedup_key"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_waybill",
       "comment": "运单表",
       "table_tier": "business",
@@ -19201,6 +26199,15 @@
           "comment": "是否锁定 0-否 1-是（已结算/已开票后置1，禁止自动重算）"
         },
         {
+          "name": "is_recon_bound",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否已挂入客户对账单 0-否 1-是（软标记，仅供列表徽章展示；拦截判据以桥接表为准，见文档 02 §六）"
+        },
+        {
           "name": "last_calc_at",
           "type": "DATETIME",
           "nullable": true,
@@ -19217,6 +26224,24 @@
           "autoincrement": null,
           "server_default": null,
           "comment": "最近一次计算结果主表ID（biz_waybill_freight_result.id）"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间（客户结算单收妥时写入）"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据ID（biz_customer_settlement.id），解锁时校验来源"
         },
         {
           "name": "origin",

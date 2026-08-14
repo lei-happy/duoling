@@ -653,8 +653,15 @@
     "feature_code": "finance_receivable",
     "feature_name": "应收管理",
     "module": "finance",
-    "description": null,
-    "required_tables": null,
+    "description": "客户对账单、结算单、收款核销与应收账龄（第 2 期）",
+    "required_tables": [
+      "biz_customer_recon",
+      "biz_customer_recon_waybill_link",
+      "biz_customer_settlement",
+      "biz_customer_settle_recon_link",
+      "biz_receipt_voucher",
+      "biz_receipt_settle_link"
+    ],
     "sort_order": 80,
     "status": 1
   },
@@ -662,8 +669,16 @@
     "feature_code": "finance_payable",
     "feature_name": "应付管理（三类路径）",
     "module": "finance",
-    "description": null,
-    "required_tables": null,
+    "description": "承运商对账结算与自有司机工资单（第 3 期）",
+    "required_tables": [
+      "biz_carrier_recon",
+      "biz_carrier_recon_task_link",
+      "biz_carrier_settlement_doc",
+      "biz_carrier_settle_recon_link",
+      "biz_driver_payroll",
+      "biz_driver_payroll_task_link",
+      "biz_driver_payroll_item"
+    ],
     "sort_order": 81,
     "status": 1
   },
@@ -672,7 +687,9 @@
     "feature_name": "对账中心（含供应商对账）",
     "module": "finance",
     "description": null,
-    "required_tables": null,
+    "required_tables": [
+      "biz_recon_diff"
+    ],
     "sort_order": 82,
     "status": 1
   },
@@ -680,8 +697,15 @@
     "feature_code": "finance_invoice",
     "feature_name": "发票管理",
     "module": "finance",
-    "description": null,
-    "required_tables": null,
+    "description": "进项发票登记与票款核销、销项发票开票与红冲",
+    "required_tables": [
+      "biz_vendor_invoice",
+      "biz_vendor_invoice_item",
+      "biz_vendor_invoice_settle_link",
+      "biz_customer_invoice",
+      "biz_customer_invoice_item",
+      "biz_customer_invoice_settle_link"
+    ],
     "sort_order": 83,
     "status": 1
   },
@@ -689,9 +713,22 @@
     "feature_code": "finance_profit",
     "feature_name": "利润分析",
     "module": "finance",
-    "description": null,
+    "description": "经营核算：财务确认口径的收入成本毛利与多维分析",
     "required_tables": null,
     "sort_order": 84,
+    "status": 1
+  },
+  {
+    "feature_code": "finance_cashier",
+    "feature_name": "资金收付（出纳台 / 银行账户）",
+    "module": "finance",
+    "description": "出纳工作台、银行账户、打款批次与收付款流水",
+    "required_tables": [
+      "biz_bank_account",
+      "biz_payment_batch",
+      "biz_payment_batch_item"
+    ],
+    "sort_order": 85,
     "status": 1
   },
   {

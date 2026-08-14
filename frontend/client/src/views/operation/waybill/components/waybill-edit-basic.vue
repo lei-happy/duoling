@@ -1,5 +1,9 @@
 <template>
   <div class="waybill-edit-step waybill-edit-step--basic">
+    <customer-credit-tip
+      :customer-id="form.customerId"
+      scene="waybill_create"
+    />
     <el-row :gutter="12">
       <el-col :xs="24" :sm="12">
         <el-form-item prop="customerId">
@@ -89,6 +93,7 @@
   import { computed } from 'vue';
   import type { CascaderProps } from 'element-plus';
   import FloatingLabel from '@shared/FloatingLabel/index.vue';
+  import CustomerCreditTip from '@/views/finance/components/customer-credit-tip.vue';
   import type { Waybill } from '@/api/waybill/model';
   import type { CustomerSelectItem } from '@/api/partner/customer/model';
   import type { RegionNavNode } from '@/api/basic-data/region/model';

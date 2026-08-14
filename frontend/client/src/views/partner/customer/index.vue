@@ -60,6 +60,28 @@
           <span v-else-if="row.settlementType === 1">票结</span>
           <span v-else-if="row.settlementType === 2">预付</span>
         </template>
+        <template #creditStatus="{ row }">
+          <el-tooltip
+            v-if="row.creditLimit != null"
+            :content="`信用额度 ¥ ${Number(row.creditLimit).toLocaleString('zh-CN')}`"
+          >
+            <el-tag
+              :type="CREDIT_TAG_TYPE[row.creditStatus ?? 1]"
+              size="small"
+              effect="plain"
+            >
+              {{ row.creditStatusLabel || '正常' }}
+            </el-tag>
+          </el-tooltip>
+          <el-tag
+            v-else
+            :type="CREDIT_TAG_TYPE[row.creditStatus ?? 1]"
+            size="small"
+            effect="plain"
+          >
+            {{ row.creditStatusLabel || '正常' }}
+          </el-tag>
+        </template>
         <template #status="{ row }">
           <el-switch
             v-if="row.id != null"
@@ -110,6 +132,13 @@
 
   defineOptions({ name: 'PartnerCustomer' });
 
+  /** 0-暂停合作 1-正常 2-重点关注 */
+  const CREDIT_TAG_TYPE: Record<number, 'danger' | 'success' | 'warning'> = {
+    0: 'danger',
+    1: 'success',
+    2: 'warning'
+  };
+
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const editVisible = ref(false);
   const editData = ref<Customer | null>(null);
@@ -132,6 +161,21 @@
       minWidth: 100,
       align: 'center',
       slot: 'settlementType'
+    },
+    {
+      prop: 'paymentDays',
+      label: '账期',
+      width: 90,
+      align: 'center',
+      formatter: (row) =>
+        row.paymentDays == null ? '未设置' : `${row.paymentDays} 天`
+    },
+    {
+      prop: 'creditStatus',
+      label: '信用',
+      width: 100,
+      align: 'center',
+      slot: 'creditStatus'
     },
     { prop: 'contactPerson', label: '联系人', minWidth: 100 },
     { prop: 'contactPhone', label: '联系电话', minWidth: 120 },

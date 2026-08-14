@@ -38,6 +38,22 @@ FIN_STATUS_LABELS: dict[int, str] = {
 }
 
 
+# 大类特有的状态文案覆盖（同一状态码在不同单据上说法不同）
+#
+# 同一个 3 在应付单上是「已支付」、应收单上是「已收款」、对账单上是「已结清」、
+# 收款单上是「已认领」。提示语直接给用户看，说法不对会让人以为点错了单据。
+DOC_KIND_STATUS_LABELS: dict[str, dict[int, str]] = {
+    "customer_recon": {2: "已确认", 3: "已结清", 5: "已结清"},
+    "carrier_recon": {2: "已确认", 3: "已结清", 5: "已结清"},
+    "customer_settle": {3: "已收款"},
+    "customer_invoice": {1: "申请中", 3: "已开票"},
+    "receipt_voucher": {3: "已认领", 5: "已核销"},
+    "driver_payroll": {3: "已发放"},
+    "vendor_invoice": {3: "已收票", 5: "已核销", 6: "部分核销"},
+    "payment_batch": {2: "待执行", 3: "已执行", 6: "部分失败"},
+}
+
+
 # 通用合法跳转表（子单据可用状态集再做交集裁剪）
 FIN_VALID_TRANS: dict[int, Set[int]] = {
     0: {1, 4},        # 草稿 → 待审批 / 已撤销
@@ -60,7 +76,51 @@ DOC_KIND_STATES: dict[str, Set[int]] = {
     "customer_recon": {0, 2, 3, 4, 5},
     "customer_settle": {0, 1, 2, 3, 4, 5},
     "customer_invoice": {0, 1, 3, 4, 9},
+    "receipt_voucher": {0, 3, 4, 5, 6},
+    "vendor_invoice": {0, 3, 4, 5, 9},
+    "payment_batch": {0, 1, 2, 3, 4, 6},
 }
+
+
+# 大类特有的额外合法跳转（与通用表取并集）
+#
+# 通用表是「草稿→待审批→已审批→已支付」这条主干，但有两类单据天然不走主干：
+# - 对账类没有审批环节，由业务主管直接确认，故补 0→2；
+# - 收款单的核销是可逆的进度推进，满额(5)撤回部分核销要能退到 3 甚至 0，
+#   故补 0→3 / 0→5 / 3→0 / 5→3 / 5→0（通用表里 5 是终态）；
+# - 进项票与收款单同理（核销可逆），另外任何非终态都能作废(9)——承运商红冲重开
+#   是常事，而作废后核销明细要全部回退。
+# - 打款批次执行后可能「部分失败」(6)：补 2→6（首次执行有失败笔）与 6→3（失败笔
+#   重试成功后转全成功），另配置项关闭审批时补 0→2 跳过待审批；
+# - 销项票没有「已审批」这一环：财务在开票系统开完票回来登记结果，故补 1→3
+#   （申请中→已开票）；作废/红冲从「已开票」出发，故 3→9；申请中被业务撤掉走 1→4。
+DOC_KIND_TRANS_EXTRA: dict[str, dict[int, Set[int]]] = {
+    "customer_recon": {0: {2}},
+    "carrier_recon": {0: {2}},
+    "customer_invoice": {1: {3}, 3: {9}},
+    "payment_batch": {
+        0: {2},
+        2: {6},
+        6: {3},
+    },
+    "receipt_voucher": {
+        0: {3, 5},
+        3: {0},
+        5: {0, 3},
+    },
+    "vendor_invoice": {
+        0: {3, 5, 9},
+        3: {0, 9},
+        5: {0, 3, 9},
+    },
+}
+
+
+def _allowed_next(doc_kind: str, old: int) -> Set[int]:
+    """通用跳转表与大类特有跳转的并集（未按可用状态集裁剪）。"""
+    allowed = set(FIN_VALID_TRANS.get(old, set()))
+    extra = DOC_KIND_TRANS_EXTRA.get(doc_kind, {})
+    return allowed | set(extra.get(old, set()))
 
 
 # 需要强制填写 reason 的目标状态（撤销/退回类）
@@ -69,7 +129,12 @@ _REASON_REQUIRED_TO: Set[int] = {FIN_CANCELLED}
 _REASON_REQUIRED_TRANS: Set[tuple[int, int]] = {(FIN_PAID, FIN_REVIEWED)}
 
 
-def label(status: int) -> str:
+def label(status: int, doc_kind: Optional[str] = None) -> str:
+    """状态文案；给出 ``doc_kind`` 时优先取该大类的说法。"""
+    if doc_kind:
+        override = DOC_KIND_STATUS_LABELS.get(doc_kind, {})
+        if status in override:
+            return override[status]
     return FIN_STATUS_LABELS.get(status, str(status))
 
 
@@ -86,19 +151,20 @@ class FinanceStateMachine:
     ) -> None:
         """校验单据状态合法跳转。
 
-        - 校验 old→new 在通用跳转表内；
+        - 校验 old→new 在通用跳转表（并上该大类的额外跳转）内；
         - 校验 new 在该 doc_kind 的可用状态集内；
         - 撤销 / 退回 / 撤销支付类必须 has_reason=True。
         """
-        allowed = FIN_VALID_TRANS.get(old, set())
+        allowed = _allowed_next(doc_kind, old)
         if new not in allowed:
             raise BizException(
-                f"单据状态从「{label(old)}」不能直接跳转到「{label(new)}」"
+                f"单据状态从「{label(old, doc_kind)}」"
+                f"不能直接跳转到「{label(new, doc_kind)}」"
             )
         kind_states = DOC_KIND_STATES.get(doc_kind)
         if kind_states is not None and new not in kind_states:
             raise BizException(
-                f"单据类型「{doc_kind}」不支持状态「{label(new)}」"
+                f"该单据不支持「{label(new, doc_kind)}」状态，请确认操作是否正确"
             )
         need_reason = (
             new in _REASON_REQUIRED_TO
@@ -146,7 +212,7 @@ class FinanceStateMachine:
     @staticmethod
     def legal_next(doc_kind: str, old: int) -> Set[int]:
         """UI 联动用：返回当前状态允许跳转的下一步集合（已按 doc_kind 裁剪）。"""
-        allowed = set(FIN_VALID_TRANS.get(old, set()))
+        allowed = _allowed_next(doc_kind, old)
         kind_states = DOC_KIND_STATES.get(doc_kind)
         if kind_states is not None:
             allowed &= kind_states

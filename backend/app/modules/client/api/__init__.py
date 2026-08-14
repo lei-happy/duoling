@@ -87,6 +87,21 @@ from app.modules.client.api.task import (
     task_finance_router,
     smart_stowage_router,
 )
+from app.modules.client.api.finance import (
+    ar_aging_router,
+    bank_account_router,
+    carrier_recon_router,
+    carrier_settlement_router,
+    customer_invoice_router,
+    customer_recon_router,
+    customer_settlement_router,
+    driver_payroll_router,
+    payment_batch_router,
+    profit_accounting_router,
+    receipt_voucher_router,
+    recon_workbench_router,
+    vendor_invoice_router,
+)
 from app.modules.client.api.insight.cockpit import router as insight_cockpit_router
 from app.modules.client.api.insight.profit import router as insight_profit_router
 from app.modules.client.api.approval import router as approval_router
@@ -344,6 +359,85 @@ router.include_router(
     prefix="/business/smart-stowage",
     tags=["客户端-智能配载"],
     dependencies=[Depends(require_feature("smart_stowage"))],
+)
+router.include_router(
+    customer_recon_router,
+    prefix="/finance/customer-recon",
+    tags=["客户端-财务结算-客户对账"],
+    dependencies=[Depends(require_feature("finance_receivable"))],
+)
+router.include_router(
+    customer_settlement_router,
+    prefix="/finance/customer-settlement",
+    tags=["客户端-财务结算-客户结算"],
+    dependencies=[Depends(require_feature("finance_receivable"))],
+)
+# 收款单没有独立菜单，入口在出纳工作台，故按出纳 feature 门控
+router.include_router(
+    receipt_voucher_router,
+    prefix="/finance/receipt",
+    tags=["客户端-财务结算-收款到账"],
+    dependencies=[Depends(require_feature("finance_cashier"))],
+)
+router.include_router(
+    carrier_recon_router,
+    prefix="/finance/carrier-recon",
+    tags=["客户端-财务结算-承运商对账"],
+    dependencies=[Depends(require_feature("finance_payable"))],
+)
+router.include_router(
+    carrier_settlement_router,
+    prefix="/finance/carrier-settlement",
+    tags=["客户端-财务结算-承运商结算"],
+    dependencies=[Depends(require_feature("finance_payable"))],
+)
+router.include_router(
+    driver_payroll_router,
+    prefix="/finance/driver-payroll",
+    tags=["客户端-财务结算-司机工资"],
+    dependencies=[Depends(require_feature("finance_payable"))],
+)
+router.include_router(
+    vendor_invoice_router,
+    prefix="/finance/vendor-invoice",
+    tags=["客户端-财务结算-进项发票"],
+    dependencies=[Depends(require_feature("finance_invoice"))],
+)
+router.include_router(
+    customer_invoice_router,
+    prefix="/finance/customer-invoice",
+    tags=["客户端-财务结算-销项发票"],
+    dependencies=[Depends(require_feature("finance_invoice"))],
+)
+router.include_router(
+    bank_account_router,
+    prefix="/finance/bank-account",
+    tags=["客户端-财务结算-银行账户"],
+    dependencies=[Depends(require_feature("finance_cashier"))],
+)
+router.include_router(
+    payment_batch_router,
+    prefix="/finance/payment-batch",
+    tags=["客户端-财务结算-打款批次与出纳台"],
+    dependencies=[Depends(require_feature("finance_cashier"))],
+)
+router.include_router(
+    profit_accounting_router,
+    prefix="/finance/profit",
+    tags=["客户端-财务结算-经营核算"],
+    dependencies=[Depends(require_feature("finance_profit"))],
+)
+router.include_router(
+    ar_aging_router,
+    prefix="/finance/ar-aging",
+    tags=["客户端-财务结算-应收账龄"],
+    dependencies=[Depends(require_feature("finance_receivable"))],
+)
+router.include_router(
+    recon_workbench_router,
+    prefix="/finance/recon-workbench",
+    tags=["客户端-财务结算-对账工作台"],
+    dependencies=[Depends(require_feature("finance_reconciliation"))],
 )
 router.include_router(
     insight_cockpit_router,

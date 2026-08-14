@@ -108,6 +108,20 @@ class Waybill(TenantModelBase):
         SmallInteger, nullable=False, default=0, server_default=text("0"),
         comment="是否锁定 0-否 1-是（已结算/已开票后置1，禁止自动重算）"
     )
+    locked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, comment="锁定时间（客户结算单收妥时写入）"
+    )
+    locked_by_doc_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, nullable=True,
+        comment="锁定来源单据ID（biz_customer_settlement.id），解锁时校验来源"
+    )
+    is_recon_bound: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, default=0, server_default=text("0"),
+        comment=(
+            "是否已挂入客户对账单 0-否 1-是（软标记，仅供列表徽章展示；"
+            "拦截判据以桥接表为准，见文档 02 §六）"
+        )
+    )
     waybill_version: Mapped[int] = mapped_column(
         Integer, nullable=False, default=1, server_default=text("1"),
         comment="运单版本号（计费敏感字段每变更1次+1）"

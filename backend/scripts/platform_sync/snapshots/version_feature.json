@@ -83,6 +83,7 @@
     "ecosystem_deal",
     "ecosystem_intent",
     "ecosystem_service_hall",
+    "finance_cashier",
     "finance_invoice",
     "finance_manage",
     "finance_payable",

@@ -13,6 +13,7 @@ from app.modules.client.models.partner.customer import Customer
 from app.modules.client.schemas.partner.customer import (
     CustomerCreate, CustomerUpdate, CustomerOut,
 )
+from app.modules.client.services.finance.base.constants import CreditStatus
 
 
 class CustomerService:
@@ -151,6 +152,12 @@ class CustomerService:
             contact_phone=data.contactPhone,
             address=data.address,
             settlement_type=data.settlementType,
+            payment_days=data.paymentDays,
+            credit_limit=data.creditLimit,
+            credit_status=(
+                CreditStatus.NORMAL if data.creditStatus is None
+                else data.creditStatus
+            ),
             credit_code=data.creditCode,
             status=status_val,
             remark=data.remark,
@@ -184,6 +191,7 @@ class CustomerService:
             "contactPhone": "contact_phone",
             "address": "address",
             "settlementType": "settlement_type",
+            "creditStatus": "credit_status",
             "creditCode": "credit_code",
             "status": "status",
             "remark": "remark",
@@ -192,6 +200,15 @@ class CustomerService:
             val = getattr(data, schema_field, None)
             if val is not None:
                 setattr(customer, model_field, val)
+
+        # 账期与额度要能改回「未设置 / 不限额」，故按「是否提交了该字段」判断，
+        # 显式传 null 即清空；上面那批字段沿用「非空才覆盖」的既有语义不动
+        for schema_field, model_field in (
+            ("paymentDays", "payment_days"),
+            ("creditLimit", "credit_limit"),
+        ):
+            if schema_field in data.model_fields_set:
+                setattr(customer, model_field, getattr(data, schema_field))
 
         await db.flush()
         await db.refresh(customer)

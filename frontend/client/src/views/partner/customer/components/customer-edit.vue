@@ -44,20 +44,6 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item prop="settlementType">
-            <floating-label
-              v-model="form.settlementType"
-              label="请选择结算方式"
-              type="select"
-              clearable
-            >
-              <el-option label="月结" :value="0" />
-              <el-option label="票结" :value="1" />
-              <el-option label="预付" :value="2" />
-            </floating-label>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
           <el-form-item prop="contactPerson">
             <floating-label
               label="请输入联系人"
@@ -142,6 +128,69 @@
             />
           </el-form-item>
         </el-col>
+
+        <!-- 结算与信用：四个字段互相配合决定到期日与额度预警，放一起才不容易填错 -->
+        <el-col :span="24">
+          <el-divider content-position="left">结算与信用</el-divider>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item prop="settlementType">
+            <floating-label
+              v-model="form.settlementType"
+              label="请选择结算方式"
+              type="select"
+              clearable
+            >
+              <el-option label="月结" :value="0" />
+              <el-option label="票结" :value="1" />
+              <el-option label="预付" :value="2" />
+            </floating-label>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item prop="paymentDays">
+            <floating-label
+              v-model="form.paymentDays"
+              label="账期天数，留空按 0 天算"
+              type="input-number"
+              :input-number-min="0"
+              :input-number-max="365"
+              :input-number-precision="0"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item prop="creditLimit">
+            <floating-label
+              v-model="form.creditLimit"
+              label="信用额度（元），留空不限额"
+              type="input-number"
+              :input-number-min="0"
+              :input-number-step="1000"
+              :input-number-precision="2"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item prop="creditStatus">
+            <floating-label
+              v-model="form.creditStatus"
+              label="请选择信用状态"
+              type="select"
+              :clearable="false"
+            >
+              <el-option label="正常" :value="1" />
+              <el-option label="重点关注" :value="2" />
+              <el-option label="暂停合作" :value="0" />
+            </floating-label>
+          </el-form-item>
+        </el-col>
+        <el-col :span="24">
+          <div class="credit-tip">
+            账期与结算方式一起决定应收到期日：月结按周期末顺延、票结按开票日顺延。
+            超额度与逾期只在页面上提示，不会阻断录单派车。
+          </div>
+        </el-col>
       </el-row>
     </el-form>
     <template #footer>
@@ -208,7 +257,10 @@
       settlementType: undefined,
       creditCode: undefined,
       status: 1,
-      remark: undefined
+      remark: undefined,
+      paymentDays: undefined,
+      creditLimit: undefined,
+      creditStatus: 1
     });
   }
 
@@ -234,6 +286,10 @@
     if (!payload.customerCode?.trim()) {
       delete payload.customerCode;
     }
+    delete payload.creditStatusLabel;
+    // 账期与额度清空是真实诉求（改回未设置 / 不限额），显式传 null 让后端清列
+    payload.paymentDays = payload.paymentDays ?? null;
+    payload.creditLimit = payload.creditLimit ?? null;
     return payload;
   };
 
@@ -263,5 +319,16 @@
 <style scoped>
   .customer-edit-form :deep(.el-form-item) {
     margin-bottom: 18px;
+  }
+
+  .customer-edit-form :deep(.el-divider) {
+    margin: 0 0 18px;
+  }
+
+  .credit-tip {
+    margin-top: -8px;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    line-height: 1.7;
   }
 </style>

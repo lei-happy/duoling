@@ -44,7 +44,9 @@ class FinanceDocEvent(TenantModelBase):
         SmallInteger, nullable=False,
         comment="事件类型 1-创建 2-提交 3-审批通过 4-审批拒绝 5-退回草稿 "
                 "6-支付 7-撤销支付 8-撤销 9-强制撤销 10-核销 11-锁定 12-解锁 "
-                "13-开票 14-作废 15-红冲",
+                "13-开票 14-作废 15-红冲 16-金额调整 17-差异登记 18-差异关闭 "
+                "19-强制确认 20-重算刷新 21-批次打款 22-到账认领 23-核销冲销 "
+                "24-进项收票 25-票款核对 26-信用预警",
     )
     from_status: Mapped[Optional[int]] = mapped_column(
         SmallInteger, nullable=True, comment="变更前状态"
