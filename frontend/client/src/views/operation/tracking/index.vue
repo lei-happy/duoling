@@ -45,7 +45,11 @@
         </template>
 
         <template #route="{ row }">
-          {{ row.origin || '--' }} → {{ row.destination || '--' }}
+          <route-cell
+            :origin="row.origin"
+            :destination="row.destination"
+            :segment-count="row.segmentCount"
+          />
         </template>
 
         <template #plannedArriveTime="{ row }">
@@ -110,6 +114,7 @@
   import { formatDateTime } from '@/utils/date-util';
   import { TASK_STATUS_MAP } from '../task/status-config';
   import ActionConfirmArrive from '../task-workbench/components/action-confirm-arrive.vue';
+  import RouteCell from '../task-workbench/components/route-cell.vue';
 
   defineOptions({ name: 'OperationTracking' });
 
@@ -129,7 +134,13 @@
       minWidth: 170,
       slot: 'carrierResource'
     },
-    { columnKey: 'route', label: '运输线路', minWidth: 200, slot: 'route' },
+    {
+      columnKey: 'route',
+      label: '运输线路',
+      minWidth: 200,
+      showOverflowTooltip: false,
+      slot: 'route'
+    },
     { prop: 'totalQuantity', label: '台数', width: 70, align: 'center' },
     {
       prop: 'actualLoadTime',

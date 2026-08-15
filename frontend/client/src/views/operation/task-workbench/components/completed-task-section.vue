@@ -43,11 +43,11 @@
       </template>
 
       <template #route="{ row }">
-        <div class="route-cell cell-ellipsis">
-          <span class="cell-ellipsis">{{ row.origin || '--' }}</span>
-          <el-icon class="route-cell__arrow"><Right /></el-icon>
-          <span class="cell-ellipsis">{{ row.destination || '--' }}</span>
-        </div>
+        <route-cell
+          :origin="row.origin"
+          :destination="row.destination"
+          :segment-count="row.segmentCount"
+        />
       </template>
 
       <template #carrierResource="{ row }">
@@ -104,8 +104,8 @@
     Columns
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import type { ButtonItem } from 'ele-admin-plus/es/ele-buttons/types';
-  import { Right } from '@element-plus/icons-vue';
   import { pageTasks } from '@/api/operation/task';
+  import RouteCell from './route-cell.vue';
   import type {
     Task,
     TaskParam,
@@ -177,7 +177,13 @@
         align: 'center',
         slot: 'carrierType'
       },
-      { columnKey: 'route', label: '运输线路', minWidth: 220, slot: 'route' },
+      {
+        columnKey: 'route',
+        label: '运输线路',
+        minWidth: 200,
+        showOverflowTooltip: false,
+        slot: 'route'
+      },
       {
         columnKey: 'carrierResource',
         label: '承运运力',
@@ -284,22 +290,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .route-cell {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-    min-width: 0;
-
-    > .cell-ellipsis {
-      flex: 1 1 0;
-    }
-
-    &__arrow {
-      flex-shrink: 0;
-      margin: 0 6px;
-    }
   }
 
   .action-cell {

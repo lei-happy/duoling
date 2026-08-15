@@ -20,14 +20,6 @@
 <template>
   <div class="task-pool">
     <ele-card :body-style="{ paddingTop: '8px' }">
-      <el-alert
-        v-if="listSubset !== 'all'"
-        :type="subsetBanner.type"
-        :closable="false"
-        class="task-pool__alert-banner"
-        show-icon
-        :title="subsetBanner.title"
-      />
       <ele-pro-table
         ref="tableRef"
         row-key="id"
@@ -42,39 +34,55 @@
         @sort-change="onSortChange"
       >
         <template #toolbar>
-          <el-button
-            v-if="showBatchToolbar"
-            type="primary"
-            plain
-            class="ele-btn-icon"
-            :icon="Operation"
-            :disabled="selections.length === 0"
-            v-permission="primaryAction!.permission"
-            @click="onBatch"
-          >
-            批量{{ primaryAction!.label }} ({{ selections.length }})
-          </el-button>
-          <el-button
-            v-if="showBatchDismiss"
-            plain
-            type="info"
-            class="ele-btn-icon"
-            :icon="Bell"
-            :disabled="selections.length === 0"
-            v-permission="'operation:task:alert-handle'"
-            @click="onBatchDismissAlerts"
-          >
-            批量忽略预警 ({{ selections.length }})
-          </el-button>
-          <el-button
-            v-if="pool.toolbar?.refresh"
-            :icon="Refresh"
-            plain
-            class="ele-btn-icon"
-            @click="doReload"
-          >
-            刷新
-          </el-button>
+          <div class="task-pool__toolbar">
+            <el-button
+              v-if="showBatchToolbar"
+              type="primary"
+              plain
+              class="ele-btn-icon"
+              :icon="Operation"
+              :disabled="selections.length === 0"
+              v-permission="primaryAction!.permission"
+              @click="onBatch"
+            >
+              批量{{ primaryAction!.label }} ({{ selections.length }})
+            </el-button>
+            <el-button
+              v-if="showBatchDismiss"
+              plain
+              type="info"
+              class="ele-btn-icon"
+              :icon="Bell"
+              :disabled="selections.length === 0"
+              v-permission="'operation:task:alert-handle'"
+              @click="onBatchDismissAlerts"
+            >
+              批量忽略预警 ({{ selections.length }})
+            </el-button>
+            <el-button
+              v-if="pool.toolbar?.refresh"
+              :icon="Refresh"
+              plain
+              class="ele-btn-icon"
+              @click="doReload"
+            >
+              刷新
+            </el-button>
+            <div
+              v-if="listSubset !== 'all'"
+              class="task-pool__subset-hint"
+              :class="`is-${subsetBanner.type}`"
+              role="status"
+              :title="subsetBanner.title"
+            >
+              <el-icon class="task-pool__subset-hint-icon">
+                <component :is="subsetBanner.icon" />
+              </el-icon>
+              <span class="task-pool__subset-hint-text">{{
+                subsetBanner.title
+              }}</span>
+            </div>
+          </div>
         </template>
 
         <template #waybillCount="{ row }">
@@ -109,20 +117,11 @@
         </template>
 
         <template #route="{ row }">
-          <div class="route-cell cell-ellipsis">
-            <span class="cell-ellipsis">{{ row.origin || '--' }}</span>
-            <el-icon class="route-cell__arrow"><Right /></el-icon>
-            <span class="cell-ellipsis">{{ row.destination || '--' }}</span>
-            <el-tag
-              v-if="(row.segmentCount || 0) > 1"
-              size="small"
-              type="info"
-              effect="plain"
-              class="route-cell__seg"
-            >
-              {{ row.segmentCount }} 段
-            </el-tag>
-          </div>
+          <route-cell
+            :origin="row.origin"
+            :destination="row.destination"
+            :segment-count="row.segmentCount"
+          />
         </template>
 
         <template #carrierResource="{ row }">
@@ -173,30 +172,33 @@
         <template #status="{ row }">
           <div class="status-cell">
             <el-tag
+              v-if="row.status !== pool.status"
               :type="(TASK_STATUS_MAP[row.status]?.type as any) || 'info'"
               size="small"
             >
               {{ TASK_STATUS_MAP[row.status]?.label || '--' }}
             </el-tag>
-            <span
-              v-if="loadProgressText(row)"
-              class="ele-text-secondary status-cell__progress"
+            <el-tag
+              v-if="progressTag(row)"
+              :type="progressTag(row)!.type"
+              size="small"
+              effect="plain"
             >
-              {{ loadProgressText(row) }}
-            </span>
+              {{ progressTag(row)!.text }}
+            </el-tag>
             <el-tooltip
-              v-if="alertLevel(row) > 0"
-              :content="alertTooltip(row)"
+              v-if="showTimeliness(row)"
+              :content="timelinessTooltip(row)"
               placement="top"
               :show-after="200"
+              :disabled="!timelinessTooltip(row)"
             >
               <el-tag
-                :type="alertTag(row).type"
+                :type="timelinessTag(row).type"
                 size="small"
                 effect="plain"
-                class="status-cell__overdue"
               >
-                {{ alertTag(row).label }}
+                {{ timelinessTag(row).label }}
               </el-tag>
             </el-tooltip>
           </div>
@@ -288,10 +290,12 @@
   import type { ButtonItem } from 'ele-admin-plus/es/ele-buttons/types';
   import {
     Bell,
+    CircleCloseFilled,
     Operation,
     QuestionFilled,
     Refresh,
-    Right
+    SuccessFilled,
+    WarningFilled
   } from '@element-plus/icons-vue';
   import { ElMessageBox } from 'element-plus';
   import { batchDismissTaskAlerts } from '@/api/operation/task-alert';
@@ -330,6 +334,7 @@
     resolveWorkbenchPoolKey
   } from '../workbench-pool-registry';
   import type { WorkbenchListSubset } from '../workbench-pool-registry';
+  import RouteCell from './route-cell.vue';
 
   const props = defineProps<{
     /** 状态池 key（列、排序、筛选用 status 均来自注册表） */
@@ -369,17 +374,20 @@
     if (listSubset.value === 'critical') {
       return {
         type: 'error' as const,
+        icon: CircleCloseFilled,
         title: `当前只看「${stage}」里已经超时、需要马上处理的任务`
       };
     }
     if (listSubset.value === 'warn') {
       return {
         type: 'warning' as const,
+        icon: WarningFilled,
         title: `当前只看「${stage}」里快要超时、建议提前介入的任务`
       };
     }
     return {
       type: 'success' as const,
+      icon: SuccessFilled,
       title: `当前只看「${stage}」里节奏正常、暂时不用管的任务`
     };
   });
@@ -540,19 +548,44 @@
     }
   };
 
-  /** 状态 Tag 后缀进度文本：已装/已卸 X/Y */
-  const loadProgressText = (row: Task): string => {
+  /**
+   * 阶段内进度：待装车始终展示已装 x/y；在途仅在已卸时展示。
+   * 本池状态名（已派车 / 在途）与卡片重复，不在此列再画一遍。
+   */
+  const progressTag = (
+    row: Task
+  ): { text: string; type: 'info' | 'primary' | 'success' } | null => {
     const total = row.totalQuantity ?? 0;
-    if (!total) return '';
+    if (!total) return null;
     if (row.status === TASK_STATUS.DISPATCHED) {
       const loaded = row.loadedQuantity ?? 0;
-      if (loaded > 0) return `已装 ${loaded}/${total}`;
-    } else if (row.status === TASK_STATUS.ON_WAY) {
-      const unloaded = row.unloadedQuantity ?? 0;
-      if (unloaded > 0) return `已卸 ${unloaded}/${total}`;
+      const type =
+        loaded <= 0 ? 'info' : loaded >= total ? 'success' : 'primary';
+      return { text: `已装 ${loaded}/${total}`, type };
     }
-    return '';
+    if (row.status === TASK_STATUS.ON_WAY) {
+      const unloaded = row.unloadedQuantity ?? 0;
+      if (unloaded <= 0) return null;
+      const type = unloaded >= total ? 'success' : 'primary';
+      return { text: `已卸 ${unloaded}/${total}`, type };
+    }
+    return null;
   };
+
+  /** 在途行始终给时效；其他行只在关注/严重时露出，避免和「超时时长」叠一套「正常」 */
+  const showTimeliness = (row: Task): boolean =>
+    row.status === TASK_STATUS.ON_WAY || alertLevel(row) > 0;
+
+  const timelinessTag = (row: Task) => {
+    const level = alertLevel(row);
+    if (level === ALERT_LEVEL.NONE) {
+      return { label: '时效正常', type: 'success' as const };
+    }
+    return alertTag(row);
+  };
+
+  const timelinessTooltip = (row: Task): string =>
+    alertLevel(row) > 0 ? alertTooltip(row) : '';
 
   const datasource: DatasourceFunction = ({ pages }) => {
     const search = props.searchWhere ?? {};
@@ -641,8 +674,59 @@
 
 <style lang="scss" scoped>
   .task-pool {
-    &__alert-banner {
-      margin-bottom: 10px;
+    &__toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 12px;
+      width: 100%;
+      min-width: 0;
+
+      > .el-button {
+        flex-shrink: 0;
+      }
+
+      :deep(.el-button + .el-button) {
+        margin-left: 0;
+      }
+    }
+
+    &__subset-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      max-width: 100%;
+      padding: 4px 10px;
+      border-radius: var(--el-border-radius-base);
+      font-size: 13px;
+      line-height: 20px;
+
+      &-icon {
+        flex-shrink: 0;
+        font-size: 14px;
+      }
+
+      &-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      &.is-success {
+        color: var(--el-color-success);
+        background: var(--el-color-success-light-9);
+      }
+
+      &.is-warning {
+        color: var(--el-color-warning);
+        background: var(--el-color-warning-light-9);
+      }
+
+      &.is-error {
+        color: var(--el-color-danger);
+        background: var(--el-color-danger-light-9);
+      }
     }
   }
 
@@ -660,27 +744,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .route-cell {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-    min-width: 0;
-    gap: 0;
-
-    > .cell-ellipsis {
-      flex: 1 1 0;
-    }
-
-    &__arrow {
-      flex-shrink: 0;
-      margin: 0 6px;
-    }
-    &__seg {
-      flex-shrink: 0;
-      margin-left: 6px;
-    }
   }
 
   .action-cell {
@@ -716,16 +779,8 @@
     display: inline-flex;
     align-items: center;
     flex-wrap: nowrap;
+    gap: 4px;
     white-space: nowrap;
-
-    &__progress {
-      margin-left: 4px;
-      font-size: 12px;
-    }
-
-    &__overdue {
-      margin-left: 4px;
-    }
   }
 
   /* 级别配色与 KPI 药丸一致：关注=黄，严重=红 */

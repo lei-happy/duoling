@@ -310,6 +310,8 @@
     plannedAmount: [{ required: true, message: '请填写计划金额' }]
   };
 
+  // immediate：父级常以 v-if="task" 包一层，首次点「新建费用单」时组件带着
+  // visible=true 才挂载；不立即执行的话 innerVisible 会一直停在 false，再点也无效。
   watch(
     () => props.visible,
     async (v) => {
@@ -344,7 +346,8 @@
       }
       // 数据/容器类型确定后再挂载容器
       innerVisible.value = true;
-    }
+    },
+    { immediate: true }
   );
 
   const loadDetail = async (id: number) => {

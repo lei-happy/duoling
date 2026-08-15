@@ -39,7 +39,7 @@
 
         <template #origin="{ row }">
           <span class="route-cell-text" :title="row.origin?.trim() || undefined">
-            {{ row.origin || '--' }}
+            {{ shortRegionPath(row.origin) }}
           </span>
         </template>
 
@@ -49,7 +49,7 @@
               class="route-cell-text"
               :title="row.destination?.trim() || undefined"
             >
-              {{ row.destination || '--' }}
+              {{ shortRegionPath(row.destination) }}
             </span>
             <el-tag
               v-if="(row.segmentCount || 0) > 1"
@@ -225,6 +225,7 @@
   import type { TaskActionConfig, TaskActionKey } from './task-actions';
   import { getCreatableDocTypes } from '@/api/operation/task-finance';
   import { usePermission } from '@/utils/use-permission';
+  import { shortRegionPath } from '@/utils/region-display';
 
   defineOptions({ name: 'OperationTask' });
 

@@ -132,6 +132,13 @@ const COL: Record<WorkbenchColumnId, string> = {
   action: '操作'
 };
 
+/**
+ * 「状态」列只给有阶段内差异的池：
+ * - 待装车：装车进度（已装 x/y），不再重复「已派车」
+ * - 在途：时效（正常 / 关注 / 严重），不再重复「在途」
+ * 待分配 / 待派车 / 待发车 / 待交车 没有进度口径，预警看「超时时长」，不设此列。
+ */
+
 /** 表头问号提示的默认文案（池内可用 `columnTips` 覆盖成本阶段的说法） */
 const COL_TIP: Partial<Record<WorkbenchColumnId, string>> = {
   carrierType: '自有车、社会运力或承运商',
@@ -143,7 +150,8 @@ const COL_TIP: Partial<Record<WorkbenchColumnId, string>> = {
   plannedArriveTime: '计划送达目的地的时间，已触发预警会标色',
   actualLoadTime: '实际完成装车的时间',
   stageDuration: '进入当前阶段至今的时长',
-  alertOverdue: '已超过应完成时间多久，可排序，优先处理拖得最久的'
+  alertOverdue: '已超过应完成时间多久，可排序，优先处理拖得最久的',
+  status: '本阶段内的进度或时效，不重复卡片上的阶段名'
 };
 
 /**
@@ -263,8 +271,10 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'status',
       'action'
     ],
+    columnLabels: { status: '装车进度' },
     columnTips: {
-      plannedLoadTime: '计划开始装车的时间，需要在这之前完成装车'
+      plannedLoadTime: '计划开始装车的时间，需要在这之前完成装车',
+      status: '已装台数 / 总台数；未装完的优先确认。关注、严重表示本阶段已超时'
     },
     defaultSort: { prop: 'plannedLoadTime', order: 'ascending' }
   },
@@ -326,8 +336,10 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
       'status',
       'action'
     ],
+    columnLabels: { status: '时效' },
     columnTips: {
-      plannedArriveTime: '计划送达目的地的时间，超期未到达会标色'
+      plannedArriveTime: '计划送达目的地的时间，超期未到达会标色',
+      status: '对照计划到货：时效正常 / 关注 / 严重；有卸车时同时显示已卸台数'
     },
     defaultSort: { prop: 'plannedArriveTime', order: 'ascending' }
   },
@@ -442,7 +454,8 @@ export function buildWorkbenchTableColumns(pool: WorkbenchPool): Columns {
         cols.push({
           columnKey: 'route',
           label: L.route,
-          minWidth: 240,
+          minWidth: 200,
+          showOverflowTooltip: false,
           slot: 'route'
         });
         break;
@@ -549,13 +562,16 @@ export function buildWorkbenchTableColumns(pool: WorkbenchPool): Columns {
         );
         break;
       case 'status':
-        cols.push({
-          prop: 'status',
-          label: L.status,
-          width: 110,
-          align: 'center',
-          slot: 'status'
-        });
+        cols.push(
+          withTip(id, {
+            prop: 'status',
+            label: L.status,
+            width: 186,
+            align: 'center',
+            showOverflowTooltip: false,
+            slot: 'status'
+          })
+        );
         break;
       case 'action':
         cols.push({
