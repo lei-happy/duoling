@@ -1,5 +1,9 @@
 <template>
-  <div class="ladder">
+  <div
+    class="ladder"
+    :data-palette="palette"
+    :style="resultCurrent"
+  >
     <div v-if="$slots.head" class="ladder-head">
       <slot name="head" />
     </div>
@@ -9,12 +13,11 @@
         指针轨：与刻度尺等宽，所以 translateX 的百分比正好等于刻度尺上的位置。
         用 transform 而不是 left，位移才走合成层。
       -->
-      <div
-        v-if="index"
-        class="ladder-rail"
-        :style="{ transform: `translate3d(${pointerLeft}%, 0, 0)` }"
-      >
-        <span class="ladder-pointer">{{ pointerLabel }}</span>
+      <div v-if="index" class="ladder-rail">
+        <span
+          class="ladder-pointer"
+          :style="{ left: `${pointerLeft}%` }"
+        >{{ pointerLabel }}</span>
       </div>
 
       <i
@@ -26,11 +29,16 @@
           'is-current': index !== null && seg === index
         }"
         :data-tier="tierOf(seg)"
+        :data-seg="seg"
       />
     </div>
 
     <div v-if="showScale" class="ladder-scale">
-      <span v-for="s in SCALE" :key="s.range">
+      <span
+        v-for="(s, i) in SCALE"
+        :key="s.range"
+        :class="{ 'is-now': index !== null && Math.ceil(index / 2) === i + 1 }"
+      >
         <b>{{ s.range }}</b>
         {{ s.name }}
       </span>
@@ -58,9 +66,21 @@ const props = withDefaults(
     pointerLabel?: string;
     /** 是否显示下方四段刻度说明 */
     showScale?: boolean;
+    /**
+     * brand：全站默认蓝阶。
+     * result：自测结果用红黄绿语义色，不影响首页/转型页刻度尺。
+     */
+    palette?: 'brand' | 'result';
   }>(),
-  { pointerLabel: '', showScale: true }
+  { pointerLabel: '', showScale: true, palette: 'brand' }
 );
+
+const resultCurrent = computed(() => {
+  if (props.palette !== 'result' || !props.index) {
+    return undefined;
+  }
+  return { '--result-current': `var(--result-${props.index})` };
+});
 
 const SCALE = [
   { range: 'L1–L2', name: '信息化' },
@@ -130,6 +150,55 @@ const pointerLeft = useSpringValue(toRef(targetLeft), {
   transform: scaleY(1.5);
 }
 
+/* 自测语义色：已走过的格按档位上色，当前格用该档强调色 */
+.ladder[data-palette='result'] {
+  .ladder-seg[data-seg='1'].is-on {
+    background: var(--result-1);
+  }
+  .ladder-seg[data-seg='2'].is-on {
+    background: var(--result-2);
+  }
+  .ladder-seg[data-seg='3'].is-on {
+    background: var(--result-3);
+  }
+  .ladder-seg[data-seg='4'].is-on {
+    background: var(--result-4);
+  }
+  .ladder-seg[data-seg='5'].is-on {
+    background: var(--result-5);
+  }
+  .ladder-seg[data-seg='6'].is-on {
+    background: var(--result-6);
+  }
+  .ladder-seg[data-seg='7'].is-on {
+    background: var(--result-7);
+  }
+  .ladder-seg[data-seg='8'].is-on {
+    background: var(--result-8);
+  }
+
+  .ladder-seg.is-current {
+    background: var(--result-current);
+  }
+
+  .ladder-pointer {
+    color: var(--result-current);
+
+    &::after {
+      background: var(--result-current);
+    }
+  }
+
+  .ladder-scale span.is-now {
+    color: var(--result-current);
+    border-top-color: var(--result-current);
+
+    b {
+      color: var(--result-current);
+    }
+  }
+}
+
 .ladder-rail {
   position: absolute;
   left: 0;
@@ -137,18 +206,17 @@ const pointerLeft = useSpringValue(toRef(targetLeft), {
   top: -22px;
   height: 0;
   pointer-events: none;
-  will-change: transform;
 }
 
 .ladder-pointer {
   position: absolute;
-  left: 0;
   transform: translateX(-50%);
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
   color: var(--brand);
   white-space: nowrap;
+  will-change: left;
 
   &::after {
     content: '';
@@ -181,21 +249,30 @@ const pointerLeft = useSpringValue(toRef(targetLeft), {
     color: var(--ink-3);
     letter-spacing: 0.06em;
   }
+
+  span.is-now {
+    color: var(--brand);
+    border-top-color: var(--brand);
+
+    b {
+      color: var(--brand);
+    }
+  }
 }
 
-/* 深底反转：祖先在别的组件上，scoped 只给最后一个选择器加属性 */
+/* 深底反转：只作用于品牌蓝刻度尺，自测语义色由结果卡自己接管 */
 .band-deep .ladder-seg,
-.result[data-tier='4'] .ladder-seg {
+.result[data-tier='4'] .ladder:not([data-palette='result']) .ladder-seg {
   background: rgba(255, 255, 255, 0.12);
 }
 
 .band-deep .ladder-seg.is-current,
-.result[data-tier='4'] .ladder-seg.is-current {
+.result[data-tier='4'] .ladder:not([data-palette='result']) .ladder-seg.is-current {
   background: var(--brand-on-dark);
 }
 
 .band-deep .ladder-pointer,
-.result[data-tier='4'] .ladder-pointer {
+.result[data-tier='4'] .ladder:not([data-palette='result']) .ladder-pointer {
   color: var(--brand-on-dark);
 
   &::after {
@@ -204,14 +281,24 @@ const pointerLeft = useSpringValue(toRef(targetLeft), {
 }
 
 .band-deep .ladder-scale span,
-.result[data-tier='4'] .ladder-scale span {
+.result[data-tier='4'] .ladder:not([data-palette='result']) .ladder-scale span {
   color: rgba(244, 247, 252, 0.55);
   border-top-color: var(--line-dark);
 }
 
 .band-deep .ladder-scale b,
-.result[data-tier='4'] .ladder-scale b {
+.result[data-tier='4'] .ladder:not([data-palette='result']) .ladder-scale b {
   color: rgba(244, 247, 252, 0.55);
+}
+
+.band-deep .ladder-scale span.is-now,
+.result[data-tier='4'] .ladder:not([data-palette='result']) .ladder-scale span.is-now {
+  color: var(--brand-on-dark);
+  border-top-color: var(--brand-on-dark);
+
+  b {
+    color: var(--brand-on-dark);
+  }
 }
 
 @media (max-width: 768px) {

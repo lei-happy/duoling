@@ -1,17 +1,36 @@
 <template>
   <div>
-    <!-- Hero -->
-    <section class="band band-tight band-paper">
+    <!-- Hero：定位 + 行业判断 + 愿景，同一屏说完我们是谁、看见什么、要去哪 -->
+    <section class="band band-paper">
       <div class="wrap">
-        <div class="sec-head hero-head">
+        <div class="sec-head sec-head--wide hero-head">
           <span class="eyebrow">关于我们</span>
           <h1 class="h-hero hero-title">
             我们只做一件事：<br /><span class="hl">让轿运企业的每一公里都算得清</span>
           </h1>
           <p class="lede">
-            {{ BRAND.legalEntity }}是一家面向轿运行业（汽车物流）的软件公司。我们不做通用
-            TMS，也不做行业大而全的平台——只服务商品车整车运输企业，把计划到结算这条主线做深。
+            {{ BRAND.legalEntity }}面向轿运行业（汽车物流）。我们不做通用
+            TMS，也不做大而全的物流平台——只服务商品车整车运输企业，把计划到结算这条主线做深。
           </p>
+        </div>
+
+        <div class="stance">
+          <article>
+            <span class="stance-kicker">行业判断</span>
+            <h2>轿运不缺软件，缺一条跑得完的经营闭环</h2>
+            <p>
+              系统买了、大屏上了、模型也接了，业务却还在微信和 Excel
+              里转——钱往往花在了错的一层。行业下一步不是再上一个平台，而是先让计划、派车、回单、结算在线上跑起来，数据和
+              AI 才有燃料。
+            </p>
+          </article>
+          <article class="stance-vision">
+            <span class="stance-kicker">我们的愿景</span>
+            <h2>让每一公里都不白跑</h2>
+            <p>
+              把{{ BRAND.product }}做成轿运企业真正用得起来的综合操作系统：流程在线、账算得清、智能用在真业务上。办公室里管经营的人，和路上跑车的司机，用的是同一套事实。
+            </p>
+          </article>
         </div>
       </div>
     </section>
@@ -19,7 +38,7 @@
     <!-- 我们相信 -->
     <section class="band band-soft band-line">
       <div class="wrap">
-        <SectionHead eyebrow="我们相信" title="业务先在线，AI 才值钱">
+        <SectionHead class="sec-head--wide" eyebrow="我们相信" title="业务先在线，AI 才值钱">
           这不是一句口号，而是产品的建设顺序：先把计划、派车、回单、结算跑进系统，再叠加数据和智能。跳过前面两层直接买
           AI，钱多半花在演示上。
         </SectionHead>
@@ -41,7 +60,7 @@
     <!-- 产品线 -->
     <section class="band band-paper">
       <div class="wrap">
-        <SectionHead eyebrow="品牌与产品" title="一个母品牌，两条产品线">
+        <SectionHead class="sec-head--wide" eyebrow="品牌与产品" title="一个母品牌，两条产品线">
           「朵灵」是母品牌，下面两条产品线各自面向不同的人：办公室里管经营的，和路上跑车的。
         </SectionHead>
 
@@ -136,13 +155,53 @@ const BELIEFS = [
 
 <style scoped lang="scss">
 .hero-head {
-  max-width: 820px;
-  margin-bottom: 0;
+  max-width: none;
+  margin-bottom: 40px;
 }
 
 .hero-title {
   font-size: clamp(28px, 3.4vw, 44px);
   margin: 16px 0 18px;
+}
+
+.stance {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.stance article {
+  padding: 28px 32px 30px;
+  background: var(--bg);
+}
+
+.stance-vision {
+  background: var(--surface-tint);
+}
+
+.stance-kicker {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--brand);
+  margin-bottom: 12px;
+}
+
+.stance h2 {
+  font-size: clamp(20px, 2vw, 24px);
+  letter-spacing: -0.025em;
+  margin-bottom: 12px;
+  line-height: 1.35;
+}
+
+.stance p {
+  font-size: 15px;
+  color: var(--ink-2);
+  line-height: 1.75;
 }
 
 .line-card {
@@ -194,6 +253,12 @@ const BELIEFS = [
     margin: 0;
     font-size: 15px;
     font-weight: 600;
+  }
+}
+
+@media (max-width: 768px) {
+  .stance {
+    grid-template-columns: 1fr;
   }
 }
 </style>

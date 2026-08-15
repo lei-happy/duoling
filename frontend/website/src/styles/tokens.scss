@@ -46,6 +46,26 @@
   --ok: #1f9254;
   --warn: #b8842a;
 
+  /*
+    自测结果专用：红 → 琥珀 → 青绿，饱和度压低，不当警报条。
+    只给免费自测的水位/结果用，全站主色仍是品牌蓝。
+  */
+  --result-1: #a84b3d;
+  --result-1-soft: #f7ebe8;
+  --result-2: #c26e32;
+  --result-2-soft: #f6eee4;
+  --result-3: #c4962e;
+  --result-3-soft: #f5f0de;
+  --result-4: #b8842a;
+  --result-4-soft: #f4edd9;
+  --result-5: #4e9a6a;
+  --result-5-soft: #e8f2ec;
+  --result-6: #2f8a5c;
+  --result-6-soft: #e3f0e9;
+  --result-7: #2a7a56;
+  --result-8: #1b6b4a;
+  --result-on-dark: #8dcaa8;
+
   /* 四层能力色阶：同一色相由浅入深，表达"越往上层管得越深" */
   --tier-1: #b3d1ff;
   --tier-2: #80b3ff;

@@ -1,7 +1,18 @@
 <template>
-  <div id="check-result" class="result" :data-tier="stage.tier">
+  <div
+    id="check-result"
+    class="result"
+    :data-tier="stage.tier"
+    :data-band="stage.band"
+  >
     <header class="rs-head">
-      <span class="eyebrow">测评结果</span>
+      <div class="rs-kicker">
+        <span class="eyebrow">测评结果</span>
+        <span class="rs-mark">
+          {{ TIER_MARK[stage.tier].layer }} · {{ TIER_MARK[stage.tier].name }}
+          <i v-if="TIER_MARK[stage.tier].tone">{{ TIER_MARK[stage.tier].tone }}</i>
+        </span>
+      </div>
       <div class="rs-title">
         <b class="rs-band num">{{ stage.band }}</b>
         <h3 class="h-sec">{{ stage.name }}</h3>
@@ -12,6 +23,7 @@
       </p>
       <WaterLadder
         class="rs-ladder"
+        palette="result"
         :index="ladderIndex"
         :pointer-label="stage.band"
       />
@@ -68,34 +80,182 @@ const props = defineProps<{
   weak: DimKey;
 }>();
 
+const TIER_MARK = {
+  1: { layer: '第一层', name: '信息化', tone: '底座未稳' },
+  2: { layer: '第二层', name: '数字化', tone: '数还没对齐' },
+  3: { layer: '第三层', name: '智能化', tone: '可以开始试' },
+  4: { layer: '第四层', name: '数智化', tone: '闭环在转' }
+} as const;
+
 /** L1 → 1，给刻度尺指针定位 */
 const ladderIndex = computed(() => Number(props.stage.band.slice(1)) || 1);
 </script>
 
 <style scoped lang="scss">
 .result {
+  position: relative;
   margin-top: 34px;
   border-radius: var(--r-lg);
   padding: 34px;
   background: var(--bg);
+  overflow: hidden;
 }
 
-/* 四层表面：同一色相由浅入深，档位号 + 刻度尺同时变化，不单靠颜色 */
-.result[data-tier='1'] {
-  background: var(--bg);
+.result::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: var(--tier-1);
 }
 
-.result[data-tier='2'] {
-  background: var(--brand-soft-2);
+.rs-kicker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.result[data-tier='3'] {
-  background: var(--brand-soft);
+.rs-head .eyebrow::before {
+  content: none;
 }
 
-.result[data-tier='4'] {
-  background: var(--ink-0);
+.rs-mark {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+  background: var(--paper);
+
+  i {
+    font-style: normal;
+    font-weight: 500;
+    opacity: 0.8;
+  }
+}
+
+.result[data-band='L1'] {
+  --rs: var(--result-1);
+  background: var(--result-1-soft);
+}
+
+.result[data-band='L2'] {
+  --rs: var(--result-2);
+  background: var(--result-2-soft);
+}
+
+.result[data-band='L3'] {
+  --rs: var(--result-3);
+  background: var(--result-3-soft);
+}
+
+.result[data-band='L4'] {
+  --rs: var(--result-4);
+  background: var(--result-4-soft);
+}
+
+.result[data-band='L5'] {
+  --rs: var(--result-5);
+  background: var(--result-5-soft);
+}
+
+.result[data-band='L6'] {
+  --rs: var(--result-6);
+  background: var(--result-6-soft);
+}
+
+.result[data-band='L1'],
+.result[data-band='L2'],
+.result[data-band='L3'],
+.result[data-band='L4'],
+.result[data-band='L5'],
+.result[data-band='L6'] {
+  &::before {
+    background: var(--rs);
+  }
+
+  .eyebrow {
+    color: var(--rs);
+
+    &::before {
+      background: var(--rs);
+    }
+  }
+
+  .rs-mark {
+    color: var(--rs);
+    background: var(--paper);
+  }
+
+  .rs-band {
+    color: var(--rs);
+  }
+
+  .rs-col-plan .rs-list li::before {
+    background: color-mix(in srgb, var(--rs) 16%, #fff);
+    color: var(--rs);
+  }
+
+  .rs-plan {
+    color: var(--rs);
+  }
+}
+
+/* L1 最要紧：顶栏加厚一档，档位号更重 */
+.result[data-band='L1']::before {
+  height: 5px;
+}
+
+.result[data-band='L7'],
+.result[data-band='L8'] {
+  --rs: var(--result-on-dark);
+  background: #15241d;
   color: var(--ink-inv);
+
+  &::before {
+    background: var(--result-7);
+  }
+
+  :deep(.ladder) {
+    --result-7: var(--result-on-dark);
+    --result-8: var(--result-on-dark);
+    --result-current: var(--result-on-dark);
+  }
+
+  :deep(.ladder-seg:not(.is-on)) {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  :deep(.ladder-scale span) {
+    color: rgba(244, 247, 252, 0.5);
+    border-top-color: rgba(255, 255, 255, 0.12);
+  }
+
+  :deep(.ladder-scale b) {
+    color: rgba(244, 247, 252, 0.5);
+  }
+
+  :deep(.ladder-scale span.is-now) {
+    color: var(--result-on-dark);
+    border-top-color: var(--result-on-dark);
+
+    b {
+      color: var(--result-on-dark);
+    }
+  }
+
+  .rs-mark {
+    color: var(--result-on-dark);
+    background: rgba(255, 255, 255, 0.08);
+  }
 
   .lede,
   .muted,
@@ -112,10 +272,10 @@ const ladderIndex = computed(() => Number(props.stage.band.slice(1)) || 1);
   }
 
   .eyebrow {
-    color: var(--brand-on-dark);
+    color: var(--result-on-dark);
 
     &::before {
-      background: var(--brand-on-dark);
+      background: var(--result-on-dark);
     }
   }
 
@@ -129,8 +289,8 @@ const ladderIndex = computed(() => Number(props.stage.band.slice(1)) || 1);
   }
 
   .rs-col-plan .rs-list li::before {
-    background: rgba(0, 101, 255, 0.28);
-    color: var(--brand-on-dark);
+    background: rgba(141, 202, 168, 0.2);
+    color: var(--result-on-dark);
   }
 
   .btn-line {
@@ -138,6 +298,10 @@ const ladderIndex = computed(() => Number(props.stage.band.slice(1)) || 1);
     border-color: var(--line-dark);
     color: var(--ink-inv);
   }
+}
+
+.result[data-band='L8']::before {
+  background: var(--result-8);
 }
 
 .rs-title {

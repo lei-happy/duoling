@@ -2,7 +2,7 @@
   <div>
     <section class="band band-tight band-paper">
       <div class="wrap">
-        <div class="sec-head log-head">
+        <div class="sec-head sec-head--wide log-head">
           <span class="eyebrow">更新记录</span>
           <h1 class="h-hero log-title">产品每一次变化，都写在这里</h1>
           <p class="lede">
@@ -13,7 +13,7 @@
     </section>
 
     <section class="band band-soft band-line">
-      <div class="wrap wrap-narrow">
+      <div class="wrap">
         <p v-if="loading" class="state">正在加载更新记录，请稍候…</p>
 
         <p v-else-if="failed" class="state">
@@ -134,7 +134,7 @@ onMounted(() => fetchList());
 
 <style scoped lang="scss">
 .log-head {
-  max-width: 720px;
+  max-width: none;
   margin-bottom: 0;
 }
 
@@ -151,9 +151,8 @@ onMounted(() => fetchList());
 
 .timeline {
   position: relative;
-  padding-left: 32px;
+  padding-left: 28px;
   border-left: 1px solid var(--line);
-  margin-left: 6px;
 }
 
 .tl-item {
@@ -167,7 +166,7 @@ onMounted(() => fetchList());
 
 .tl-dot {
   position: absolute;
-  left: -38px;
+  left: -33px;
   top: 22px;
   width: 9px;
   height: 9px;

@@ -1,5 +1,5 @@
 <template>
-  <aside class="gauge">
+  <aside class="gauge" :data-band="stage.band" :style="resultVars">
     <span class="eyebrow">当前水位</span>
     <p class="gauge-stage">{{ stageLabel }}</p>
 
@@ -16,6 +16,7 @@
 
     <WaterLadder
       class="gauge-ladder"
+      palette="result"
       :index="ladderIndex"
       :pointer-label="stage.band"
     />
@@ -57,6 +58,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import WaterLadder from '@/components/ui/WaterLadder.vue';
 import {
   DIM_NAME,
@@ -67,7 +69,7 @@ import {
 import type { ScoreResult } from './scoring';
 import type { Stage } from './stages';
 
-defineProps<{
+const props = defineProps<{
   scores: ScoreResult;
   stage: Stage;
   stageLabel: string;
@@ -78,6 +80,12 @@ defineProps<{
 
 const emit = defineEmits<{ submit: []; reset: [] }>();
 
+const resultVars = computed(() =>
+  props.ladderIndex
+    ? { '--result-current': `var(--result-${props.ladderIndex})` }
+    : undefined
+);
+
 const TOTAL_QUESTIONS = QUESTION_IDS.length;
 </script>
 
@@ -87,6 +95,8 @@ const TOTAL_QUESTIONS = QUESTION_IDS.length;
   position: sticky;
   top: 92px;
   max-height: calc(100vh - 112px);
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   background: var(--paper);
   border-radius: var(--r-lg);
@@ -99,6 +109,7 @@ const TOTAL_QUESTIONS = QUESTION_IDS.length;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 4px 0 18px;
+  color: var(--result-current, var(--ink-1));
 }
 
 .gauge-score {
@@ -170,15 +181,10 @@ const TOTAL_QUESTIONS = QUESTION_IDS.length;
     display: block;
     height: 100%;
     border-radius: 3px;
-    background: var(--tier-3);
+    background: var(--result-current, var(--tier-3));
     transform-origin: left center;
     transition: transform var(--dur-move) var(--ease);
   }
-}
-
-/* 最弱一环用实心主色标出来，它决定了档位封顶 */
-.dim.is-weak .dim-bar i {
-  background: var(--brand);
 }
 
 .dim-flag {
@@ -186,7 +192,7 @@ const TOTAL_QUESTIONS = QUESTION_IDS.length;
   margin-top: 6px;
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--brand);
+  color: var(--result-current, var(--brand));
 }
 
 .gauge-actions {
@@ -203,7 +209,8 @@ const TOTAL_QUESTIONS = QUESTION_IDS.length;
   .gauge {
     position: static;
     max-height: none;
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .gauge-ladder {
