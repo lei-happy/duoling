@@ -1,58 +1,235 @@
 <template>
-  <div class="features-page">
+  <div>
     <!-- Hero -->
-    <section class="page-hero">
-      <div class="hero-bg">
-        <div class="grid-lines"></div>
-        <div class="glow glow-1"></div>
-      </div>
-      <div class="container hero-content">
-        <h1 class="scroll-animate">产品功能</h1>
-        <p class="scroll-animate" data-delay="100">
-          五大核心亮点，全方位赋能整车运输企业数字化升级
-        </p>
+    <section class="band band-tight band-paper">
+      <div class="wrap">
+        <div class="sec-head sec-head--wide hero-head">
+          <span class="eyebrow">产品能力</span>
+          <h1 class="h-hero hero-title">
+            接单、派车、算钱、收钱，<br /><span class="hl">在一套系统里跑完</span>
+          </h1>
+          <p class="lede">
+            {{ BRAND.product }}面向轿运行业（汽车物流），按商品车运输企业的真实动线设计：业务从计划中心进来，经配载、调度、在途、回单，落到能源成本与财务结算，再回到经营分析。带
+            <span class="tag tag-pro">旗舰版</span>
+            标记的能力属于旗舰版，其余在基础版即可使用。
+          </p>
+        </div>
       </div>
     </section>
 
-    <!-- 功能亮点 -->
-    <section
-      v-for="(feature, idx) in features"
-      :key="feature.title"
-      class="feature-section"
-      :class="{ reversed: idx % 2 === 1 }"
-    >
-      <div class="container feature-row">
-        <div class="feature-text scroll-animate" :data-direction="idx % 2 === 0 ? 'left' : 'right'">
-          <div class="feature-number">0{{ idx + 1 }}</div>
-          <h2>{{ feature.title }}</h2>
-          <p class="feature-desc">{{ feature.desc }}</p>
-          <ul class="feature-list">
-            <li v-for="item in feature.highlights" :key="item">
-              <span class="check-icon">✓</span>
-              {{ item }}
-            </li>
-          </ul>
-          <div class="feature-keywords">
-            <span v-for="kw in feature.keywords" :key="kw">{{ kw }}</span>
+    <!-- 角色视角 -->
+    <section id="roles" class="band band-soft band-line">
+      <div class="wrap">
+        <div class="role-head">
+          <div class="sec-head sec-head--flush reveal">
+            <span class="eyebrow">五个角色</span>
+            <h2 class="h-sec role-title">你的人，每天在系统里做什么</h2>
+          </div>
+          <div class="reveal">
+            <UiTabs
+              v-model="role"
+              :items="ROLE_TABS"
+              aria-label="切换角色"
+              panel-id="role-panel"
+            />
           </div>
         </div>
-        <div class="feature-visual scroll-animate" :data-direction="idx % 2 === 0 ? 'right' : 'left'">
-          <div class="visual-card" v-html="feature.svg"></div>
+
+        <div id="role-panel" class="role-panel reveal" role="tabpanel">
+          <div>
+            <span class="tag tag-brand">{{ activeRole.tag }}</span>
+            <h3>{{ activeRole.title }}</h3>
+            <p class="lede role-lede">{{ activeRole.lede }}</p>
+            <ul class="role-list">
+              <li v-for="item in activeRole.items" :key="item.text">
+                <span class="num">{{ item.when }}</span>
+                <span>
+                  {{ item.text }}
+                  <span v-if="item.pro" class="tag tag-pro">旗舰版</span>
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 界面示意，纯装饰，对读屏隐藏 -->
+          <div class="mock" aria-hidden="true">
+            <div class="mock-bar">
+              <i /><i /><i /><b>{{ activeRole.mock.title }}</b>
+            </div>
+            <div class="mock-body">
+              <div v-if="activeRole.mock.flow" class="mock-flow">
+                <span
+                  v-for="node in activeRole.mock.flow"
+                  :key="node.text"
+                  class="mock-node"
+                  :class="node.state && `is-${node.state}`"
+                >
+                  {{ node.text }}
+                </span>
+              </div>
+
+              <div v-if="activeRole.mock.kpis" class="mock-kpis">
+                <div v-for="k in activeRole.mock.kpis" :key="k.label" class="mock-kpi">
+                  <span>{{ k.label }}</span>
+                  <b :class="k.tone">{{ k.value }}</b>
+                </div>
+              </div>
+
+              <div v-if="activeRole.mock.bars" class="mock-bars">
+                <i
+                  v-for="(h, i) in activeRole.mock.bars"
+                  :key="i"
+                  :class="{ 'is-hi': i === activeRole.mock.bars.length - 1 }"
+                  :style="{ height: `${h}%` }"
+                />
+              </div>
+
+              <MockRows v-if="activeRole.mock.rows" :rows="activeRole.mock.rows" />
+
+              <div v-if="activeRole.mock.kpisTail" class="mock-kpis">
+                <div
+                  v-for="k in activeRole.mock.kpisTail"
+                  :key="k.label"
+                  class="mock-kpi"
+                >
+                  <span>{{ k.label }}</span>
+                  <b :class="k.tone">{{ k.value }}</b>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 四条主线 -->
+    <section class="band band-paper">
+      <div class="wrap">
+        <article
+          v-for="(p, i) in PILLARS"
+          :id="p.anchor"
+          :key="p.step"
+          class="pillar reveal"
+          :class="{ 'pillar-alt': i % 2 === 1 }"
+        >
+          <div>
+            <span class="pillar-step">{{ p.step }}</span>
+            <h2>{{ p.title }}</h2>
+            <p class="lede">{{ p.lede }}</p>
+            <ul class="pillar-points">
+              <li v-for="pt in p.points" :key="pt.name">
+                <span class="pt-ico" v-html="pt.icon" />
+                <span>
+                  <b>{{ pt.name }}</b>：{{ pt.text }}
+                  <span v-if="pt.pro" class="tag tag-pro">{{ pt.pro }}</span>
+                </span>
+              </li>
+            </ul>
+            <RouterLink v-if="p.link" class="btn btn-text" :to="p.link.to">
+              {{ p.link.text }} <span class="arrow">→</span>
+            </RouterLink>
+            <p v-if="p.note" class="muted">{{ p.note }}</p>
+          </div>
+
+          <div class="mock" aria-hidden="true">
+            <div class="mock-bar"><i /><i /><i /><b>{{ p.mock.title }}</b></div>
+            <div class="mock-body">
+              <div v-if="p.mock.flow" class="mock-flow">
+                <span
+                  v-for="node in p.mock.flow"
+                  :key="node.text"
+                  class="mock-node"
+                  :class="node.state && `is-${node.state}`"
+                >
+                  {{ node.text }}
+                </span>
+              </div>
+
+              <MockRows v-if="p.mock.rows" :rows="p.mock.rows" />
+              <MockRows v-if="p.mock.rows2" :rows="p.mock.rows2" />
+
+              <div v-if="p.mock.kpis" class="mock-kpis">
+                <div v-for="k in p.mock.kpis" :key="k.label" class="mock-kpi">
+                  <span>{{ k.label }}</span>
+                  <b :class="k.tone">{{ k.value }}</b>
+                </div>
+              </div>
+
+              <div v-if="p.mock.flowTail" class="mock-flow">
+                <span
+                  v-for="node in p.mock.flowTail"
+                  :key="node.text"
+                  class="mock-node"
+                  :class="node.state && `is-${node.state}`"
+                >
+                  {{ node.text }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 模块全景 -->
+    <section class="band band-soft band-line">
+      <div class="wrap">
+        <SectionHead class="sec-head--wide" eyebrow="经营链路" title="模块按经营链路收在一起">
+          不按菜单平铺。先选一条链路，看它解决什么经营问题，再看对应模块。带标记的属于旗舰版。
+        </SectionHead>
+
+        <div class="reveal">
+          <UiTabs
+            v-model="chain"
+            :items="CHAIN_TABS"
+            aria-label="切换经营链路"
+            panel-id="chain-panel"
+          />
+        </div>
+
+        <div id="chain-panel" class="reveal" role="tabpanel">
+          <p class="map-why">{{ activeChain.why }}</p>
+          <div class="map-mods">
+            <div
+              v-for="(mod, i) in activeChain.mods"
+              :key="mod.name"
+              class="mod card-lift"
+            >
+              <div class="mod-head">
+                <h3>{{ mod.name }}</h3>
+                <span class="num">{{ String(i + 1).padStart(2, '0') }}</span>
+              </div>
+              <p>{{ mod.desc }}</p>
+              <div class="tag-list">
+                <span
+                  v-for="t in mod.tags"
+                  :key="t.text"
+                  class="tag"
+                  :class="{ 'tag-pro': t.pro }"
+                >
+                  {{ t.text }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- CTA -->
-    <section class="cta-section">
-      <div class="container">
-        <div class="cta-card scroll-animate">
-          <h2>体验全部功能</h2>
-          <p>解锁整车运输数字化管理新体验</p>
-          <router-link to="/register">
-            <el-button type="primary" size="large" class="cta-btn">
-              立即注册
-            </el-button>
-          </router-link>
+    <section class="band band-tight band-deep">
+      <div class="wrap cta">
+        <div>
+          <h2 class="h-sec cta-title">想看这些模块在你企业怎么跑？</h2>
+          <p class="lede cta-lede">用你自己的线路和运价，我们做一遍演示。</p>
+        </div>
+        <div class="btn-row">
+          <RouterLink class="btn btn-primary btn-lg" to="/assessment#lead">
+            预约 30 分钟演示<span class="arrow">→</span>
+          </RouterLink>
+          <RouterLink class="btn btn-line btn-lg" to="/pricing">
+            看价格方案
+          </RouterLink>
         </div>
       </div>
     </section>
@@ -60,517 +237,887 @@
 </template>
 
 <script setup lang="ts">
-import { useScrollAnimation } from '@/composables/useScrollAnimation'
+import { computed, ref } from 'vue';
+import { RouterLink } from 'vue-router';
+import { BRAND } from '@/config/brand';
+import { useReveal } from '@/composables/useReveal';
+import SectionHead from '@/components/ui/SectionHead.vue';
+import UiTabs from '@/components/ui/UiTabs.vue';
+import MockRows from '@/components/ui/MockRows.vue';
+import type { MockPanel } from '@/components/ui/mock';
 
-useScrollAnimation()
+useReveal();
 
-/* ---------- 5 大功能亮点 SVG 插画 ---------- */
+/* ------------------------------------------------------------- 角色视角 */
 
-// 1. AI助理 - 大脑+电路+轿运车
-const svgAI = `<svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="400" height="300" rx="20" fill="#eff6ff"/>
-  <!-- 中央大脑 -->
-  <circle cx="200" cy="130" r="60" fill="url(#fa1)" opacity="0.12"/>
-  <circle cx="200" cy="130" r="42" fill="url(#fa1)"/>
-  <path d="M184 130c0-8.8 7.2-16 16-16s16 7.2 16 16" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>
-  <path d="M188 118c-4-6-2-14 4-18m20 18c4-6 2-14-4-18" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>
-  <circle cx="200" cy="138" r="4" fill="#fff"/>
-  <!-- AI发散线 -->
-  <line x1="200" y1="82" x2="200" y2="64" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
-  <line x1="248" y1="106" x2="262" y2="96" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
-  <line x1="152" y1="106" x2="138" y2="96" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
-  <circle cx="200" cy="58" r="4" fill="#bfdbfe"/>
-  <circle cx="268" cy="92" r="4" fill="#bfdbfe"/>
-  <circle cx="132" cy="92" r="4" fill="#bfdbfe"/>
-  <!-- 底部面板 -->
-  <rect x="100" y="200" width="200" height="60" rx="10" fill="#fff" stroke="#dbeafe" stroke-width="1.5"/>
-  <rect x="116" y="216" width="60" height="8" rx="4" fill="#bfdbfe"/>
-  <rect x="116" y="232" width="40" height="8" rx="4" fill="#dbeafe"/>
-  <rect x="224" y="212" width="56" height="24" rx="8" fill="url(#fa1)"/>
-  <text x="252" y="228" text-anchor="middle" font-size="10" fill="#fff" font-weight="600">智能推荐</text>
-  <!-- 连接线 -->
-  <path d="M200 172v28" stroke="#93c5fd" stroke-width="2" stroke-dasharray="4 3"/>
-  <defs><linearGradient id="fa1" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
-    <stop stop-color="#1d4ed8"/><stop offset="1" stop-color="#2563eb"/>
-  </linearGradient></defs>
-</svg>`
+type RoleKey = 'boss' | 'dispatch' | 'captain' | 'finance' | 'driver';
 
-// 2. 全链路 - 流程节点连线
-const svgChain = `<svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="400" height="300" rx="20" fill="#eff6ff"/>
-  <!-- 节点连线 -->
-  <line x1="80" y1="150" x2="320" y2="150" stroke="#dbeafe" stroke-width="3"/>
-  <!-- 节点1: 主机厂 -->
-  <circle cx="80" cy="150" r="24" fill="url(#fb1)"/>
-  <rect x="68" y="142" width="24" height="16" rx="3" fill="#fff" opacity="0.4"/>
-  <text x="80" y="198" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="600">主机厂</text>
-  <!-- 节点2: 调度 -->
-  <circle cx="160" cy="150" r="24" fill="url(#fb1)" opacity="0.85"/>
-  <path d="M152 150h16M160 142v16" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-  <text x="160" y="198" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="600">调度</text>
-  <!-- 节点3: 在途 -->
-  <circle cx="240" cy="150" r="24" fill="url(#fb1)" opacity="0.85"/>
-  <path d="M230 154h20l-4-4m4 4l-4 4" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="240" y="198" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="600">在途</text>
-  <!-- 节点4: 交付 -->
-  <circle cx="320" cy="150" r="24" fill="url(#fb1)"/>
-  <path d="M312 150l5 5 11-11" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="320" y="198" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="600">交付</text>
-  <!-- 箭头指示 -->
-  <path d="M108 150l8-6v12z" fill="#bfdbfe"/>
-  <path d="M188 150l8-6v12z" fill="#bfdbfe"/>
-  <path d="M268 150l8-6v12z" fill="#bfdbfe"/>
-  <!-- 上方标签 -->
-  <rect x="130" y="80" width="140" height="32" rx="16" fill="#fff" stroke="#dbeafe" stroke-width="1.5"/>
-  <text x="200" y="100" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="600">全链路实时在线</text>
-  <path d="M200 112v14" stroke="#bfdbfe" stroke-width="1.5" stroke-dasharray="3 2"/>
-  <defs><linearGradient id="fb1" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
-    <stop stop-color="#1d4ed8"/><stop offset="1" stop-color="#2563eb"/>
-  </linearGradient></defs>
-</svg>`
+interface RoleView {
+  tag: string;
+  title: string;
+  lede: string;
+  items: { when: string; text: string; pro?: boolean }[];
+  mock: MockPanel;
+}
 
-// 3. 运营成本 - 费用面板+趋势线
-const svgCost = `<svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="400" height="300" rx="20" fill="#eff6ff"/>
-  <!-- 左侧费用列表 -->
-  <rect x="40" y="50" width="150" height="200" rx="12" fill="#fff" stroke="#dbeafe" stroke-width="1.5"/>
-  <text x="60" y="78" font-size="12" fill="#1d4ed8" font-weight="700">费用明细</text>
-  <rect x="56" y="92" width="80" height="8" rx="4" fill="#bfdbfe"/>
-  <rect x="148" y="92" width="28" height="8" rx="4" fill="#dbeafe"/>
-  <rect x="56" y="112" width="60" height="8" rx="4" fill="#bfdbfe"/>
-  <rect x="148" y="112" width="28" height="8" rx="4" fill="#dbeafe"/>
-  <rect x="56" y="132" width="70" height="8" rx="4" fill="#bfdbfe"/>
-  <rect x="148" y="132" width="28" height="8" rx="4" fill="#dbeafe"/>
-  <rect x="56" y="152" width="50" height="8" rx="4" fill="#bfdbfe"/>
-  <rect x="148" y="152" width="28" height="8" rx="4" fill="#dbeafe"/>
-  <!-- 异常标记 -->
-  <rect x="56" y="176" width="118" height="28" rx="8" fill="#FEF2F2" stroke="#FECACA" stroke-width="1"/>
-  <circle cx="72" cy="190" r="6" fill="#EF4444"/>
-  <text x="70" y="193" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">!</text>
-  <text x="86" y="194" font-size="10" fill="#DC2626" font-weight="600">异常费用预警</text>
-  <!-- 右侧趋势图 -->
-  <rect x="210" y="50" width="150" height="200" rx="12" fill="#fff" stroke="#dbeafe" stroke-width="1.5"/>
-  <text x="230" y="78" font-size="12" fill="#1d4ed8" font-weight="700">成本趋势</text>
-  <path d="M230 200 L260 180 L290 190 L320 160 L340 140" stroke="url(#fc1)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-  <circle cx="260" cy="180" r="3" fill="#1d4ed8"/>
-  <circle cx="290" cy="190" r="3" fill="#1d4ed8"/>
-  <circle cx="320" cy="160" r="3" fill="#1d4ed8"/>
-  <circle cx="340" cy="140" r="3" fill="#2563eb"/>
-  <path d="M230 200 L260 180 L290 190 L320 160 L340 140 L340 210 L230 210Z" fill="url(#fc1)" opacity="0.08"/>
-  <!-- 底部汇总 -->
-  <rect x="230" y="216" width="64" height="20" rx="10" fill="url(#fc1)"/>
-  <text x="262" y="230" text-anchor="middle" font-size="9" fill="#fff" font-weight="600">环比↓12%</text>
-  <defs><linearGradient id="fc1" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
-    <stop stop-color="#1d4ed8"/><stop offset="1" stop-color="#2563eb"/>
-  </linearGradient></defs>
-</svg>`
+const ROLE_TABS = [
+  { key: 'boss', label: '老板' },
+  { key: 'dispatch', label: '调度员' },
+  { key: 'captain', label: '车队长' },
+  { key: 'finance', label: '财务' },
+  { key: 'driver', label: '驾驶员' }
+];
 
-// 4. 智能BI - 数据看板
-const svgBI = `<svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="400" height="300" rx="20" fill="#eff6ff"/>
-  <!-- 看板主体 -->
-  <rect x="30" y="40" width="340" height="220" rx="12" fill="#fff" stroke="#dbeafe" stroke-width="1.5"/>
-  <!-- 顶部指标 -->
-  <rect x="50" y="60" width="90" height="50" rx="8" fill="#eff6ff"/>
-  <text x="60" y="78" font-size="9" fill="#64748B">运量 (台)</text>
-  <text x="60" y="98" font-size="18" fill="#1d4ed8" font-weight="800">1,286</text>
-  <rect x="155" y="60" width="90" height="50" rx="8" fill="#eff6ff"/>
-  <text x="165" y="78" font-size="9" fill="#64748B">收入 (万)</text>
-  <text x="165" y="98" font-size="18" fill="#1d4ed8" font-weight="800">86.4</text>
-  <rect x="260" y="60" width="90" height="50" rx="8" fill="#eff6ff"/>
-  <text x="270" y="78" font-size="9" fill="#64748B">利润率</text>
-  <text x="270" y="98" font-size="18" fill="#22C55E" font-weight="800">18.2%</text>
-  <!-- 柱状图 -->
-  <rect x="60" y="180" width="24" height="50" rx="4" fill="#dbeafe"/>
-  <rect x="96" y="160" width="24" height="70" rx="4" fill="#bfdbfe"/>
-  <rect x="132" y="140" width="24" height="90" rx="4" fill="url(#fd1)"/>
-  <rect x="168" y="155" width="24" height="75" rx="4" fill="#bfdbfe"/>
-  <rect x="204" y="130" width="24" height="100" rx="4" fill="url(#fd1)"/>
-  <rect x="240" y="150" width="24" height="80" rx="4" fill="#bfdbfe"/>
-  <!-- 右侧饼图 -->
-  <circle cx="316" cy="185" r="36" fill="#dbeafe"/>
-  <path d="M316 149 A36 36 0 0 1 348 201Z" fill="url(#fd1)"/>
-  <path d="M316 149 A36 36 0 0 0 284 201Z" fill="#93c5fd"/>
-  <circle cx="316" cy="185" r="18" fill="#fff"/>
-  <defs><linearGradient id="fd1" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-    <stop stop-color="#1d4ed8"/><stop offset="1" stop-color="#2563eb"/>
-  </linearGradient></defs>
-</svg>`
-
-// 5. 移动办公 - 手机界面
-const svgMobile = `<svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="400" height="300" rx="20" fill="#eff6ff"/>
-  <!-- 手机1: 司机端 -->
-  <rect x="80" y="40" width="100" height="200" rx="16" fill="url(#fe1)"/>
-  <rect x="88" y="56" width="84" height="160" rx="8" fill="#fff" opacity="0.15"/>
-  <rect x="96" y="68" width="68" height="12" rx="6" fill="#fff" opacity="0.3"/>
-  <rect x="96" y="88" width="68" height="40" rx="8" fill="#fff" opacity="0.2"/>
-  <text x="130" y="113" text-anchor="middle" font-size="10" fill="#fff" font-weight="600">待接运单</text>
-  <rect x="96" y="136" width="68" height="28" rx="8" fill="#fff" opacity="0.35"/>
-  <text x="130" y="154" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">一键接单</text>
-  <rect x="96" y="172" width="30" height="24" rx="6" fill="#fff" opacity="0.2"/>
-  <text x="111" y="188" text-anchor="middle" font-size="8" fill="#fff">拍照</text>
-  <rect x="134" y="172" width="30" height="24" rx="6" fill="#fff" opacity="0.2"/>
-  <text x="149" y="188" text-anchor="middle" font-size="8" fill="#fff">导航</text>
-  <text x="130" y="254" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="600">司机端</text>
-  <!-- 手机2: 管理端 -->
-  <rect x="220" y="40" width="100" height="200" rx="16" fill="url(#fe1)" opacity="0.85"/>
-  <rect x="228" y="56" width="84" height="160" rx="8" fill="#fff" opacity="0.15"/>
-  <rect x="236" y="68" width="68" height="12" rx="6" fill="#fff" opacity="0.3"/>
-  <rect x="236" y="88" width="32" height="32" rx="6" fill="#fff" opacity="0.2"/>
-  <rect x="274" y="88" width="32" height="32" rx="6" fill="#fff" opacity="0.2"/>
-  <rect x="236" y="126" width="32" height="32" rx="6" fill="#fff" opacity="0.2"/>
-  <rect x="274" y="126" width="32" height="32" rx="6" fill="#fff" opacity="0.2"/>
-  <rect x="236" y="168" width="68" height="28" rx="8" fill="#fff" opacity="0.25"/>
-  <text x="270" y="186" text-anchor="middle" font-size="9" fill="#fff" font-weight="600">实时看板</text>
-  <text x="270" y="254" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="600">管理端</text>
-  <!-- 中间连接 -->
-  <path d="M184 140 C200 140, 200 140, 216 140" stroke="#bfdbfe" stroke-width="2" stroke-dasharray="4 3"/>
-  <circle cx="200" cy="140" r="10" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
-  <path d="M196 140h8M200 136v8" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round"/>
-  <defs><linearGradient id="fe1" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-    <stop stop-color="#1d4ed8"/><stop offset="1" stop-color="#2563eb"/>
-  </linearGradient></defs>
-</svg>`
-
-const features = [
-  {
-    svg: svgAI,
-    title: 'AI 助理集成业务过程',
-    desc: '将 AI 智能深度融入整车运输全业务流程——从订单匹配、板车调度、配载优化到在途异常处理。智途 AI 助理如同一位永不休息的调度专家，全天候为您智能识别运输风险、自动推荐最优装载与路线方案，让日常调度效率实现质的飞跃。',
-    highlights: [
-      '智能调度：基于板车位置、装载能力和交付时限，自动匹配最优运力资源',
-      '异常识别：AI 实时监控运输全程，超时停留、路线偏离、恶劣天气提前预警',
-      '配载推荐：根据车型尺寸与目的地，自动生成最优装载方案，提高板车利用率',
+const ROLES: Record<RoleKey, RoleView> = {
+  boss: {
+    tag: '老板 / 总经理',
+    title: '不用等月报，也不用问人',
+    lede: '进系统第一眼就是经营驾驶舱：这个月赚了多少、哪条线在亏、哪个客户的报价该谈了。',
+    items: [
+      { when: '每天', text: '看驾驶舱：收入、单车日均利润、亏损线路、在途异常。' },
+      {
+        when: '每周',
+        text: '看运营看板与线路盈利排名，定下周要调的价和要停的线。',
+        pro: true
+      },
+      {
+        when: '随时',
+        text: '问 AI 数据分析员：上月哪个客户毛利最低，为什么。',
+        pro: true
+      },
+      { when: '按需', text: '审大额费用与例外申请，手机上就能批。' }
     ],
-    keywords: ['智能调度', '异常识别', '配载优化'],
+    mock: {
+      title: '经营驾驶舱 / 利润总览',
+      kpis: [
+        { label: '本月毛利', value: '86.4万', tone: 'up' },
+        { label: '毛利率', value: '17.8%' },
+        { label: '待回款', value: '212万', tone: 'down' }
+      ],
+      bars: [38, 52, 44, 66, 58, 72, 88],
+      rows: [
+        { head: true, cells: ['客户', '趟次', '毛利率', '建议'] },
+        {
+          cells: ['某主机厂华东', '126', '21.4%'],
+          nums: [1, 2],
+          tag: { text: '保持', kind: 'brand' }
+        },
+        {
+          cells: ['某经销商集团', '48', '6.2%'],
+          nums: [1, 2],
+          tag: { text: '重谈价', kind: 'pro' }
+        }
+      ]
+    }
+  },
+  dispatch: {
+    tag: '调度员',
+    title: '从计划池到派车，不用来回打电话',
+    lede: '客户的车辆清单进来就在计划池里，按线路和车型配载成任务单，直接派给自有车或承运商。',
+    items: [
+      { when: '接单', text: '计划中心接客户需求，支持批量导入与 AI 识别录入。' },
+      {
+        when: '配载',
+        text: '手动配载或让系统推荐板位组合，空板先降下来。',
+        pro: true
+      },
+      { when: '派车', text: '调度工作台看车辆在哪、谁有空，一键派给司机或承运商。' },
+      { when: '跟车', text: '在途监控看节点是否超期，异常直接派成待办。' }
+    ],
+    mock: {
+      title: '调度工作台 / 今日待派 18 车',
+      rows: [
+        { head: true, cells: ['线路', '台数', '可用运力', '状态'] },
+        {
+          cells: ['上海 → 郑州', '8', '自有 3 车'],
+          nums: [1],
+          tag: { text: '可配', kind: 'brand' }
+        },
+        {
+          cells: ['宁波 → 合肥', '6', '承运商 2 车'],
+          nums: [1],
+          tag: { text: '待确认' }
+        },
+        {
+          cells: ['南京 → 武汉', '4', '缺 1 车'],
+          nums: [1],
+          tag: { text: '去运力大厅', kind: 'pro' }
+        }
+      ],
+      flow: [
+        { text: '计划池', state: 'done' },
+        { text: '配载中', state: 'live' },
+        { text: '待派车' },
+        { text: '在途' }
+      ]
+    }
+  },
+  captain: {
+    tag: '车队长',
+    title: '车、人、证照，不再记在本子上',
+    lede: '自有车、挂车、驾驶员集中建档，证照和维保到期系统提前提醒，出车审批在线走。',
+    items: [
+      { when: '管车', text: '车辆、挂车、分组、变更记录全部在册，谁在开哪台车清楚。' },
+      { when: '合规', text: '行驶证、营运证、驾驶证、押运资质到期自动预警。' },
+      {
+        when: '维保',
+        text: '维保计划与费用台账，避免临期抛锚耽误交车。',
+        pro: true
+      },
+      { when: '能源', text: '能源卡绑车绑人，加油加气充电流水能追到车与任务。' }
+    ],
+    mock: {
+      title: '证照监控 / 30 天内到期',
+      kpis: [
+        { label: '在册板车', value: '42' },
+        { label: '7 天内到期', value: '3', tone: 'down' },
+        { label: '待维保', value: '5' }
+      ],
+      rows: [
+        { head: true, cells: ['车牌 / 人员', '证件', '到期', '状态'] },
+        {
+          cells: ['苏A·9F21 挂', '营运证', '08-19'],
+          nums: [2],
+          tag: { text: '5 天', kind: 'pro' }
+        },
+        {
+          cells: ['李师傅', '押运资质', '09-02'],
+          nums: [2],
+          tag: { text: '19 天' }
+        }
+      ]
+    }
+  },
+  finance: {
+    tag: '财务',
+    title: '对账、开票、打款，不再各拉一张表',
+    lede: '运费按合同生成，成本按政策归集；客户应收、承运商应付、司机工资与能源账户在同一条资金链上闭环。',
+    items: [
+      {
+        when: '应收',
+        text: '客户对账 → 结算 → 开票 → 收款核销，账龄一眼看清。',
+        pro: true
+      },
+      { when: '应付', text: '任务费用、承运商对账结算、自有司机工资单一处处理。' },
+      {
+        when: '出纳',
+        text: '银行账户、打款批次与到账认领，钱在哪看得见。',
+        pro: true
+      },
+      {
+        when: '核算',
+        text: '经营核算按已确认收入与已审批成本算毛利。',
+        pro: true
+      }
+    ],
+    mock: {
+      title: '出纳工作台 / 待付款与待认领',
+      kpis: [
+        { label: '待付款', value: '6 笔', tone: 'down' },
+        { label: '待认领到账', value: '3' },
+        { label: '本月开票', value: '78万' }
+      ],
+      rows: [
+        { head: true, cells: ['对象', '类型', '金额', '状态'] },
+        {
+          cells: ['某承运商', '应付结算', '￥18.6万'],
+          nums: [2],
+          tag: { text: '待打款', kind: 'pro' }
+        },
+        {
+          cells: ['某主机厂', '应收结算', '￥84.2万'],
+          nums: [2],
+          tag: { text: '待收款', kind: 'brand' }
+        },
+        {
+          cells: ['自有司机 · 7 月', '工资单', '￥9.4万'],
+          nums: [2],
+          tag: { text: '待审批' }
+        }
+      ]
+    }
+  },
+  driver: {
+    tag: '驾驶员',
+    title: '手机上接任务、交回单、看收入',
+    lede: '不用回场补录，装车、到货、签收当场拍完就传上去，跑了多少、该拿多少自己看得见。',
+    items: [
+      { when: '接单', text: '手机收到任务，车辆清单、线路、收货门店都在里面。' },
+      { when: '执行', text: '装车、到货、签收逐节点上报，拍照即上传。' },
+      { when: '异常', text: '划伤、延误、改配当场提报，调度立刻看到。' },
+      { when: '收入', text: '我的收入与账户明细自己查，少扯皮。' }
+    ],
+    mock: {
+      title: `${BRAND.driverProduct} / 我的任务`,
+      flow: [
+        { text: '接受', state: 'done' },
+        { text: '装车', state: 'done' },
+        { text: '在途', state: 'live' },
+        { text: '到货' },
+        { text: '签收' }
+      ],
+      rows: [
+        { head: true, cells: ['任务', '台数', '里程', '回单'] },
+        {
+          cells: ['上海 → 郑州', '8', '862km'],
+          nums: [1, 2],
+          tag: { text: '待上传' }
+        },
+        {
+          cells: ['郑州 → 西安', '6', '505km'],
+          nums: [1, 2],
+          tag: { text: '已完成', kind: 'brand' }
+        }
+      ],
+      kpisTail: [
+        { label: '本月趟次', value: '11' },
+        { label: '本月里程', value: '7,420' },
+        { label: '预计收入', value: '￥13,860', tone: 'up' }
+      ]
+    }
+  }
+};
+
+const role = ref<RoleKey>('boss');
+const activeRole = computed(() => ROLES[role.value]);
+
+/* ------------------------------------------------------------- 四条主线 */
+
+const ICON = {
+  list: '<svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></svg>',
+  deck: '<svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 6v12M14 6v12"/></svg>',
+  clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></svg>',
+  doc: '<svg viewBox="0 0 24 24"><path d="M6 4h9l3 3v13H6z"/><path d="M9 12h6M9 16h4"/></svg>',
+  chart:
+    '<svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"/><path d="M8 15V9M12 15v-4M16 15V7"/></svg>',
+  flow: '<svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></svg>',
+  card: '<svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 10h8M8 14h5"/></svg>',
+  board:
+    '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 15v-3M12 15V9M16 15v-5"/></svg>',
+  spark:
+    '<svg viewBox="0 0 24 24"><path d="M12 4l1.7 4L18 9.7l-4.3 1.7L12 16l-1.7-4.6L6 9.7 10.3 8z"/></svg>',
+  search:
+    '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L20 20"/></svg>',
+  bell: '<svg viewBox="0 0 24 24"><path d="M12 4a6 6 0 016 6c0 4-2 5-2 7H8c0-2-2-3-2-7a6 6 0 016-6z"/><path d="M10 20h4"/></svg>',
+  link: '<svg viewBox="0 0 24 24"><path d="M9 7H7a5 5 0 000 10h2M15 7h2a5 5 0 010 10h-2"/><path d="M8 12h8"/></svg>',
+  catalog:
+    '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg>',
+  shield:
+    '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg>'
+};
+
+interface Pillar {
+  step: string;
+  /** 锚点 id，供首页等处深链到具体某条主线 */
+  anchor?: string;
+  title: string;
+  lede: string;
+  points: { icon: string; name: string; text: string; pro?: string }[];
+  link?: { to: string; text: string };
+  note?: string;
+  mock: MockPanel;
+}
+
+const PILLARS: Pillar[] = [
+  {
+    step: '主线 01 / 接单到派车',
+    title: '单据从进门那一刻就在线',
+    lede: '客户发来的车辆清单，无论是 Excel、系统对接还是运单照片，进来就是计划。配载成任务单、派给车和人，在途和回单都跟到底。',
+    points: [
+      {
+        icon: ICON.list,
+        name: '计划中心',
+        text: '接单、批量导入、拆分与合并，需求不再散落在群里。'
+      },
+      {
+        icon: ICON.deck,
+        name: '配载建单',
+        text: '按车型与板位组合，手动配载或智能推荐。'
+      },
+      {
+        icon: ICON.clock,
+        name: '调度工作台与在途监控',
+        text: '谁有空、车在哪、哪个节点超期。'
+      },
+      {
+        icon: ICON.check,
+        name: '回单签收',
+        text: '司机现场上传，齐不齐一眼看得见。'
+      }
+    ],
+    link: { to: '/assessment#lead', text: '看这条主线的演示' },
+    mock: {
+      title: '计划中心 / 待配载 34 台',
+      rows: [
+        { head: true, cells: ['品牌车型', '台数', '提车地', '交车门店'] },
+        { cells: ['某品牌 SUV', '6', '上海港', '郑州中原店'], nums: [1] },
+        { cells: ['某品牌轿车', '9', '上海仓', '洛阳建业店'], nums: [1] },
+        { cells: ['某品牌 MPV', '4', '宁波港', '合肥政务店'], nums: [1] }
+      ],
+      flowTail: [
+        { text: '配载建单', state: 'live' },
+        { text: '任务单' },
+        { text: '派车' },
+        { text: '在途' },
+        { text: '签收' }
+      ]
+    }
   },
   {
-    svg: svgChain,
-    title: '业务全链路在线管理',
-    desc: '从主机厂下发运输指令、调度中心派车、板车装车出发、在途实时跟踪，到经销商验车签收、回单确认，整车运输全业务链路在线化管理。告别纸质验车单和电话问位置，让每一台商品车的运输状态实时可视、多方协同。',
-    highlights: [
-      '全流程在线：运输指令、装车清单、验车报告全部电子化，VIN 码扫码即录',
-      '实时协同：主机厂、调度中心、司机、经销商四方在线协作，信息零延迟',
-      '无纸化交接：电子验车签收，在线对账结算，大幅降低人工成本与纠纷',
+    step: '主线 02 / 算钱到收钱',
+    title: '运费、能源、结算，在同一条资金链上',
+    lede: '报价有合同、成本有政策；油 / 气 / 电进能源账户，客户应收与承运商应付进财务结算。对账、结算、开票、打款与经营核算接在一起，不再各拉一张表。',
+    points: [
+      {
+        icon: ICON.doc,
+        name: '运价合同与成本政策',
+        text: '报价自动取价；油、路桥、人工、外协按规则摊到每一趟。',
+        pro: '成本政策 · 旗舰版'
+      },
+      {
+        icon: ICON.chart,
+        name: '能源中心',
+        text: '供应商账户、能源卡、充值与消费一本账；异常加注可追。',
+        pro: '消费对账分析 · 旗舰版'
+      },
+      {
+        icon: ICON.flow,
+        name: '应付路径',
+        text: '任务费用工作台、承运商对账结算、自有司机工资单。'
+      },
+      {
+        icon: ICON.card,
+        name: '应收 · 出纳 · 发票 · 核算',
+        text: '客户对账到回款，银行打款与进销项票，经营核算看毛利。',
+        pro: '旗舰版'
+      }
     ],
-    keywords: ['全流程', '实时协同', '无纸化'],
+    link: { to: '/pricing', text: '看版本差异' },
+    mock: {
+      title: '财务结算 / 客户对账 → 结算 → 收款',
+      flow: [
+        { text: '对账', state: 'done' },
+        { text: '结算', state: 'done' },
+        { text: '开票', state: 'live' },
+        { text: '收款' },
+        { text: '核算' }
+      ],
+      rows: [
+        { head: true, cells: ['成本项', '金额', '占比', '口径'] },
+        {
+          cells: ['司机人工', '￥3,240', '31%'],
+          nums: [1, 2],
+          tag: { text: '工资单' }
+        },
+        {
+          cells: ['能源费', '￥2,860', '27%'],
+          nums: [1, 2],
+          tag: { text: '账户扣减' }
+        },
+        {
+          cells: ['路桥', '￥1,910', '18%'],
+          nums: [1, 2],
+          tag: { text: '按线路' }
+        },
+        {
+          cells: ['外协运费', '￥1,480', '14%'],
+          nums: [1, 2],
+          tag: { text: '承运商结算' }
+        }
+      ],
+      kpis: [
+        { label: '单趟收入', value: '￥13,200' },
+        { label: '单趟成本', value: '￥10,490' },
+        { label: '单趟毛利', value: '￥2,710', tone: 'up' }
+      ]
+    }
   },
   {
-    svg: svgCost,
-    title: '运营成本实时在线',
-    desc: '油费、过路费、维修费、保险费等运营成本实时归集到每一票运单、每台板车、每条线路。每一笔费用清晰可追溯，异常支出自动预警，帮助轿运企业从根本上做到降本增效，清晰掌握每条线路的真实利润。',
-    highlights: [
-      '费用归集：按运单、板车、线路多维度自动归集，单车运输成本一目了然',
-      '异常预警：超出预算或偏离历史水平的费用自动标记提醒，杜绝跑冒滴漏',
-      '利润透视：实时查看每条线路、每个客户的真实利润率，辅助报价与经营决策',
+    step: '主线 03 / 看数与 AI',
+    title: '该提醒的事不靠人记，该算的数不靠人拉',
+    lede: '经营驾驶舱把结果摆在明面上；AI 数字员工承担录单和取数这类重复活；预警和预测让问题在发生之前被看见。',
+    points: [
+      {
+        icon: ICON.board,
+        name: '经营驾驶舱与运营看板',
+        text: '收入、成本、利润、履约一屏看完。'
+      },
+      {
+        icon: ICON.spark,
+        name: 'AI 录单员',
+        text: '读 Excel 与运单照片，直接生成计划。',
+        pro: '旗舰版'
+      },
+      {
+        icon: ICON.search,
+        name: 'AI 数据分析员',
+        text: '用一句话问出线路排名与客户毛利。',
+        pro: '旗舰版'
+      },
+      {
+        icon: ICON.bell,
+        name: '预警与智能预测',
+        text: '证照、运费、回单异常主动提醒；旺季前预判缺车。',
+        pro: '旗舰版'
+      }
     ],
-    keywords: ['费用管控', '异常预警', '利润透视'],
+    link: { to: '/assessment', text: '测测我该先补哪一层' },
+    mock: {
+      title: 'AI 数字员工 / 数据分析员',
+      rows: [
+        { head: true, cells: ['你问'] },
+        { cells: ['上个月哪条线亏得最多，主要亏在哪？'], full: true },
+        { head: true, cells: ['它答'] },
+        {
+          cells: [
+            '成都 → 西安，17 趟合计亏 5,270 元。主要是返程空驶率 61%，且外协单价高于合同均价 8%。'
+          ],
+          full: true
+        }
+      ],
+      rows2: [
+        { head: true, cells: ['它顺手给的动作'] },
+        {
+          cells: ['建议：在货源大厅挂返程需求；对该线路承运商重新议价。'],
+          full: true
+        }
+      ]
+    }
   },
   {
-    svg: svgBI,
-    title: '智能 BI 报表',
-    desc: '自动生成运营分析报表，从运量趋势、收入结构、线路盈利到客户贡献，多维度数据钻取分析。告别手工统计与 Excel 汇总，让管理层实时掌握企业经营全貌，每一个决策都有数据支撑。',
-    highlights: [
-      '可视化看板：运量、收入、成本、利润核心指标一目了然，实时数据大屏',
-      '多维分析：按时间、线路、主机厂、经销商等维度自由组合，深度钻取分析',
-      '决策支持：历史对标与趋势预测，辅助报价策略制定与运力投入决策',
+    step: '主线 04 / 对外连接',
+    anchor: 'open-platform',
+    title: '让 AI 和别的系统，都能接上这套数据',
+    lede: '一份能力目录，两个通道：给系统用的标准 REST 接口，给 AI 用的远程 MCP 服务。都在「接入应用」里创建、授权和审计，不用另开一套账号体系。',
+    points: [
+      {
+        icon: ICON.link,
+        name: 'MCP 连接器',
+        text: '生成配置粘进支持远程 MCP 的 AI 工具，你的 AI 就能读到系统数据。'
+      },
+      {
+        icon: ICON.catalog,
+        name: '能力目录',
+        text: '每项能力的通道、入参与示例都列出来，当前 MCP 侧开放连接自检与客户、车辆、运单查询。'
+      },
+      {
+        icon: ICON.shield,
+        name: '授权与安全',
+        text: '按连接勾选能力、Token 仅展示一次、敏感字段自动脱敏、按凭证限流。'
+      },
+      {
+        icon: ICON.clock,
+        name: '调用记录',
+        text: '时间、能力、通道、状态、耗时、来源 IP 与请求编号全程可查。'
+      }
     ],
-    keywords: ['数据看板', '多维分析', '决策支持'],
+    note: '当前开放的 MCP 能力均为只读查询；写入类能力在规划中。',
+    mock: {
+      title: '开放平台 / MCP 连接与调用记录',
+      flow: [
+        { text: '建应用', state: 'done' },
+        { text: '新建连接', state: 'done' },
+        { text: '勾选能力', state: 'done' },
+        { text: '复制配置', state: 'live' },
+        { text: 'AI 里粘贴' }
+      ],
+      rows: [
+        { head: true, cells: ['时间', '能力', '通道', '结果'] },
+        {
+          cells: ['14:02:11', '查询运单', 'MCP'],
+          nums: [0],
+          tag: { text: '成功 82ms', kind: 'brand' }
+        },
+        {
+          cells: ['14:02:36', '查询车辆', 'MCP'],
+          nums: [0],
+          tag: { text: '成功 64ms', kind: 'brand' }
+        },
+        {
+          cells: ['14:05:09', '查询客户', 'MCP'],
+          nums: [0],
+          tag: { text: '未授权', kind: 'pro' }
+        },
+        {
+          cells: ['14:11:47', '运输指令接收', 'API'],
+          nums: [0],
+          tag: { text: '成功 131ms', kind: 'brand' }
+        }
+      ],
+      kpis: [
+        { label: '已授权能力', value: '4' },
+        { label: '本月调用', value: '1,286' },
+        { label: '失败率', value: '0.3%', tone: 'up' }
+      ]
+    }
+  }
+];
+
+/* ------------------------------------------------------------- 模块全景 */
+
+const CHAIN_TABS = [
+  { key: 'ops', label: '接单到交车' },
+  { key: 'fleet', label: '运力与能源' },
+  { key: 'money', label: '计费到资金' },
+  { key: 'intel', label: '智能与连接' },
+  { key: 'org', label: '组织底座' }
+];
+
+/** 把标签串按「基础版 | 旗舰版」拆成两组，避免逐个手写对象 */
+function tags(base: string, pro = '') {
+  return [
+    ...base.split(' ').filter(Boolean).map((text) => ({ text, pro: false })),
+    ...pro.split(' ').filter(Boolean).map((text) => ({ text, pro: true }))
+  ];
+}
+
+type ChainKey = 'ops' | 'fleet' | 'money' | 'intel' | 'org';
+
+interface ChainView {
+  why: string;
+  mods: {
+    name: string;
+    desc: string;
+    tags: { text: string; pro: boolean }[];
+  }[];
+}
+
+const CHAINS: Record<ChainKey, ChainView> = {
+  ops: {
+    why: '客户需求进来，到配载、派车、在途、回单签收，单据不落地、节点能倒查。',
+    mods: [
+      {
+        name: '运营调度',
+        desc: '从接单到签收的主流程。',
+        tags: tags('计划中心 配载建单 调度工作台 在途监控 回单签收 任务单台账', '智能配载')
+      },
+      {
+        name: '客商中心',
+        desc: '客户、承运商与交车门店档案。',
+        tags: tags('客户管理 承运商管理 供应商 互联客户 经销商门店')
+      },
+      {
+        name: '服务平台',
+        desc: '缺车找车，空板找货。',
+        tags: tags('货源大厅 运力大厅 我的合作 企业名片', '主动联系同行')
+      }
+    ]
   },
-  {
-    svg: svgMobile,
-    title: '移动办公更快捷、更高效',
-    desc: '手机端随时随地处理整车运输业务。司机在线接单、装车拍照、交车验收、费用申报一键完成；管理者随时审批、查看实时运营数据。移动办公打破时间和空间限制，板车在路上也能高效协同。',
-    highlights: [
-      '司机端：一键接单、装车拍照记录、交车扫码验收、费用提交，全在手机完成',
-      '管理端：随时审批、查看实时运营看板、异常通知即时处理，移动决策不延迟',
-      '消息推送：发运指令、到车通知、异常预警自动推送，不遗漏任何关键节点',
-    ],
-    keywords: ['随时随地', '移动协同', '效率翻倍'],
+  fleet: {
+    why: '车、人、证照和油电气收在一本账里，出车前知道能不能走，跑完知道钱花在哪。',
+    mods: [
+      {
+        name: '运力中心',
+        desc: '自有车、外协车、社会运力一起管。',
+        tags: tags('自有运力 驾驶员 车辆与挂车 承运商运力 社会运力池 证照监控', '车辆维保')
+      },
+      {
+        name: '能源中心',
+        desc: '油、气、电一本账，钱在哪、花在哪看得见。',
+        tags: tags(
+          '能源账户 能源卡 充值管理 供应商与站点 能源设置',
+          '能源消费 数据接入 能源对账 异常中心 成本分析'
+        )
+      }
+    ]
   },
-]
+  money: {
+    why: '报价有合同、成本有政策；客户应收与承运商应付对上，开票打款能闭环。',
+    mods: [
+      {
+        name: '计费中心',
+        desc: '价格与成本的规则都在这里。',
+        tags: tags('运价合同 路线管理', '成本政策 承运商合同 费用模板')
+      },
+      {
+        name: '财务结算',
+        desc: '从费用确认到收付款与利润核算。',
+        tags: tags(
+          '费用工作台 费用单台账 承运商对账 承运商结算 司机工资单',
+          '对账工作台 出纳工作台 客户对账结算 进销项发票 应收账龄 经营核算'
+        )
+      }
+    ]
+  },
+  intel: {
+    why: '经营结果摆在明面上；重复活交给数字员工；你自己的 AI 也能连进同一套数据。',
+    mods: [
+      {
+        name: '数据洞察',
+        desc: '把结果和原因摆出来。',
+        tags: tags('经营驾驶舱', '运营看板 数据报表 智能预测')
+      },
+      {
+        name: 'AI 数字员工',
+        desc: '承担录单、取数这类重复活。',
+        tags: tags('', 'AI录单员 AI数据分析员 对话工作台')
+      },
+      {
+        name: '开放平台',
+        desc: '对接客户系统，也给 AI 留了入口。',
+        tags: tags('接入应用 MCP连接器 能力目录 接口文档 调用记录')
+      }
+    ]
+  },
+  org: {
+    why: '谁能看、谁能批、谁改过什么，写清楚，扩张时管理半径不失控。',
+    mods: [
+      {
+        name: '审批中心',
+        desc: '该谁批就谁批，留痕可查。',
+        tags: tags('我的待办 我的申请 审批记录 审批配置')
+      },
+      {
+        name: '企业配置',
+        desc: '组织、权限与基础数据。',
+        tags: tags('组织架构 经营主体 员工管理 角色权限 数据管理 系统设置')
+      },
+      {
+        name: '日志中心',
+        desc: '谁做了什么，什么时候做的。',
+        tags: tags('操作记录 登录记录')
+      }
+    ]
+  }
+};
+
+const chain = ref<ChainKey>('ops');
+const activeChain = computed(() => CHAINS[chain.value]);
 </script>
 
 <style scoped lang="scss">
-/* ========== Page Hero ========== */
-.page-hero {
-  position: relative;
-  padding: 160px 0 80px;
-  text-align: center;
-  background: var(--gradient-hero);
-  overflow: hidden;
+/* --------------------------------------------------------------- hero */
 
-  .hero-bg {
-    position: absolute;
-    inset: 0;
-  }
-
-  .grid-lines {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 60px 60px;
-  }
-
-  .glow-1 {
-    position: absolute;
-    width: 400px;
-    height: 400px;
-    border-radius: 50%;
-    background: var(--color-accent);
-    filter: blur(100px);
-    opacity: 0.3;
-    top: -20%;
-    right: 10%;
-  }
-
-  .hero-content {
-    position: relative;
-    z-index: 1;
-  }
-
-  h1 {
-    font-size: 48px;
-    font-weight: 800;
-    color: #fff;
-    margin-bottom: 16px;
-    letter-spacing: -0.02em;
-  }
-
-  p {
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.6);
-  }
+.hero-head {
+  max-width: none;
+  margin-bottom: 0;
 }
 
-/* ========== Feature Sections ========== */
-.feature-section {
-  padding: 100px 0;
-  background: var(--color-bg);
-
-  &:nth-child(odd) {
-    background: var(--color-bg-soft);
-  }
+.hero-title {
+  font-size: clamp(30px, 3.6vw, 46px);
+  margin: 16px 0 18px;
 }
 
-.feature-row {
+/* --------------------------------------------------------------- 角色视角 */
+
+.role-head {
   display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+.sec-head--flush {
+  margin-bottom: 0;
+}
+
+.role-title {
+  margin-top: 12px;
+}
+
+.role-panel {
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 44px;
   align-items: center;
-  gap: 64px;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
+  background: var(--paper);
+  border-radius: var(--r-lg);
+  padding: 34px;
+
+  h3 {
+    font-size: 22px;
+    margin: 10px 0 12px;
+  }
 }
 
-.reversed .feature-row {
-  flex-direction: row-reverse;
+.role-lede {
+  font-size: 15px;
 }
 
-.feature-text {
-  flex: 1;
-}
-
-.feature-number {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-primary);
-  letter-spacing: 0.1em;
-  margin-bottom: 12px;
-  font-family: var(--font-mono);
-}
-
-.feature-text h2 {
-  font-size: 32px;
-  font-weight: 800;
-  color: var(--color-text);
-  margin-bottom: 16px;
-  letter-spacing: -0.02em;
-}
-
-.feature-desc {
-  font-size: 16px;
-  color: var(--color-text-secondary);
-  line-height: 1.8;
-  margin-bottom: 28px;
-}
-
-.feature-list {
-  list-style: none;
-  margin-bottom: 24px;
+.role-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
 
   li {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: 62px 1fr;
+    gap: 14px;
+    align-items: baseline;
     font-size: 15px;
-    color: var(--color-text);
-    line-height: 1.6;
-    margin-bottom: 12px;
+    color: var(--ink-2);
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line-soft);
+
+    &:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+  }
+
+  .num {
+    font-size: 11px;
+    color: var(--brand);
+    letter-spacing: 0.04em;
   }
 }
 
-.check-icon {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-  color: #fff;
-  font-size: 12px;
-  display: flex;
+/* --------------------------------------------------------------- 主线 */
+
+.pillar {
+  display: grid;
+  grid-template-columns: 1fr 1.08fr;
+  gap: 56px;
   align-items: center;
-  justify-content: center;
-  margin-top: 2px;
+
+  & + .pillar {
+    margin-top: 88px;
+    padding-top: 88px;
+    border-top: 1px solid var(--line);
+  }
+
+  h2 {
+    font-size: clamp(24px, 2.4vw, 32px);
+    letter-spacing: -0.025em;
+    margin: 12px 0 16px;
+  }
 }
 
-.feature-keywords {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+/* 偶数条主线左右对调，长页面读起来有节奏；1024 以下还原为单列 */
+.pillar-alt > *:first-child {
+  order: 2;
+}
 
-  span {
-    font-size: 13px;
-    padding: 6px 16px;
-    border-radius: 100px;
-    background: var(--color-bg-muted);
-    color: var(--color-primary);
+.pillar-step {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
+
+.pillar-points {
+  display: grid;
+  gap: 14px;
+  margin: 24px 0 20px;
+
+  li {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 12px;
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+
+  b {
+    color: var(--ink-1);
     font-weight: 600;
   }
 }
 
-/* ========== Visual Card (SVG 插画) ========== */
-.feature-visual {
-  flex: 0 0 420px;
+.pt-ico :deep(svg) {
+  width: 17px;
+  height: 17px;
+  margin-top: 4px;
+  stroke: var(--brand);
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.visual-card {
-  width: 100%;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  transition: all 0.3s ease;
+/* --------------------------------------------------------------- 模块全景 */
 
-  &:hover {
-    transform: translateY(-4px);
-    filter: drop-shadow(0 8px 24px rgba(29, 78, 216, 0.12));
-  }
-
-  :deep(svg) {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
+.map-why {
+  font-size: 16px;
+  color: var(--ink-2);
+  margin: 22px 0 24px;
+  max-width: 640px;
 }
 
-/* ========== CTA ========== */
-.cta-section {
-  padding: 100px 0;
-  background: var(--color-bg);
+.map-mods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 
-.cta-card {
-  text-align: center;
-  padding: 80px 40px;
-  border-radius: var(--radius-xl);
-  background: var(--gradient-hero);
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-  }
-
-  h2 {
-    font-size: 36px;
-    font-weight: 800;
-    color: #fff;
-    margin-bottom: 16px;
-    position: relative;
-  }
+.mod {
+  background: var(--paper);
+  border-radius: var(--r-lg);
+  padding: 22px 24px;
 
   p {
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 36px;
-    position: relative;
+    font-size: 14px;
+    color: var(--ink-3);
+    margin-bottom: 14px;
   }
 }
 
-.cta-btn {
-  background: #fff !important;
-  color: var(--color-primary) !important;
-  border: none !important;
-  border-radius: 10px !important;
-  padding: 14px 36px !important;
-  font-size: 16px !important;
-  font-weight: 700 !important;
-  height: auto !important;
-  position: relative;
-  transition: transform 0.2s, box-shadow 0.2s !important;
+.mod-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--line-soft);
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(255, 255, 255, 0.2) !important;
+  h3 {
+    font-size: 17px;
   }
 
-  .btn-arrow {
-    margin-left: 8px;
-    transition: transform 0.2s;
-  }
-
-  &:hover .btn-arrow {
-    transform: translateX(4px);
+  .num {
+    font-size: 11px;
+    color: var(--ink-3);
   }
 }
 
-/* ========== 响应式 ========== */
+/* --------------------------------------------------------------- CTA */
+
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cta-title {
+  font-size: 26px;
+}
+
+.cta-lede {
+  margin-top: 10px;
+}
+
+/* --------------------------------------------------------------- 响应式 */
+
 @media (max-width: 1024px) {
-  .feature-row,
-  .reversed .feature-row {
-    flex-direction: column;
-    gap: 40px;
+  .role-panel,
+  .pillar {
+    grid-template-columns: 1fr;
+    gap: 32px;
   }
 
-  .feature-visual {
-    flex: none;
-    width: 100%;
-    max-width: 420px;
+  .pillar-alt > *:first-child {
+    order: 0;
+  }
+
+  .pillar + .pillar {
+    margin-top: 56px;
+    padding-top: 56px;
+  }
+
+  .map-mods {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  .page-hero {
-    padding: 120px 0 60px;
-
-    h1 {
-      font-size: 36px;
-    }
-  }
-
-  .feature-section {
-    padding: 64px 0;
-  }
-
-  .feature-text h2 {
-    font-size: 26px;
-  }
-
-  .cta-section {
-    padding: 64px 0;
-  }
-
-  .cta-card {
-    padding: 48px 24px;
-
-    h2 { font-size: 28px; }
+  .role-panel {
+    padding: 24px 20px;
   }
 }
 </style>

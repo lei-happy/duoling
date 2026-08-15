@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>车队数智化水位快测 · 智途</title>
-<meta name="description" content="10 道题、2 分钟，测出你的车队在信息化、数字化、智能化、数智化的哪一档，以及接下来 90 天该先补什么。" />
+<title>企业数智化水位快测 · 朵灵·企云</title>
+<meta name="description" content="3 道企业画像加 10 道水位题，测出你的企业在信息化、数字化、智能化、数智化的哪一档，以及接下来 90 天该先补什么。" />
 <link rel="stylesheet" href="assets/site.css" />
 <style>
   /* 自测页专用：作答区与结果区 */
@@ -193,6 +193,15 @@
     grid-template-columns: repeat(5, 1fr);
     gap: 8px;
     padding-left: 34px;
+  }
+
+  .q-choices[data-cols="3"] {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 560px;
+  }
+
+  .q-choices[data-cols="4"] {
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .ch {
@@ -433,6 +442,11 @@
       padding-left: 0;
     }
 
+    .q-choices[data-cols="3"],
+    .q-choices[data-cols="4"] {
+      grid-template-columns: 1fr;
+    }
+
     .ch-box {
       padding: 8px 2px;
       font-size: 11px;
@@ -492,11 +506,12 @@
 <header class="nav">
   <div class="wrap nav-inner">
     <a class="brand" href="01-首页.html">
-      <span class="brand-mark">ZT</span>
-      智途
-      <span class="brand-sub">轿运车队数智化</span>
+      <span class="brand-mark">DL</span>
+      朵灵·企云
+      <span class="brand-sub">轿运企业综合操作系统</span>
     </a>
     <nav class="nav-links" id="nav-links" aria-label="主导航">
+      <a href="01-首页.html">首页</a>
       <a href="02-数智化转型.html">数智化转型</a>
       <a href="03-产品能力.html">产品能力</a>
       <a href="05-价格方案.html">价格方案</a>
@@ -516,16 +531,16 @@
   <section class="band band-tight band-paper">
     <div class="wrap">
       <div class="sec-head" style="max-width:780px;margin-bottom:0">
-        <span class="eyebrow">10 题 · 约 2 分钟</span>
+        <span class="eyebrow">3 道画像 + 10 题 · 约 3 分钟</span>
         <h1 class="h-hero" style="font-size:clamp(30px,3.6vw,46px);margin:16px 0 16px">
-          你的车队，<span class="hl">卡在哪一层？</span>
+          你的企业，<span class="hl">卡在哪一层？</span>
         </h1>
         <p class="lede">
           信息化、数字化、智能化、数智化不是四个价位的软件，而是四层能力。底座没打好就上 AI，钱多半花在演示上。
           先花两分钟量一下水位，再决定接下来 90 天先补什么。
         </p>
         <p class="muted" style="margin-top:16px">
-          每题五档，按你车队的真实情况选。四个维度各自折算成 20 分，满分 80 分；
+          每题五档，按你企业的真实情况选。四个维度各自折算成 20 分，满分 80 分；
           短板会封顶你的档位，所以总分高但某一维很弱，不会被判成高阶段。
         </p>
       </div>
@@ -592,9 +607,9 @@
     <div class="wrap lead">
       <div>
         <span class="eyebrow">下一步</span>
-        <h2 class="h-sec" style="margin:14px 0 16px">要一份针对你车队的诊断，而不是一份通用报告</h2>
+        <h2 class="h-sec" style="margin:14px 0 16px">要一份针对你企业的诊断，而不是一份通用报告</h2>
         <p class="lede">
-          留下联系方式，顾问会带着完整版《车队数智化转型路径》和 20 题深度自检表联系你，
+          留下联系方式，顾问会带着完整版《企业数智化转型路径》和 20 题深度自检表联系你，
           按你的车辆规模、线路结构和现有系统，给一份能落地的 90 天清单。
         </p>
         <ul class="lead-list">
@@ -612,7 +627,7 @@
         <span class="lead-echo" data-lead-stage-echo hidden></span>
         <div class="lead-grid">
           <label class="field"><span>企业名称</span>
-            <input class="input" type="text" placeholder="如：华东某轿运车队" required />
+            <input class="input" type="text" placeholder="如：华东某轿运企业" required />
           </label>
           <label class="field"><span>联系人</span>
             <input class="input" type="text" placeholder="您的称呼" required />
@@ -648,23 +663,22 @@
   <div class="wrap">
     <div class="foot-top">
       <div>
-        <div class="brand"><span class="brand-mark">ZT</span>智途</div>
-        <p class="foot-slogan">让每一公里都不白跑。智途为轿运车队提供从计划录入到结算回款的数智化经营系统。</p>
+        <div class="brand"><span class="brand-mark">DL</span>朵灵·企云</div>
+        <p class="foot-slogan">让每一公里都不白跑。朵灵·企云面向轿运行业（汽车物流），把计划到结算收进一套企业经营系统。</p>
       </div>
       <div>
         <h4>产品</h4>
         <ul>
-          <li><a href="03-产品能力.html">产品能力</a></li>
+          <li><a href="03-产品能力.html">朵灵·企云</a></li>
+          <li><a href="#">朵灵·司机</a></li>
           <li><a href="05-价格方案.html">价格方案</a></li>
-          <li><a href="#">承运商轻量版</a></li>
-          <li><a href="#">驾驶员手机端</a></li>
         </ul>
       </div>
       <div>
         <h4>了解数智化</h4>
         <ul>
           <li><a href="02-数智化转型.html">四阶段辨析</a></li>
-          <li><a href="04-数智化自测.html">车队水位快测</a></li>
+          <li><a href="04-数智化自测.html">企业水位快测</a></li>
           <li><a href="#">完整转型报告</a></li>
         </ul>
       </div>
@@ -673,12 +687,12 @@
         <ul>
           <li><a href="#lead">预约演示</a></li>
           <li><a href="#">400 电话（待定）</a></li>
-          <li><a href="#">北京 · 智途科技</a></li>
+          <li><a href="#">北京 · 朵灵科技</a></li>
         </ul>
       </div>
     </div>
     <div class="foot-btm">
-      <span>© 2026 北京智途科技有限公司</span>
+      <span>© 2026 北京朵灵科技有限公司</span>
       <span>官网原型稿 · 仅用于设计评审</span>
     </div>
   </div>

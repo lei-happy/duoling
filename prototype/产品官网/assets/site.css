@@ -1,5 +1,5 @@
 /* ==========================================================================
-   智途产品官网 · 设计系统
+   朵灵·企云产品官网 · 设计系统
    视觉基调：调度看板的秩序感 + 工程图纸的刻度感
    主色沿用销售物料（管理者精读版）的深墨青，保证官网与销售材料同源
    ========================================================================== */
@@ -564,6 +564,36 @@ ul {
 
 .card .h-card {
   margin-bottom: 10px;
+}
+
+.proof-empty {
+  border: 1px dashed var(--line);
+  background: var(--bg);
+  border-radius: var(--r-lg);
+  padding: 36px 28px;
+  text-align: center;
+}
+
+.proof-empty p {
+  color: var(--ink-3);
+  font-size: 15px;
+}
+
+.proof-marks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.proof-marks span {
+  min-width: 88px;
+  padding: 8px 14px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r);
+  font-size: 13px;
+  color: var(--ink-3);
 }
 
 /* 图标：统一 36px 方形、1.6 线宽的线性图形 */

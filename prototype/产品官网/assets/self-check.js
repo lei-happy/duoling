@@ -1,8 +1,8 @@
-/* 智途官网 · 车队数智化水位快测（10 题）
+/* 朵灵·企云官网 · 企业数智化水位快测（3 道画像 + 10 题计分）
    计分口径与销售物料《管理者精读版》完全一致：
    - 四维各自归一化到 0–20，总分 0–80
    - 先按总分落档（L1–L8），再按短板维度封顶，L8 额外要求四维均 ≥14
-   完整 20 题深度自检仍以精读版为准，本页只做 2 分钟粗测。 */
+   完整 20 题深度自检仍以精读版为准，本页只做约 3 分钟粗测。 */
 
 (function () {
   'use strict';
@@ -10,7 +10,7 @@
   const root = document.querySelector('[data-self-check]');
   if (!root) return;
 
-  /* ---------------- 题库：四维共 10 题，全部写成车队日常语言 ---------------- */
+  /* ---------------- 题库：四维共 10 题，全部写成企业日常语言 ---------------- */
 
   const CHOICES = [
     { v: 0, label: '几乎没有' },
@@ -18,6 +18,39 @@
     { v: 2, label: '部分做到' },
     { v: 3, label: '多数做到' },
     { v: 4, label: '稳定做到' }
+  ];
+
+  const PROFILE = [
+    {
+      id: 'P1',
+      text: '自有板车大概多少台？',
+      choices: [
+        { v: 'lt10', label: '10 台以内' },
+        { v: '10-30', label: '10–30 台' },
+        { v: '30-100', label: '30–100 台' },
+        { v: 'gt100', label: '100 台以上' }
+      ]
+    },
+    {
+      id: 'P2',
+      text: '现在主要靠什么管日常业务？',
+      choices: [
+        { v: 'excel', label: 'Excel 和微信' },
+        { v: 'bypass', label: '有系统，但一线常绕路' },
+        { v: 'online', label: '系统已是主流程' }
+      ]
+    },
+    {
+      id: 'P3',
+      text: '当前最想先解决哪一块？',
+      choices: [
+        { v: 'plan', label: '计划调度' },
+        { v: 'receipt', label: '回单在途' },
+        { v: 'recon', label: '对账结算' },
+        { v: 'cost', label: '成本利润' },
+        { v: 'energy', label: '能源加油' }
+      ]
+    }
   ];
 
   const GROUPS = [
@@ -51,7 +84,7 @@
         },
         {
           id: 'B2',
-          text: '一趟运输的收入和成本（运费、油、路桥、外协、人工）能不能自动归到单车和单线路，而不是月底人工拉表拼？'
+          text: '一趟运输的收入和成本（运费、油或能源、路桥、外协、人工）能不能自动归到单车和单线路，而不是月底人工拉表拼？'
         },
         {
           id: 'B3',
@@ -66,11 +99,11 @@
       questions: [
         {
           id: 'C1',
-          text: '配载组合、证照到期、运费异常这些事，系统会不会主动给建议或预警，而不是全靠人盯着？'
+          text: '配载组合、证照到期、运费异常这些事，系统会不会主动给建议或预警，并且能直接变成调度或财务的下一步动作？'
         },
         {
           id: 'C2',
-          text: '系统给出的建议和预警，调度和财务是真的在用吗，效果有人回头核对吗？'
+          text: '这些建议进了真实流程之后，有没有人回头核对：采纳了多少、省了多少、错了怎么改？'
         }
       ]
     },
@@ -112,7 +145,7 @@
       name: '信息化起步期',
       short: '在线起步',
       tier: 1,
-      desc: '车队的真相还在 Excel 和微信群里。这个阶段先别谈 AI，把计划、派车、回单搬进系统，比买任何模型都值钱。',
+      desc: '企业的真相还在 Excel 和微信群里。这个阶段先别谈 AI，把计划、派车、回单在线上跑通，比买任何模型都值钱。',
       plan: '基础版',
       planWhy: '先把核心单据在线化，投入最小、见效最快',
       moves: [
@@ -329,8 +362,53 @@
   const form = root.querySelector('[data-check-form]');
   const listHost = root.querySelector('[data-check-list]');
 
-  let index = 0;
-  listHost.innerHTML = GROUPS.map((group) => {
+  const profileHtml =
+    '<section class="q-group">' +
+    '<header class="q-group-head">' +
+    '<span class="tag tag-brand">画像 · 不计分</span>' +
+    '<p class="muted">先告诉顾问你是谁、卡在哪，后面 10 题才用来量水位</p>' +
+    '</header>' +
+    '<ul class="q-list">' +
+    PROFILE.map((q, i) => {
+      const no = String(i + 1).padStart(2, '0');
+      const choices = q.choices
+        .map(
+          (c) =>
+            '<label class="ch">' +
+            '<input type="radio" name="' +
+            q.id +
+            '" value="' +
+            c.v +
+            '" />' +
+            '<span class="ch-box">' +
+            c.label +
+            '</span>' +
+            '</label>'
+        )
+        .join('');
+      return (
+        '<li class="q" data-q="' +
+        q.id +
+        '">' +
+        '<div class="q-head"><span class="q-no num">' +
+        no +
+        '</span><p class="q-text">' +
+        q.text +
+        '</p></div>' +
+        '<div class="q-choices" data-cols="' +
+        q.choices.length +
+        '" role="radiogroup" aria-label="画像第 ' +
+        no +
+        ' 题">' +
+        choices +
+        '</div>' +
+        '</li>'
+      );
+    }).join('') +
+    '</ul></section>';
+
+  let index = 3;
+  listHost.innerHTML = profileHtml + GROUPS.map((group) => {
     const items = group.questions
       .map((q) => {
         index += 1;
@@ -500,7 +578,7 @@
     resultBox.innerHTML =
       '<header class="rs-head">' +
       '<span class="eyebrow">测评结果</span>' +
-      '<h3 class="h-sec">你的车队在 ' +
+      '<h3 class="h-sec">你的企业在 ' +
       stage.band +
       ' · ' +
       stage.name +
@@ -525,7 +603,7 @@
       '<p class="muted">这三件事建议放进 90 天内完成，都能用经营结果验证。</p>' +
       '</section>' +
       '<section class="rs-col rs-col-plan">' +
-      '<h4 class="h-sub">这个阶段，智途先帮你做三件事</h4>' +
+      '<h4 class="h-sub">这个阶段，朵灵·企云先帮你做三件事</h4>' +
       '<ol class="rs-list">' +
       stage.moves.map((t) => '<li>' + t + '</li>').join('') +
       '</ol>' +

@@ -1,11 +1,9 @@
 import { createApp } from 'vue';
-import ElementPlus from 'element-plus';
-import 'element-plus/dist/index.css';
 import App from './App.vue';
 import router from './router';
 import './styles/index.scss';
+import './styles/components.scss';
 
-const app = createApp(App);
-app.use(ElementPlus);
-app.use(router);
-app.mount('#app');
+// 官网不引组件库：这里的每个控件都按品牌设计系统手写，
+// 引一整套 UI 库既会带来默认组件的观感，也会白白多几百 KB。
+createApp(App).use(router).mount('#app');

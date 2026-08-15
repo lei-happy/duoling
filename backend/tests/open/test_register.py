@@ -10,6 +10,10 @@
 分两层：
 1. 纯逻辑：手机号正则、schema 校验（零 DB）；
 2. HTTP 集成：phone-available / register / progress（平台库不可达时 skip）。
+
+注：自助注册已下线改走留资，register / progress 两个路由只保留引导文案，
+用例相应改为验证「挡得住」而不是原来的建库流程；schema 仍有承运商邀请在用，
+所以纯逻辑部分保留。
 """
 
 import re
@@ -123,35 +127,33 @@ class TestRegisterHttp:
         )
         assert resp.status_code == 422
 
-    async def test_register_missing_sms_code_422(self, platform_client):
-        """TC-OPN-REGISTER-010：提交注册缺少验证码 → 422"""
+    async def test_register_closed_with_guidance(self, platform_client):
+        """TC-OPN-REGISTER-010：自助注册已下线 → 业务错误并引导留资（不落库）
+
+        路由保留是为了让旧书签与外部链接不至于 404；提交什么内容都不再建库。
+        """
         resp = await platform_client.post(
             "/api/open/register",
             json={
                 "tenant_name": "自动化测试企业_勿用",
                 "contact_person": "测试员",
                 "contact_phone": "13800000000",
-            },
-        )
-        assert resp.status_code == 422
-
-    async def test_register_wrong_sms_code_biz_error(self, platform_client):
-        """TC-OPN-REGISTER-011：验证码错误 → 业务失败 code!=0（不落库）"""
-        resp = await platform_client.post(
-            "/api/open/register",
-            json={
-                "tenant_name": "自动化测试企业_勿用_验证码错误",
-                "contact_person": "测试员",
-                "contact_phone": "13800000001",
-                "sms_code": "000000",
+                "sms_code": "123456",
             },
         )
         assert resp.status_code == 200
-        # 验证码错误或该企业名/手机号已存在，均应为业务错误
+        body = resp.json()
+        assert body["code"] != 0
+        assert "留下联系方式" in body["message"]
+
+    async def test_register_closed_even_without_body(self, platform_client):
+        """TC-OPN-REGISTER-011：空请求体同样被挡下，不因缺字段泄露旧校验规则"""
+        resp = await platform_client.post("/api/open/register", json={})
+        assert resp.status_code == 200
         assert resp.json()["code"] != 0
 
-    async def test_progress_invalid_task_id(self, platform_client):
-        """TC-OPN-REGISTER-012：非法 task_id 查询进度 → 业务错误"""
+    async def test_progress_closed(self, platform_client):
+        """TC-OPN-REGISTER-012：注册进度查询已下线 → 业务错误"""
         resp = await platform_client.get("/api/open/register/progress/not-a-uuid")
         assert resp.status_code == 200
         assert resp.json()["code"] != 0

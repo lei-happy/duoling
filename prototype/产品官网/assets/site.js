@@ -1,5 +1,5 @@
-/* 智途产品官网原型 · 通用交互
-   包含：导航吸顶与移动端菜单、滚动进场、通用 Tab、价格周期切换、原型表单占位提交 */
+/* 朵灵·企云产品官网原型 · 通用交互
+   包含：导航吸顶与移动端菜单、滚动进场、通用 Tab、Banner 幻灯、价格周期切换、原型表单占位提交 */
 
 (function () {
   'use strict';
@@ -72,7 +72,6 @@
   if (cycleSwitch) {
     const CYCLE = {
       month: { label: '/月', note: '按月付费，随时停用' },
-      quarter: { label: '/季', note: '季付约 9 折，适合先跑一个旺季' },
       year: { label: '/年', note: '年付约 8 折，相当于省 2 个多月' }
     };
 
@@ -104,6 +103,47 @@
     const preset = cycleSwitch.querySelector('[data-cycle][aria-selected="true"]');
     setCycle(preset ? preset.dataset.cycle : 'year');
   }
+
+  /* ---------------- 横向 Banner 幻灯 ---------------- */
+  document.querySelectorAll('[data-banner]').forEach((root) => {
+    const track = root.querySelector('.banner-track');
+    const slides = root.querySelectorAll('.banner-slide');
+    const prev = root.querySelector('[data-banner-prev]');
+    const next = root.querySelector('[data-banner-next]');
+    const dotsWrap = root.querySelector('[data-banner-dots]');
+    if (!track || !slides.length) return;
+
+    let index = 0;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    slides.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.setAttribute('aria-label', '第 ' + (i + 1) + ' 层');
+      dot.addEventListener('click', () => go(i));
+      dotsWrap.appendChild(dot);
+    });
+
+    const go = (i) => {
+      index = (i + slides.length) % slides.length;
+      track.style.transition = reduce ? 'none' : '';
+      track.style.transform = 'translateX(-' + index * 100 + '%)';
+      dotsWrap.querySelectorAll('button').forEach((dot, di) => {
+        dot.setAttribute('aria-current', di === index ? 'true' : 'false');
+      });
+    };
+
+    if (prev) prev.addEventListener('click', () => go(index - 1));
+    if (next) next.addEventListener('click', () => go(index + 1));
+
+    root.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') go(index - 1);
+      if (event.key === 'ArrowRight') go(index + 1);
+    });
+    root.setAttribute('tabindex', '0');
+
+    go(0);
+  });
 
   /* ---------------- 原型表单：不真实提交 ---------------- */
   document.querySelectorAll('form[data-proto-form]').forEach((form) => {

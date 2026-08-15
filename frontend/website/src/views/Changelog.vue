@@ -1,58 +1,57 @@
 <template>
-  <div class="changelog-page">
-    <!-- Hero -->
-    <section class="page-hero">
-      <div class="hero-bg">
-        <div class="grid-lines"></div>
-        <div class="glow glow-1"></div>
-      </div>
-      <div class="container hero-content">
-        <h1 class="scroll-animate">更新记录</h1>
-        <p class="scroll-animate" data-delay="100">
-          了解智途产品的最新迭代与功能更新
-        </p>
+  <div>
+    <section class="band band-tight band-paper">
+      <div class="wrap">
+        <div class="sec-head log-head">
+          <span class="eyebrow">更新记录</span>
+          <h1 class="h-hero log-title">产品每一次变化，都写在这里</h1>
+          <p class="lede">
+            {{ BRAND.product }}持续迭代。这里按版本记录新增能力与修复，方便你判断什么时候该跟一次升级。
+          </p>
+        </div>
       </div>
     </section>
 
-    <!-- 时间线 -->
-    <section class="changelog-section">
-      <div class="container">
-        <div v-if="loading" class="changelog-loading">
-          <el-icon class="is-loading"><Loading /></el-icon>
-          <span>加载中...</span>
-        </div>
-        <div v-else-if="!list.length" class="changelog-empty">
-          <p>暂无更新记录</p>
-        </div>
-        <div v-else class="changelog-timeline">
-          <div
-            v-for="(item, idx) in list"
-            :key="item.id"
-            class="timeline-item scroll-animate"
-            :data-delay="idx * 80"
-          >
-            <div class="timeline-dot"></div>
-            <div class="timeline-content">
-              <div class="timeline-header">
-                <span class="timeline-version">{{ item.version }}</span>
-                <span class="timeline-date">{{ formatDate(item.release_date) }}</span>
+    <section class="band band-soft band-line">
+      <div class="wrap wrap-narrow">
+        <p v-if="loading" class="state">正在加载更新记录，请稍候…</p>
+
+        <p v-else-if="failed" class="state">
+          更新记录没能加载出来，请稍后刷新重试。
+        </p>
+
+        <p v-else-if="!list.length" class="state">
+          还没有公开的更新记录，新版本发布后会第一时间贴在这里。
+        </p>
+
+        <ol v-else class="timeline">
+          <li v-for="item in list" :key="item.id" class="tl-item">
+            <div class="tl-dot" />
+            <div class="tl-card">
+              <div class="tl-head">
+                <span class="tag tag-brand">{{ item.version }}</span>
+                <span class="tl-date num">{{ formatDate(item.release_date) }}</span>
               </div>
-              <h3 class="timeline-title">{{ item.title }}</h3>
+              <h2 class="tl-title">{{ item.title }}</h2>
+              <!-- 后端 Markdown 经 DOMPurify 清洗后渲染 -->
               <div
                 v-if="item.content"
-                class="timeline-body markdown-body"
-                v-html="renderedContent(item.content)"
+                class="tl-body"
+                v-html="renderMarkdown(item.content)"
               />
             </div>
-          </div>
-        </div>
-        <div v-if="total > list.length" class="changelog-more">
-          <el-button
-            :loading="loadingMore"
+          </li>
+        </ol>
+
+        <div v-if="hasMore" class="log-more">
+          <button
+            type="button"
+            class="btn btn-line"
+            :disabled="loadingMore"
             @click="loadMore"
           >
-            加载更多
-          </el-button>
+            {{ loadingMore ? '正在加载，请稍候…' : '看更早的版本' }}
+          </button>
         </div>
       </div>
     </section>
@@ -60,294 +59,214 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { marked } from 'marked'
-import DOMPurify from 'dompurify'
-import { Loading } from '@element-plus/icons-vue'
-import { useScrollAnimation } from '@/composables/useScrollAnimation'
-import { getChangelog } from '@/api'
-
-useScrollAnimation()
+import { computed, onMounted, ref } from 'vue';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+import { BRAND } from '@/config/brand';
+import { getChangelog } from '@/api';
 
 interface ChangelogItem {
-  id: number
-  version: string
-  title: string
-  content?: string
-  release_date: string
-  sort_order: number
-  status: number
-  created_at: string
-  updated_at: string
+  id: number;
+  version: string;
+  title: string;
+  content?: string;
+  release_date: string;
 }
 
-const list = ref<ChangelogItem[]>([])
-const total = ref(0)
-const page = ref(1)
-const pageSize = 20
-const loading = ref(true)
-const loadingMore = ref(false)
+const PAGE_SIZE = 20;
 
-function formatDate(d: string) {
-  if (!d) return ''
-  const date = new Date(d)
-  return date.toLocaleDateString('zh-CN', {
+const list = ref<ChangelogItem[]>([]);
+const total = ref(0);
+const page = ref(1);
+const loading = ref(true);
+const loadingMore = ref(false);
+const failed = ref(false);
+
+const hasMore = computed(() => list.value.length < total.value);
+
+function formatDate(value: string) {
+  if (!value) {
+    return '';
+  }
+  return new Date(value).toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
-  })
+  });
 }
 
-function renderedContent(md: string) {
-  if (!md) return ''
-  const html = marked.parse(md, { async: false }) as string
-  return DOMPurify.sanitize(html)
+function renderMarkdown(md: string) {
+  return DOMPurify.sanitize(marked.parse(md, { async: false }) as string);
 }
 
-async function fetchList(isMore = false) {
-  if (isMore) {
-    loadingMore.value = true
+async function fetchList(append = false) {
+  if (append) {
+    loadingMore.value = true;
   } else {
-    loading.value = true
+    loading.value = true;
   }
+  failed.value = false;
+
   try {
-    const res = await getChangelog({
-      page: page.value,
-      page_size: pageSize
-    })
-    const data = res?.data?.data
-    if (data) {
-      if (isMore) {
-        list.value = list.value.concat(data.list || [])
-      } else {
-        list.value = data.list || []
-      }
-      total.value = data.total || 0
+    const res = await getChangelog({ page: page.value, page_size: PAGE_SIZE });
+    const data = res?.data?.data;
+    const rows: ChangelogItem[] = data?.list ?? [];
+    list.value = append ? list.value.concat(rows) : rows;
+    total.value = data?.total ?? 0;
+  } catch {
+    failed.value = true;
+    if (append) {
+      page.value -= 1;
     }
   } finally {
-    loading.value = false
-    loadingMore.value = false
+    loading.value = false;
+    loadingMore.value = false;
   }
 }
 
 function loadMore() {
-  page.value += 1
-  fetchList(true)
+  page.value += 1;
+  fetchList(true);
 }
 
-onMounted(() => {
-  fetchList()
-})
+onMounted(() => fetchList());
 </script>
 
 <style scoped lang="scss">
-.page-hero {
-  position: relative;
-  padding: 160px 0 80px;
+.log-head {
+  max-width: 720px;
+  margin-bottom: 0;
+}
+
+.log-title {
+  font-size: clamp(28px, 3.2vw, 42px);
+  margin: 16px 0 18px;
+}
+
+.state {
+  padding: 64px 0;
   text-align: center;
-  background: var(--gradient-hero);
-  overflow: hidden;
-
-  .hero-bg {
-    position: absolute;
-    inset: 0;
-  }
-
-  .grid-lines {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 60px 60px;
-  }
-
-  .glow-1 {
-    position: absolute;
-    width: 400px;
-    height: 400px;
-    border-radius: 50%;
-    background: var(--color-accent);
-    filter: blur(100px);
-    opacity: 0.3;
-    top: -20%;
-    right: 10%;
-  }
-
-  .hero-content {
-    position: relative;
-    z-index: 1;
-  }
-
-  h1 {
-    font-size: 48px;
-    font-weight: 800;
-    color: #fff;
-    margin-bottom: 16px;
-    letter-spacing: -0.02em;
-  }
-
-  p {
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.6);
-  }
+  color: var(--ink-3);
 }
 
-.changelog-section {
-  padding: 80px 0 100px;
-  background: var(--color-bg);
-}
-
-.changelog-loading,
-.changelog-empty {
-  text-align: center;
-  padding: 80px 0;
-  color: var(--color-text-secondary);
-}
-
-.changelog-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 16px;
-}
-
-.changelog-timeline {
+.timeline {
   position: relative;
   padding-left: 32px;
-  border-left: 2px solid var(--color-border);
-  margin-left: 8px;
+  border-left: 1px solid var(--line);
+  margin-left: 6px;
 }
 
-.timeline-item {
+.tl-item {
   position: relative;
-  padding-bottom: 48px;
+  padding-bottom: 40px;
 
   &:last-child {
     padding-bottom: 0;
   }
 }
 
-.timeline-dot {
+.tl-dot {
   position: absolute;
-  left: -40px;
-  top: 6px;
-  width: 12px;
-  height: 12px;
+  left: -38px;
+  top: 22px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-  box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.15);
+  background: var(--brand);
+  box-shadow: 0 0 0 4px var(--bg);
 }
 
-.timeline-content {
+.tl-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
   padding: 24px 28px;
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-soft);
-  border: 1px solid var(--color-border);
-  transition: all 0.3s ease;
-
-  &:hover {
-    border-color: var(--color-primary-light);
-    box-shadow: var(--shadow-md);
-  }
 }
 
-.timeline-header {
+.tl-head {
   display: flex;
   align-items: center;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
-.timeline-version {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-primary);
-  padding: 4px 12px;
-  border-radius: 100px;
-  background: rgba(29, 78, 216, 0.1);
+.tl-date {
+  font-size: 13px;
+  color: var(--ink-3);
 }
 
-.timeline-date {
-  font-size: 14px;
-  color: var(--color-text-muted);
-}
-
-.timeline-title {
+.tl-title {
   font-size: 20px;
-  font-weight: 700;
-  color: var(--color-text);
-  margin-bottom: 16px;
-  line-height: 1.4;
+  margin-bottom: 14px;
 }
 
-.timeline-body {
+.tl-body {
   font-size: 15px;
-  color: var(--color-text-secondary);
+  color: var(--ink-2);
   line-height: 1.8;
 
-  :deep(h1), :deep(h2), :deep(h3) {
+  :deep(h1),
+  :deep(h2),
+  :deep(h3) {
     margin: 20px 0 12px;
-    color: var(--color-text);
+    font-size: 16px;
+    color: var(--ink-1);
   }
-  :deep(ul), :deep(ol) {
+
+  :deep(ul),
+  :deep(ol) {
     margin: 12px 0;
-    padding-left: 24px;
+    padding-left: 20px;
+    list-style: disc;
   }
+
   :deep(li) {
     margin: 6px 0;
   }
+
+  :deep(a) {
+    color: var(--brand);
+  }
+
   :deep(code) {
     padding: 2px 6px;
     border-radius: 4px;
-    background: var(--color-bg-muted);
-    font-size: 14px;
+    background: var(--bg-2);
+    font-family: var(--mono);
+    font-size: 13px;
   }
+
   :deep(pre) {
-    padding: 16px;
-    border-radius: 8px;
-    background: var(--color-bg-muted);
-    overflow-x: auto;
     margin: 12px 0;
+    padding: 16px;
+    border-radius: var(--r);
+    background: var(--bg-2);
+    overflow-x: auto;
   }
+
   :deep(pre code) {
     padding: 0;
     background: none;
   }
 }
 
-.changelog-more {
+.log-more {
+  margin-top: 40px;
   text-align: center;
-  margin-top: 48px;
 }
 
 @media (max-width: 768px) {
-  .page-hero {
-    padding: 120px 0 60px;
-
-    h1 {
-      font-size: 36px;
-    }
+  .timeline {
+    padding-left: 22px;
   }
 
-  .changelog-timeline {
-    padding-left: 24px;
-    margin-left: 4px;
+  .tl-dot {
+    left: -27px;
   }
 
-  .timeline-dot {
-    left: -32px;
-    width: 10px;
-    height: 10px;
-  }
-
-  .timeline-content {
-    padding: 20px 16px;
-  }
-
-  .timeline-title {
-    font-size: 18px;
+  .tl-card {
+    padding: 20px 18px;
   }
 }
 </style>

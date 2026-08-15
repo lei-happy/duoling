@@ -11,7 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_platform_db
 from app.common.response import success
-from app.modules.open.services.sms_service import SmsService
+from app.common.exceptions import BizException
+from app.modules.open.services.sms_service import SmsService, PURPOSE_TENANT_REGISTER
 
 router = APIRouter()
 
@@ -61,6 +62,12 @@ async def send_sms_code(
     返回值中包含 code 字段，开发阶段可直接使用；
     接入短信通道后将移除该返回字段。
     """
+    # 官网自助注册已下线，这条通道只保留给承运商邀请激活（app_type=client）
+    if data.purpose == PURPOSE_TENANT_REGISTER and data.app_type == "website":
+        raise BizException(
+            "开户已改为顾问协助办理，请在官网留下联系方式，我们 1 个工作日内回电。"
+        )
+
     client_ip = request.client.host if request.client else None
     result = await SmsService.send_code(
         db, data.phone, data.purpose,

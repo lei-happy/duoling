@@ -1,195 +1,340 @@
-/* ===========================
-   智途官网 - 全局设计系统
-   =========================== */
+/* ==========================================================================
+   朵灵·企云官网 · 基础层与通用组件类
+   Token 定义在 tokens.scss，这里只做落地。
+   ========================================================================== */
 
-:root {
-  /* 主色 - 深蓝 */
-  --color-primary: #1d4ed8;
-  --color-primary-light: #3b82f6;
-  --color-accent: #2563eb;
-  --color-accent-light: #60a5fa;
+@use './tokens.scss';
 
-  /* 渐变 */
-  --gradient-primary: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%);
-  --gradient-hero: linear-gradient(160deg, #030b1a 0%, #0c1a30 40%, #132744 100%);
-  --gradient-card: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+/* --------------------------------------------------------------- base */
 
-  /* 文字 */
-  --color-text: #1e293b;
-  --color-text-secondary: #64748b;
-  --color-text-muted: #94a3b8;
-
-  /* 背景 */
-  --color-bg: #ffffff;
-  --color-bg-soft: #f8fafc;
-  --color-bg-muted: #f1f5f9;
-  --color-bg-dark: #0f172a;
-  --color-bg-dark-soft: #1e293b;
-
-  /* 边框 */
-  --color-border: #e2e8f0;
-  --color-border-light: #f1f5f9;
-
-  /* 圆角 */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-
-  /* 阴影 */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1);
-  --shadow-glow: 0 0 40px rgba(29, 78, 216, 0.15);
-
-  /* 字体 */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-}
-
-/* ===========================
-   CSS Reset
-   =========================== */
 *,
 *::before,
 *::after {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
 html {
+  -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink-1);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  font-family: var(--font-sans);
-  color: var(--color-text);
-  background: var(--color-bg);
-  line-height: 1.6;
-  overflow-x: hidden;
+img,
+svg {
+  display: block;
+  max-width: 100%;
 }
 
 a {
-  text-decoration: none;
   color: inherit;
+  text-decoration: none;
 }
 
-img {
-  max-width: 100%;
-  display: block;
+/* 字距按尺寸分级：越大越紧，正文接近 0 */
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+p {
+  margin: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 button {
-  cursor: pointer;
+  font-family: inherit;
 }
 
-/* ===========================
-   全局工具类
-   =========================== */
-.container {
-  max-width: 1200px;
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 10px 16px;
+  background: var(--paper);
+  border-radius: 0 0 var(--r) 0;
+  font-weight: 600;
+
+  &:focus {
+    left: 0;
+  }
+}
+
+/* --------------------------------------------------------------- layout */
+
+.wrap {
+  width: 100%;
+  max-width: var(--wrap);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 28px;
 }
 
-.section-title {
-  text-align: center;
-  font-size: 36px;
+.wrap-narrow {
+  max-width: 860px;
+}
+
+.band {
+  padding: 96px 0;
+}
+
+.band-tight {
+  padding: 64px 0;
+}
+
+.band-paper {
+  background: var(--paper);
+}
+
+.band-soft {
+  background: var(--bg);
+}
+
+.band-line {
+  border-top: 1px solid var(--line);
+}
+
+/* 深区块：纯色底 + 一层极淡的单色径向光，不用多色渐变 */
+.band-deep {
+  background: var(--ink-0);
+  color: var(--ink-inv);
+  background-image: radial-gradient(
+    120% 90% at 12% -10%,
+    rgba(0, 101, 255, 0.16),
+    transparent 62%
+  );
+
+  .lede,
+  .muted {
+    color: rgba(244, 247, 252, 0.68);
+  }
+}
+
+/* --------------------------------------------------------------- type */
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand);
+
+  &::before {
+    content: '';
+    width: 18px;
+    height: 1px;
+    background: var(--brand);
+  }
+}
+
+.band-deep .eyebrow {
+  color: var(--brand-on-dark);
+
+  &::before {
+    background: var(--brand-on-dark);
+  }
+}
+
+.h-hero {
+  font-size: clamp(34px, 4.6vw, 58px);
+  line-height: 1.14;
+  letter-spacing: -0.03em;
   font-weight: 800;
-  color: var(--color-text);
-  margin-bottom: 16px;
+}
+
+.h-sec {
+  font-size: clamp(26px, 2.9vw, 38px);
+  letter-spacing: -0.025em;
+}
+
+.h-card {
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+
+.h-sub {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lede {
+  font-size: 17px;
+  color: var(--ink-2);
+  line-height: 1.75;
+}
+
+.muted {
+  color: var(--ink-3);
+  font-size: 14px;
+}
+
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
 
-.section-subtitle {
-  text-align: center;
-  font-size: 18px;
-  color: var(--color-text-secondary);
-  max-width: 640px;
-  margin: 0 auto 56px;
-  line-height: 1.7;
+.hl {
+  color: var(--brand);
 }
 
-/* ===========================
-   滚动动画
-   =========================== */
-.scroll-animate {
+.band-deep .hl {
+  color: var(--brand-on-dark);
+}
+
+/* 待商务/产品确认的占位数字 */
+.pending {
+  border-bottom: 1px dashed var(--warn);
+  color: var(--warn);
+}
+
+/* --------------------------------------------------------------- 通用文本块 */
+
+.sec-head {
+  max-width: 720px;
+  margin-bottom: 48px;
+
+  .h-sec {
+    margin: 14px 0;
+  }
+}
+
+/* 官网长导语吃满栏宽；默认 720 仍留给短标题区块 */
+.sec-head--wide {
+  max-width: none;
+}
+
+/* --------------------------------------------------------------- grid */
+
+.grid {
+  display: grid;
+  gap: 20px;
+}
+
+.g-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.g-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.g-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* --------------------------------------------------------------- 滚动进场 */
+
+.reveal {
   opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(8px);
+  transition:
+    opacity var(--dur-reveal) var(--ease),
+    transform var(--dur-reveal) var(--ease);
 
-  &[data-direction="left"] {
-    transform: translateX(-32px);
-  }
-  &[data-direction="right"] {
-    transform: translateX(32px);
-  }
-  &[data-direction="down"] {
-    transform: translateY(-32px);
-  }
-
-  &.animate-in {
+  &.is-in {
     opacity: 1;
-    transform: translate(0, 0);
+    transform: none;
   }
 }
 
-/* ===========================
-   Element Plus 覆盖
-   =========================== */
-.el-button--primary {
-  --el-button-bg-color: var(--color-primary);
-  --el-button-border-color: var(--color-primary);
-  --el-button-hover-bg-color: var(--color-primary-light);
-  --el-button-hover-border-color: var(--color-primary-light);
-}
+/* --------------------------------------------------------------- 响应式 */
 
-/* ===========================
-   响应式
-   =========================== */
-/* 二维码 Popover（el-popover 渲染到 body） */
-.qrcode-popover {
-  .qrcode-content {
-    text-align: center;
-    padding: 8px 0;
+@media (max-width: 1024px) {
+  .band {
+    padding: 72px 0;
   }
-  .qrcode-img {
-    width: 160px;
-    height: 160px;
-    display: block;
-    margin: 0 auto 12px;
-    border-radius: 8px;
-  }
-  .qrcode-tip {
-    font-size: 14px;
-    color: #64748b;
-    margin: 0;
-  }
-  .qrcode-placeholder {
-    font-size: 12px;
-    color: #94a3b8;
-    max-width: 180px;
-    margin: 0 auto;
+
+  .g-4 {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .section-title {
-    font-size: 28px;
+  body {
+    font-size: 15px;
   }
 
-  .section-subtitle {
-    font-size: 16px;
-    margin-bottom: 40px;
+  .wrap {
+    padding: 0 20px;
   }
 
-  .container {
-    padding: 0 16px;
+  .band {
+    padding: 56px 0;
+  }
+
+  .band-tight {
+    padding: 44px 0;
+  }
+
+  .sec-head {
+    margin-bottom: 32px;
+  }
+
+  .g-2,
+  .g-3,
+  .g-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --------------------------------------------------------------- 无障碍降级 */
+
+/*
+ * 降低动效 ≠ 去掉反馈。这里只去掉位移与缩放（前庭敏感的部分），
+ * 保留 opacity / color 过渡，用户仍能感知状态变化。
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .reveal {
+    transform: none;
+    transition: opacity var(--dur-reveal) var(--ease);
+  }
+}
+
+/* 关闭透明度偏好：毛玻璃改实色 */
+@media (prefers-reduced-transparency: reduce) {
+  .site-header__inner {
+    background: var(--paper) !important;
+    backdrop-filter: none !important;
   }
 }

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>产品能力 · 智途轿运车队数智化系统</title>
-<meta name="description" content="从接单派车到算钱收钱，再到看数与 AI 数字员工：智途覆盖轿运车队的全部经营动作，含运营调度、运力中心、计费结算、数据洞察、服务平台与开放平台。" />
+<title>产品能力 · 朵灵·企云</title>
+<meta name="description" content="面向轿运行业（汽车物流）：从接单派车到算钱收钱，再到能源与 AI。朵灵·企云覆盖运营调度、运力中心、计费、能源中心、财务结算、数据洞察、服务平台与开放平台。" />
 <link rel="stylesheet" href="assets/site.css" />
 <style>
   /* 产品能力页专用 */
@@ -126,7 +126,20 @@
     font-weight: 600;
   }
 
-  /* 模块全景 */
+  /* 经营链路地图 */
+  .map-why {
+    font-size: 16px;
+    color: var(--ink-2);
+    margin: 22px 0 24px;
+    max-width: 640px;
+  }
+
+  .map-mods {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
   .mod {
     background: var(--paper);
     border: 1px solid var(--line);
@@ -181,6 +194,10 @@
       margin-top: 56px;
       padding-top: 56px;
     }
+
+    .map-mods {
+      grid-template-columns: 1fr;
+    }
   }
 
   @media (max-width: 768px) {
@@ -201,11 +218,12 @@
 <header class="nav">
   <div class="wrap nav-inner">
     <a class="brand" href="01-首页.html">
-      <span class="brand-mark">ZT</span>
-      智途
-      <span class="brand-sub">轿运车队数智化</span>
+      <span class="brand-mark">DL</span>
+      朵灵·企云
+      <span class="brand-sub">轿运企业综合操作系统</span>
     </a>
     <nav class="nav-links" id="nav-links" aria-label="主导航">
+      <a href="01-首页.html">首页</a>
       <a href="02-数智化转型.html">数智化转型</a>
       <a href="03-产品能力.html" aria-current="page">产品能力</a>
       <a href="05-价格方案.html">价格方案</a>
@@ -230,8 +248,9 @@
           接单、派车、算钱、收钱，<br /><span class="hl">在一套系统里跑完</span>
         </h1>
         <p class="lede">
-          智途按轿运车队的真实动线设计：业务从计划中心进来，经配载、调度、在途、回单，
-          落到对账与结算，再回到经营分析。带
+          朵灵·企云面向轿运行业（汽车物流），按商品车运输企业的真实动线设计：
+          业务从计划中心进来，经配载、调度、在途、回单，落到能源成本与财务结算，再回到经营分析。
+          带
           <span class="tag tag-pro">旗舰版</span>
           标记的能力属于旗舰版，其余在基础版即可使用。
         </p>
@@ -333,7 +352,7 @@
             <li><span class="num">管车</span><span>车辆、挂车、分组、变更记录全部在册，谁在开哪台车清楚。</span></li>
             <li><span class="num">合规</span><span>行驶证、营运证、驾驶证、押运资质到期自动预警。</span></li>
             <li><span class="num">维保</span><span>维保计划与费用台账，避免临期抛锚耽误交车。<span class="tag tag-pro">旗舰版</span></span></li>
-            <li><span class="num">审批</span><span>出车、加油、维修申请在线提交与审批，有记录可查。</span></li>
+            <li><span class="num">能源</span><span>能源卡绑车绑人，加油加气充电流水能追到车与任务。</span></li>
           </ul>
         </div>
         <div class="mock" aria-hidden="true">
@@ -357,28 +376,30 @@
       <div class="role-panel reveal" data-tab-panel="finance" role="tabpanel" hidden>
         <div>
           <span class="tag tag-brand">财务</span>
-          <h3>对账不再靠三个人算一周</h3>
-          <p class="lede" style="font-size:15px">运费按合同自动生成，成本按政策自动归集，客户对账与承运商结算在同一处完成。</p>
+          <h3>对账、开票、打款，不再各拉一张表</h3>
+          <p class="lede" style="font-size:15px">
+            运费按合同生成，成本按政策归集；客户应收、承运商应付、司机工资与能源账户在同一条资金链上闭环。
+          </p>
           <ul class="role-list">
-            <li><span class="num">应收</span><span>按合同自动算运费，生成对账单发给客户确认。<span class="tag tag-pro">旗舰版</span></span></li>
-            <li><span class="num">应付</span><span>承运商运费、司机结算、扣款与押金一并核对。</span></li>
-            <li><span class="num">对账</span><span>对账中心比对双方数据，差异直接标出来。<span class="tag tag-pro">旗舰版</span></span></li>
-            <li><span class="num">开票</span><span>发票管理与回款跟踪，账期一目了然。<span class="tag tag-pro">旗舰版</span></span></li>
+            <li><span class="num">应收</span><span>客户对账 → 结算 → 开票 → 收款核销，账龄一眼看清。<span class="tag tag-pro">旗舰版</span></span></li>
+            <li><span class="num">应付</span><span>任务费用、承运商对账结算、自有司机工资单一处处理。</span></li>
+            <li><span class="num">出纳</span><span>银行账户、打款批次与到账认领，钱在哪看得见。<span class="tag tag-pro">旗舰版</span></span></li>
+            <li><span class="num">核算</span><span>经营核算按已确认收入与已审批成本算毛利。<span class="tag tag-pro">旗舰版</span></span></li>
           </ul>
         </div>
         <div class="mock" aria-hidden="true">
-          <div class="mock-bar"><i></i><i></i><i></i><b>对账中心 / 8 月 · 某主机厂</b></div>
+          <div class="mock-bar"><i></i><i></i><i></i><b>出纳工作台 / 待付款与待认领</b></div>
           <div class="mock-body">
-            <div class="mock-rows">
-              <div class="mock-row is-head"><span>项目</span><span>我方</span><span>对方</span><span>差异</span></div>
-              <div class="mock-row"><span>运输趟次</span><span class="num">126</span><span class="num">126</span><span class="tag tag-brand">一致</span></div>
-              <div class="mock-row"><span>运费金额</span><span class="num">￥84.2万</span><span class="num">￥83.6万</span><span class="tag tag-pro">6,240</span></div>
-              <div class="mock-row"><span>异常扣款</span><span class="num">￥3,100</span><span class="num">￥3,100</span><span class="tag tag-brand">一致</span></div>
-            </div>
             <div class="mock-kpis">
-              <div class="mock-kpi"><span>待确认对账单</span><b>4</b></div>
-              <div class="mock-kpi"><span>逾期应收</span><b class="down">37万</b></div>
+              <div class="mock-kpi"><span>待付款</span><b class="down">6 笔</b></div>
+              <div class="mock-kpi"><span>待认领到账</span><b>3</b></div>
               <div class="mock-kpi"><span>本月开票</span><b>78万</b></div>
+            </div>
+            <div class="mock-rows">
+              <div class="mock-row is-head"><span>对象</span><span>类型</span><span>金额</span><span>状态</span></div>
+              <div class="mock-row"><span>某承运商</span><span>应付结算</span><span class="num">￥18.6万</span><span class="tag tag-pro">待打款</span></div>
+              <div class="mock-row"><span>某主机厂</span><span>应收结算</span><span class="num">￥84.2万</span><span class="tag tag-brand">待收款</span></div>
+              <div class="mock-row"><span>自有司机 · 7 月</span><span>工资单</span><span class="num">￥9.4万</span><span class="tag">待审批</span></div>
             </div>
           </div>
         </div>
@@ -398,7 +419,7 @@
           </ul>
         </div>
         <div class="mock" aria-hidden="true">
-          <div class="mock-bar"><i></i><i></i><i></i><b>驾驶员手机端 / 我的任务</b></div>
+          <div class="mock-bar"><i></i><i></i><i></i><b>朵灵·司机 / 我的任务</b></div>
           <div class="mock-body">
             <div class="mock-flow">
               <span class="mock-node is-done">接受</span>
@@ -479,14 +500,21 @@
       <!-- 主线二 -->
       <div class="pillar pillar-alt reveal">
         <div class="mock" aria-hidden="true">
-          <div class="mock-bar"><i></i><i></i><i></i><b>利润分析 / 单车 · 单线路</b></div>
+          <div class="mock-bar"><i></i><i></i><i></i><b>财务结算 / 客户对账 → 结算 → 收款</b></div>
           <div class="mock-body">
+            <div class="mock-flow">
+              <span class="mock-node is-done">对账</span>
+              <span class="mock-node is-done">结算</span>
+              <span class="mock-node is-live">开票</span>
+              <span class="mock-node">收款</span>
+              <span class="mock-node">核算</span>
+            </div>
             <div class="mock-rows">
               <div class="mock-row is-head"><span>成本项</span><span>金额</span><span>占比</span><span>口径</span></div>
-              <div class="mock-row"><span>司机人工</span><span class="num">￥3,240</span><span class="num">31%</span><span class="tag">按趟</span></div>
-              <div class="mock-row"><span>油费</span><span class="num">￥2,860</span><span class="num">27%</span><span class="tag">按里程</span></div>
+              <div class="mock-row"><span>司机人工</span><span class="num">￥3,240</span><span class="num">31%</span><span class="tag">工资单</span></div>
+              <div class="mock-row"><span>能源费</span><span class="num">￥2,860</span><span class="num">27%</span><span class="tag">账户扣减</span></div>
               <div class="mock-row"><span>路桥</span><span class="num">￥1,910</span><span class="num">18%</span><span class="tag">按线路</span></div>
-              <div class="mock-row"><span>外协运费</span><span class="num">￥1,480</span><span class="num">14%</span><span class="tag">按合同</span></div>
+              <div class="mock-row"><span>外协运费</span><span class="num">￥1,480</span><span class="num">14%</span><span class="tag">承运商结算</span></div>
             </div>
             <div class="mock-kpis">
               <div class="mock-kpi"><span>单趟收入</span><b>￥13,200</b></div>
@@ -497,27 +525,27 @@
         </div>
         <div>
           <span class="pillar-step">主线 02 / 算钱到收钱</span>
-          <h2>运费按合同算，成本按政策摊</h2>
+          <h2>运费、能源、结算，在同一条资金链上</h2>
           <p class="lede">
-            报价有合同、成本有政策，系统按规则自动算，不再靠 Excel 手工摊。
-            客户对账、承运商结算、发票与回款接在同一条链上。
+            报价有合同、成本有政策；油 / 气 / 电进能源账户，客户应收与承运商应付进财务结算。
+            对账、结算、开票、打款与经营核算接在一起，不再各拉一张表。
           </p>
           <ul class="pillar-points">
             <li>
               <svg viewBox="0 0 24 24"><path d="M6 4h9l3 3v13H6z" /><path d="M9 12h6M9 16h4" /></svg>
-              <span><b>运价合同与路线管理</b>：报价自动取价，改价留痕。</span>
+              <span><b>运价合同与成本政策</b>：报价自动取价；油、路桥、人工、外协按规则摊到每一趟。<span class="tag tag-pro">成本政策 · 旗舰版</span></span>
             </li>
             <li>
               <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16" /><path d="M8 15V9M12 15v-4M16 15V7" /></svg>
-              <span><b>成本政策</b>：油、路桥、人工、外协按规则摊到每一趟。<span class="tag tag-pro">旗舰版</span></span>
+              <span><b>能源中心</b>：供应商账户、能源卡、充值与消费一本账；异常加注可追。<span class="tag tag-pro">消费对账分析 · 旗舰版</span></span>
             </li>
             <li>
               <svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16" /><circle cx="9" cy="8" r="2" /><circle cx="15" cy="16" r="2" /></svg>
-              <span><b>对账中心</b>：双方数据自动比对，差异直接标出。<span class="tag tag-pro">旗舰版</span></span>
+              <span><b>应付路径</b>：任务费用工作台、承运商对账结算、自有司机工资单。</span>
             </li>
             <li>
               <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2" /><path d="M8 10h8M8 14h5" /></svg>
-              <span><b>应收应付与发票</b>：账期、回款、开票全程可查。<span class="tag tag-pro">旗舰版</span></span>
+              <span><b>应收 · 出纳 · 发票 · 核算</b>：客户对账到回款，银行打款与进销项票，经营核算看毛利。<span class="tag tag-pro">旗舰版</span></span>
             </li>
           </ul>
           <a class="btn btn-text" href="05-价格方案.html">看版本差异 <span class="arrow">→</span></a>
@@ -630,122 +658,159 @@
 
   <!-- 模块全景 -->
   <section class="band band-soft band-line">
-    <div class="wrap">
+    <div class="wrap" data-tabs>
       <div class="sec-head reveal">
-        <span class="eyebrow">模块全景</span>
-        <h2 class="h-sec" style="margin:14px 0 14px">系统里一共有这些模块</h2>
-        <p class="lede">按企业端菜单结构列出。基础版覆盖前六项的主体功能，带标记的能力属于旗舰版。</p>
+        <span class="eyebrow">经营链路</span>
+        <h2 class="h-sec" style="margin:14px 0 14px">模块按经营链路收在一起</h2>
+        <p class="lede">不按菜单平铺。先选一条链路，看它解决什么经营问题，再看对应模块。带标记的属于旗舰版。</p>
       </div>
 
-      <div class="grid g-3">
-        <div class="mod reveal">
-          <div class="mod-head"><h3>运营调度</h3><span class="num">01</span></div>
-          <p>从接单到签收的主流程。</p>
-          <div class="tag-list">
-            <span class="tag">计划中心</span><span class="tag">配载建单</span><span class="tag">调度工作台</span>
-            <span class="tag">在途监控</span><span class="tag">回单签收</span><span class="tag">任务单台账</span>
-            <span class="tag tag-pro">智能配载</span>
-          </div>
-        </div>
+      <div class="tabs reveal" role="tablist" aria-label="经营链路">
+        <button class="tab-btn" type="button" role="tab" data-tab-btn="ops" aria-selected="true">接单到交车</button>
+        <button class="tab-btn" type="button" role="tab" data-tab-btn="fleet">运力与能源</button>
+        <button class="tab-btn" type="button" role="tab" data-tab-btn="money">计费到资金</button>
+        <button class="tab-btn" type="button" role="tab" data-tab-btn="intel">智能与连接</button>
+        <button class="tab-btn" type="button" role="tab" data-tab-btn="org">组织底座</button>
+      </div>
 
-        <div class="mod reveal" data-delay="50">
-          <div class="mod-head"><h3>运力中心</h3><span class="num">02</span></div>
-          <p>自有车、外协车、社会运力一起管。</p>
-          <div class="tag-list">
-            <span class="tag">自有运力</span><span class="tag">驾驶员</span><span class="tag">车辆与挂车</span>
-            <span class="tag">承运商运力</span><span class="tag">社会运力池</span><span class="tag">证照监控</span>
-            <span class="tag tag-pro">车辆维保</span>
+      <div class="reveal" data-tab-panel="ops" role="tabpanel">
+        <p class="map-why">客户需求进来，到配载、派车、在途、回单签收，单据不落地、节点能倒查。</p>
+        <div class="map-mods">
+          <div class="mod">
+            <div class="mod-head"><h3>运营调度</h3><span class="num">01</span></div>
+            <p>从接单到签收的主流程。</p>
+            <div class="tag-list">
+              <span class="tag">计划中心</span><span class="tag">配载建单</span><span class="tag">调度工作台</span>
+              <span class="tag">在途监控</span><span class="tag">回单签收</span><span class="tag">任务单台账</span>
+              <span class="tag tag-pro">智能配载</span>
+            </div>
           </div>
-        </div>
-
-        <div class="mod reveal" data-delay="100">
-          <div class="mod-head"><h3>客商中心</h3><span class="num">03</span></div>
-          <p>客户、承运商与交车门店档案。</p>
-          <div class="tag-list">
-            <span class="tag">客户管理</span><span class="tag">承运商管理</span><span class="tag">供应商</span>
-            <span class="tag">互联客户</span><span class="tag">经销商门店</span>
+          <div class="mod">
+            <div class="mod-head"><h3>客商中心</h3><span class="num">02</span></div>
+            <p>客户、承运商与交车门店档案。</p>
+            <div class="tag-list">
+              <span class="tag">客户管理</span><span class="tag">承运商管理</span><span class="tag">供应商</span>
+              <span class="tag">互联客户</span><span class="tag">经销商门店</span>
+            </div>
           </div>
-        </div>
-
-        <div class="mod reveal">
-          <div class="mod-head"><h3>计费中心</h3><span class="num">04</span></div>
-          <p>价格与成本的规则都在这里。</p>
-          <div class="tag-list">
-            <span class="tag">运价合同</span><span class="tag">路线管理</span>
-            <span class="tag tag-pro">成本政策</span><span class="tag tag-pro">承运商合同</span><span class="tag tag-pro">费用模板</span>
-          </div>
-        </div>
-
-        <div class="mod reveal" data-delay="50">
-          <div class="mod-head"><h3>财务结算</h3><span class="num">05</span></div>
-          <p>收得回来、付得清楚。</p>
-          <div class="tag-list">
-            <span class="tag">应付管理</span><span class="tag">费用工作台</span><span class="tag">费用单台账</span>
-            <span class="tag tag-pro">应收管理</span><span class="tag tag-pro">对账中心</span>
-            <span class="tag tag-pro">发票管理</span><span class="tag tag-pro">利润分析</span>
-          </div>
-        </div>
-
-        <div class="mod reveal" data-delay="100">
-          <div class="mod-head"><h3>审批中心</h3><span class="num">06</span></div>
-          <p>该谁批就谁批，留痕可查。</p>
-          <div class="tag-list">
-            <span class="tag">我的待办</span><span class="tag">我的申请</span><span class="tag">审批记录</span><span class="tag">审批配置</span>
-          </div>
-        </div>
-
-        <div class="mod reveal">
-          <div class="mod-head"><h3>数据洞察</h3><span class="num">07</span></div>
-          <p>把结果和原因摆出来。</p>
-          <div class="tag-list">
-            <span class="tag">经营驾驶舱</span>
-            <span class="tag tag-pro">运营看板</span><span class="tag tag-pro">数据报表</span><span class="tag tag-pro">智能预测</span>
-          </div>
-        </div>
-
-        <div class="mod reveal" data-delay="50">
-          <div class="mod-head"><h3>AI 数字员工</h3><span class="num">08</span></div>
-          <p>承担录单、取数这类重复活。</p>
-          <div class="tag-list">
-            <span class="tag tag-pro">AI 录单员</span><span class="tag tag-pro">AI 数据分析员</span><span class="tag tag-pro">对话工作台</span>
-          </div>
-        </div>
-
-        <div class="mod reveal" data-delay="100">
-          <div class="mod-head"><h3>服务平台</h3><span class="num">09</span></div>
-          <p>缺车找车，空板找货。</p>
-          <div class="tag-list">
-            <span class="tag">货源大厅</span><span class="tag">运力大厅</span><span class="tag">我的合作</span><span class="tag">企业名片</span>
-            <span class="tag tag-pro">主动联系同行</span>
-          </div>
-        </div>
-
-        <div class="mod reveal">
-          <div class="mod-head"><h3>开放平台</h3><span class="num">10</span></div>
-          <p>对接客户系统，也给 AI 留了入口。</p>
-          <div class="tag-list">
-            <span class="tag">接入应用</span><span class="tag">MCP 连接器</span><span class="tag">能力目录</span>
-            <span class="tag">接口文档</span><span class="tag">调用记录</span>
-          </div>
-        </div>
-
-        <div class="mod reveal" data-delay="50">
-          <div class="mod-head"><h3>企业配置</h3><span class="num">11</span></div>
-          <p>组织、权限与基础数据。</p>
-          <div class="tag-list">
-            <span class="tag">组织架构</span><span class="tag">经营主体</span><span class="tag">员工管理</span>
-            <span class="tag">角色权限</span><span class="tag">数据管理</span><span class="tag">系统设置</span>
-          </div>
-        </div>
-
-        <div class="mod reveal" data-delay="100">
-          <div class="mod-head"><h3>日志中心</h3><span class="num">12</span></div>
-          <p>谁做了什么，什么时候做的。</p>
-          <div class="tag-list">
-            <span class="tag">操作记录</span><span class="tag">登录记录</span>
+          <div class="mod">
+            <div class="mod-head"><h3>服务平台</h3><span class="num">03</span></div>
+            <p>缺车找车，空板找货。</p>
+            <div class="tag-list">
+              <span class="tag">货源大厅</span><span class="tag">运力大厅</span><span class="tag">我的合作</span>
+              <span class="tag">企业名片</span><span class="tag tag-pro">主动联系同行</span>
+            </div>
           </div>
         </div>
       </div>
+
+      <div class="reveal" data-tab-panel="fleet" role="tabpanel" hidden>
+        <p class="map-why">车、人、证照和油电气收在一本账里，出车前知道能不能走，跑完知道钱花在哪。</p>
+        <div class="map-mods">
+          <div class="mod">
+            <div class="mod-head"><h3>运力中心</h3><span class="num">01</span></div>
+            <p>自有车、外协车、社会运力一起管。</p>
+            <div class="tag-list">
+              <span class="tag">自有运力</span><span class="tag">驾驶员</span><span class="tag">车辆与挂车</span>
+              <span class="tag">承运商运力</span><span class="tag">社会运力池</span><span class="tag">证照监控</span>
+              <span class="tag tag-pro">车辆维保</span>
+            </div>
+          </div>
+          <div class="mod">
+            <div class="mod-head"><h3>能源中心</h3><span class="num">02</span></div>
+            <p>油、气、电一本账，钱在哪、花在哪看得见。</p>
+            <div class="tag-list">
+              <span class="tag">能源账户</span><span class="tag">能源卡</span><span class="tag">充值管理</span>
+              <span class="tag">供应商与站点</span><span class="tag">能源设置</span>
+              <span class="tag tag-pro">能源消费</span><span class="tag tag-pro">数据接入</span>
+              <span class="tag tag-pro">能源对账</span><span class="tag tag-pro">异常中心</span><span class="tag tag-pro">成本分析</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" data-tab-panel="money" role="tabpanel" hidden>
+        <p class="map-why">报价有合同、成本有政策；客户应收与承运商应付对上，开票打款能闭环。</p>
+        <div class="map-mods">
+          <div class="mod">
+            <div class="mod-head"><h3>计费中心</h3><span class="num">01</span></div>
+            <p>价格与成本的规则都在这里。</p>
+            <div class="tag-list">
+              <span class="tag">运价合同</span><span class="tag">路线管理</span>
+              <span class="tag tag-pro">成本政策</span><span class="tag tag-pro">承运商合同</span><span class="tag tag-pro">费用模板</span>
+            </div>
+          </div>
+          <div class="mod">
+            <div class="mod-head"><h3>财务结算</h3><span class="num">02</span></div>
+            <p>从费用确认到收付款与利润核算。</p>
+            <div class="tag-list">
+              <span class="tag">费用工作台</span><span class="tag">费用单台账</span>
+              <span class="tag">承运商对账</span><span class="tag">承运商结算</span><span class="tag">司机工资单</span>
+              <span class="tag tag-pro">对账工作台</span><span class="tag tag-pro">出纳工作台</span>
+              <span class="tag tag-pro">客户对账结算</span><span class="tag tag-pro">进销项发票</span>
+              <span class="tag tag-pro">应收账龄</span><span class="tag tag-pro">经营核算</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" data-tab-panel="intel" role="tabpanel" hidden>
+        <p class="map-why">经营结果摆在明面上；重复活交给数字员工；你自己的 AI 也能连进同一套数据。</p>
+        <div class="map-mods">
+          <div class="mod">
+            <div class="mod-head"><h3>数据洞察</h3><span class="num">01</span></div>
+            <p>把结果和原因摆出来。</p>
+            <div class="tag-list">
+              <span class="tag">经营驾驶舱</span>
+              <span class="tag tag-pro">运营看板</span><span class="tag tag-pro">数据报表</span><span class="tag tag-pro">智能预测</span>
+            </div>
+          </div>
+          <div class="mod">
+            <div class="mod-head"><h3>AI 数字员工</h3><span class="num">02</span></div>
+            <p>承担录单、取数这类重复活。</p>
+            <div class="tag-list">
+              <span class="tag tag-pro">AI 录单员</span><span class="tag tag-pro">AI 数据分析员</span><span class="tag tag-pro">对话工作台</span>
+            </div>
+          </div>
+          <div class="mod">
+            <div class="mod-head"><h3>开放平台</h3><span class="num">03</span></div>
+            <p>对接客户系统，也给 AI 留了入口。</p>
+            <div class="tag-list">
+              <span class="tag">接入应用</span><span class="tag">MCP 连接器</span><span class="tag">能力目录</span>
+              <span class="tag">接口文档</span><span class="tag">调用记录</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal" data-tab-panel="org" role="tabpanel" hidden>
+        <p class="map-why">谁能看、谁能批、谁改过什么，写清楚，扩张时管理半径不失控。</p>
+        <div class="map-mods">
+          <div class="mod">
+            <div class="mod-head"><h3>审批中心</h3><span class="num">01</span></div>
+            <p>该谁批就谁批，留痕可查。</p>
+            <div class="tag-list">
+              <span class="tag">我的待办</span><span class="tag">我的申请</span><span class="tag">审批记录</span><span class="tag">审批配置</span>
+            </div>
+          </div>
+          <div class="mod">
+            <div class="mod-head"><h3>企业配置</h3><span class="num">02</span></div>
+            <p>组织、权限与基础数据。</p>
+            <div class="tag-list">
+              <span class="tag">组织架构</span><span class="tag">经营主体</span><span class="tag">员工管理</span>
+              <span class="tag">角色权限</span><span class="tag">数据管理</span><span class="tag">系统设置</span>
+            </div>
+          </div>
+          <div class="mod">
+            <div class="mod-head"><h3>日志中心</h3><span class="num">03</span></div>
+            <p>谁做了什么，什么时候做的。</p>
+            <div class="tag-list">
+              <span class="tag">操作记录</span><span class="tag">登录记录</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -753,7 +818,7 @@
   <section class="band band-tight band-deep">
     <div class="wrap" style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between">
       <div>
-        <h2 class="h-sec" style="font-size:26px">想看这些模块在你车队怎么跑？</h2>
+        <h2 class="h-sec" style="font-size:26px">想看这些模块在你企业怎么跑？</h2>
         <p class="lede" style="margin-top:10px">用你自己的线路和运价，我们做一遍演示。</p>
       </div>
       <div class="btn-row">
@@ -769,23 +834,22 @@
   <div class="wrap">
     <div class="foot-top">
       <div>
-        <div class="brand"><span class="brand-mark">ZT</span>智途</div>
-        <p class="foot-slogan">让每一公里都不白跑。智途为轿运车队提供从计划录入到结算回款的数智化经营系统。</p>
+        <div class="brand"><span class="brand-mark">DL</span>朵灵·企云</div>
+        <p class="foot-slogan">让每一公里都不白跑。朵灵·企云面向轿运行业（汽车物流），把计划到结算收进一套企业经营系统。</p>
       </div>
       <div>
         <h4>产品</h4>
         <ul>
-          <li><a href="03-产品能力.html">产品能力</a></li>
+          <li><a href="03-产品能力.html">朵灵·企云</a></li>
+          <li><a href="#">朵灵·司机</a></li>
           <li><a href="05-价格方案.html">价格方案</a></li>
-          <li><a href="#">承运商轻量版</a></li>
-          <li><a href="#">驾驶员手机端</a></li>
         </ul>
       </div>
       <div>
         <h4>了解数智化</h4>
         <ul>
           <li><a href="02-数智化转型.html">四阶段辨析</a></li>
-          <li><a href="04-数智化自测.html">车队水位快测</a></li>
+          <li><a href="04-数智化自测.html">企业水位快测</a></li>
           <li><a href="#">完整转型报告</a></li>
         </ul>
       </div>
@@ -794,12 +858,12 @@
         <ul>
           <li><a href="04-数智化自测.html#lead">预约演示</a></li>
           <li><a href="#">400 电话（待定）</a></li>
-          <li><a href="#">北京 · 智途科技</a></li>
+          <li><a href="#">北京 · 朵灵科技</a></li>
         </ul>
       </div>
     </div>
     <div class="foot-btm">
-      <span>© 2026 北京智途科技有限公司</span>
+      <span>© 2026 北京朵灵科技有限公司</span>
       <span>官网原型稿 · 仅用于设计评审</span>
     </div>
   </div>

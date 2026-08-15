@@ -1,21 +1,18 @@
 <template>
   <div id="app">
-    <NavHeader v-if="!isFullPage" />
-    <main>
-      <router-view />
+    <a class="skip-link" href="#main">跳到正文</a>
+    <SiteHeader />
+    <main id="main">
+      <RouterView />
     </main>
-    <SiteFooter v-if="!isFullPage" />
+    <SiteFooter />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import NavHeader from '@/components/NavHeader.vue'
-import SiteFooter from '@/components/SiteFooter.vue'
-
-const route = useRoute()
-const isFullPage = computed(() => route.meta.fullPage === true)
+import { RouterView } from 'vue-router';
+import SiteHeader from '@/layouts/SiteHeader.vue';
+import SiteFooter from '@/layouts/SiteFooter.vue';
 </script>
 
 <style lang="scss">

@@ -1,7 +1,7 @@
 {
   "name": "zhitu-website",
   "version": "0.1.0",
-  "description": "智途(ZhiTu) - 产品官网",
+  "description": "朵灵·企云 - 产品官网",
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 5175",
@@ -9,10 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@element-plus/icons-vue": "^2.3.2",
     "axios": "^1.12.2",
     "dompurify": "^3.2.0",
-    "element-plus": "^2.11.7",
     "marked": "^15.0.0",
     "vue": "^3.5.22",
     "vue-router": "^4.5.1"

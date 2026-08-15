@@ -1,149 +1,437 @@
 <template>
-  <div class="home">
-    <!-- Hero -->
-    <section class="hero">
-      <div class="hero-bg">
-        <div class="grid-lines"></div>
-        <div class="glow glow-1"></div>
-        <div class="glow glow-2"></div>
-        <div class="particles">
-          <div
-            v-for="p in particles"
-            :key="p.id"
-            class="particle"
-            :style="p.style"
-          />
-        </div>
-      </div>
-      <div class="container hero-content">
-        <div class="hero-badge scroll-animate">
-          <span class="badge-dot"></span>
-          轿运车队的利润管理专家
-        </div>
-        <h1 class="scroll-animate" data-delay="100">
-          让每一台车、每一公里的<span class="gradient-text">利润都看得清楚</span>
-        </h1>
-        <p class="hero-desc scroll-animate" data-delay="200">
-          助力轿运企业建立“利润确定性”——看清每单赚没赚、每条线路值不值、每个客户划不划算。
-        </p>
-        <div class="hero-actions scroll-animate" data-delay="300">
-          <router-link to="/register">
-            <el-button type="primary" size="large" class="btn-hero-primary">
-              免费体验
-              <span class="btn-arrow">→</span>
-            </el-button>
-          </router-link>
-          <router-link to="/features">
-            <el-button size="large" class="btn-hero-secondary">了解更多</el-button>
-          </router-link>
-        </div>
-      </div>
-    </section>
-
-    <!-- 痛点共鸣 -->
-    <section class="pain-section">
-      <div class="container">
-        <h2 class="section-title scroll-animate">这些问题，是不是你每天都在面对？</h2>
-        <div class="pain-grid">
-          <div
-            v-for="(item, idx) in painPoints"
-            :key="item.question"
-            class="pain-card scroll-animate"
-            :data-delay="idx * 100"
-          >
-            <div class="pain-icon" v-html="item.icon"></div>
-            <h3>{{ item.question }}</h3>
-            <p>{{ item.desc }}</p>
+  <div>
+    <!-- Hero：左边说清定位，右边直接给一张真实的驾驶舱切片 -->
+    <section class="band-deep hero">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="eyebrow">轿运行业 · 汽车物流</span>
+          <h1 class="h-hero">企业的利润，<br />不该等到月底才知道</h1>
+          <p class="lede">
+            {{ BRAND.product
+            }}面向轿运行业（汽车物流）——把商品车运输的计划、配载、调度、回单、对账、结算装进一条在线链路。
+            它是企业的综合操作系统：流程、资金与成本分析收在一处，每台车、每条线、每个客户赚没赚，随时算得出来。
+          </p>
+          <div class="hero-actions">
+            <RouterLink class="btn btn-primary btn-lg" to="/assessment#lead">
+              预约演示<span class="arrow">→</span>
+            </RouterLink>
+            <RouterLink class="btn btn-line btn-lg" to="/assessment">
+              3 分钟测我的数智化水位
+            </RouterLink>
+          </div>
+          <div class="hero-foot">
+            <span>专为轿运（商品车整车运输）打造</span>
+            <span>外协承运商受邀即可协同</span>
+            <span>{{ BRAND.driverProduct }}现场作业</span>
+            <span>支持你的 AI 工具直连</span>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- 解决方案 -->
-    <section class="solutions-section">
-      <div class="container">
-        <h2 class="section-title scroll-animate">智途帮你做到的四件事</h2>
-        <p class="section-subtitle scroll-animate" data-delay="100">
-          不是给你一套系统，而是帮你建立“利润确定性”
-        </p>
-        <div class="solutions-grid">
-          <div
-            v-for="(item, idx) in solutions"
-            :key="item.title"
-            class="solution-card scroll-animate"
-            :data-delay="idx * 100"
-          >
-            <div class="solution-number">{{ String(idx + 1).padStart(2, '0') }}</div>
-            <div class="solution-illustration" v-html="item.svg"></div>
-            <div class="solution-content">
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.desc }}</p>
+        <div class="mock" aria-hidden="true">
+          <div class="mock-bar">
+            <i /><i /><i />
+            <b>经营驾驶舱 / 本月</b>
+          </div>
+          <div class="mock-body">
+            <div class="mock-kpis">
+              <div class="mock-kpi"><span>运输收入</span><b>486.2万</b></div>
+              <div class="mock-kpi">
+                <span>单车日均利润</span><b class="up">1,240</b>
+              </div>
+              <div class="mock-kpi">
+                <span>亏损线路</span><b class="down">3 条</b>
+              </div>
+            </div>
+            <div class="mock-flow">
+              <span class="mock-node is-done">计划</span>
+              <span class="mock-node is-done">配载</span>
+              <span class="mock-node is-done">派车</span>
+              <span class="mock-node is-live">在途 42</span>
+              <span class="mock-node">回单</span>
+              <span class="mock-node">对账</span>
+              <span class="mock-node">结算</span>
+            </div>
+            <div class="mock-rows">
+              <div class="mock-row is-head">
+                <span>线路</span><span>趟次</span><span>单趟毛利</span
+                ><span>状态</span>
+              </div>
+              <div class="mock-row">
+                <span>上海 → 郑州</span><span class="num">38</span
+                ><span class="num">￥2,180</span
+                ><span class="tag tag-brand">优</span>
+              </div>
+              <div class="mock-row">
+                <span>广州 → 长沙</span><span class="num">26</span
+                ><span class="num">￥940</span><span class="tag">偏低</span>
+              </div>
+              <div class="mock-row">
+                <span>成都 → 西安</span><span class="num">17</span
+                ><span class="num">-￥310</span
+                ><span class="tag tag-pro">亏损</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 产品能力 -->
-    <section class="capabilities-section">
-      <div class="container">
-        <h2 class="section-title scroll-animate">用结果说话</h2>
-        <p class="section-subtitle scroll-animate" data-delay="100">
-          不做功能堆叠，只看实际结果
-        </p>
-        <div class="capabilities-grid">
-          <div
-            v-for="(item, idx) in capabilities"
-            :key="item.title"
-            class="capability-card scroll-animate"
-            :data-delay="idx * 100"
-          >
-            <div class="capability-icon" v-html="item.icon"></div>
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.desc }}</p>
-          </div>
+    <!-- 痛点：标题通栏，条目横排，不再把正文锁进半栏 -->
+    <section class="band band-paper">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">企业的日常</span>
+          <h2 class="h-sec">这些事，多数企业每天都在重复</h2>
+          <p class="lede">
+            它们看起来是效率问题，实际上都是同一个问题：业务没有真正在线，数据也就不可能算得准。
+          </p>
         </div>
+
+        <ul class="pain-list reveal" data-delay="120">
+          <li v-for="(pain, i) in PAINS" :key="pain.title">
+            <span class="num">{{ String(i + 1).padStart(2, '0') }}</span>
+            <b>{{ pain.title }}</b>
+            <p>{{ pain.desc }}</p>
+          </li>
+        </ul>
       </div>
     </section>
 
-    <!-- 案例 -->
-    <section class="case-section">
-      <div class="container">
-        <h2 class="section-title scroll-animate">他们已经看清了利润</h2>
-        <div class="case-card scroll-animate" data-delay="100">
-          <div class="case-info">
-            <div class="case-label">客户案例</div>
-            <h3>某轿运车队 · 30台板车 · 华东区域</h3>
-            <p class="case-desc">
-              使用智途 3 个月后，通过单车利润核算与线路盈亏分析，
-              精准定位了亏损线路与低价客户，调整经营策略后利润显著提升。
+    <!-- 四层能力 + 自测钩子 -->
+    <section class="band band-soft band-line">
+      <div class="wrap">
+        <div class="stage-hook">
+          <div class="reveal">
+            <span class="eyebrow">先搞清概念，再花钱</span>
+            <h2 class="h-sec stage-hook__title">
+              信息化、数字化、智能化、数智化，<br />不是四个价位的软件
+            </h2>
+            <p class="lede">
+              它们是四层能力：先让业务在线上跑通，再让经营算得清，然后让系统辅助判断，最后把智能嵌进经营机制。
+              业务还不上线就先买 AI，钱多半花在演示上。
+            </p>
+            <p class="lede stage-hook__more">
+              所以我们不劝你一次买全，而是先帮你量清水位，再决定这 90
+              天该补哪一层。
+            </p>
+            <div class="btn-row stage-hook__actions">
+              <RouterLink class="btn btn-dark" to="/assessment">
+                开始 10 题快测<span class="arrow">→</span>
+              </RouterLink>
+              <RouterLink class="btn btn-text" to="/transformation#online-first">
+                为什么先在线，再智能
+              </RouterLink>
+            </div>
+          </div>
+
+          <div class="hook-card reveal" data-delay="140">
+            <span class="eyebrow">水位刻度</span>
+            <p class="hook-card__title">从 L1 到 L8，你的企业在第几格？</p>
+            <WaterLadder :index="3" pointer-label="多数企业" />
+            <p class="hook-note">
+              我们接触过的轿运企业，多数自评落在 L2–L4：系统买了，但对账、成本、利润仍要人工拼。
+              短板会封顶档位，所以某一维很弱时，总分再高也上不去。
             </p>
           </div>
-          <div class="case-metrics">
-            <div
-              v-for="(m, idx) in caseMetrics"
-              :key="m.label"
-              class="metric-item scroll-animate"
-              :data-delay="200 + idx * 120"
-            >
-              <div class="metric-value">{{ m.value }}</div>
-              <div class="metric-label">{{ m.label }}</div>
-            </div>
+        </div>
+
+        <div class="chain reveal" data-delay="80">
+          <div
+            v-for="(step, i) in CHAIN"
+            :key="step.title"
+            class="chain-step"
+            :data-tier="i + 1"
+          >
+            <span class="num">STEP {{ String(i + 1).padStart(2, '0') }}</span>
+            <h3>{{ step.title }}</h3>
+            <p>{{ step.desc }}</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- CTA -->
-    <section class="cta-section">
-      <div class="container">
-        <div class="cta-card scroll-animate">
-          <h2>从今天开始，让每一分利润都看得清楚</h2>
-          <router-link to="/register">
-            <el-button type="primary" size="large" class="cta-btn">
-              立即注册
-            </el-button>
-          </router-link>
+    <!-- 产品亮点 -->
+    <section class="band band-paper">
+      <div class="wrap">
+        <SectionHead eyebrow="产品亮点" title="朵灵·企云在轿运企业里，具体解决什么">
+          不做功能堆叠。下面每一项都对应一段真实存在的浪费。
+        </SectionHead>
+
+        <div class="feats">
+          <article class="card card-tint feat-lead reveal">
+            <div>
+              <div class="ico">
+                <svg viewBox="0 0 24 24">
+                  <path d="M4 6h10M4 12h16M4 18h7" />
+                  <circle cx="19" cy="6" r="2" />
+                  <circle cx="14" cy="18" r="2" />
+                </svg>
+              </div>
+              <h3 class="h-card">一张单子，从录入到收款不落地</h3>
+              <p>
+                客户需求进来就建计划，配载成任务单、派给车和司机，在途可查、回单在线签收，
+                然后直接进对账和结算。中间不再落到 Excel，也不需要谁在群里催。
+              </p>
+              <div class="feat-tags">
+                <span v-for="t in LEAD_FEAT_TAGS" :key="t" class="tag">
+                  {{ t }}
+                </span>
+              </div>
+            </div>
+            <div class="mock" aria-hidden="true">
+              <div class="mock-bar">
+                <i /><i /><i />
+                <b>任务单 DL-24081207 / 上海 → 郑州</b>
+              </div>
+              <div class="mock-body">
+                <div class="mock-flow">
+                  <span class="mock-node is-done">建计划</span>
+                  <span class="mock-node is-done">配载</span>
+                  <span class="mock-node is-done">派车</span>
+                  <span class="mock-node is-live">在途</span>
+                  <span class="mock-node">签收</span>
+                  <span class="mock-node">结算</span>
+                </div>
+                <div class="mock-rows">
+                  <div class="mock-row is-head">
+                    <span>节点</span><span>操作人</span><span>时间</span
+                    ><span>凭证</span>
+                  </div>
+                  <div class="mock-row">
+                    <span>装车完成</span><span>王强（车队长）</span
+                    ><span class="num">08-12 09:24</span
+                    ><span class="tag tag-brand">6 张</span>
+                  </div>
+                  <div class="mock-row">
+                    <span>到货签收</span><span>李师傅（司机）</span
+                    ><span class="num">08-13 15:07</span
+                    ><span class="tag tag-brand">已上传</span>
+                  </div>
+                  <div class="mock-row">
+                    <span>运费确认</span><span>财务 · 待确认</span
+                    ><span class="num">—</span><span class="tag">待处理</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article
+            v-for="(feat, i) in FEATURES"
+            :key="feat.title"
+            class="card card-tint card-lift reveal"
+            :data-stagger="i % 2"
+          >
+            <div class="ico" v-html="feat.icon" />
+            <h3 class="h-card">{{ feat.title }}</h3>
+            <p>{{ feat.desc }}</p>
+            <div class="feat-tags">
+              <span
+                v-for="t in feat.tags"
+                :key="t.label"
+                class="tag"
+                :class="{ 'tag-pro': t.pro }"
+              >
+                {{ t.label }}
+              </span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 开放平台 / MCP -->
+    <section class="band band-soft band-line">
+      <div class="wrap mcp-grid">
+        <div class="reveal">
+          <span class="eyebrow">面向 AI 时代的开放能力</span>
+          <h2 class="h-sec mcp-title">你自己的 AI，<br />也能直接连进系统</h2>
+          <p class="lede">
+            系统里有我们内置的 AI 数字员工。但如果你的团队已经在用别的 AI 工具，
+            不必再等我们做功能：开放平台会生成一段 MCP 连接配置，复制粘贴进去，
+            AI 就能按你授权的范围读到系统里的客户、车辆和运单。
+          </p>
+          <ul class="mcp-points">
+            <li v-for="(p, i) in MCP_POINTS" :key="p.title">
+              <span class="num">{{ String(i + 1).padStart(2, '0') }}</span>
+              <div>
+                <b>{{ p.title }}</b>
+                <p>{{ p.desc }}</p>
+              </div>
+            </li>
+          </ul>
+          <div class="btn-row mcp-actions">
+            <RouterLink class="btn btn-dark" to="/features#open-platform">
+              看开放平台怎么接<span class="arrow">→</span>
+            </RouterLink>
+          </div>
+        </div>
+
+        <div class="reveal" data-delay="120">
+          <CodeCard
+            filename="MCP 连接配置 / 一键复制"
+            :html="MCP_CONFIG_HTML"
+            :raw="MCP_CONFIG_RAW"
+          >
+            <template #foot>
+              <span class="lbl">这条连接被授权的能力</span>
+              <span class="tag tag-ro">连接自检</span>
+              <span class="tag tag-ro">查询客户</span>
+              <span class="tag tag-ro">查询车辆</span>
+              <span class="tag tag-ro">查询运单</span>
+              <span class="tag">只读</span>
+            </template>
+          </CodeCard>
+          <p class="muted mcp-note">
+            同一套能力目录也提供标准 REST 接口，用于和主机厂 DMS、客户 TMS
+            做系统级对接。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 补充能力 -->
+    <section class="band band-tight band-paper">
+      <div class="wrap">
+        <div class="sec-head sec-head--tight reveal">
+          <h2 class="h-sec h-sec--sm">还有这些，扩张的时候你会用到</h2>
+        </div>
+        <div class="grid g-4">
+          <div
+            v-for="(extra, i) in EXTRAS"
+            :key="extra.title"
+            class="card card-soft reveal"
+            :data-stagger="i"
+          >
+            <h3 class="h-sub">{{ extra.title }}</h3>
+            <p class="muted">{{ extra.desc }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 成效 -->
+    <section class="band band-tight band-paper band-line">
+      <div class="wrap">
+        <div class="sec-head sec-head--tight reveal">
+          <span class="eyebrow">上线之后</span>
+          <h2 class="h-sec h-sec--sm metric-title">变化通常先出现在这四个地方</h2>
+        </div>
+        <div class="stat-row reveal">
+          <div v-for="s in METRICS" :key="s.label" class="stat">
+            <div class="stat-val">{{ s.value }}</div>
+            <div class="stat-label">{{ s.label }}</div>
+          </div>
+        </div>
+        <p class="metric-note">
+          以上为<span class="pending">示意数据，待真实客户案例校准</span>后再对外发布。
+        </p>
+      </div>
+    </section>
+
+    <!-- 定价预览 -->
+    <section class="band band-soft band-line">
+      <div class="wrap">
+        <SectionHead eyebrow="价格" title="基础服务费 + 资源包，用多少买多少">
+          基础服务费按版本和周期订阅；AI 用量、货源与运力大厅的接单接货按资源包购买，旗舰版自带初始额度。
+        </SectionHead>
+
+        <div class="plans-mini">
+          <div class="plan-mini reveal">
+            <div class="plan-mini-head">
+              <h3>基础版</h3>
+              <span class="tag">中小企业</span>
+            </div>
+            <p class="muted">把计划到结算跑成在线闭环，含能源账户与应付路径。</p>
+            <div class="price">
+              <span>￥</span><b class="num pending">2,999</b><span>/年起</span>
+            </div>
+            <ul>
+              <li>运营调度、运力中心、客商中心</li>
+              <li>运价合同、应付结算与能源账户</li>
+              <li>审批中心与驾驶舱利润总览</li>
+              <li>货源与运力大厅（可发布、可成交）</li>
+            </ul>
+            <RouterLink class="btn btn-line plan-mini__cta" to="/pricing">
+              看包含的模块
+            </RouterLink>
+          </div>
+
+          <div class="plan-mini is-pro reveal" data-delay="100">
+            <div class="plan-mini-head">
+              <h3>旗舰版</h3>
+              <span class="tag tag-pro">推荐</span>
+            </div>
+            <p class="muted">在基础版之上加 AI、财务全套、能源分析与深度看板。</p>
+            <div class="price">
+              <span>￥</span><b class="num pending">9,999</b><span>/年起</span>
+            </div>
+            <ul>
+              <li>AI 数字员工与智能配载</li>
+              <li>应收、出纳、发票、经营核算全套</li>
+              <li>能源消费分析与成本政策引擎</li>
+              <li>运营看板、数据报表、智能预测</li>
+              <li>含初始 AI 用量额度</li>
+            </ul>
+            <RouterLink class="btn btn-primary plan-mini__cta" to="/pricing">
+              对比两个版本<span class="arrow">→</span>
+            </RouterLink>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 实施与安全 -->
+    <section class="band band-paper">
+      <div class="wrap">
+        <SectionHead eyebrow="上线之前先问清" title="自己就能上线，数据归你" />
+        <div class="grid g-2">
+          <div class="card card-tint reveal">
+            <h3 class="h-card">线上实施</h3>
+            <p>
+              开通后按引导配置线路、运价和人员，自己把第一单从计划跑到结算。全程在线上完成，不安排驻场实施。数据随时可导出，不做锁定。
+            </p>
+          </div>
+          <div class="card card-tint reveal" data-stagger="1">
+            <h3 class="h-card">数据与安全</h3>
+            <p>
+              按租户隔离，按经营主体和角色分权。谁改过运费、谁确认过到货，操作记录里查得到。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 客户见证占位 -->
+    <section class="band band-soft band-line">
+      <div class="wrap">
+        <SectionHead eyebrow="客户见证" title="先把真实案例写清楚，再对外说" />
+        <div class="proof-empty reveal">
+          <p>
+            轿运企业的授权案例与成效数字校准后，会放在这里。现在不编造客户名，也不提前写百分比。
+          </p>
+          <div class="proof-marks">
+            <span v-for="i in 3" :key="i">待客户授权</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 结尾 CTA -->
+    <section id="cta" class="band band-deep">
+      <div class="wrap cta-final">
+        <span class="eyebrow">下一步</span>
+        <h2 class="h-sec cta-final__title">先量水位，再决定花钱的顺序</h2>
+        <p class="lede">
+          我们更愿意先花 30 分钟看你现在的单据怎么流转、成本怎么算，再告诉你哪一层值得先补。
+        </p>
+        <div class="btn-row">
+          <RouterLink class="btn btn-primary btn-lg" to="/assessment">
+            开始 10 题快测<span class="arrow">→</span>
+          </RouterLink>
+          <RouterLink class="btn btn-line btn-lg" to="/assessment#lead">
+            预约 30 分钟演示
+          </RouterLink>
         </div>
       </div>
     </section>
@@ -151,811 +439,533 @@
 </template>
 
 <script setup lang="ts">
-import { useScrollAnimation } from '@/composables/useScrollAnimation'
+import { RouterLink } from 'vue-router';
+import { BRAND } from '@/config/brand';
+import { useReveal } from '@/composables/useReveal';
+import SectionHead from '@/components/ui/SectionHead.vue';
+import WaterLadder from '@/components/ui/WaterLadder.vue';
+import CodeCard from '@/components/ui/CodeCard.vue';
 
-useScrollAnimation()
+useReveal();
 
-const particles = Array.from({ length: 30 }, (_, i) => {
-  const size = Math.random() * 3 + 1
-  return {
-    id: i,
-    style: {
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
-      width: `${size}px`,
-      height: `${size}px`,
-      animationDelay: `${Math.random() * 8}s`,
-      animationDuration: `${Math.random() * 6 + 6}s`,
-    },
+const PAINS = [
+  {
+    title: '计划在微信，台账在 Excel',
+    desc: '客户的运输需求发在群里，调度誊到表格，改一次要同步三个地方。'
+  },
+  {
+    title: '回单靠拍照，齐不齐没人说得清',
+    desc: '司机把回单发到群里，内勤回场统一补录，结算前才发现少了七八张。'
+  },
+  {
+    title: '外协运费每月要算一周',
+    desc: '承运商报的数和自己的记录对不上，扣款、押金、亏舱各算一套，扯皮到月中。'
+  },
+  {
+    title: '亏损线路一直在跑',
+    desc: '看着忙、看着有量，摊完油费路桥人工才发现每趟都在贴钱，但没有数据不敢停。'
+  },
+  {
+    title: '旺季找不到车，淡季车找不到货',
+    desc: '临时找运力只能打电话问同行，价格随行就市，成本控不住。'
+  },
+  {
+    title: '老板看到的数，永远是上个月的',
+    desc: '报表要人做，口径还常常不一致，决策只能靠经验和感觉。'
   }
-})
+];
 
-/* ---------- 痛点图标 ---------- */
-const iconRevenue = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#fef3c7"/><text x="20" y="25" text-anchor="middle" font-size="18" fill="#d97706">¥</text></svg>`
-const iconRoute = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#fee2e2"/><path d="M12 28l6-8 5 4 7-12" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`
-const iconPrice = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#ede9fe"/><path d="M14 20h12M14 16h8M14 24h10" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"/></svg>`
-const iconEfficiency = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#dbeafe"/><path d="M20 12v8l5 3" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`
-const iconScale = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="#d1fae5"/><path d="M12 28l5-6 4 3 5-7 4 2" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="30" cy="20" r="2.5" fill="#059669"/></svg>`
-
-const painPoints = [
+const CHAIN = [
   {
-    icon: iconRevenue,
-    question: '为什么你每个月有营收，却不知道赚没赚钱？',
-    desc: '收入不等于利润，油费、路桥、人工、维修……算不清就看不清。',
+    title: '流程上线',
+    desc: '计划、派车、回单在线上跑通，节点有时间也有责任人。'
   },
   {
-    icon: iconRoute,
-    question: '哪些线路在亏钱，你能看清吗？',
-    desc: '有些线路看着忙，实际每趟都在亏，却一直在跑。',
+    title: '经营算清',
+    desc: '收入与成本自动归到单车、单线路、单客户，全公司一套口径。'
   },
   {
-    icon: iconPrice,
-    question: '哪些客户报价过低，你能识别吗？',
-    desc: '老客户的报价可能早已低于成本，但你不敢动、也没依据。',
+    title: '智能研判',
+    desc: '配载推荐、异常预警、运费校验由系统先算一遍，人只做决定。'
   },
   {
-    icon: iconEfficiency,
-    question: '哪些环节可以提效，你能抓住吗？',
-    desc: '空驶、等待、绕路……每一个低效环节都在吃利润。',
+    title: '闭环运转',
+    desc: '预警变任务、任务有结果、结果改回规则，形成持续循环。'
+  }
+];
+
+const LEAD_FEAT_TAGS = [
+  '计划中心',
+  '配载建单',
+  '调度工作台',
+  '回单签收',
+  '对账中心',
+  '发票管理'
+];
+
+// 图标统一 24 viewBox、1.6 线宽，样式由 .ico 统一接管
+const FEATURES = [
+  {
+    icon: '<svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16" /><path d="M7 15l4-5 3 3 5-7" /></svg>',
+    title: '利润不是月底才知道',
+    desc: '运价合同自动取价，成本政策把油费、路桥、外协、人工按规则摊到每一趟。单车、单线路、单客户的毛利随时能看，报价前就知道这单该不该接。',
+    tags: [{ label: '运价合同' }, { label: '成本政策' }, { label: '利润分析' }]
   },
   {
-    icon: iconScale,
-    question: '为什么规模越大，反而利润越不稳定？',
-    desc: '车多了、线路多了、客户多了，管理复杂度指数级增长。',
-  },
-]
-
-/* ---------- 解决方案 SVG ---------- */
-const svgProfit = `<svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="20" y="20" width="160" height="120" rx="12" fill="#eff6ff"/>
-  <rect x="40" y="50" width="56" height="56" rx="8" fill="url(#sp1)"/>
-  <text x="68" y="86" text-anchor="middle" font-size="28" fill="#fff" font-weight="700">¥</text>
-  <rect x="112" y="50" width="52" height="10" rx="5" fill="#bfdbfe"/>
-  <rect x="112" y="68" width="40" height="10" rx="5" fill="#93c5fd"/>
-  <rect x="112" y="86" width="48" height="10" rx="5" fill="#bfdbfe"/>
-  <path d="M112 108h22" stroke="#34d399" stroke-width="3" stroke-linecap="round"/>
-  <text x="138" y="112" font-size="10" fill="#059669" font-weight="600">+¥</text>
-  <defs><linearGradient id="sp1" x1="40" y1="50" x2="96" y2="106" gradientUnits="userSpaceOnUse">
-    <stop stop-color="#1d4ed8"/><stop offset="1" stop-color="#2563eb"/>
-  </linearGradient></defs>
-</svg>`
-
-const svgLossRoute = `<svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="20" y="20" width="160" height="120" rx="12" fill="#eff6ff"/>
-  <path d="M40 110 C60 80, 80 60, 100 70 S140 40, 170 35" stroke="#93c5fd" stroke-width="3" stroke-linecap="round" fill="none"/>
-  <path d="M40 100 C55 90, 70 95, 85 100 S120 80, 140 85" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" fill="none" stroke-dasharray="6 4"/>
-  <circle cx="85" cy="100" r="12" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5"/>
-  <path d="M81 96l8 8M89 96l-8 8" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
-  <circle cx="170" cy="35" r="8" fill="url(#sr1)"/>
-  <path d="M166 35l3 3 5-5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="40" cy="110" r="6" fill="#1d4ed8"/>
-  <circle cx="40" cy="110" r="3" fill="#fff"/>
-  <defs><linearGradient id="sr1" x1="162" y1="27" x2="178" y2="43" gradientUnits="userSpaceOnUse">
-    <stop stop-color="#1d4ed8"/><stop offset="1" stop-color="#2563eb"/>
-  </linearGradient></defs>
-</svg>`
-
-const svgDecision = `<svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="20" y="20" width="160" height="120" rx="12" fill="#eff6ff"/>
-  <rect x="40" y="100" width="20" height="24" rx="4" fill="#bfdbfe"/>
-  <rect x="68" y="80" width="20" height="44" rx="4" fill="#93c5fd"/>
-  <rect x="96" y="60" width="20" height="64" rx="4" fill="url(#sd1)"/>
-  <rect x="124" y="72" width="20" height="52" rx="4" fill="#93c5fd"/>
-  <rect x="152" y="50" width="20" height="74" rx="4" fill="url(#sd1)"/>
-  <path d="M46 96 L74 76 L102 56 L130 68 L158 46" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" fill="none"/>
-  <circle cx="102" cy="56" r="4" fill="#1d4ed8"/>
-  <circle cx="158" cy="46" r="4" fill="#1d4ed8"/>
-  <rect x="38" y="34" width="52" height="16" rx="8" fill="#1d4ed8"/>
-  <text x="64" y="45" text-anchor="middle" font-size="8" fill="#fff" font-weight="600">决策依据</text>
-  <defs><linearGradient id="sd1" x1="0" y1="0" x2="0" y2="160" gradientUnits="userSpaceOnUse">
-    <stop stop-color="#1d4ed8"/><stop offset="1" stop-color="#2563eb"/>
-  </linearGradient></defs>
-</svg>`
-
-const svgPricing = `<svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="20" y="20" width="160" height="120" rx="12" fill="#eff6ff"/>
-  <rect x="40" y="42" width="120" height="32" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
-  <text x="52" y="62" font-size="10" fill="#64748b">客户A</text>
-  <text x="118" y="62" font-size="10" fill="#ef4444" font-weight="600">偏低</text>
-  <rect x="136" y="52" width="16" height="12" rx="3" fill="#fef2f2"/>
-  <path d="M140 58l4-3 4 3" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180 144 56.5)"/>
-  <rect x="40" y="82" width="120" height="32" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
-  <text x="52" y="102" font-size="10" fill="#64748b">客户B</text>
-  <text x="118" y="102" font-size="10" fill="#059669" font-weight="600">合理</text>
-  <rect x="136" y="92" width="16" height="12" rx="3" fill="#d1fae5"/>
-  <path d="M140 98l4-3 4 3" stroke="#059669" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`
-
-const solutions = [
-  {
-    svg: svgProfit,
-    title: '看清单车利润',
-    desc: '每一单运输赚了多少钱，收入、成本、利润自动核算，一目了然。',
+    icon: '<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3" /><circle cx="17" cy="10" r="2.4" /><path d="M3 20c0-3 2.2-5 5-5s5 2 5 5" /><path d="M14 20c0-2.2 1.4-3.6 3-3.6S20 17.8 20 20" /></svg>',
+    title: '五个角色都在线，流程不断点',
+    desc: '司机用朵灵·司机接任务、拍回单、报异常；调度配载派车；车队长审批；财务对账开票；老板看驾驶舱。同一套数据，谁卡住了一眼看得出来。',
+    tags: [{ label: '朵灵·司机' }, { label: '审批中心' }, { label: '经营驾驶舱' }]
   },
   {
-    svg: svgLossRoute,
-    title: '找出亏损线路',
-    desc: '哪条线路赚钱、哪条亏钱，跑得多不等于赚得多，用数据说话。',
+    icon: '<svg viewBox="0 0 24 24"><circle cx="6.5" cy="12" r="3" /><circle cx="17.5" cy="12" r="3" /><path d="M9.5 12h5" /><path d="M6.5 5.5V9M17.5 15v3.5" /></svg>',
+    title: '承运商邀请一下就能协同',
+    desc: '发个邀请，外协单位就能进来接任务、管自己的车和司机、回传回单。账号互通，派给他的任务和运费都在线上流转，不用再一遍遍转发和口头确认。',
+    tags: [{ label: '承运商管理' }, { label: '互联客户' }, { label: '承运商运费' }]
   },
   {
-    svg: svgDecision,
-    title: '提供决策依据',
-    desc: '不再拍脑袋做决定，经营数据实时呈现，每一步都有据可依。',
+    icon: '<svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z" /><path d="M17.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" /></svg>',
+    title: 'AI 数字员工替人干重复活',
+    desc: '录单员读客户发来的 Excel 和运单照片，直接生成运输计划；数据分析员听得懂「上月哪条线亏得最多」，当场把数摆出来。',
+    tags: [
+      { label: '旗舰版', pro: true },
+      { label: 'AI 录单员' },
+      { label: 'AI 数据分析员' },
+      { label: '智能配载' }
+    ]
   },
   {
-    svg: svgPricing,
-    title: '优化客户报价',
-    desc: '识别哪些客户报价偏低、哪些还有空间，让每一单报价都合理。',
-  },
-]
-
-/* ---------- 产品能力图标 ---------- */
-const capIconCalc = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="48" height="48" rx="12" fill="#eff6ff"/>
-  <rect x="12" y="12" width="24" height="24" rx="4" fill="url(#gc1)"/>
-  <text x="24" y="29" text-anchor="middle" font-size="14" fill="#fff" font-weight="700">¥</text>
-  <defs><linearGradient id="gc1" x1="12" y1="12" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-    <stop stop-color="#1d4ed8"/><stop offset="1" stop-color="#2563eb"/>
-  </linearGradient></defs>
-</svg>`
-
-const capIconRank = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="48" height="48" rx="12" fill="#eff6ff"/>
-  <rect x="12" y="28" width="6" height="8" rx="1" fill="#93c5fd"/>
-  <rect x="21" y="20" width="6" height="16" rx="1" fill="url(#gc2)"/>
-  <rect x="30" y="24" width="6" height="12" rx="1" fill="#93c5fd"/>
-  <defs><linearGradient id="gc2" x1="21" y1="20" x2="27" y2="36" gradientUnits="userSpaceOnUse">
-    <stop stop-color="#1d4ed8"/><stop offset="1" stop-color="#2563eb"/>
-  </linearGradient></defs>
-</svg>`
-
-const capIconCustomer = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="48" height="48" rx="12" fill="#eff6ff"/>
-  <circle cx="24" cy="20" r="6" fill="url(#gc3)"/>
-  <path d="M14 36c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" fill="none"/>
-  <defs><linearGradient id="gc3" x1="18" y1="14" x2="30" y2="26" gradientUnits="userSpaceOnUse">
-    <stop stop-color="#1d4ed8"/><stop offset="1" stop-color="#2563eb"/>
-  </linearGradient></defs>
-</svg>`
-
-const capIconCost = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="48" height="48" rx="12" fill="#eff6ff"/>
-  <circle cx="24" cy="24" r="12" fill="none" stroke="#dbeafe" stroke-width="2"/>
-  <path d="M24 12a12 12 0 0 1 10.39 6" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round" fill="none"/>
-  <path d="M34.39 18a12 12 0 0 1-3.08 14.56" stroke="#2563eb" stroke-width="3" stroke-linecap="round" fill="none"/>
-  <path d="M31.31 32.56A12 12 0 0 1 12.27 21" stroke="#93c5fd" stroke-width="3" stroke-linecap="round" fill="none"/>
-</svg>`
-
-const capabilities = [
-  {
-    icon: capIconCalc,
-    title: '单车利润自动核算',
-    desc: '每台车、每趟运输的收入与成本自动归集，利润实时可见。',
+    icon: '<svg viewBox="0 0 24 24"><path d="M3 10.5L12 4l9 6.5" /><path d="M5 10v10h14V10" /><path d="M9.5 20v-5h5v5" /></svg>',
+    title: '货源大厅、运力大厅，资源可控',
+    desc: '缺车的时候在运力大厅找同行，空板的时候去货源大厅接货。成交、评价、合作记录都留在系统里，慢慢沉淀成自己能调得动的运力池。',
+    tags: [{ label: '货源大厅' }, { label: '运力大厅' }, { label: '我的合作' }]
   },
   {
-    icon: capIconRank,
-    title: '线路盈利能力排名',
-    desc: '所有运营线路按利润率排序，亏损线路一眼定位。',
-  },
-  {
-    icon: capIconCustomer,
-    title: '客户利润分析',
-    desc: '按客户维度统计利润贡献，识别低价客户与高价值客户。',
-  },
-  {
-    icon: capIconCost,
-    title: '成本结构拆解',
-    desc: '油费、路桥费、司机工资……每一项成本自动归类，清晰透明。',
-  },
-]
+    icon: '<svg viewBox="0 0 24 24"><path d="M12 4v3M12 17v3M4 12h3M17 12h3" /><circle cx="12" cy="12" r="4.2" /><path d="M6.4 6.4l1.9 1.9M15.7 15.7l1.9 1.9" /></svg>',
+    title: '该提醒的事，不靠人记',
+    desc: '证照到期、运费异常、回单超期、亏损线路，系统先发现再提醒，并能派成待办跟到底。旺季前还能预测缺多少车，提前筹备。',
+    tags: [
+      { label: '证照监控' },
+      { label: '运营看板' },
+      { label: '智能预测', pro: true }
+    ]
+  }
+];
 
-const caseMetrics = [
-  { value: '30%', label: '亏损线路发现' },
-  { value: '5个', label: '低价客户识别' },
-  { value: '12%', label: '利润提升' },
-]
+const MCP_POINTS = [
+  {
+    title: '复制一段配置就连上',
+    desc: '生成连接地址与访问 Token，粘进支持远程 MCP 的 AI 工具即可，不需要写代码、不需要导表。'
+  },
+  {
+    title: '能给它看什么，你说了算',
+    desc: '按应用、按连接分别勾选能力，当前开放的都是只读查询，联系电话这类敏感字段自动打码。'
+  },
+  {
+    title: '每一次调用都留痕',
+    desc: '哪个 AI、什么时候、查了什么、耗时多少，调用记录里查得到，还能按连接限流。'
+  }
+];
+
+const MCP_CONFIG_RAW = `{
+  "mcpServers": {
+    "朵灵企云助手": {
+      "url": "https://api.zhitu.me/mcp/7f3a9c2e1b4d",
+      "headers": {
+        "Authorization": "Bearer mcp_····.mcpt_········"
+      }
+    }
+  }
+}`;
+
+// 键 / 值 / 注释三色，手写高亮，不为一段示例配置引一整个 highlighter
+const MCP_CONFIG_HTML = `{
+  <span class="ck">"mcpServers"</span>: {
+    <span class="ck">"朵灵企云助手"</span>: {
+      <span class="ck">"url"</span>: <span class="cs">"https://api.zhitu.me/mcp/7f3a9c2e1b4d"</span>,
+      <span class="ck">"headers"</span>: {
+        <span class="ck">"Authorization"</span>: <span class="cs">"Bearer mcp_····.mcpt_········"</span>
+      }
+    }
+  }
+}
+<span class="cp">// Token 仅在创建时展示一次，遗失后重新生成即可</span>`;
+
+const EXTRAS = [
+  {
+    title: '多经营主体与数据权限',
+    desc: '按主体、组织、角色分权，分公司之间数据不串。'
+  },
+  {
+    title: '标准接口对接主机厂',
+    desc: '与客户的 DMS、TMS 打通，运输指令自动进单，不用人工转录。'
+  },
+  {
+    title: '车辆维保与合规台账',
+    desc: '维保记录、证照资质集中管理，到期自动提醒。'
+  },
+  {
+    title: '操作留痕与登录审计',
+    desc: '谁改了运费、谁确认了到货，全部可追溯。'
+  }
+];
+
+const METRICS = [
+  { value: '-60%', label: '月度对账与结算的人工工时' },
+  { value: 'T+1', label: '单车与线路利润的可见时效' },
+  { value: '+25pt', label: '回单及时回收率' },
+  { value: '-8pt', label: '空板位率' }
+];
 </script>
 
 <style scoped lang="scss">
-/* ========== Hero ========== */
+/* --------------------------------------------------------------- hero */
+
 .hero {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
+  padding: 92px 0 100px;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 60px;
   align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: var(--gradient-hero);
-  padding: 120px 0 80px;
-}
-
-.hero-bg {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.grid-lines {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-}
-
-.glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.4;
-}
-
-.glow-1 {
-  width: 500px;
-  height: 500px;
-  background: var(--color-primary);
-  top: -10%;
-  right: -5%;
-  animation: float 8s ease-in-out infinite, glow-color-1 10s ease-in-out infinite;
-}
-
-.glow-2 {
-  width: 400px;
-  height: 400px;
-  background: var(--color-accent);
-  bottom: -10%;
-  left: -5%;
-  animation: float 10s ease-in-out infinite reverse, glow-color-2 12s ease-in-out infinite;
-}
-
-@keyframes glow-color-1 {
-  0%, 100% { background: #1d4ed8; }
-  33% { background: #7c3aed; }
-  66% { background: #2563eb; }
-}
-
-@keyframes glow-color-2 {
-  0%, 100% { background: #2563eb; }
-  33% { background: #db2777; }
-  66% { background: #0891b2; }
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(30px, -30px); }
-}
-
-.particles {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.particle {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  animation: particle-rise linear infinite;
-  will-change: transform, opacity;
-}
-
-@keyframes particle-rise {
-  0% {
-    transform: translateY(0) scale(1);
-    opacity: 0;
-  }
-  10% { opacity: 0.8; }
-  90% { opacity: 0.6; }
-  100% {
-    transform: translateY(-100vh) scale(0.5);
-    opacity: 0;
-  }
-}
-
-.hero-content {
-  position: relative;
-  text-align: center;
-  z-index: 1;
-}
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 100px;
-  padding: 8px 20px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 32px;
-  backdrop-filter: blur(8px);
-}
-
-.badge-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #34d399;
-  animation: pulse-dot 2s ease-in-out infinite;
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
 }
 
 .hero h1 {
-  font-size: 48px;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1.3;
-  margin-bottom: 24px;
-  letter-spacing: -0.02em;
+  margin: 20px 0 22px;
 }
 
-// .gradient-text {
-//   background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6, #fb923c, #34d399);
-//   -webkit-background-clip: text;
-//   -webkit-text-fill-color: transparent;
-//   background-clip: text;
-// }
-
-.hero-desc {
-  font-size: 17px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.8;
-  max-width: 720px;
-  margin: 0 auto 40px;
+.hero .lede {
+  color: rgba(244, 247, 252, 0.74);
+  max-width: 640px;
 }
 
 .hero-actions {
   display: flex;
-  gap: 16px;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 32px 0 26px;
 }
 
-.btn-hero-primary {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent)) !important;
-  border: none !important;
-  border-radius: 10px !important;
-  padding: 12px 32px !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  height: auto !important;
-  transition: transform 0.2s, box-shadow 0.2s !important;
+.hero-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 26px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line-dark);
+  font-size: 14px;
+  color: rgba(244, 247, 252, 0.6);
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(29, 78, 216, 0.4) !important;
-  }
+  span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
-  .btn-arrow {
-    margin-left: 8px;
-    transition: transform 0.2s;
-  }
-
-  &:hover .btn-arrow {
-    transform: translateX(4px);
-  }
-}
-
-.btn-hero-secondary {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  color: #fff !important;
-  border-radius: 10px !important;
-  padding: 12px 32px !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  height: auto !important;
-  backdrop-filter: blur(8px);
-  transition: all 0.2s !important;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.15) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
+    &::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--brand-on-dark);
+    }
   }
 }
 
-/* ========== 痛点共鸣 ========== */
-.pain-section {
-  padding: 100px 0;
-  background: var(--color-bg);
+/* --------------------------------------------------------------- 痛点 */
+
+.sec-head--flush {
+  margin-bottom: 0;
 }
 
-.pain-grid {
+.sec-head--tight {
+  margin-bottom: 28px;
+}
+
+.h-sec--sm {
+  font-size: clamp(22px, 2vw, 26px);
+}
+
+.pain-list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-top: 16px;
-}
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px 40px;
 
-.pain-card {
-  padding: 32px 28px;
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-soft);
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: var(--color-bg);
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-4px);
+  li {
+    display: grid;
+    gap: 8px;
+    align-content: start;
   }
 
-  h3 {
+  .num {
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  b {
+    display: block;
     font-size: 17px;
-    font-weight: 700;
-    color: var(--color-text);
-    line-height: 1.6;
-    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+    line-height: 1.4;
   }
 
   p {
-    font-size: 14px;
-    color: var(--color-text-secondary);
+    font-size: 15px;
+    color: var(--ink-2);
     line-height: 1.7;
   }
 }
 
-.pain-icon {
-  width: 40px;
-  height: 40px;
-  margin-bottom: 16px;
+/* --------------------------------------------------------------- 演进与自测钩子 */
 
-  :deep(svg) {
-    width: 100%;
-    height: 100%;
-  }
-}
-
-/* ========== 解决方案 ========== */
-.solutions-section {
-  padding: 100px 0;
-  background: var(--color-bg-soft);
-}
-
-.solutions-grid {
+.stage-hook {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+  margin-bottom: 44px;
 }
 
-.solution-card {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 24px;
-  padding: 36px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
-  transition: all 0.3s ease;
+.stage-hook__title {
+  margin: 14px 0 18px;
+}
 
-  &:hover {
-    border-color: var(--color-primary-light);
-    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(29, 78, 216, 0.06);
-    transform: translateY(-4px);
+.stage-hook__more {
+  margin-top: 16px;
+}
+
+.stage-hook__actions {
+  margin-top: 26px;
+}
+
+.hook-card {
+  background: var(--paper);
+  border-radius: var(--r-lg);
+  padding: 30px 30px 26px;
+  box-shadow: var(--shadow);
+}
+
+.hook-card__title {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 10px 0 26px;
+}
+
+.hook-note {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* --------------------------------------------------------------- 亮点 */
+
+.feats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.feat-lead {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.feat-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* --------------------------------------------------------------- 开放平台 */
+
+.mcp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.mcp-title {
+  margin: 14px 0 18px;
+}
+
+.mcp-points {
+  display: grid;
+  gap: 18px;
+  margin-top: 26px;
+
+  li {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 14px;
   }
 
-  .solution-content {
-    flex: 1;
-    min-width: 0;
+  .num {
+    font-size: 12px;
+    color: var(--brand);
+    padding-top: 3px;
+  }
+
+  b {
+    display: block;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+
+  p {
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+}
+
+.mcp-actions {
+  margin-top: 26px;
+}
+
+.mcp-note {
+  margin-top: 14px;
+}
+
+/* --------------------------------------------------------------- 成效 */
+
+.metric-title {
+  margin-top: 12px;
+}
+
+.metric-note {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+/* --------------------------------------------------------------- 定价预览 */
+
+.plans-mini {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.plan-mini {
+  background: var(--paper);
+  border-radius: var(--r-lg);
+  padding: 28px;
+
+  /* 推荐版用 tint 表面抬起来，不用品牌色描边圈住 */
+  &.is-pro {
+    background: var(--surface-tint);
+    box-shadow: var(--shadow);
   }
 
   h3 {
     font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    color: var(--color-text);
   }
 
-  p {
-    color: var(--color-text-secondary);
+  ul {
+    display: grid;
+    gap: 9px;
+    margin-bottom: 22px;
     font-size: 15px;
-    line-height: 1.7;
+    color: var(--ink-2);
+  }
+
+  li {
+    display: flex;
+    gap: 9px;
+
+    &::before {
+      content: '—';
+      color: var(--ink-3);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding-top: 3px;
+    }
+  }
+
+  &.is-pro li::before {
+    content: '+';
+    color: var(--brand);
   }
 }
 
-.solution-number {
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  font-size: 48px;
-  font-weight: 900;
-  color: var(--color-primary);
-  opacity: 0.06;
-  line-height: 1;
-}
-
-.solution-illustration {
-  flex: 0 0 140px;
-  width: 140px;
-
-  :deep(svg) {
-    width: 100%;
-    height: auto;
-  }
-}
-
-/* ========== 产品能力 ========== */
-.capabilities-section {
-  padding: 100px 0;
-  background: var(--color-bg);
-}
-
-.capabilities-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-}
-
-.capability-card {
-  text-align: center;
-  padding: 40px 24px;
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-soft);
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: var(--color-bg);
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-4px);
-  }
-
-  h3 {
-    font-size: 17px;
-    font-weight: 700;
-    margin-bottom: 10px;
-    color: var(--color-text);
-  }
-
-  p {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-    line-height: 1.7;
-  }
-}
-
-.capability-icon {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 20px;
-
-  :deep(svg) {
-    width: 100%;
-    height: 100%;
-  }
-}
-
-/* ========== 案例 ========== */
-.case-section {
-  padding: 100px 0;
-  background: var(--color-bg-soft);
-}
-
-.case-card {
+.plan-mini-head {
   display: flex;
   align-items: center;
-  gap: 60px;
-  padding: 60px;
-  border-radius: var(--radius-xl);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-}
-
-.case-info {
-  flex: 1;
-}
-
-.case-label {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-primary);
-  background: var(--color-primary-light);
-  padding: 4px 12px;
-  border-radius: 100px;
-  margin-bottom: 16px;
-}
-
-.case-info h3 {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--color-text);
-  margin-bottom: 16px;
-}
-
-.case-desc {
-  font-size: 15px;
-  color: var(--color-text-secondary);
-  line-height: 1.8;
-}
-
-.case-metrics {
-  display: flex;
-  gap: 40px;
-  flex-shrink: 0;
-}
-
-.metric-item {
-  text-align: center;
-}
-
-.metric-value {
-  font-size: 42px;
-  font-weight: 800;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 8px;
-  letter-spacing: -0.02em;
-  line-height: 1;
 }
 
-.metric-label {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  font-weight: 500;
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  margin: 14px 0 18px;
+
+  b {
+    font-size: 34px;
+    font-weight: 600;
+  }
+
+  span {
+    font-size: 14px;
+    color: var(--ink-3);
+  }
 }
 
-/* ========== CTA ========== */
-.cta-section {
-  padding: 100px 0;
-  background: var(--color-bg);
+.plan-mini__cta {
+  width: 100%;
 }
 
-.cta-card {
+/* --------------------------------------------------------------- 结尾 */
+
+.cta-final {
   text-align: center;
-  padding: 80px 40px;
-  border-radius: var(--radius-xl);
-  background: var(--gradient-hero);
-  position: relative;
-  overflow: hidden;
+  max-width: 680px;
+  margin: 0 auto;
 
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-  }
-
-  h2 {
-    font-size: 36px;
-    font-weight: 800;
-    color: #fff;
-    margin-bottom: 16px;
-    position: relative;
-  }
-
-  p {
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 36px;
-    position: relative;
-  }
-}
-
-.cta-btn {
-  background: #fff !important;
-  color: var(--color-primary) !important;
-  border: none !important;
-  border-radius: 10px !important;
-  padding: 14px 36px !important;
-  font-size: 16px !important;
-  font-weight: 700 !important;
-  height: auto !important;
-  position: relative;
-  transition: transform 0.2s, box-shadow 0.2s !important;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(255, 255, 255, 0.2) !important;
-  }
-
-  .btn-arrow {
-    margin-left: 8px;
-    transition: transform 0.2s;
-  }
-
-  &:hover .btn-arrow {
-    transform: translateX(4px);
-  }
-}
-
-/* ========== 响应式 ========== */
-@media (max-width: 1024px) {
-  .solutions-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .capabilities-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .case-card {
-    flex-direction: column;
-    gap: 40px;
-    padding: 40px;
-  }
-
-  .case-metrics {
-    width: 100%;
+  .btn-row {
     justify-content: center;
+    margin-top: 28px;
   }
 }
 
-@media (max-width: 768px) {
+.cta-final__title {
+  margin: 16px 0;
+}
+
+/* --------------------------------------------------------------- 响应式 */
+
+@media (max-width: 1024px) {
   .hero {
-    padding: 120px 0 60px;
-    min-height: auto;
+    padding: 64px 0 72px;
   }
 
-  .hero h1 {
-    font-size: 28px;
+  .hero-grid,
+  .pain-list,
+  .stage-hook,
+  .mcp-grid,
+  .feat-lead {
+    grid-template-columns: 1fr;
+    gap: 36px;
   }
 
-  .hero-desc {
-    font-size: 15px;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .pain-grid {
+  .feats,
+  .plans-mini {
     grid-template-columns: 1fr;
   }
 
-  .solution-card {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .solution-illustration {
-    flex: none;
-    width: 100%;
-    max-width: 160px;
-    margin: 0 auto;
-  }
-
-  .capabilities-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .case-card {
-    padding: 32px 24px;
-  }
-
-  .case-metrics {
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  .metric-value {
-    font-size: 32px;
-  }
-
-  .solutions-section,
-  .pain-section,
-  .capabilities-section,
-  .case-section,
-  .cta-section {
-    padding: 64px 0;
-  }
-
-  .cta-card {
-    padding: 48px 24px;
-
-    h2 {
-      font-size: 28px;
-    }
+  .feat-lead {
+    grid-column: span 1;
   }
 }
 </style>

@@ -2,8 +2,16 @@
   <ele-page>
     <ele-card title="自助注册策略">
       <template #extra>
-        <span class="card-tip">控制官网/推荐码自助开户时默认开通的产品版本与试用天数</span>
+        <span class="card-tip">控制自助开户时默认开通的产品版本与试用天数</span>
       </template>
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        class="policy-notice"
+        title="官网自助注册已下线，这里的配置当前只对承运商邀请激活生效"
+        description="官网访客改为留下联系方式，由顾问在「客户列表」手工开户；线索见「官网线索」。"
+      />
       <el-form
         ref="formRef"
         :model="form"
@@ -123,6 +131,10 @@
   .card-tip {
     font-size: 13px;
     color: var(--el-text-color-secondary);
+  }
+  .policy-notice {
+    max-width: 720px;
+    margin-bottom: 20px;
   }
   .policy-form {
     max-width: 560px;

@@ -16,6 +16,7 @@ from app.modules.console.api.system.organization import router as org_router
 from app.modules.console.api.product.product_version import router as product_version_router
 from app.modules.console.api.changelog import router as changelog_router
 from app.modules.console.api.feedback import router as feedback_router
+from app.modules.console.api.website_lead import router as website_lead_router
 from app.modules.console.api.dictionary.dict import router as dict_router
 from app.modules.console.api.dictionary.dict_data import router as dict_data_router
 from app.modules.console.api.product.product_feature import router as product_feature_router
@@ -62,6 +63,9 @@ router.include_router(product_version_router, prefix="/product-version", tags=["
 router.include_router(product_feature_router, prefix="/product-feature", tags=["管理后台-功能清单"])
 router.include_router(changelog_router, prefix="/changelog", tags=["管理后台-更新记录"])
 router.include_router(feedback_router, prefix="/feedback", tags=["管理后台-意见反馈"])
+router.include_router(
+    website_lead_router, prefix="/website-lead", tags=["管理后台-官网线索"]
+)
 router.include_router(dict_router, prefix="/system/dictionary", tags=["数据字典"])
 router.include_router(dict_data_router, prefix="/system/dictionary-data", tags=["字典数据"])
 router.include_router(client_menu_router, prefix="/system/client-menu", tags=["客户端菜单管理"])

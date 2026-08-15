@@ -1,92 +1,257 @@
 <template>
-  <div class="pricing-page">
-    <!-- Hero -->
-    <section class="page-hero">
-      <div class="hero-bg">
-        <div class="grid-lines"></div>
-        <div class="glow glow-1"></div>
-      </div>
-      <div class="container hero-content">
-        <h1 class="scroll-animate">价格方案</h1>
-        <p class="scroll-animate" data-delay="100">
-          简单透明的定价，选择适合你车队规模的方案
-        </p>
+  <div>
+    <!-- Hero + 计价模型 -->
+    <section class="band band-tight band-paper">
+      <div class="wrap">
+        <div class="sec-head sec-head--wide hero-head">
+          <span class="eyebrow">价格</span>
+          <h1 class="h-hero hero-title">
+            基础服务费 + 资源包，<br /><span class="hl">用多少买多少</span>
+          </h1>
+          <p class="lede">
+            系统本身按版本和周期订阅，这部分是固定的。AI
+            用量、货源与运力大厅的接单接货按实际用量买资源包，不用就不花钱。旗舰版自带一份初始额度。
+          </p>
+        </div>
+
+        <div class="model">
+          <div
+            v-for="(m, i) in MODEL"
+            :key="m.title"
+            class="model-card reveal"
+            :data-stagger="i"
+          >
+            <span class="num">PART {{ String(i + 1).padStart(2, '0') }}</span>
+            <h3>{{ m.title }}</h3>
+            <p>{{ m.desc }}</p>
+            <ul>
+              <li v-for="t in m.items" :key="t">{{ t }}</li>
+            </ul>
+          </div>
+        </div>
+
+        <SectionHead
+          class="sec-head--wide rationale-head"
+          eyebrow="我们的定价逻辑"
+          title="先把流程跑起来，再按管理深度加能力"
+        >
+          两个版本只按功能深度区分，不按账号数、车辆数设门槛。相对市面同类，把预算留给真正要用起来的模块，而不是先买一堆用不上的席位。
+        </SectionHead>
+        <div class="grid g-3">
+          <div
+            v-for="(c, i) in RATIONALE"
+            :key="c.title"
+            class="card card-tint reveal"
+            :data-stagger="i"
+          >
+            <h3 class="h-card">{{ c.title }}</h3>
+            <p>{{ c.desc }}</p>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- 定价卡片 -->
-    <section class="pricing-section">
-      <div class="container">
-        <div class="pricing-grid">
-          <div
-            v-for="(plan, idx) in plans"
+    <!-- 版本 -->
+    <section class="band band-soft band-line">
+      <div class="wrap">
+        <div class="plans-head">
+          <div class="sec-head sec-head--flush reveal">
+            <span class="eyebrow">选版本</span>
+            <h2 class="h-sec plans-title">按管理深度选版本</h2>
+          </div>
+          <div class="reveal">
+            <UiTabs
+              v-model="cycle"
+              :items="CYCLE_TABS"
+              variant="switch"
+              aria-label="切换付费周期"
+            />
+            <p class="cycle-note">
+              {{
+                cycle === 'year'
+                  ? '年付约 8 折，相当于省 2 个多月'
+                  : '月付更灵活，随时可以升到年付'
+              }}
+            </p>
+          </div>
+        </div>
+
+        <div class="plans">
+          <article
+            v-for="(plan, i) in PLANS"
             :key="plan.name"
-            class="pricing-card scroll-animate"
-            :class="{ recommended: plan.recommended }"
-            :data-delay="idx * 120"
+            class="plan reveal"
+            :class="{ 'plan-pro': plan.featured }"
+            :data-stagger="i"
           >
-            <div v-if="plan.recommended" class="recommend-badge">推荐</div>
-            <div class="plan-header">
+            <span v-if="plan.featured" class="plan-flag">多数企业的选择</span>
+
+            <div class="plan-top">
               <h3>{{ plan.name }}</h3>
-              <p class="plan-desc">{{ plan.desc }}</p>
-              <div class="plan-price">
-                <span class="price-currency">¥</span>
-                <span class="price-value">{{ plan.price.toLocaleString() }}</span>
-                <span class="price-period">/年</span>
-              </div>
+              <span class="tag" :class="{ 'tag-pro': plan.featured }">
+                {{ plan.badge }}
+              </span>
             </div>
-            <div class="plan-features">
-              <div
-                v-for="item in plan.features"
-                :key="item.text"
-                class="plan-feature-item"
-                :class="{ disabled: !item.included }"
-              >
-                <span class="feature-check" :class="{ active: item.included }">
-                  {{ item.included ? '✓' : '—' }}
+            <p class="plan-for">{{ plan.forWhom }}</p>
+
+            <div class="plan-price">
+              <span class="cur">￥</span>
+              <b class="num pending">{{ priceOf(plan) }}</b>
+              <span class="per">{{ cycle === 'year' ? '/年' : '/月' }}</span>
+            </div>
+            <p class="muted price-note">价格示意，最终以商务报价为准</p>
+
+            <ul class="plan-inc">
+              <li v-for="item in plan.includes" :key="item.text">
+                <i>{{ item.all ? '✓' : '+' }}</i>
+                <span>
+                  <b>{{ item.name }}</b><template v-if="item.text">：{{ item.text }}</template>
                 </span>
-                <span>{{ item.text }}</span>
-              </div>
+              </li>
+            </ul>
+
+            <div class="plan-cta">
+              <RouterLink
+                class="btn btn-lg"
+                :class="plan.featured ? 'btn-primary' : 'btn-line'"
+                to="/assessment#lead"
+              >
+                {{ plan.cta }}
+                <span v-if="plan.featured" class="arrow">→</span>
+              </RouterLink>
             </div>
-            <div class="plan-action">
-              <router-link :to="plan.action.link">
-                <el-button
-                  :type="plan.recommended ? 'primary' : 'default'"
-                  size="large"
-                  class="plan-btn"
-                  :class="{ 'plan-btn-primary': plan.recommended }"
-                >
-                  {{ plan.action.text }}
-                </el-button>
-              </router-link>
+
+            <p class="plan-foot">
+              <template v-if="plan.featured">
+                不确定该选哪个？先做
+                <RouterLink class="btn-text" to="/assessment">
+                  10 题水位快测
+                </RouterLink>
+                ，按结果推荐。
+              </template>
+              <template v-else>不限账号与车辆数，按功能深度选版本即可。</template>
+            </p>
+          </article>
+        </div>
+
+        <div class="other-card reveal">
+          <h3>你的承运商不用另买一套</h3>
+          <p>
+            邀请外协单位后，对方就能在企云的协同里管自己的车和司机、接任务、传回单。账号互通，这是租户端能力的一部分，不是单独卖的产品。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 资源包 -->
+    <section class="band band-paper">
+      <div class="wrap">
+        <SectionHead class="sec-head--wide" eyebrow="按用量购买" title="三类资源包">
+          这些能力的成本随用量变化，所以单独计费。旗舰版会先给一份初始额度，用完再买。
+        </SectionHead>
+
+        <div class="grid g-3">
+          <div
+            v-for="(pack, i) in PACKS"
+            :key="pack.title"
+            class="pack reveal"
+            :data-stagger="i"
+          >
+            <div class="ico" v-html="pack.icon" />
+            <h3>{{ pack.title }}</h3>
+            <p>{{ pack.desc }}</p>
+            <div class="pack-price">
+              <span class="pending">价格待定</span>
+              <span class="pack-unit">计量单位：{{ pack.unit }}</span>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- FAQ -->
-    <section class="faq-section">
-      <div class="container">
-        <h2 class="section-title scroll-animate">常见问题</h2>
-        <p class="section-subtitle scroll-animate" data-delay="100">
-          关于产品和定价的常见疑问解答
-        </p>
-        <div class="faq-list">
+    <!-- 版本对比 -->
+    <section class="band band-soft band-line">
+      <div class="wrap">
+        <SectionHead
+          class="sec-head--wide"
+          eyebrow="版本对比"
+          title="两个版本的差别，主要在算钱和用 AI"
+        >
+          按模块列，不逐条罗列功能点。完整功能清单可以让顾问发你一份。
+        </SectionHead>
+
+        <div class="table-scroll reveal">
+          <table class="ctable ctable-mid">
+            <thead>
+              <tr>
+                <th>模块</th>
+                <th class="cell-c">基础版</th>
+                <th class="cell-c col-pro">旗舰版</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in COMPARE" :key="row.name">
+                <td class="row-label">
+                  <b>{{ row.name }}</b><span>{{ row.sub }}</span>
+                </td>
+                <td class="cell-c" :class="basicMark(row.basic)">
+                  {{ row.basic }}
+                </td>
+                <td class="cell-c col-pro mark-pro">{{ row.pro }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 实施与安全 -->
+    <section class="band band-paper">
+      <div class="wrap">
+        <SectionHead class="sec-head--wide" eyebrow="上线之前先问清" title="自己就能上线，数据归你" />
+        <div class="grid g-2">
           <div
-            v-for="(item, idx) in faqs"
-            :key="item.q"
-            class="faq-item scroll-animate"
-            :data-delay="idx * 80"
+            v-for="(c, i) in DELIVERY"
+            :key="c.title"
+            class="card card-tint reveal"
+            :data-stagger="i"
           >
-            <div class="faq-question" @click="toggleFaq(idx)">
-              <span>{{ item.q }}</span>
-              <span class="faq-toggle" :class="{ open: openFaq === idx }">+</span>
-            </div>
-            <div class="faq-answer" :class="{ open: openFaq === idx }">
-              <p>{{ item.a }}</p>
-            </div>
+            <h3 class="h-card">{{ c.title }}</h3>
+            <p>{{ c.desc }}</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="band band-soft band-line">
+      <div class="wrap">
+        <div class="sec-head sec-head--wide sec-head--tight reveal">
+          <span class="eyebrow">常见问题</span>
+          <h2 class="h-sec faq-title">关于价格，你可能想问</h2>
+        </div>
+        <div class="reveal">
+          <UiFaq :items="FAQ" />
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="band band-tight band-deep">
+      <div class="wrap cta">
+        <div>
+          <h2 class="h-sec cta-title">给你算一份具体的账</h2>
+          <p class="lede cta-lede">
+            按你的车辆数、线路数和现有人手，我们算清一年省多少人工、多看清多少利润。
+          </p>
+        </div>
+        <div class="btn-row">
+          <RouterLink class="btn btn-primary btn-lg" to="/assessment#lead">
+            找顾问算一算<span class="arrow">→</span>
+          </RouterLink>
+          <RouterLink class="btn btn-line btn-lg" to="/assessment">
+            先做 10 题快测
+          </RouterLink>
         </div>
       </div>
     </section>
@@ -94,401 +259,593 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useScrollAnimation } from '@/composables/useScrollAnimation'
+import { ref } from 'vue';
+import { RouterLink } from 'vue-router';
+import { useReveal } from '@/composables/useReveal';
+import SectionHead from '@/components/ui/SectionHead.vue';
+import UiTabs from '@/components/ui/UiTabs.vue';
+import UiFaq from '@/components/ui/UiFaq.vue';
 
-useScrollAnimation()
+useReveal();
 
-const openFaq = ref<number | null>(null)
+const MODEL = [
+  {
+    title: '基础服务费',
+    desc: '按版本订阅，包含系统使用、常规升级与在线支持。可月付或年付，年付更省。',
+    items: [
+      '基础版：把计划到结算跑成在线闭环，含能源账户与应付路径',
+      '旗舰版：再加 AI、财务全套、能源消费分析与深度看板',
+      '付费周期越长，单价越低'
+    ]
+  },
+  {
+    title: '资源包',
+    desc: '按用量计费的能力单独买，避免为不常用的功能付固定钱。',
+    items: [
+      'AI 用量：录单识别、数据问答、智能配载调用',
+      '货源大厅接货、运力大厅接单',
+      '用完可续，剩余可结转（规则待定）'
+    ]
+  }
+];
 
-function toggleFaq(idx: number) {
-  openFaq.value = openFaq.value === idx ? null : idx
+const RATIONALE = [
+  {
+    title: '为什么没有长期免费版',
+    desc: '数字化要有人对结果负责。完全不花钱的试用，项目容易停在半路。基础版用一份可承受的订阅，换来「必须把流程跑起来」的共同约定。'
+  },
+  {
+    title: '基础版扛住最紧的事',
+    desc: '面向中小企业：把业务与财务基础流程搬上线——计划到回单、应付结算、能源账户。先在线上把活干完，账才有地方算。'
+  },
+  {
+    title: '旗舰版加更深的管理',
+    desc: '在基础版之上叠加 AI、全套财务、能源分析与深度看板。管理诉求到了再选，不必为用不上的席位先付钱。'
+  }
+];
+
+/* --------------------------------------------------------------- 版本 */
+
+const CYCLE_TABS = [
+  { key: 'month', label: '月付' },
+  { key: 'year', label: '年付' }
+];
+
+const cycle = ref('year');
+
+interface Plan {
+  name: string;
+  badge: string;
+  forWhom: string;
+  month: number;
+  year: number;
+  featured?: boolean;
+  cta: string;
+  includes: { name: string; text?: string; all?: boolean }[];
 }
 
-const plans = [
+const PLANS: Plan[] = [
   {
-    name: '标准版',
-    desc: '适合中小规模轿运车队，覆盖核心利润管理能力',
-    price: 4999,
-    recommended: false,
-    features: [
-      { text: '单车利润核算', included: true },
-      { text: '运单全流程管理', included: true },
-      { text: '基础线路盈亏分析', included: true },
-      { text: '客户管理', included: true },
-      { text: '成本录入与统计', included: true },
-      { text: '基础数据报表', included: true },
-      { text: '在线客服支持', included: true },
-      { text: '线路盈利能力排名', included: false },
-      { text: '客户利润深度分析', included: false },
-      { text: '成本结构智能拆解', included: false },
-      { text: '高级 BI 数据看板', included: false },
-      { text: '报价优化建议', included: false },
-      { text: '专属客户经理', included: false },
-    ],
-    action: { text: '立即开通', link: '/register' },
+    name: '基础版',
+    badge: '业务与财务基础流程',
+    forWhom: '先把业务搬上线、把账算清楚。适合还在用 Excel 和微信群管调度的企业。',
+    month: 349,
+    year: 2999,
+    cta: '申请试用',
+    includes: [
+      { name: '运营调度全流程', text: '计划、配载、调度、在途、回单签收' },
+      { name: '运力中心', text: '自有、承运商、社会运力与证照监控' },
+      { name: '客商中心', text: '客户、承运商、经销商门店与承运商互联' },
+      {
+        name: '计费与应付结算',
+        text: '运价合同、路线；任务费用、承运商对账结算、司机工资单'
+      },
+      { name: '能源账户', text: '供应商与站点、账户、能源卡、充值入账' },
+      { name: '审批中心与操作留痕' },
+      { name: '经营驾驶舱利润总览' },
+      { name: '服务平台', text: '大厅浏览、发布货源运力、在线成交' },
+      { name: '开放平台与 MCP 连接器', text: '系统对接与自有 AI 接入' }
+    ]
   },
   {
-    name: '高级版',
-    desc: '适合追求精细化经营的中大型车队',
-    price: 9999,
-    recommended: true,
-    features: [
-      { text: '单车利润核算', included: true },
-      { text: '运单全流程管理', included: true },
-      { text: '基础线路盈亏分析', included: true },
-      { text: '客户管理', included: true },
-      { text: '成本录入与统计', included: true },
-      { text: '基础数据报表', included: true },
-      { text: '在线客服支持', included: true },
-      { text: '线路盈利能力排名', included: true },
-      { text: '客户利润深度分析', included: true },
-      { text: '成本结构智能拆解（油/路/人）', included: true },
-      { text: '高级 BI 数据看板', included: true },
-      { text: '报价优化建议', included: true },
-      { text: '专属客户经理', included: true },
-    ],
-    action: { text: '立即开通', link: '/register' },
-  },
-]
+    name: '旗舰版',
+    badge: '更深的管理能力',
+    forWhom:
+      '在基础版之上，把 AI、财务全套、能源消费分析与深度看板补齐，让经营节奏从月度变周度。',
+    month: 1099,
+    year: 9999,
+    featured: true,
+    cta: '预约演示',
+    includes: [
+      { name: '包含基础版全部能力', all: true },
+      { name: 'AI 数字员工', text: 'AI 录单员、AI 数据分析员' },
+      { name: '智能配载', text: '按车型板位推荐组合' },
+      { name: '成本政策与承运商运费引擎', text: '成本自动摊到每趟' },
+      {
+        name: '能源中心全套',
+        text: '消费接入、对账、异常风控、单车成本分析'
+      },
+      {
+        name: '财务全套',
+        text: '客户应收、出纳打款、进销项发票、经营核算'
+      },
+      { name: '数据洞察全套', text: '运营看板、数据报表、智能预测' },
+      { name: '主动联系同行与服务大厅' },
+      { name: '车辆维保台账' }
+    ]
+  }
+];
 
-const faqs = [
+function priceOf(plan: Plan) {
+  return (cycle.value === 'year' ? plan.year : plan.month).toLocaleString('en-US');
+}
+
+/* --------------------------------------------------------------- 资源包 */
+
+const PACKS = [
+  {
+    title: 'AI 用量包',
+    desc: 'AI 录单员识别 Excel 与运单照片、数据分析员问答、智能配载调用，都从这份额度里扣。',
+    unit: '按识别单据数 / 问答次数（待确认）',
+    icon: '<svg viewBox="0 0 24 24"><path d="M12 4l1.7 4L18 9.7l-4.3 1.7L12 16l-1.7-4.6L6 9.7 10.3 8z"/></svg>'
+  },
+  {
+    title: '货源大厅接货包',
+    desc: '空板返程时去货源大厅接同行的货，按成功接单的次数扣额度。',
+    unit: '按成交单量（待确认）',
+    icon: '<svg viewBox="0 0 24 24"><path d="M3 10.5L12 4l9 6.5"/><path d="M5 10v10h14V10"/><path d="M9.5 20v-5h5v5"/></svg>'
+  },
+  {
+    title: '运力大厅接单包',
+    desc: '旺季自有车不够时，从运力大厅找同行的车，按成功派出的任务扣额度。',
+    unit: '按成交任务数（待确认）',
+    icon: '<svg viewBox="0 0 24 24"><rect x="3" y="7" width="13" height="9" rx="2"/><path d="M16 10h3l2 3v3h-5z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>'
+  }
+];
+
+/* --------------------------------------------------------------- 对比表 */
+
+/** 「—」灰掉，「✓/全部」标主色，其余是说明文字，保持正文色 */
+function basicMark(value: string) {
+  if (value === '—') {
+    return 'mark-n';
+  }
+  return value.startsWith('✓') || value === '全部' ? 'mark-y' : '';
+}
+
+const COMPARE = [
+  {
+    name: '运营调度',
+    sub: '计划、配载、调度、在途、回单',
+    basic: '全部',
+    pro: '全部'
+  },
+  { name: '智能配载', sub: '按车型板位推荐组合', basic: '—', pro: '✓' },
+  {
+    name: '运力中心',
+    sub: '自有、承运商、社会运力、证照监控',
+    basic: '全部',
+    pro: '全部 + 车辆维保'
+  },
+  { name: '客商与承运商互联', sub: '邀请开户、账号互通', basic: '✓', pro: '✓' },
+  { name: '计费中心', sub: '运价合同、路线管理', basic: '✓', pro: '✓' },
+  {
+    name: '成本政策与承运商运费引擎',
+    sub: '成本自动摊到每趟',
+    basic: '—',
+    pro: '✓'
+  },
+  {
+    name: '能源中心 · 账户',
+    sub: '供应商站点、账户、卡、充值',
+    basic: '✓',
+    pro: '✓'
+  },
+  {
+    name: '能源中心 · 消费与分析',
+    sub: '消费接入、对账、风控、成本分析',
+    basic: '—',
+    pro: '✓'
+  },
+  {
+    name: '应付结算',
+    sub: '任务费用、承运商对账结算、司机工资单',
+    basic: '✓',
+    pro: '✓'
+  },
+  { name: '应收与对账工作台', sub: '客户对账、结算、账龄', basic: '—', pro: '✓' },
+  {
+    name: '出纳与银行账户',
+    sub: '打款批次、到账认领、资金流水',
+    basic: '—',
+    pro: '✓'
+  },
+  { name: '进销项发票', sub: '客户开票、供应商收票与核销', basic: '—', pro: '✓' },
+  { name: '经营核算', sub: '财务确认口径的收入成本毛利', basic: '—', pro: '✓' },
+  { name: '经营驾驶舱', sub: '利润总览', basic: '✓', pro: '✓ 含计划总览' },
+  {
+    name: '运营看板、数据报表、智能预测',
+    sub: '分岗位看数与预判',
+    basic: '—',
+    pro: '✓'
+  },
+  {
+    name: 'AI 数字员工',
+    sub: 'AI 录单员、AI 数据分析员',
+    basic: '—',
+    pro: '✓ 含初始额度'
+  },
+  {
+    name: '服务平台',
+    sub: '货源与运力大厅',
+    basic: '浏览、发布、成交',
+    pro: '再加主动联系同行'
+  },
+  {
+    name: '开放平台与 MCP 连接器',
+    sub: '系统对接 + 你自己的 AI 接入',
+    basic: '✓ 全版本可用',
+    pro: '✓ 全版本可用'
+  },
+  {
+    name: '服务与支持',
+    sub: '在线实施与响应',
+    basic: '在线文档与支持',
+    pro: '优先在线支持'
+  }
+];
+
+const DELIVERY = [
+  {
+    title: '线上实施',
+    desc: '开通后按引导配置线路、运价和人员，自己把第一单从计划跑到结算。全程在线上完成，不安排驻场实施。数据随时可导出，不做锁定。'
+  },
+  {
+    title: '数据与安全',
+    desc: '按租户隔离，按经营主体和角色分权。谁改过运费、谁确认过到货，操作记录里查得到。'
+  }
+];
+
+const FAQ = [
   {
     q: '可以先试用再决定吗？',
-    a: '当然可以。我们提供免费试用期，您可以充分体验核心功能后再决定是否订阅。',
+    a: '可以。开通后按引导导入自己的线路、运价和人员，在线上跑一遍从建计划到出利润。确认好用再订阅。'
   },
   {
-    q: '标准版和高级版的核心区别是什么？',
-    a: '标准版覆盖单车利润核算和基础线路分析，满足日常经营需求；高级版在此基础上增加深度利润分析、报价优化建议、BI 数据看板等高级能力，帮助您做更精细化的经营决策。',
+    q: '基础版和旗舰版怎么选？',
+    a: '看管理深度，不看车辆台数。单据还不在线、回单收不齐，基础版就够把流程跑起来；成本算不清、对账要一周、能源对不上、想让 AI 分担录单和取数，直接上旗舰版。不确定的话，先做 10 题水位快测，结果页会按你的短板给建议。'
   },
   {
-    q: '数据安全如何保障？',
-    a: '我们采用银行级数据加密、多地域灾备、严格的权限管控，确保您的运单、车辆、财务等核心业务数据安全无忧。',
+    q: '资源包怎么计费，不买会影响正常业务吗？',
+    a: '不影响。计划、调度、回单、结算这些主流程都在基础服务费里，不消耗资源包。只有 AI 识别与问答、在大厅接货接单这类按量产生成本的动作才扣额度，额度用完会提前提醒，不会中断在跑的业务。'
   },
   {
-    q: '是否支持对接主机厂系统？',
-    a: '支持。高级版提供标准 API 接口，可与主机厂 DMS、TMS 等系统对接，实现运输指令自动接收，并配备专属技术对接支持。',
+    q: '用我们自己的 AI 通过 MCP 连进来，算不算 AI 用量？',
+    a: '不算。AI 用量包只对系统内置的 AI 数字员工计费。通过 MCP 连接器接入的是你自己的 AI 工具，算力由你那边承担，我们只提供数据通道和授权控制，开放平台在所有版本里都可以用。'
   },
   {
-    q: '可以随时升级版本吗？',
-    a: '可以。您可以根据业务发展需要，随时在系统内升级到高级版，差价按剩余时长折算。',
+    q: '我的承运商也要买账号吗？',
+    a: '不用。你邀请之后，承运商就能进来接任务、管车和司机、传回单，双方账号互通。这是企云协同能力的一部分，不用单独买一套产品。'
   },
   {
-    q: '如何获取技术支持？',
-    a: '标准版提供在线客服支持；高级版配备专属客户经理，提供 7×24 小时技术响应。',
+    q: '中途可以升级吗？会不会重新开始算钱？',
+    a: '可以随时从基础版升到旗舰版，差价按剩余时长折算，数据和配置全部保留，不需要重新导入。'
   },
-]
+  {
+    q: '数据安全和归属怎么保证？',
+    a: '数据归你所有，按经营主体和角色分权，关键操作全部留痕可审计。需要时可以导出完整业务数据，不做数据锁定。'
+  }
+];
 </script>
 
 <style scoped lang="scss">
-/* ========== Page Hero ========== */
-.page-hero {
-  position: relative;
-  padding: 160px 0 80px;
-  text-align: center;
-  background: var(--gradient-hero);
-  overflow: hidden;
+/* --------------------------------------------------------------- hero */
 
-  .hero-bg {
-    position: absolute;
-    inset: 0;
+.hero-head {
+  max-width: none;
+  margin-bottom: 36px;
+}
+
+.rationale-head {
+  margin-top: 48px;
+  margin-bottom: 28px;
+}
+
+.hero-title {
+  font-size: clamp(30px, 3.6vw, 46px);
+  margin: 16px 0 18px;
+}
+
+.model {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.model-card {
+  background: var(--surface-tint);
+  border-radius: var(--r-lg);
+  padding: 26px 28px;
+
+  .num {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--ink-3);
   }
 
-  .grid-lines {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 60px 60px;
-  }
-
-  .glow-1 {
-    position: absolute;
-    width: 400px;
-    height: 400px;
-    border-radius: 50%;
-    background: var(--color-primary);
-    filter: blur(100px);
-    opacity: 0.25;
-    top: -20%;
-    left: 20%;
-  }
-
-  .hero-content {
-    position: relative;
-    z-index: 1;
-  }
-
-  h1 {
-    font-size: 48px;
-    font-weight: 800;
-    color: #fff;
-    margin-bottom: 16px;
-    letter-spacing: -0.02em;
+  h3 {
+    font-size: 20px;
+    margin: 10px 0;
   }
 
   p {
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.6);
-  }
-}
-
-/* ========== 定价卡片 ========== */
-.pricing-section {
-  padding: 100px 0;
-  background: var(--color-bg-soft);
-  margin-top: -40px;
-  position: relative;
-  z-index: 2;
-}
-
-.pricing-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 32px;
-  align-items: start;
-  max-width: 880px;
-  margin: 0 auto;
-}
-
-.pricing-card {
-  position: relative;
-  background: var(--color-bg);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  padding: 40px 32px;
-  transition: all 0.3s ease;
-
-  &:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-4px);
+    font-size: 15px;
+    color: var(--ink-2);
   }
 
-  &.recommended {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 1px var(--color-primary), var(--shadow-lg);
-    transform: scale(1.03);
+  ul {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
 
-    &:hover {
-      transform: scale(1.03) translateY(-4px);
+  li {
+    display: flex;
+    gap: 8px;
+
+    &::before {
+      content: '·';
+      color: var(--brand);
+      font-weight: 700;
     }
   }
 }
 
-.recommend-badge {
-  position: absolute;
-  top: -1px;
-  right: 24px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 6px 16px;
-  border-radius: 0 0 8px 8px;
+/* --------------------------------------------------------------- 版本卡 */
+
+.plans-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
 }
 
-.plan-header {
-  margin-bottom: 32px;
+.sec-head--flush {
+  margin-bottom: 0;
+}
+
+.sec-head--tight {
+  margin-bottom: 28px;
+}
+
+.plans-title {
+  margin-top: 12px;
+}
+
+.faq-title {
+  margin-top: 12px;
+}
+
+.cycle-note {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 8px;
+  text-align: right;
+}
+
+.plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.plan {
+  background: var(--paper);
+  border-radius: var(--r-xl);
+  padding: 34px;
+  position: relative;
+}
+
+/* 推荐版本用 tint 表面抬起来，不用品牌色描边圈住 */
+.plan-pro {
+  background: var(--surface-tint);
+  box-shadow: var(--shadow);
+}
+
+.plan-flag {
+  position: absolute;
+  top: 0;
+  right: 28px;
+  transform: translateY(-50%);
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plan-top {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
 
   h3 {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--color-text);
-    margin-bottom: 8px;
+    font-size: 24px;
   }
+}
 
-  .plan-desc {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-    margin-bottom: 24px;
-    line-height: 1.6;
-  }
+.plan-for {
+  margin: 10px 0 22px;
+  font-size: 15px;
+  color: var(--ink-2);
+  min-height: 46px;
 }
 
 .plan-price {
   display: flex;
   align-items: baseline;
-  gap: 2px;
-}
+  gap: 4px;
+  padding-bottom: 8px;
 
-.price-currency {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-.price-value {
-  font-size: 48px;
-  font-weight: 800;
-  color: var(--color-text);
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-
-.price-period {
-  font-size: 16px;
-  color: var(--color-text-secondary);
-  margin-left: 4px;
-}
-
-.plan-features {
-  margin-bottom: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.plan-feature-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: var(--color-text);
-
-  &.disabled {
-    color: var(--color-text-muted);
-  }
-}
-
-.feature-check {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  flex-shrink: 0;
-  background: var(--color-bg-muted);
-  color: var(--color-text-muted);
-
-  &.active {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-    color: #fff;
-  }
-}
-
-.plan-action {
-  .plan-btn {
-    width: 100%;
-    border-radius: 10px !important;
-    font-weight: 600 !important;
-    font-size: 15px !important;
-    height: 48px !important;
-  }
-
-  .plan-btn-primary {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-accent)) !important;
-    border: none !important;
-    transition: transform 0.2s, box-shadow 0.2s !important;
-
-    &:hover {
-      box-shadow: 0 4px 20px rgba(29, 78, 216, 0.35) !important;
-    }
-  }
-}
-
-/* ========== FAQ ========== */
-.faq-section {
-  padding: 100px 0;
-  background: var(--color-bg);
-}
-
-.faq-list {
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-.faq-item {
-  border-bottom: 1px solid var(--color-border-light);
-
-  &:first-child {
-    border-top: 1px solid var(--color-border-light);
-  }
-}
-
-.faq-question {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 0;
-  cursor: pointer;
-  user-select: none;
-
-  span:first-child {
-    font-size: 16px;
+  .cur {
+    font-size: 20px;
     font-weight: 600;
-    color: var(--color-text);
+  }
+
+  b {
+    font-size: 46px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .per {
+    font-size: 15px;
+    color: var(--ink-3);
   }
 }
 
-.faq-toggle {
-  font-size: 24px;
-  color: var(--color-text-secondary);
-  transition: transform 0.3s;
-  flex-shrink: 0;
-  width: 28px;
-  text-align: center;
+.price-note {
+  margin-bottom: 22px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line-soft);
+}
 
-  &.open {
-    transform: rotate(45deg);
+.plan-inc {
+  display: grid;
+  gap: 11px;
+  margin-bottom: 26px;
+
+  li {
+    display: grid;
+    grid-template-columns: 18px 1fr;
+    gap: 10px;
+    font-size: 15px;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+
+  i {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--brand);
+    padding-top: 2px;
+  }
+
+  b {
+    color: var(--ink-1);
+    font-weight: 600;
   }
 }
 
-.faq-answer {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease;
+.plan-cta .btn {
+  width: 100%;
+}
 
-  &.open {
-    max-height: 200px;
-    padding-bottom: 20px;
+.plan-foot {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.other-card {
+  margin-top: 24px;
+  background: var(--surface-tint);
+  border-radius: var(--r-lg);
+  padding: 22px 24px;
+
+  h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
   }
 
   p {
-    font-size: 15px;
-    color: var(--color-text-secondary);
-    line-height: 1.7;
+    font-size: 14px;
+    color: var(--ink-2);
   }
 }
 
-/* ========== 响应式 ========== */
-@media (max-width: 1024px) {
-  .pricing-grid {
-    grid-template-columns: 1fr;
-    max-width: 480px;
-    margin: 0 auto;
+/* --------------------------------------------------------------- 资源包 */
+
+.pack {
+  background: var(--surface-tint);
+  border-radius: var(--r-lg);
+  padding: 24px;
+
+  h3 {
+    font-size: 17px;
+    margin: 14px 0 8px;
   }
 
-  .pricing-card.recommended {
-    transform: none;
+  p {
+    font-size: 14px;
+    color: var(--ink-2);
+    margin-bottom: 14px;
+  }
+}
 
-    &:hover {
-      transform: translateY(-4px);
-    }
+.pack-price {
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.pack-unit {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+/* --------------------------------------------------------------- CTA */
+
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cta-title {
+  font-size: 26px;
+}
+
+.cta-lede {
+  margin-top: 10px;
+}
+
+/* --------------------------------------------------------------- 响应式 */
+
+@media (max-width: 1024px) {
+  .model,
+  .plans {
+    grid-template-columns: 1fr;
+  }
+
+  .cycle-note {
+    text-align: left;
   }
 }
 
 @media (max-width: 768px) {
-  .page-hero {
-    padding: 120px 0 60px;
-
-    h1 {
-      font-size: 36px;
-    }
+  .plan {
+    padding: 26px 22px;
   }
 
-  .pricing-section {
-    padding: 64px 0;
-  }
-
-  .faq-section {
-    padding: 64px 0;
-  }
-
-  .price-value {
-    font-size: 40px;
+  .plan-for {
+    min-height: 0;
   }
 }
 </style>

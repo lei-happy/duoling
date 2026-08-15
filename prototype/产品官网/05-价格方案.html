@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>价格方案 · 智途</title>
-<meta name="description" content="智途按基础服务费加资源包计价：基础版与旗舰版可月付、季付、年付；AI 用量与货源运力大厅的接单接货按资源包购买，旗舰版含初始额度。" />
+<title>价格方案 · 朵灵·企云</title>
+<meta name="description" content="面向轿运行业（汽车物流）的朵灵·企云：基础服务费加资源包计价，基础版与旗舰版可月付或年付；按管理深度区分功能，不按账号车辆卡额度。" />
 <link rel="stylesheet" href="assets/site.css" />
 <style>
   /* 价格页专用 */
@@ -256,7 +256,7 @@
   /* 其他版本说明 */
   .other {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 20px;
   }
 
@@ -306,11 +306,12 @@
 <header class="nav">
   <div class="wrap nav-inner">
     <a class="brand" href="01-首页.html">
-      <span class="brand-mark">ZT</span>
-      智途
-      <span class="brand-sub">轿运车队数智化</span>
+      <span class="brand-mark">DL</span>
+      朵灵·企云
+      <span class="brand-sub">轿运企业综合操作系统</span>
     </a>
     <nav class="nav-links" id="nav-links" aria-label="主导航">
+      <a href="01-首页.html">首页</a>
       <a href="02-数智化转型.html">数智化转型</a>
       <a href="03-产品能力.html">产品能力</a>
       <a href="05-价格方案.html" aria-current="page">价格方案</a>
@@ -344,10 +345,10 @@
         <div class="model-card reveal">
           <span class="num">PART 01</span>
           <h3>基础服务费</h3>
-          <p>按版本订阅，包含系统使用、账号数量、常规升级与在线支持。可月付、季付或年付。</p>
+          <p>按版本订阅，包含系统使用、常规升级与在线支持。可月付或年付，年付更省。</p>
           <ul>
-            <li>基础版：把计划到结算跑成在线闭环</li>
-            <li>旗舰版：再加 AI、全财务与深度分析</li>
+            <li>基础版：把计划到结算跑成在线闭环，含能源账户与应付路径</li>
+            <li>旗舰版：再加 AI、财务全套、能源消费分析与深度看板</li>
             <li>付费周期越长，单价越低</li>
           </ul>
         </div>
@@ -365,18 +366,42 @@
     </div>
   </section>
 
+  <!-- 定价理念 -->
+  <section class="band band-paper">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">我们怎么定价</span>
+        <h2 class="h-sec" style="margin:14px 0 14px">先把流程跑起来，再按管理深度加能力</h2>
+        <p class="lede">两个版本只按功能深度区分，不按账号数、车辆数设门槛。相对市面同类，把预算留给真正要用起来的模块，而不是先买一堆用不上的席位。</p>
+      </div>
+      <div class="grid g-3">
+        <div class="card reveal">
+          <h3 class="h-card">为什么没有长期免费版</h3>
+          <p>数字化要有人对结果负责。完全不花钱的试用，项目容易停在半路。基础版用一份可承受的订阅，换来「必须把流程跑起来」的共同约定。</p>
+        </div>
+        <div class="card reveal" data-delay="60">
+          <h3 class="h-card">基础版扛住最紧的事</h3>
+          <p>面向中小企业：把业务与财务基础流程搬上线——计划到回单、应付结算、能源账户。先在线上把活干完，账才有地方算。</p>
+        </div>
+        <div class="card reveal" data-delay="120">
+          <h3 class="h-card">旗舰版加更深的管理</h3>
+          <p>在基础版之上叠加 AI、全套财务、能源分析与深度看板。管理诉求到了再选，不必为用不上的席位先付钱。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- 版本 -->
   <section class="band band-soft band-line">
     <div class="wrap">
       <div class="plans-head">
         <div class="sec-head reveal" style="margin-bottom:0">
           <span class="eyebrow">选版本</span>
-          <h2 class="h-sec" style="margin-top:12px">两个版本，按车队规模和管理深度选</h2>
+          <h2 class="h-sec" style="margin-top:12px">按管理深度选版本</h2>
         </div>
         <div class="reveal">
           <div class="tabs" data-cycle-switch role="tablist" aria-label="付费周期">
             <button class="tab-btn" type="button" role="tab" data-cycle="month">月付</button>
-            <button class="tab-btn" type="button" role="tab" data-cycle="quarter">季付</button>
             <button class="tab-btn" type="button" role="tab" data-cycle="year" aria-selected="true">年付</button>
           </div>
           <p class="cycle-note" data-cycle-note>年付约 8 折，相当于省 2 个多月</p>
@@ -388,28 +413,23 @@
         <div class="plan reveal">
           <div class="plan-top">
             <h3>基础版</h3>
-            <span class="tag">10–100 台板车</span>
+            <span class="tag">业务与财务基础流程</span>
           </div>
-          <p class="plan-for">先把业务搬上线、把账算清楚。适合还在用 Excel 和微信群管调度的车队。</p>
+          <p class="plan-for">先把业务搬上线、把账算清楚。适合还在用 Excel 和微信群管调度的企业。</p>
 
           <div class="plan-price">
             <span class="cur">￥</span>
-            <b class="pending" data-price data-price-month="349" data-price-quarter="899" data-price-year="2999">2,999</b>
+            <b class="pending" data-price data-price-month="349" data-price-year="2999">2,999</b>
             <span class="per" data-period-label>/年</span>
           </div>
           <p class="muted" style="margin-bottom:0">价格示意，最终以商务报价为准</p>
-
-          <div class="plan-quota">
-            <div>账号数<b>20</b></div>
-            <div>车辆数<b>100</b></div>
-            <div>AI 额度<b>—</b></div>
-          </div>
 
           <ul class="plan-inc">
             <li><i>+</i><span><b>运营调度全流程</b>：计划、配载、调度、在途、回单签收</span></li>
             <li><i>+</i><span><b>运力中心</b>：自有、承运商、社会运力与证照监控</span></li>
             <li><i>+</i><span><b>客商中心</b>：客户、承运商、经销商门店与承运商互联</span></li>
-            <li><i>+</i><span><b>计费与应付结算</b>：运价合同、路线、费用单台账</span></li>
+            <li><i>+</i><span><b>计费与应付结算</b>：运价合同、路线；任务费用、承运商对账结算、司机工资单</span></li>
+            <li><i>+</i><span><b>能源账户</b>：供应商与站点、账户、能源卡、充值入账</span></li>
             <li><i>+</i><span><b>审批中心</b>与操作留痕</span></li>
             <li><i>+</i><span><b>经营驾驶舱</b>利润总览</span></li>
             <li><i>+</i><span><b>服务平台</b>：大厅浏览、发布货源运力、在线成交</span></li>
@@ -419,40 +439,35 @@
           <div class="plan-cta">
             <a class="btn btn-line btn-lg" href="04-数智化自测.html#lead">申请试用</a>
           </div>
-          <p class="plan-foot">超出账号或车辆数可按需扩容。</p>
+          <p class="plan-foot">不限账号与车辆数，按功能深度选版本即可。</p>
         </div>
 
         <!-- 旗舰版 -->
         <div class="plan plan-pro reveal" data-delay="100">
-          <span class="plan-flag">多数车队的选择</span>
+          <span class="plan-flag">多数企业的选择</span>
           <div class="plan-top">
             <h3>旗舰版</h3>
-            <span class="tag tag-pro">100 台以上 / 多主体</span>
+            <span class="tag tag-pro">更深的管理能力</span>
           </div>
-          <p class="plan-for">在基础版之上，把 AI、全套财务和深度分析补齐，让经营节奏从月度变周度。</p>
+          <p class="plan-for">在基础版之上，把 AI、财务全套、能源消费分析与深度看板补齐，让经营节奏从月度变周度。</p>
 
           <div class="plan-price">
             <span class="cur">￥</span>
-            <b class="pending" data-price data-price-month="1099" data-price-quarter="2999" data-price-year="9999">9,999</b>
+            <b class="pending" data-price data-price-month="1099" data-price-year="9999">9,999</b>
             <span class="per" data-period-label>/年</span>
           </div>
           <p class="muted" style="margin-bottom:0">价格示意，最终以商务报价为准</p>
-
-          <div class="plan-quota">
-            <div>账号数<b>100</b></div>
-            <div>车辆数<b>500</b></div>
-            <div>AI 额度<b class="pending">含初始</b></div>
-          </div>
 
           <ul class="plan-inc">
             <li><i>✓</i><span>包含<b>基础版全部能力</b></span></li>
             <li><i>+</i><span><b>AI 数字员工</b>：AI 录单员、AI 数据分析员</span></li>
             <li><i>+</i><span><b>智能配载</b>：按车型板位推荐组合</span></li>
             <li><i>+</i><span><b>成本政策与承运商运费引擎</b>：成本自动摊到每趟</span></li>
-            <li><i>+</i><span><b>财务全套</b>：应收、对账中心、发票、利润分析</span></li>
+            <li><i>+</i><span><b>能源中心全套</b>：消费接入、对账、异常风控、单车成本分析</span></li>
+            <li><i>+</i><span><b>财务全套</b>：客户应收、出纳打款、进销项发票、经营核算</span></li>
             <li><i>+</i><span><b>数据洞察全套</b>：运营看板、数据报表、智能预测</span></li>
             <li><i>+</i><span><b>主动联系同行</b>与服务大厅</span></li>
-            <li><i>+</i><span><b>车辆维保</b>台账与专属客户成功支持</span></li>
+            <li><i>+</i><span><b>车辆维保</b>台账</span></li>
           </ul>
 
           <div class="plan-cta">
@@ -464,12 +479,8 @@
 
       <div class="other" style="margin-top:24px">
         <div class="other-card reveal">
-          <h3>你的承运商不用付费</h3>
-          <p>被你邀请的外协单位会开通一个免费的轻量版，用来管自己的车和司机、接你派的任务、传回单。账号与你互通。</p>
-        </div>
-        <div class="other-card reveal" data-delay="60">
-          <h3>只想管车管证照？</h3>
-          <p>我们还有一个更轻的运力管理产品，只做运力建档与资质到期监控，可以先用它起步，之后再升级到完整系统。</p>
+          <h3>你的承运商不用另买一套</h3>
+          <p>邀请外协单位后，对方就能在企云的协同里管自己的车和司机、接任务、传回单。账号互通，这是租户端能力的一部分，不是单独卖的产品。</p>
         </div>
       </div>
     </div>
@@ -544,11 +555,6 @@
           </thead>
           <tbody>
             <tr>
-              <td class="row-label"><b>适用规模</b><span>账号数 / 车辆数</span></td>
-              <td class="cell-c num">20 / 100</td>
-              <td class="cell-c col-pro num">100 / 500</td>
-            </tr>
-            <tr>
               <td class="row-label"><b>运营调度</b><span>计划、配载、调度、在途、回单</span></td>
               <td class="cell-c mark-y">全部</td>
               <td class="cell-c col-pro mark-pro">全部</td>
@@ -579,12 +585,37 @@
               <td class="cell-c col-pro mark-pro">✓</td>
             </tr>
             <tr>
-              <td class="row-label"><b>应付结算</b><span>费用工作台、费用单台账</span></td>
+              <td class="row-label"><b>能源中心 · 账户</b><span>供应商站点、账户、卡、充值</span></td>
               <td class="cell-c mark-y">✓</td>
               <td class="cell-c col-pro mark-pro">✓</td>
             </tr>
             <tr>
-              <td class="row-label"><b>应收、对账、发票、利润分析</b><span>收得回来、算得清楚</span></td>
+              <td class="row-label"><b>能源中心 · 消费与分析</b><span>消费接入、对账、风控、成本分析</span></td>
+              <td class="cell-c mark-n">—</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>应付结算</b><span>任务费用、承运商对账结算、司机工资单</span></td>
+              <td class="cell-c mark-y">✓</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>应收与对账工作台</b><span>客户对账、结算、账龄</span></td>
+              <td class="cell-c mark-n">—</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>出纳与银行账户</b><span>打款批次、到账认领、资金流水</span></td>
+              <td class="cell-c mark-n">—</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>进销项发票</b><span>客户开票、供应商收票与核销</span></td>
+              <td class="cell-c mark-n">—</td>
+              <td class="cell-c col-pro mark-pro">✓</td>
+            </tr>
+            <tr>
+              <td class="row-label"><b>经营核算</b><span>财务确认口径的收入成本毛利</span></td>
               <td class="cell-c mark-n">—</td>
               <td class="cell-c col-pro mark-pro">✓</td>
             </tr>
@@ -614,9 +645,9 @@
               <td class="cell-c col-pro mark-pro">✓ 全版本可用</td>
             </tr>
             <tr>
-              <td class="row-label"><b>服务与支持</b><span>上线陪跑与响应</span></td>
-              <td class="cell-c">在线支持</td>
-              <td class="cell-c col-pro mark-pro">专属客户成功</td>
+              <td class="row-label"><b>服务与支持</b><span>在线实施与响应</span></td>
+              <td class="cell-c">在线文档与支持</td>
+              <td class="cell-c col-pro mark-pro">优先在线支持</td>
             </tr>
           </tbody>
         </table>
@@ -624,8 +655,28 @@
     </div>
   </section>
 
-  <!-- FAQ -->
+  <!-- 实施与安全 -->
   <section class="band band-paper">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">上线之前先问清</span>
+        <h2 class="h-sec" style="margin:14px 0 14px">自己就能上线，数据归你</h2>
+      </div>
+      <div class="grid g-2">
+        <div class="card reveal">
+          <h3 class="h-card">线上实施</h3>
+          <p>开通后按引导配置线路、运价和人员，自己把第一单从计划跑到结算。全程在线上完成，不安排驻场实施。数据随时可导出，不做锁定。</p>
+        </div>
+        <div class="card reveal" data-delay="80">
+          <h3 class="h-card">数据与安全</h3>
+          <p>按租户隔离，按经营主体和角色分权。谁改过运费、谁确认过到货，操作记录里查得到。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="band band-soft band-line">
     <div class="wrap wrap-narrow">
       <div class="sec-head reveal" style="margin-bottom:28px">
         <span class="eyebrow">常见问题</span>
@@ -636,16 +687,16 @@
         <details class="faq-item">
           <summary>可以先试用再决定吗？</summary>
           <div class="faq-body">
-            可以。我们会用你自己的线路、运价和真实单据配一个试用环境，跑一遍从建计划到出利润的完整流程，
-            确认好用再谈订阅。
+            可以。开通后按引导导入自己的线路、运价和人员，在线上跑一遍从建计划到出利润。
+            确认好用再订阅。
           </div>
         </details>
 
         <details class="faq-item">
           <summary>基础版和旗舰版怎么选？</summary>
           <div class="faq-body">
-            简单判断：如果现在的主要痛点是「单据不在线、回单收不齐」，基础版够用；
-            如果痛点是「成本算不清、对账要一周、想让 AI 分担录单和取数」，直接上旗舰版更划算。
+            看管理深度，不看车辆台数。单据还不在线、回单收不齐，基础版就够把流程跑起来；
+            成本算不清、对账要一周、能源对不上、想让 AI 分担录单和取数，直接上旗舰版。
             不确定的话，先做 10 题水位快测，结果页会按你的短板给建议。
           </div>
         </details>
@@ -671,8 +722,8 @@
         <details class="faq-item">
           <summary>我的承运商也要买账号吗？</summary>
           <div class="faq-body">
-            不用。你邀请的承运商会免费开通轻量版，用来管自己的车和司机、接任务、传回单，
-            双方账号互通。这样外协协同才能真的搬到线上。
+            不用。你邀请之后，承运商就能进来接任务、管车和司机、传回单，双方账号互通。
+            这是企云协同能力的一部分，不用单独买一套产品。
           </div>
         </details>
 
@@ -714,23 +765,22 @@
   <div class="wrap">
     <div class="foot-top">
       <div>
-        <div class="brand"><span class="brand-mark">ZT</span>智途</div>
-        <p class="foot-slogan">让每一公里都不白跑。智途为轿运车队提供从计划录入到结算回款的数智化经营系统。</p>
+        <div class="brand"><span class="brand-mark">DL</span>朵灵·企云</div>
+        <p class="foot-slogan">让每一公里都不白跑。朵灵·企云面向轿运行业（汽车物流），把计划到结算收进一套企业经营系统。</p>
       </div>
       <div>
         <h4>产品</h4>
         <ul>
-          <li><a href="03-产品能力.html">产品能力</a></li>
+          <li><a href="03-产品能力.html">朵灵·企云</a></li>
+          <li><a href="#">朵灵·司机</a></li>
           <li><a href="05-价格方案.html">价格方案</a></li>
-          <li><a href="#">承运商轻量版</a></li>
-          <li><a href="#">驾驶员手机端</a></li>
         </ul>
       </div>
       <div>
         <h4>了解数智化</h4>
         <ul>
           <li><a href="02-数智化转型.html">四阶段辨析</a></li>
-          <li><a href="04-数智化自测.html">车队水位快测</a></li>
+          <li><a href="04-数智化自测.html">企业水位快测</a></li>
           <li><a href="#">完整转型报告</a></li>
         </ul>
       </div>
@@ -739,12 +789,12 @@
         <ul>
           <li><a href="04-数智化自测.html#lead">预约演示</a></li>
           <li><a href="#">400 电话（待定）</a></li>
-          <li><a href="#">北京 · 智途科技</a></li>
+          <li><a href="#">北京 · 朵灵科技</a></li>
         </ul>
       </div>
     </div>
     <div class="foot-btm">
-      <span>© 2026 北京智途科技有限公司</span>
+      <span>© 2026 北京朵灵科技有限公司</span>
       <span>官网原型稿 · 价格为示意，待商务确认</span>
     </div>
   </div>
