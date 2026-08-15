@@ -215,6 +215,52 @@ services:
     # worker 没有 HTTP 端口；进程崩溃由 restart: unless-stopped 自动拉起，
     # 这里不再单独配 healthcheck（python:slim 默认不带 ps，避免镜像膨胀）。
 
+  # ---- 能源同步 Worker（独立进程） ----
+  # 扫 biz_energy_sync_task，并在每日 01:10 做余额快照与成本归集。
+  backend-energy-worker:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.backend
+    container_name: zhitu-backend-energy-worker
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_SECRET_KEY=${APP_SECRET_KEY:-change-me-in-production}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-me-in-production}
+      - JWT_ALGORITHM=HS256
+      - DB_SUFFIX=
+      - PLATFORM_DB_HOST=host.docker.internal
+      - PLATFORM_DB_PORT=3306
+      - PLATFORM_DB_USER=${DB_USER:-root}
+      - PLATFORM_DB_PASSWORD=${DB_PASSWORD:-zhitu2026}
+      - PLATFORM_DB_NAME=zt_platform
+      - TENANT_DB_HOST=host.docker.internal
+      - TENANT_DB_PORT=3306
+      - TENANT_DB_USER=${DB_USER:-root}
+      - TENANT_DB_PASSWORD=${DB_PASSWORD:-zhitu2026}
+      - TENANT_DB_PREFIX=zt_biz_
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_PASSWORD=
+      - LOG_LEVEL=INFO
+      - LOG_DIR=logs
+      - ENERGY_SYNC_WORKER_ENABLED=1
+      - ENERGY_SYNC_WORKER_INTERVAL=${ENERGY_SYNC_WORKER_INTERVAL:-30}
+      - ENERGY_SYNC_WORKER_BATCH=${ENERGY_SYNC_WORKER_BATCH:-10}
+    volumes:
+      - backend_logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+    command:
+      - python
+      - -m
+      - app.workers.energy_sync_main
+
   # ---- 证照监控 Worker（独立进程） ----
   # 运力宝核心：周期扫描各租户运力资质到期字段，生成 biz_compliance_alert 预警。
   # 与 backend 共用同一镜像、同一份环境变量，启动命令是

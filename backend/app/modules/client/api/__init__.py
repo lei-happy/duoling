@@ -102,6 +102,22 @@ from app.modules.client.api.finance import (
     recon_workbench_router,
     vendor_invoice_router,
 )
+from app.modules.client.api.energy import (
+    account_router as energy_account_router,
+    analysis_router as energy_analysis_router,
+    card_router as energy_card_router,
+    connector_router as energy_connector_router,
+    consumption_router as energy_consumption_router,
+    exception_router as energy_exception_router,
+    meta_router as energy_meta_router,
+    product_router as energy_product_router,
+    profile_router as energy_profile_router,
+    recharge_router as energy_recharge_router,
+    recon_router as energy_recon_router,
+    rule_router as energy_rule_router,
+    station_router as energy_station_router,
+    supplier_router as energy_supplier_router,
+)
 from app.modules.client.api.insight.cockpit import router as insight_cockpit_router
 from app.modules.client.api.insight.profit import router as insight_profit_router
 from app.modules.client.api.approval import router as approval_router
@@ -478,6 +494,90 @@ router.include_router(
             require_feature("ecosystem_cargo_publish", "ecosystem_capacity_publish")
         )
     ],
+)
+router.include_router(
+    energy_meta_router,
+    prefix="/energy",
+    tags=["客户端-能源中心-元数据"],
+    dependencies=[Depends(require_feature("energy_account"))],
+)
+router.include_router(
+    energy_supplier_router,
+    prefix="/energy/suppliers",
+    tags=["客户端-能源中心-供应商"],
+    dependencies=[Depends(require_feature("energy_account"))],
+)
+router.include_router(
+    energy_station_router,
+    prefix="/energy/stations",
+    tags=["客户端-能源中心-站点"],
+    dependencies=[Depends(require_feature("energy_account"))],
+)
+router.include_router(
+    energy_account_router,
+    prefix="/energy/accounts",
+    tags=["客户端-能源中心-账户"],
+    dependencies=[Depends(require_feature("energy_account"))],
+)
+router.include_router(
+    energy_card_router,
+    prefix="/energy/cards",
+    tags=["客户端-能源中心-能源卡"],
+    dependencies=[Depends(require_feature("energy_account"))],
+)
+router.include_router(
+    energy_recharge_router,
+    prefix="/energy/recharges",
+    tags=["客户端-能源中心-充值"],
+    dependencies=[Depends(require_feature("energy_account"))],
+)
+router.include_router(
+    energy_consumption_router,
+    prefix="/energy/consumptions",
+    tags=["客户端-能源中心-消费"],
+    dependencies=[Depends(require_feature("energy_consumption"))],
+)
+router.include_router(
+    energy_connector_router,
+    prefix="/energy/connectors",
+    tags=["客户端-能源中心-数据接入"],
+    dependencies=[Depends(require_feature("energy_consumption"))],
+)
+router.include_router(
+    energy_recon_router,
+    prefix="/energy/recons",
+    tags=["客户端-能源中心-对账"],
+    dependencies=[Depends(require_feature("energy_recon"))],
+)
+router.include_router(
+    energy_exception_router,
+    prefix="/energy/exceptions",
+    tags=["客户端-能源中心-异常"],
+    dependencies=[Depends(require_feature("energy_risk"))],
+)
+router.include_router(
+    energy_analysis_router,
+    prefix="/energy/analysis",
+    tags=["客户端-能源中心-分析"],
+    dependencies=[Depends(require_feature("energy_analysis"))],
+)
+router.include_router(
+    energy_product_router,
+    prefix="/energy/products",
+    tags=["客户端-能源中心-商品"],
+    dependencies=[Depends(require_feature("energy_account"))],
+)
+router.include_router(
+    energy_profile_router,
+    prefix="/energy/vehicle-profiles",
+    tags=["客户端-能源中心-车辆档案"],
+    dependencies=[Depends(require_feature("energy_account"))],
+)
+router.include_router(
+    energy_rule_router,
+    prefix="/energy/rules",
+    tags=["客户端-能源中心-风控规则"],
+    dependencies=[Depends(require_feature("energy_risk"))],
 )
 router.include_router(ai_client_router, prefix="/ai", tags=["客户端-AI数字员工"])
 router.include_router(

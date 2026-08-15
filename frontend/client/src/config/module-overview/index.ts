@@ -10,6 +10,7 @@ import ecosystem from './ecosystem';
 import logCenter from './log-center';
 import enterprise from './enterprise';
 import openPlatform from './open-platform';
+import energy from './energy';
 
 /**
  * 各一级模块的总览配置注册表。
@@ -26,7 +27,8 @@ const configs: Record<string, ModuleOverviewConfig> = {
   ecosystem,
   'log-center': logCenter,
   enterprise,
-  'open-platform': openPlatform
+  'open-platform': openPlatform,
+  energy
 };
 
 /**

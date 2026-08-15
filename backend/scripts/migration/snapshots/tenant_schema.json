@@ -14006,6 +14006,3581 @@
       "foreign_keys": []
     },
     {
+      "name": "biz_energy_account",
+      "comment": "能源账户表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_code",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账户编码（租户内唯一）"
+        },
+        {
+          "name": "account_name",
+          "type": "VARCHAR(128)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账户名称"
+        },
+        {
+          "name": "account_type",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "'PREPAID'",
+          "comment": "账户类型 PREPAID/POSTPAID/CREDIT/CARD_POOL/VIRTUAL"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "'CNY'",
+          "comment": "币种"
+        },
+        {
+          "name": "energy_type",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源类型 OIL/GAS/ELECTRIC/OTHER"
+        },
+        {
+          "name": "external_account_no",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商侧账号"
+        },
+        {
+          "name": "frozen_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "冻结金额"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_sync_time",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近同步时间"
+        },
+        {
+          "name": "last_txn_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近一笔流水时间"
+        },
+        {
+          "name": "ledger_balance",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "账面余额（唯一事实来源：Σ txn.delta）"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-正常 2-冻结 3-已关闭"
+        },
+        {
+          "name": "supplier_balance",
+          "type": "NUMERIC(18, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商侧余额（对账用）"
+        },
+        {
+          "name": "supplier_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商 ID"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_account_supplier",
+          "columns": [
+            "supplier_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_energy_account_code",
+          "columns": [
+            "account_code"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_account_daily_snapshot",
+      "comment": "能源账户每日余额快照",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源账户 ID"
+        },
+        {
+          "name": "adjustment_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "当日调账（带符号）"
+        },
+        {
+          "name": "closing_balance",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "期末账面余额"
+        },
+        {
+          "name": "consumption_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "当日消费"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "frozen_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "期末冻结金额"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "opening_balance",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "期初账面余额"
+        },
+        {
+          "name": "recharge_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "当日充值"
+        },
+        {
+          "name": "refund_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "当日退款"
+        },
+        {
+          "name": "snapshot_date",
+          "type": "DATE",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "快照日期"
+        },
+        {
+          "name": "supplier_balance",
+          "type": "NUMERIC(18, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "当日供应商侧余额"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_acct_snapshot_date",
+          "columns": [
+            "snapshot_date"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_energy_acct_snapshot",
+          "columns": [
+            "account_id",
+            "snapshot_date"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_account_txn",
+      "comment": "能源账户资金流水表（append-only）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源账户 ID"
+        },
+        {
+          "name": "amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "金额（正数，展示用）"
+        },
+        {
+          "name": "balance_after",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "记账后账面余额"
+        },
+        {
+          "name": "balance_before",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "记账前账面余额"
+        },
+        {
+          "name": "biz_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "来源业务 ID"
+        },
+        {
+          "name": "biz_type",
+          "type": "VARCHAR(32)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "来源业务类型 recharge/consumption/manual"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "delta",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "账面余额带符号变动额"
+        },
+        {
+          "name": "external_txn_id",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "外部流水号"
+        },
+        {
+          "name": "frozen_delta",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "冻结金额带符号变动额"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "operator_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人 user_id"
+        },
+        {
+          "name": "operator_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "操作人姓名（冗余）"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(512)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reversed_txn_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "被冲正的原流水 ID"
+        },
+        {
+          "name": "transaction_time",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "业务发生时间"
+        },
+        {
+          "name": "txn_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "流水号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "txn_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "流水类型 1充值 2消费 3退款 4转入 5转出 6调账 7冲正 8冻结 9解冻 10手续费"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_txn_account",
+          "columns": [
+            "account_id",
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_txn_biz",
+          "columns": [
+            "biz_type",
+            "biz_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_txn_external",
+          "columns": [
+            "external_txn_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_energy_txn_no",
+          "columns": [
+            "txn_no"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_card",
+      "comment": "能源卡表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "所属能源账户 ID"
+        },
+        {
+          "name": "card_no",
+          "type": "VARCHAR(128)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "卡号（租户内唯一）"
+        },
+        {
+          "name": "card_type",
+          "type": "VARCHAR(32)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "卡类型（实体卡/虚拟卡等）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "energy_type",
+          "type": "VARCHAR(16)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源类型 OIL/GAS/ELECTRIC/OTHER"
+        },
+        {
+          "name": "external_card_id",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商侧卡 ID"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-正常 2-冻结 3-已注销 4-挂失 5-未激活"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "valid_from",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "有效期起"
+        },
+        {
+          "name": "valid_to",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "有效期止"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_card_account",
+          "columns": [
+            "account_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_energy_card_no",
+          "columns": [
+            "card_no"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_card_binding",
+      "comment": "能源卡绑定历史表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "card_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源卡 ID"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "driver_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "绑定司机 ID"
+        },
+        {
+          "name": "end_time",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "绑定结束时间（空表示当前有效）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "start_time",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "绑定开始时间"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-已解绑 1-绑定中"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "vehicle_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "绑定车辆 ID"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_card_binding_card",
+          "columns": [
+            "card_id",
+            "start_time"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_card_binding_driver",
+          "columns": [
+            "driver_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_card_binding_vehicle",
+          "columns": [
+            "vehicle_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_connector",
+      "comment": "能源连接器实例配置",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "默认能源账户 ID"
+        },
+        {
+          "name": "auth_config_json",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "鉴权配置（加密存储，一期明文 JSON）"
+        },
+        {
+          "name": "connector_code",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "连接器类型编码 excel/manual/http_api"
+        },
+        {
+          "name": "connector_name",
+          "type": "VARCHAR(128)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实例名称"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "cron",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "cron 表达式"
+        },
+        {
+          "name": "field_mapping_json",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "字段映射：外部字段 → 内部标准字段"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "last_error",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近一次错误"
+        },
+        {
+          "name": "last_success_cursor",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "断点续传游标"
+        },
+        {
+          "name": "last_sync_time",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近成功同步时间"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-正常"
+        },
+        {
+          "name": "supplier_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商 ID"
+        },
+        {
+          "name": "sync_mode",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "'manual'",
+          "comment": "同步模式 realtime/interval/cron/manual"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_connector_supplier",
+          "columns": [
+            "supplier_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_consumption",
+      "comment": "能源消费标准流水表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源账户 ID"
+        },
+        {
+          "name": "amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "金额"
+        },
+        {
+          "name": "card_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源卡 ID"
+        },
+        {
+          "name": "card_no",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "卡号（快照）"
+        },
+        {
+          "name": "consumption_no",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "消费单号"
+        },
+        {
+          "name": "consumption_time",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "消费时间"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "driver_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "司机 ID"
+        },
+        {
+          "name": "driver_name",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "司机姓名（快照）"
+        },
+        {
+          "name": "energy_product_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源商品 ID"
+        },
+        {
+          "name": "energy_type",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源类型 OIL/GAS/ELECTRIC/OTHER"
+        },
+        {
+          "name": "exception_status",
+          "type": "VARCHAR(16)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "异常状态"
+        },
+        {
+          "name": "external_transaction_id",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "外部流水号"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_ledger_affecting",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "是否扣减能源账户余额 0-否 1-是（垫付引用置 0，避免与任务费用单重复）"
+        },
+        {
+          "name": "ledger_txn_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "扣账流水 ID"
+        },
+        {
+          "name": "match_status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "'UNMATCHED'",
+          "comment": "匹配状态 MATCHED/PARTIAL/UNMATCHED/CONFLICT"
+        },
+        {
+          "name": "match_trace_json",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "匹配轨迹"
+        },
+        {
+          "name": "mileage",
+          "type": "NUMERIC(18, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "本次行驶里程（km）"
+        },
+        {
+          "name": "odometer",
+          "type": "NUMERIC(18, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "表显里程"
+        },
+        {
+          "name": "plate_number",
+          "type": "VARCHAR(20)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车牌号（快照）"
+        },
+        {
+          "name": "product_name",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "商品名称（快照）"
+        },
+        {
+          "name": "quantity",
+          "type": "NUMERIC(18, 4)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "数量"
+        },
+        {
+          "name": "raw_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "原始数据 ID"
+        },
+        {
+          "name": "recon_status",
+          "type": "VARCHAR(16)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "对账状态"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(512)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "route_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "线路 ID"
+        },
+        {
+          "name": "source_channel",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "3",
+          "comment": "来源 1-供应商直连 2-Excel 3-手工 4-司机垫付引用 5-月结账单"
+        },
+        {
+          "name": "station_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "站点 ID"
+        },
+        {
+          "name": "station_name",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "站点名称（快照）"
+        },
+        {
+          "name": "supplier_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商 ID"
+        },
+        {
+          "name": "task_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务 ID"
+        },
+        {
+          "name": "unit",
+          "type": "VARCHAR(16)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单位"
+        },
+        {
+          "name": "unit_price",
+          "type": "NUMERIC(18, 6)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单价"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "vehicle_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车辆 ID"
+        },
+        {
+          "name": "waybill_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "运单 ID"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_cons_account",
+          "columns": [
+            "account_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_cons_driver",
+          "columns": [
+            "driver_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_cons_match",
+          "columns": [
+            "match_status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_cons_task",
+          "columns": [
+            "task_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_cons_time",
+          "columns": [
+            "consumption_time"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_cons_vehicle",
+          "columns": [
+            "vehicle_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_energy_consumption_no",
+          "columns": [
+            "consumption_no"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_consumption_raw",
+      "comment": "能源消费原始数据表（只增不改）",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "connector_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "连接器实例 ID"
+        },
+        {
+          "name": "consumption_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "生成的标准流水 ID"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "data_hash",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "去重指纹"
+        },
+        {
+          "name": "error_message",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理失败原因"
+        },
+        {
+          "name": "external_transaction_id",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商流水号"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "process_status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理状态 pending/processed/duplicate/failed"
+        },
+        {
+          "name": "processed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理完成时间"
+        },
+        {
+          "name": "raw_data",
+          "type": "JSON",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "原始 JSON"
+        },
+        {
+          "name": "received_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "接收时间"
+        },
+        {
+          "name": "supplier_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商 ID"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_raw_external",
+          "columns": [
+            "external_transaction_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_raw_supplier",
+          "columns": [
+            "supplier_id",
+            "process_status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_energy_raw_hash",
+          "columns": [
+            "data_hash"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_cost_allocation",
+      "comment": "能源成本归集结果",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "金额合计（仅 is_ledger_affecting=1）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "dimension",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "维度 vehicle/driver/task/waybill/route/supplier"
+        },
+        {
+          "name": "dimension_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "维度对象 ID"
+        },
+        {
+          "name": "energy_type",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源类型"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "mileage",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "里程合计（km）"
+        },
+        {
+          "name": "period_end",
+          "type": "DATE",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATE",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "quantity",
+          "type": "NUMERIC(18, 4)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "数量合计"
+        },
+        {
+          "name": "record_count",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "流水笔数"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_cost_alloc_period",
+          "columns": [
+            "period_start",
+            "period_end"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_energy_cost_alloc",
+          "columns": [
+            "dimension",
+            "dimension_id",
+            "period_start",
+            "energy_type"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_exception",
+      "comment": "能源异常记录表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源账户 ID"
+        },
+        {
+          "name": "consumption_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "消费流水 ID"
+        },
+        {
+          "name": "context_json",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "上下文快照"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "exception_message",
+          "type": "VARCHAR(512)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "异常说明"
+        },
+        {
+          "name": "exception_type",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "异常类型"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "process_remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理备注"
+        },
+        {
+          "name": "processed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理时间"
+        },
+        {
+          "name": "processor_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理人 user_id"
+        },
+        {
+          "name": "risk_level",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "风险等级"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "状态 pending/processed/ignored"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_exc_cons",
+          "columns": [
+            "consumption_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_exc_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_product",
+      "comment": "能源商品表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "energy_type",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源类型 OIL/GAS/ELECTRIC/OTHER"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "product_code",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "商品编码（租户内唯一）"
+        },
+        {
+          "name": "product_name",
+          "type": "VARCHAR(128)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "商品名称"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "standard_unit",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "标准单位 L/kg/m3/kWh"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-正常"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "uk_energy_product_code",
+          "columns": [
+            "product_code"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_recharge",
+      "comment": "能源充值单",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源账户 ID"
+        },
+        {
+          "name": "actual_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际金额（支付/收款后填）"
+        },
+        {
+          "name": "approval_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "远期审批中心单号"
+        },
+        {
+          "name": "bank_account_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款银行账户 ID（biz_bank_account，仅记录）"
+        },
+        {
+          "name": "bank_account_label",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款账户快照"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "收/付方向 1-收款（应收） 2-付款（应付）"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据大类（冗余）：task_finance / carrier_recon / carrier_settle / driver_payroll / customer_recon / customer_settle / customer_invoice"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据编号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "ledger_txn_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "入账流水 ID（biz_energy_account_txn）"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID（被哪个上游单据锁定）"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款时间"
+        },
+        {
+          "name": "paid_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款操作人 user_id"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（应付）/ 收款方式（应收）"
+        },
+        {
+          "name": "pay_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        },
+        {
+          "name": "payment_reference",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "银行回单号 / 付款凭证号"
+        },
+        {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "planned_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划金额（>= 0）"
+        },
+        {
+          "name": "recharge_time",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "充值发生时间"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批时间"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "通用状态 0-草稿 1-待审批 2-已审批 3-已支付/已收款/已开票 4-已撤销 5-已核销/已结清 6-部分核销/部分支付 9-已作废"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
+        },
+        {
+          "name": "supplier_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商 ID（冗余）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "doc_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_energy_recharge_account",
+          "columns": [
+            "account_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_recharge_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_recon",
+      "comment": "能源对账单",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "account_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源账户 ID"
+        },
+        {
+          "name": "actual_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "实际金额（支付/收款后填）"
+        },
+        {
+          "name": "approval_no",
+          "type": "VARCHAR(50)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "远期审批中心单号"
+        },
+        {
+          "name": "cancel_reason",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销原因（撤销必填）"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销时间"
+        },
+        {
+          "name": "cancelled_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "撤销操作人 user_id"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "created_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "创建人 user_id"
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(8)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "CNY",
+          "comment": "币种"
+        },
+        {
+          "name": "diff_count",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "差异笔数"
+        },
+        {
+          "name": "difference_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "差异金额"
+        },
+        {
+          "name": "direction",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "收/付方向 1-收款（应收） 2-付款（应付）"
+        },
+        {
+          "name": "doc_kind",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据大类（冗余）：task_finance / carrier_recon / carrier_settle / driver_payroll / customer_recon / customer_settle / customer_invoice"
+        },
+        {
+          "name": "doc_no",
+          "type": "VARCHAR(50)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "单据编号（系统生成，租户内唯一）"
+        },
+        {
+          "name": "external_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "外部账单金额合计"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "幂等键（远期写库唯一索引）"
+        },
+        {
+          "name": "internal_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "系统流水金额合计"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "is_locked",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否锁定（终态后置 1）"
+        },
+        {
+          "name": "locked_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定时间"
+        },
+        {
+          "name": "locked_by_doc_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "锁定来源单据 ID（被哪个上游单据锁定）"
+        },
+        {
+          "name": "matched_count",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已匹配笔数"
+        },
+        {
+          "name": "paid_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款时间"
+        },
+        {
+          "name": "paid_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "付款/收款操作人 user_id"
+        },
+        {
+          "name": "pay_method",
+          "type": "SMALLINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "支付方式（应付）/ 收款方式（应收）"
+        },
+        {
+          "name": "pay_voucher_url",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "凭证图片 URL"
+        },
+        {
+          "name": "period_end",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期止"
+        },
+        {
+          "name": "period_start",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "周期起"
+        },
+        {
+          "name": "planned_amount",
+          "type": "NUMERIC(14, 2)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "计划金额（>= 0）"
+        },
+        {
+          "name": "recon_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "2",
+          "comment": "对账类型 1-账户余额 2-消费流水"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批时间"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "审批人 user_id"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "通用状态 0-草稿 1-待审批 2-已审批 3-已支付/已收款/已开票 4-已撤销 5-已核销/已结清 6-部分核销/部分支付 9-已作废"
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批时间"
+        },
+        {
+          "name": "submitted_by",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "提交审批人 user_id"
+        },
+        {
+          "name": "supplier_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商 ID"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [
+        {
+          "name": null,
+          "columns": [
+            "doc_no"
+          ]
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_energy_recon_account",
+          "columns": [
+            "account_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_recon_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_recon_item",
+      "comment": "能源对账明细",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "consumption_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "系统消费流水 ID"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "difference_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "差异金额"
+        },
+        {
+          "name": "external_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "外部金额"
+        },
+        {
+          "name": "external_transaction_id",
+          "type": "VARCHAR(128)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "外部流水号"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "internal_amount",
+          "type": "NUMERIC(18, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "系统金额"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "process_status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "处理状态 pending/confirmed/adjusted/ignored"
+        },
+        {
+          "name": "recon_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "对账单 ID"
+        },
+        {
+          "name": "recon_result",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "MATCHED/MISSING_INTERNAL/MISSING_EXTERNAL/AMOUNT_DIFF/QTY_DIFF/DUPLICATED"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_recon_item_batch",
+          "columns": [
+            "recon_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_recon_item_cons",
+          "columns": [
+            "consumption_id"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_rule",
+      "comment": "能源风控规则表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "energy_type",
+          "type": "VARCHAR(16)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "适用能源类型，空表示全部"
+        },
+        {
+          "name": "extra_config_json",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "扩展配置"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "risk_level",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "'MEDIUM'",
+          "comment": "风险等级 LOW/MEDIUM/HIGH"
+        },
+        {
+          "name": "rule_code",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "规则编码 OVER_TANK/REPEAT_FILL/..."
+        },
+        {
+          "name": "rule_name",
+          "type": "VARCHAR(128)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "规则名称"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-启用"
+        },
+        {
+          "name": "threshold_value",
+          "type": "NUMERIC(18, 4)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "主阈值（容量倍数/分钟/偏离比例）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_station",
+      "comment": "能源站点表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "address",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "地址"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "latitude",
+          "type": "NUMERIC(10, 6)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "纬度"
+        },
+        {
+          "name": "longitude",
+          "type": "NUMERIC(10, 6)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "经度"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "station_code",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "站点编码（供应商内唯一）"
+        },
+        {
+          "name": "station_name",
+          "type": "VARCHAR(128)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "站点名称"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-正常"
+        },
+        {
+          "name": "supplier_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商 ID"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_station_supplier",
+          "columns": [
+            "supplier_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "uk_energy_station_code",
+          "columns": [
+            "supplier_id",
+            "station_code"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_supplier",
+      "comment": "能源供应商表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "contact_name",
+          "type": "VARCHAR(64)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "联系人"
+        },
+        {
+          "name": "contact_phone",
+          "type": "VARCHAR(32)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "联系电话"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(500)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "status",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "1",
+          "comment": "状态 0-停用 1-正常"
+        },
+        {
+          "name": "supplier_code",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商编码（租户内唯一）"
+        },
+        {
+          "name": "supplier_name",
+          "type": "VARCHAR(128)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "供应商名称"
+        },
+        {
+          "name": "supplier_type",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "9",
+          "comment": "类型 1-石油石化 2-燃气 3-充电 4-能源平台 5-民营油站 9-其他"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "uk_energy_supplier_code",
+          "columns": [
+            "supplier_code"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_sync_task",
+      "comment": "能源同步任务队列",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "connector_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "连接器 ID"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "error_message",
+          "type": "VARCHAR(1000)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "最近一次错误"
+        },
+        {
+          "name": "finished_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "完成时间"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "max_retry_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "3",
+          "comment": "最大重试次数"
+        },
+        {
+          "name": "payload_json",
+          "type": "VARCHAR(2000)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务参数 JSON"
+        },
+        {
+          "name": "priority",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "优先级（越大越优先）"
+        },
+        {
+          "name": "retry_count",
+          "type": "INTEGER",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "已重试次数"
+        },
+        {
+          "name": "started_at",
+          "type": "DATETIME",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "开始时间"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "'pending'",
+          "comment": "状态 pending/running/success/failed"
+        },
+        {
+          "name": "target_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目标 ID"
+        },
+        {
+          "name": "target_type",
+          "type": "VARCHAR(32)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "目标类型"
+        },
+        {
+          "name": "task_type",
+          "type": "VARCHAR(32)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "任务类型 pull/import/normalize/allocate/snapshot"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "idx_energy_sync_connector",
+          "columns": [
+            "connector_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_energy_sync_status",
+          "columns": [
+            "status",
+            "priority",
+            "created_at"
+          ],
+          "unique": false
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
+      "name": "biz_energy_vehicle_profile",
+      "comment": "车辆能源档案表",
+      "table_tier": "business",
+      "columns": [
+        {
+          "name": "battery_capacity",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "电池容量（kWh）"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "创建时间"
+        },
+        {
+          "name": "default_product_id",
+          "type": "BIGINT",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "默认能源商品 ID"
+        },
+        {
+          "name": "energy_type",
+          "type": "VARCHAR(16)",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "能源类型 OIL/GAS/ELECTRIC/OTHER"
+        },
+        {
+          "name": "id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": true,
+          "autoincrement": true,
+          "server_default": null,
+          "comment": "主键ID"
+        },
+        {
+          "name": "is_deleted",
+          "type": "SMALLINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "0",
+          "comment": "是否删除 0-否 1-是"
+        },
+        {
+          "name": "remark",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "备注"
+        },
+        {
+          "name": "standard_consumption_per_100km",
+          "type": "NUMERIC(10, 3)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "标准百公里能耗"
+        },
+        {
+          "name": "tank_capacity",
+          "type": "NUMERIC(10, 2)",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "油箱/气瓶容量（L 或 kg）"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": "now()",
+          "comment": "更新时间"
+        },
+        {
+          "name": "vehicle_id",
+          "type": "BIGINT",
+          "nullable": false,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "车辆 ID（biz_vehicle.id）"
+        }
+      ],
+      "primary_key": [
+        "id"
+      ],
+      "unique_constraints": [],
+      "indexes": [
+        {
+          "name": "uk_energy_vehicle_profile",
+          "columns": [
+            "vehicle_id"
+          ],
+          "unique": true
+        }
+      ],
+      "foreign_keys": []
+    },
+    {
       "name": "biz_finance_doc_event",
       "comment": "财务单据审计事件表",
       "table_tier": "business",

@@ -71,6 +71,17 @@ const SUBMENU_ICON_BY_PATH: Record<string, string> = {
   '/billing/cost-policy': 'sub-cost-policy',
   '/billing/carrier-contract': 'sub-carrier-contract',
   '/billing/fee-template': 'sub-fee-template',
+  // 能源中心
+  '/energy/account': 'sub-energy-account',
+  '/energy/card': 'sub-energy-card',
+  '/energy/recharge': 'sub-energy-recharge',
+  '/energy/consumption': 'sub-energy-consumption',
+  '/energy/connector': 'sub-energy-connector',
+  '/energy/recon': 'sub-energy-recon',
+  '/energy/exception': 'sub-energy-exception',
+  '/energy/analysis': 'sub-energy-analysis',
+  '/energy/supplier': 'sub-energy-supplier',
+  '/energy/setting': 'sub-energy-setting',
   // 审批中心
   '/approval/pending': 'sub-approval-pending',
   '/approval/initiated': 'sub-approval-initiated',

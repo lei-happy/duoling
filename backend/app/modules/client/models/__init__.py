@@ -163,6 +163,27 @@ from app.modules.client.models.capacity.self_capacity.driver.driver_settlement_c
     DriverSettlementConfig,
 )
 from app.modules.client.models.ecosystem import BizEcoPostRef
+from app.modules.client.models.energy import (
+    EnergyAccount,
+    EnergyAccountDailySnapshot,
+    EnergyAccountTxn,
+    EnergyCard,
+    EnergyCardBinding,
+    EnergyConnector,
+    EnergyConsumption,
+    EnergyConsumptionRaw,
+    EnergyCostAllocation,
+    EnergyException,
+    EnergyProduct,
+    EnergyRecharge,
+    EnergyRecon,
+    EnergyReconItem,
+    EnergyRule,
+    EnergyStation,
+    EnergySupplier,
+    EnergySyncTask,
+    EnergyVehicleProfile,
+)
 
 # ---- Tier 2: Business - AI 数字员工（biz_ai_*） ----
 from app.modules.ai.models.tenant.biz_ai_session import BizAiSession
@@ -295,6 +316,25 @@ __all__ = [
     "FleetWorkshop",
     "BizCompanyActivity",
     "BizEcoPostRef",
+    "EnergySupplier",
+    "EnergyStation",
+    "EnergyProduct",
+    "EnergyVehicleProfile",
+    "EnergyAccount",
+    "EnergyCard",
+    "EnergyCardBinding",
+    "EnergyAccountTxn",
+    "EnergyRecharge",
+    "EnergyAccountDailySnapshot",
+    "EnergyConsumptionRaw",
+    "EnergyConsumption",
+    "EnergyConnector",
+    "EnergySyncTask",
+    "EnergyRecon",
+    "EnergyReconItem",
+    "EnergyRule",
+    "EnergyException",
+    "EnergyCostAllocation",
     # AI 数字员工（biz_ai_*）
     "BizAiSession",
     "BizAiMessage",

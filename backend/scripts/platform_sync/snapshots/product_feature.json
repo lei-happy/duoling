@@ -624,6 +624,86 @@
     "status": 1
   },
   {
+    "feature_code": "energy_manage",
+    "feature_name": "能源中心",
+    "module": "energy",
+    "description": "能源中心一级容器：油/气/电账户、消费、对账与分析",
+    "required_tables": null,
+    "sort_order": 64,
+    "status": 1
+  },
+  {
+    "feature_code": "energy_account",
+    "feature_name": "能源账户",
+    "module": "energy",
+    "description": "供应商、站点、能源商品、车辆能源档案、账户、卡、充值与资金流水",
+    "required_tables": [
+      "biz_energy_supplier",
+      "biz_energy_station",
+      "biz_energy_product",
+      "biz_energy_vehicle_profile",
+      "biz_energy_account",
+      "biz_energy_card",
+      "biz_energy_card_binding",
+      "biz_energy_account_txn",
+      "biz_energy_recharge",
+      "biz_energy_account_daily_snapshot"
+    ],
+    "sort_order": 65,
+    "status": 1
+  },
+  {
+    "feature_code": "energy_consumption",
+    "feature_name": "能源消费",
+    "module": "energy",
+    "description": "消费台账、数据接入、原始流水与成本归集",
+    "required_tables": [
+      "biz_energy_consumption_raw",
+      "biz_energy_consumption",
+      "biz_energy_connector",
+      "biz_energy_sync_task",
+      "biz_energy_cost_allocation"
+    ],
+    "sort_order": 66,
+    "status": 1
+  },
+  {
+    "feature_code": "energy_recon",
+    "feature_name": "能源对账",
+    "module": "energy",
+    "description": "账户余额对账与消费流水对账",
+    "required_tables": [
+      "biz_energy_recon",
+      "biz_energy_recon_item"
+    ],
+    "sort_order": 67,
+    "status": 1
+  },
+  {
+    "feature_code": "energy_risk",
+    "feature_name": "能源风控",
+    "module": "energy",
+    "description": "可配置阈值与异常加注检测",
+    "required_tables": [
+      "biz_energy_rule",
+      "biz_energy_exception"
+    ],
+    "sort_order": 68,
+    "status": 1
+  },
+  {
+    "feature_code": "energy_analysis",
+    "feature_name": "能源分析",
+    "module": "energy",
+    "description": "资金效率、单车能耗与供应商对比",
+    "required_tables": [
+      "biz_energy_account_daily_snapshot",
+      "biz_energy_cost_allocation"
+    ],
+    "sort_order": 69,
+    "status": 1
+  },
+  {
     "feature_code": "approval_manage",
     "feature_name": "审批中心",
     "module": "approval",
