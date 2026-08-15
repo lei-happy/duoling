@@ -19,7 +19,7 @@ const energy: ModuleOverviewConfig = {
     { path: '/energy/recon', icon: 'contract', desc: '账户余额与消费流水对账' },
     { path: '/energy/exception', icon: 'shield', desc: '异常加注与未匹配流水' },
     { path: '/energy/analysis', icon: 'chart', desc: '单车成本与资金效率' },
-    { path: '/energy/supplier', icon: 'people', desc: '维护能源供应商与站点' },
+    { path: '/energy/supplier', icon: 'people', desc: '维护供应商，以及站点位置与结算价' },
     { path: '/energy/setting', icon: 'settings', desc: '能源商品、车辆档案与风控阈值' }
   ],
   quickActions: [

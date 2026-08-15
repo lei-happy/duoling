@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
@@ -33,9 +35,10 @@ class EnergySupplierOut(BaseModel):
     contactPhone: Optional[str] = None
     remark: Optional[str] = None
     createdAt: datetime
+    stationCount: int = 0
 
     @classmethod
-    def from_model(cls, m) -> "EnergySupplierOut":
+    def from_model(cls, m, *, station_count: int = 0) -> "EnergySupplierOut":
         return cls(
             id=m.id,
             supplierCode=m.supplier_code,
@@ -46,7 +49,25 @@ class EnergySupplierOut(BaseModel):
             contactPhone=m.contact_phone,
             remark=m.remark,
             createdAt=m.created_at,
+            stationCount=station_count,
         )
+
+
+class EnergyStationProductIn(BaseModel):
+    energyType: str
+    productId: Optional[int] = None
+    productName: Optional[str] = None
+    settlementPrice: Decimal
+    unit: Optional[str] = None
+
+
+class EnergyStationProductOut(BaseModel):
+    id: int
+    energyType: str
+    productId: Optional[int] = None
+    productName: Optional[str] = None
+    settlementPrice: Decimal
+    unit: str
 
 
 class EnergyStationCreate(BaseModel):
@@ -57,6 +78,7 @@ class EnergyStationCreate(BaseModel):
     longitude: Optional[Decimal] = None
     latitude: Optional[Decimal] = None
     remark: Optional[str] = None
+    products: Optional[list[EnergyStationProductIn]] = None
 
 
 class EnergyStationUpdate(BaseModel):
@@ -66,11 +88,13 @@ class EnergyStationUpdate(BaseModel):
     latitude: Optional[Decimal] = None
     status: Optional[int] = None
     remark: Optional[str] = None
+    products: Optional[list[EnergyStationProductIn]] = None
 
 
 class EnergyStationOut(BaseModel):
     id: int
     supplierId: int
+    supplierName: Optional[str] = None
     stationCode: str
     stationName: str
     address: Optional[str] = None
@@ -78,12 +102,20 @@ class EnergyStationOut(BaseModel):
     latitude: Optional[Decimal] = None
     status: int
     remark: Optional[str] = None
+    products: list[EnergyStationProductOut] = []
 
     @classmethod
-    def from_model(cls, m) -> "EnergyStationOut":
+    def from_model(
+        cls,
+        m,
+        *,
+        supplier_name: Optional[str] = None,
+        products: Optional[list[EnergyStationProductOut]] = None,
+    ) -> "EnergyStationOut":
         return cls(
             id=m.id,
             supplierId=m.supplier_id,
+            supplierName=supplier_name,
             stationCode=m.station_code,
             stationName=m.station_name,
             address=m.address,
@@ -91,4 +123,5 @@ class EnergyStationOut(BaseModel):
             latitude=m.latitude,
             status=m.status,
             remark=m.remark,
+            products=products or [],
         )

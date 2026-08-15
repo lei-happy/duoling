@@ -24,6 +24,7 @@
 | 14 | [开放平台](./14.开放平台.md) | open_platform（接入应用、API 密钥、MCP 配置、能力目录、调用审计）；脚本在 `backend/tests/open/test_open_platform_*.py` |
 | 15 | [车辆资产维修保养](./15.车辆资产维修保养.md) | 车辆资产目录、维修保养工单/计划/看板、运力状态联动；脚本 `test_fleet_maintenance_service.py`；报告见 [15.车辆资产维修保养-测试报告](./15.车辆资产维修保养-测试报告.md) |
 | 16 | [车辆资产成本](./16.车辆资产成本.md) | 续期台账、资产卡片与折旧、单车四类成本汇总；脚本 `test_fleet_asset_cost_service.py`；报告见 [16.车辆资产成本-测试报告](./16.车辆资产成本-测试报告.md) |
+| 17 | [能源中心](./17.能源中心.md) | 供应商/站点/账户/卡/充值/消费/导入/对账；脚本 `test_energy_*.py`；报告见 [17.能源中心-测试报告](./17.能源中心-测试报告.md) |
 
 缺陷统一登记：[缺陷记录.md](./缺陷记录.md)（不改 `00.缺陷台账/README.md`）。
 
@@ -69,6 +70,11 @@ python -m pytest tests/client -v
 | `test_ai_employee.py` | 集成(平台库) | 启用数字员工列表、按 code 查询、工具绑定 |
 | `test_task_finance_stage_rules.py` | 纯逻辑 | 费用单发起节点规则解析/判定/校验（TC-CLI-FINSTAGE-001~018） |
 | `test_task_finance_stage_service.py` | 集成(租户库) | 发起节点 create_doc 硬拦截、creatable、懒补齐幂等（TC-CLI-FINSTAGE-101~106） |
+| `test_energy_ledger.py` | 纯逻辑 | 记账符号、冲正、可用余额派生 |
+| `test_energy_pipeline.py` | 纯逻辑 | 指纹、标准化、风控判定、JSON 安全转换 |
+| `test_energy_masterdata.py` | 集成(租户库) | 供应商/站点/商品/档案/规则（TC-CLI-ENERGY-001~020） |
+| `test_energy_account_flow.py` | 集成(租户库) | 账户/卡/充值/调账/撤销（TC-CLI-ENERGY-021~040） |
+| `test_energy_consumption_flow.py` | 集成(租户库) | 消费入账、垫付、Excel 导入、对账/分析（TC-CLI-ENERGY-041~055） |
 
 ## 四、执行结果概览
 
@@ -89,6 +95,9 @@ python -m pytest tests/client -v
 |---|---|---|---|
 | BUG-CLI-001 | 地名标准化：以「州」等结尾的地级市省略「市」后缀时层级路径解析失败 | S3 | 已修复 |
 | BUG-CLI-002 | AI 日志脱敏：身份证正则反向断言用 `\w` 与手机号/银行卡的 `\d` 不一致 | S4 | 已修复 |
+| BUG-CLI-ENERGY-001 | 新增供应商 flush 后序列化 `createdAt` 触发 MissingGreenlet | S2 | 已修复 |
+| BUG-CLI-ENERGY-002 | Excel 日期单元格写入 raw JSON 列失败 | S2 | 已修复 |
+| BUG-CLI-ENERGY-003 | 软删后同编码撞唯一索引变成 IntegrityError | S3 | 已修复 |
 
 详见 [缺陷记录.md](./缺陷记录.md)。
 

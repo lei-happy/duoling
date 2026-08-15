@@ -18,6 +18,7 @@ from app.modules.client.models.energy.recon import EnergyRecon
 from app.modules.client.models.energy.recon_item import EnergyReconItem
 from app.modules.client.models.energy.rule import EnergyRule
 from app.modules.client.models.energy.station import EnergyStation
+from app.modules.client.models.energy.station_product import EnergyStationProduct
 from app.modules.client.models.energy.supplier import EnergySupplier
 from app.modules.client.models.energy.sync_task import EnergySyncTask
 from app.modules.client.models.energy.vehicle_profile import EnergyVehicleProfile
@@ -25,6 +26,7 @@ from app.modules.client.models.energy.vehicle_profile import EnergyVehicleProfil
 __all__ = [
     "EnergySupplier",
     "EnergyStation",
+    "EnergyStationProduct",
     "EnergyProduct",
     "EnergyVehicleProfile",
     "EnergyAccount",

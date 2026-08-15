@@ -85,16 +85,17 @@ class EnergyCardService:
     @staticmethod
     async def create(db: AsyncSession, data: EnergyCardCreate) -> EnergyCard:
         await EnergyAccountService.get(db, data.accountId)
+        card_no = (data.cardNo or "").strip()
+        if not card_no:
+            raise BizException("请填写卡号")
         exists = (await db.execute(
-            select(EnergyCard.id).where(
-                EnergyCard.card_no == data.cardNo.strip(), EnergyCard.is_deleted == 0
-            )
+            select(EnergyCard.id).where(EnergyCard.card_no == card_no)
         )).scalar_one_or_none()
         if exists:
             raise BizException("卡号已存在")
         obj = EnergyCard(
             account_id=data.accountId,
-            card_no=data.cardNo.strip(),
+            card_no=card_no,
             external_card_id=data.externalCardId,
             card_type=data.cardType,
             energy_type=data.energyType,
@@ -103,6 +104,7 @@ class EnergyCardService:
         )
         db.add(obj)
         await db.flush()
+        await db.refresh(obj)
         return obj
 
     @staticmethod

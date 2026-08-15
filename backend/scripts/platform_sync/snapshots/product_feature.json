@@ -640,6 +640,7 @@
     "required_tables": [
       "biz_energy_supplier",
       "biz_energy_station",
+      "biz_energy_station_product",
       "biz_energy_product",
       "biz_energy_vehicle_profile",
       "biz_energy_account",

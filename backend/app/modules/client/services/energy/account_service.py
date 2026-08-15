@@ -95,12 +95,20 @@ class EnergyAccountService:
         await EnergySupplierService.get(db, data.supplierId)
         if data.energyType not in {x["value"] for x in ENERGY_TYPES}:
             raise BizException("请选择正确的能源类型")
+        name = (data.accountName or "").strip()
+        if not name:
+            raise BizException("请填写账户名称")
         code = (data.accountCode or "").strip() or await next_code(
             db, EnergyAccount, "account_code", "EA"
         )
+        exists = (await db.execute(
+            select(EnergyAccount.id).where(EnergyAccount.account_code == code)
+        )).scalar_one_or_none()
+        if exists:
+            raise BizException("账户编码已存在")
         obj = EnergyAccount(
             account_code=code,
-            account_name=data.accountName.strip(),
+            account_name=name,
             supplier_id=data.supplierId,
             energy_type=data.energyType,
             account_type=data.accountType or "PREPAID",
@@ -110,6 +118,7 @@ class EnergyAccountService:
         )
         db.add(obj)
         await db.flush()
+        await db.refresh(obj)
         return obj
 
     @staticmethod

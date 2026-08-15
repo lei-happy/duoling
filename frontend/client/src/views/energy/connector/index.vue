@@ -1,169 +1,182 @@
 <template>
   <ele-page>
-    <ele-card>
-      <div class="toolbar">
-        <el-button type="primary" @click="openAdd">新增接入</el-button>
-      </div>
-      <el-table :data="list" v-loading="loading" border>
-        <el-table-column prop="connectorName" label="名称" min-width="160" />
-        <el-table-column label="类型" width="140">
-          <template #default="{ row }">
-            {{ labelOf(CONNECTOR_CODES, row.connectorCode) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="syncMode" label="同步方式" width="110" />
-        <el-table-column prop="lastSyncTime" label="最近同步" min-width="160" />
-        <el-table-column label="操作" width="200">
-          <template #default="{ row }">
-            <el-upload
-              v-if="row.connectorCode === 'excel'"
-              :show-file-list="false"
-              :http-request="(opt: any) => doImport(row, opt.file)"
-            >
-              <el-button link type="primary">导入 Excel</el-button>
-            </el-upload>
-            <el-button link type="primary" @click="doPull(row)">立即同步</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+    <connector-search
+      :suppliers="suppliers"
+      @search="(where) => reload(where, 1)"
+    />
+    <ele-card :body-style="{ paddingTop: '8px' }">
+      <ele-pro-table
+        ref="tableRef"
+        row-key="id"
+        :columns="columns"
+        :datasource="datasource"
+        :show-overflow-tooltip="true"
+        :highlight-current-row="true"
+        cache-key="EnergyConnectorTable"
+      >
+        <template #toolbar>
+          <btn-items
+            :items="[
+              {
+                preset: 'add',
+                title: '新增接入',
+                permission: 'energy:connector:add',
+                onClick: () => openAdd()
+              }
+            ]"
+          />
+        </template>
+        <template #connectorCode="{ row }">
+          {{ labelOf(CONNECTOR_CODES, row.connectorCode) }}
+        </template>
+        <template #lastSyncTime="{ row }">
+          {{ formatDateTime(row.lastSyncTime) }}
+        </template>
+        <template #action="{ row }">
+          <btn-items
+            divider
+            type="link"
+            :wrap="false"
+            :items="actionItems(row)"
+          />
+        </template>
+      </ele-pro-table>
     </ele-card>
-
-    <el-dialog v-model="visible" title="新增数据接入" width="520px" :close-on-click-modal="false">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="108px">
-        <el-form-item label="接入名称" prop="connectorName">
-          <el-input v-model.trim="form.connectorName" placeholder="如 中石化月账单导入" />
-        </el-form-item>
-        <el-form-item label="接入类型" prop="connectorCode">
-          <el-select v-model="form.connectorCode" style="width: 100%">
-            <el-option
-              v-for="o in CONNECTOR_CODES"
-              :key="o.value"
-              :label="o.label"
-              :value="o.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="供应商" prop="supplierId">
-          <el-select v-model="form.supplierId" filterable style="width: 100%">
-            <el-option
-              v-for="s in suppliers"
-              :key="s.id"
-              :label="s.supplierName"
-              :value="s.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="默认账户">
-          <el-select v-model="form.accountId" clearable filterable style="width: 100%">
-            <el-option
-              v-for="a in accounts"
-              :key="a.id"
-              :label="a.accountName"
-              :value="a.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="同步方式">
-          <el-select v-model="form.syncMode" style="width: 100%">
-            <el-option label="手工" value="manual" />
-            <el-option label="定时" value="cron" />
-            <el-option label="间隔拉取" value="interval" />
-          </el-select>
-        </el-form-item>
-        <el-form-item v-if="form.syncMode === 'cron'" label="Cron">
-          <el-input v-model.trim="form.cron" placeholder="如 0 2 * * *" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model.trim="form.remark" type="textarea" :rows="2" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
-      </template>
-    </el-dialog>
+    <input
+      ref="fileRef"
+      type="file"
+      accept=".xlsx,.xls,.csv"
+      class="hidden-file"
+      @change="onFilePicked"
+    />
+    <connector-edit
+      v-model:visible="visible"
+      :suppliers="suppliers"
+      :accounts="accounts"
+      @done="reload"
+    />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
   import { onMounted, reactive, ref } from 'vue';
-  import type { FormInstance, FormRules } from 'element-plus';
+  import { Refresh, Upload } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
+  import type { EleProTable } from 'ele-admin-plus';
+  import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
+  import type {
+    Columns,
+    DatasourceFunction
+  } from 'ele-admin-plus/es/ele-pro-table/types';
   import {
-    addConnector,
     importConnector,
     pageConnectors,
     pullConnector
   } from '@/api/energy';
+  import { formatDateTime } from '@/utils/date-util';
   import { CONNECTOR_CODES, asPage, labelOf } from '../_shared/options';
+  import { buildActionColumnItems } from '../_shared/action-column';
   import { useEnergyLookups } from '../_shared/use-lookups';
+  import ConnectorSearch from './components/connector-search.vue';
+  import ConnectorEdit from './components/connector-edit.vue';
+  import type { ConnectorSearchParam } from './components/connector-search.vue';
 
   defineOptions({ name: 'EnergyConnector' });
 
-  const loading = ref(false);
-  const saving = ref(false);
-  const list = ref<any[]>([]);
-  const visible = ref(false);
-  const formRef = ref<FormInstance>();
-  const form = reactive<any>({ connectorCode: 'excel', syncMode: 'manual' });
+  const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
+  const fileRef = ref<HTMLInputElement | null>(null);
+  const importRow = ref<Record<string, any> | null>(null);
   const { suppliers, accounts, loadSuppliers, loadAccounts } = useEnergyLookups();
+  const where = reactive<ConnectorSearchParam>({});
+  const visible = ref(false);
 
-  const rules: FormRules = {
-    connectorName: [{ required: true, message: '请填写接入名称', trigger: 'blur' }],
-    connectorCode: [{ required: true, message: '请选择接入类型', trigger: 'change' }],
-    supplierId: [{ required: true, message: '请选择供应商', trigger: 'change' }]
+  const columns = ref<Columns>([
+    { prop: 'connectorName', label: '名称', minWidth: 180 },
+    {
+      prop: 'connectorCode',
+      label: '类型',
+      width: 140,
+      slot: 'connectorCode'
+    },
+    { prop: 'syncMode', label: '同步方式', width: 110, align: 'center' },
+    {
+      prop: 'lastSyncTime',
+      label: '最近同步',
+      minWidth: 170,
+      slot: 'lastSyncTime'
+    },
+    {
+      columnKey: 'action',
+      label: '操作',
+      width: 180,
+      minWidth: 180,
+      align: 'center',
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
+    }
+  ]);
+
+  const datasource: DatasourceFunction = async ({ pages, where: tableWhere }) => {
+    return asPage(await pageConnectors({ ...(tableWhere || where), ...pages }));
   };
 
-  const fetchData = async () => {
-    loading.value = true;
-    try {
-      list.value = asPage(await pageConnectors({ page: 1, limit: 50 })).list;
-    } catch (e: any) {
-      EleMessage.error({ message: e.message || '加载接入配置失败，请重试', plain: true });
-    } finally {
-      loading.value = false;
-    }
+  const reload = (next?: ConnectorSearchParam, page?: number) => {
+    if (next) Object.assign(where, next);
+    tableRef.value?.reload?.({ where: { ...where }, page });
   };
 
   const openAdd = async () => {
     await Promise.all([loadSuppliers(), loadAccounts()]);
-    Object.assign(form, {
-      connectorName: '',
-      connectorCode: 'excel',
-      supplierId: undefined,
-      accountId: undefined,
-      syncMode: 'manual',
-      cron: '',
-      remark: ''
-    });
     visible.value = true;
   };
 
-  const save = async () => {
-    await formRef.value?.validate();
-    saving.value = true;
-    try {
-      await addConnector(form);
-      EleMessage.success({ message: '已新增接入配置', plain: true });
-      visible.value = false;
-      fetchData();
-    } catch (e: any) {
-      if (e?.message) EleMessage.error({ message: e.message, plain: true });
-    } finally {
-      saving.value = false;
+  const actionItems = (row: any): ButtonItem[] => {
+    const visibleItems: ButtonDropdownItem[] = [];
+    if (row.connectorCode === 'excel') {
+      visibleItems.push({
+        title: '导入 Excel',
+        icon: Upload,
+        permission: 'energy:connector:sync',
+        onClick: () => pickFile(row)
+      });
+    }
+    visibleItems.push({
+      title: '立即同步',
+      icon: Refresh,
+      permission: 'energy:connector:sync',
+      onClick: () => doPull(row)
+    });
+    return buildActionColumnItems(visibleItems);
+  };
+
+  const pickFile = (row: any) => {
+    importRow.value = row;
+    if (fileRef.value) {
+      fileRef.value.value = '';
+      fileRef.value.click();
     }
   };
 
-  const doImport = async (row: any, file: File) => {
+  const onFilePicked = async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file || !importRow.value) return;
     try {
-      const res: any = await importConnector(row.id, file);
+      const res: any = await importConnector(importRow.value.id, file);
       EleMessage.success({
         message: `已导入 ${res.imported ?? 0} 笔，重复 ${res.duplicated ?? 0} 笔`,
         plain: true
       });
-      fetchData();
-    } catch (e: any) {
-      EleMessage.error({ message: e.message || '导入失败，请检查文件后重试', plain: true });
+      reload();
+    } catch (err: any) {
+      EleMessage.error({
+        message: err.message || '导入失败，请检查文件后重试',
+        plain: true
+      });
     }
   };
 
@@ -171,16 +184,22 @@
     try {
       await pullConnector(row.id);
       EleMessage.success({ message: '已发起同步', plain: true });
-      fetchData();
+      reload();
     } catch (e: any) {
-      EleMessage.error({ message: e.message || '同步失败，请稍后重试', plain: true });
+      EleMessage.error({
+        message: e.message || '同步失败，请稍后重试',
+        plain: true
+      });
     }
   };
 
-  onMounted(fetchData);
+  onMounted(() => {
+    loadSuppliers();
+  });
 </script>
+
 <style scoped>
-  .toolbar {
-    margin-bottom: 12px;
+  .hidden-file {
+    display: none;
   }
 </style>

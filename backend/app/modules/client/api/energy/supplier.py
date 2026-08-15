@@ -8,7 +8,6 @@ from app.common.response import success
 from app.core.dependencies import get_current_user, get_tenant_db
 from app.modules.client.schemas.energy.supplier import (
     EnergyStationCreate,
-    EnergyStationOut,
     EnergyStationUpdate,
     EnergySupplierCreate,
     EnergySupplierOut,
@@ -78,12 +77,22 @@ async def page_stations(
     page_size: int = Query(20, alias="limit", ge=1, le=100),
     supplierId: Optional[int] = None,
     keyword: Optional[str] = None,
+    energyType: Optional[str] = None,
     db: AsyncSession = Depends(get_tenant_db),
     _=Depends(get_current_user),
 ):
     return success(data=await EnergyStationService.page(
-        db, page, page_size, supplierId, keyword,
+        db, page, page_size, supplierId, keyword, energyType,
     ))
+
+
+@station_router.get("/{sid}")
+async def get_station(
+    sid: int,
+    db: AsyncSession = Depends(get_tenant_db),
+    _=Depends(get_current_user),
+):
+    return success(data=await EnergyStationService.detail(db, sid))
 
 
 @station_router.post("")
@@ -94,7 +103,7 @@ async def create_station(
     _=Depends(get_current_user),
 ):
     obj = await EnergyStationService.create(db, data)
-    return success(data=EnergyStationOut.from_model(obj).model_dump())
+    return success(data=await EnergyStationService.detail(db, obj.id))
 
 
 @station_router.put("/{sid}")
@@ -106,7 +115,7 @@ async def update_station(
     _=Depends(get_current_user),
 ):
     obj = await EnergyStationService.update(db, sid, data)
-    return success(data=EnergyStationOut.from_model(obj).model_dump())
+    return success(data=await EnergyStationService.detail(db, obj.id))
 
 
 @station_router.delete("/{sid}")

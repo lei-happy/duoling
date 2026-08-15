@@ -79,6 +79,7 @@ class EnergyReconService:
         )
         db.add(obj)
         await db.flush()
+        await db.refresh(obj)
         return obj
 
     @staticmethod
@@ -191,6 +192,7 @@ class EnergyReconService:
             it.recon_id = obj.id
             db.add(it)
         await db.flush()
+        await db.refresh(obj)
         return obj
 
     @staticmethod

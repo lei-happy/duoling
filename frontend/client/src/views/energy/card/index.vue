@@ -1,201 +1,143 @@
 <template>
   <ele-page>
-    <ele-card :body-style="{ paddingBottom: 0 }">
-      <el-form :inline="true" @submit.prevent="">
-        <el-form-item label="卡号">
-          <el-input
-            v-model="keyword"
-            placeholder="卡号"
-            clearable
-            style="width: 180px"
-            @keyup.enter="reload(1)"
+    <card-search @search="(where) => reload(where, 1)" />
+    <ele-card :body-style="{ paddingTop: '8px' }">
+      <ele-pro-table
+        ref="tableRef"
+        row-key="id"
+        :columns="columns"
+        :datasource="datasource"
+        :show-overflow-tooltip="true"
+        :highlight-current-row="true"
+        cache-key="EnergyCardTable"
+      >
+        <template #toolbar>
+          <btn-items
+            :items="[
+              {
+                preset: 'add',
+                title: '新增能源卡',
+                permission: 'energy:card:add',
+                onClick: () => openEdit()
+              }
+            ]"
           />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="reload(1)">查询</el-button>
-          <el-button type="primary" @click="openEdit()">新增能源卡</el-button>
-        </el-form-item>
-      </el-form>
-    </ele-card>
-    <ele-card>
-      <el-table :data="list" v-loading="loading" border>
-        <el-table-column prop="cardNo" label="卡号" min-width="160" />
-        <el-table-column prop="accountName" label="所属账户" min-width="140" />
-        <el-table-column label="能源" width="80">
-          <template #default="{ row }">
-            {{ labelOf(ENERGY_TYPES, row.energyType) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="cardType" label="卡类型" width="100" />
-        <el-table-column label="当前绑定" min-width="160">
-          <template #default="{ row }">
-            {{ bindText(row) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="90">
-          <template #default="{ row }">
-            {{ labelOf(CARD_STATUSES, row.status) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="primary" @click="openBind(row)">绑定</el-button>
-            <el-button link type="primary" @click="doUnbind(row)">解绑</el-button>
-            <el-button link type="danger" @click="doRemove(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="pager">
-        <el-pagination
-          :current-page="page"
-          :page-size="limit"
-          :total="total"
-          layout="total, prev, pager, next"
-          @current-change="(p: number) => { page = p; fetchData(); }"
-        />
-      </div>
-    </ele-card>
-
-    <el-dialog
-      v-model="editVisible"
-      :title="form.id ? '编辑能源卡' : '新增能源卡'"
-      width="520px"
-      :close-on-click-modal="false"
-    >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="96px">
-        <el-form-item label="所属账户" prop="accountId">
-          <el-select
-            v-model="form.accountId"
-            filterable
-            style="width: 100%"
-            :disabled="!!form.id"
+        </template>
+        <template #energyType="{ row }">
+          {{ labelOf(ENERGY_TYPES, row.energyType) }}
+        </template>
+        <template #bind="{ row }">
+          {{ bindText(row) }}
+        </template>
+        <template #status="{ row }">
+          <el-tag
+            :type="row.status === 1 ? 'success' : 'info'"
+            size="small"
+            :disable-transitions="true"
           >
-            <el-option
-              v-for="a in accounts"
-              :key="a.id"
-              :label="`${a.accountName}（${a.accountCode}）`"
-              :value="a.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="卡号" prop="cardNo">
-          <el-input v-model.trim="form.cardNo" :disabled="!!form.id" placeholder="实体卡或虚拟卡号" />
-        </el-form-item>
-        <el-form-item label="卡类型">
-          <el-select v-model="form.cardType" clearable style="width: 100%">
-            <el-option v-for="o in CARD_TYPES" :key="o.value" :label="o.label" :value="o.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="能源类型">
-          <el-select v-model="form.energyType" clearable style="width: 100%">
-            <el-option v-for="o in ENERGY_TYPES" :key="o.value" :label="o.label" :value="o.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item v-if="form.id" label="状态">
-          <el-select v-model="form.status" style="width: 100%">
-            <el-option
-              v-for="o in CARD_STATUSES"
-              :key="o.value"
-              :label="o.label"
-              :value="o.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model.trim="form.remark" type="textarea" :rows="2" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="editVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog v-model="bindVisible" title="绑定车辆 / 司机" width="480px" :close-on-click-modal="false">
-      <el-alert
-        type="info"
-        :closable="false"
-        title="绑定会记下开始时间。以后改绑不会覆盖历史，三个月前的消费仍能还原当时绑的是谁。"
-        style="margin-bottom: 16px"
-      />
-      <el-form :model="bindForm" label-width="80px">
-        <el-form-item label="车辆">
-          <el-select v-model="bindForm.vehicleId" filterable clearable style="width: 100%">
-            <el-option
-              v-for="v in vehicles"
-              :key="v.id"
-              :label="v.plateNumber"
-              :value="v.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="司机">
-          <el-select v-model="bindForm.driverId" filterable clearable style="width: 100%">
-            <el-option
-              v-for="d in drivers"
-              :key="d.id"
-              :label="`${d.name || '未命名'}${d.phone ? ' · ' + d.phone : ''}`"
-              :value="d.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="bindVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="saveBind">确认绑定</el-button>
-      </template>
-    </el-dialog>
+            {{ labelOf(CARD_STATUSES, row.status) }}
+          </el-tag>
+        </template>
+        <template #action="{ row }">
+          <btn-items
+            divider
+            type="link"
+            :wrap="false"
+            :items="actionItems(row)"
+          />
+        </template>
+      </ele-pro-table>
+    </ele-card>
+    <card-edit
+      v-model:visible="editVisible"
+      :data="editData"
+      :accounts="accounts"
+      @done="reload"
+    />
+    <card-bind
+      v-model:visible="bindVisible"
+      :card="bindData"
+      :vehicles="vehicles"
+      :drivers="drivers"
+      @done="reload"
+    />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
   import { onMounted, reactive, ref } from 'vue';
-  import type { FormInstance, FormRules } from 'element-plus';
   import { ElMessageBox } from 'element-plus';
+  import { Link, Unlock } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
-  import {
-    addCard,
-    bindCard,
-    pageCards,
-    removeCard,
-    unbindCard,
-    updateCard
-  } from '@/api/energy';
+  import type { EleProTable } from 'ele-admin-plus';
+  import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
+  import type {
+    Columns,
+    DatasourceFunction
+  } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { DeleteOutlined, EditOutlined } from '@/components/icons';
+  import { pageCards, removeCard, unbindCard } from '@/api/energy';
   import {
     CARD_STATUSES,
-    CARD_TYPES,
     ENERGY_TYPES,
     asPage,
     labelOf
   } from '../_shared/options';
+  import { buildActionColumnItems } from '../_shared/action-column';
   import { useEnergyLookups } from '../_shared/use-lookups';
+  import CardSearch from './components/card-search.vue';
+  import CardEdit from './components/card-edit.vue';
+  import CardBind from './components/card-bind.vue';
+  import type { CardSearchParam } from './components/card-search.vue';
 
   defineOptions({ name: 'EnergyCard' });
 
-  const loading = ref(false);
-  const saving = ref(false);
-  const list = ref<any[]>([]);
-  const total = ref(0);
-  const page = ref(1);
-  const limit = ref(20);
-  const keyword = ref('');
+  const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const { accounts, vehicles, drivers, loadAccounts, loadVehicles, loadDrivers } =
     useEnergyLookups();
-
+  const where = reactive<CardSearchParam>({});
   const editVisible = ref(false);
   const bindVisible = ref(false);
-  const formRef = ref<FormInstance>();
-  const form = reactive<any>({});
-  const bindForm = reactive<any>({ cardId: 0 });
+  const editData = ref<Record<string, any> | null>(null);
+  const bindData = ref<Record<string, any> | null>(null);
 
-  const rules: FormRules = {
-    accountId: [{ required: true, message: '请选择所属账户', trigger: 'change' }],
-    cardNo: [{ required: true, message: '请填写卡号', trigger: 'blur' }]
-  };
+  const columns = ref<Columns>([
+    { prop: 'cardNo', label: '卡号', minWidth: 160 },
+    { prop: 'accountName', label: '所属账户', minWidth: 160 },
+    {
+      prop: 'energyType',
+      label: '能源',
+      width: 80,
+      align: 'center',
+      slot: 'energyType'
+    },
+    { prop: 'cardType', label: '卡类型', width: 100, align: 'center' },
+    { prop: 'bind', label: '当前绑定', minWidth: 180, slot: 'bind' },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 90,
+      align: 'center',
+      slot: 'status'
+    },
+    {
+      columnKey: 'action',
+      label: '操作',
+      width: 160,
+      minWidth: 160,
+      align: 'center',
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
+    }
+  ]);
 
   const bindText = (row: any) => {
-    const parts = [];
+    const parts: string[] = [];
     const plate = vehicles.value.find((v) => v.id === row.vehicleId)?.plateNumber;
     const driver = drivers.value.find((d) => d.id === row.driverId);
     if (row.vehicleId) parts.push(plate || `车辆 ${row.vehicleId}`);
@@ -203,114 +145,88 @@
     return parts.join(' / ') || '未绑定';
   };
 
-  const fetchData = async () => {
-    loading.value = true;
-    try {
-      const res = asPage(
-        await pageCards({ keyword: keyword.value, page: page.value, limit: limit.value })
-      );
-      list.value = res.list;
-      total.value = res.count;
-    } catch (e: any) {
-      EleMessage.error({ message: e.message || '加载能源卡失败，请重试', plain: true });
-    } finally {
-      loading.value = false;
-    }
+  const datasource: DatasourceFunction = async ({ pages, where: tableWhere }) => {
+    return asPage(await pageCards({ ...(tableWhere || where), ...pages }));
   };
-  const reload = (p?: number) => {
-    if (p) page.value = p;
-    fetchData();
+
+  const reload = (next?: CardSearchParam, page?: number) => {
+    if (next) Object.assign(where, next);
+    tableRef.value?.reload?.({ where: { ...where }, page });
   };
 
   const openEdit = (row?: any) => {
-    Object.assign(form, {
-      id: row?.id,
-      accountId: row?.accountId,
-      cardNo: row?.cardNo || '',
-      cardType: row?.cardType || '实体卡',
-      energyType: row?.energyType || 'OIL',
-      status: row?.status ?? 1,
-      remark: row?.remark || ''
-    });
+    editData.value = row ?? null;
     editVisible.value = true;
   };
 
-  const save = async () => {
-    await formRef.value?.validate();
-    saving.value = true;
-    try {
-      if (form.id) await updateCard(form.id, form);
-      else await addCard(form);
-      EleMessage.success({ message: form.id ? '已保存能源卡' : '已新增能源卡', plain: true });
-      editVisible.value = false;
-      reload();
-    } catch (e: any) {
-      if (e?.message) EleMessage.error({ message: e.message, plain: true });
-    } finally {
-      saving.value = false;
-    }
-  };
-
   const openBind = async (row: any) => {
-    Object.assign(bindForm, {
-      cardId: row.id,
-      vehicleId: row.vehicleId,
-      driverId: row.driverId
-    });
     await Promise.all([loadVehicles(), loadDrivers()]);
+    bindData.value = row;
     bindVisible.value = true;
   };
 
-  const saveBind = async () => {
-    if (!bindForm.vehicleId && !bindForm.driverId) {
-      EleMessage.error({ message: '请至少选择车辆或司机', plain: true });
-      return;
-    }
-    saving.value = true;
-    try {
-      await bindCard(bindForm.cardId, {
-        vehicleId: bindForm.vehicleId,
-        driverId: bindForm.driverId
+  const actionItems = (row: any): ButtonItem[] => {
+    const visible: ButtonDropdownItem[] = [
+      {
+        title: '编辑',
+        icon: EditOutlined,
+        permission: 'energy:card:edit',
+        onClick: () => openEdit(row)
+      },
+      {
+        title: '绑定',
+        icon: Link,
+        permission: 'energy:card:bind',
+        onClick: () => openBind(row)
+      }
+    ];
+    if (row.vehicleId || row.driverId) {
+      visible.push({
+        title: '解绑',
+        icon: Unlock,
+        permission: 'energy:card:bind',
+        onClick: () => doUnbind(row)
       });
-      EleMessage.success({ message: '已绑定', plain: true });
-      bindVisible.value = false;
-      reload();
-    } catch (e: any) {
-      EleMessage.error({ message: e.message || '绑定失败，请重试', plain: true });
-    } finally {
-      saving.value = false;
     }
+    visible.push({
+      title: '删除',
+      icon: DeleteOutlined,
+      permission: 'energy:card:edit',
+      divided: true,
+      danger: true,
+      onClick: () => doRemove(row)
+    });
+    return buildActionColumnItems(visible);
   };
 
   const doUnbind = (row: any) => {
-    ElMessageBox.confirm('解绑后这张卡不再对应当前车辆/司机，历史绑定会保留。', '解绑确认', {
-      type: 'warning'
-    }).then(async () => {
-      await unbindCard(row.id);
-      EleMessage.success({ message: '已解绑', plain: true });
-      reload();
-    });
+    ElMessageBox.confirm(
+      '解绑后这张卡不再对应当前车辆/司机，历史绑定会保留。',
+      '解绑确认',
+      { type: 'warning', draggable: true }
+    )
+      .then(async () => {
+        await unbindCard(row.id);
+        EleMessage.success({ message: '已解绑', plain: true });
+        reload();
+      })
+      .catch(() => undefined);
   };
 
   const doRemove = (row: any) => {
     ElMessageBox.confirm(`确定删除卡「${row.cardNo}」？`, '删除确认', {
-      type: 'warning'
-    }).then(async () => {
-      await removeCard(row.id);
-      EleMessage.success({ message: '已删除', plain: true });
-      reload();
-    });
+      type: 'warning',
+      draggable: true
+    })
+      .then(async () => {
+        await removeCard(row.id);
+        EleMessage.success({ message: '已删除能源卡', plain: true });
+        reload();
+      })
+      .catch(() => undefined);
   };
 
   onMounted(async () => {
     await Promise.all([loadAccounts(), loadVehicles(), loadDrivers()]);
-    fetchData();
   });
 </script>
-<style scoped>
-  .pager {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 12px;
-  }
-</style>

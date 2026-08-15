@@ -67,6 +67,27 @@ export const RECHARGE_STATUSES: Record<number, string> = {
   5: '已结清'
 };
 
+export const RECHARGE_STATUS_OPTIONS = Object.entries(RECHARGE_STATUSES).map(
+  ([value, label]) => ({ value: Number(value), label })
+);
+
+export const RECON_DOC_STATUSES = [
+  { value: 0, label: '待核销' },
+  { value: 5, label: '已核销' }
+];
+
+export const EXCEPTION_STATUSES = [
+  { value: 'pending', label: '待处理' },
+  { value: 'processed', label: '已处理' },
+  { value: 'ignored', label: '已忽略' }
+];
+
+export const SYNC_MODES = [
+  { value: 'manual', label: '手工' },
+  { value: 'cron', label: '定时' },
+  { value: 'interval', label: '间隔拉取' }
+];
+
 export const CONNECTOR_CODES = [
   { value: 'excel', label: 'Excel 账单导入' },
   { value: 'manual', label: '手工录入' },
@@ -115,4 +136,13 @@ export function asPage<T>(res: any): { list: T[]; count: number } {
     list: res?.list ?? [],
     count: Number(res?.count ?? res?.total ?? 0)
   };
+}
+
+export function formatMoney(n: unknown, digits = 2) {
+  const v = Number(n);
+  if (Number.isNaN(v)) return '-';
+  return v.toLocaleString('zh-CN', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits
+  });
 }

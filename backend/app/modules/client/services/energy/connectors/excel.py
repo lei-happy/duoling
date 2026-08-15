@@ -10,6 +10,7 @@ from app.modules.client.services.energy.connectors.registry import (
     RawRecord,
     register_connector,
 )
+from app.modules.client.services.energy.normalizer import json_safe_value
 
 
 @register_connector(code="excel", name="Excel 账单导入", sync_modes=["manual"],
@@ -46,7 +47,7 @@ class ExcelConnector:
                 val = row[i] if i < len(row) else None
                 if val not in (None, ""):
                     empty = False
-                item[h] = val
+                item[h] = json_safe_value(val)
             if not empty:
                 out.append(item)
         return out

@@ -30,7 +30,7 @@ from app.modules.client.services.energy.constants import (
 from app.modules.client.services.energy.fingerprint import build_data_hash
 from app.modules.client.services.energy.ledger_service import EnergyLedgerService
 from app.modules.client.services.energy.matcher import EnergyMatcher
-from app.modules.client.services.energy.normalizer import normalize_record
+from app.modules.client.services.energy.normalizer import json_safe_record, normalize_record
 from app.modules.client.services.energy.refs.master_data_resolver import MasterDataResolver
 
 
@@ -157,6 +157,7 @@ class EnergyConsumptionService:
         field_mapping: Optional[dict] = None,
         is_ledger_affecting: int = 1,
     ) -> EnergyConsumptionRaw:
+        raw_data = json_safe_record(raw_data)
         std = normalize_record(raw_data, field_mapping)
         data_hash = build_data_hash(
             supplier_id=supplier_id,

@@ -6,7 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from app.modules.client.services.energy.fingerprint import build_data_hash
-from app.modules.client.services.energy.normalizer import normalize_record
+from app.modules.client.services.energy.normalizer import json_safe_record, normalize_record
 from app.modules.client.services.energy.risk_engine import (
     evaluate_over_tank,
     evaluate_price_deviation,
@@ -61,6 +61,15 @@ class TestNormalizer:
             field_mapping={"cardNo": "oil_card", "amount": "fee"},
         )
         assert std["cardNo"] == "C9"
+        assert std["amount"] == Decimal("12.5")
+
+    def test_json_safe_datetime(self):
+        t = datetime(2026, 8, 10, 15, 30, 0)
+        safe = json_safe_record({"消费时间": t, "金额": Decimal("12.5")})
+        assert safe["消费时间"] == "2026-08-10 15:30:00"
+        assert safe["金额"] == "12.5"
+        std = normalize_record(safe)
+        assert std["transactionTime"] == t
         assert std["amount"] == Decimal("12.5")
 
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any, Optional
 
@@ -59,6 +59,25 @@ def _to_dt(v) -> Optional[datetime]:
         except ValueError:
             continue
     return None
+
+
+def json_safe_value(v: Any) -> Any:
+    """把 Excel / 外部记录里的 datetime、Decimal 收成 JSON 可落库的值。"""
+    if isinstance(v, datetime):
+        return v.strftime("%Y-%m-%d %H:%M:%S")
+    if isinstance(v, date):
+        return v.isoformat()
+    if isinstance(v, Decimal):
+        return str(v)
+    if isinstance(v, dict):
+        return {k: json_safe_value(x) for k, x in v.items()}
+    if isinstance(v, (list, tuple)):
+        return [json_safe_value(x) for x in v]
+    return v
+
+
+def json_safe_record(raw: Optional[dict]) -> dict:
+    return {k: json_safe_value(v) for k, v in (raw or {}).items()}
 
 
 def normalize_record(raw: dict, field_mapping: Optional[dict] = None) -> dict:

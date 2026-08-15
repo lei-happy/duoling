@@ -45,22 +45,24 @@ class EnergyProductService:
         if not code:
             raise BizException("请填写商品编码")
         exists = (await db.execute(
-            select(EnergyProduct.id).where(
-                EnergyProduct.product_code == code, EnergyProduct.is_deleted == 0
-            )
+            select(EnergyProduct.id).where(EnergyProduct.product_code == code)
         )).scalar_one_or_none()
         if exists:
             raise BizException("商品编码已存在")
         energy_type = data.get("energyType") or "OIL"
+        name = (data.get("productName") or "").strip()
+        if not name:
+            raise BizException("请填写商品名称")
         obj = EnergyProduct(
             energy_type=energy_type,
             product_code=code,
-            product_name=(data.get("productName") or "").strip(),
+            product_name=name,
             standard_unit=data.get("standardUnit") or ENERGY_TYPE_UNITS.get(energy_type, "L"),
             remark=data.get("remark"),
         )
         db.add(obj)
         await db.flush()
+        await db.refresh(obj)
         return obj
 
     @staticmethod
@@ -128,6 +130,7 @@ class EnergyVehicleProfileService:
         if existed is None:
             db.add(obj)
         await db.flush()
+        await db.refresh(obj)
         return obj
 
 

@@ -36,6 +36,7 @@ export const removeSupplier = (id: number) => del(`/energy/suppliers/${id}`);
 
 export const pageStations = (params: any) =>
   get<PageResult<any>>('/energy/stations', params);
+export const getStation = (id: number) => get<any>(`/energy/stations/${id}`);
 export const addStation = (data: any) => post('/energy/stations', data);
 export const updateStation = (id: number, data: any) =>
   put(`/energy/stations/${id}`, data);

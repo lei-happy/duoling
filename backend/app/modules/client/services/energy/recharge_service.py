@@ -99,6 +99,7 @@ class EnergyRechargeService:
         )
         db.add(obj)
         await db.flush()
+        await db.refresh(obj)
         return obj
 
     @staticmethod
