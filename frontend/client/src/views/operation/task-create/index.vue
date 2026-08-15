@@ -84,7 +84,10 @@
 
   defineOptions({ name: 'OperationTaskCreate' });
 
-  const pickerRef = ref<{ reload: () => Promise<void> } | null>(null);
+  const pickerRef = ref<{
+    reload: () => Promise<void>;
+    consumeAndReload: (items?: TaskWaybillItem[]) => Promise<void>;
+  } | null>(null);
 
   const waybillItems = ref<TaskWaybillItem[]>([]);
   const segments = ref<TaskSegment[]>([]);
@@ -121,10 +124,11 @@
         message: '已创建配载单，可以继续配载下一单',
         plain: true
       });
+      const created = waybillItems.value;
       waybillItems.value = [];
       remark.value = '';
       remarkPopoverVisible.value = false;
-      await pickerRef.value?.reload();
+      await pickerRef.value?.consumeAndReload(created);
     } catch (e: unknown) {
       const msg = (e as { message?: string }).message || '保存失败';
       EleMessage.error({ message: msg, plain: true });

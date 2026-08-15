@@ -143,7 +143,10 @@ class DatabaseManager:
             try:
                 yield session
                 # 派生数据收尾（如任务预警重算）必须与主改动同事务，
-                # 否则接口返回成功但看板还是旧的
+                # 否则接口返回成功但看板还是旧的。
+                # 注意：Depends 默认 request scope 会在「响应已发出」后才执行到这里；
+                # 写后立刻读的接口请用 dependencies.TenantDb（scope=function），
+                # 否则客户端重拉可能看不到本次写入。
                 await run_pre_commit_hooks(session)
                 await session.commit()
             except Exception:

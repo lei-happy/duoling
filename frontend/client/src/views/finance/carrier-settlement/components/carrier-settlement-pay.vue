@@ -4,88 +4,95 @@
     title="登记付款"
     width="540px"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
+    <div v-if="detail" class="finance-identity">
+      <div class="finance-identity__name">{{ detail.docNo }}</div>
+      <div class="finance-identity__meta">
+        {{ detail.carrierName }} · 应付 ¥
+        {{ formatMoney(detail.plannedAmount) }}
+      </div>
+    </div>
     <el-alert
       v-if="detail?.isOffsetOnly === 1"
-      type="info"
+      type="warning"
       :closable="false"
       show-icon
-      class="tip"
+      class="offset-alert"
       title="本单是纯抵账单：预付已经覆盖全额，确认后直接置为已支付，不需要填凭证。"
     />
-    <el-alert
-      v-else
-      type="info"
-      :closable="false"
-      show-icon
-      class="tip"
-      title="这里登记的是「这张单付出去了」。要按批次统一打款，请走出纳台的批量打款。"
-    />
-
-    <el-form :model="form" label-width="96px" v-loading="loading">
-      <el-form-item label="结算单">
-        <span>
-          {{ detail?.docNo || '--' }}
-          <span class="muted">{{ detail?.carrierName }}</span>
-        </span>
+    <p v-else class="finance-form-tip">
+      这里登记的是「这张单付出去了」。要按批次统一打款，请走出纳台的批量打款。
+    </p>
+    <el-form
+      v-if="detail?.isOffsetOnly !== 1"
+      :model="form"
+      label-width="0"
+      class="finance-edit-form"
+      v-loading="loading"
+    >
+      <el-form-item>
+        <floating-label
+          v-model="form.actualAmount"
+          label="请输入付款金额"
+          type="input-number"
+          :input-number-min="0.01"
+          :input-number-precision="2"
+          :input-number-step="100"
+        />
       </el-form-item>
-      <el-form-item label="应付金额">
-        <span class="num">¥ {{ formatMoney(detail?.plannedAmount) }}</span>
+      <el-form-item>
+        <floating-label
+          v-model="form.paidAt"
+          label="请选择付款时间"
+          type="date"
+          date-type="datetime"
+          value-format="YYYY-MM-DD HH:mm:ss"
+          :clearable="false"
+        />
       </el-form-item>
-      <template v-if="detail?.isOffsetOnly !== 1">
-        <el-form-item label="付款金额" required>
-          <el-input-number
-            v-model="form.actualAmount"
-            :min="0.01"
-            :precision="2"
-            :controls="false"
-            style="width: 180px"
+      <el-form-item>
+        <floating-label
+          v-model="form.payMethod"
+          label="请选择付款方式"
+          type="select"
+          :clearable="false"
+        >
+          <el-option
+            v-for="o in PAY_METHOD_OPTIONS"
+            :key="o.value"
+            :value="o.value"
+            :label="o.label"
           />
-        </el-form-item>
-        <el-form-item label="付款时间" required>
-          <el-date-picker
-            v-model="form.paidAt"
-            type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            style="width: 100%"
+        </floating-label>
+      </el-form-item>
+      <el-form-item>
+        <floating-label
+          v-model="form.settlementAccountId"
+          label="付款账户，留空沿用单上账户"
+          type="select"
+          clearable
+        >
+          <el-option
+            v-for="a in accounts"
+            :key="a.accountId"
+            :value="a.accountId"
+            :label="accountLabel(a)"
           />
-        </el-form-item>
-        <el-form-item label="付款方式" required>
-          <el-select v-model="form.payMethod" style="width: 100%">
-            <el-option
-              v-for="o in PAY_METHOD_OPTIONS"
-              :key="o.value"
-              :value="o.value"
-              :label="o.label"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="付款账户">
-          <el-select
-            v-model="form.settlementAccountId"
-            placeholder="留空沿用单上账户"
-            clearable
-            style="width: 100%"
-          >
-            <el-option
-              v-for="a in accounts"
-              :key="a.accountId"
-              :value="a.accountId"
-              :label="accountLabel(a)"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="付款凭证">
-          <el-input
-            v-model="form.payVoucherUrl"
-            maxlength="500"
-            placeholder="选填，回单链接"
-          />
-        </el-form-item>
-      </template>
+        </floating-label>
+      </el-form-item>
+      <el-form-item>
+        <floating-label
+          label="请输入付款凭证链接，选填"
+          type="input"
+          v-model="form.payVoucherUrl"
+          :maxlength="500"
+          clearable
+        />
+      </el-form-item>
     </el-form>
 
     <template #footer>
@@ -100,6 +107,7 @@
 <script lang="ts" setup>
   import { ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import {
     getCarrierSettle,
     listCarrierAccounts,
@@ -208,17 +216,9 @@
 </script>
 
 <style lang="scss" scoped>
-  .tip {
-    margin-bottom: 14px;
-  }
+  @use '../../_shared/ui.scss';
 
-  .num {
-    font-variant-numeric: tabular-nums;
-  }
-
-  .muted {
-    margin-left: 8px;
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
+  .offset-alert {
+    margin-bottom: 4px;
   }
 </style>

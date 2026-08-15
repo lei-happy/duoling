@@ -5,22 +5,24 @@
     width="920px"
     top="6vh"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-form :model="form" label-width="88px">
-      <el-row :gutter="12">
+    <el-form :model="form" label-width="0" class="finance-edit-form">
+      <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="司机" required>
-            <el-select
+          <el-form-item>
+            <floating-label
               v-model="form.driverId"
-              placeholder="输入姓名或手机号搜索"
+              label="请选择司机，可搜姓名或手机号"
+              type="select"
               filterable
               remote
               :remote-method="searchDrivers"
               :loading="driverLoading"
-              style="width: 100%"
+              :clearable="false"
               @change="onDriverChange"
             >
               <el-option
@@ -29,55 +31,66 @@
                 :value="d.id as number"
                 :label="`${d.name || ''}${d.phone ? ' · ' + d.phone : ''}`"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="工资周期" required>
-            <el-date-picker
+          <el-form-item>
+            <floating-label
               v-model="period"
-              type="daterange"
+              label="请选择工资周期"
+              type="date"
+              date-type="daterange"
               value-format="YYYY-MM-DD"
               start-placeholder="开始日期"
               end-placeholder="结束日期"
-              style="width: 100%"
-              @change="loadCandidates"
+              unlink-panels
+              :clearable="false"
+              @update:model-value="loadCandidates"
             />
           </el-form-item>
         </el-col>
-      </el-row>
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="工资模式">
-            <el-select v-model="form.payrollModel" style="width: 100%">
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              v-model="form.payrollModel"
+              label="请选择工资模式"
+              type="select"
+              :clearable="false"
+            >
               <el-option
                 v-for="o in PAYROLL_MODEL_OPTIONS"
                 :key="o.value"
                 :value="o.value"
                 :label="o.label"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="周期类型">
-            <el-select v-model="form.periodType" style="width: 100%">
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              v-model="form.periodType"
+              label="请选择周期类型"
+              type="select"
+              :clearable="false"
+            >
               <el-option
                 v-for="o in PAYROLL_PERIOD_OPTIONS"
                 :key="o.value"
                 :value="o.value"
                 :label="o.label"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="发薪账户">
-            <el-select
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.accountId"
-              placeholder="留空用默认账户"
+              label="发薪账户，留空用默认账户"
+              type="select"
               clearable
-              style="width: 100%"
             >
               <el-option
                 v-for="a in accounts"
@@ -85,50 +98,54 @@
                 :value="a.accountId"
                 :label="accountLabel(a)"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-      </el-row>
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="计件口径">
-            <el-select v-model="form.billingBase" style="width: 100%">
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              v-model="form.billingBase"
+              label="请选择计件口径"
+              type="select"
+              :clearable="false"
+            >
               <el-option
                 v-for="o in BILLING_BASE_OPTIONS"
                 :key="o.value"
                 :value="o.value"
                 :label="o.label"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="提成单价">
-            <el-input-number
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.unitPrice"
-              :min="0"
-              :precision="2"
-              :controls="false"
-              placeholder="每台/每趟"
-              style="width: 100%"
+              label="请输入提成单价，每台/每趟"
+              type="input-number"
+              :input-number-min="0"
+              :input-number-precision="2"
             />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="备注">
-            <el-input
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入备注，选填"
+              type="input"
               v-model="form.remark"
-              placeholder="选填"
-              maxlength="200"
+              :maxlength="200"
+              clearable
             />
           </el-form-item>
         </el-col>
       </el-row>
     </el-form>
 
-    <div class="cand-head">
-      <span class="cand-title">可计提成的任务</span>
-      <span class="cand-tip">
+    <div class="finance-cand-head">
+      <span class="finance-cand-title">可计提成的任务</span>
+      <span class="finance-cand-tip">
         已选 {{ selected.length }} 个任务，共
         {{ selectedQuantity }} 台，预计提成 ¥
         {{ formatMoney(estimatedCommission) }}
@@ -141,7 +158,7 @@
       v-loading="loading"
       height="300"
       row-key="taskId"
-      size="small"
+      :highlight-current-row="true"
       @selection-change="(v: PayrollCandidate[]) => (selected = v)"
     >
       <el-table-column type="selection" width="42" reserve-selection />
@@ -172,7 +189,7 @@
         </template>
       </el-table-column>
       <template #empty>
-        <div class="cand-empty">
+        <div class="finance-cand-empty">
           {{
             form.driverId
               ? '这个司机在所选周期内没有可计提成的任务，换个周期看看'
@@ -194,6 +211,7 @@
 <script lang="ts" setup>
   import { computed, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import {
     addPayroll,
     listDriverAccounts,
@@ -360,27 +378,7 @@
 </script>
 
 <style lang="scss" scoped>
-  .cand-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-
-  .cand-title {
-    font-weight: 600;
-  }
-
-  .cand-tip {
-    margin-left: auto;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-  }
-
-  .cand-empty {
-    padding: 24px 0;
-    color: var(--el-text-color-secondary);
-  }
+  @use '../../_shared/ui.scss';
 
   .offset {
     color: var(--el-color-warning);

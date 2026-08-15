@@ -6,19 +6,21 @@
     width="900px"
     top="6vh"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-form :model="form" label-width="88px">
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="客户" required>
-            <el-select
+    <el-form :model="form" label-width="0" class="finance-edit-form">
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.customerId"
-              placeholder="请选择客户"
+              label="请选择客户"
+              type="select"
               filterable
-              style="width: 100%"
+              :clearable="false"
               @change="loadCandidates"
             >
               <el-option
@@ -27,83 +29,95 @@
                 :value="c.id"
                 :label="c.customerName"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="发票类型">
-            <el-select v-model="form.invoiceType" style="width: 100%">
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              v-model="form.invoiceType"
+              label="请选择发票类型"
+              type="select"
+              :clearable="false"
+            >
               <el-option
                 v-for="o in INVOICE_TYPE_OPTIONS"
                 :key="o.value"
                 :value="o.value"
                 :label="o.label"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="税率">
-            <el-input-number
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.taxRate"
-              :min="0"
-              :max="100"
-              :precision="2"
-              :controls="false"
-              placeholder="百分数，公路运输一般填 9"
-              style="width: 100%"
+              label="请输入税率，公路运输一般填 9"
+              type="input-number"
+              :input-number-min="0"
+              :input-number-max="100"
+              :input-number-precision="2"
             />
           </el-form-item>
         </el-col>
-      </el-row>
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="开票主体">
-            <business-entity-select
-              v-model="form.sellerEntityId"
-              placeholder="选填，默认取结算单主体"
-            />
+        <el-col :span="12">
+          <el-form-item>
+            <div class="finance-entity-field">
+              <span>开票主体，选填</span>
+              <business-entity-select
+                v-model="form.sellerEntityId"
+                placeholder="默认取结算单主体"
+              />
+            </div>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="购方名称">
-            <el-input
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="购方名称，留空按客户档案抬头"
+              type="input"
               v-model="form.buyerTitle"
-              placeholder="留空按客户档案抬头"
-              maxlength="100"
+              :maxlength="100"
+              clearable
             />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="购方税号">
-            <el-input
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="购方税号，留空按客户信用代码"
+              type="input"
               v-model="form.buyerTaxNo"
-              placeholder="留空按客户统一社会信用代码"
-              maxlength="30"
+              :maxlength="30"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24">
+          <el-form-item>
+            <floating-label
+              label="请输入备注，会打印在发票备注栏"
+              type="input"
+              v-model="form.remark"
+              :maxlength="500"
+              clearable
             />
           </el-form-item>
         </el-col>
       </el-row>
-      <el-form-item label="备注">
-        <el-input
-          v-model="form.remark"
-          placeholder="选填，会打印在发票备注栏"
-          maxlength="500"
-        />
-      </el-form-item>
     </el-form>
 
-    <div class="cand-head">
-      <span class="cand-title">可开票的结算单</span>
+    <div class="finance-cand-head">
+      <span class="finance-cand-title">可开票的结算单</span>
       <el-input
         v-model="keyword"
         placeholder="结算单号"
         clearable
-        size="small"
         style="width: 180px"
         @change="loadCandidates"
       />
-      <span class="cand-tip">
+      <span class="finance-cand-tip">
         已选 {{ selected.length }} 张，开票金额合计 ¥
         {{ formatMoney(selectedAmount) }}
       </span>
@@ -115,7 +129,7 @@
       v-loading="loading"
       height="300"
       row-key="settleId"
-      size="small"
+      :highlight-current-row="true"
       @selection-change="onSelectionChange"
     >
       <el-table-column type="selection" width="42" reserve-selection />
@@ -144,7 +158,7 @@
         </template>
       </el-table-column>
       <template #empty>
-        <div class="cand-empty">
+        <div class="finance-cand-empty">
           {{
             form.customerId
               ? '这个客户没有可开票的结算单，可能票已开齐或结算单还没审批'
@@ -166,6 +180,7 @@
 <script lang="ts" setup>
   import { computed, ref, watch } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import BusinessEntitySelect from '@/components/BusinessEntitySelect/index.vue';
   import {
     createCustomerInvoice,
@@ -296,27 +311,7 @@
 </script>
 
 <style lang="scss" scoped>
-  .cand-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-
-  .cand-title {
-    font-weight: 600;
-  }
-
-  .cand-tip {
-    margin-left: auto;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-  }
-
-  .cand-empty {
-    padding: 24px 0;
-    color: var(--el-text-color-secondary);
-  }
+  @use '../../_shared/ui.scss';
 
   .avail {
     font-weight: 600;

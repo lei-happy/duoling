@@ -41,6 +41,7 @@ from app.modules.client.services.state_machine.waybill_state_machine import (
 )
 from app.modules.client.services.state_machine.task_state_machine import (
     TASK_ARRIVED,
+    TASK_CANCELLED,
     TASK_DISPATCHED,
     TASK_LOADED,
     TASK_ON_WAY,
@@ -100,9 +101,33 @@ class TaskWaybillItemService:
         return conds
 
     @staticmethod
-    def _candidate_remaining_expr():
-        return WaybillCargo.quantity - func.coalesce(
-            WaybillCargo.allocated_quantity, 0
+    def _active_occupied_subquery():
+        """活跃任务上未完结挂接的占用台数（取消/删除任务不计入）。"""
+        return (
+            select(
+                TaskWaybillItem.waybill_cargo_id.label("cargo_id"),
+                func.coalesce(func.sum(TaskWaybillItem.quantity), 0).label(
+                    "occupied"
+                ),
+            )
+            .join(Task, Task.id == TaskWaybillItem.task_id)
+            .where(
+                TaskWaybillItem.is_deleted == 0,
+                TaskWaybillItem.status < UNFINISHED_THRESHOLD,
+                Task.is_deleted == 0,
+                Task.status != TASK_CANCELLED,
+            )
+            .group_by(TaskWaybillItem.waybill_cargo_id)
+            .subquery()
+        )
+
+    @staticmethod
+    def _candidate_remaining_expr(occupied_subq=None):
+        if occupied_subq is None:
+            occupied_subq = TaskWaybillItemService._active_occupied_subquery()
+        return WaybillCargo.quantity - func.greatest(
+            func.coalesce(WaybillCargo.allocated_quantity, 0),
+            func.coalesce(occupied_subq.c.occupied, 0),
         )
 
     @staticmethod
@@ -125,7 +150,10 @@ class TaskWaybillItemService:
         destination_keyword: Optional[str] = None,
         model_keyword: Optional[str] = None,
     ):
-        remaining = TaskWaybillItemService._candidate_remaining_expr()
+        occupied_subq = TaskWaybillItemService._active_occupied_subquery()
+        remaining = TaskWaybillItemService._candidate_remaining_expr(
+            occupied_subq
+        )
         conds = [
             WaybillCargo.is_deleted == 0,
             remaining > 0,
@@ -141,7 +169,7 @@ class TaskWaybillItemService:
         )
         if model_cond is not None:
             conds.append(model_cond)
-        return remaining, conds
+        return remaining, conds, occupied_subq
 
     @staticmethod
     async def count_candidate_cargoes(
@@ -153,12 +181,14 @@ class TaskWaybillItemService:
         model_keyword: Optional[str] = None,
     ) -> Tuple[int, int, int]:
         """统计待配计划数、cargo 明细行数、剩余可配总台数（不受 list limit 影响）。"""
-        remaining, conds = TaskWaybillItemService._candidate_cargo_where(
-            keyword=keyword,
-            customer_id=customer_id,
-            origin_keyword=origin_keyword,
-            destination_keyword=destination_keyword,
-            model_keyword=model_keyword,
+        remaining, conds, occupied_subq = (
+            TaskWaybillItemService._candidate_cargo_where(
+                keyword=keyword,
+                customer_id=customer_id,
+                origin_keyword=origin_keyword,
+                destination_keyword=destination_keyword,
+                model_keyword=model_keyword,
+            )
         )
         q = (
             select(
@@ -168,6 +198,9 @@ class TaskWaybillItemService:
             )
             .select_from(WaybillCargo)
             .join(Waybill, Waybill.id == WaybillCargo.waybill_id)
+            .outerjoin(
+                occupied_subq, occupied_subq.c.cargo_id == WaybillCargo.id
+            )
             .where(*conds)
         )
         row = (await db.execute(q)).one()
@@ -210,7 +243,7 @@ class TaskWaybillItemService:
             )
         )
 
-        _, conds = TaskWaybillItemService._candidate_cargo_where(
+        _, conds, occupied_subq = TaskWaybillItemService._candidate_cargo_where(
             keyword=keyword,
             customer_id=customer_id,
             origin_keyword=origin_keyword,
@@ -218,8 +251,15 @@ class TaskWaybillItemService:
             model_keyword=model_keyword,
         )
         cg_q = (
-            select(WaybillCargo, Waybill)
+            select(
+                WaybillCargo,
+                Waybill,
+                func.coalesce(occupied_subq.c.occupied, 0),
+            )
             .join(Waybill, Waybill.id == WaybillCargo.waybill_id)
+            .outerjoin(
+                occupied_subq, occupied_subq.c.cargo_id == WaybillCargo.id
+            )
             .where(*conds)
             .order_by(
                 Waybill.created_at.desc(),
@@ -242,8 +282,9 @@ class TaskWaybillItemService:
         series_lookup = await WaybillService._series_image_lookup_map(db)
 
         out: List[CandidateCargoOut] = []
-        for c, w in rows:
-            remaining = max(0, int(c.quantity) - int(c.allocated_quantity or 0))
+        for c, w, occupied in rows:
+            used = max(int(c.allocated_quantity or 0), int(occupied or 0))
+            remaining = max(0, int(c.quantity) - used)
             img_key = waybill_brand_model_key(c.vehicle_brand, c.vehicle_model)
             series_image = series_lookup.get(img_key)
             out.append(CandidateCargoOut(
@@ -278,12 +319,34 @@ class TaskWaybillItemService:
     # 挂接核心：cargo 行原子加减
     # ------------------------------------------------------------------
     @staticmethod
+    async def _active_occupied_quantity(
+        db: AsyncSession,
+        cargo_id: int,
+    ) -> int:
+        """未完结挂接占用的台数（比 allocated_quantity 列更接近事实）。"""
+        res = await db.execute(
+            select(func.coalesce(func.sum(TaskWaybillItem.quantity), 0))
+            .join(Task, Task.id == TaskWaybillItem.task_id)
+            .where(
+                TaskWaybillItem.waybill_cargo_id == cargo_id,
+                TaskWaybillItem.is_deleted == 0,
+                TaskWaybillItem.status < UNFINISHED_THRESHOLD,
+                Task.is_deleted == 0,
+                Task.status != TASK_CANCELLED,
+            )
+        )
+        return int(res.scalar() or 0)
+
+    @staticmethod
     async def _bump_cargo_allocated(
         db: AsyncSession,
         cargo_id: int,
         delta: int,
     ) -> WaybillCargo:
-        """原子调整 cargo.allocated_quantity；增量后必须 <= quantity 且 >= 0"""
+        """原子调整 cargo.allocated_quantity；增量后必须 <= quantity 且 >= 0
+
+        占用以未完结挂接合计为准，避免列值漂移后误拦正常配载。
+        """
         # 先锁定行
         res = await db.execute(
             select(WaybillCargo).where(
@@ -293,15 +356,17 @@ class TaskWaybillItemService:
         )
         cargo = res.scalar_one_or_none()
         if not cargo:
-            raise BizException(f"计划货物行不存在 (cargo_id={cargo_id})")
-        new_allocated = int(cargo.allocated_quantity or 0) + delta
+            raise BizException("计划货物行不存在，请刷新待选计划后重试")
+        occupied = await TaskWaybillItemService._active_occupied_quantity(
+            db, cargo_id
+        )
+        new_allocated = occupied + delta
         if new_allocated < 0:
             new_allocated = 0
         if new_allocated > int(cargo.quantity):
             raise BizException(
-                f"计划 {cargo.waybill_id} 货物行可分配台数不足："
-                f"原台数 {cargo.quantity} / 已分配 {cargo.allocated_quantity or 0} / "
-                f"本次新增 {delta}"
+                "这台商品车可配台数已经不够了，可能已经配到其他任务上，"
+                "请重新挑选还没配完的"
             )
         cargo.allocated_quantity = new_allocated
         await db.flush()
@@ -353,6 +418,23 @@ class TaskWaybillItemService:
         )
 
     @staticmethod
+    def _merge_items_in(items_in: List[TaskWaybillItemIn]) -> List[TaskWaybillItemIn]:
+        """同一货物行只挂一次，台数相加。"""
+        merged: dict[int, TaskWaybillItemIn] = {}
+        order: List[int] = []
+        for it in items_in:
+            cargo_id = int(it.waybillCargoId)
+            prev = merged.get(cargo_id)
+            if prev is None:
+                merged[cargo_id] = it
+                order.append(cargo_id)
+                continue
+            merged[cargo_id] = prev.model_copy(
+                update={"quantity": int(prev.quantity) + int(it.quantity)}
+            )
+        return [merged[cargo_id] for cargo_id in order]
+
+    @staticmethod
     async def add_items(
         db: AsyncSession,
         task: Task,
@@ -361,15 +443,35 @@ class TaskWaybillItemService:
         """批量挂接到任务单（不替换，追加）"""
         added: List[TaskWaybillItem] = []
         affected_wb: set[int] = set()
-        for it in items_in:
-            await TaskWaybillItemService._bump_cargo_allocated(
-                db, it.waybillCargoId, int(it.quantity)
+        for it in TaskWaybillItemService._merge_items_in(items_in):
+            cargo_id = int(it.waybillCargoId)
+            res = await db.execute(
+                select(WaybillCargo).where(
+                    WaybillCargo.id == cargo_id,
+                    WaybillCargo.is_deleted == 0,
+                ).with_for_update()
             )
+            cargo = res.scalar_one_or_none()
+            if not cargo:
+                raise BizException("计划货物行不存在，请刷新待选计划后重试")
+            occupied = await TaskWaybillItemService._active_occupied_quantity(
+                db, cargo_id
+            )
+            available = int(cargo.quantity) - occupied
+            if available <= 0:
+                continue
+            qty = min(int(it.quantity), available)
+            it = it.model_copy(update={"quantity": qty})
+            await TaskWaybillItemService._bump_cargo_allocated(db, cargo_id, qty)
             row = await TaskWaybillItemService._build_item_snapshot(db, task, it)
             db.add(row)
             await db.flush()
             added.append(row)
             affected_wb.add(int(row.waybill_id))
+        if not added:
+            raise BizException(
+                "选中的商品车都已经配到其他任务上了，请重新挑选还没配完的"
+            )
         await TaskWaybillItemService._refresh_task_aggregates(db, task)
         # 挂接是正向推进：禁用 downgrade
         await WaybillStatusAggregator.recompute_many(

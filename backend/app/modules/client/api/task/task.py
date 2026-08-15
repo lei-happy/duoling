@@ -18,6 +18,7 @@ from app.common.exceptions import TenantException
 from app.common.operation_log import operation_log
 from app.common.response import success
 from app.core.dependencies import (
+    TenantDb,
     ensure_biz_company_activity_table,
     get_current_user,
     get_tenant_db,
@@ -361,10 +362,16 @@ async def get_task(
 async def create_task(
     request: Request,
     data: TaskCreate,
-    db: AsyncSession = Depends(get_tenant_db),
+    db: TenantDb,
     current_user: TokenData = Depends(get_current_user),
     _: None = Depends(ensure_biz_company_activity_table),
 ):
+    """创建任务单。
+
+    使用 TenantDb（commit 在响应前完成）：手动配载页创建成功后会立刻重拉
+    待派候选，若仍用默认 request-scope Session，客户端可能读到未提交快照，
+    已配商品车会继续出现在左侧可选列表。
+    """
     _require_tenant(current_user)
     op_name = await CompanyActivityService.actor_display_name(
         db, current_user.user_id

@@ -140,13 +140,18 @@
             align="center"
           >
             <template #default="{ row }">
-              <el-link
-                type="danger"
-                :underline="false"
-                @click="removeItem(row.id, row.docNo)"
-              >
-                移出
-              </el-link>
+              <btn-items
+                :items="[
+                  {
+                    title: '移出',
+                    icon: DeleteOutlined,
+                    danger: true,
+                    onClick: () => removeItem(row.id, row.docNo)
+                  }
+                ]"
+                type="link"
+                :wrap="false"
+              />
             </template>
           </el-table-column>
           <template #empty>
@@ -229,10 +234,12 @@
       title="执行打款"
       width="760px"
       append-to-body
+      draggable
+      :close-on-click-modal="false"
     >
-      <div class="exec-tip">
+      <p class="finance-form-tip">
         默认按全部成功登记。某笔没打成功就取消勾选并填原因，失败笔会留在批次里等补打。
-      </div>
+      </p>
       <el-table :data="execRows" size="small" max-height="340">
         <el-table-column label="成功" width="70" align="center">
           <template #default="{ row }">
@@ -287,6 +294,7 @@
   import { computed, ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import { DeleteOutlined } from '@/components/icons';
   import {
     approvePaymentBatch,
     cancelPaymentBatch,
@@ -529,6 +537,8 @@
 </script>
 
 <style lang="scss" scoped>
+  @use '../../_shared/ui.scss';
+
   .num {
     font-variant-numeric: tabular-nums;
   }

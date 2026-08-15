@@ -3,9 +3,10 @@
   <el-dialog
     :model-value="visible"
     :title="account ? '编辑账户' : '新增账户'"
-    width="560px"
+    width="640px"
     top="8vh"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="close"
   >
@@ -13,86 +14,136 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="100px"
+      label-width="0"
+      class="finance-edit-form"
       @submit.prevent
     >
-      <el-form-item label="经营主体" prop="enterpriseId">
-        <business-entity-select
-          v-model="form.enterpriseId"
-          :disabled="!!account"
-          :auto-default="!account"
-        />
-      </el-form-item>
-      <el-form-item label="账户名称" prop="accountName">
-        <el-input
-          v-model="form.accountName"
-          placeholder="如：某某物流有限公司基本户"
-          maxlength="100"
-        />
-      </el-form-item>
-      <el-form-item label="银行账号" prop="accountNo">
-        <el-input
-          v-model="form.accountNo"
-          placeholder="填完整账号，列表只展示后四位"
-          maxlength="50"
-        />
-      </el-form-item>
-      <el-form-item label="开户银行">
-        <el-input
-          v-model="form.bankName"
-          placeholder="如：工商银行"
-          maxlength="100"
-        />
-      </el-form-item>
-      <el-form-item label="开户网点">
-        <el-input
-          v-model="form.bankBranch"
-          placeholder="如：某某支行"
-          maxlength="100"
-        />
-      </el-form-item>
-      <el-form-item label="账户类型">
-        <el-select v-model="form.accountType" style="width: 100%">
-          <el-option
-            v-for="o in BANK_ACCOUNT_TYPE_OPTIONS"
-            :key="o.value"
-            :value="o.value"
-            :label="o.label"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="收付用途">
-        <el-select v-model="form.usageScope" style="width: 100%">
-          <el-option
-            v-for="o in ACCOUNT_USAGE_SCOPE_OPTIONS"
-            :key="o.value"
-            :value="o.value"
-            :label="o.label"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item v-if="!account" label="账面余额">
-        <el-input-number
-          v-model="form.balance"
-          :precision="2"
-          :controls="false"
-          placeholder="建档时的账面余额，之后由收付款自动增减"
-          style="width: 100%"
-        />
-      </el-form-item>
-      <el-form-item label="默认账户">
-        <el-checkbox v-model="defaultReceive">收款默认用它</el-checkbox>
-        <el-checkbox v-model="defaultPay">付款默认用它</el-checkbox>
-      </el-form-item>
-      <el-form-item label="备注">
-        <el-input
-          v-model="form.remark"
-          type="textarea"
-          :rows="2"
-          maxlength="255"
-          show-word-limit
-        />
-      </el-form-item>
+      <el-row :gutter="16">
+        <el-col :span="24">
+          <el-form-item prop="enterpriseId">
+            <div class="finance-entity-field">
+              <span>经营主体</span>
+              <business-entity-select
+                v-model="form.enterpriseId"
+                :disabled="!!account"
+                :auto-default="!account"
+              />
+            </div>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item prop="accountName">
+            <floating-label
+              label="请输入账户名称"
+              type="input"
+              v-model="form.accountName"
+              :maxlength="100"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item prop="accountNo">
+            <floating-label
+              label="请输入银行账号，列表只展示后四位"
+              type="input"
+              v-model="form.accountNo"
+              :maxlength="50"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入开户银行"
+              type="input"
+              v-model="form.bankName"
+              :maxlength="100"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入开户网点"
+              type="input"
+              v-model="form.bankBranch"
+              :maxlength="100"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              v-model="form.accountType"
+              label="请选择账户类型"
+              type="select"
+              :clearable="false"
+            >
+              <el-option
+                v-for="o in BANK_ACCOUNT_TYPE_OPTIONS"
+                :key="o.value"
+                :value="o.value"
+                :label="o.label"
+              />
+            </floating-label>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              v-model="form.usageScope"
+              label="请选择收付用途"
+              type="select"
+              :clearable="false"
+            >
+              <el-option
+                v-for="o in ACCOUNT_USAGE_SCOPE_OPTIONS"
+                :key="o.value"
+                :value="o.value"
+                :label="o.label"
+              />
+            </floating-label>
+          </el-form-item>
+        </el-col>
+        <el-col v-if="!account" :span="24">
+          <el-form-item>
+            <floating-label
+              v-model="form.balance"
+              label="请输入建档账面余额"
+              type="input-number"
+              :input-number-precision="2"
+              :input-number-step="100"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24">
+          <el-form-item>
+            <div class="finance-switch-field">
+              <span>默认账户</span>
+              <div>
+                <el-checkbox v-model="defaultReceive">收款默认用它</el-checkbox>
+                <el-checkbox v-model="defaultPay">付款默认用它</el-checkbox>
+              </div>
+            </div>
+          </el-form-item>
+        </el-col>
+        <el-col :span="24">
+          <el-form-item>
+            <floating-label
+              label="请输入备注，选填"
+              type="input"
+              input-type="textarea"
+              v-model="form.remark"
+              :maxlength="255"
+              :clearable="false"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
     </el-form>
 
     <template #footer>
@@ -108,6 +159,7 @@
   import { computed, reactive, ref, watch } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
   import type { FormInstance, FormRules } from 'element-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import BusinessEntitySelect from '@/components/BusinessEntitySelect/index.vue';
   import {
     createBankAccount,
@@ -214,3 +266,7 @@
     }
   };
 </script>
+
+<style lang="scss" scoped>
+  @use '../../_shared/ui.scss';
+</style>

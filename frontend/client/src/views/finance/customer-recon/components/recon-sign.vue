@@ -4,32 +4,40 @@
     title="登记客户回签"
     width="480px"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-form :model="form" label-width="96px">
-      <el-form-item label="客户确认人" required>
-        <el-input
+    <p class="finance-form-tip">
+      登记客户签字或盖章的回签结果。确认人必填，时间留空按现在记。
+    </p>
+    <el-form :model="form" label-width="0" class="finance-edit-form">
+      <el-form-item>
+        <floating-label
+          label="请输入客户确认人"
+          type="input"
           v-model="form.signerName"
-          maxlength="50"
-          placeholder="签字或盖章的客户方人员"
+          :maxlength="50"
+          :clearable="false"
         />
       </el-form-item>
-      <el-form-item label="回签时间">
-        <el-date-picker
+      <el-form-item>
+        <floating-label
           v-model="form.signedAt"
-          type="datetime"
+          label="回签时间，留空按现在"
+          type="date"
+          date-type="datetime"
           value-format="YYYY-MM-DD HH:mm:ss"
-          placeholder="留空按当前时间"
-          style="width: 100%"
         />
       </el-form-item>
-      <el-form-item label="回签凭证">
-        <el-input
+      <el-form-item>
+        <floating-label
+          label="请输入回签凭证链接，选填"
+          type="input"
           v-model="form.voucherUrl"
-          maxlength="500"
-          placeholder="选填，回签扫描件链接"
+          :maxlength="500"
+          clearable
         />
       </el-form-item>
     </el-form>
@@ -46,6 +54,7 @@
 <script lang="ts" setup>
   import { ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { signRecon } from '@/api/finance/customer-recon';
 
   const props = defineProps<{ visible: boolean; reconId: number }>();
@@ -89,3 +98,7 @@
     }
   };
 </script>
+
+<style lang="scss" scoped>
+  @use '../../_shared/ui.scss';
+</style>

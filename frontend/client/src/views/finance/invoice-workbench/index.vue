@@ -40,15 +40,19 @@
             <el-table-column label="账期" width="110" align="center">
               <template #default="{ row }">{{ row.dueDate || '--' }}</template>
             </el-table-column>
-            <el-table-column label="操作" width="100" align="center">
+            <el-table-column label="操作" width="100" align="center" fixed="right">
               <template #default="{ row }">
-                <el-link
-                  type="primary"
-                  :underline="false"
-                  @click="goCustomerInvoice(row.customerId)"
-                >
-                  去开票
-                </el-link>
+                <btn-items
+                  :items="[
+                    {
+                      title: '去开票',
+                      icon: FormOutlined,
+                      onClick: () => goCustomerInvoice(row.customerId)
+                    }
+                  ]"
+                  type="link"
+                  :wrap="false"
+                />
               </template>
             </el-table-column>
             <template #empty>
@@ -97,15 +101,19 @@
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="100" align="center">
+            <el-table-column label="操作" width="100" align="center" fixed="right">
               <template #default="{ row }">
-                <el-link
-                  type="primary"
-                  :underline="false"
-                  @click="goVendorInvoice(row.carrierId)"
-                >
-                  去收票
-                </el-link>
+                <btn-items
+                  :items="[
+                    {
+                      title: '去收票',
+                      icon: FormOutlined,
+                      onClick: () => goVendorInvoice(row.carrierId)
+                    }
+                  ]"
+                  type="link"
+                  :wrap="false"
+                />
               </template>
             </el-table-column>
             <template #empty>
@@ -143,15 +151,19 @@
                 {{ formatDateTime(row.applicantAt) || '--' }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="110" align="center">
+            <el-table-column label="操作" width="110" align="center" fixed="right">
               <template #default="{ row }">
-                <el-link
-                  type="primary"
-                  :underline="false"
-                  @click="goCustomerInvoice(row.customerId)"
-                >
-                  去登记
-                </el-link>
+                <btn-items
+                  :items="[
+                    {
+                      title: '去登记',
+                      icon: FormOutlined,
+                      onClick: () => goCustomerInvoice(row.customerId)
+                    }
+                  ]"
+                  type="link"
+                  :wrap="false"
+                />
               </template>
             </el-table-column>
             <template #empty>
@@ -168,6 +180,7 @@
   import { computed, onMounted, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import { EleMessage } from 'ele-admin-plus';
+  import { FormOutlined } from '@/components/icons';
   import FinanceKpiCards from '../components/finance-kpi-cards.vue';
   import type { FinanceKpiCard } from '../components/finance-kpi-cards.vue';
   import {

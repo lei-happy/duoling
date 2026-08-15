@@ -1,5 +1,10 @@
 <template>
   <ele-page>
+    <recon-search
+      ref="searchRef"
+      :customers="customers"
+      @search="(next) => reload(next, 1)"
+    />
     <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
@@ -8,86 +13,20 @@
         :datasource="datasource"
         :pagination="{ pageSize: 20 }"
         :show-overflow-tooltip="true"
+        :highlight-current-row="true"
         cache-key="FinanceCustomerReconTable"
       >
         <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="对账单号/客户"
-                clearable
-                style="width: 190px"
-                @change="reload()"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.customerId"
-                placeholder="客户"
-                clearable
-                filterable
-                style="width: 200px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="c in customers"
-                  :key="c.id"
-                  :value="c.id"
-                  :label="c.customerName"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.status"
-                placeholder="状态"
-                clearable
-                style="width: 110px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in RECON_STATUS_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-date-picker
-                v-model="period"
-                type="daterange"
-                value-format="YYYY-MM-DD"
-                start-placeholder="周期开始"
-                end-placeholder="周期结束"
-                style="width: 240px"
-                @change="onPeriodChange"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-checkbox v-model="where.onlyDirty" @change="reload()">
-                只看待重核
-              </el-checkbox>
-            </el-form-item>
-            <el-form-item>
-              <el-checkbox v-model="where.onlyDiff" @change="reload()">
-                只看有差异
-              </el-checkbox>
-            </el-form-item>
-            <el-form-item>
-              <btn-items
-                :items="[
-                  {
-                    preset: 'add',
-                    title: '新建对账单',
-                    permission: 'finance:cust-recon:create',
-                    onClick: () => openCreate()
-                  }
-                ]"
-              />
-            </el-form-item>
-          </el-form>
+          <btn-items
+            :items="[
+              {
+                preset: 'add',
+                title: '新建对账单',
+                permission: 'finance:cust-recon:create',
+                onClick: () => openCreate()
+              }
+            ]"
+          />
         </template>
 
         <template #period="{ row }">
@@ -160,36 +99,12 @@
         </template>
 
         <template #action="{ row }">
-          <el-link
-            type="primary"
-            :underline="false"
-            v-permission="'finance:cust-recon:detail'"
-            @click="openDetail(row.id)"
-          >
-            详情
-          </el-link>
-          <template v-if="row.status === 0">
-            <el-divider direction="vertical" />
-            <el-link
-              type="success"
-              :underline="false"
-              v-permission="'finance:cust-recon:confirm'"
-              @click="confirmRow(row)"
-            >
-              确认
-            </el-link>
-          </template>
-          <template v-if="row.status === 2 && !row.confirmedByCustomerAt">
-            <el-divider direction="vertical" />
-            <el-link
-              type="primary"
-              :underline="false"
-              v-permission="'finance:cust-recon:customer-sign'"
-              @click="openDetail(row.id)"
-            >
-              登记回签
-            </el-link>
-          </template>
+          <btn-items
+            divider
+            type="link"
+            :wrap="false"
+            :items="actionItems(row)"
+          />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -210,17 +125,27 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, nextTick, onMounted, reactive, ref } from 'vue';
+  import { computed, onMounted, reactive, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
+  import type {
     Columns,
     DatasourceFunction
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import {
+    CheckOutlined,
+    EyeOutlined,
+    FormOutlined
+  } from '@/components/icons';
   import ReconCreate from './components/recon-create.vue';
   import ReconDetail from './components/recon-detail.vue';
+  import ReconSearch from './components/recon-search.vue';
   import { confirmRecon, pageRecons } from '@/api/finance/customer-recon';
   import type {
     ReconListItem,
@@ -229,10 +154,10 @@
   import { selectCustomers } from '@/api/partner/customer';
   import type { CustomerSelectItem } from '@/api/partner/customer/model';
   import { formatDate } from '@/utils/date-util';
+  import { buildActionColumnItems } from '../_shared/action-column';
   import {
     formatMoney,
-    RECON_STATUS_MAP,
-    RECON_STATUS_OPTIONS
+    RECON_STATUS_MAP
   } from '../status-config';
 
   defineOptions({ name: 'FinanceCustomerRecon' });
@@ -240,8 +165,8 @@
   const route = useRoute();
   const router = useRouter();
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
+  const searchRef = ref<InstanceType<typeof ReconSearch> | null>(null);
   const where = reactive<ReconParam>({});
-  const period = ref<[string, string] | null>(null);
   const customers = ref<CustomerSelectItem[]>([]);
 
   const createVisible = ref(false);
@@ -303,28 +228,26 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 180,
+      width: 160,
+      minWidth: 160,
       align: 'center',
-      fixed: 'right',
-      slot: 'action'
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
     }
   ]);
 
-  const datasource: DatasourceFunction = ({ pages }) => {
-    return pageRecons({ ...where, ...pages }).then((res) => ({
+  const datasource: DatasourceFunction = ({ pages, where: tableWhere }) => {
+    return pageRecons({ ...(tableWhere || where), ...pages }).then((res) => ({
       list: res?.list ?? [],
       count: res?.count ?? 0
     }));
   };
 
-  const reload = () => {
-    nextTick(() => tableRef.value?.reload?.());
-  };
-
-  const onPeriodChange = () => {
-    where.periodStart = period.value?.[0];
-    where.periodEnd = period.value?.[1];
-    reload();
+  const reload = (next?: ReconParam, page?: number) => {
+    if (next) Object.assign(where, next);
+    tableRef.value?.reload?.({ where: { ...where }, page });
   };
 
   const openCreate = (customerId?: number) => {
@@ -344,6 +267,34 @@
     detailVisible.value = true;
   };
 
+  const actionItems = (row: ReconListItem): ButtonItem[] => {
+    const visible: ButtonDropdownItem[] = [
+      {
+        title: '详情',
+        icon: EyeOutlined,
+        permission: 'finance:cust-recon:detail',
+        onClick: () => openDetail(row.id)
+      }
+    ];
+    if (row.status === 0) {
+      visible.push({
+        title: '确认',
+        icon: CheckOutlined,
+        permission: 'finance:cust-recon:confirm',
+        onClick: () => confirmRow(row)
+      });
+    }
+    if (row.status === 2 && !row.confirmedByCustomerAt) {
+      visible.push({
+        title: '登记回签',
+        icon: FormOutlined,
+        permission: 'finance:cust-recon:customer-sign',
+        onClick: () => openDetail(row.id)
+      });
+    }
+    return buildActionColumnItems(visible);
+  };
+
   const confirmRow = async (row: ReconListItem) => {
     try {
       await ElMessageBox.confirm(
@@ -352,7 +303,8 @@
         {
           type: 'warning',
           confirmButtonText: '确认',
-          cancelButtonText: '再看看'
+          cancelButtonText: '再看看',
+          draggable: true
         }
       );
     } catch {
@@ -380,10 +332,14 @@
     } catch {
       // 客户下拉拉取失败不影响列表，用户仍可用关键词搜索
     }
-    // 对账工作台「生成对账单」跳转带参：直接把客户预置进新建弹窗
     const q = route.query;
     if (q.create === '1' && q.customerId) {
       openCreate(Number(q.customerId));
+      router.replace({ path: route.path });
+      return;
+    }
+    if (q.customerId) {
+      searchRef.value?.setCustomer(Number(q.customerId));
       router.replace({ path: route.path });
     }
   });

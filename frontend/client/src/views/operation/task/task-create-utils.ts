@@ -19,13 +19,35 @@ export function validateCargoTab(waybillItems: TaskWaybillItem[]): boolean {
   return true;
 }
 
-/** 序列化商品车挂接 payload */
+/** 序列化商品车挂接 payload（同 cargo 行合并台数） */
 export function buildWaybillItemsPayload(waybillItems: TaskWaybillItem[]) {
-  return waybillItems.map((w) => ({
-    waybillId: w.waybillId,
-    waybillCargoId: w.waybillCargoId,
-    quantity: w.quantity,
-    segmentId: w.segmentId ?? undefined,
-    remark: w.remark
-  }));
+  const merged = new Map<
+    number,
+    {
+      waybillId: number;
+      waybillCargoId: number;
+      quantity: number;
+      segmentId: number | undefined;
+      remark: string | undefined;
+    }
+  >();
+  for (const item of waybillItems) {
+    const cargoId = Number(item.waybillCargoId);
+    if (!Number.isFinite(cargoId) || cargoId <= 0) continue;
+    const quantity = Number(item.quantity) || 0;
+    if (quantity <= 0) continue;
+    const prev = merged.get(cargoId);
+    if (prev) {
+      prev.quantity += quantity;
+      continue;
+    }
+    merged.set(cargoId, {
+      waybillId: item.waybillId,
+      waybillCargoId: cargoId,
+      quantity,
+      segmentId: item.segmentId ?? undefined,
+      remark: item.remark
+    });
+  }
+  return [...merged.values()];
 }

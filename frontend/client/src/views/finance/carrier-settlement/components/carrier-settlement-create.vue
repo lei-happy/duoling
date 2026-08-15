@@ -5,19 +5,21 @@
     width="920px"
     top="6vh"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-form :model="form" label-width="88px">
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="承运商" required>
-            <el-select
+    <el-form :model="form" label-width="0" class="finance-edit-form">
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.carrierId"
-              placeholder="请选择承运商"
+              label="请选择承运商"
+              type="select"
               filterable
-              style="width: 100%"
+              :clearable="false"
               @change="onCarrierChange"
             >
               <el-option
@@ -26,16 +28,16 @@
                 :value="c.id"
                 :label="c.carrierName"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="付款账户">
-            <el-select
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.settlementAccountId"
-              placeholder="留空取默认账户"
+              label="付款账户，留空取默认账户"
+              type="select"
               clearable
-              style="width: 100%"
             >
               <el-option
                 v-for="a in accounts"
@@ -43,47 +45,49 @@
                 :value="a.accountId"
                 :label="accountLabel(a)"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="到期日">
-            <el-date-picker
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.dueDate"
+              label="到期日，约定的付款日"
               type="date"
+              date-type="date"
               value-format="YYYY-MM-DD"
-              placeholder="约定的付款日"
-              style="width: 100%"
             />
           </el-form-item>
         </el-col>
-      </el-row>
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="纯抵账">
-            <el-switch
-              v-model="form.isOffsetOnly"
-              :active-value="1"
-              :inactive-value="0"
-              active-text="预付已覆盖，不实付"
-            />
+        <el-col :span="12">
+          <el-form-item>
+            <div class="finance-switch-field">
+              <span>纯抵账，预付已覆盖不实付</span>
+              <el-switch
+                v-model="form.isOffsetOnly"
+                :active-value="1"
+                :inactive-value="0"
+              />
+            </div>
           </el-form-item>
         </el-col>
-        <el-col :span="16">
-          <el-form-item label="备注">
-            <el-input
+        <el-col :span="24">
+          <el-form-item>
+            <floating-label
+              label="请输入备注，选填"
+              type="input"
               v-model="form.remark"
-              maxlength="200"
-              placeholder="选填"
+              :maxlength="200"
+              clearable
             />
           </el-form-item>
         </el-col>
       </el-row>
     </el-form>
 
-    <div class="cand-head">
-      <span class="cand-title">可结算的已确认对账单</span>
-      <span class="cand-tip">
+    <div class="finance-cand-head">
+      <span class="finance-cand-title">可结算的已确认对账单</span>
+      <span class="finance-cand-tip">
         已选 {{ selected.length }} 张，认领合计 ¥
         {{ formatMoney(totalApplied) }}
       </span>
@@ -94,7 +98,7 @@
       v-loading="loading"
       height="300"
       row-key="reconId"
-      size="small"
+      :highlight-current-row="true"
       @selection-change="onSelectionChange"
     >
       <el-table-column type="selection" width="42" />
@@ -143,7 +147,7 @@
         </template>
       </el-table-column>
       <template #empty>
-        <div class="cand-empty">
+        <div class="finance-cand-empty">
           {{
             form.carrierId
               ? '这个承运商没有可结算的对账单，先去承运商对账单确认一张'
@@ -165,6 +169,7 @@
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import {
     addCarrierSettle,
     listCarrierAccounts,
@@ -319,26 +324,7 @@
 </script>
 
 <style lang="scss" scoped>
-  .cand-head {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-
-  .cand-title {
-    font-weight: 600;
-  }
-
-  .cand-tip {
-    margin-left: auto;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-  }
-
-  .cand-empty {
-    padding: 24px 0;
-    color: var(--el-text-color-secondary);
-  }
+  @use '../../_shared/ui.scss';
 
   .offset {
     color: var(--el-color-info);

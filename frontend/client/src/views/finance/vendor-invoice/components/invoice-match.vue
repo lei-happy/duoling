@@ -5,26 +5,34 @@
     width="820px"
     top="8vh"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <div class="pick-head">
-      <span>
-        本票待核销 ¥ {{ formatMoney(unsettledAmount) }}，已分配 ¥
+    <div class="finance-identity">
+      <div class="finance-identity__name">核销到结算单</div>
+      <div class="finance-identity__meta">
+        本票待核销 ¥ {{ formatMoney(unsettledAmount) }} · 已分配 ¥
         {{ formatMoney(allocatedTotal) }}
-      </span>
+      </div>
+    </div>
+    <div class="finance-cand-head">
       <el-input
         v-model="keyword"
         placeholder="结算单号"
         clearable
-        size="small"
-        style="width: 180px; margin-left: auto"
+        style="width: 180px"
         @change="load"
       />
     </div>
 
-    <el-table :data="rows" v-loading="loading" height="340" size="small">
+    <el-table
+      :data="rows"
+      v-loading="loading"
+      height="340"
+      :highlight-current-row="true"
+    >
       <el-table-column prop="docNo" label="结算单号" min-width="165" />
       <el-table-column label="结算金额" width="130" align="right">
         <template #default="{ row }">
@@ -60,7 +68,7 @@
         </template>
       </el-table-column>
       <template #empty>
-        <div class="pick-empty">
+        <div class="finance-cand-empty">
           这个供应商暂时没有还缺票的结算单。先在「承运商结算单」建单，再回来核销。
         </div>
       </template>
@@ -176,13 +184,7 @@
 </script>
 
 <style lang="scss" scoped>
-  .pick-head {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-  }
+  @use '../../_shared/ui.scss';
 
   .num {
     font-variant-numeric: tabular-nums;
@@ -192,8 +194,4 @@
     color: var(--el-color-warning);
   }
 
-  .pick-empty {
-    padding: 24px 0;
-    color: var(--el-text-color-secondary);
-  }
 </style>

@@ -1,5 +1,6 @@
 <template>
   <ele-page>
+    <payroll-search @search="(next) => reload(next, 1)" />
     <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
@@ -8,75 +9,20 @@
         :datasource="datasource"
         :pagination="{ pageSize: 20 }"
         :show-overflow-tooltip="true"
+        :highlight-current-row="true"
         cache-key="FinanceDriverPayrollTable"
       >
         <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="工资单号/司机"
-                clearable
-                style="width: 190px"
-                @change="reload()"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.status"
-                placeholder="状态"
-                clearable
-                style="width: 110px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in PAYROLL_STATUS_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.payrollModel"
-                placeholder="工资模式"
-                clearable
-                style="width: 140px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in PAYROLL_MODEL_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-date-picker
-                v-model="period"
-                type="daterange"
-                value-format="YYYY-MM-DD"
-                start-placeholder="周期开始"
-                end-placeholder="周期结束"
-                style="width: 240px"
-                @change="onPeriodChange"
-              />
-            </el-form-item>
-            <el-form-item>
-              <btn-items
-                :items="[
-                  {
-                    preset: 'add',
-                    title: '新建工资单',
-                    permission: 'finance:driver-payroll:create',
-                    onClick: () => (createVisible = true)
-                  }
-                ]"
-              />
-            </el-form-item>
-          </el-form>
+          <btn-items
+            :items="[
+              {
+                preset: 'add',
+                title: '新建工资单',
+                permission: 'finance:driver-payroll:create',
+                onClick: () => (createVisible = true)
+              }
+            ]"
+          />
         </template>
 
         <template #driver="{ row }">
@@ -131,47 +77,12 @@
         </template>
 
         <template #action="{ row }">
-          <el-link
-            type="primary"
-            :underline="false"
-            v-permission="'finance:driver-payroll:detail'"
-            @click="openDetail(row.id)"
-          >
-            详情
-          </el-link>
-          <template v-if="row.status === 0">
-            <el-divider direction="vertical" />
-            <el-link
-              type="warning"
-              :underline="false"
-              v-permission="'finance:driver-payroll:submit'"
-              @click="submitRow(row)"
-            >
-              提交审批
-            </el-link>
-          </template>
-          <template v-if="row.status === 1">
-            <el-divider direction="vertical" />
-            <el-link
-              type="success"
-              :underline="false"
-              v-permission="'finance:driver-payroll:approve'"
-              @click="approveRow(row)"
-            >
-              审批通过
-            </el-link>
-          </template>
-          <template v-if="row.status === 2">
-            <el-divider direction="vertical" />
-            <el-link
-              type="primary"
-              :underline="false"
-              v-permission="'finance:driver-payroll:pay'"
-              @click="openPay(row.id)"
-            >
-              登记发放
-            </el-link>
-          </template>
+          <btn-items
+            divider
+            type="link"
+            :wrap="false"
+            :items="actionItems(row)"
+          />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -193,17 +104,28 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, nextTick, reactive, ref } from 'vue';
+  import { computed, reactive, ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
+  import type {
     Columns,
     DatasourceFunction
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import {
+    CheckCircleOutlined,
+    CloudUploadOutlined,
+    EyeOutlined,
+    FundOutlined
+  } from '@/components/icons';
   import PayrollCreate from './components/payroll-create.vue';
   import PayrollDetail from './components/payroll-detail.vue';
   import PayrollPay from './components/payroll-pay.vue';
+  import PayrollSearch from './components/payroll-search.vue';
   import {
     approvePayroll,
     pagePayrolls,
@@ -214,18 +136,13 @@
     PayrollParam
   } from '@/api/finance/driver-payroll/model';
   import { formatDate } from '@/utils/date-util';
-  import {
-    formatMoney,
-    PAYROLL_MODEL_OPTIONS,
-    PAYROLL_STATUS_MAP,
-    PAYROLL_STATUS_OPTIONS
-  } from '../status-config';
+  import { buildActionColumnItems } from '../_shared/action-column';
+  import { formatMoney, PAYROLL_STATUS_MAP } from '../status-config';
 
   defineOptions({ name: 'FinanceDriverPayroll' });
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const where = reactive<PayrollParam>({});
-  const period = ref<[string, string] | null>(null);
 
   const createVisible = ref(false);
   const detailVisible = ref(false);
@@ -287,28 +204,26 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 180,
+      width: 160,
+      minWidth: 160,
       align: 'center',
-      fixed: 'right',
-      slot: 'action'
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
     }
   ]);
 
-  const datasource: DatasourceFunction = ({ pages }) => {
-    return pagePayrolls({ ...where, ...pages }).then((res) => ({
+  const datasource: DatasourceFunction = ({ pages, where: tableWhere }) => {
+    return pagePayrolls({ ...(tableWhere || where), ...pages }).then((res) => ({
       list: res?.list ?? [],
       count: res?.count ?? 0
     }));
   };
 
-  const reload = () => {
-    nextTick(() => tableRef.value?.reload?.());
-  };
-
-  const onPeriodChange = () => {
-    where.periodStart = period.value?.[0];
-    where.periodEnd = period.value?.[1];
-    reload();
+  const reload = (next?: PayrollParam, page?: number) => {
+    if (next) Object.assign(where, next);
+    tableRef.value?.reload?.({ where: { ...where }, page });
   };
 
   const openDetail = (payrollId: number) => {
@@ -324,6 +239,42 @@
   const onCreated = (payrollId?: number) => {
     reload();
     if (payrollId) openDetail(payrollId);
+  };
+
+  const actionItems = (row: PayrollListItem): ButtonItem[] => {
+    const visible: ButtonDropdownItem[] = [
+      {
+        title: '详情',
+        icon: EyeOutlined,
+        permission: 'finance:driver-payroll:detail',
+        onClick: () => openDetail(row.id)
+      }
+    ];
+    if (row.status === 0) {
+      visible.push({
+        title: '提交审批',
+        icon: CloudUploadOutlined,
+        permission: 'finance:driver-payroll:submit',
+        onClick: () => submitRow(row)
+      });
+    }
+    if (row.status === 1) {
+      visible.push({
+        title: '审批通过',
+        icon: CheckCircleOutlined,
+        permission: 'finance:driver-payroll:approve',
+        onClick: () => approveRow(row)
+      });
+    }
+    if (row.status === 2) {
+      visible.push({
+        title: '登记发放',
+        icon: FundOutlined,
+        permission: 'finance:driver-payroll:pay',
+        onClick: () => openPay(row.id)
+      });
+    }
+    return buildActionColumnItems(visible);
   };
 
   const runRow = async (
@@ -350,7 +301,12 @@
           row.netAmount
         )}。`,
         '提交审批',
-        { type: 'warning', confirmButtonText: '提交', cancelButtonText: '取消' }
+        {
+          type: 'warning',
+          confirmButtonText: '提交',
+          cancelButtonText: '取消',
+          draggable: true
+        }
       );
     } catch {
       return;
@@ -367,7 +323,12 @@
       await ElMessageBox.confirm(
         `确认审批通过工资单「${row.docNo}」？通过后即可发放。`,
         '审批通过',
-        { type: 'warning', confirmButtonText: '通过', cancelButtonText: '取消' }
+        {
+          type: 'warning',
+          confirmButtonText: '通过',
+          cancelButtonText: '取消',
+          draggable: true
+        }
       );
     } catch {
       return;

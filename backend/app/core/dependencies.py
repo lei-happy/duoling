@@ -7,7 +7,7 @@ FastAPI 依赖注入
 - 获取租户库 Session（根据当前用户的 tenant_code）
 """
 
-from typing import AsyncGenerator, Optional, Set
+from typing import Annotated, AsyncGenerator, Optional, Set
 
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -100,6 +100,15 @@ async def ensure_biz_ai_tables(
 async def get_tenant_db(
     tenant_code: str = Depends(get_tenant_code),
 ) -> AsyncGenerator[AsyncSession, None]:
-    """获取当前租户的数据库 Session"""
+    """获取当前租户的数据库 Session
+
+    默认 ``Depends(get_tenant_db)`` 为 request scope：响应发给客户端之后才
+    ``commit``。写接口若会被前端立刻跟读（创建后刷新列表等），请改用
+    ``TenantDb``，否则客户端可能读到提交前的旧快照。
+    """
     async for session in db_manager.get_tenant_session(tenant_code):
         yield session
+
+
+# 写后立刻读：在返回响应前跑完 pre_commit hooks + commit
+TenantDb = Annotated[AsyncSession, Depends(get_tenant_db, scope="function")]

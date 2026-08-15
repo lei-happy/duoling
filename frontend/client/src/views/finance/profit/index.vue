@@ -167,16 +167,20 @@
             }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="90" align="center">
+        <el-table-column label="操作" width="90" align="center" fixed="right">
           <template #default="{ row }">
-            <el-link
-              type="primary"
-              :underline="false"
-              v-permission="'finance:profit:drill-down'"
-              @click="openDrill(row)"
-            >
-              下钻
-            </el-link>
+            <btn-items
+              :items="[
+                {
+                  title: '下钻',
+                  icon: EyeOutlined,
+                  permission: 'finance:profit:drill-down',
+                  onClick: () => openDrill(row)
+                }
+              ]"
+              type="link"
+              :wrap="false"
+            />
           </template>
         </el-table-column>
         <template #empty>
@@ -281,6 +285,7 @@
 <script lang="ts" setup>
   import { computed, onMounted, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import { EyeOutlined } from '@/components/icons';
   import BusinessEntitySelect from '@/components/BusinessEntitySelect/index.vue';
   import FinanceKpiCards from '../components/finance-kpi-cards.vue';
   import type { FinanceKpiCard } from '../components/finance-kpi-cards.vue';

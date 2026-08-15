@@ -219,10 +219,14 @@ export async function listCandidateWaybills(params: {
   modelKeyword?: string;
   offset?: number;
   limit?: number;
+  _ts?: number;
 }) {
   const res = await request.get<ApiResult<CandidateCargoListResult>>(
     '/business/task/candidate-waybills',
-    { params }
+    {
+      params,
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+    }
   );
   if (res.data.code === 0) {
     return (

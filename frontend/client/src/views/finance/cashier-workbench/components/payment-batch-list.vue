@@ -1,7 +1,7 @@
 <!-- 打款批次列表：提交、审批、执行打款都从这里进详情做 -->
 <template>
   <div>
-    <div class="panel-toolbar">
+    <el-form label-width="0" class="search-form panel-toolbar" @submit.prevent>
       <el-input
         v-model="where.keyword"
         placeholder="批次号"
@@ -9,11 +9,12 @@
         style="width: 180px"
         @change="load"
       />
-      <el-select
+      <floating-label
         v-model="where.status"
-        placeholder="状态"
+        label="请选择状态"
+        type="select"
         clearable
-        style="width: 130px"
+        style="width: 150px"
         @change="load"
       >
         <el-option
@@ -22,18 +23,23 @@
           :value="o.value"
           :label="o.label"
         />
-      </el-select>
-      <el-date-picker
+      </floating-label>
+      <floating-label
         v-model="dateRange"
-        type="daterange"
+        label="请选择创建日期"
+        type="date"
+        date-type="daterange"
         value-format="YYYY-MM-DD"
         start-placeholder="创建起"
         end-placeholder="创建止"
-        style="width: 230px"
-        @change="onDateChange"
+        unlink-panels
+        style="width: 240px"
+        @update:model-value="onDateChange"
       />
-      <el-button @click="load">刷新</el-button>
-    </div>
+      <btn-items
+        :items="[{ preset: 'search', title: '刷新', onClick: load }]"
+      />
+    </el-form>
 
     <el-table :data="rows" v-loading="loading" size="small" max-height="460">
       <el-table-column label="批次号" min-width="180">
@@ -87,15 +93,19 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="90" align="center">
+      <el-table-column label="操作" width="100" align="center" fixed="right">
         <template #default="{ row }">
-          <el-link
-            type="primary"
-            :underline="false"
-            @click="openDetail(row.id)"
-          >
-            处理
-          </el-link>
+          <btn-items
+            :items="[
+              {
+                title: '处理',
+                icon: EyeOutlined,
+                onClick: () => openDetail(row.id)
+              }
+            ]"
+            type="link"
+            :wrap="false"
+          />
         </template>
       </el-table-column>
       <template #empty>
@@ -125,6 +135,8 @@
 <script lang="ts" setup>
   import { onMounted, reactive, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
+  import { EyeOutlined } from '@/components/icons';
   import PaymentBatchDetail from './payment-batch-detail.vue';
   import { pagePaymentBatches } from '@/api/finance/payment-batch';
   import type {
@@ -186,6 +198,8 @@
 </script>
 
 <style lang="scss" scoped>
+  @use '../../_shared/ui.scss';
+
   .panel-toolbar {
     display: flex;
     flex-wrap: wrap;

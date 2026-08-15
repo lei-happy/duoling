@@ -1,82 +1,20 @@
 <template>
   <ele-page>
-    <ele-card :body-style="{ paddingTop: '8px' }">
-      <el-tabs v-model="activeTab" class="page-tabs">
-        <el-tab-pane label="发票台账" name="list" />
-        <el-tab-pane label="待收票结算单" name="pending" />
-        <el-tab-pane label="抵扣台账" name="deduct" />
-      </el-tabs>
-
-      <ele-pro-table
-        v-if="activeTab === 'list'"
-        ref="tableRef"
-        row-key="id"
-        :columns="columns"
-        :datasource="datasource"
-        :pagination="{ pageSize: 20 }"
-        :show-overflow-tooltip="true"
-        cache-key="FinanceVendorInvoiceTable"
-      >
-        <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="发票号/供应商"
-                clearable
-                style="width: 190px"
-                @change="reload()"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.status"
-                placeholder="状态"
-                clearable
-                style="width: 120px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in VENDOR_INVOICE_STATUS_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.vendorType"
-                placeholder="供应商类型"
-                clearable
-                style="width: 130px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in VENDOR_TYPE_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-date-picker
-                v-model="dateRange"
-                type="daterange"
-                value-format="YYYY-MM-DD"
-                start-placeholder="开票起"
-                end-placeholder="开票止"
-                style="width: 230px"
-                @change="onDateChange"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-checkbox v-model="where.onlyUnsettled" @change="reload()">
-                只看未核销完
-              </el-checkbox>
-            </el-form-item>
-            <el-form-item>
+    <el-tabs v-model="activeTab">
+      <el-tab-pane label="发票台账" name="list">
+        <vendor-invoice-search @search="(next) => reload(next, 1)" />
+        <ele-card :body-style="{ paddingTop: '8px' }">
+          <ele-pro-table
+            ref="tableRef"
+            row-key="id"
+            :columns="columns"
+            :datasource="datasource"
+            :pagination="{ pageSize: 20 }"
+            :show-overflow-tooltip="true"
+            :highlight-current-row="true"
+            cache-key="FinanceVendorInvoiceTable"
+          >
+            <template #toolbar>
               <btn-items
                 :items="[
                   {
@@ -87,203 +25,220 @@
                   }
                 ]"
               />
-            </el-form-item>
-          </el-form>
-        </template>
-
-        <template #vendor="{ row }">
-          <div>{{ row.vendorName || row.sellerTitle || '--' }}</div>
-          <div class="muted">{{ row.vendorTypeLabel }}</div>
-        </template>
-
-        <template #invoice="{ row }">
-          <div>{{ row.invoiceNo }}</div>
-          <div class="muted">
-            {{ row.invoiceTypeLabel }}
-            <span v-if="row.isMultiRate === 1">· 多税率</span>
-          </div>
-        </template>
-
-        <template #amount="{ row }">
-          <div class="num-cell strong">
-            ¥ {{ formatMoney(row.amountInclTax) }}
-          </div>
-          <div class="muted">
-            税额 {{ formatMoney(row.taxAmount) }}
-            <span v-if="row.taxRate != null">· {{ row.taxRate }}%</span>
-          </div>
-        </template>
-
-        <template #settled="{ row }">
-          <div class="num-cell paid"
-            >¥ {{ formatMoney(row.settledAmount) }}</div
-          >
-          <div v-if="row.unsettledAmount > 0" class="num-cell gap">
-            待核销 {{ formatMoney(row.unsettledAmount) }}
-          </div>
-        </template>
-
-        <template #deduct="{ row }">
-          <el-tag
-            :type="row.deductible === 1 ? 'success' : 'info'"
-            size="small"
-            effect="plain"
-          >
-            {{ row.deductible === 1 ? '可抵扣' : '不可抵扣' }}
-          </el-tag>
-          <div v-if="row.deductPeriod" class="muted">{{
-            row.deductPeriod
-          }}</div>
-        </template>
-
-        <template #status="{ row }">
-          <el-tag
-            :type="
-              (VENDOR_INVOICE_STATUS_MAP[row.status]?.type as any) || 'info'
-            "
-            size="small"
-          >
-            {{
-              row.statusLabel || VENDOR_INVOICE_STATUS_MAP[row.status]?.label
-            }}
-          </el-tag>
-          <div
-            v-if="row.verifyStatus === 2"
-            class="verify-bad"
-            :title="row.verifyStatusLabel"
-          >
-            验真不符
-          </div>
-        </template>
-
-        <template #action="{ row }">
-          <el-link
-            type="primary"
-            :underline="false"
-            v-permission="'finance:vendor-invoice:detail'"
-            @click="openDetail(row.id)"
-          >
-            详情
-          </el-link>
-          <template v-if="row.unsettledAmount > 0 && row.status !== 9">
-            <el-divider direction="vertical" />
-            <el-link
-              type="success"
-              :underline="false"
-              v-permission="'finance:vendor-invoice:match'"
-              @click="openDetail(row.id)"
-            >
-              核销
-            </el-link>
-          </template>
-        </template>
-      </ele-pro-table>
-
-      <!-- 待收票：从付款侧看还差多少票，催票用 -->
-      <div v-else-if="activeTab === 'pending'" class="sub-panel">
-        <div class="panel-tip">
-          已付款但票没收齐的结算单。发票到手后点「登记收票」，登记完在详情里核销到对应结算单。
-        </div>
-        <el-table :data="pendingRows" v-loading="pendingLoading" size="small">
-          <el-table-column prop="docNo" label="结算单号" min-width="170" />
-          <el-table-column prop="carrierName" label="承运商" min-width="150" />
-          <el-table-column label="结算金额" width="130" align="right">
-            <template #default="{ row }">
-              <span class="num-cell"
-                >¥ {{ formatMoney(row.plannedAmount) }}</span
-              >
             </template>
-          </el-table-column>
-          <el-table-column label="已收票" width="130" align="right">
-            <template #default="{ row }">
-              <span class="num-cell">
-                ¥ {{ formatMoney(row.invoiceAmountTotal) }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column label="缺口" width="130" align="right">
-            <template #default="{ row }">
-              <span class="num-cell gap"
-                >¥ {{ formatMoney(row.gapAmount) }}</span
-              >
-            </template>
-          </el-table-column>
-          <el-table-column label="付款时间" width="160" align="center">
-            <template #default="{ row }">
-              {{ formatDate(row.paidAt) || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="已过天数" width="100" align="center">
-            <template #default="{ row }">
-              <span :class="{ overdue: (row.paidDays || 0) > 30 }">
-                {{ row.paidDays ?? '--' }}
-              </span>
-            </template>
-          </el-table-column>
-          <template #empty>
-            <div class="empty-tip">票都收齐了，没有待催的结算单</div>
-          </template>
-        </el-table>
-      </div>
 
-      <!-- 抵扣台账：给会计报税时对数用 -->
-      <div v-else class="sub-panel">
-        <div class="panel-toolbar">
-          <el-select v-model="deductGroupBy" size="small" style="width: 140px">
-            <el-option value="period" label="按抵扣税期" />
-            <el-option value="entity" label="按开票主体" />
-            <el-option value="tax_rate" label="按税率" />
-          </el-select>
-          <el-date-picker
-            v-model="deductPeriod"
-            type="monthrange"
-            value-format="YYYY-MM"
-            start-placeholder="起始税期"
-            end-placeholder="结束税期"
-            size="small"
-            style="width: 230px"
-          />
-          <el-button size="small" type="primary" plain @click="loadDeduct">
-            查询
-          </el-button>
-        </div>
-        <el-table :data="deductRows" v-loading="deductLoading" size="small">
-          <el-table-column label="分组" min-width="160">
-            <template #default="{ row }">
-              {{ row.groupKey ?? '未填' }}
+            <template #vendor="{ row }">
+              <div>{{ row.vendorName || row.sellerTitle || '--' }}</div>
+              <div class="muted">{{ row.vendorTypeLabel }}</div>
             </template>
-          </el-table-column>
-          <el-table-column
-            prop="invoiceCount"
-            label="发票数"
-            width="100"
-            align="center"
-          />
-          <el-table-column label="不含税额" width="150" align="right">
-            <template #default="{ row }">
-              <span class="num-cell"
-                >¥ {{ formatMoney(row.amountExclTax) }}</span
-              >
+
+            <template #invoice="{ row }">
+              <div>{{ row.invoiceNo }}</div>
+              <div class="muted">
+                {{ row.invoiceTypeLabel }}
+                <span v-if="row.isMultiRate === 1">· 多税率</span>
+              </div>
             </template>
-          </el-table-column>
-          <el-table-column label="税额" width="150" align="right">
-            <template #default="{ row }">
-              <span class="num-cell">¥ {{ formatMoney(row.taxAmount) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="价税合计" width="150" align="right">
-            <template #default="{ row }">
-              <span class="num-cell strong">
+
+            <template #amount="{ row }">
+              <div class="num-cell strong">
                 ¥ {{ formatMoney(row.amountInclTax) }}
-              </span>
+              </div>
+              <div class="muted">
+                税额 {{ formatMoney(row.taxAmount) }}
+                <span v-if="row.taxRate != null">· {{ row.taxRate }}%</span>
+              </div>
             </template>
-          </el-table-column>
-          <template #empty>
-            <div class="empty-tip">这个区间还没有可抵扣的进项票</div>
-          </template>
-        </el-table>
-      </div>
-    </ele-card>
+
+            <template #settled="{ row }">
+              <div class="num-cell paid"
+                >¥ {{ formatMoney(row.settledAmount) }}</div
+              >
+              <div v-if="row.unsettledAmount > 0" class="num-cell gap">
+                待核销 {{ formatMoney(row.unsettledAmount) }}
+              </div>
+            </template>
+
+            <template #deduct="{ row }">
+              <el-tag
+                :type="row.deductible === 1 ? 'success' : 'info'"
+                size="small"
+                effect="plain"
+              >
+                {{ row.deductible === 1 ? '可抵扣' : '不可抵扣' }}
+              </el-tag>
+              <div v-if="row.deductPeriod" class="muted">{{
+                row.deductPeriod
+              }}</div>
+            </template>
+
+            <template #status="{ row }">
+              <el-tag
+                :type="
+                  (VENDOR_INVOICE_STATUS_MAP[row.status]?.type as any) || 'info'
+                "
+                size="small"
+              >
+                {{
+                  row.statusLabel || VENDOR_INVOICE_STATUS_MAP[row.status]?.label
+                }}
+              </el-tag>
+              <div
+                v-if="row.verifyStatus === 2"
+                class="verify-bad"
+                :title="row.verifyStatusLabel"
+              >
+                验真不符
+              </div>
+            </template>
+
+            <template #action="{ row }">
+              <btn-items
+                divider
+                type="link"
+                :wrap="false"
+                :items="actionItems(row)"
+              />
+            </template>
+          </ele-pro-table>
+        </ele-card>
+      </el-tab-pane>
+
+      <el-tab-pane label="待收票结算单" name="pending">
+        <ele-card :body-style="{ paddingTop: '8px' }">
+          <p class="panel-tip">
+            已付款但票没收齐的结算单。发票到手后点「登记收票」，登记完在详情里核销到对应结算单。
+          </p>
+          <el-table
+            :data="pendingRows"
+            v-loading="pendingLoading"
+            :highlight-current-row="true"
+          >
+            <el-table-column prop="docNo" label="结算单号" min-width="170" />
+            <el-table-column prop="carrierName" label="承运商" min-width="150" />
+            <el-table-column label="结算金额" width="130" align="right">
+              <template #default="{ row }">
+                <span class="num-cell"
+                  >¥ {{ formatMoney(row.plannedAmount) }}</span
+                >
+              </template>
+            </el-table-column>
+            <el-table-column label="已收票" width="130" align="right">
+              <template #default="{ row }">
+                <span class="num-cell">
+                  ¥ {{ formatMoney(row.invoiceAmountTotal) }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column label="缺口" width="130" align="right">
+              <template #default="{ row }">
+                <span class="num-cell gap"
+                  >¥ {{ formatMoney(row.gapAmount) }}</span
+                >
+              </template>
+            </el-table-column>
+            <el-table-column label="付款时间" width="160" align="center">
+              <template #default="{ row }">
+                {{ formatDate(row.paidAt) || '--' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="已过天数" width="100" align="center">
+              <template #default="{ row }">
+                <span :class="{ overdue: (row.paidDays || 0) > 30 }">
+                  {{ row.paidDays ?? '--' }}
+                </span>
+              </template>
+            </el-table-column>
+            <template #empty>
+              <div class="empty-tip">票都收齐了，没有待催的结算单</div>
+            </template>
+          </el-table>
+        </ele-card>
+      </el-tab-pane>
+
+      <el-tab-pane label="抵扣台账" name="deduct">
+        <ele-card search-form>
+          <el-form label-width="0" @submit.prevent="">
+            <el-row :gutter="8">
+              <el-col :lg="6" :md="8" :sm="12" :xs="24">
+                <floating-label
+                  v-model="deductGroupBy"
+                  label="分组方式"
+                  type="select"
+                  :clearable="false"
+                >
+                  <el-option value="period" label="按抵扣税期" />
+                  <el-option value="entity" label="按开票主体" />
+                  <el-option value="tax_rate" label="按税率" />
+                </floating-label>
+              </el-col>
+              <el-col :lg="8" :md="10" :sm="12" :xs="24">
+                <floating-label
+                  v-model="deductPeriod"
+                  label="抵扣税期"
+                  type="date"
+                  date-type="monthrange"
+                  value-format="YYYY-MM"
+                  start-placeholder="起始税期"
+                  end-placeholder="结束税期"
+                />
+              </el-col>
+              <el-col :lg="6" :md="8" :sm="12" :xs="24">
+                <el-form-item label-width="0px">
+                  <btn-items
+                    :wrap="false"
+                    :items="[
+                      { preset: 'search', onClick: () => loadDeduct() }
+                    ]"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </el-form>
+        </ele-card>
+        <ele-card :body-style="{ paddingTop: '8px' }">
+          <el-table
+            :data="deductRows"
+            v-loading="deductLoading"
+            :highlight-current-row="true"
+          >
+            <el-table-column label="分组" min-width="160">
+              <template #default="{ row }">
+                {{ row.groupKey ?? '未填' }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="invoiceCount"
+              label="发票数"
+              width="100"
+              align="center"
+            />
+            <el-table-column label="不含税额" width="150" align="right">
+              <template #default="{ row }">
+                <span class="num-cell"
+                  >¥ {{ formatMoney(row.amountExclTax) }}</span
+                >
+              </template>
+            </el-table-column>
+            <el-table-column label="税额" width="150" align="right">
+              <template #default="{ row }">
+                <span class="num-cell">¥ {{ formatMoney(row.taxAmount) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="价税合计" width="150" align="right">
+              <template #default="{ row }">
+                <span class="num-cell strong">
+                  ¥ {{ formatMoney(row.amountInclTax) }}
+                </span>
+              </template>
+            </el-table-column>
+            <template #empty>
+              <div class="empty-tip">这个区间还没有可抵扣的进项票</div>
+            </template>
+          </el-table>
+        </ele-card>
+      </el-tab-pane>
+    </el-tabs>
 
     <vendor-invoice-edit
       v-model:visible="editVisible"
@@ -301,15 +256,22 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, nextTick, reactive, ref, watch } from 'vue';
+  import { computed, reactive, ref, watch } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
+  import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
   import type {
     Columns,
     DatasourceFunction
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { ConnectionOutlined, EyeOutlined } from '@/components/icons';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import VendorInvoiceDetail from './components/vendor-invoice-detail.vue';
   import VendorInvoiceEdit from './components/vendor-invoice-edit.vue';
+  import VendorInvoiceSearch from './components/vendor-invoice-search.vue';
   import {
     getDeductSummary,
     listPendingInvoiceSettles,
@@ -319,14 +281,14 @@
     DeductSummaryRow,
     PendingInvoiceSettle,
     VendorInvoiceDetail as InvoiceDetailModel,
+    VendorInvoiceListItem,
     VendorInvoiceParam
   } from '@/api/finance/vendor-invoice/model';
   import { formatDate } from '@/utils/date-util';
+  import { buildActionColumnItems } from '../_shared/action-column';
   import {
     formatMoney,
-    VENDOR_INVOICE_STATUS_MAP,
-    VENDOR_INVOICE_STATUS_OPTIONS,
-    VENDOR_TYPE_OPTIONS
+    VENDOR_INVOICE_STATUS_MAP
   } from '../status-config';
 
   defineOptions({ name: 'FinanceVendorInvoice' });
@@ -334,7 +296,6 @@
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const activeTab = ref('list');
   const where = reactive<VendorInvoiceParam>({});
-  const dateRange = ref<[string, string] | null>(null);
 
   const editVisible = ref(false);
   const editingInvoice = ref<InvoiceDetailModel | null>(null);
@@ -399,28 +360,28 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 140,
+      width: 160,
+      minWidth: 160,
       align: 'center',
-      fixed: 'right',
-      slot: 'action'
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
     }
   ]);
 
-  const datasource: DatasourceFunction = ({ pages }) => {
-    return pageVendorInvoices({ ...where, ...pages }).then((res) => ({
-      list: res?.list ?? [],
-      count: res?.count ?? 0
-    }));
+  const datasource: DatasourceFunction = ({ pages, where: tableWhere }) => {
+    return pageVendorInvoices({ ...(tableWhere || where), ...pages }).then(
+      (res) => ({
+        list: res?.list ?? [],
+        count: res?.count ?? 0
+      })
+    );
   };
 
-  const reload = () => {
-    nextTick(() => tableRef.value?.reload?.());
-  };
-
-  const onDateChange = () => {
-    where.dateFrom = dateRange.value?.[0];
-    where.dateTo = dateRange.value?.[1];
-    reload();
+  const reload = (next?: VendorInvoiceParam, page?: number) => {
+    if (next) Object.assign(where, next);
+    tableRef.value?.reload?.({ where: { ...where }, page });
   };
 
   const openEdit = (invoice: InvoiceDetailModel | null) => {
@@ -431,6 +392,26 @@
   const openDetail = (invoiceId: number) => {
     detailId.value = invoiceId;
     detailVisible.value = true;
+  };
+
+  const actionItems = (row: VendorInvoiceListItem): ButtonItem[] => {
+    const visible: ButtonDropdownItem[] = [
+      {
+        title: '详情',
+        icon: EyeOutlined,
+        permission: 'finance:vendor-invoice:detail',
+        onClick: () => openDetail(row.id)
+      }
+    ];
+    if (row.unsettledAmount > 0 && row.status !== 9) {
+      visible.push({
+        title: '核销',
+        icon: ConnectionOutlined,
+        permission: 'finance:vendor-invoice:match',
+        onClick: () => openDetail(row.id)
+      });
+    }
+    return buildActionColumnItems(visible);
   };
 
   const onEdited = (invoiceId?: number) => {
@@ -475,29 +456,11 @@
 </script>
 
 <style lang="scss" scoped>
-  .page-tabs {
-    margin-bottom: 4px;
-
-    :deep(.el-tabs__header) {
-      margin-bottom: 8px;
-    }
-  }
-
-  .sub-panel {
-    padding-top: 4px;
-  }
-
   .panel-tip {
-    margin-bottom: 10px;
+    margin: 0 0 12px;
     color: var(--el-text-color-secondary);
     font-size: 13px;
-  }
-
-  .panel-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+    line-height: 1.7;
   }
 
   .num-cell {

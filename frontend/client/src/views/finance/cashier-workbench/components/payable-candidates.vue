@@ -1,10 +1,11 @@
 <!-- 待打款候选：已审批未入批的应付单，勾选后合成一个打款批次 -->
 <template>
   <div>
-    <div class="panel-toolbar">
-      <el-select
+    <el-form label-width="0" class="search-form panel-toolbar" @submit.prevent>
+      <floating-label
         v-model="docKinds"
-        placeholder="单据类型"
+        label="请选择单据类型"
+        type="select"
         multiple
         collapse-tags
         clearable
@@ -17,7 +18,7 @@
           :value="o.value"
           :label="o.label"
         />
-      </el-select>
+      </floating-label>
       <el-input
         v-model="keyword"
         placeholder="单号/收款方"
@@ -25,15 +26,18 @@
         style="width: 200px"
         @change="load"
       />
-      <el-date-picker
+      <floating-label
         v-model="dueBefore"
+        label="账期早于"
         type="date"
+        date-type="date"
         value-format="YYYY-MM-DD"
-        placeholder="账期早于"
-        style="width: 150px"
-        @change="load"
+        style="width: 160px"
+        @update:model-value="load"
       />
-      <el-button @click="load">刷新</el-button>
+      <btn-items
+        :items="[{ preset: 'search', title: '刷新', onClick: load }]"
+      />
       <div class="toolbar-right">
         <span class="toolbar-tip">
           已选 {{ selected.length }} 单，合计 ¥
@@ -48,7 +52,7 @@
           合成打款批次
         </el-button>
       </div>
-    </div>
+    </el-form>
 
     <el-table
       ref="tableRef"
@@ -100,15 +104,29 @@
       </template>
     </el-table>
 
-    <!-- 合成批次 -->
-    <el-dialog v-model="createVisible" title="合成打款批次" width="520px">
-      <el-form :model="form" label-width="94px">
-        <el-form-item label="付款账户" required>
-          <el-select
+    <el-dialog
+      v-model="createVisible"
+      title="合成打款批次"
+      width="520px"
+      draggable
+      :close-on-click-modal="false"
+    >
+      <div class="finance-identity">
+        <div class="finance-identity__name">
+          共 {{ selected.length }} 单
+        </div>
+        <div class="finance-identity__meta">
+          合计 ¥ {{ formatMoney(selectedAmount) }}
+        </div>
+      </div>
+      <el-form :model="form" label-width="0" class="finance-edit-form">
+        <el-form-item>
+          <floating-label
             v-model="form.bankAccountId"
-            placeholder="选一个付款账户"
+            label="请选择付款账户"
+            type="select"
             filterable
-            style="width: 100%"
+            :clearable="false"
           >
             <el-option
               v-for="a in accounts"
@@ -116,34 +134,42 @@
               :value="a.id"
               :label="`${a.displayLabel || a.accountName}（余额 ${formatMoney(a.balance)}）`"
             />
-          </el-select>
+          </floating-label>
         </el-form-item>
-        <el-form-item label="付款方式">
-          <el-select v-model="form.payMethod" style="width: 100%">
+        <el-form-item>
+          <floating-label
+            v-model="form.payMethod"
+            label="请选择付款方式"
+            type="select"
+            :clearable="false"
+          >
             <el-option
               v-for="o in PAY_METHOD_OPTIONS"
               :key="o.value"
               :value="o.value"
               :label="o.label"
             />
-          </el-select>
+          </floating-label>
         </el-form-item>
-        <el-form-item label="计划付款日">
-          <el-date-picker
+        <el-form-item>
+          <floating-label
             v-model="form.planPayDate"
+            label="计划付款日，留空表示今天付"
             type="date"
+            date-type="date"
             value-format="YYYY-MM-DD"
-            placeholder="留空表示今天付"
-            style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.remark" maxlength="500" />
+        <el-form-item>
+          <floating-label
+            label="请输入备注，选填"
+            type="input"
+            v-model="form.remark"
+            :maxlength="500"
+            clearable
+          />
         </el-form-item>
       </el-form>
-      <div class="dialog-sum">
-        共 {{ selected.length }} 单，合计 ¥ {{ formatMoney(selectedAmount) }}
-      </div>
       <template #footer>
         <el-button @click="createVisible = false">取消</el-button>
         <el-button type="primary" :loading="saving" @click="doCreate">
@@ -157,6 +183,7 @@
 <script lang="ts" setup>
   import { computed, onMounted, reactive, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import {
     createPaymentBatch,
     listPayableCandidates
@@ -283,6 +310,8 @@
 </script>
 
 <style lang="scss" scoped>
+  @use '../../_shared/ui.scss';
+
   .panel-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -332,9 +361,4 @@
     text-align: center;
   }
 
-  .dialog-sum {
-    padding-top: 4px;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-  }
 </style>

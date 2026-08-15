@@ -82,14 +82,19 @@
                 align="center"
               >
                 <template #default="{ row }">
-                  <el-link
-                    type="danger"
-                    :underline="false"
-                    v-permission="'finance:cust-settle:link-recon'"
-                    @click="unlink(row.id, row.reconDocNo)"
-                  >
-                    解除
-                  </el-link>
+                  <btn-items
+                    :items="[
+                      {
+                        title: '解除',
+                        icon: DeleteOutlined,
+                        danger: true,
+                        permission: 'finance:cust-settle:link-recon',
+                        onClick: () => unlink(row.id, row.reconDocNo)
+                      }
+                    ]"
+                    type="link"
+                    :wrap="false"
+                  />
                 </template>
               </el-table-column>
               <template #empty>
@@ -220,6 +225,7 @@
   import { ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import { DeleteOutlined } from '@/components/icons';
   import SettlementReceive from './settlement-receive.vue';
   import {
     approveSettlement,

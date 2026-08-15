@@ -5,19 +5,21 @@
     width="940px"
     top="6vh"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-form :model="form" label-width="88px">
-      <el-row :gutter="12">
+    <el-form :model="form" label-width="0" class="finance-edit-form">
+      <el-row :gutter="16">
         <el-col :span="12">
-          <el-form-item label="承运商" required>
-            <el-select
+          <el-form-item>
+            <floating-label
               v-model="form.carrierId"
-              placeholder="请选择承运商"
+              label="请选择承运商"
+              type="select"
               filterable
-              style="width: 100%"
+              :clearable="false"
               @change="loadCandidates"
             >
               <el-option
@@ -26,59 +28,66 @@
                 :value="c.id"
                 :label="c.carrierName"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="对账周期" required>
-            <el-date-picker
+          <el-form-item>
+            <floating-label
               v-model="period"
-              type="daterange"
+              label="请选择对账周期"
+              type="date"
+              date-type="daterange"
               value-format="YYYY-MM-DD"
               start-placeholder="开始日期"
               end-placeholder="结束日期"
-              style="width: 100%"
-              @change="loadCandidates"
+              unlink-panels
+              :clearable="false"
+              @update:model-value="loadCandidates"
             />
           </el-form-item>
         </el-col>
-      </el-row>
-      <el-row :gutter="12">
         <el-col :span="12">
-          <el-form-item label="计费基础">
-            <el-select v-model="form.billingBase" style="width: 100%">
+          <el-form-item>
+            <floating-label
+              v-model="form.billingBase"
+              label="请选择计费基础"
+              type="select"
+              :clearable="false"
+            >
               <el-option
                 v-for="o in BILLING_BASE_OPTIONS"
                 :key="o.value"
                 :value="o.value"
                 :label="o.label"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="备注">
-            <el-input
+          <el-form-item>
+            <floating-label
+              label="请输入备注，选填"
+              type="input"
               v-model="form.remark"
-              placeholder="选填，会显示在对账单上"
-              maxlength="200"
+              :maxlength="200"
+              clearable
             />
           </el-form-item>
         </el-col>
       </el-row>
     </el-form>
 
-    <div class="cand-head">
-      <span class="cand-title">可对账任务</span>
+    <div class="finance-cand-head">
+      <span class="finance-cand-title">可对账任务</span>
       <el-input
         v-model="keyword"
         placeholder="任务号/车牌"
         clearable
-        size="small"
         style="width: 200px"
         @change="loadCandidates"
       />
-      <span class="cand-tip">
+      <span class="finance-cand-tip">
         已选 {{ selected.length }} 个任务，应付净额 ¥
         {{ formatMoney(selectedNet) }}
       </span>
@@ -90,7 +99,7 @@
       v-loading="loading"
       height="320"
       row-key="taskId"
-      size="small"
+      :highlight-current-row="true"
       @selection-change="onSelectionChange"
     >
       <el-table-column type="selection" width="42" reserve-selection />
@@ -131,7 +140,7 @@
         </template>
       </el-table-column>
       <template #empty>
-        <div class="cand-empty">
+        <div class="finance-cand-empty">
           {{
             form.carrierId
               ? '这个承运商在所选周期内没有可对账的任务，换个周期看看'
@@ -153,6 +162,7 @@
 <script lang="ts" setup>
   import { computed, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import {
     addCarrierRecon,
     listCarrierReconCandidates
@@ -279,27 +289,7 @@
 </script>
 
 <style lang="scss" scoped>
-  .cand-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-
-  .cand-title {
-    font-weight: 600;
-  }
-
-  .cand-tip {
-    margin-left: auto;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-  }
-
-  .cand-empty {
-    padding: 24px 0;
-    color: var(--el-text-color-secondary);
-  }
+  @use '../../_shared/ui.scss';
 
   .strong {
     font-weight: 600;

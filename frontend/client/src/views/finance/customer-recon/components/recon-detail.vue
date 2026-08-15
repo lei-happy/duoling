@@ -154,23 +154,27 @@
                 align="center"
               >
                 <template #default="{ row }">
-                  <el-link
-                    type="primary"
-                    :underline="false"
-                    v-permission="'finance:cust-recon:adjust-line'"
-                    @click="openAdjust(row)"
-                  >
-                    调整
-                  </el-link>
-                  <el-divider direction="vertical" />
-                  <el-link
-                    type="danger"
-                    :underline="false"
-                    v-permission="'finance:cust-recon:remove-waybill'"
-                    @click="removeLine(row)"
-                  >
-                    移除
-                  </el-link>
+                  <btn-items
+                    :items="[
+                      {
+                        title: '调整',
+                        icon: EditOutlined,
+                        permission: 'finance:cust-recon:adjust-line',
+                        onClick: () => openAdjust(row)
+                      },
+                      {
+                        title: '移除',
+                        icon: DeleteOutlined,
+                        danger: true,
+                        divided: true,
+                        permission: 'finance:cust-recon:remove-waybill',
+                        onClick: () => removeLine(row)
+                      }
+                    ]"
+                    type="link"
+                    :wrap="false"
+                    divider
+                  />
                 </template>
               </el-table-column>
             </el-table>
@@ -243,14 +247,18 @@
                   >
                     {{ row.statusLabel }}
                   </el-tag>
-                  <el-link
+                  <btn-items
                     v-else
-                    type="primary"
-                    :underline="false"
-                    @click="openResolve(row)"
-                  >
-                    去处置
-                  </el-link>
+                    :items="[
+                      {
+                        title: '去处置',
+                        icon: FormOutlined,
+                        onClick: () => openResolve(row)
+                      }
+                    ]"
+                    type="link"
+                    :wrap="false"
+                  />
                 </template>
               </el-table-column>
               <template #empty>
@@ -382,6 +390,11 @@
   import { ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import {
+    DeleteOutlined,
+    EditOutlined,
+    FormOutlined
+  } from '@/components/icons';
   import ReconAddWaybills from './recon-add-waybills.vue';
   import ReconLineAdjust from './recon-line-adjust.vue';
   import ReconSign from './recon-sign.vue';

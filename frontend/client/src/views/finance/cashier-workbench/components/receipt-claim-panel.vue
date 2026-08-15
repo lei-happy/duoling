@@ -6,7 +6,7 @@
 -->
 <template>
   <div>
-    <div class="panel-toolbar">
+    <el-form label-width="0" class="search-form panel-toolbar" @submit.prevent>
       <el-input
         v-model="keyword"
         placeholder="收款单号/付款方/流水号"
@@ -14,10 +14,14 @@
         style="width: 220px"
         @change="load"
       />
-      <el-checkbox v-model="onlyUnsettled" @change="load">
-        只看还没认领完的
-      </el-checkbox>
-      <el-button @click="load">刷新</el-button>
+      <div class="search-flags">
+        <el-checkbox v-model="onlyUnsettled" @change="load">
+          只看还没认领完的
+        </el-checkbox>
+      </div>
+      <btn-items
+        :items="[{ preset: 'search', title: '刷新', onClick: load }]"
+      />
       <div class="toolbar-right">
         <el-button
           type="primary"
@@ -27,7 +31,7 @@
           登记到账
         </el-button>
       </div>
-    </div>
+    </el-form>
 
     <el-table :data="rows" v-loading="loading" size="small" max-height="460">
       <el-table-column label="收款单" min-width="170">
@@ -66,17 +70,21 @@
           row.bankAccountLabel || '--'
         }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="100" align="center">
+      <el-table-column label="操作" width="120" align="center" fixed="right">
         <template #default="{ row }">
-          <el-link
+          <btn-items
             v-if="row.unsettledAmount > 0"
-            type="primary"
-            :underline="false"
-            v-permission="'finance:cashier-wb:claim-receipt'"
-            @click="openClaim(row)"
-          >
-            认领
-          </el-link>
+            :items="[
+              {
+                title: '认领',
+                icon: ConnectionOutlined,
+                permission: 'finance:cashier-wb:claim-receipt',
+                onClick: () => openClaim(row)
+              }
+            ]"
+            type="link"
+            :wrap="false"
+          />
           <span v-else class="muted">已认领完</span>
         </template>
       </el-table-column>
@@ -98,86 +106,129 @@
       />
     </div>
 
-    <!-- 登记到账 -->
-    <el-dialog v-model="createVisible" title="登记到账" width="520px">
-      <el-form :model="createForm" label-width="94px">
-        <el-form-item label="到账金额" required>
-          <el-input-number
-            v-model="createForm.amount"
-            :min="0.01"
-            :precision="2"
-            :controls="false"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="到账时间" required>
-          <el-date-picker
-            v-model="createForm.receivedAt"
-            type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            placeholder="按银行回单时间填"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="收款账户">
-          <el-select
-            v-model="createForm.bankAccountId"
-            placeholder="选收到这笔钱的账户"
-            filterable
-            clearable
-            style="width: 100%"
-          >
-            <el-option
-              v-for="a in accounts"
-              :key="a.id"
-              :value="a.id"
-              :label="a.displayLabel || a.accountName"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="收款方式">
-          <el-select
-            v-model="createForm.receiveMethod"
-            clearable
-            style="width: 100%"
-          >
-            <el-option
-              v-for="o in RECEIVE_METHOD_OPTIONS"
-              :key="o.value"
-              :value="o.value"
-              :label="o.label"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="客户">
-          <el-select
-            v-model="createForm.customerId"
-            placeholder="认得出就选，认不出可留空"
-            filterable
-            clearable
-            style="width: 100%"
-          >
-            <el-option
-              v-for="c in customers"
-              :key="c.id"
-              :value="c.id"
-              :label="c.customerName"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="付款方名称">
-          <el-input
-            v-model="createForm.payerName"
-            placeholder="银行回单上的付款方"
-            maxlength="100"
-          />
-        </el-form-item>
-        <el-form-item label="银行流水号">
-          <el-input v-model="createForm.bankSerialNo" maxlength="64" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="createForm.remark" maxlength="500" />
-        </el-form-item>
+    <el-dialog
+      v-model="createVisible"
+      title="登记到账"
+      width="560px"
+      draggable
+      :close-on-click-modal="false"
+    >
+      <p class="finance-form-tip">
+        按银行回单把钱先记下来，再认领到具体结算单。认不出客户可以先留空。
+      </p>
+      <el-form :model="createForm" label-width="0" class="finance-edit-form">
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
+                v-model="createForm.amount"
+                label="请输入到账金额"
+                type="input-number"
+                :input-number-min="0.01"
+                :input-number-precision="2"
+                :input-number-step="100"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
+                v-model="createForm.receivedAt"
+                label="请选择到账时间"
+                type="date"
+                date-type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                :clearable="false"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
+                v-model="createForm.bankAccountId"
+                label="请选择收款账户"
+                type="select"
+                filterable
+                clearable
+              >
+                <el-option
+                  v-for="a in accounts"
+                  :key="a.id"
+                  :value="a.id"
+                  :label="a.displayLabel || a.accountName"
+                />
+              </floating-label>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
+                v-model="createForm.receiveMethod"
+                label="请选择收款方式"
+                type="select"
+                clearable
+              >
+                <el-option
+                  v-for="o in RECEIVE_METHOD_OPTIONS"
+                  :key="o.value"
+                  :value="o.value"
+                  :label="o.label"
+                />
+              </floating-label>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
+                v-model="createForm.customerId"
+                label="客户，认不出可留空"
+                type="select"
+                filterable
+                clearable
+              >
+                <el-option
+                  v-for="c in customers"
+                  :key="c.id"
+                  :value="c.id"
+                  :label="c.customerName"
+                />
+              </floating-label>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
+                label="请输入付款方名称"
+                type="input"
+                v-model="createForm.payerName"
+                :maxlength="100"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
+                label="请输入银行流水号"
+                type="input"
+                v-model="createForm.bankSerialNo"
+                :maxlength="64"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
+                label="请输入备注，选填"
+                type="input"
+                v-model="createForm.remark"
+                :maxlength="500"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <el-button @click="createVisible = false">取消</el-button>
@@ -192,13 +243,18 @@
       v-model="claimVisible"
       :title="`认领到账 ${current?.docNo || ''}`"
       width="820px"
+      draggable
+      :close-on-click-modal="false"
     >
-      <div class="claim-head">
-        <span>
-          待认领 ¥ {{ formatMoney(current?.unsettledAmount) }}，本次分配
-          <span class="num strong">¥ {{ formatMoney(allocatedAmount) }}</span>
-        </span>
-        <el-button size="small" type="primary" plain @click="autoFill">
+      <div class="finance-identity">
+        <div class="finance-identity__name">{{ current?.docNo || '认领到账' }}</div>
+        <div class="finance-identity__meta">
+          待认领 ¥ {{ formatMoney(current?.unsettledAmount) }} · 本次分配 ¥
+          {{ formatMoney(allocatedAmount) }}
+        </div>
+      </div>
+      <div class="finance-cand-head">
+        <el-button type="primary" plain @click="autoFill">
           一键按账期填满
         </el-button>
       </div>
@@ -250,6 +306,8 @@
 <script lang="ts" setup>
   import { computed, onMounted, reactive, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
+  import { ConnectionOutlined } from '@/components/icons';
   import {
     claimReceipt,
     createReceipt,
@@ -452,6 +510,8 @@
 </script>
 
 <style lang="scss" scoped>
+  @use '../../_shared/ui.scss';
+
   .panel-toolbar {
     display: flex;
     flex-wrap: wrap;

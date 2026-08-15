@@ -58,7 +58,7 @@
         </el-tab-pane>
       </el-tabs>
 
-      <div class="tab-toolbar">
+      <el-form label-width="0" class="search-form tab-toolbar" @submit.prevent>
         <el-input
           v-if="activeTab === 'candidates'"
           v-model="keyword"
@@ -67,18 +67,16 @@
           style="width: 200px"
           @change="loadList"
         />
-        <el-checkbox
-          v-if="activeTab === 'diffs'"
-          v-model="onlyBlocking"
-          @change="loadList"
-        >
-          只看阻断确认的差异
-        </el-checkbox>
+        <div v-if="activeTab === 'diffs'" class="search-flags">
+          <el-checkbox v-model="onlyBlocking" @change="loadList">
+            只看阻断确认的差异
+          </el-checkbox>
+        </div>
         <span class="toolbar-tip">{{ tabTip }}</span>
-        <el-button size="small" :loading="loading" @click="reloadAll">
-          刷新
-        </el-button>
-      </div>
+        <btn-items
+          :items="[{ preset: 'search', title: '刷新', onClick: reloadAll }]"
+        />
+      </el-form>
 
       <!-- 候选池：待对账运单按客户归堆，选客户再去建单 -->
       <el-table
@@ -103,24 +101,14 @@
             <span class="num">¥ {{ formatMoney(row.freightAmount) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center">
+        <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
-            <el-link
-              type="primary"
-              :underline="false"
-              v-permission="'finance:recon-wb:gen-recon'"
-              @click="openCreate(row.customerId)"
-            >
-              生成对账单
-            </el-link>
-            <el-divider direction="vertical" />
-            <el-link
-              type="primary"
-              :underline="false"
-              @click="gotoLedger(row.customerId)"
-            >
-              去台账
-            </el-link>
+            <btn-items
+              :items="candidateActions(row)"
+              type="link"
+              :wrap="false"
+              divider
+            />
           </template>
         </el-table-column>
         <template #empty>
@@ -173,46 +161,14 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="240" align="center">
+        <el-table-column label="操作" width="220" align="center" fixed="right">
           <template #default="{ row }">
-            <el-link
-              type="primary"
-              :underline="false"
-              @click="openDetail(row.id)"
-            >
-              详情
-            </el-link>
-            <template v-if="activeTab === 'dirty'">
-              <el-divider direction="vertical" />
-              <el-link
-                type="warning"
-                :underline="false"
-                v-permission="'finance:recon-wb:recheck'"
-                @click="recheck(row)"
-              >
-                重新核对
-              </el-link>
-              <el-divider direction="vertical" />
-              <el-link
-                type="primary"
-                :underline="false"
-                v-permission="'finance:recon-wb:recalc'"
-                @click="recalc(row)"
-              >
-                回灌重算
-              </el-link>
-            </template>
-            <template v-else>
-              <el-divider direction="vertical" />
-              <el-link
-                type="primary"
-                :underline="false"
-                v-permission="'finance:cust-recon:customer-sign'"
-                @click="openSign(row.id)"
-              >
-                登记回签
-              </el-link>
-            </template>
+            <btn-items
+              :items="reconActions(row)"
+              type="link"
+              :wrap="false"
+              divider
+            />
           </template>
         </el-table-column>
         <template #empty>
@@ -275,16 +231,13 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center">
+        <el-table-column label="操作" width="100" align="center" fixed="right">
           <template #default="{ row }">
-            <el-link
-              type="primary"
-              :underline="false"
-              v-permission="'finance:recon-wb:raise-diff'"
-              @click="openResolve(row)"
-            >
-              处置
-            </el-link>
+            <btn-items
+              :items="diffActions(row)"
+              type="link"
+              :wrap="false"
+            />
           </template>
         </el-table-column>
         <template #empty>
@@ -326,6 +279,18 @@
   import { useRouter } from 'vue-router';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
+  import {
+    CheckOutlined,
+    EyeOutlined,
+    FormOutlined,
+    PlusOutlined,
+    SyncOutlined
+  } from '@/components/icons';
+  import { buildActionColumnItems } from '../_shared/action-column';
   import FinanceKpiCards from '../components/finance-kpi-cards.vue';
   import type { FinanceKpiCard } from '../components/finance-kpi-cards.vue';
   import ReconCreate from '../customer-recon/components/recon-create.vue';
@@ -497,6 +462,65 @@
     loadList();
   };
 
+  const candidateActions = (row: PendingWaybillGroup): ButtonItem[] =>
+    buildActionColumnItems([
+      {
+        title: '生成对账单',
+        icon: PlusOutlined,
+        permission: 'finance:recon-wb:gen-recon',
+        onClick: () => openCreate(row.customerId)
+      },
+      {
+        title: '去台账',
+        icon: EyeOutlined,
+        onClick: () => gotoLedger(row.customerId)
+      }
+    ]);
+
+  const reconActions = (row: ReconListItem): ButtonItem[] => {
+    const visible: ButtonDropdownItem[] = [
+      {
+        title: '详情',
+        icon: EyeOutlined,
+        onClick: () => openDetail(row.id)
+      }
+    ];
+    if (activeTab.value === 'dirty') {
+      visible.push(
+        {
+          title: '重新核对',
+          icon: SyncOutlined,
+          permission: 'finance:recon-wb:recheck',
+          onClick: () => recheck(row)
+        },
+        {
+          title: '回灌重算',
+          icon: CheckOutlined,
+          permission: 'finance:recon-wb:recalc',
+          onClick: () => recalc(row)
+        }
+      );
+    } else {
+      visible.push({
+        title: '登记回签',
+        icon: FormOutlined,
+        permission: 'finance:cust-recon:customer-sign',
+        onClick: () => openSign(row.id)
+      });
+    }
+    return buildActionColumnItems(visible);
+  };
+
+  const diffActions = (row: ReconDiff): ButtonItem[] =>
+    buildActionColumnItems([
+      {
+        title: '处置',
+        icon: FormOutlined,
+        permission: 'finance:recon-wb:raise-diff',
+        onClick: () => openResolve(row)
+      }
+    ]);
+
   const openCreate = (customerId: number) => {
     createCustomerId.value = customerId;
     createVisible.value = true;
@@ -597,6 +621,8 @@
 </script>
 
 <style lang="scss" scoped>
+  @use '../_shared/ui.scss';
+
   .tab-badge {
     margin-left: 2px;
     vertical-align: middle;

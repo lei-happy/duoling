@@ -178,23 +178,27 @@
                 align="center"
               >
                 <template #default="{ row }">
-                  <el-link
-                    type="primary"
-                    :underline="false"
-                    v-permission="'finance:carrier-recon:adjust-line'"
-                    @click="openAdjust(row)"
-                  >
-                    调整
-                  </el-link>
-                  <el-divider direction="vertical" />
-                  <el-link
-                    type="danger"
-                    :underline="false"
-                    v-permission="'finance:carrier-recon:remove-task'"
-                    @click="removeLine(row)"
-                  >
-                    移除
-                  </el-link>
+                  <btn-items
+                    :items="[
+                      {
+                        title: '调整',
+                        icon: EditOutlined,
+                        permission: 'finance:carrier-recon:adjust-line',
+                        onClick: () => openAdjust(row)
+                      },
+                      {
+                        title: '移除',
+                        icon: DeleteOutlined,
+                        danger: true,
+                        divided: true,
+                        permission: 'finance:carrier-recon:remove-task',
+                        onClick: () => removeLine(row)
+                      }
+                    ]"
+                    type="link"
+                    :wrap="false"
+                    divider
+                  />
                 </template>
               </el-table-column>
             </el-table>
@@ -267,14 +271,18 @@
                   >
                     {{ row.statusLabel }}
                   </el-tag>
-                  <el-link
+                  <btn-items
                     v-else
-                    type="primary"
-                    :underline="false"
-                    @click="openResolve(row)"
-                  >
-                    去处置
-                  </el-link>
+                    :items="[
+                      {
+                        title: '去处置',
+                        icon: FormOutlined,
+                        onClick: () => openResolve(row)
+                      }
+                    ]"
+                    type="link"
+                    :wrap="false"
+                  />
                 </template>
               </el-table-column>
               <template #empty>
@@ -407,6 +415,11 @@
   import { ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import {
+    DeleteOutlined,
+    EditOutlined,
+    FormOutlined
+  } from '@/components/icons';
   import CarrierReconAddTasks from './carrier-recon-add-tasks.vue';
   import CarrierReconLineAdjust from './carrier-recon-line-adjust.vue';
   import CarrierReconSign from './carrier-recon-sign.vue';

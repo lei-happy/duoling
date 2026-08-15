@@ -1,8 +1,8 @@
 <template>
   <ele-page>
-    <ele-card>
-      <finance-kpi-cards :cards="kpiCards" />
-
+    <finance-kpi-cards :cards="kpiCards" />
+    <bank-account-search @search="(next) => reload(next, 1)" />
+    <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
         row-key="id"
@@ -10,76 +10,20 @@
         :datasource="datasource"
         :pagination="{ pageSize: 20 }"
         :show-overflow-tooltip="true"
+        :highlight-current-row="true"
         cache-key="FinanceBankAccountTable"
       >
         <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="账户名/账号/开户行"
-                clearable
-                style="width: 200px"
-                @change="reload()"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.accountType"
-                placeholder="账户类型"
-                clearable
-                style="width: 120px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in BANK_ACCOUNT_TYPE_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.usageScope"
-                placeholder="用途"
-                clearable
-                style="width: 120px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in ACCOUNT_USAGE_SCOPE_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.status"
-                placeholder="状态"
-                clearable
-                style="width: 110px"
-                @change="reload()"
-              >
-                <el-option :value="1" label="启用中" />
-                <el-option :value="0" label="已停用" />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <btn-items
-                :items="[
-                  {
-                    preset: 'add',
-                    title: '新增账户',
-                    permission: 'finance:bank-account:create',
-                    onClick: () => openEdit(null)
-                  }
-                ]"
-              />
-            </el-form-item>
-          </el-form>
+          <btn-items
+            :items="[
+              {
+                preset: 'add',
+                title: '新增账户',
+                permission: 'finance:bank-account:create',
+                onClick: () => openEdit(null)
+              }
+            ]"
+          />
         </template>
 
         <template #account="{ row }">
@@ -120,41 +64,12 @@
         </template>
 
         <template #action="{ row }">
-          <el-link
-            type="primary"
-            :underline="false"
-            v-permission="'finance:bank-account:edit'"
-            @click="openEdit(row)"
-          >
-            编辑
-          </el-link>
-          <el-divider direction="vertical" />
-          <el-link
-            type="warning"
-            :underline="false"
-            v-permission="'finance:bank-account:calibrate'"
-            @click="openCalibrate(row)"
-          >
-            余额校准
-          </el-link>
-          <el-divider direction="vertical" />
-          <el-link
-            :type="row.status === 1 ? 'danger' : 'success'"
-            :underline="false"
-            v-permission="'finance:bank-account:edit'"
-            @click="toggleStatus(row)"
-          >
-            {{ row.status === 1 ? '停用' : '启用' }}
-          </el-link>
-          <el-divider direction="vertical" />
-          <el-link
-            type="danger"
-            :underline="false"
-            v-permission="'finance:bank-account:delete'"
-            @click="onRemove(row)"
-          >
-            删除
-          </el-link>
+          <btn-items
+            divider
+            type="link"
+            :wrap="false"
+            :items="actionItems(row)"
+          />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -164,23 +79,39 @@
       :account="editing"
       @done="onSaved"
     />
+    <bank-account-calibrate
+      v-model:visible="calibrateVisible"
+      :account="calibrating"
+      @done="onSaved"
+    />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
-  import { computed, nextTick, reactive, ref } from 'vue';
+  import { computed, reactive, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
   import { ElMessageBox } from 'element-plus';
   import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
+  import type {
     Columns,
     DatasourceFunction
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import {
+    DeleteOutlined,
+    EditOutlined,
+    FundOutlined,
+    MinusCircleOutlined
+  } from '@/components/icons';
+  import BankAccountCalibrate from './components/bank-account-calibrate.vue';
   import BankAccountEdit from './components/bank-account-edit.vue';
+  import BankAccountSearch from './components/bank-account-search.vue';
   import FinanceKpiCards from '../components/finance-kpi-cards.vue';
   import type { FinanceKpiCard } from '../components/finance-kpi-cards.vue';
   import {
-    calibrateBankAccount,
     getBalanceSummary,
     pageBankAccounts,
     removeBankAccount,
@@ -190,11 +121,8 @@
     BankAccountItem,
     BankAccountParam
   } from '@/api/finance/bank-account/model';
-  import {
-    ACCOUNT_USAGE_SCOPE_OPTIONS,
-    BANK_ACCOUNT_TYPE_OPTIONS,
-    formatMoney
-  } from '../status-config';
+  import { buildActionColumnItems } from '../_shared/action-column';
+  import { formatMoney } from '../status-config';
 
   defineOptions({ name: 'FinanceBankAccount' });
 
@@ -202,6 +130,8 @@
   const where = reactive<BankAccountParam>({});
   const editVisible = ref(false);
   const editing = ref<BankAccountItem | null>(null);
+  const calibrateVisible = ref(false);
+  const calibrating = ref<BankAccountItem | null>(null);
   const summary = ref({ accountCount: 0, balanceTotal: 0 });
 
   const kpiCards = computed<FinanceKpiCard[]>(() => [
@@ -255,23 +185,29 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 250,
+      width: 168,
+      minWidth: 168,
       align: 'center',
-      fixed: 'right',
-      slot: 'action'
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
     }
   ]);
 
-  const datasource: DatasourceFunction = ({ pages }) => {
+  const datasource: DatasourceFunction = ({ pages, where: tableWhere }) => {
     loadSummary();
-    return pageBankAccounts({ ...where, ...pages }).then((res) => ({
-      list: res?.list ?? [],
-      count: res?.count ?? 0
-    }));
+    return pageBankAccounts({ ...(tableWhere || where), ...pages }).then(
+      (res) => ({
+        list: res?.list ?? [],
+        count: res?.count ?? 0
+      })
+    );
   };
 
-  const reload = () => {
-    nextTick(() => tableRef.value?.reload?.());
+  const reload = (next?: BankAccountParam, page?: number) => {
+    if (next) Object.assign(where, next);
+    tableRef.value?.reload?.({ where: { ...where }, page });
   };
 
   const loadSummary = async () => {
@@ -290,6 +226,41 @@
 
   const onSaved = () => reload();
 
+  const actionItems = (row: BankAccountItem): ButtonItem[] => {
+    const visible: ButtonDropdownItem[] = [
+      {
+        title: '编辑',
+        icon: EditOutlined,
+        permission: 'finance:bank-account:edit',
+        onClick: () => openEdit(row)
+      },
+      {
+        title: '余额校准',
+        icon: FundOutlined,
+        permission: 'finance:bank-account:calibrate',
+        onClick: () => {
+          calibrating.value = row;
+          calibrateVisible.value = true;
+        }
+      },
+      {
+        title: row.status === 1 ? '停用' : '启用',
+        icon: MinusCircleOutlined,
+        permission: 'finance:bank-account:edit',
+        onClick: () => toggleStatus(row)
+      },
+      {
+        title: '删除',
+        icon: DeleteOutlined,
+        permission: 'finance:bank-account:delete',
+        divided: true,
+        danger: true,
+        onClick: () => onRemove(row)
+      }
+    ];
+    return buildActionColumnItems(visible);
+  };
+
   const toggleStatus = async (row: BankAccountItem) => {
     const next = row.status === 1 ? 0 : 1;
     try {
@@ -298,67 +269,25 @@
           ? '停用后这个账户不再出现在收付款的账户下拉里，已有流水不受影响。确定停用吗？'
           : '确定重新启用这个账户吗？',
         next === 0 ? '停用账户' : '启用账户',
-        { type: 'warning' }
+        { type: 'warning', draggable: true }
       );
     } catch {
       return;
     }
-    const loading = EleMessage.loading('正在更新账户状态，请稍候…');
+    const loading = EleMessage.loading({
+      message: '正在更新账户状态，请稍候…',
+      plain: true
+    });
     try {
       await setBankAccountStatus(row.id, next);
-      EleMessage.success(next === 1 ? '已启用' : '已停用');
+      EleMessage.success({
+        message: next === 1 ? '已启用' : '已停用',
+        plain: true
+      });
       reload();
     } catch (e: unknown) {
       EleMessage.error({
         message: (e as { message?: string }).message || '操作失败，请重试',
-        plain: true
-      });
-    } finally {
-      loading.close();
-    }
-  };
-
-  const openCalibrate = async (row: BankAccountItem) => {
-    let balance: string | undefined;
-    try {
-      const step1 = await ElMessageBox.prompt(
-        `当前账面余额 ¥ ${formatMoney(row.balance)}，请填银行实际余额`,
-        '余额校准',
-        {
-          inputPattern: /^-?\d+(\.\d{1,2})?$/,
-          inputErrorMessage: '请填数字，最多两位小数',
-          inputValue: String(row.balance ?? 0)
-        }
-      );
-      balance = step1.value;
-    } catch {
-      return;
-    }
-    let reason: string | undefined;
-    try {
-      const step2 = await ElMessageBox.prompt(
-        '校准会留痕，请说明原因（如：银行手续费未登记）',
-        '校准原因',
-        {
-          inputPattern: /.{5,}/,
-          inputErrorMessage: '原因至少写 5 个字，方便日后追溯'
-        }
-      );
-      reason = step2.value;
-    } catch {
-      return;
-    }
-    const loading = EleMessage.loading('正在校准余额，请稍候…');
-    try {
-      await calibrateBankAccount(row.id, {
-        balance: Number(balance),
-        reason: reason as string
-      });
-      EleMessage.success('余额已校准');
-      reload();
-    } catch (e: unknown) {
-      EleMessage.error({
-        message: (e as { message?: string }).message || '校准失败，请重试',
         plain: true
       });
     } finally {
@@ -371,15 +300,18 @@
       await ElMessageBox.confirm(
         `确定删除账户「${row.accountName}」吗？有收付流水的账户不能删，请改为停用。`,
         '删除账户',
-        { type: 'warning' }
+        { type: 'warning', draggable: true }
       );
     } catch {
       return;
     }
-    const loading = EleMessage.loading('正在删除账户，请稍候…');
+    const loading = EleMessage.loading({
+      message: '正在删除账户，请稍候…',
+      plain: true
+    });
     try {
       await removeBankAccount(row.id);
-      EleMessage.success('账户已删除');
+      EleMessage.success({ message: '账户已删除', plain: true });
       reload();
     } catch (e: unknown) {
       EleMessage.error({

@@ -142,14 +142,19 @@
                 align="center"
               >
                 <template #default="{ row }">
-                  <el-link
-                    type="danger"
-                    :underline="false"
-                    v-permission="'finance:cust-invoice:edit'"
-                    @click="unlink(row.id, row.settleDocNo)"
-                  >
-                    移除
-                  </el-link>
+                  <btn-items
+                    :items="[
+                      {
+                        title: '移除',
+                        icon: DeleteOutlined,
+                        danger: true,
+                        permission: 'finance:cust-invoice:edit',
+                        onClick: () => unlink(row.id, row.settleDocNo)
+                      }
+                    ]"
+                    type="link"
+                    :wrap="false"
+                  />
                 </template>
               </el-table-column>
               <template #empty>
@@ -274,32 +279,45 @@
       title="登记开票结果"
       width="480px"
       append-to-body
+      draggable
+      :close-on-click-modal="false"
     >
-      <el-form :model="issueForm" label-width="88px">
-        <el-form-item label="发票号码" required>
-          <el-input
+      <p class="finance-form-tip">把税控系统开出的发票号记下来，客户就能对上票。</p>
+      <el-form :model="issueForm" label-width="0" class="finance-edit-form">
+        <el-form-item>
+          <floating-label
+            label="请输入发票号码"
+            type="input"
             v-model="issueForm.invoiceNo"
-            placeholder="税控系统开出的发票号"
-            maxlength="50"
+            :maxlength="50"
+            :clearable="false"
           />
         </el-form-item>
-        <el-form-item label="发票代码">
-          <el-input v-model="issueForm.invoiceCode" maxlength="30" />
+        <el-form-item>
+          <floating-label
+            label="请输入发票代码，选填"
+            type="input"
+            v-model="issueForm.invoiceCode"
+            :maxlength="30"
+            clearable
+          />
         </el-form-item>
-        <el-form-item label="开票日期">
-          <el-date-picker
+        <el-form-item>
+          <floating-label
             v-model="issueForm.invoiceDate"
+            label="开票日期，留空按今天"
             type="date"
+            date-type="date"
             value-format="YYYY-MM-DD"
-            placeholder="留空按今天"
-            style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="PDF 链接">
-          <el-input
+        <el-form-item>
+          <floating-label
+            label="请输入 PDF 链接，选填"
+            type="input"
             v-model="issueForm.pdfUrl"
-            placeholder="选填，方便客户自取"
-            maxlength="500"
+            :maxlength="500"
+            clearable
           />
         </el-form-item>
       </el-form>
@@ -316,15 +334,17 @@
       title="补挂结算单"
       width="720px"
       append-to-body
+      draggable
+      :close-on-click-modal="false"
       @open="loadCandidates"
     >
       <el-table
         ref="candTableRef"
         :data="candidates"
         v-loading="candLoading"
-        size="small"
         height="320"
         row-key="settleId"
+        :highlight-current-row="true"
         @selection-change="
           (rows: InvoiceSettleCandidate[]) => (candSelected = rows)
         "
@@ -360,6 +380,8 @@
   import { reactive, ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
+  import { DeleteOutlined } from '@/components/icons';
   import {
     cancelCustomerInvoice,
     getCustomerInvoice,
@@ -602,6 +624,8 @@
 </script>
 
 <style lang="scss" scoped>
+  @use '../../_shared/ui.scss';
+
   .num {
     font-variant-numeric: tabular-nums;
   }

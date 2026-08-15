@@ -4,49 +4,53 @@
     title="处置对账差异"
     width="520px"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-descriptions :column="1" border size="small" class="diff-info">
-      <el-descriptions-item label="差异类型">
-        {{ diff?.diffTypeLabel || '--' }}
+    <div class="finance-identity">
+      <div class="finance-identity__name">
+        {{ diff?.diffTypeLabel || '对账差异' }}
         <el-tag
           v-if="diff?.severity === 2"
           type="danger"
           size="small"
           effect="plain"
-          style="margin-left: 6px"
+          style="margin-left: 8px"
         >
           阻塞确认
         </el-tag>
-      </el-descriptions-item>
-      <el-descriptions-item label="业务单据">
-        {{ diff?.bizDocNo || diff?.bizDocId }}
-      </el-descriptions-item>
-      <el-descriptions-item label="快照值 → 当前值">
-        {{ diff?.expectedValue || '--' }} → {{ diff?.actualValue || '--' }}
-      </el-descriptions-item>
-    </el-descriptions>
-
-    <el-form :model="form" label-width="88px">
-      <el-form-item label="处置方式" required>
-        <el-select v-model="form.status" style="width: 100%">
+      </div>
+      <div class="finance-identity__meta">
+        {{ diff?.bizDocNo || diff?.bizDocId || '--' }}
+        · {{ diff?.expectedValue || '--' }} → {{ diff?.actualValue || '--' }}
+      </div>
+    </div>
+    <el-form :model="form" label-width="0" class="finance-edit-form">
+      <el-form-item>
+        <floating-label
+          v-model="form.status"
+          label="请选择处置方式"
+          type="select"
+          :clearable="false"
+        >
           <el-option
             v-for="o in DIFF_RESOLVE_OPTIONS"
             :key="o.value"
             :value="o.value"
             :label="o.label"
           />
-        </el-select>
+        </floating-label>
       </el-form-item>
-      <el-form-item label="处置说明" required>
-        <el-input
+      <el-form-item>
+        <floating-label
+          :label="placeholder"
+          type="input"
+          input-type="textarea"
           v-model="form.resolution"
-          type="textarea"
-          :rows="3"
-          maxlength="200"
-          :placeholder="placeholder"
+          :maxlength="200"
+          :clearable="false"
         />
       </el-form-item>
     </el-form>
@@ -63,6 +67,7 @@
 <script lang="ts" setup>
   import { computed, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { resolveReconDiff } from '@/api/finance/customer-recon';
   import { resolveCarrierReconDiff } from '@/api/finance/carrier-recon';
   import type { ReconDiff } from '@/api/finance/customer-recon/model';
@@ -88,8 +93,8 @@
 
   const placeholder = computed(() =>
     props.side === 'carrier'
-      ? '说明怎么处理的，例如：与承运商核对后按 8 台确认'
-      : '说明怎么处理的，例如：与客户核对后按 8 台确认'
+      ? '请说明怎么处理的，例如：与承运商核对后按 8 台确认'
+      : '请说明怎么处理的，例如：与客户核对后按 8 台确认'
   );
 
   const onOpen = () => {
@@ -126,7 +131,5 @@
 </script>
 
 <style lang="scss" scoped>
-  .diff-info {
-    margin-bottom: 14px;
-  }
+  @use '../_shared/ui.scss';
 </style>

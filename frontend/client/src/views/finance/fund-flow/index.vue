@@ -1,8 +1,11 @@
 <template>
   <ele-page>
-    <ele-card>
-      <finance-kpi-cards :cards="kpiCards" />
-
+    <finance-kpi-cards :cards="kpiCards" />
+    <fund-flow-search
+      :accounts="accounts"
+      @search="(next) => reload(next, 1)"
+    />
+    <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
         row-key="flowId"
@@ -10,66 +13,9 @@
         :datasource="datasource"
         :pagination="{ pageSize: 20 }"
         :show-overflow-tooltip="true"
+        :highlight-current-row="true"
         cache-key="FinanceFundFlowTable"
       >
-        <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="单号/对方名称/银行流水号"
-                clearable
-                style="width: 220px"
-                @change="reload()"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.direction"
-                placeholder="收付方向"
-                clearable
-                style="width: 120px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in FLOW_DIRECTION_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.bankAccountId"
-                placeholder="收付账户"
-                clearable
-                filterable
-                style="width: 200px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="a in accounts"
-                  :key="a.id"
-                  :value="a.id"
-                  :label="a.displayLabel || a.accountName"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-date-picker
-                v-model="dateRange"
-                type="daterange"
-                value-format="YYYY-MM-DD"
-                start-placeholder="发生起"
-                end-placeholder="发生止"
-                style="width: 230px"
-                @change="onDateChange"
-              />
-            </el-form-item>
-          </el-form>
-        </template>
-
         <template #direction="{ row }">
           <el-tag
             :type="row.direction === 1 ? 'success' : 'warning'"
@@ -111,7 +57,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, nextTick, onMounted, reactive, ref } from 'vue';
+  import { computed, onMounted, reactive, ref } from 'vue';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
     Columns,
@@ -119,6 +65,7 @@
   } from 'ele-admin-plus/es/ele-pro-table/types';
   import FinanceKpiCards from '../components/finance-kpi-cards.vue';
   import type { FinanceKpiCard } from '../components/finance-kpi-cards.vue';
+  import FundFlowSearch from './components/fund-flow-search.vue';
   import { pageFundFlow } from '@/api/finance/payment-batch';
   import type {
     FundFlowParam,
@@ -127,13 +74,12 @@
   import { listBankAccountOptions } from '@/api/finance/bank-account';
   import type { BankAccountOption } from '@/api/finance/bank-account/model';
   import { formatDate } from '@/utils/date-util';
-  import { FLOW_DIRECTION_OPTIONS, formatMoney } from '../status-config';
+  import { formatMoney } from '../status-config';
 
   defineOptions({ name: 'FinanceFundFlow' });
 
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const where = reactive<FundFlowParam>({});
-  const dateRange = ref<[string, string] | null>(null);
   const accounts = ref<BankAccountOption[]>([]);
   const summary = ref<FundFlowSummary>({
     inAmount: 0,
@@ -195,21 +141,16 @@
     { prop: 'remark', label: '备注', minWidth: 140 }
   ]);
 
-  const datasource: DatasourceFunction = ({ pages }) => {
-    return pageFundFlow({ ...where, ...pages }).then((res) => {
+  const datasource: DatasourceFunction = ({ pages, where: tableWhere }) => {
+    return pageFundFlow({ ...(tableWhere || where), ...pages }).then((res) => {
       if (res?.summary) summary.value = res.summary;
       return { list: res?.list ?? [], count: res?.count ?? 0 };
     });
   };
 
-  const reload = () => {
-    nextTick(() => tableRef.value?.reload?.());
-  };
-
-  const onDateChange = () => {
-    where.dateFrom = dateRange.value?.[0];
-    where.dateTo = dateRange.value?.[1];
-    reload();
+  const reload = (next?: FundFlowParam, page?: number) => {
+    if (next) Object.assign(where, next);
+    tableRef.value?.reload?.({ where: { ...where }, page });
   };
 
   onMounted(async () => {

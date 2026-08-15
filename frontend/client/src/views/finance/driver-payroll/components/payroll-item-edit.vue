@@ -4,18 +4,25 @@
     :title="item ? '修改工资项' : '新增工资项'"
     width="520px"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-form :model="form" label-width="88px">
-      <el-form-item v-if="!item" label="项目" required>
+    <div v-if="item" class="finance-identity">
+      <div class="finance-identity__name">
+        {{ item.itemName || item.itemType }}
+      </div>
+      <div class="finance-identity__meta">{{ categoryHint }}</div>
+    </div>
+    <el-form :model="form" label-width="0" class="finance-edit-form">
+      <el-form-item v-if="!item">
         <el-select
           v-model="form.itemType"
-          placeholder="选常用项，或直接输入自定义项"
           filterable
           allow-create
           default-first-option
+          placeholder="请选择或输入工资项"
           style="width: 100%"
           @change="onPresetChange"
         >
@@ -27,46 +34,56 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item v-else label="项目">
-        <span>{{ item.itemName || item.itemType }}</span>
-      </el-form-item>
-      <el-form-item label="项目名称">
-        <el-input
+      <el-form-item>
+        <floating-label
+          label="请输入项目名称"
+          type="input"
           v-model="form.itemName"
-          maxlength="50"
-          placeholder="显示在工资条上的名称"
+          :maxlength="50"
+          clearable
         />
       </el-form-item>
-      <el-form-item v-if="!item" label="加减方向" required>
-        <el-radio-group v-model="form.category">
-          <el-radio
-            v-for="o in PAYROLL_ITEM_CATEGORY_OPTIONS"
-            :key="o.value"
-            :value="o.value"
-          >
-            {{ o.label }}
-          </el-radio>
-        </el-radio-group>
+      <el-form-item v-if="!item">
+        <div class="finance-switch-field">
+          <span>加减方向</span>
+          <el-radio-group v-model="form.category">
+            <el-radio
+              v-for="o in PAYROLL_ITEM_CATEGORY_OPTIONS"
+              :key="o.value"
+              :value="o.value"
+            >
+              {{ o.label }}
+            </el-radio>
+          </el-radio-group>
+        </div>
       </el-form-item>
-      <el-form-item label="金额" required>
-        <el-input-number
+      <el-form-item>
+        <floating-label
           v-model="form.amount"
-          :min="0.01"
-          :precision="2"
-          :controls="false"
-          style="width: 180px"
+          :label="`请输入金额，填正数，${categoryHint}`"
+          type="input-number"
+          :input-number-min="0.01"
+          :input-number-precision="2"
+          :input-number-step="10"
         />
-        <span class="hint"> 填正数，{{ categoryHint }} </span>
       </el-form-item>
-      <el-form-item label="计算说明">
-        <el-input
+      <el-form-item>
+        <floating-label
+          label="请输入计算说明，选填"
+          type="input"
           v-model="form.formula"
-          maxlength="255"
-          placeholder="选填，如：出勤 26 天 × 30 元"
+          :maxlength="255"
+          clearable
         />
       </el-form-item>
-      <el-form-item label="备注">
-        <el-input v-model="form.remark" maxlength="255" placeholder="选填" />
+      <el-form-item>
+        <floating-label
+          label="请输入备注，选填"
+          type="input"
+          v-model="form.remark"
+          :maxlength="255"
+          clearable
+        />
       </el-form-item>
     </el-form>
 
@@ -80,6 +97,7 @@
 <script lang="ts" setup>
   import { computed, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import {
     addPayrollItem,
     updatePayrollItem
@@ -182,9 +200,5 @@
 </script>
 
 <style lang="scss" scoped>
-  .hint {
-    margin-left: 10px;
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-  }
+  @use '../../_shared/ui.scss';
 </style>

@@ -662,6 +662,13 @@
     TaskSegment,
     TaskWaybillItem
   } from '@/api/operation/task/model';
+  import {
+    applyConsumedToCandidates,
+    cargoIdKey,
+    pickedQuantityForCargo,
+    remainingAfterPick,
+    sameCargoId
+  } from '../task-cargo-picker-utils';
 
   type PickedItem = TaskWaybillItem & {
     /** 候选行剩余台数（用于已选面板里动态计算最大可输入） */
@@ -768,7 +775,8 @@
         destinationKeyword: filter.destinationKeyword || undefined,
         modelKeyword: filter.modelKeyword || undefined,
         offset: (currentPage.value - 1) * CANDIDATE_PAGE_SIZE,
-        limit: CANDIDATE_PAGE_SIZE
+        limit: CANDIDATE_PAGE_SIZE,
+        _ts: Date.now()
       });
       candidates.value = res.items || [];
       candidateStats.waybillCount = res.waybillCount ?? 0;
@@ -926,12 +934,8 @@
     return [...new Set(titles)].join('；') || '';
   }
 
-  const pickedQty = (row: CandidateCargo): number => {
-    const p = (props.modelValue || []).find(
-      (x) => x.waybillCargoId === row.cargoId
-    );
-    return p?.quantity || 0;
-  };
+  const pickedQty = (row: CandidateCargo): number =>
+    pickedQuantityForCargo(props.modelValue, row.cargoId);
 
   function upsertPickedQuantity(
     list: PickedItem[],
@@ -940,15 +944,10 @@
   ): PickedItem[] {
     const cap = row.remainingQuantity;
     const q = Math.max(0, Math.min(Math.floor(qty), cap));
-    const i = list.findIndex((x) => x.waybillCargoId === row.cargoId);
-    const next = [...list];
-    if (q <= 0) {
-      if (i >= 0) next.splice(i, 1);
-      return next;
-    }
+    const cargoId = cargoIdKey(row.cargoId);
     const patch = {
       waybillId: row.waybillId,
-      waybillCargoId: row.cargoId,
+      waybillCargoId: cargoId || row.cargoId,
       waybillNo: row.waybillNo,
       customerId: row.customerId,
       customerName: row.customerName,
@@ -962,14 +961,24 @@
       _availableRemaining: cap,
       seriesImage: row.seriesImage
     };
-    if (i >= 0) {
-      next[i] = {
-        ...next[i],
+    const next: PickedItem[] = [];
+    let replaced = false;
+    for (const item of list) {
+      if (!sameCargoId(item.waybillCargoId, cargoId)) {
+        next.push(item);
+        continue;
+      }
+      if (replaced) continue;
+      replaced = true;
+      if (q <= 0) continue;
+      next.push({
+        ...item,
         ...patch,
-        segmentId: next[i].segmentId,
-        seriesImage: row.seriesImage ?? next[i].seriesImage
-      };
-    } else {
+        segmentId: item.segmentId,
+        seriesImage: row.seriesImage ?? item.seriesImage
+      });
+    }
+    if (!replaced && q > 0) {
       next.push({
         ...patch,
         segmentId: undefined
@@ -1063,7 +1072,9 @@
 
     const pickedMap = new Map<number, number>();
     (props.modelValue || []).forEach((p) => {
-      pickedMap.set(p.waybillCargoId, p.quantity || 0);
+      const id = cargoIdKey(p.waybillCargoId);
+      if (!id) return;
+      pickedMap.set(id, (pickedMap.get(id) || 0) + (p.quantity || 0));
     });
 
     type AccSub = { key: string; title: string; raw: CandidateCargo[] };
@@ -1102,9 +1113,9 @@
 
         for (const m of mergedRows) {
           for (const c of m.lines) {
-            const pickedQ = pickedMap.get(c.cargoId) || 0;
+            const pickedQ = pickedMap.get(cargoIdKey(c.cargoId)) || 0;
             if (pickedQ > 0) pickedQuantity += pickedQ;
-            addableQuantity += Math.max(0, c.remainingQuantity - pickedQ);
+            addableQuantity += remainingAfterPick(c.remainingQuantity, pickedQ);
           }
         }
 
@@ -1271,23 +1282,27 @@
 
   const candidateById = computed(() => {
     const m = new Map<number, CandidateCargo>();
-    candidates.value.forEach((c) => m.set(c.cargoId, c));
+    candidates.value.forEach((c) => {
+      const id = cargoIdKey(c.cargoId);
+      if (id) m.set(id, c);
+    });
     return m;
   });
 
   function pickedSeriesImageUrl(p: PickedItem): string {
     return seriesImageUrl(
-      p.seriesImage ?? candidateById.value.get(p.waybillCargoId)?.seriesImage
+      p.seriesImage ??
+        candidateById.value.get(cargoIdKey(p.waybillCargoId))?.seriesImage
     );
   }
 
   function pickedOrigin(p: PickedItem): string {
-    const c = candidateById.value.get(p.waybillCargoId);
+    const c = candidateById.value.get(cargoIdKey(p.waybillCargoId));
     return (p.origin ?? c?.origin ?? '').trim() || '未填';
   }
 
   function pickedDestination(p: PickedItem): string {
-    const c = candidateById.value.get(p.waybillCargoId);
+    const c = candidateById.value.get(cargoIdKey(p.waybillCargoId));
     return (p.destination ?? c?.destination ?? '').trim() || '未填';
   }
 
@@ -1301,7 +1316,7 @@
   function pickedVinOf(p: PickedItem): string {
     return (
       p.vin ??
-      candidateById.value.get(p.waybillCargoId)?.vin ??
+      candidateById.value.get(cargoIdKey(p.waybillCargoId))?.vin ??
       ''
     ).trim();
   }
@@ -1357,7 +1372,39 @@
     return mine.trim() !== dr.trim();
   }
 
-  defineExpose({ reload: resetAndLoadCandidates });
+  async function consumeAndReload(items?: PickedItem[]): Promise<void> {
+    const src = items ?? props.modelValue ?? [];
+    const beforeWaybills = new Set(
+      candidates.value.map((c) => cargoIdKey(c.waybillId)).filter((id) => id > 0)
+    );
+    const consumedQty = src.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    candidates.value = applyConsumedToCandidates(candidates.value, src);
+    const afterWaybills = new Set(
+      candidates.value.map((c) => cargoIdKey(c.waybillId)).filter((id) => id > 0)
+    );
+    let removedWaybills = 0;
+    beforeWaybills.forEach((id) => {
+      if (!afterWaybills.has(id)) removedWaybills += 1;
+    });
+    candidateStats.quantityTotal = Math.max(
+      0,
+      candidateStats.quantityTotal - consumedQty
+    );
+    candidateStats.waybillCount = Math.max(
+      0,
+      candidateStats.waybillCount - removedWaybills
+    );
+    candidateStats.lineCount = Math.max(
+      0,
+      candidateStats.lineCount - src.length
+    );
+    await resetAndLoadCandidates();
+  }
+
+  defineExpose({
+    reload: resetAndLoadCandidates,
+    consumeAndReload
+  });
 </script>
 
 <style lang="scss" scoped>

@@ -161,6 +161,187 @@ class TestTaskDispatch:
         assert result.quantityTotal >= 5
         assert any(row.cargoId == cargo.id for row in result.items)
 
+    async def test_candidate_excludes_cargo_after_full_allocate(self, tenant_session):
+        waybill, cargo = await _seed_dispatchable_waybill(tenant_session, quantity=1)
+        await TaskService.create_task(
+            tenant_session,
+            TaskCreate(
+                taskNo=f"RW{unique_suffix()}",
+                waybillItems=[
+                    TaskWaybillItemIn(
+                        waybillId=waybill.id,
+                        waybillCargoId=cargo.id,
+                        quantity=1,
+                    )
+                ],
+            ),
+        )
+        result = await TaskWaybillItemService.list_candidate_cargoes(
+            tenant_session, keyword=waybill.waybill_no, limit=50
+        )
+        assert all(row.cargoId != cargo.id for row in result.items)
+        assert result.quantityTotal == 0
+
+    async def test_second_allocate_same_cargo_is_rejected(self, tenant_session):
+        waybill, cargo = await _seed_dispatchable_waybill(tenant_session, quantity=1)
+        await TaskService.create_task(
+            tenant_session,
+            TaskCreate(
+                taskNo=f"RW{unique_suffix()}",
+                waybillItems=[
+                    TaskWaybillItemIn(
+                        waybillId=waybill.id,
+                        waybillCargoId=cargo.id,
+                        quantity=1,
+                    )
+                ],
+            ),
+        )
+        with pytest.raises(BizException) as ei:
+            await TaskService.create_task(
+                tenant_session,
+                TaskCreate(
+                    taskNo=f"RW{unique_suffix()}",
+                    waybillItems=[
+                        TaskWaybillItemIn(
+                            waybillId=waybill.id,
+                            waybillCargoId=cargo.id,
+                            quantity=1,
+                        )
+                    ],
+                ),
+            )
+        msg = str(ei.value)
+        assert "已经配到其他任务" in msg
+        assert "原台数" not in msg
+        assert str(waybill.id) not in msg
+
+    async def test_stale_allocated_column_does_not_block_create(self, tenant_session):
+        """allocated_quantity 虚高但没有真实挂接时，不应拦住配载。"""
+        waybill, cargo = await _seed_dispatchable_waybill(tenant_session, quantity=1)
+        cargo.allocated_quantity = 1
+        await tenant_session.flush()
+
+        task = await TaskService.create_task(
+            tenant_session,
+            TaskCreate(
+                taskNo=f"RW{unique_suffix()}",
+                waybillItems=[
+                    TaskWaybillItemIn(
+                        waybillId=waybill.id,
+                        waybillCargoId=cargo.id,
+                        quantity=1,
+                    )
+                ],
+            ),
+        )
+        assert task.total_quantity == 1
+        await tenant_session.refresh(cargo)
+        assert int(cargo.allocated_quantity or 0) == 1
+
+    async def test_duplicate_cargo_in_one_request_uses_remaining(self, tenant_session):
+        waybill, cargo = await _seed_dispatchable_waybill(tenant_session, quantity=1)
+        task = await TaskService.create_task(
+            tenant_session,
+            TaskCreate(
+                taskNo=f"RW{unique_suffix()}",
+                waybillItems=[
+                    TaskWaybillItemIn(
+                        waybillId=waybill.id,
+                        waybillCargoId=cargo.id,
+                        quantity=1,
+                    ),
+                    TaskWaybillItemIn(
+                        waybillId=waybill.id,
+                        waybillCargoId=cargo.id,
+                        quantity=1,
+                    ),
+                ],
+            ),
+        )
+        items = await TaskWaybillItemService.list_items_of_task(
+            tenant_session, task.id
+        )
+        assert len(items) == 1
+        assert int(items[0].quantity) == 1
+        assert task.total_quantity == 1
+
+    async def test_create_skips_occupied_and_keeps_available(self, tenant_session):
+        taken_wb, taken_cargo = await _seed_dispatchable_waybill(
+            tenant_session, quantity=1
+        )
+        free_wb, free_cargo = await _seed_dispatchable_waybill(
+            tenant_session, quantity=1
+        )
+        await TaskService.create_task(
+            tenant_session,
+            TaskCreate(
+                taskNo=f"RW{unique_suffix()}",
+                waybillItems=[
+                    TaskWaybillItemIn(
+                        waybillId=taken_wb.id,
+                        waybillCargoId=taken_cargo.id,
+                        quantity=1,
+                    )
+                ],
+            ),
+        )
+        task = await TaskService.create_task(
+            tenant_session,
+            TaskCreate(
+                taskNo=f"RW{unique_suffix()}",
+                waybillItems=[
+                    TaskWaybillItemIn(
+                        waybillId=taken_wb.id,
+                        waybillCargoId=taken_cargo.id,
+                        quantity=1,
+                    ),
+                    TaskWaybillItemIn(
+                        waybillId=free_wb.id,
+                        waybillCargoId=free_cargo.id,
+                        quantity=1,
+                    ),
+                ],
+            ),
+        )
+        items = await TaskWaybillItemService.list_items_of_task(
+            tenant_session, task.id
+        )
+        assert len(items) == 1
+        assert int(items[0].waybill_cargo_id) == int(free_cargo.id)
+
+    async def test_cancelled_task_items_do_not_block_create(self, tenant_session):
+        waybill, cargo = await _seed_dispatchable_waybill(tenant_session, quantity=1)
+        first = await TaskService.create_task(
+            tenant_session,
+            TaskCreate(
+                taskNo=f"RW{unique_suffix()}",
+                waybillItems=[
+                    TaskWaybillItemIn(
+                        waybillId=waybill.id,
+                        waybillCargoId=cargo.id,
+                        quantity=1,
+                    )
+                ],
+            ),
+        )
+        first.status = 9
+        await tenant_session.flush()
+        second = await TaskService.create_task(
+            tenant_session,
+            TaskCreate(
+                taskNo=f"RW{unique_suffix()}",
+                waybillItems=[
+                    TaskWaybillItemIn(
+                        waybillId=waybill.id,
+                        waybillCargoId=cargo.id,
+                        quantity=1,
+                    )
+                ],
+            ),
+        )
+        assert second.total_quantity == 1
+
     async def test_duplicate_task_no_rejected(self, tenant_session):
         waybill, cargo = await _seed_dispatchable_waybill(tenant_session)
         task_no = f"RW{unique_suffix()}"

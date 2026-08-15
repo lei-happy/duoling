@@ -5,18 +5,21 @@
     width="820px"
     top="6vh"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-form :model="form" label-width="94px">
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="供应商类型" required>
-            <el-select
+    <el-form :model="form" label-width="0" class="finance-edit-form">
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.vendorType"
+              label="请选择供应商类型"
+              type="select"
               :disabled="!!invoice"
-              style="width: 100%"
+              :clearable="false"
               @change="form.vendorId = void 0"
             >
               <el-option
@@ -25,18 +28,18 @@
                 :value="o.value"
                 :label="o.label"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item v-if="form.vendorType === 1" label="承运商">
-            <el-select
+        <el-col :span="12">
+          <el-form-item v-if="form.vendorType === 1">
+            <floating-label
               v-model="form.vendorId"
-              placeholder="请选择承运商"
+              label="请选择承运商"
+              type="select"
               filterable
               clearable
               :disabled="!!invoice"
-              style="width: 100%"
               @change="onCarrierChange"
             >
               <el-option
@@ -45,88 +48,100 @@
                 :value="c.id"
                 :label="c.carrierName"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
-          <el-form-item v-else label="供应商名称">
-            <el-input
+          <el-form-item v-else>
+            <floating-label
+              label="请输入开票方名称"
+              type="input"
               v-model="form.sellerTitle"
-              maxlength="100"
-              placeholder="开票方名称"
+              :maxlength="100"
+              clearable
             />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="发票类型">
-            <el-select v-model="form.invoiceType" style="width: 100%">
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              v-model="form.invoiceType"
+              label="请选择发票类型"
+              type="select"
+              :clearable="false"
+            >
               <el-option
                 v-for="o in INVOICE_TYPE_OPTIONS"
                 :key="o.value"
                 :value="o.value"
                 :label="o.label"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-      </el-row>
-
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="发票号码" required>
-            <el-input
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入发票号码"
+              type="input"
               v-model="form.invoiceNo"
               :disabled="!!invoice"
-              maxlength="30"
-              placeholder="发票号码"
+              :maxlength="30"
+              :clearable="false"
             />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="发票代码">
-            <el-input
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入发票代码，选填"
+              type="input"
               v-model="form.invoiceCode"
               :disabled="!!invoice"
-              maxlength="20"
-              placeholder="选填"
+              :maxlength="20"
+              clearable
             />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="开票日期">
-            <el-date-picker
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.invoiceDate"
+              label="请选择开票日期"
               type="date"
+              date-type="date"
               value-format="YYYY-MM-DD"
-              style="width: 100%"
             />
           </el-form-item>
         </el-col>
-      </el-row>
-
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="销方税号">
-            <el-input
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入销方税号，选填"
+              type="input"
               v-model="form.sellerTaxNo"
-              maxlength="30"
-              placeholder="选填"
+              :maxlength="30"
+              clearable
             />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="购方名称">
-            <el-input
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入购方名称"
+              type="input"
               v-model="form.buyerTitle"
-              maxlength="100"
-              placeholder="我方开票主体"
+              :maxlength="100"
+              clearable
             />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="购方税号">
-            <el-input
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入购方税号，选填"
+              type="input"
               v-model="form.buyerTaxNo"
-              maxlength="30"
-              placeholder="选填"
+              :maxlength="30"
+              clearable
             />
           </el-form-item>
         </el-col>
@@ -140,59 +155,62 @@
       </el-divider>
 
       <template v-if="!multiRate">
-        <el-row :gutter="12">
-          <el-col :span="6">
-            <el-form-item label="税率 %">
-              <el-input-number
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
                 v-model="form.taxRate"
-                :min="0"
-                :max="100"
-                :precision="2"
-                :controls="false"
-                style="width: 100%"
-                @change="onSingleRateChange"
+                label="请输入税率 %"
+                type="input-number"
+                :input-number-min="0"
+                :input-number-max="100"
+                :input-number-precision="2"
+                @update:model-value="onSingleRateChange"
               />
             </el-form-item>
           </el-col>
-          <el-col :span="6">
-            <el-form-item label="价税合计" required>
-              <el-input-number
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
                 v-model="form.amountInclTax"
-                :min="0.01"
-                :precision="2"
-                :controls="false"
-                style="width: 100%"
-                @change="onSingleRateChange"
+                label="请输入价税合计"
+                type="input-number"
+                :input-number-min="0.01"
+                :input-number-precision="2"
+                :input-number-step="100"
+                @update:model-value="onSingleRateChange"
               />
             </el-form-item>
           </el-col>
-          <el-col :span="6">
-            <el-form-item label="不含税额">
-              <el-input-number
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
                 v-model="form.amountExclTax"
-                :min="0"
-                :precision="2"
-                :controls="false"
-                style="width: 100%"
+                label="请输入不含税额"
+                type="input-number"
+                :input-number-min="0"
+                :input-number-precision="2"
+                :input-number-step="100"
               />
             </el-form-item>
           </el-col>
-          <el-col :span="6">
-            <el-form-item label="税额">
-              <el-input-number
+          <el-col :span="12">
+            <el-form-item>
+              <floating-label
                 v-model="form.taxAmount"
-                :min="0"
-                :precision="2"
-                :controls="false"
-                style="width: 100%"
+                label="请输入税额"
+                type="input-number"
+                :input-number-min="0"
+                :input-number-precision="2"
+                :input-number-step="10"
               />
             </el-form-item>
           </el-col>
         </el-row>
-        <div class="amount-tip">
+        <p class="finance-form-tip">
           填税率与价税合计会自动折算，不平的话可以手工改。三者要满足「不含税额 +
           税额 = 价税合计」。
-        </div>
+        </p>
       </template>
 
       <template v-else>
@@ -257,15 +275,20 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="70" align="center">
+          <el-table-column label="操作" width="80" align="center">
             <template #default="{ $index }">
-              <el-link
-                type="danger"
-                :underline="false"
-                @click="form.items.splice($index, 1)"
-              >
-                删除
-              </el-link>
+              <btn-items
+                :items="[
+                  {
+                    title: '删除',
+                    icon: DeleteOutlined,
+                    danger: true,
+                    onClick: () => form.items.splice($index, 1)
+                  }
+                ]"
+                type="link"
+                :wrap="false"
+              />
             </template>
           </el-table-column>
         </el-table>
@@ -277,39 +300,52 @@
         </div>
       </template>
 
-      <el-row :gutter="12" class="mt-12">
-        <el-col :span="8">
-          <el-form-item label="可否抵扣">
-            <el-radio-group v-model="form.deductible">
-              <el-radio :value="1">可抵扣</el-radio>
-              <el-radio :value="0">不可抵扣</el-radio>
-            </el-radio-group>
+      <el-row :gutter="16" class="mt-12">
+        <el-col :span="12">
+          <el-form-item>
+            <div class="finance-switch-field">
+              <span>可否抵扣</span>
+              <el-radio-group v-model="form.deductible">
+                <el-radio :value="1">可抵扣</el-radio>
+                <el-radio :value="0">不可抵扣</el-radio>
+              </el-radio-group>
+            </div>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="抵扣税期">
-            <el-date-picker
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.deductPeriod"
-              type="month"
+              label="抵扣税期，选填"
+              type="date"
+              date-type="month"
               value-format="YYYY-MM"
-              placeholder="选填，如 2026-08"
-              style="width: 100%"
             />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="发票影像">
-            <el-input
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入发票影像链接，选填"
+              type="input"
               v-model="form.attachmentUrl"
-              maxlength="500"
-              placeholder="选填，附件链接"
+              :maxlength="500"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入备注，选填"
+              type="input"
+              v-model="form.remark"
+              :maxlength="500"
+              clearable
             />
           </el-form-item>
         </el-col>
       </el-row>
-      <el-form-item label="备注">
-        <el-input v-model="form.remark" maxlength="500" placeholder="选填" />
-      </el-form-item>
     </el-form>
 
     <template #footer>
@@ -324,6 +360,8 @@
 <script lang="ts" setup>
   import { computed, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
+  import { DeleteOutlined } from '@/components/icons';
   import {
     registerVendorInvoice,
     updateVendorInvoice
@@ -535,6 +573,8 @@
 </script>
 
 <style lang="scss" scoped>
+  @use '../../_shared/ui.scss';
+
   .amount-tip {
     color: var(--el-text-color-secondary);
     font-size: 12px;

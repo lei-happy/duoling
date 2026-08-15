@@ -4,63 +4,78 @@
     title="调整任务提成"
     width="520px"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-form :model="form" label-width="96px">
-      <el-form-item label="任务号">
-        <span>{{ link?.taskNo || '--' }}</span>
-        <span v-if="link?.plateNumber" class="muted">
-          {{ link.plateNumber }}
-        </span>
-      </el-form-item>
-      <el-form-item label="交车台数">
-        <span>{{ link?.signedQuantitySnapshot ?? '--' }}</span>
-        <span class="muted">交车时的台数，改动量请填在下面</span>
-      </el-form-item>
-      <el-form-item label="计件数量">
-        <el-input-number
-          v-model="form.quantity"
-          :min="0"
-          :precision="2"
-          :controls="false"
-          style="width: 160px"
-        />
-      </el-form-item>
-      <el-form-item label="提成单价">
-        <el-input-number
-          v-model="form.unitPrice"
-          :min="0"
-          :precision="2"
-          :controls="false"
-          style="width: 160px"
-        />
-      </el-form-item>
-      <el-form-item label="额外调整">
-        <el-input-number
-          v-model="form.adjustAmount"
-          :precision="2"
-          :controls="false"
-          placeholder="补贴填正、扣减填负"
-          style="width: 160px"
-        />
-      </el-form-item>
-      <el-form-item v-if="needReason" label="调整原因" required>
-        <el-input
-          v-model="form.adjustReason"
-          type="textarea"
-          :rows="2"
-          maxlength="255"
-          placeholder="说明为什么调整，会记进操作记录"
-        />
-      </el-form-item>
-      <el-form-item label="备注">
-        <el-input v-model="form.remark" maxlength="255" placeholder="选填" />
-      </el-form-item>
+    <div class="finance-identity">
+      <div class="finance-identity__name">{{ link?.taskNo || '--' }}</div>
+      <div class="finance-identity__meta">
+        <template v-if="link?.plateNumber">{{ link.plateNumber }} · </template>
+        交车台数 {{ link?.signedQuantitySnapshot ?? '--' }}
+        · 本行提成预计 ¥ {{ formatMoney(previewAmount) }}
+      </div>
+    </div>
+    <el-form :model="form" label-width="0" class="finance-edit-form">
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              v-model="form.quantity"
+              label="请输入计件数量"
+              type="input-number"
+              :input-number-min="0"
+              :input-number-precision="2"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              v-model="form.unitPrice"
+              label="请输入提成单价"
+              type="input-number"
+              :input-number-min="0"
+              :input-number-precision="2"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24">
+          <el-form-item>
+            <floating-label
+              v-model="form.adjustAmount"
+              label="请输入额外调整，补贴填正、扣减填负"
+              type="input-number"
+              :input-number-precision="2"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col v-if="needReason" :span="24">
+          <el-form-item>
+            <floating-label
+              label="请说明调整原因，会记进操作记录"
+              type="input"
+              input-type="textarea"
+              v-model="form.adjustReason"
+              :maxlength="255"
+              :clearable="false"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24">
+          <el-form-item>
+            <floating-label
+              label="请输入备注，选填"
+              type="input"
+              v-model="form.remark"
+              :maxlength="255"
+              clearable
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
     </el-form>
-
-    <div class="preview"> 本行提成预计 ¥ {{ formatMoney(previewAmount) }} </div>
 
     <template #footer>
       <el-button @click="emit('update:visible', false)">取消</el-button>
@@ -72,6 +87,7 @@
 <script lang="ts" setup>
   import { computed, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import { adjustPayrollTask } from '@/api/finance/driver-payroll';
   import type { PayrollTaskLink } from '@/api/finance/driver-payroll/model';
   import { formatMoney } from '../../status-config';
@@ -154,16 +170,5 @@
 </script>
 
 <style lang="scss" scoped>
-  .muted {
-    margin-left: 8px;
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-  }
-
-  .preview {
-    padding: 8px 12px;
-    background: var(--el-fill-color-light);
-    border-radius: 4px;
-    font-variant-numeric: tabular-nums;
-  }
+  @use '../../_shared/ui.scss';
 </style>

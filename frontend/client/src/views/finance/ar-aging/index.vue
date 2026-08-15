@@ -6,29 +6,11 @@
       <div class="chart-head">
         <span class="chart-title">账龄分布</span>
         <span class="chart-sub">
-          统计基准日 {{ summary?.baseDate || baseDate || '今天' }}
+          统计基准日 {{ summary?.baseDate || where.baseDate || '今天' }}
           <template v-if="summary?.bucketLabels?.length">
             · 分档 {{ summary.bucketLabels.join(' / ') }}
           </template>
         </span>
-        <div class="chart-actions">
-          <el-date-picker
-            v-model="baseDate"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="统计基准日"
-            size="small"
-            style="width: 150px"
-            @change="reloadAll"
-          />
-          <el-button
-            size="small"
-            v-permission="'finance:ar-aging:export'"
-            @click="exportList"
-          >
-            导出
-          </el-button>
-        </div>
       </div>
       <div class="chart-body" v-loading="summaryLoading">
         <v-chart
@@ -43,6 +25,12 @@
       </div>
     </ele-card>
 
+    <aging-search
+      ref="searchRef"
+      :bucket-labels="bucketLabels"
+      @search="onSearch"
+    />
+
     <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
@@ -51,62 +39,20 @@
         :datasource="datasource"
         :pagination="{ pageSize: 20 }"
         :show-overflow-tooltip="true"
+        :highlight-current-row="true"
         cache-key="FinanceArAgingTable"
       >
         <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="客户名称"
-                clearable
-                style="width: 180px"
-                @change="reloadAll"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.creditStatus"
-                placeholder="信用状态"
-                clearable
-                style="width: 130px"
-                @change="reloadAll"
-              >
-                <el-option
-                  v-for="o in CREDIT_STATUS_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.bucket"
-                placeholder="账龄档"
-                clearable
-                style="width: 140px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="(label, idx) in bucketLabels"
-                  :key="idx"
-                  :value="idx"
-                  :label="label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-checkbox v-model="where.onlyOverdue" @change="reload()">
-                只看逾期
-              </el-checkbox>
-            </el-form-item>
-            <el-form-item>
-              <el-checkbox v-model="where.onlyExceeded" @change="reload()">
-                只看超额度
-              </el-checkbox>
-            </el-form-item>
-          </el-form>
+          <btn-items
+            :items="[
+              {
+                preset: 'export',
+                title: '导出',
+                permission: 'finance:ar-aging:export',
+                onClick: exportList
+              }
+            ]"
+          />
         </template>
 
         <template #customer="{ row }">
@@ -163,14 +109,12 @@
         </template>
 
         <template #action="{ row }">
-          <el-link
-            type="primary"
-            :underline="false"
-            v-permission="'finance:ar-aging:detail'"
-            @click="openDetail(row)"
-          >
-            看明细
-          </el-link>
+          <btn-items
+            divider
+            type="link"
+            :wrap="false"
+            :items="actionItems(row)"
+          />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -178,16 +122,17 @@
     <aging-detail-drawer
       v-model:visible="detailVisible"
       :customer-id="detailCustomerId"
-      :base-date="baseDate"
+      :base-date="where.baseDate"
     />
   </ele-page>
 </template>
 
 <script lang="ts" setup>
-  import { computed, nextTick, onMounted, reactive, ref } from 'vue';
+  import { computed, onMounted, reactive, ref } from 'vue';
   import { useRoute } from 'vue-router';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
+  import type { ButtonItem } from 'ele-admin-plus/es/ele-buttons/types';
   import type {
     Columns,
     DatasourceFunction
@@ -198,10 +143,12 @@
   import { BarChart } from 'echarts/charts';
   import { GridComponent, TooltipComponent } from 'echarts/components';
   import VChart from 'vue-echarts';
+  import { EyeOutlined } from '@/components/icons';
   import { useEcharts } from '@/utils/use-echarts';
   import FinanceKpiCards from '../components/finance-kpi-cards.vue';
   import type { FinanceKpiCard } from '../components/finance-kpi-cards.vue';
   import AgingDetailDrawer from './components/aging-detail-drawer.vue';
+  import AgingSearch from './components/aging-search.vue';
   import {
     exportAging,
     getAgingSummary,
@@ -212,9 +159,9 @@
     AgingParam,
     AgingSummary
   } from '@/api/finance/ar-aging/model';
+  import { buildActionColumnItems } from '../_shared/action-column';
   import {
     CREDIT_STATUS_MAP,
-    CREDIT_STATUS_OPTIONS,
     formatMoney
   } from '../status-config';
 
@@ -224,11 +171,11 @@
 
   const route = useRoute();
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
+  const searchRef = ref<InstanceType<typeof AgingSearch> | null>(null);
   const chartRef = ref<InstanceType<typeof VChart> | null>(null);
   useEcharts([chartRef]);
 
   const where = reactive<AgingParam>({});
-  const baseDate = ref<string | undefined>(void 0);
   const summary = ref<AgingSummary | null>(null);
   const summaryLoading = ref(false);
   const bucketLabels = ref<string[]>([]);
@@ -341,27 +288,28 @@
     base.push({
       columnKey: 'action',
       label: '操作',
-      width: 100,
+      width: 120,
+      minWidth: 120,
       align: 'center',
-      fixed: 'right',
-      slot: 'action'
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
     });
     return base;
   });
 
-  const datasource: DatasourceFunction = ({ pages }) => {
-    return pageAging({ ...where, baseDate: baseDate.value, ...pages }).then(
-      (res) => {
-        if (res?.bucketLabels?.length) {
-          bucketLabels.value = res.bucketLabels;
-        }
-        return { list: res?.list ?? [], count: res?.count ?? 0 };
+  const datasource: DatasourceFunction = ({ pages, where: tableWhere }) => {
+    return pageAging({ ...(tableWhere || where), ...pages }).then((res) => {
+      if (res?.bucketLabels?.length) {
+        bucketLabels.value = res.bucketLabels;
       }
-    );
+      return { list: res?.list ?? [], count: res?.count ?? 0 };
+    });
   };
 
-  const reload = () => {
-    nextTick(() => tableRef.value?.reload?.());
+  const reload = (page?: number) => {
+    tableRef.value?.reload?.({ where: { ...where }, page });
   };
 
   const renderChart = () => {
@@ -415,7 +363,7 @@
       const res = await getAgingSummary({
         keyword: where.keyword,
         creditStatus: where.creditStatus,
-        baseDate: baseDate.value
+        baseDate: where.baseDate
       });
       summary.value = res ?? null;
       if (res?.bucketLabels?.length) {
@@ -431,33 +379,35 @@
     }
   };
 
-  const reloadAll = async () => {
+  const onSearch = async (next?: AgingParam) => {
+    if (next) Object.assign(where, next);
     await loadSummary();
-    reload();
+    reload(1);
   };
 
   const onKpiSelect = (key: string) => {
     if (key === 'overdue') {
-      where.onlyOverdue = !where.onlyOverdue;
-      where.onlyExceeded = false;
-      where.bucket = void 0;
+      searchRef.value?.applyFlags({ onlyOverdue: true });
     } else if (key === 'exceeded') {
-      where.onlyExceeded = !where.onlyExceeded;
-      where.onlyOverdue = false;
-      where.bucket = void 0;
+      searchRef.value?.applyFlags({ onlyExceeded: true });
     } else if (key === 'lastBucket') {
       const last = bucketLabels.value.length - 1;
-      where.bucket = where.bucket === last ? void 0 : last;
-      where.onlyOverdue = false;
-      where.onlyExceeded = false;
+      searchRef.value?.applyFlags({ bucket: last });
     }
-    reload();
   };
 
-  const openDetail = (row: AgingCustomerRow) => {
-    detailCustomerId.value = row.customerId;
-    detailVisible.value = true;
-  };
+  const actionItems = (row: AgingCustomerRow): ButtonItem[] =>
+    buildActionColumnItems([
+      {
+        title: '看明细',
+        icon: EyeOutlined,
+        permission: 'finance:ar-aging:detail',
+        onClick: () => {
+          detailCustomerId.value = row.customerId;
+          detailVisible.value = true;
+        }
+      }
+    ]);
 
   const exportList = async () => {
     const l = EleMessage.loading({
@@ -469,7 +419,7 @@
         keyword: where.keyword,
         creditStatus: where.creditStatus,
         bucket: where.bucket,
-        baseDate: baseDate.value
+        baseDate: where.baseDate
       });
       l.close();
       EleMessage.success({ message: '账龄表已开始下载', plain: true });
@@ -482,7 +432,6 @@
 
   onMounted(async () => {
     await loadSummary();
-    // 从业务页提示条跳过来时带着客户，直接把这个客户的明细摊开，省一次翻找
     const fromQuery = Number(route.query.customerId);
     if (fromQuery) {
       where.customerId = fromQuery;
@@ -506,17 +455,12 @@
 
   .chart-title {
     font-weight: 600;
+    letter-spacing: -0.01em;
   }
 
   .chart-sub {
     color: var(--el-text-color-secondary);
     font-size: 12px;
-  }
-
-  .chart-actions {
-    display: flex;
-    gap: 8px;
-    margin-left: auto;
   }
 
   .chart-body {

@@ -1,82 +1,23 @@
 <template>
   <ele-page>
-    <ele-card :body-style="{ paddingTop: '8px' }">
-      <el-tabs v-model="activeTab" class="page-tabs">
-        <el-tab-pane label="发票台账" name="list" />
-        <el-tab-pane label="待开票池" name="pending" />
-      </el-tabs>
-
-      <ele-pro-table
-        v-if="activeTab === 'list'"
-        ref="tableRef"
-        row-key="id"
-        :columns="columns"
-        :datasource="datasource"
-        :pagination="{ pageSize: 20 }"
-        :show-overflow-tooltip="true"
-        cache-key="FinanceCustomerInvoiceTable"
-      >
-        <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="申请单号/发票号/客户"
-                clearable
-                style="width: 200px"
-                @change="reload()"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.customerId"
-                placeholder="客户"
-                clearable
-                filterable
-                style="width: 170px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="c in customers"
-                  :key="c.id"
-                  :value="c.id"
-                  :label="c.customerName"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.status"
-                placeholder="状态"
-                clearable
-                style="width: 120px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in CUSTOMER_INVOICE_STATUS_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-date-picker
-                v-model="dateRange"
-                type="daterange"
-                value-format="YYYY-MM-DD"
-                start-placeholder="开票起"
-                end-placeholder="开票止"
-                style="width: 230px"
-                @change="onDateChange"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-checkbox v-model="where.onlyRed" @change="reload()">
-                只看红字票
-              </el-checkbox>
-            </el-form-item>
-            <el-form-item>
+    <el-tabs v-model="activeTab">
+      <el-tab-pane label="发票台账" name="list">
+        <invoice-search
+          :customers="customers"
+          @search="(next) => reload(next, 1)"
+        />
+        <ele-card :body-style="{ paddingTop: '8px' }">
+          <ele-pro-table
+            ref="tableRef"
+            row-key="id"
+            :columns="columns"
+            :datasource="datasource"
+            :pagination="{ pageSize: 20 }"
+            :show-overflow-tooltip="true"
+            :highlight-current-row="true"
+            cache-key="FinanceCustomerInvoiceTable"
+          >
+            <template #toolbar>
               <btn-items
                 :items="[
                   {
@@ -87,129 +28,121 @@
                   }
                 ]"
               />
-            </el-form-item>
-          </el-form>
-        </template>
+            </template>
 
-        <template #doc="{ row }">
-          <div>{{ row.docNo }}</div>
-          <div class="muted">
-            {{ row.invoiceTypeLabel }}
-            <span v-if="row.isRedFlush === 1" class="red-mark">红字票</span>
+            <template #doc="{ row }">
+              <div>{{ row.docNo }}</div>
+              <div class="muted">
+                {{ row.invoiceTypeLabel }}
+                <span v-if="row.isRedFlush === 1" class="red-mark">红字票</span>
+              </div>
+            </template>
+
+            <template #invoice="{ row }">
+              <div>{{ row.invoiceNo || '未开票' }}</div>
+              <div class="muted">{{ formatDate(row.invoiceDate) || '--' }}</div>
+            </template>
+
+            <template #amount="{ row }">
+              <div class="num-cell strong">
+                ¥ {{ formatMoney(row.amountInclTax) }}
+              </div>
+              <div class="muted">
+                不含税 {{ formatMoney(row.amountExclTax) }}
+                <span v-if="row.taxRate != null">· {{ row.taxRate }}%</span>
+              </div>
+            </template>
+
+            <template #status="{ row }">
+              <el-tag
+                :type="
+                  (CUSTOMER_INVOICE_STATUS_MAP[row.status]?.type as any) ||
+                  'info'
+                "
+                size="small"
+              >
+                {{
+                  row.statusLabel ||
+                  CUSTOMER_INVOICE_STATUS_MAP[row.status]?.label
+                }}
+              </el-tag>
+            </template>
+
+            <template #action="{ row }">
+              <btn-items
+                divider
+                type="link"
+                :wrap="false"
+                :items="actionItems(row)"
+              />
+            </template>
+          </ele-pro-table>
+        </ele-card>
+      </el-tab-pane>
+
+      <el-tab-pane label="待开票池" name="pending">
+        <ele-card :body-style="{ paddingTop: '8px' }">
+          <p class="panel-tip">
+            已审批或已收款、但票还没开齐的结算单。勾一张点「按此开票」就会带着结算单建申请。
+          </p>
+          <div class="panel-toolbar">
+            <el-checkbox v-model="onlyRequired" @change="loadPending">
+              只看客户要求开票的
+            </el-checkbox>
+            <btn-items
+              :items="[{ preset: 'search', title: '刷新', onClick: loadPending }]"
+            />
           </div>
-        </template>
-
-        <template #invoice="{ row }">
-          <div>{{ row.invoiceNo || '未开票' }}</div>
-          <div class="muted">{{ formatDate(row.invoiceDate) || '--' }}</div>
-        </template>
-
-        <template #amount="{ row }">
-          <div class="num-cell strong">
-            ¥ {{ formatMoney(row.amountInclTax) }}
-          </div>
-          <div class="muted">
-            不含税 {{ formatMoney(row.amountExclTax) }}
-            <span v-if="row.taxRate != null">· {{ row.taxRate }}%</span>
-          </div>
-        </template>
-
-        <template #status="{ row }">
-          <el-tag
-            :type="
-              (CUSTOMER_INVOICE_STATUS_MAP[row.status]?.type as any) || 'info'
-            "
-            size="small"
+          <el-table
+            :data="pendingRows"
+            v-loading="pendingLoading"
+            :highlight-current-row="true"
           >
-            {{
-              row.statusLabel || CUSTOMER_INVOICE_STATUS_MAP[row.status]?.label
-            }}
-          </el-tag>
-        </template>
-
-        <template #action="{ row }">
-          <el-link
-            type="primary"
-            :underline="false"
-            v-permission="'finance:cust-invoice:detail'"
-            @click="openDetail(row.id)"
-          >
-            详情
-          </el-link>
-          <template v-if="row.status === 1">
-            <el-divider direction="vertical" />
-            <el-link
-              type="success"
-              :underline="false"
-              v-permission="'finance:cust-invoice:issue'"
-              @click="openDetail(row.id)"
-            >
-              登记开票
-            </el-link>
-          </template>
-        </template>
-      </ele-pro-table>
-
-      <!-- 待开票池：结算单侧还差多少票没开，催开票用 -->
-      <div v-else class="sub-panel">
-        <div class="panel-tip">
-          已审批或已收款、但票还没开齐的结算单。勾一张点「按此开票」就会带着结算单建申请。
-        </div>
-        <div class="panel-toolbar">
-          <el-checkbox v-model="onlyRequired" @change="loadPending">
-            只看客户要求开票的
-          </el-checkbox>
-          <el-button size="small" type="primary" plain @click="loadPending">
-            刷新
-          </el-button>
-        </div>
-        <el-table :data="pendingRows" v-loading="pendingLoading" size="small">
-          <el-table-column prop="docNo" label="结算单号" min-width="170" />
-          <el-table-column prop="customerName" label="客户" min-width="150" />
-          <el-table-column label="结算金额" width="130" align="right">
-            <template #default="{ row }">
-              <span class="num-cell"
-                >¥ {{ formatMoney(row.plannedAmount) }}</span
-              >
+            <el-table-column prop="docNo" label="结算单号" min-width="170" />
+            <el-table-column prop="customerName" label="客户" min-width="150" />
+            <el-table-column label="结算金额" width="130" align="right">
+              <template #default="{ row }">
+                <span class="num-cell"
+                  >¥ {{ formatMoney(row.plannedAmount) }}</span
+                >
+              </template>
+            </el-table-column>
+            <el-table-column label="已开票" width="130" align="right">
+              <template #default="{ row }">
+                <span class="num-cell"
+                  >¥ {{ formatMoney(row.invoicedAmount) }}</span
+                >
+              </template>
+            </el-table-column>
+            <el-table-column label="缺口" width="130" align="right">
+              <template #default="{ row }">
+                <span class="num-cell gap"
+                  >¥ {{ formatMoney(row.gapAmount) }}</span
+                >
+              </template>
+            </el-table-column>
+            <el-table-column label="账期" width="120" align="center">
+              <template #default="{ row }">
+                {{ row.dueDate || '--' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120" align="center">
+              <template #default="{ row }">
+                <btn-items
+                  divider
+                  type="link"
+                  :wrap="false"
+                  :items="pendingActions(row)"
+                />
+              </template>
+            </el-table-column>
+            <template #empty>
+              <div class="empty-tip">票都开齐了，没有待开票的结算单</div>
             </template>
-          </el-table-column>
-          <el-table-column label="已开票" width="130" align="right">
-            <template #default="{ row }">
-              <span class="num-cell"
-                >¥ {{ formatMoney(row.invoicedAmount) }}</span
-              >
-            </template>
-          </el-table-column>
-          <el-table-column label="缺口" width="130" align="right">
-            <template #default="{ row }">
-              <span class="num-cell gap"
-                >¥ {{ formatMoney(row.gapAmount) }}</span
-              >
-            </template>
-          </el-table-column>
-          <el-table-column label="账期" width="120" align="center">
-            <template #default="{ row }">
-              {{ row.dueDate || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="110" align="center">
-            <template #default="{ row }">
-              <el-link
-                type="primary"
-                :underline="false"
-                v-permission="'finance:cust-invoice:create'"
-                @click="openCreate(row.customerId)"
-              >
-                按此开票
-              </el-link>
-            </template>
-          </el-table-column>
-          <template #empty>
-            <div class="empty-tip">票都开齐了，没有待开票的结算单</div>
-          </template>
-        </el-table>
-      </div>
-    </ele-card>
+          </el-table>
+        </ele-card>
+      </el-tab-pane>
+    </el-tabs>
 
     <customer-invoice-create
       v-model:visible="createVisible"
@@ -227,29 +160,36 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
+  import { computed, onMounted, reactive, ref, watch } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
+  import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
   import type {
     Columns,
     DatasourceFunction
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import { EyeOutlined, FormOutlined } from '@/components/icons';
   import CustomerInvoiceCreate from './components/customer-invoice-create.vue';
   import CustomerInvoiceDetail from './components/customer-invoice-detail.vue';
+  import InvoiceSearch from './components/invoice-search.vue';
   import {
     listPendingInvoicePool,
     pageCustomerInvoices
   } from '@/api/finance/customer-invoice';
   import type {
+    CustomerInvoiceListItem,
     CustomerInvoiceParam,
     PendingInvoiceSettle
   } from '@/api/finance/customer-invoice/model';
   import { selectCustomers } from '@/api/partner/customer';
   import type { CustomerSelectItem } from '@/api/partner/customer/model';
   import { formatDate } from '@/utils/date-util';
+  import { buildActionColumnItems } from '../_shared/action-column';
   import {
     CUSTOMER_INVOICE_STATUS_MAP,
-    CUSTOMER_INVOICE_STATUS_OPTIONS,
     formatMoney
   } from '../status-config';
 
@@ -258,7 +198,6 @@
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const activeTab = ref('list');
   const where = reactive<CustomerInvoiceParam>({});
-  const dateRange = ref<[string, string] | null>(null);
   const customers = ref<CustomerSelectItem[]>([]);
 
   const createVisible = ref(false);
@@ -298,28 +237,28 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 150,
+      width: 160,
+      minWidth: 160,
       align: 'center',
-      fixed: 'right',
-      slot: 'action'
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
     }
   ]);
 
-  const datasource: DatasourceFunction = ({ pages }) => {
-    return pageCustomerInvoices({ ...where, ...pages }).then((res) => ({
-      list: res?.list ?? [],
-      count: res?.count ?? 0
-    }));
+  const datasource: DatasourceFunction = ({ pages, where: tableWhere }) => {
+    return pageCustomerInvoices({ ...(tableWhere || where), ...pages }).then(
+      (res) => ({
+        list: res?.list ?? [],
+        count: res?.count ?? 0
+      })
+    );
   };
 
-  const reload = () => {
-    nextTick(() => tableRef.value?.reload?.());
-  };
-
-  const onDateChange = () => {
-    where.dateFrom = dateRange.value?.[0];
-    where.dateTo = dateRange.value?.[1];
-    reload();
+  const reload = (next?: CustomerInvoiceParam, page?: number) => {
+    if (next) Object.assign(where, next);
+    tableRef.value?.reload?.({ where: { ...where }, page });
   };
 
   const openCreate = (customerId?: number) => {
@@ -331,6 +270,36 @@
     detailId.value = invoiceId;
     detailVisible.value = true;
   };
+
+  const actionItems = (row: CustomerInvoiceListItem): ButtonItem[] => {
+    const visible: ButtonDropdownItem[] = [
+      {
+        title: '详情',
+        icon: EyeOutlined,
+        permission: 'finance:cust-invoice:detail',
+        onClick: () => openDetail(row.id)
+      }
+    ];
+    if (row.status === 1) {
+      visible.push({
+        title: '登记开票',
+        icon: FormOutlined,
+        permission: 'finance:cust-invoice:issue',
+        onClick: () => openDetail(row.id)
+      });
+    }
+    return buildActionColumnItems(visible);
+  };
+
+  const pendingActions = (row: PendingInvoiceSettle): ButtonItem[] =>
+    buildActionColumnItems([
+      {
+        title: '按此开票',
+        icon: FormOutlined,
+        permission: 'finance:cust-invoice:create',
+        onClick: () => openCreate(row.customerId)
+      }
+    ]);
 
   const onCreated = (invoiceId?: number) => {
     activeTab.value = 'list';
@@ -375,22 +344,11 @@
 </script>
 
 <style lang="scss" scoped>
-  .page-tabs {
-    margin-bottom: 4px;
-
-    :deep(.el-tabs__header) {
-      margin-bottom: 8px;
-    }
-  }
-
-  .sub-panel {
-    padding-top: 4px;
-  }
-
   .panel-tip {
-    margin-bottom: 10px;
+    margin: 0 0 12px;
     color: var(--el-text-color-secondary);
     font-size: 13px;
+    line-height: 1.7;
   }
 
   .panel-toolbar {

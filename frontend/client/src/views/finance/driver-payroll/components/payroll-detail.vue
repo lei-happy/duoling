@@ -152,23 +152,27 @@
                 align="center"
               >
                 <template #default="{ row }">
-                  <el-link
-                    type="primary"
-                    :underline="false"
-                    v-permission="'finance:driver-payroll:edit'"
-                    @click="openAdjust(row)"
-                  >
-                    调整
-                  </el-link>
-                  <el-divider direction="vertical" />
-                  <el-link
-                    type="danger"
-                    :underline="false"
-                    v-permission="'finance:driver-payroll:edit'"
-                    @click="removeTask(row.id, row.taskNo)"
-                  >
-                    移除
-                  </el-link>
+                  <btn-items
+                    :items="[
+                      {
+                        title: '调整',
+                        icon: EditOutlined,
+                        permission: 'finance:driver-payroll:edit',
+                        onClick: () => openAdjust(row)
+                      },
+                      {
+                        title: '移除',
+                        icon: DeleteOutlined,
+                        danger: true,
+                        divided: true,
+                        permission: 'finance:driver-payroll:edit',
+                        onClick: () => removeTask(row.id, row.taskNo)
+                      }
+                    ]"
+                    type="link"
+                    :wrap="false"
+                    divider
+                  />
                 </template>
               </el-table-column>
               <template #empty>
@@ -243,25 +247,29 @@
                 align="center"
               >
                 <template #default="{ row }">
-                  <template v-if="!row.isSystem">
-                    <el-link
-                      type="primary"
-                      :underline="false"
-                      v-permission="'finance:driver-payroll:edit-item'"
-                      @click="openItem(row)"
-                    >
-                      修改
-                    </el-link>
-                    <el-divider direction="vertical" />
-                    <el-link
-                      type="danger"
-                      :underline="false"
-                      v-permission="'finance:driver-payroll:edit-item'"
-                      @click="removeItem(row.id, row.itemName || row.itemType)"
-                    >
-                      删除
-                    </el-link>
-                  </template>
+                  <btn-items
+                    v-if="!row.isSystem"
+                    :items="[
+                      {
+                        title: '修改',
+                        icon: EditOutlined,
+                        permission: 'finance:driver-payroll:edit-item',
+                        onClick: () => openItem(row)
+                      },
+                      {
+                        title: '删除',
+                        icon: DeleteOutlined,
+                        danger: true,
+                        divided: true,
+                        permission: 'finance:driver-payroll:edit-item',
+                        onClick: () =>
+                          removeItem(row.id, row.itemName || row.itemType)
+                      }
+                    ]"
+                    type="link"
+                    :wrap="false"
+                    divider
+                  />
                   <span v-else class="muted">--</span>
                 </template>
               </el-table-column>
@@ -460,6 +468,7 @@
   import { computed, ref } from 'vue';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
+  import { DeleteOutlined, EditOutlined } from '@/components/icons';
   import PayrollAddTasks from './payroll-add-tasks.vue';
   import PayrollItemEdit from './payroll-item-edit.vue';
   import PayrollPay from './payroll-pay.vue';

@@ -5,21 +5,23 @@
     width="880px"
     top="6vh"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
     <customer-credit-tip :customer-id="form.customerId" :show-link="false" />
 
-    <el-form :model="form" label-width="88px">
-      <el-row :gutter="12">
-        <el-col :span="8">
-          <el-form-item label="客户" required>
-            <el-select
+    <el-form :model="form" label-width="0" class="finance-edit-form">
+      <el-row :gutter="16">
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.customerId"
-              placeholder="请选择客户"
+              label="请选择客户"
+              type="select"
               filterable
-              style="width: 100%"
+              :clearable="false"
               @change="load"
             >
               <el-option
@@ -28,39 +30,48 @@
                 :value="c.id"
                 :label="c.customerName"
               />
-            </el-select>
+            </floating-label>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="到期日">
-            <el-date-picker
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
               v-model="form.dueDate"
+              label="到期日，留空按客户账期"
               type="date"
+              date-type="date"
               value-format="YYYY-MM-DD"
-              placeholder="留空按客户账期推导"
-              style="width: 100%"
             />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="是否开票">
-            <el-switch
-              v-model="form.invoiceRequired"
-              :active-value="1"
-              :inactive-value="0"
-              active-text="需要开票"
+        <el-col :span="12">
+          <el-form-item>
+            <div class="finance-switch-field">
+              <span>需要开票</span>
+              <el-switch
+                v-model="form.invoiceRequired"
+                :active-value="1"
+                :inactive-value="0"
+              />
+            </div>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item>
+            <floating-label
+              label="请输入备注，选填"
+              type="input"
+              v-model="form.remark"
+              clearable
             />
           </el-form-item>
         </el-col>
       </el-row>
-      <el-form-item label="备注">
-        <el-input v-model="form.remark" maxlength="200" placeholder="选填" />
-      </el-form-item>
     </el-form>
 
-    <div class="cand-head">
-      <span class="cand-title">可结算的已确认对账单</span>
-      <span class="cand-tip">
+    <div class="finance-cand-head">
+      <span class="finance-cand-title">可结算的已确认对账单</span>
+      <span class="finance-cand-tip">
         已选 {{ selected.length }} 张，认领合计 ¥
         {{ formatMoney(totalApplied) }}
       </span>
@@ -71,7 +82,7 @@
       v-loading="loading"
       height="300"
       row-key="reconId"
-      size="small"
+      :highlight-current-row="true"
       @selection-change="onSelectionChange"
     >
       <el-table-column type="selection" width="42" />
@@ -105,14 +116,13 @@
             :max="row.availableAmount"
             :precision="2"
             :controls="false"
-            size="small"
             :disabled="!isSelected(row.reconId)"
             style="width: 130px"
           />
         </template>
       </el-table-column>
       <template #empty>
-        <div class="cand-empty">
+        <div class="finance-cand-empty">
           {{
             form.customerId
               ? '这个客户没有可结算的对账单，先去客户对账单确认一张'
@@ -134,6 +144,7 @@
 <script lang="ts" setup>
   import { computed, reactive, ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import CustomerCreditTip from '../../components/customer-credit-tip.vue';
   import {
     addSettlement,
@@ -183,7 +194,6 @@
 
   const onSelectionChange = (rows: SettleReconCandidate[]) => {
     selected.value = rows;
-    // 勾选即默认认领全部未结金额，出纳最常见的就是整张结清
     rows.forEach((r) => {
       if (appliedMap[r.reconId] === void 0) {
         appliedMap[r.reconId] = r.availableAmount;
@@ -258,24 +268,5 @@
 </script>
 
 <style lang="scss" scoped>
-  .cand-head {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-
-  .cand-title {
-    font-weight: 600;
-  }
-
-  .cand-tip {
-    margin-left: auto;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-  }
-
-  .cand-empty {
-    padding: 24px 0;
-    color: var(--el-text-color-secondary);
-  }
+  @use '../../_shared/ui.scss';
 </style>

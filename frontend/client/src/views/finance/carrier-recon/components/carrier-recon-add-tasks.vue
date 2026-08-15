@@ -5,20 +5,20 @@
     width="880px"
     top="8vh"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <div class="pick-head">
+    <div class="finance-cand-head">
       <el-input
         v-model="keyword"
         placeholder="任务号/车牌"
         clearable
-        size="small"
         style="width: 200px"
         @change="load"
       />
-      <el-select v-model="billingBase" size="small" style="width: 130px">
+      <el-select v-model="billingBase" style="width: 130px">
         <el-option
           v-for="o in BILLING_BASE_OPTIONS"
           :key="o.value"
@@ -26,7 +26,7 @@
           :label="o.label"
         />
       </el-select>
-      <span class="pick-tip">已选 {{ selected.length }} 个任务</span>
+      <span class="finance-cand-tip">已选 {{ selected.length }} 个任务</span>
     </div>
 
     <el-table
@@ -34,7 +34,7 @@
       v-loading="loading"
       height="340"
       row-key="taskId"
-      size="small"
+      :highlight-current-row="true"
       @selection-change="(v: CarrierReconCandidate[]) => (selected = v)"
     >
       <el-table-column type="selection" width="42" />
@@ -70,7 +70,7 @@
         }}</template>
       </el-table-column>
       <template #empty>
-        <div class="pick-empty">这个承运商已经没有可补挂的任务了</div>
+        <div class="finance-cand-empty">这个承运商已经没有可补挂的任务了</div>
       </template>
     </el-table>
 
@@ -167,23 +167,7 @@
 </script>
 
 <style lang="scss" scoped>
-  .pick-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-
-  .pick-tip {
-    margin-left: auto;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-  }
-
-  .pick-empty {
-    padding: 24px 0;
-    color: var(--el-text-color-secondary);
-  }
+  @use '../../_shared/ui.scss';
 
   .strong {
     font-weight: 600;

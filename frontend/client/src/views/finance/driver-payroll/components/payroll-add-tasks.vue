@@ -5,32 +5,29 @@
     width="860px"
     top="8vh"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <div class="pick-head">
-      <el-form-item label="计件口径" class="inline-item">
-        <el-select v-model="billingBase" size="small" style="width: 120px">
-          <el-option
-            v-for="o in BILLING_BASE_OPTIONS"
-            :key="o.value"
-            :value="o.value"
-            :label="o.label"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="提成单价" class="inline-item">
-        <el-input-number
-          v-model="unitPrice"
-          :min="0"
-          :precision="2"
-          :controls="false"
-          size="small"
-          style="width: 120px"
+    <div class="finance-cand-head">
+      <el-select v-model="billingBase" style="width: 140px">
+        <el-option
+          v-for="o in BILLING_BASE_OPTIONS"
+          :key="o.value"
+          :value="o.value"
+          :label="o.label"
         />
-      </el-form-item>
-      <span class="pick-tip">
+      </el-select>
+      <el-input-number
+        v-model="unitPrice"
+        :min="0"
+        :precision="2"
+        :controls="false"
+        placeholder="提成单价"
+        style="width: 140px"
+      />
+      <span class="finance-cand-tip">
         已选 {{ selected.length }} 个任务，共 {{ selectedQuantity }} 台
       </span>
     </div>
@@ -40,7 +37,7 @@
       v-loading="loading"
       height="340"
       row-key="taskId"
-      size="small"
+      :highlight-current-row="true"
       @selection-change="(v: PayrollCandidate[]) => (selected = v)"
     >
       <el-table-column type="selection" width="42" />
@@ -71,7 +68,7 @@
         </template>
       </el-table-column>
       <template #empty>
-        <div class="pick-empty">这个司机暂时没有可补挂的任务</div>
+        <div class="finance-cand-empty">这个司机暂时没有可补挂的任务</div>
       </template>
     </el-table>
 
@@ -172,27 +169,7 @@
 </script>
 
 <style lang="scss" scoped>
-  .pick-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-
-  .inline-item {
-    margin-bottom: 0;
-  }
-
-  .pick-tip {
-    margin-left: auto;
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-  }
-
-  .pick-empty {
-    padding: 24px 0;
-    color: var(--el-text-color-secondary);
-  }
+  @use '../../_shared/ui.scss';
 
   .offset {
     color: var(--el-color-warning);

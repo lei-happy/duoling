@@ -4,66 +4,77 @@
     title="登记收款"
     width="520px"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-alert
-      type="info"
-      :closable="false"
-      show-icon
-      class="tip"
-      title="这里登记的是「这张单收到钱了」。银行流水先入账再核销的场景，请走出纳台的到账认领。"
-    />
-    <el-form :model="form" label-width="96px" v-loading="loading">
-      <el-form-item label="结算单">
-        <span>
-          {{ detail?.docNo || '--' }}
-          <span class="muted">{{ detail?.customerName }}</span>
-        </span>
-      </el-form-item>
-      <el-form-item label="应收金额">
-        <span class="num">¥ {{ formatMoney(detail?.plannedAmount) }}</span>
-      </el-form-item>
-      <el-form-item label="收款金额" required>
-        <el-input-number
+    <div v-if="detail" class="finance-identity">
+      <div class="finance-identity__name">{{ detail.docNo }}</div>
+      <div class="finance-identity__meta">
+        {{ detail.customerName }} · 应收 ¥
+        {{ formatMoney(detail.plannedAmount) }}
+      </div>
+    </div>
+    <p class="finance-form-tip">
+      这里登记的是「这张单收到钱了」。银行流水先入账再核销，请走出纳台的到账认领。
+    </p>
+    <el-form
+      :model="form"
+      label-width="0"
+      class="finance-edit-form"
+      v-loading="loading"
+    >
+      <el-form-item>
+        <floating-label
           v-model="form.actualAmount"
-          :min="0.01"
-          :precision="2"
-          :controls="false"
-          style="width: 180px"
+          label="请输入收款金额"
+          type="input-number"
+          :input-number-min="0.01"
+          :input-number-precision="2"
+          :input-number-step="100"
+          input-number-controls-position="right"
         />
       </el-form-item>
-      <el-form-item label="到账时间" required>
-        <el-date-picker
+      <el-form-item>
+        <floating-label
           v-model="form.receivedAt"
-          type="datetime"
+          label="请选择到账时间"
+          type="date"
+          date-type="datetime"
           value-format="YYYY-MM-DD HH:mm:ss"
-          style="width: 100%"
+          :clearable="false"
         />
       </el-form-item>
-      <el-form-item label="收款方式" required>
-        <el-select v-model="form.receiveMethod" style="width: 100%">
+      <el-form-item>
+        <floating-label
+          v-model="form.receiveMethod"
+          label="请选择收款方式"
+          type="select"
+          :clearable="false"
+        >
           <el-option
             v-for="o in RECEIVE_METHOD_OPTIONS"
             :key="o.value"
             :value="o.value"
             :label="o.label"
           />
-        </el-select>
+        </floating-label>
       </el-form-item>
-      <el-form-item label="收款账户">
-        <el-input
-          v-model="form.receivedAccountLabel"
-          maxlength="100"
-          placeholder="选填，如：工行公户 1234"
+      <el-form-item>
+        <floating-label
+          label="请输入收款账户，选填"
+          type="input"
+          v-model.trim="form.receivedAccountLabel"
+          clearable
         />
       </el-form-item>
-      <el-form-item label="收款凭证">
-        <el-input
-          v-model="form.voucherUrl"
-          maxlength="500"
-          placeholder="选填，回单链接"
+      <el-form-item>
+        <floating-label
+          label="请输入收款凭证链接，选填"
+          type="input"
+          v-model.trim="form.voucherUrl"
+          clearable
         />
       </el-form-item>
     </el-form>
@@ -80,6 +91,7 @@
 <script lang="ts" setup>
   import { ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import {
     getSettlement,
     receiveSettlement
@@ -165,17 +177,5 @@
 </script>
 
 <style lang="scss" scoped>
-  .tip {
-    margin-bottom: 14px;
-  }
-
-  .num {
-    font-variant-numeric: tabular-nums;
-  }
-
-  .muted {
-    margin-left: 8px;
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-  }
+  @use '../../_shared/ui.scss';
 </style>

@@ -1,5 +1,9 @@
 <template>
   <ele-page>
+    <carrier-recon-search
+      :carriers="carriers"
+      @search="(next) => reload(next, 1)"
+    />
     <ele-card :body-style="{ paddingTop: '8px' }">
       <ele-pro-table
         ref="tableRef"
@@ -8,86 +12,20 @@
         :datasource="datasource"
         :pagination="{ pageSize: 20 }"
         :show-overflow-tooltip="true"
+        :highlight-current-row="true"
         cache-key="FinanceCarrierReconTable"
       >
         <template #toolbar>
-          <el-form :model="where" class="ele-bg-wrap" inline>
-            <el-form-item>
-              <el-input
-                v-model="where.keyword"
-                placeholder="对账单号/承运商"
-                clearable
-                style="width: 190px"
-                @change="reload()"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.carrierId"
-                placeholder="承运商"
-                clearable
-                filterable
-                style="width: 200px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="c in carriers"
-                  :key="c.id"
-                  :value="c.id"
-                  :label="c.carrierName"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-select
-                v-model="where.status"
-                placeholder="状态"
-                clearable
-                style="width: 110px"
-                @change="reload()"
-              >
-                <el-option
-                  v-for="o in CARRIER_RECON_STATUS_OPTIONS"
-                  :key="o.value"
-                  :value="o.value"
-                  :label="o.label"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <el-date-picker
-                v-model="period"
-                type="daterange"
-                value-format="YYYY-MM-DD"
-                start-placeholder="周期开始"
-                end-placeholder="周期结束"
-                style="width: 240px"
-                @change="onPeriodChange"
-              />
-            </el-form-item>
-            <el-form-item>
-              <el-checkbox v-model="where.onlyDirty" @change="reload()">
-                只看待重核
-              </el-checkbox>
-            </el-form-item>
-            <el-form-item>
-              <el-checkbox v-model="where.onlyDiff" @change="reload()">
-                只看有差异
-              </el-checkbox>
-            </el-form-item>
-            <el-form-item>
-              <btn-items
-                :items="[
-                  {
-                    preset: 'add',
-                    title: '新建对账单',
-                    permission: 'finance:carrier-recon:create',
-                    onClick: () => openCreate()
-                  }
-                ]"
-              />
-            </el-form-item>
-          </el-form>
+          <btn-items
+            :items="[
+              {
+                preset: 'add',
+                title: '新建对账单',
+                permission: 'finance:carrier-recon:create',
+                onClick: () => openCreate()
+              }
+            ]"
+          />
         </template>
 
         <template #period="{ row }">
@@ -171,36 +109,12 @@
         </template>
 
         <template #action="{ row }">
-          <el-link
-            type="primary"
-            :underline="false"
-            v-permission="'finance:carrier-recon:detail'"
-            @click="openDetail(row.id)"
-          >
-            详情
-          </el-link>
-          <template v-if="row.status === 0">
-            <el-divider direction="vertical" />
-            <el-link
-              type="success"
-              :underline="false"
-              v-permission="'finance:carrier-recon:confirm'"
-              @click="confirmRow(row)"
-            >
-              确认
-            </el-link>
-          </template>
-          <template v-if="row.status === 2 && !row.confirmedByCarrierAt">
-            <el-divider direction="vertical" />
-            <el-link
-              type="primary"
-              :underline="false"
-              v-permission="'finance:carrier-recon:carrier-sign'"
-              @click="openDetail(row.id)"
-            >
-              登记回签
-            </el-link>
-          </template>
+          <btn-items
+            divider
+            type="link"
+            :wrap="false"
+            :items="actionItems(row)"
+          />
         </template>
       </ele-pro-table>
     </ele-card>
@@ -221,17 +135,27 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, nextTick, onMounted, reactive, ref } from 'vue';
+  import { computed, onMounted, reactive, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { ElMessageBox } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
   import type { EleProTable } from 'ele-admin-plus';
   import type {
+    ButtonDropdownItem,
+    ButtonItem
+  } from 'ele-admin-plus/es/ele-buttons/types';
+  import type {
     Columns,
     DatasourceFunction
   } from 'ele-admin-plus/es/ele-pro-table/types';
+  import {
+    CheckOutlined,
+    EyeOutlined,
+    FormOutlined
+  } from '@/components/icons';
   import CarrierReconCreate from './components/carrier-recon-create.vue';
   import CarrierReconDetail from './components/carrier-recon-detail.vue';
+  import CarrierReconSearch from './components/carrier-recon-search.vue';
   import {
     confirmCarrierRecon,
     pageCarrierRecons
@@ -243,9 +167,9 @@
   import { selectCarriers } from '@/api/partner/carrier';
   import type { CarrierSelectItem } from '@/api/partner/carrier/model';
   import { formatDate } from '@/utils/date-util';
+  import { buildActionColumnItems } from '../_shared/action-column';
   import {
     CARRIER_RECON_STATUS_MAP,
-    CARRIER_RECON_STATUS_OPTIONS,
     formatMoney
   } from '../status-config';
 
@@ -255,7 +179,6 @@
   const router = useRouter();
   const tableRef = ref<InstanceType<typeof EleProTable> | null>(null);
   const where = reactive<CarrierReconParam>({});
-  const period = ref<[string, string] | null>(null);
   const carriers = ref<CarrierSelectItem[]>([]);
 
   const createVisible = ref(false);
@@ -319,28 +242,28 @@
     {
       columnKey: 'action',
       label: '操作',
-      width: 180,
+      width: 160,
+      minWidth: 160,
       align: 'center',
-      fixed: 'right',
-      slot: 'action'
+      slot: 'action',
+      hideInPrint: true,
+      hideInExport: true,
+      fixed: 'right'
     }
   ]);
 
-  const datasource: DatasourceFunction = ({ pages }) => {
-    return pageCarrierRecons({ ...where, ...pages }).then((res) => ({
-      list: res?.list ?? [],
-      count: res?.count ?? 0
-    }));
+  const datasource: DatasourceFunction = ({ pages, where: tableWhere }) => {
+    return pageCarrierRecons({ ...(tableWhere || where), ...pages }).then(
+      (res) => ({
+        list: res?.list ?? [],
+        count: res?.count ?? 0
+      })
+    );
   };
 
-  const reload = () => {
-    nextTick(() => tableRef.value?.reload?.());
-  };
-
-  const onPeriodChange = () => {
-    where.periodStart = period.value?.[0];
-    where.periodEnd = period.value?.[1];
-    reload();
+  const reload = (next?: CarrierReconParam, page?: number) => {
+    if (next) Object.assign(where, next);
+    tableRef.value?.reload?.({ where: { ...where }, page });
   };
 
   const openCreate = (carrierId?: number) => {
@@ -358,6 +281,34 @@
     detailVisible.value = true;
   };
 
+  const actionItems = (row: CarrierReconListItem): ButtonItem[] => {
+    const visible: ButtonDropdownItem[] = [
+      {
+        title: '详情',
+        icon: EyeOutlined,
+        permission: 'finance:carrier-recon:detail',
+        onClick: () => openDetail(row.id)
+      }
+    ];
+    if (row.status === 0) {
+      visible.push({
+        title: '确认',
+        icon: CheckOutlined,
+        permission: 'finance:carrier-recon:confirm',
+        onClick: () => confirmRow(row)
+      });
+    }
+    if (row.status === 2 && !row.confirmedByCarrierAt) {
+      visible.push({
+        title: '登记回签',
+        icon: FormOutlined,
+        permission: 'finance:carrier-recon:carrier-sign',
+        onClick: () => openDetail(row.id)
+      });
+    }
+    return buildActionColumnItems(visible);
+  };
+
   const confirmRow = async (row: CarrierReconListItem) => {
     try {
       await ElMessageBox.confirm(
@@ -366,7 +317,8 @@
         {
           type: 'warning',
           confirmButtonText: '确认',
-          cancelButtonText: '再看看'
+          cancelButtonText: '再看看',
+          draggable: true
         }
       );
     } catch {
@@ -394,7 +346,6 @@
     } catch {
       // 承运商下拉拉取失败不影响列表，用户仍可用关键词搜索
     }
-    // 对账工作台「生成对账单」跳转带参：直接把承运商预置进新建弹窗
     const q = route.query;
     if (q.create === '1' && q.carrierId) {
       openCreate(Number(q.carrierId));

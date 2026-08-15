@@ -4,60 +4,68 @@
     title="登记工资发放"
     width="520px"
     destroy-on-close
+    draggable
     :close-on-click-modal="false"
     @update:model-value="(v: boolean) => emit('update:visible', v)"
     @open="onOpen"
   >
-    <el-alert
-      type="info"
-      :closable="false"
-      show-icon
-      class="tip"
-      title="登记后这批任务不能再改动。要按批次统一发薪，请走出纳台的批量打款。"
-    />
-    <el-form :model="form" label-width="96px" v-loading="loading">
-      <el-form-item label="工资单">
-        <span>
-          {{ detail?.docNo || '--' }}
-          <span class="muted">{{ detail?.driverName }}</span>
-        </span>
-      </el-form-item>
-      <el-form-item label="实发合计">
-        <span class="num">¥ {{ formatMoney(detail?.netAmount) }}</span>
-      </el-form-item>
-      <el-form-item label="发放金额" required>
-        <el-input-number
+    <div v-if="detail" class="finance-identity">
+      <div class="finance-identity__name">{{ detail.docNo }}</div>
+      <div class="finance-identity__meta">
+        {{ detail.driverName }} · 实发合计 ¥
+        {{ formatMoney(detail.netAmount) }}
+      </div>
+    </div>
+    <p class="finance-form-tip">
+      登记后这批任务不能再改动。要按批次统一发薪，请走出纳台的批量打款。
+    </p>
+    <el-form
+      :model="form"
+      label-width="0"
+      class="finance-edit-form"
+      v-loading="loading"
+    >
+      <el-form-item>
+        <floating-label
           v-model="form.actualAmount"
-          :min="0.01"
-          :precision="2"
-          :controls="false"
-          style="width: 180px"
+          label="请输入发放金额"
+          type="input-number"
+          :input-number-min="0.01"
+          :input-number-precision="2"
+          :input-number-step="100"
         />
       </el-form-item>
-      <el-form-item label="发放时间" required>
-        <el-date-picker
+      <el-form-item>
+        <floating-label
           v-model="form.paidAt"
-          type="datetime"
+          label="请选择发放时间"
+          type="date"
+          date-type="datetime"
           value-format="YYYY-MM-DD HH:mm:ss"
-          style="width: 100%"
+          :clearable="false"
         />
       </el-form-item>
-      <el-form-item label="发放方式" required>
-        <el-select v-model="form.payMethod" style="width: 100%">
+      <el-form-item>
+        <floating-label
+          v-model="form.payMethod"
+          label="请选择发放方式"
+          type="select"
+          :clearable="false"
+        >
           <el-option
             v-for="o in PAY_METHOD_OPTIONS"
             :key="o.value"
             :value="o.value"
             :label="o.label"
           />
-        </el-select>
+        </floating-label>
       </el-form-item>
-      <el-form-item label="发薪账户">
-        <el-select
+      <el-form-item>
+        <floating-label
           v-model="form.accountId"
-          placeholder="留空沿用单上账户"
+          label="发薪账户，留空沿用单上账户"
+          type="select"
           clearable
-          style="width: 100%"
         >
           <el-option
             v-for="a in accounts"
@@ -65,13 +73,15 @@
             :value="a.accountId"
             :label="accountLabel(a)"
           />
-        </el-select>
+        </floating-label>
       </el-form-item>
-      <el-form-item label="发放凭证">
-        <el-input
+      <el-form-item>
+        <floating-label
+          label="请输入发放凭证链接，选填"
+          type="input"
           v-model="form.payVoucherUrl"
-          maxlength="500"
-          placeholder="选填，回单链接"
+          :maxlength="500"
+          clearable
         />
       </el-form-item>
     </el-form>
@@ -88,6 +98,7 @@
 <script lang="ts" setup>
   import { ref } from 'vue';
   import { EleMessage } from 'ele-admin-plus';
+  import FloatingLabel from '@shared/FloatingLabel/index.vue';
   import {
     getPayroll,
     listDriverAccounts,
@@ -187,17 +198,5 @@
 </script>
 
 <style lang="scss" scoped>
-  .tip {
-    margin-bottom: 14px;
-  }
-
-  .num {
-    font-variant-numeric: tabular-nums;
-  }
-
-  .muted {
-    margin-left: 8px;
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-  }
+  @use '../../_shared/ui.scss';
 </style>
