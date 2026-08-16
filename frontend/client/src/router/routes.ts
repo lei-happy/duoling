@@ -75,23 +75,22 @@ export function getMenuRoutes(menus?: MenuItem[], homePath?: string) {
       component: () => import('@/views/enterprise/manage.vue'),
       meta: { title: '企业管理' }
     },
-    // 个人中心（静态路由，不依赖后端菜单；与运营端入口一致）
+    // 个人中心 / 意见反馈 / 消息中心：静态路由，不依赖后端菜单。
+    // 不要写 hideSidebar：混合布局下会把导航算成 top，顶栏铺开全部一级菜单。
     {
       path: '/user/profile',
       component: () => import('@/views/user/profile/index.vue'),
-      meta: { title: '个人中心', hideSidebar: true }
+      meta: { title: '个人中心' }
     },
-    // 意见反馈（静态路由，不依赖后端菜单）
     {
       path: '/user/feedback',
       component: () => import('@/views/user/feedback/index.vue'),
-      meta: { title: '意见反馈', hideSidebar: true }
+      meta: { title: '意见反馈' }
     },
-    // 消息中心（静态路由，不依赖后端菜单；与顶栏通知「查看更多」等入口一致）
     {
       path: '/user/message',
       component: () => import('@/views/user/message/index.vue'),
-      meta: { title: '消息中心', hideSidebar: true }
+      meta: { title: '消息中心' }
     },
     // 运价合同详情（独立页，不在后端菜单中注册）
     {

@@ -75,9 +75,28 @@
         />
       </el-form-item>
 
-      <el-form-item label="本次卸车" prop="itemIds" required>
+      <el-form-item prop="itemIds" required>
+        <template #label>
+          <div class="arrive-item-label-row">
+            <span>本次卸车</span>
+            <div v-if="unloadableItems.length" class="arrive-item-label-row__right">
+              <span class="arrive-item-label-row__count">
+                已选 {{ form.itemIds.length }} / {{ unloadableItems.length }} 行
+              </span>
+              <el-button
+                link
+                type="primary"
+                size="small"
+                @click.stop="toggleSelectAllUnloadable"
+              >
+                {{ allUnloadableSelected ? '取消全选' : '全选' }}
+              </el-button>
+            </div>
+          </div>
+        </template>
         <div style="width: 100%">
           <el-table
+            ref="tableRef"
             :data="unloadableItems"
             row-key="id"
             border
@@ -174,21 +193,30 @@
 
     <template #footer>
       <el-button @click="emit('update:visible', false)">取消</el-button>
-      <el-button
-        type="success"
-        :loading="submitting"
-        :disabled="!form.itemIds.length"
-        @click="submit"
+      <el-tooltip
+        content="请先勾选本次要卸的挂接货物"
+        placement="top"
+        :disabled="!!form.itemIds.length"
       >
-        确认本次卸车
-      </el-button>
+        <span>
+          <el-button
+            type="success"
+            :loading="submitting"
+            :disabled="!form.itemIds.length"
+            @click="submit"
+          >
+            确认本次卸车
+          </el-button>
+        </span>
+      </el-tooltip>
     </template>
   </el-dialog>
 </template>
 
 <script lang="ts" setup>
-  import { computed, reactive, ref } from 'vue';
+  import { computed, nextTick, reactive, ref } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
+  import { ElTable } from 'element-plus';
   import { Close, Plus } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import { listTaskSegments, listTaskWaybillItems } from '@/api/operation/task';
@@ -222,6 +250,7 @@
   }>();
 
   const formRef = ref<FormInstance | null>(null);
+  const tableRef = ref<InstanceType<typeof ElTable> | null>(null);
   const loading = ref(false);
   const submitting = ref(false);
 
@@ -285,6 +314,48 @@
       .reduce((s, it) => s + (it.quantity || 0), 0)
   );
 
+  const allUnloadableSelected = computed(
+    () =>
+      unloadableItems.value.length > 0 &&
+      unloadableItems.value.every(
+        (it) => it.id != null && form.itemIds.includes(it.id)
+      )
+  );
+
+  const syncingSelection = ref(false);
+
+  const syncUnloadableTableSelection = async () => {
+    await nextTick();
+    const table = tableRef.value;
+    if (!table) return;
+    syncingSelection.value = true;
+    table.clearSelection();
+    const idSet = new Set(form.itemIds);
+    for (const row of unloadableItems.value) {
+      if (row.id != null && idSet.has(row.id)) {
+        table.toggleRowSelection(row, true);
+      }
+    }
+    syncingSelection.value = false;
+  };
+
+  const selectAllUnloadable = async () => {
+    form.itemIds = unloadableItems.value
+      .map((it) => it.id!)
+      .filter((id) => id != null);
+    await syncUnloadableTableSelection();
+  };
+
+  const toggleSelectAllUnloadable = async () => {
+    if (allUnloadableSelected.value) {
+      form.itemIds = [];
+      await nextTick();
+      tableRef.value?.clearSelection();
+      return;
+    }
+    await selectAllUnloadable();
+  };
+
   const onOpen = async () => {
     form.dispatchOrderId = undefined;
     form.happenedAt = new Date().toISOString().slice(0, 19);
@@ -308,7 +379,9 @@
       );
       if (heavy.length === 1) {
         form.dispatchOrderId = heavy[0]!.id;
-        onOrderChange(form.dispatchOrderId);
+        await onOrderChange(form.dispatchOrderId);
+      } else {
+        await selectAllUnloadable();
       }
     } catch (e: unknown) {
       EleMessage.error({
@@ -325,9 +398,11 @@
     if (o && !form.location) {
       form.location = o.toLocation || '';
     }
+    return selectAllUnloadable();
   };
 
   const onItemSelection = (rows: TaskWaybillItem[]) => {
+    if (syncingSelection.value) return;
     form.itemIds = rows.map((r) => r.id!).filter((x) => !!x);
   };
 
@@ -457,5 +532,25 @@
   }
   .mt-8 {
     margin-top: 8px;
+  }
+
+  .arrive-item-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+
+    &__right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    &__count {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--el-text-color-secondary);
+    }
   }
 </style>

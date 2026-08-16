@@ -954,8 +954,9 @@
     tabActive.value = t.key as string;
     emit('tabAdd', t);
 
-    // 更新菜单选中
-    if (!navigationIsChanged && !sideNavigationIsChanged) {
+    // 更新菜单选中。不在菜单树里的页（个人中心 / 意见反馈等）保持当前
+    // 混合布局与侧栏，避免顶栏被铺成全部一级菜单。
+    if (!navigationIsChanged && !sideNavigationIsChanged && matched?.length) {
       updateMenuActive(active, matched);
       if (
         navigation.value === 'mix' ||

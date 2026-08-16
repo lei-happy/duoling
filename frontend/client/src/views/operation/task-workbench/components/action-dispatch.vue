@@ -104,36 +104,44 @@
           :closable="false"
           style="margin-bottom: 12px"
           :title="`该任务已分配给 ${task?.carrierName || '承运商'}，等待承运商通过 LITE 端上报运力。`"
-          description="若承运商暂未响应，可展开下方面板由调度员代填运力（兜底）。"
+          description="也可以在下方代填主驾和车牌，点「提交代填运力」直接派车。"
         />
-        <el-collapse v-model="proxyPanelOpen">
-          <el-collapse-item title="调度员代填运力（兜底）" name="proxy">
-            <el-row :gutter="12">
-              <el-col :span="12">
-                <el-form-item label="主驾姓名" required>
-                  <el-input v-model="form.carrier.mainDriverName" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="主驾电话" required>
-                  <el-input v-model="form.carrier.mainDriverPhone" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="12">
-              <el-col :span="12">
-                <el-form-item label="车牌号" required>
-                  <el-input v-model="form.carrier.plateNumber" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
-                <el-form-item label="挂车牌号">
-                  <el-input v-model="form.carrier.trailerPlateNumber" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-collapse-item>
-        </el-collapse>
+        <div class="dispatch-proxy">
+          <div class="dispatch-proxy__title">调度员代填运力</div>
+          <el-row :gutter="12">
+            <el-col :span="12">
+              <el-form-item label="主驾姓名" required>
+                <el-input
+                  v-model="form.carrier.mainDriverName"
+                  placeholder="代填时必填"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="主驾电话" required>
+                <el-input
+                  v-model="form.carrier.mainDriverPhone"
+                  placeholder="代填时必填"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="12">
+            <el-col :span="12">
+              <el-form-item label="车牌号" required>
+                <el-input
+                  v-model="form.carrier.plateNumber"
+                  placeholder="代填时必填"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="挂车牌号">
+                <el-input v-model="form.carrier.trailerPlateNumber" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
       </template>
 
       <!-- 社会运力 -->
@@ -199,7 +207,28 @@
 
     <template #footer>
       <el-button @click="emit('update:visible', false)">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="submit">
+      <template v-if="form.carrier.carrierType === CARRIER_TYPE.CARRIER">
+        <el-button :loading="submitting" @click="notifyCarrier">
+          通知承运商上报
+        </el-button>
+        <el-tooltip
+          content="请先填齐主驾姓名、电话和车牌"
+          placement="top"
+          :disabled="hasProxyData"
+        >
+          <span>
+            <el-button
+              type="primary"
+              :loading="submitting"
+              :disabled="!hasProxyData"
+              @click="submitProxy"
+            >
+              提交代填运力
+            </el-button>
+          </span>
+        </el-tooltip>
+      </template>
+      <el-button v-else type="primary" :loading="submitting" @click="submit">
         {{ confirmLabel }}
       </el-button>
     </template>
@@ -238,7 +267,6 @@
   const submitting = ref(false);
   const capacities = ref<Capacity[]>([]);
   const socialCapacities = ref<SocialCapacitySelectItem[]>([]);
-  const proxyPanelOpen = ref<string[]>([]);
 
   const defaultCarrier = (): TaskCarrierInfo => ({
     carrierType: CARRIER_TYPE.SELF,
@@ -263,11 +291,17 @@
         TASK_STATUS.DISPATCHED && !!props.task?.carrierType
   );
   const title = computed(() => (isReassign.value ? '重新派车' : '派车'));
-  const confirmLabel = computed(() => {
-    if (form.carrier.carrierType === CARRIER_TYPE.CARRIER) {
-      return form.isProxy ? '提交代填运力' : '通知承运商上报';
-    }
-    return isReassign.value ? '确认换车' : '确认派车';
+  const confirmLabel = computed(() =>
+    isReassign.value ? '确认换车' : '确认派车'
+  );
+
+  const hasProxyData = computed(() => {
+    const c = form.carrier;
+    return !!(
+      c.mainDriverName?.trim() &&
+      c.mainDriverPhone?.trim() &&
+      c.plateNumber?.trim()
+    );
   });
 
   const carrierTypeLabel = computed(() => {
@@ -303,7 +337,6 @@
         carrierShortName: props.task.carrierShortName || ''
       };
       form.isProxy = false;
-      proxyPanelOpen.value = [];
       if (
         form.carrier.carrierType === CARRIER_TYPE.SELF &&
         capacities.value.length === 0
@@ -413,17 +446,9 @@
       }
       if (!c.plateNumber?.trim()) return '请填写车牌号';
     } else if (c.carrierType === CARRIER_TYPE.CARRIER) {
-      // 承运商类型：调度员是否代填
-      const hasProxyData =
-        c.mainDriverName?.trim() &&
-        c.mainDriverPhone?.trim() &&
-        c.plateNumber?.trim();
-      if (hasProxyData) {
-        form.isProxy = true;
-      } else if (proxyPanelOpen.value.includes('proxy')) {
-        return '请填写完整的主驾/电话/车牌或关闭代填面板';
+      if (form.isProxy && !hasProxyData.value) {
+        return '请填齐主驾姓名、电话和车牌';
       }
-      // 不填运力则提交后等待 lite 上报，无需校验
     } else if (c.carrierType === CARRIER_TYPE.SOCIAL) {
       if (!c.socialDriverId) {
         return '请选择社会运力';
@@ -435,6 +460,23 @@
     return null;
   };
 
+  const notifyCarrier = () => {
+    EleMessage.info({
+      message: '已通知承运商上报运力，请耐心等待。',
+      plain: true
+    });
+    emit('update:visible', false);
+  };
+
+  const submitProxy = async () => {
+    if (!hasProxyData.value) {
+      EleMessage.error({ message: '请填齐主驾姓名、电话和车牌', plain: true });
+      return;
+    }
+    form.isProxy = true;
+    await submit();
+  };
+
   const submit = async () => {
     if (!props.task?.id) {
       emit('update:visible', false);
@@ -443,20 +485,6 @@
     const err = validate();
     if (err) {
       EleMessage.error({ message: err, plain: true });
-      return;
-    }
-
-    // 承运商类型未代填运力时：仅提示等待 lite 上报，不发请求
-    if (
-      form.carrier.carrierType === CARRIER_TYPE.CARRIER &&
-      !form.isProxy &&
-      !form.carrier.mainDriverName?.trim()
-    ) {
-      EleMessage.info({
-        message: '已通知承运商上报运力，请耐心等待。',
-        plain: true
-      });
-      emit('update:visible', false);
       return;
     }
 
@@ -480,3 +508,18 @@
     }
   };
 </script>
+
+<style lang="scss" scoped>
+  .dispatch-proxy {
+    padding: 12px 12px 0;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+
+    &__title {
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--el-text-color-primary);
+    }
+  }
+</style>

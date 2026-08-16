@@ -212,6 +212,16 @@ class TestWaybillStateMachine:
         WaybillStateMachine.assert_transition(1, 5)
         WaybillStateMachine.assert_transition(2, 5)
 
+    def test_cross_step_downgrade_after_cancel(self):
+        # 整单取消 / 强制取消后无活跃挂接：高位作业态必须能回到待调度
+        WaybillStateMachine.assert_transition(3, 1)
+        WaybillStateMachine.assert_transition(4, 1)
+        WaybillStateMachine.assert_transition(5, 1)
+        # 撤销装卸后也可能一次回到调度中
+        WaybillStateMachine.assert_transition(4, 2)
+        WaybillStateMachine.assert_transition(5, 2)
+        WaybillStateMachine.assert_transition(5, 3)
+
     @pytest.mark.parametrize("s", sorted(WAYBILL_STATES_BLOCKING_NEW_ITEM))
     def test_blocks_new_item(self, s):
         assert WaybillStateMachine.allows_new_item(s) is False

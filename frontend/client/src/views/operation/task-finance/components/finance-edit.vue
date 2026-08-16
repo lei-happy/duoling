@@ -246,6 +246,16 @@
     };
   };
 
+  const defaultExpenseItem = (): TaskFinanceItem => ({
+    itemType: 'oil',
+    itemName: '油费',
+    quantity: undefined,
+    unit: '',
+    unitPrice: undefined,
+    amount: 0,
+    sortOrder: 0
+  });
+
   const defaultForm = (): TaskFinanceDocCreatePayload => ({
     docType: props.initDocType ?? 1,
     isFinal: props.initIsFinal ?? 0,
@@ -259,7 +269,7 @@
     payMethod: undefined,
     plannedPayTime: undefined,
     remark: '',
-    items: []
+    items: [defaultExpenseItem()]
   });
 
   const form = reactive<TaskFinanceDocCreatePayload>(defaultForm());
@@ -401,7 +411,11 @@
       return;
     }
     if (form.items.length === 0) {
-      EleMessage.error({ message: '请至少添加 1 条费用项', plain: true });
+      EleMessage.error({ message: '请先加一条费用', plain: true });
+      return;
+    }
+    if (form.items.every((it) => !(Number(it.amount) > 0))) {
+      EleMessage.error({ message: '请填写这条费用的金额', plain: true });
       return;
     }
     if (payee.payeeType !== 3 && !payee.payeeId) {

@@ -153,7 +153,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, reactive, ref, watch } from 'vue';
+  import { computed, nextTick, reactive, ref, watch } from 'vue';
   import type { FormInstance, FormRules } from 'element-plus';
   import { ElTable } from 'element-plus';
   import { EleMessage } from 'ele-admin-plus';
@@ -208,7 +208,7 @@
 
   const submitDisabled = computed(() => {
     if (isSingleTask.value) {
-      return loadingItems.value || unsignedItems.value.length === 0;
+      return loadingItems.value || selectedItemIds.value.length === 0;
     }
     return false;
   });
@@ -264,9 +264,27 @@
     }
   };
 
+  const syncingSelection = ref(false);
+
   const onSelectionChange = (rows: TaskWaybillItem[]) => {
+    if (syncingSelection.value) return;
     selectedItemIds.value = rows.map((r) => r.id!).filter(Boolean);
     form.selectedItemIds = selectedItemIds.value;
+  };
+
+  const applyDefaultUnsignedSelection = async () => {
+    const ids = unsignedItems.value.map((it) => it.id!).filter(Boolean);
+    selectedItemIds.value = ids;
+    form.selectedItemIds = ids;
+    await nextTick();
+    const table = tableRef.value;
+    if (!table) return;
+    syncingSelection.value = true;
+    table.clearSelection();
+    for (const row of unsignedItems.value) {
+      table.toggleRowSelection(row, true);
+    }
+    syncingSelection.value = false;
   };
 
   const fetchItems = async () => {
@@ -279,9 +297,6 @@
     loadingItems.value = true;
     try {
       items.value = (await listTaskWaybillItems(taskId)) || [];
-      // 默认全选未签收行
-      await Promise.resolve();
-      tableRef.value?.toggleAllSelection?.();
     } catch (e: unknown) {
       const msg = (e as { message?: string }).message;
       if (msg) EleMessage.error({ message: msg, plain: true });
@@ -289,6 +304,8 @@
     } finally {
       loadingItems.value = false;
     }
+    // 等表格挂上后再勾，避免 toggleAllSelection 落空
+    await applyDefaultUnsignedSelection();
   };
 
   const onOpen = () => {

@@ -87,7 +87,7 @@
             <div class="load-item-label-row__left">
               <span class="load-item-label-row__title">本次装车</span>
               <span class="load-item-label-row__hint">
-                点击卡片选择本次要装的商品车
+                默认已全选当前可装商品车，点击卡片可取消
               </span>
             </div>
             <div v-if="loadableItems.length" class="load-item-label-row__right">
@@ -532,6 +532,8 @@
       if (heavy.length === 1) {
         form.dispatchOrderId = heavy[0]!.id;
         onOrderChange(form.dispatchOrderId);
+      } else {
+        selectAllLoadable();
       }
     } catch (e: unknown) {
       EleMessage.error({
@@ -548,8 +550,7 @@
     if (o && !form.location) {
       form.location = o.fromLocation || '';
     }
-    form.itemIds = [];
-    syncItemSelectionValidation();
+    selectAllLoadable();
   };
 
   const beforeUpload = async (file: File) => {
