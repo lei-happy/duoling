@@ -45,6 +45,8 @@ export interface Waybill {
   receiptAt?: string | null;
   remark?: string;
   createdBy?: number;
+  /** 创建人姓名（real_name / nickname / phone） */
+  createdByName?: string | null;
   createdAt?: string;
   originRegionId?: number | null;
   destinationRegionId?: number | null;

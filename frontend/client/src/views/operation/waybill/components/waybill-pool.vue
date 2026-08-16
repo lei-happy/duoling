@@ -16,7 +16,7 @@
   设计要点：
     - 列、筛选、行内动作全部由 pool 注册表驱动；新增/调整某状态的差异仅改 registry
     - 所有 cell slot（waybillNo / customerName / origin / destination / vehicleInfo /
-      quantity / allocatedQuantity / calcStatus / isLocked / status / createdAt / action）
+      quantity / allocatedQuantity / calcStatus / isLocked / status / createdBy / createdAt / action）
       集中在本文件，与 registry.buildWaybillTableColumns 的 slot 名一一对应
     - 操作列遵循开发手册「17.列表操作列按钮规范」：权限过滤后 ≤2 平铺、≥3 首项+更多
     - 行内可变操作（确认 / 重算 / 锁定 / 解锁 / 删除）由本组件直接调用 API，
@@ -35,7 +35,7 @@
         :highlight-current-row="true"
         v-model:selections="selections"
         :default-sort="pool.defaultSort"
-        :cache-key="`WaybillPool-${pool.key}-a3`"
+        :cache-key="`WaybillPool-${pool.key}-a4`"
         @done="onTableDone"
       >
         <template #toolbar>
@@ -201,6 +201,10 @@
 
         <template #status="{ row }">
           <waybill-status-tag :status="row.status" />
+        </template>
+
+        <template #createdBy="{ row }">
+          {{ row.createdByName || '--' }}
         </template>
 
         <template #createdAt="{ row }">

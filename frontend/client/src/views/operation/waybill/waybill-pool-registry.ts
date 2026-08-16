@@ -64,6 +64,7 @@ export type WaybillColumnId =
   | 'calcStatus'
   | 'isLocked'
   | 'status'
+  | 'createdBy'
   | 'createdAt'
   | 'action';
 
@@ -170,6 +171,7 @@ const COL: Record<WaybillColumnId, string> = {
   calcStatus: '计算状态',
   isLocked: '锁定',
   status: '状态',
+  createdBy: '创建人',
   createdAt: '创建时间',
   action: '操作'
 };
@@ -198,6 +200,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'calcStatus',
       'isLocked',
       'status',
+      'createdBy',
       'createdAt',
       'action'
     ],
@@ -238,6 +241,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'calcStatus',
       'isLocked',
       'status',
+      'createdBy',
       'createdAt',
       'action'
     ],
@@ -270,6 +274,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'calcStatus',
       'isLocked',
       'status',
+      'createdBy',
       'createdAt',
       'action'
     ],
@@ -293,6 +298,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'freightAmount',
       'calcStatus',
       'status',
+      'createdBy',
       'createdAt',
       'action'
     ],
@@ -320,6 +326,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'freightAmount',
       'calcStatus',
       'status',
+      'createdBy',
       'createdAt',
       'action'
     ],
@@ -347,6 +354,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'freightAmount',
       'calcStatus',
       'status',
+      'createdBy',
       'createdAt',
       'action'
     ],
@@ -374,6 +382,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'freightAmount',
       'calcStatus',
       'status',
+      'createdBy',
       'createdAt',
       'action'
     ],
@@ -392,6 +401,7 @@ export const WAYBILL_POOLS: WaybillPool[] = [
       'destination',
       'quantity',
       'status',
+      'createdBy',
       'createdAt',
       'action'
     ],
@@ -519,6 +529,15 @@ export function buildWaybillTableColumns(pool: WaybillPool): Columns {
           width: 90,
           align: 'center',
           slot: 'status'
+        });
+        break;
+      case 'createdBy':
+        cols.push({
+          prop: 'createdByName',
+          label: L.createdBy,
+          width: 96,
+          align: 'center',
+          slot: 'createdBy'
         });
         break;
       case 'createdAt':

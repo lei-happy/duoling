@@ -209,6 +209,9 @@ class WaybillOut(BaseModel):
     lastResultId: Optional[int] = None
     remark: Optional[str] = None
     createdBy: Optional[int] = None
+    createdByName: Optional[str] = Field(
+        default=None, description="创建人姓名（real_name / nickname / phone）",
+    )
     createdAt: datetime
     # —— 来自任务挂接的聚合视图（前端用于禁用编辑/删除按钮，参考状态机设计文档）
     hasActiveTaskItems: Optional[bool] = Field(
@@ -232,6 +235,7 @@ class WaybillOut(BaseModel):
         redact_freight_amount: bool = False,
         has_active_task_items: Optional[bool] = None,
         allocated_total: Optional[int] = None,
+        created_by_name: Optional[str] = None,
     ) -> "WaybillOut":
         cargo_list = cargoes or []
         cargo_out: list[WaybillCargoOut] = []
@@ -304,6 +308,7 @@ class WaybillOut(BaseModel):
             lastResultId=getattr(m, "last_result_id", None),
             remark=m.remark,
             createdBy=m.created_by,
+            createdByName=created_by_name,
             createdAt=m.created_at,
             hasActiveTaskItems=has_active_task_items,
             allocatedQuantity=allocated_total,

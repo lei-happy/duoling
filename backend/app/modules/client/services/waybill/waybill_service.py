@@ -28,6 +28,7 @@ from app.modules.client.schemas.waybill.waybill import (
     waybill_brand_model_key,
 )
 from app.modules.client.models.task.task_waybill_item import TaskWaybillItem
+from app.modules.client.models.user.biz_user import BizUser
 from app.modules.client.services.system_config_service import SystemConfigService
 from app.modules.client.services.billing.billing_engine_service import BillingEngineService
 from app.modules.client.services.billing.standardize_service import StandardizeService
@@ -59,6 +60,28 @@ _SCHEMA_TO_MODEL = {
 
 
 class WaybillService:
+
+    @staticmethod
+    def _user_display_name(user) -> Optional[str]:
+        """创建人展示名：真实姓名 > 昵称 > 手机号。"""
+        for attr in ("real_name", "nickname", "phone"):
+            val = (getattr(user, attr, None) or "").strip()
+            if val:
+                return val
+        return None
+
+    @staticmethod
+    async def _creator_name_map(
+        db: AsyncSession, user_ids: list,
+    ) -> dict[int, Optional[str]]:
+        ids = sorted({int(uid) for uid in user_ids if uid})
+        if not ids:
+            return {}
+        rows = await db.execute(select(BizUser).where(BizUser.id.in_(ids)))
+        return {
+            u.id: WaybillService._user_display_name(u)
+            for u in rows.scalars().all()
+        }
 
     @staticmethod
     def _raise_biz_if_duplicate_waybill_no(exc: IntegrityError) -> None:
@@ -426,6 +449,9 @@ class WaybillService:
             cargo_map = await WaybillService._fetch_cargoes_batch(db, wb_ids)
             series_lookup = await WaybillService._series_image_lookup_map(db)
             active_map = await WaybillService._active_task_items_map(db, wb_ids)
+            creator_map = await WaybillService._creator_name_map(
+                db, [item.created_by for item in page_items]
+            )
             return {
                 "list": [
                     WaybillOut.from_model(
@@ -434,6 +460,7 @@ class WaybillService:
                         series_image_lookup=series_lookup,
                         redact_freight_amount=redact_freight_amount,
                         has_active_task_items=active_map.get(item.id, False),
+                        created_by_name=creator_map.get(item.created_by),
                     ).model_dump()
                     for item in page_items
                 ],
@@ -456,6 +483,9 @@ class WaybillService:
         cargo_map = await WaybillService._fetch_cargoes_batch(db, wb_ids)
         series_lookup = await WaybillService._series_image_lookup_map(db)
         active_map = await WaybillService._active_task_items_map(db, wb_ids)
+        creator_map = await WaybillService._creator_name_map(
+            db, [item.created_by for item in items]
+        )
 
         return {
             "list": [
@@ -465,6 +495,7 @@ class WaybillService:
                     series_image_lookup=series_lookup,
                     redact_freight_amount=redact_freight_amount,
                     has_active_task_items=active_map.get(item.id, False),
+                    created_by_name=creator_map.get(item.created_by),
                 ).model_dump()
                 for item in items
             ],
@@ -574,10 +605,12 @@ class WaybillService:
         cargoes = await WaybillService._fetch_cargoes_for_waybill(db, waybill.id)
         series_lookup = await WaybillService._series_image_lookup_map(db)
         active_map = await WaybillService._active_task_items_map(db, [waybill.id])
+        creator_map = await WaybillService._creator_name_map(db, [waybill.created_by])
         return WaybillOut.from_model(
             waybill, cargoes,
             series_image_lookup=series_lookup,
             has_active_task_items=active_map.get(waybill.id, False),
+            created_by_name=creator_map.get(waybill.created_by),
         )
 
     @staticmethod
