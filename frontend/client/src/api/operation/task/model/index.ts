@@ -171,6 +171,40 @@ export interface CandidateCargoListResult {
   truncated: boolean;
 }
 
+export type DispatchSelectionSource = 'recommended' | 'search' | 'manual';
+
+export interface CapacityRecommendReason {
+  code: string;
+  text: string;
+}
+
+export interface CapacityRecommendItem {
+  capacityId: number;
+  driverName?: string;
+  driverPhone?: string;
+  plateNumber?: string;
+  trailerPlateNumber?: string;
+  /** BLUE / YELLOW / NEW_ENERGY，缺省按黄牌展示 */
+  plateCategory?: string;
+  operationStatus: number;
+  rank: number;
+  reasons: CapacityRecommendReason[];
+}
+
+export interface CapacityRecommendResult {
+  engine: string;
+  items: CapacityRecommendItem[];
+}
+
+export interface DispatchSelectionFeedback {
+  engine: string;
+  source: DispatchSelectionSource;
+  shownCapacityIds: number[];
+  topRecommendedId?: number | null;
+  selectedCapacityId?: number | null;
+  selectedRank?: number | null;
+}
+
 /** 承运方信息（三类合一） */
 export interface TaskCarrierInfo {
   carrierType: number; // 1-自有车 2-承运商 3-社会运力

@@ -13,6 +13,7 @@ import uuid
 from datetime import date as ddate
 
 import pytest
+from sqlalchemy import select
 
 from app.common.exceptions import BizException
 from app.modules.client.models.task.constants import CarrierType
@@ -33,8 +34,32 @@ from app.modules.client.models.task.task_status_event import (
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.models.waybill.waybill_cargo import WaybillCargo
 from app.modules.client.schemas.partner.customer import CustomerCreate
+from app.modules.client.models.capacity.self_capacity.capacity import Capacity
+from app.modules.client.models.capacity.self_capacity.driver.driver_route import (
+    DriverRoute,
+)
+from app.modules.client.models.capacity.social_capacity.social_capacity import (
+    SocialCapacity,
+)
+from app.modules.client.services.capacity.self_capacity.recommend.service import (
+    SOCIAL_POOL_ENGINE,
+)
+from app.modules.client.models.task.task_dispatch_selection import (
+    TaskDispatchSelection,
+)
 from app.modules.client.schemas.task.task import (
-    TaskCarrierAssignmentInfo, TaskCreate, TaskStatusUpdate,
+    DispatchSelectionFeedback,
+    TaskAssignCarrierRequest,
+    TaskCarrierAssignmentInfo,
+    TaskCarrierInfo,
+    TaskCreate,
+    TaskStatusUpdate,
+)
+from app.modules.client.services.capacity.self_capacity.capacity_service import (
+    CapacityService,
+)
+from app.modules.client.services.capacity.self_capacity.recommend import (
+    CapacityRecommendService,
 )
 from app.modules.client.schemas.task.task_waybill_item import (
     TaskWaybillItemIn, TaskWaybillItemStatusUpdate,
@@ -56,7 +81,7 @@ from app.modules.client.services.task.task_status_event_service import (
 from app.modules.client.services.task.task_waybill_item_service import (
     TaskWaybillItemService,
 )
-from tests.client.conftest import unique_suffix
+from tests.client.conftest import unique_phone, unique_suffix
 
 
 async def _seed_dispatchable_waybill(session, quantity: int = 3):
@@ -112,6 +137,35 @@ async def _seed_task_with_item(session, quantity: int = 2):
     )
     items = await TaskWaybillItemService.list_items_of_task(session, task.id)
     return task, items[0]
+
+
+async def _seed_social_capacity(
+    session,
+    *,
+    name: str,
+    phone: str | None = None,
+    plate: str | None = None,
+    id_card: str | None = None,
+    approval_status: int = 2,
+    status: int = 1,
+    rating_score: float | None = None,
+    rating_level: int | None = None,
+):
+    cap = SocialCapacity(
+        social_code=f"S{unique_suffix()}",
+        driver_name=name,
+        driver_phone=phone or unique_phone(),
+        plate_number=plate or f"皖{unique_suffix(5)}",
+        driver_id_card=id_card,
+        approval_status=approval_status,
+        status=status,
+        rating_score=rating_score,
+        rating_level=rating_level,
+    )
+    session.add(cap)
+    await session.flush()
+    await session.refresh(cap)
+    return cap
 
 
 class TestTaskDispatch:
@@ -641,3 +695,419 @@ class TestWorkbenchTimeFilter:
             time_end=end,
         )
         assert stats["totals"]["pendingDispatch"] == 1
+
+
+def _unique_driver_id() -> int:
+    return int(uuid.uuid4().int % 1_000_000_000) + 20_000_000
+
+
+async def _make_capacity(
+    session,
+    *,
+    name: str,
+    plate: str,
+    operation_status: int,
+    driver_id: int | None = None,
+) -> Capacity:
+    cap = Capacity(
+        driver_id=driver_id or _unique_driver_id(),
+        driver_name=name,
+        driver_phone=unique_phone(),
+        vehicle_id=_unique_driver_id(),
+        plate_number=plate,
+        status=1,
+        operation_status=operation_status,
+    )
+    session.add(cap)
+    await session.flush()
+    return cap
+
+
+class TestCapacityRecommendAndSelection:
+    async def test_heuristic_orders_available_route_then_transit(
+        self, tenant_session
+    ):
+        task, _item = await _seed_task_with_item(tenant_session)
+        task.origin = "石家庄"
+        task.origin_code = "130100"
+        task.destination = "三明"
+        task.destination_code = "350400"
+        await tenant_session.flush()
+
+        tag = unique_suffix(4)
+        available_route = await _make_capacity(
+            tenant_session,
+            name=f"推荐甲{tag}",
+            plate=f"冀A{tag}1",
+            operation_status=1,
+        )
+        available = await _make_capacity(
+            tenant_session,
+            name=f"推荐乙{tag}",
+            plate=f"冀A{tag}2",
+            operation_status=1,
+        )
+        in_transit = await _make_capacity(
+            tenant_session,
+            name=f"推荐丙{tag}",
+            plate=f"冀A{tag}3",
+            operation_status=2,
+        )
+        on_leave = await _make_capacity(
+            tenant_session,
+            name=f"休假丁{tag}",
+            plate=f"冀A{tag}4",
+            operation_status=3,
+        )
+        tenant_session.add(
+            DriverRoute(
+                driver_id=available_route.driver_id,
+                origin_code="130100",
+                origin_name="石家庄",
+                dest_code="350400",
+                dest_name="三明",
+                status=1,
+            )
+        )
+        await tenant_session.flush()
+
+        result = await CapacityRecommendService.recommend_for_task(
+            tenant_session, task.id, limit=50,
+        )
+        assert result.engine == "heuristic_v1"
+        ranks = {item.capacityId: item.rank for item in result.items}
+        assert available_route.id in ranks
+        assert available.id in ranks
+        assert in_transit.id in ranks
+        assert on_leave.id not in ranks
+        assert ranks[available_route.id] < ranks[available.id] < ranks[in_transit.id]
+
+        top = next(
+            item for item in result.items if item.capacityId == available_route.id
+        )
+        codes = {r.code for r in top.reasons}
+        assert "AVAILABLE" in codes
+        assert "FAMILIAR_ROUTE" in codes
+        assert any("常跑" in r.text for r in top.reasons)
+
+        transit = next(
+            item for item in result.items if item.capacityId == in_transit.id
+        )
+        assert any(r.code == "IN_TRANSIT" for r in transit.reasons)
+
+        filtered = await CapacityRecommendService.recommend_for_task(
+            tenant_session, task.id, keyword=f"休假丁{tag}", limit=20,
+        )
+        leave_ids = {item.capacityId for item in filtered.items}
+        assert on_leave.id in leave_ids
+        leave_item = next(
+            item for item in filtered.items if item.capacityId == on_leave.id
+        )
+        assert any(r.code == "ON_LEAVE" for r in leave_item.reasons)
+
+    async def test_occupied_capacity_excluded_from_default_recommend(
+        self, tenant_session
+    ):
+        """已被其他未完成任务占用的运力，默认推荐不再出现。"""
+        pending_task, _ = await _seed_task_with_item(tenant_session)
+        occupied = await _make_capacity(
+            tenant_session,
+            name=f"占用司机{unique_suffix(4)}",
+            plate=f"冀D{unique_suffix(4)}",
+            operation_status=1,
+        )
+        occupying_task, _ = await _seed_task_with_item(tenant_session)
+        await TaskService.assign_carrier(
+            tenant_session,
+            occupying_task.id,
+            TaskAssignCarrierRequest(
+                carrier=TaskCarrierInfo(
+                    carrierType=CarrierType.SELF,
+                    capacityId=occupied.id,
+                    mainDriverName=occupied.driver_name,
+                    plateNumber=occupied.plate_number,
+                ),
+            ),
+            current_user_id=1,
+        )
+
+        default = await CapacityRecommendService.recommend_for_task(
+            tenant_session, pending_task.id, limit=50,
+        )
+        default_ids = {item.capacityId for item in default.items}
+        assert occupied.id not in default_ids
+
+        searched = await CapacityRecommendService.recommend_for_task(
+            tenant_session,
+            pending_task.id,
+            keyword=occupied.driver_name,
+            limit=20,
+        )
+        hit = next(
+            item for item in searched.items if item.capacityId == occupied.id
+        )
+        assert any(r.code == "ASSIGNED_OTHER" for r in hit.reasons)
+        assert not any(r.code == "AVAILABLE" for r in hit.reasons)
+
+        reassign = await CapacityRecommendService.recommend_for_task(
+            tenant_session, occupying_task.id, limit=50,
+        )
+        reassign_ids = {item.capacityId for item in reassign.items}
+        assert occupied.id in reassign_ids
+
+    async def test_assign_carrier_writes_capacity_in_transit(
+        self, tenant_session
+    ):
+        task, _item = await _seed_task_with_item(tenant_session)
+        cap = await _make_capacity(
+            tenant_session,
+            name=f"回写司机{unique_suffix(4)}",
+            plate=f"冀E{unique_suffix(4)}",
+            operation_status=1,
+        )
+        await TaskService.assign_carrier(
+            tenant_session,
+            task.id,
+            TaskAssignCarrierRequest(
+                carrier=TaskCarrierInfo(
+                    carrierType=CarrierType.SELF,
+                    capacityId=cap.id,
+                    mainDriverName=cap.driver_name,
+                    plateNumber=cap.plate_number,
+                ),
+            ),
+            current_user_id=1,
+        )
+        await tenant_session.refresh(cap)
+        assert int(cap.operation_status) == 2
+
+        await TaskService.cancel_task(
+            tenant_session, task.id, reason="测试释放运力", current_user_id=1,
+        )
+        await tenant_session.refresh(cap)
+        assert int(cap.operation_status) == 1
+
+    async def test_reassign_releases_previous_capacity(self, tenant_session):
+        task, _item = await _seed_task_with_item(tenant_session)
+        old = await _make_capacity(
+            tenant_session,
+            name=f"原司机{unique_suffix(4)}",
+            plate=f"冀F{unique_suffix(4)}",
+            operation_status=1,
+        )
+        new = await _make_capacity(
+            tenant_session,
+            name=f"新司机{unique_suffix(4)}",
+            plate=f"冀G{unique_suffix(4)}",
+            operation_status=1,
+        )
+        await TaskService.assign_carrier(
+            tenant_session,
+            task.id,
+            TaskAssignCarrierRequest(
+                carrier=TaskCarrierInfo(
+                    carrierType=CarrierType.SELF,
+                    capacityId=old.id,
+                    mainDriverName=old.driver_name,
+                    plateNumber=old.plate_number,
+                ),
+            ),
+            current_user_id=1,
+        )
+        await TaskService.assign_carrier(
+            tenant_session,
+            task.id,
+            TaskAssignCarrierRequest(
+                carrier=TaskCarrierInfo(
+                    carrierType=CarrierType.SELF,
+                    capacityId=new.id,
+                    mainDriverName=new.driver_name,
+                    plateNumber=new.plate_number,
+                ),
+            ),
+            current_user_id=1,
+        )
+        await tenant_session.refresh(old)
+        await tenant_session.refresh(new)
+        assert int(old.operation_status) == 1
+        assert int(new.operation_status) == 2
+
+    async def test_list_stats_heals_stale_idle_capacity(self, tenant_session):
+        task, _item = await _seed_task_with_item(tenant_session)
+        cap = await _make_capacity(
+            tenant_session,
+            name=f"漂移司机{unique_suffix(4)}",
+            plate=f"冀H{unique_suffix(4)}",
+            operation_status=1,
+        )
+        await TaskService.assign_carrier(
+            tenant_session,
+            task.id,
+            TaskAssignCarrierRequest(
+                carrier=TaskCarrierInfo(
+                    carrierType=CarrierType.SELF,
+                    capacityId=cap.id,
+                    mainDriverName=cap.driver_name,
+                    plateNumber=cap.plate_number,
+                ),
+            ),
+            current_user_id=1,
+        )
+        cap.operation_status = 1
+        await tenant_session.flush()
+
+        stats = await CapacityService.list_stats(tenant_session)
+        await tenant_session.refresh(cap)
+        assert int(cap.operation_status) == 2
+        assert stats["inTransit"] >= 1
+
+    async def test_assign_carrier_writes_selection(self, tenant_session):
+        task, _item = await _seed_task_with_item(tenant_session)
+        cap = await _make_capacity(
+            tenant_session,
+            name="留痕司机",
+            plate=f"冀B{unique_suffix(4)}",
+            operation_status=1,
+        )
+        await TaskService.assign_carrier(
+            tenant_session,
+            task.id,
+            TaskAssignCarrierRequest(
+                carrier=TaskCarrierInfo(
+                    carrierType=CarrierType.SELF,
+                    capacityId=cap.id,
+                    mainDriverName=cap.driver_name,
+                    plateNumber=cap.plate_number,
+                ),
+                selection=DispatchSelectionFeedback(
+                    engine="heuristic_v1",
+                    source="recommended",
+                    shownCapacityIds=[cap.id],
+                    topRecommendedId=cap.id,
+                    selectedCapacityId=cap.id,
+                    selectedRank=1,
+                ),
+            ),
+            current_user_id=1,
+        )
+        rows = (
+            await tenant_session.execute(
+                select(TaskDispatchSelection).where(
+                    TaskDispatchSelection.task_id == task.id,
+                    TaskDispatchSelection.is_deleted == 0,
+                )
+            )
+        ).scalars().all()
+        assert len(rows) == 1
+        assert rows[0].engine == "heuristic_v1"
+        assert rows[0].source == "recommended"
+        assert rows[0].adopted == 1
+        assert rows[0].selected_capacity_id == cap.id
+        assert rows[0].shown_capacity_ids == [cap.id]
+
+    async def test_assign_carrier_without_selection_still_works(
+        self, tenant_session
+    ):
+        task, _item = await _seed_task_with_item(tenant_session)
+        cap = await _make_capacity(
+            tenant_session,
+            name="无留痕司机",
+            plate=f"冀C{unique_suffix(4)}",
+            operation_status=1,
+        )
+        await TaskService.assign_carrier(
+            tenant_session,
+            task.id,
+            TaskAssignCarrierRequest(
+                carrier=TaskCarrierInfo(
+                    carrierType=CarrierType.SELF,
+                    capacityId=cap.id,
+                    mainDriverName=cap.driver_name,
+                    plateNumber=cap.plate_number,
+                ),
+            ),
+            current_user_id=1,
+        )
+        refreshed = await TaskService.get_or_404(tenant_session, task.id)
+        assert int(refreshed.status) == TASK_DISPATCHED
+        assert refreshed.capacity_id == cap.id
+        rows = (
+            await tenant_session.execute(
+                select(TaskDispatchSelection).where(
+                    TaskDispatchSelection.task_id == task.id,
+                    TaskDispatchSelection.is_deleted == 0,
+                )
+            )
+        ).scalars().all()
+        assert rows == []
+
+    async def test_social_task_recommend_lists_pool(self, tenant_session):
+        task, _ = await _seed_task_with_item(tenant_session)
+        task.carrier_type = CarrierType.SOCIAL
+        await tenant_session.flush()
+
+        high = await _seed_social_capacity(
+            tenant_session, name="高评司机", rating_level=1, rating_score=4.8,
+        )
+        low = await _seed_social_capacity(
+            tenant_session, name="低评司机", rating_level=3, rating_score=2.1,
+        )
+        draft = await _seed_social_capacity(
+            tenant_session, name="草稿司机", approval_status=0, status=0,
+        )
+
+        result = await CapacityRecommendService.recommend_for_task(
+            tenant_session, task.id, limit=50,
+        )
+        assert result.engine == SOCIAL_POOL_ENGINE
+        ids = [item.capacityId for item in result.items]
+        assert high.id in ids
+        assert low.id in ids
+        assert draft.id not in ids
+        assert ids.index(high.id) < ids.index(low.id)
+        top = next(item for item in result.items if item.capacityId == high.id)
+        assert any(r.code == "RATING" and "A" in r.text for r in top.reasons)
+
+        filtered = await CapacityRecommendService.recommend_for_task(
+            tenant_session, task.id, keyword=low.driver_name, limit=20,
+        )
+        assert {item.capacityId for item in filtered.items} == {low.id}
+
+    async def test_assign_social_fills_snapshot_from_pool(self, tenant_session):
+        task, _ = await _seed_task_with_item(tenant_session)
+        task.carrier_type = CarrierType.SOCIAL
+        await tenant_session.flush()
+        social = await _seed_social_capacity(
+            tenant_session,
+            name="档案司机",
+            phone="19912345678",
+            plate="皖S12345",
+            id_card="340123199001011234",
+        )
+
+        await TaskService.assign_carrier(
+            tenant_session,
+            task.id,
+            TaskAssignCarrierRequest(
+                carrier=TaskCarrierInfo(
+                    carrierType=CarrierType.SOCIAL,
+                    socialDriverId=social.id,
+                ),
+                selection=DispatchSelectionFeedback(
+                    engine=SOCIAL_POOL_ENGINE,
+                    source="recommended",
+                    shownCapacityIds=[social.id],
+                    topRecommendedId=social.id,
+                    selectedCapacityId=social.id,
+                    selectedRank=1,
+                ),
+            ),
+            current_user_id=1,
+        )
+        refreshed = await TaskService.get_or_404(tenant_session, task.id)
+        assert int(refreshed.status) == TASK_DISPATCHED
+        assert refreshed.social_driver_id == social.id
+        assert refreshed.main_driver_name == "档案司机"
+        assert refreshed.main_driver_phone == "19912345678"
+        assert refreshed.plate_number == "皖S12345"
+        assert refreshed.main_driver_id_card == "340123199001011234"

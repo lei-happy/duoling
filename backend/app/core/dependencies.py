@@ -49,11 +49,17 @@ async def get_current_user_optional(request: Request) -> Optional[TokenData]:
 # ============================================================
 
 async def get_tenant_code(request: Request) -> str:
-    """获取当前请求的租户编码"""
+    """获取当前请求的租户编码
+
+    Token 过期/无效时中间件不会注入 current_user，应走 401，
+    而不是「缺租户」400——否则前端只会 toast，不会回登录页。
+    """
     tenant_code = getattr(request.state, "tenant_code", None)
-    if not tenant_code:
-        raise TenantException("缺少租户信息，请确认登录状态")
-    return tenant_code
+    if tenant_code:
+        return tenant_code
+    if not getattr(request.state, "current_user", None):
+        raise AuthException("未登录或 Token 已过期")
+    raise TenantException("缺少租户信息，请确认登录状态")
 
 
 async def ensure_biz_login_log_table(

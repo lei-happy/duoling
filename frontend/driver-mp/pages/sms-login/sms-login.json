@@ -1,3 +1,8 @@
 {
-  "navigationBarTitleText": "验证码登录"
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#0d1b3e",
+  "backgroundColorTop": "#0d1b3e",
+  "backgroundColorBottom": "#ffffff",
+  "disableScroll": true
 }

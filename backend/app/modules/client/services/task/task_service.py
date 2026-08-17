@@ -19,13 +19,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.exceptions import BizException
 from app.modules.client.models.capacity.self_capacity.capacity import Capacity
+from app.modules.client.models.capacity.social_capacity.social_capacity import (
+    SocialCapacity,
+)
+from app.modules.client.models.capacity.social_capacity.social_capacity_vehicle import (
+    SocialCapacityVehicle,
+)
 from app.modules.client.models.partner.carrier import Carrier
+from app.modules.client.services.capacity.social_capacity import (
+    APPROVAL_APPROVED,
+    STATUS_ACTIVE,
+)
 from app.modules.client.models.route import Route
 from app.modules.client.models.task.task import Task
 from app.modules.client.models.task.task_dispatch_order import TaskDispatchOrder
+from app.modules.client.models.task.task_dispatch_selection import TaskDispatchSelection
 from app.modules.client.models.task.task_waybill_item import TaskWaybillItem
+from app.modules.client.models.user.biz_user import BizUser
 from app.modules.client.models.waybill.waybill import Waybill
 from app.modules.client.schemas.task.task import (
+    DispatchSelectionFeedback,
     TaskAssignCarrierRequest,
     TaskCarrierAssignmentInfo,
     TaskCarrierInfo,
@@ -62,6 +75,9 @@ from app.modules.client.services.state_machine.task_state_machine import (
     TASK_SIGNED,
     TASK_STATUS_LABELS,
     TaskStateMachine,
+)
+from app.modules.client.services.capacity.self_capacity.capacity_service import (
+    CapacityService,
 )
 from app.modules.client.services.system_config_service import SystemConfigService
 from app.modules.client.services.task.task_code_name_generator import (
@@ -250,8 +266,42 @@ class TaskService:
                 if not snapshot["carrier_short_name"]:
                     snapshot["carrier_short_name"] = car.short_name
 
-        # 社会运力：完全依赖前端传入的快照字段（已在 Schema 校验必填）；
-        # 成本归属经营主体留空，由下游财务按租户默认主体兜底解析
+        elif carrier_info.carrierType == CarrierType.SOCIAL:
+            if not carrier_info.socialDriverId:
+                raise BizException("请选择社会运力")
+            cap_res = await db.execute(
+                select(SocialCapacity).where(
+                    SocialCapacity.id == carrier_info.socialDriverId,
+                    SocialCapacity.is_deleted == 0,
+                )
+            )
+            cap = cap_res.scalar_one_or_none()
+            if not cap:
+                raise BizException("所选社会运力不存在或已删除，请重新选择")
+            if (
+                int(cap.approval_status) != APPROVAL_APPROVED
+                or int(cap.status) != STATUS_ACTIVE
+            ):
+                raise BizException("这名社会运力还未通过审核或已停用，请换一位")
+            snapshot["social_driver_id"] = cap.id
+            if not snapshot["main_driver_name"]:
+                snapshot["main_driver_name"] = cap.driver_name
+            if not snapshot["main_driver_phone"]:
+                snapshot["main_driver_phone"] = cap.driver_phone
+            if not snapshot["main_driver_id_card"]:
+                snapshot["main_driver_id_card"] = cap.driver_id_card
+            if not snapshot["plate_number"]:
+                snapshot["plate_number"] = cap.plate_number
+            if not snapshot["trailer_plate_number"]:
+                veh_res = await db.execute(
+                    select(SocialCapacityVehicle.trailer_plate).where(
+                        SocialCapacityVehicle.social_capacity_id == cap.id,
+                        SocialCapacityVehicle.is_deleted == 0,
+                    )
+                )
+                snapshot["trailer_plate_number"] = veh_res.scalar_one_or_none()
+            # 成本归属经营主体留空，由下游财务按租户默认主体兜底解析
+
         return snapshot
 
     @staticmethod
@@ -742,6 +792,12 @@ class TaskService:
         await db.refresh(task)
         if int(task.status) == TASK_DISPATCHED:
             await TaskService._try_enqueue_billing_calc(db, task)
+        await TaskService._sync_capacity_occupancy(
+            db,
+            task.capacity_id,
+            current_user_id=current_user_id,
+            remark="建单指派运力",
+        )
         return task
 
     @staticmethod
@@ -759,6 +815,7 @@ class TaskService:
                 f"任务单当前状态「{_STATUS_LABELS.get(task.status, task.status)}」"
                 f"不允许编辑（仅待分配/待派车/已派车可编辑）"
             )
+        prev_capacity_id = task.capacity_id
 
         if data.taskName is not None:
             task.task_name = data.taskName or None
@@ -810,6 +867,13 @@ class TaskService:
 
         await db.flush()
         await db.refresh(task)
+        await TaskService._sync_capacity_occupancy(
+            db,
+            prev_capacity_id,
+            task.capacity_id,
+            current_user_id=current_user_id,
+            remark="编辑任务运力",
+        )
         return task
 
     @staticmethod
@@ -819,6 +883,7 @@ class TaskService:
             TASK_PENDING_ASSIGN, TASK_PENDING_DISPATCH, TASK_CANCELLED
         ):
             raise BizException("仅「待分配/待派车/已取消」状态的任务单允许删除")
+        capacity_id = task.capacity_id
 
         # 软删调令
         for s in await TaskService.list_dispatch_orders(db, task_id):
@@ -829,6 +894,9 @@ class TaskService:
 
         task.is_deleted = 1
         await db.flush()
+        await TaskService._sync_capacity_occupancy(
+            db, capacity_id, remark="删除任务单",
+        )
 
     @staticmethod
     async def cancel_task(
@@ -859,6 +927,12 @@ class TaskService:
         )
         await db.flush()
         await db.refresh(task)
+        await TaskService._sync_capacity_occupancy(
+            db,
+            task.capacity_id,
+            current_user_id=current_user_id,
+            remark="任务单取消",
+        )
         return task
 
     @staticmethod
@@ -911,6 +985,12 @@ class TaskService:
         )
 
         await db.refresh(task)
+        await TaskService._sync_capacity_occupancy(
+            db,
+            task.capacity_id,
+            current_user_id=current_user_id,
+            remark="任务单强制取消",
+        )
         return task
 
     @staticmethod
@@ -1030,6 +1110,28 @@ class TaskService:
     @staticmethod
     def _stamp_dispatched(task: Task) -> None:
         task.dispatched_at = datetime.now()
+
+    @staticmethod
+    async def _sync_capacity_occupancy(
+        db: AsyncSession,
+        *capacity_ids: Optional[int],
+        current_user_id: Optional[int] = None,
+        remark: str = "任务占用变更",
+    ) -> None:
+        seen: set[int] = set()
+        for raw in capacity_ids:
+            if not raw:
+                continue
+            cid = int(raw)
+            if cid in seen:
+                continue
+            seen.add(cid)
+            await CapacityService.sync_task_occupancy_status(
+                db,
+                cid,
+                operator_user_id=current_user_id,
+                remark=remark,
+            )
 
     @staticmethod
     def _carrier_payload(task: Task) -> dict:
@@ -1207,6 +1309,12 @@ class TaskService:
         await db.refresh(task)
         if target == TASK_DISPATCHED:
             await TaskService._try_enqueue_billing_calc(db, task)
+        await TaskService._sync_capacity_occupancy(
+            db,
+            task.capacity_id,
+            current_user_id=current_user_id,
+            remark="确认承运方",
+        )
         return task
 
     @staticmethod
@@ -1248,6 +1356,7 @@ class TaskService:
         task = await TaskService.get_or_404(db, task_id)
         if int(task.status) not in (TASK_PENDING_DISPATCH, TASK_DISPATCHED):
             raise BizException("仅「待派车/已派车」状态可重新派车")
+        prev_capacity_id = task.capacity_id
         snap = await TaskService._resolve_carrier_snapshot(db, data.carrier)
         for k, v in snap.items():
             setattr(task, k, v)
@@ -1279,11 +1388,59 @@ class TaskService:
                 reason="重新派车",
                 payload=TaskService._carrier_payload(task),
             )
+        if data.selection is not None:
+            await TaskService._record_dispatch_selection(
+                db, task, data.selection, current_user_id=current_user_id,
+            )
         await db.flush()
         await db.refresh(task)
         if int(task.status) == TASK_DISPATCHED:
             await TaskService._try_enqueue_billing_calc(db, task)
+        await TaskService._sync_capacity_occupancy(
+            db,
+            prev_capacity_id,
+            task.capacity_id,
+            current_user_id=current_user_id,
+            remark="派车",
+        )
         return task
+
+    @staticmethod
+    async def _record_dispatch_selection(
+        db: AsyncSession,
+        task: Task,
+        selection: DispatchSelectionFeedback,
+        current_user_id: Optional[int] = None,
+    ) -> None:
+        dispatcher_name: Optional[str] = None
+        if current_user_id:
+            user = await db.get(BizUser, current_user_id)
+            if user is not None:
+                dispatcher_name = user.real_name or user.nickname
+        adopted = (
+            1
+            if (
+                selection.selectedCapacityId
+                and selection.topRecommendedId
+                and int(selection.selectedCapacityId) == int(selection.topRecommendedId)
+            )
+            else 0
+        )
+        db.add(
+            TaskDispatchSelection(
+                task_id=int(task.id),
+                dispatcher_id=current_user_id,
+                dispatcher_name=dispatcher_name,
+                carrier_type=task.carrier_type,
+                engine=selection.engine.strip()[:32],
+                source=selection.source,
+                shown_capacity_ids=list(selection.shownCapacityIds),
+                top_recommended_id=selection.topRecommendedId,
+                selected_capacity_id=selection.selectedCapacityId,
+                selected_rank=selection.selectedRank,
+                adopted=adopted,
+            )
+        )
 
     # ------------------------------------------------------------------
     # 列表与详情

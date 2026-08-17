@@ -22,7 +22,11 @@ from app.modules.client.models.capacity.self_capacity.vehicle import Vehicle
 from app.modules.client.models.capacity.self_capacity.vehicle_ext import VehicleExt
 from app.modules.client.models.capacity.self_capacity.trailer import Trailer
 from app.modules.client.models.organization.biz_department import BizDepartment
+from app.modules.client.models.task.task import Task
 from app.modules.client.models.user.biz_user import BizUser
+from app.modules.client.services.state_machine.task_state_machine import (
+    TASK_OCCUPYING_CAPACITY_STATUSES,
+)
 from app.modules.client.schemas.capacity.self_capacity.capacity import (
     CapacityOut, CapacityLogOut,
 )
@@ -307,6 +311,121 @@ class CapacityService:
         return last_id
 
     @staticmethod
+    async def occupied_capacity_ids(db: AsyncSession) -> set[int]:
+        """其他未完成任务已绑定的运力 id。"""
+        rows = await db.execute(
+            select(Task.capacity_id).where(
+                Task.is_deleted == 0,
+                Task.capacity_id.isnot(None),
+                Task.status.in_(tuple(TASK_OCCUPYING_CAPACITY_STATUSES)),
+            )
+        )
+        return {int(cid) for cid in rows.scalars().all() if cid}
+
+    @staticmethod
+    async def sync_task_occupancy_status(
+        db: AsyncSession,
+        capacity_id: Optional[int],
+        *,
+        operator_user_id: Optional[int] = None,
+        remark: str = "任务占用变更",
+    ) -> None:
+        """按当前任务占用回写运力运营状态：占用→运输中，释放→空闲。
+
+        维修保养中不抢写；休假/停运被派单后改为运输中。
+        """
+        if not capacity_id:
+            return
+        occupied = int(capacity_id) in await CapacityService.occupied_capacity_ids(db)
+        await CapacityService._apply_occupancy_target(
+            db,
+            int(capacity_id),
+            occupied=occupied,
+            operator_user_id=operator_user_id,
+            remark=remark,
+        )
+
+    @staticmethod
+    async def reconcile_task_occupancy_statuses(
+        db: AsyncSession,
+        *,
+        operator_user_id: Optional[int] = None,
+    ) -> None:
+        """对齐运力状态与任务占用（修复历史未回写、漏钩子）。"""
+        occupied = await CapacityService.occupied_capacity_ids(db)
+        rows = await db.execute(
+            select(Capacity.id, Capacity.operation_status).where(
+                Capacity.status == 1,
+                Capacity.is_deleted == 0,
+            )
+        )
+        for capacity_id, operation_status in rows.all():
+            cid = int(capacity_id)
+            op = int(operation_status or 1)
+            should_occupy = cid in occupied
+            if should_occupy and op not in (2, 5):
+                await CapacityService._apply_occupancy_target(
+                    db,
+                    cid,
+                    occupied=True,
+                    operator_user_id=operator_user_id,
+                    remark="任务占用对齐",
+                )
+            elif not should_occupy and op == 2:
+                await CapacityService._apply_occupancy_target(
+                    db,
+                    cid,
+                    occupied=False,
+                    operator_user_id=operator_user_id,
+                    remark="任务占用对齐",
+                )
+
+    @staticmethod
+    async def _apply_occupancy_target(
+        db: AsyncSession,
+        capacity_id: int,
+        *,
+        occupied: bool,
+        operator_user_id: Optional[int] = None,
+        remark: str = "任务占用变更",
+    ) -> None:
+        result = await db.execute(
+            select(Capacity).where(
+                Capacity.id == capacity_id,
+                Capacity.is_deleted == 0,
+            )
+        )
+        capacity = result.scalar_one_or_none()
+        if not capacity or int(capacity.status) != 1:
+            return
+        current = int(capacity.operation_status or 1)
+        if occupied:
+            if current == 5:
+                return
+            target = 2
+        else:
+            if current != 2:
+                return
+            target = 1
+        if current == target:
+            return
+        labels = CapacityService.OPERATION_STATUS_LABELS
+        next_label = labels.get(target, "未知")
+        await CapacityService._apply_operation_status(
+            db,
+            capacity_id=capacity.id,
+            operation_status=target,
+            operator_user_id=operator_user_id,
+            remark_prefix=remark,
+            event_code="capacity.module_status_change",
+            allow_same=True,
+            activity_summary=(
+                f"系统将车辆「{capacity.plate_number}」的运力状态"
+                f"调整为「{next_label}」（{remark}）"
+            ),
+        )
+
+    @staticmethod
     async def _apply_operation_status(
         db: AsyncSession,
         *,
@@ -434,6 +553,7 @@ class CapacityService:
         enterprise_id: Optional[int] = None,
     ) -> dict:
         """运力分页列表（仅当前绑定中的运力；已解绑请在变动记录中查看）"""
+        await CapacityService.reconcile_task_occupancy_statuses(db)
         query = (
             select(
                 Capacity,
@@ -538,6 +658,7 @@ class CapacityService:
         enterprise_id: Optional[int] = None,
     ) -> dict:
         """运力列表 KPI：按运营状态分组计数（不含 operationStatus 自身筛选）。"""
+        await CapacityService.reconcile_task_occupancy_statuses(db)
         query = (
             select(Capacity.operation_status, func.count())
             .outerjoin(

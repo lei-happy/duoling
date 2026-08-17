@@ -2,10 +2,24 @@ const { API_BASE, OPEN_BASE } = require('../config/env');
 const { STORAGE_KEYS, getItem, setItem, clearSession } = require('./storage');
 
 const AUTH_LOGIN_URLS = ['/auth/login', '/auth/sms-login', '/auth/switch-tenant'];
+const AUTH_PAGE_MARKERS = ['/pages/login/', '/pages/sms-login/', '/pages/tenant-select/'];
+
+let loginRedirectTimer = null;
 
 function isAuthLoginRequest(url) {
   if (!url) return false;
   return AUTH_LOGIN_URLS.some((p) => url.indexOf(p) !== -1);
+}
+
+function isAuthPage(route) {
+  return AUTH_PAGE_MARKERS.some((p) => route.indexOf(p) !== -1);
+}
+
+function isSessionExpired(status, body) {
+  if (status === 401) return true;
+  if (body && Number(body.code) === 401) return true;
+  const msg = (body && body.message) || '';
+  return status === 400 && msg.indexOf('请确认登录状态') !== -1;
 }
 
 function buildQuery(params) {
@@ -31,12 +45,13 @@ function goLogin() {
   const pages = getCurrentPages();
   const cur = pages[pages.length - 1];
   const route = cur ? `/${cur.route}` : '';
-  if (route.indexOf('/pages/login/') !== -1 || route.indexOf('/pages/sms-login/') !== -1) {
+  if (isAuthPage(route) || loginRedirectTimer) {
     return;
   }
   clearSession();
   toast('登录已过期，请重新登录');
-  setTimeout(() => {
+  loginRedirectTimer = setTimeout(() => {
+    loginRedirectTimer = null;
     wx.reLaunch({ url: '/pages/login/login' });
   }, 400);
 }
@@ -75,7 +90,7 @@ function request(options) {
           setItem(STORAGE_KEYS.ACCESS_TOKEN, refreshed.slice('Bearer '.length));
         }
 
-        if (status === 401) {
+        if (isSessionExpired(status, body)) {
           const msg = body.message || '登录失败，请重试';
           if (isAuthLoginRequest(url)) {
             if (!silent) toast(msg);
@@ -172,5 +187,7 @@ module.exports = {
   put,
   del,
   openPost,
-  toast
+  toast,
+  goLogin,
+  isSessionExpired
 };

@@ -112,6 +112,7 @@ from app.modules.client.models.waybill.waybill_import import (
 from app.modules.client.models.task import (
     Task,
     TaskDispatchOrder,
+    TaskDispatchSelection,
     TaskWaybillItem,
     TaskLoadingRecord,
     TaskLoadingRecordItem,
@@ -254,6 +255,7 @@ __all__ = [
     "WaybillImportRow",
     "Task",
     "TaskDispatchOrder",
+    "TaskDispatchSelection",
     "TaskWaybillItem",
     "TaskLoadingRecord",
     "TaskLoadingRecordItem",

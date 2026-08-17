@@ -35,6 +35,18 @@ TASK_SIGNED = 5
 TASK_CLOSED = 7
 TASK_CANCELLED = 9
 
+# 已绑定运力且尚未交车/关闭/取消：运力视为占用（待接单或执行中）
+TASK_OCCUPYING_CAPACITY_STATUSES = frozenset(
+    {
+        TASK_PENDING_ASSIGN,
+        TASK_PENDING_DISPATCH,
+        TASK_DISPATCHED,
+        TASK_LOADED,
+        TASK_ON_WAY,
+        TASK_ARRIVED,
+    }
+)
+
 
 TASK_STATUS_LABELS: dict[int, str] = {
     -1: "待分配",

@@ -1,7 +1,7 @@
 """任务单主表 Schemas"""
 
 from datetime import datetime
-from typing import List, Mapping, Optional
+from typing import List, Literal, Mapping, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -72,8 +72,8 @@ class TaskCarrierInfo(BaseModel):
             if not (self.carrierId or self.carrierName):
                 raise ValueError("承运商任务必须选择承运商或填写承运商名称")
         elif self.carrierType == CarrierType.SOCIAL:
-            if not (self.mainDriverName and self.mainDriverPhone and self.plateNumber):
-                raise ValueError("社会运力必须填写司机姓名/电话/车牌")
+            if not self.socialDriverId:
+                raise ValueError("请选择社会运力")
         return self
 
 
@@ -180,6 +180,17 @@ class TaskStatusUpdate(BaseModel):
     remark: Optional[str] = None
 
 
+class DispatchSelectionFeedback(BaseModel):
+    """派车确认时的推荐选择留痕（可选；旧客户端 / LITE 不传则不写记录）。"""
+
+    engine: str = Field(min_length=1, max_length=32)
+    source: Literal["recommended", "search", "manual"]
+    shownCapacityIds: List[int] = Field(default_factory=list)
+    topRecommendedId: Optional[int] = None
+    selectedCapacityId: Optional[int] = None
+    selectedRank: Optional[int] = Field(default=None, ge=1, le=99)
+
+
 class TaskAssignCarrierRequest(BaseModel):
     """派车（设置承运方）。
 
@@ -195,6 +206,7 @@ class TaskAssignCarrierRequest(BaseModel):
     carrierCostType: Optional[int] = None
     carrierCostAmount: Optional[float] = None
     costRemark: Optional[str] = None
+    selection: Optional[DispatchSelectionFeedback] = None
 
 
 class TaskPlanRouteRequest(BaseModel):

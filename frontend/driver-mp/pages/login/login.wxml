@@ -1,45 +1,107 @@
-<view class="page login-page">
-  <view class="hero">
-    <view class="brand">智途司机</view>
-    <view class="slogan">任务进度一手掌握</view>
-  </view>
-
-  <view class="form card">
-    <t-input
-      label="手机号"
-      type="number"
-      maxlength="{{11}}"
-      placeholder="请输入手机号"
-      value="{{phone}}"
-      layout="vertical"
-      clearable
-      bind:change="onPhone"
-    />
-    <t-input
-      label="密码"
-      type="password"
-      placeholder="请输入密码"
-      value="{{password}}"
-      layout="vertical"
-      clearable
-      bind:change="onPassword"
-    />
-
-    <view class="form-actions">
-      <t-button
-        theme="primary"
-        size="large"
-        shape="round"
-        block
-        loading="{{loading}}"
-        disabled="{{loading}}"
-        bind:tap="onSubmit"
-      >登录</t-button>
+<view class="auth">
+  <view class="auth__hero">
+    <view class="auth__status" style="height: {{statusBarHeight}}px;"></view>
+    <view class="auth__brand">
+      <view class="auth__mark">智</view>
+      <view class="auth__title">智途司机端</view>
+      <view class="auth__desc">
+        <text>接单、装车、签收、收款</text>
+        <text>一部手机跑完全程</text>
+      </view>
     </view>
-
-    <view class="links">
-      <text class="link" bindtap="goSms">验证码登录</text>
-      <text class="hint">忘记密码？请用验证码登录后修改</text>
+    <view class="auth__road">
+      <view class="auth__road-trap"></view>
+      <view class="auth__road-dash auth__road-dash--1"></view>
+      <view class="auth__road-dash auth__road-dash--2"></view>
+      <view class="auth__road-dash auth__road-dash--3"></view>
     </view>
   </view>
+
+  <view class="auth__panel">
+    <view class="auth__sells">
+      <view class="auth__sell">
+        <view class="auth__sell-ico">
+          <image src="/assets/login/icon-bell.svg" mode="aspectFit" />
+        </view>
+        <view>
+          <text class="auth__sell-title">调令直接推到微信</text>
+          <text class="auth__sell-desc">不用等电话，派车即到</text>
+        </view>
+      </view>
+      <view class="auth__sell">
+        <view class="auth__sell-ico">
+          <image src="/assets/login/icon-camera.svg" mode="aspectFit" />
+        </view>
+        <view>
+          <text class="auth__sell-title">回单拍照就传</text>
+          <text class="auth__sell-desc">不用再攒一沓纸回公司交</text>
+        </view>
+      </view>
+      <view class="auth__sell">
+        <view class="auth__sell-ico is-accent">
+          <image src="/assets/login/icon-wallet.svg" mode="aspectFit" />
+        </view>
+        <view>
+          <text class="auth__sell-title">运费自己看得见</text>
+          <text class="auth__sell-desc">预付、结算、油卡一目了然</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="auth__field">
+      <text class="auth__label">手机号</text>
+      <input
+        class="auth__input"
+        type="number"
+        maxlength="11"
+        placeholder="请输入手机号"
+        placeholder-class="auth__input-placeholder"
+        value="{{phone}}"
+        bindinput="onPhone"
+      />
+    </view>
+    <view class="auth__field">
+      <text class="auth__label">密码</text>
+      <input
+        class="auth__input"
+        password
+        placeholder="请输入密码"
+        placeholder-class="auth__input-placeholder"
+        value="{{password}}"
+        bindinput="onPassword"
+      />
+    </view>
+
+    <view
+      class="auth__submit {{agreed && !loading ? '' : 'is-off'}}"
+      bindtap="onSubmit"
+    >{{loading ? '正在登录，请稍候…' : '登录'}}</view>
+
+    <view class="auth__agree" bindtap="onToggleAgree">
+      <view class="auth__check {{agreed ? 'is-on' : ''}}">
+        <view wx:if="{{agreed}}" class="auth__check-tick"></view>
+      </view>
+      <view class="auth__agree-text">
+        已阅读并同意
+        <text class="auth__link" catchtap="onOpenPolicy" data-key="service">服务协议</text>
+        与
+        <text class="auth__link" catchtap="onOpenPolicy" data-key="privacy">隐私政策</text>
+        ，授权智途使用手机号匹配司机档案
+      </view>
+    </view>
+
+    <view class="auth__alt">
+      <text class="auth__alt-item" bindtap="goSms">手机验证码登录</text>
+      <text class="auth__alt-item" bindtap="onHelp">登录遇到问题</text>
+    </view>
+  </view>
+</view>
+
+<view wx:if="{{policyVisible}}" class="auth__sheet-mask" bindtap="closePolicy" catchtouchmove="noop"></view>
+<view wx:if="{{policyVisible}}" class="auth__sheet" catchtouchmove="noop">
+  <view class="auth__sheet-title">{{policyTitle}}</view>
+  <scroll-view scroll-y class="auth__sheet-body">
+    <text>{{policyText}}</text>
+  </scroll-view>
+  <view class="auth__sheet-btn" bindtap="closePolicy">我知道了</view>
 </view>

@@ -56,6 +56,9 @@ from app.modules.client.models.task.task_status_event import (
     TASK_EVENT_REVERT_LOAD,
     TASK_EVENT_SOURCE_SYSTEM,
 )
+from app.modules.client.services.capacity.self_capacity.capacity_service import (
+    CapacityService,
+)
 from app.modules.client.services.task.task_status_event_service import (
     TaskStatusEventService,
 )
@@ -717,6 +720,9 @@ class TaskWaybillItemService:
                 reason="全部挂接货物已交车",
             )
             await db.flush()
+            await CapacityService.sync_task_occupancy_status(
+                db, task.capacity_id, remark="任务已交车",
+            )
         elif cur == TASK_SIGNED and not all_signed:
             TaskStatusEventService.apply_status(
                 db, task, TASK_ARRIVED,
@@ -725,6 +731,9 @@ class TaskWaybillItemService:
                 reason="存在被撤销交车的挂接货物",
             )
             await db.flush()
+            await CapacityService.sync_task_occupancy_status(
+                db, task.capacity_id, remark="撤销交车",
+            )
 
     # ------------------------------------------------------------------
     # Task → Item 同步（正向 / 反向）

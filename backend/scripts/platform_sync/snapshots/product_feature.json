@@ -267,7 +267,8 @@
       "biz_task_receipt",
       "biz_task_status_event",
       "biz_task_alert",
-      "biz_task_alert_rule"
+      "biz_task_alert_rule",
+      "biz_task_dispatch_selection"
     ],
     "sort_order": 34,
     "status": 1

@@ -60,7 +60,12 @@ request.interceptors.response.use(
     const reqUrl = error?.config?.url as string | undefined;
     const authLoginFail = isAuthLoginRequest(reqUrl) || isOnAuthPage();
 
-    if (status === 401) {
+    const sessionExpired =
+      status === 401 ||
+      Number(body?.code) === 401 ||
+      (status === 400 && String(msg).includes('请确认登录状态'));
+
+    if (sessionExpired) {
       if (authLoginFail) {
         // 登录/选企业失败：展示后端真实原因，不清会话、不整页跳转
         showFailToast(msg || '登录失败，请重试');

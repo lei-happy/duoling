@@ -26,6 +26,12 @@ PROTECTED_GET_PATHS = [
 # 鉴权失败的合理 HTTP 状态：401 未登录 / 400 缺租户 / 403 无权限
 REJECT_STATUS = {400, 401, 403}
 
+# 司机端受保护接口：未登录必须 401（不能是「缺租户」400，否则小程序不会回登录页）
+# 只选不依赖 platform_db 的路径，避免无 lifespan 时误触 DB 初始化
+DRIVER_PROTECTED_GET_PATHS = [
+    "/api/driver/task/my",
+]
+
 
 class TestAuthGuard:
     @pytest.mark.parametrize("path", PROTECTED_GET_PATHS)
@@ -53,3 +59,20 @@ class TestAuthGuard:
     async def test_unknown_path_404(self, http_client):
         resp = await http_client.get("/api/client/__no_such_endpoint__")
         assert resp.status_code == 404
+
+    @pytest.mark.parametrize("path", DRIVER_PROTECTED_GET_PATHS)
+    async def test_driver_missing_token_is_401(self, http_client, path):
+        resp = await http_client.get(path)
+        assert resp.status_code == 401, (
+            f"{path} 未带 Token 应为 401，实得 {resp.status_code}: {resp.text}"
+        )
+        assert "登录" in (resp.json().get("message") or "")
+
+    @pytest.mark.parametrize("path", DRIVER_PROTECTED_GET_PATHS)
+    async def test_driver_garbage_token_is_401(self, http_client, path):
+        resp = await http_client.get(
+            path, headers={"Authorization": "Bearer not-a-real-jwt"}
+        )
+        assert resp.status_code == 401, (
+            f"{path} 非法 Token 应为 401，实得 {resp.status_code}: {resp.text}"
+        )

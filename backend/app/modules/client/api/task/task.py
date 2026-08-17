@@ -64,6 +64,9 @@ from app.modules.client.services.task.task_loading_record_service import (
     TaskLoadingRecordService,
 )
 from app.modules.client.services.task.task_alert_service import TaskAlertService
+from app.modules.client.services.capacity.self_capacity.recommend import (
+    CapacityRecommendService,
+)
 from app.modules.client.services.task.task_service import TaskService
 from app.modules.client.services.task.task_status_event_service import (
     TaskStatusEventService,
@@ -445,6 +448,22 @@ async def plan_route(
     _require_tenant(current_user)
     task = await TaskService.plan_route(db, task_id, data)
     return success(data=await _task_detail_dump(db, task))
+
+
+@router.get("/{task_id}/capacity-recommendations")
+async def list_capacity_recommendations(
+    task_id: int,
+    keyword: Optional[str] = None,
+    limit: int = Query(20, ge=1, le=50),
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+):
+    """派车运力列表：自有车 heuristic_v1；社会运力 social_pool_v0（评价推荐可替换）。"""
+    _require_tenant(current_user)
+    data = await CapacityRecommendService.recommend_for_task(
+        db, task_id, keyword=keyword, limit=limit,
+    )
+    return success(data=data.model_dump())
 
 
 @router.post("/{task_id}/assign-carrier")

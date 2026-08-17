@@ -7,6 +7,8 @@ import type {
   Task,
   TaskBatchStatusPayload,
   TaskBatchCarrierAssignmentPayload,
+  CapacityRecommendResult,
+  DispatchSelectionFeedback,
   TaskCarrierInfo,
   TaskCreatePayload,
   TaskFinanceSummaryItem,
@@ -92,6 +94,18 @@ export async function updateTaskStatus(
   return Promise.reject(new Error(res.data.message));
 }
 
+export async function listCapacityRecommendations(
+  taskId: number,
+  params?: { keyword?: string; limit?: number }
+) {
+  const res = await request.get<ApiResult<CapacityRecommendResult>>(
+    `/business/task/${taskId}/capacity-recommendations`,
+    { params }
+  );
+  if (res.data.code === 0) return res.data.data;
+  return Promise.reject(new Error(res.data.message));
+}
+
 export async function assignCarrier(
   id: number,
   data: {
@@ -100,6 +114,7 @@ export async function assignCarrier(
     carrierCostType?: number | null;
     carrierCostAmount?: number | null;
     costRemark?: string;
+    selection?: DispatchSelectionFeedback;
   }
 ) {
   const res = await request.post<ApiResult<Task>>(

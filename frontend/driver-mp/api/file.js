@@ -1,6 +1,6 @@
 const { API_BASE } = require('../config/env');
 const { STORAGE_KEYS, getItem } = require('../utils/storage');
-const { toast } = require('../utils/request');
+const { toast, goLogin, isSessionExpired } = require('../utils/request');
 
 /**
  * 上传本地图片临时路径
@@ -23,6 +23,11 @@ function uploadImage(filePath, scene) {
         } catch (e) {
           toast('上传失败，请重试');
           reject(new Error('上传失败，请重试'));
+          return;
+        }
+        if (isSessionExpired(res.statusCode, body)) {
+          goLogin();
+          reject(new Error(body.message || '登录已过期，请重新登录'));
           return;
         }
         if (body.code === 0 && body.data && body.data.url) {

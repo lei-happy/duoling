@@ -1,15 +1,179 @@
-.tip-title {
-  font-size: 34rpx;
+.tenant-page {
+  padding: 16rpx 32rpx 200rpx;
+  background: #f4f6fb;
+}
+
+.tenant-head {
+  padding: 12rpx 4rpx 32rpx;
+}
+
+.tenant-h1 {
+  font-size: 44rpx;
   font-weight: 700;
-  margin-bottom: 12rpx;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  line-height: 1.25;
 }
 
-.tip-desc {
-  font-size: 26rpx;
+.tenant-cap {
+  margin-top: 16rpx;
+  font-size: 27rpx;
+  line-height: 1.6;
+  color: #5a6779;
 }
 
-.loading-wrap {
+.tenant {
   display: flex;
+  align-items: center;
+  gap: 26rpx;
+  padding: 30rpx 32rpx;
+  background: #fff;
+  border-radius: 32rpx;
+  box-shadow: 0 2rpx 4rpx rgba(15, 23, 42, 0.04), 0 12rpx 32rpx -16rpx rgba(15, 23, 42, 0.1);
+  border: 3rpx solid transparent;
+}
+
+.tenant + .tenant {
+  margin-top: 20rpx;
+}
+
+.tenant:active {
+  transform: scale(0.985);
+}
+
+.tenant.is-on {
+  border-color: #1d4ed8;
+  background: #eaf0ff;
+}
+
+.tenant__logo {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 26rpx;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 48rpx 0;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.tenant__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.tenant__name {
+  font-size: 32rpx;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.tenant__sub {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #94a3b8;
+}
+
+.tenant__tag {
+  flex-shrink: 0;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.tenant__arrow {
+  width: 16rpx;
+  height: 16rpx;
+  border-right: 3rpx solid #c3ccda;
+  border-top: 3rpx solid #c3ccda;
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+
+.tenant-help {
+  margin-top: 48rpx;
+}
+
+.tenant-help__title {
+  padding: 0 4rpx 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.tenant-help__card {
+  display: flex;
+  gap: 24rpx;
+  align-items: center;
+  padding: 28rpx;
+  background: #fff;
+  border-radius: 32rpx;
+  box-shadow: 0 2rpx 4rpx rgba(15, 23, 42, 0.04), 0 12rpx 32rpx -16rpx rgba(15, 23, 42, 0.1);
+}
+
+.tenant-help__ico {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 24rpx;
+  background: #fff5e3;
+  color: #b26b00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.tenant-help__name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.tenant-help__desc {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  line-height: 1.55;
+  color: #94a3b8;
+}
+
+.tenant-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  padding: 20rpx 32rpx;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -16rpx 80rpx rgba(15, 23, 42, 0.08);
+}
+
+.tenant-enter {
+  height: 104rpx;
+  border-radius: 28rpx;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 34rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12rpx 36rpx -12rpx rgba(29, 78, 216, 0.55);
+}
+
+.tenant-enter:active {
+  transform: scale(0.975);
+}
+
+.tenant-enter.is-off {
+  background: #c7d7fe;
+  box-shadow: none;
+  transform: none;
 }

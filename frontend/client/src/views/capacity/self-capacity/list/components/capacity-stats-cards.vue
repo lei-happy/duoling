@@ -75,7 +75,7 @@
     {
       key: '2',
       label: '运输中',
-      sub: '任务在途中',
+      sub: '已派任务，暂不可再派',
       statsKey: 'inTransit'
     },
     {

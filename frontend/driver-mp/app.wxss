@@ -8,20 +8,31 @@ page {
   --td-brand-color-light: #eff6ff;
 
   --brand-primary: #1d4ed8;
+  --brand-primary-deep: #1b3ba3;
   --brand-primary-light: #3b82f6;
+  --brand-primary-soft: #eaf0ff;
+  --brand-accent: #f5a524;
+  --brand-accent-deep: #b26b00;
+  --brand-accent-soft: #fff5e3;
   --brand-success: #16a34a;
   --brand-warning: #f59e0b;
   --brand-danger: #dc2626;
   --brand-info: #0ea5e9;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
+  --hero-navy: #0d1b3e;
+  --ink: #0f172a;
+  --ink-2: #5a6779;
+  --ink-3: #94a3b8;
+  --text-primary: #0f172a;
+  --text-secondary: #5a6779;
   --text-muted: #94a3b8;
   --bg-page: #f4f6fb;
   --bg-card: #ffffff;
-  --border-color: #e2e8f0;
+  --border-color: #e7ebf3;
   --radius-sm: 12rpx;
   --radius-md: 20rpx;
   --radius-lg: 28rpx;
+  --radius-ctl: 20rpx;
+  --shadow-card: 0 2rpx 4rpx rgba(15, 23, 42, 0.04), 0 12rpx 32rpx -16rpx rgba(15, 23, 42, 0.1);
 
   background: var(--bg-page);
   color: var(--text-primary);
