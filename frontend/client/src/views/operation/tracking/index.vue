@@ -16,7 +16,7 @@
         :datasource="datasource"
         :show-overflow-tooltip="true"
         :highlight-current-row="true"
-        cache-key="OperationTrackingTable"
+        cache-key="OperationTrackingTable-v2"
       >
         <template #toolbar>
           <el-form :model="where" class="ele-bg-wrap" inline>
@@ -46,6 +46,7 @@
 
         <template #route="{ row }">
           <route-cell
+            :nodes="row.routeNodes"
             :origin="row.origin"
             :destination="row.destination"
             :segment-count="row.segmentCount"
@@ -126,22 +127,23 @@
 
   const columns = ref<Columns>([
     { type: 'index', columnKey: 'index', width: 50, align: 'center' },
-    { prop: 'taskNo', label: '任务单号', minWidth: 160 },
+    { prop: 'taskNo', label: '任务单号', width: 168 },
     {
       prop: 'carrierType',
       columnKey: 'carrierResource',
       label: '承运资源',
-      minWidth: 170,
+      width: 180,
       slot: 'carrierResource'
     },
     {
+      prop: 'origin',
       columnKey: 'route',
       label: '运输线路',
-      minWidth: 200,
+      minWidth: 320,
       showOverflowTooltip: false,
       slot: 'route'
     },
-    { prop: 'totalQuantity', label: '台数', width: 70, align: 'center' },
+    { prop: 'totalQuantity', label: '台数', width: 92, align: 'center' },
     {
       prop: 'actualLoadTime',
       label: '实际装车',

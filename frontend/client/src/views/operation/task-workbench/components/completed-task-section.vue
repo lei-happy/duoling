@@ -23,7 +23,7 @@
       :datasource="datasource"
       :pagination="{ pageSize: 10 }"
       :show-overflow-tooltip="true"
-      :cache-key="`OperationCompletedTaskPool-${activeTab}`"
+      :cache-key="`OperationCompletedTaskPool-v2-${activeTab}`"
     >
       <template #toolbar>
         <el-radio-group v-model="activeTab" @change="onTabChange">
@@ -44,6 +44,7 @@
 
       <template #route="{ row }">
         <route-cell
+          :nodes="row.routeNodes"
           :origin="row.origin"
           :destination="row.destination"
           :segment-count="row.segmentCount"
@@ -169,7 +170,7 @@
   const columns = computed<Columns>(() => {
     const cols: Record<string, unknown>[] = [
       { type: 'index', columnKey: 'index', width: 50, align: 'center' },
-      { prop: 'taskNo', label: '任务单号', minWidth: 160 },
+      { prop: 'taskNo', label: '任务单号', width: 168 },
       {
         prop: 'carrierType',
         label: '承运方式',
@@ -178,19 +179,20 @@
         slot: 'carrierType'
       },
       {
+        prop: 'origin',
         columnKey: 'route',
         label: '运输线路',
-        minWidth: 200,
+        minWidth: 320,
         showOverflowTooltip: false,
         slot: 'route'
       },
       {
         columnKey: 'carrierResource',
         label: '承运运力',
-        minWidth: 170,
+        width: 180,
         slot: 'carrierResource'
       },
-      { prop: 'totalQuantity', label: '台数', width: 80, align: 'center' },
+      { prop: 'totalQuantity', label: '台数', width: 92, align: 'center' },
       {
         prop: 'actualArriveTime',
         label: '实际到货',

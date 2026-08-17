@@ -377,11 +377,39 @@
       </div>
 
       <div v-if="modelValue.length" class="cargo-picker__picked-summary">
-        <div v-if="dominantRoute" class="cargo-picker__route-banner">
-          <span class="cargo-picker__route-banner-label">本单线路</span>
-          <span class="cargo-picker__route-banner-text" :title="dominantRoute">
-            {{ dominantRoute }}
-          </span>
+        <div v-if="dominantRouteView" class="cargo-picker__route-board">
+          <div class="cargo-picker__route-board-head">
+            <span class="cargo-picker__route-board-label">本单线路</span>
+          </div>
+          <div
+            class="cargo-picker__route-board-body"
+            :title="dominantRouteView.fullTitle"
+            :aria-label="dominantRouteView.fullTitle"
+          >
+            <div class="cargo-picker__station is-from">
+              <span
+                v-if="dominantRouteView.originProvince"
+                class="cargo-picker__station-province"
+              >
+                {{ dominantRouteView.originProvince }}
+              </span>
+              <span class="cargo-picker__station-city">{{
+                dominantRouteView.originCity
+              }}</span>
+            </div>
+            <span class="cargo-picker__route-to" aria-hidden="true">至</span>
+            <div class="cargo-picker__station is-to">
+              <span
+                v-if="dominantRouteView.destProvince"
+                class="cargo-picker__station-province"
+              >
+                {{ dominantRouteView.destProvince }}
+              </span>
+              <span class="cargo-picker__station-city">{{
+                dominantRouteView.destCity
+              }}</span>
+            </div>
+          </div>
         </div>
         <div class="cargo-picker__summary">
           <el-tag
@@ -450,12 +478,12 @@
                 >
                   <div class="picked-row__route-line">
                     <span class="picked-row__route-end">{{
-                      pickedOrigin(u.item)
+                      pickedShortOrigin(u.item)
                     }}</span>
                     <span class="picked-row__route-arrow" aria-hidden="true"
                       >→</span>
                     <span class="picked-row__route-end">{{
-                      pickedDestination(u.item)
+                      pickedShortDestination(u.item)
                     }}</span>
                   </div>
                 </el-tooltip>
@@ -655,6 +683,11 @@
   } from '@element-plus/icons-vue';
   import { QuestionCircleOutlined } from '@/components/icons';
   import { formatDateTime } from '@/utils/date-util';
+  import {
+    formatRouteTitle,
+    parseRegionDisplay,
+    shortRegionPath
+  } from '@/utils/region-display';
   import { formatVinDisplay } from '@/utils/vin-util';
   import { listCandidateWaybills } from '@/api/operation/task';
   import type {
@@ -1306,11 +1339,24 @@
     return (p.destination ?? c?.destination ?? '').trim() || '未填';
   }
 
+  function pickedShortOrigin(p: PickedItem): string {
+    return shortRegionPath(pickedOrigin(p), '未填');
+  }
+
+  function pickedShortDestination(p: PickedItem): string {
+    return shortRegionPath(pickedDestination(p), '未填');
+  }
+
   function routeOfPicked(p: PickedItem): string {
     const o = pickedOrigin(p);
     const d = pickedDestination(p);
     if (o === '未填' && d === '未填') return '';
     return `${o} → ${d}`;
+  }
+
+  function splitRouteEnds(route: string): [string, string] {
+    const parts = route.split(/\s*→\s*/);
+    return [parts[0]?.trim() || '', parts[1]?.trim() || ''];
   }
 
   function pickedVinOf(p: PickedItem): string {
@@ -1344,6 +1390,25 @@
   }
 
   const dominantRoute = computed(() => dominantOf(routeOfPicked));
+  const dominantRouteView = computed(() => {
+    const route = dominantRoute.value;
+    if (!route) return null;
+    const item = (props.modelValue || []).find((p) => routeOfPicked(p) === route);
+    const origin = item ? pickedOrigin(item) : splitRouteEnds(route)[0];
+    const dest = item ? pickedDestination(item) : splitRouteEnds(route)[1];
+    const from = parseRegionDisplay(origin === '未填' ? '' : origin, '未填');
+    const to = parseRegionDisplay(dest === '未填' ? '' : dest, '未填');
+    return {
+      originProvince: from.province,
+      originCity: from.cityDistrict,
+      destProvince: to.province,
+      destCity: to.cityDistrict,
+      fullTitle: formatRouteTitle(
+        origin === '未填' ? '' : origin,
+        dest === '未填' ? '' : dest
+      ) || route
+    };
+  });
   const dominantModel = computed(() =>
     dominantOf((p) => `${p.vehicleBrand || ''} / ${p.vehicleModel || ''}`)
   );
@@ -1534,36 +1599,90 @@
     flex-shrink: 0;
   }
 
-  .cargo-picker__route-banner {
+  .cargo-picker__route-board {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .cargo-picker__route-board-head {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    border-radius: 6px;
-    background: var(--el-color-primary-light-9);
-    border: 1px solid var(--el-border-color-lighter);
   }
 
-  .cargo-picker__route-banner-label {
-    flex-shrink: 0;
-    padding: 2px 7px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1.4;
-    color: var(--el-color-primary);
-    background: var(--el-bg-color);
-    border: 1px solid var(--el-color-primary-light-5);
+  .cargo-picker__route-board-label {
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 18px;
+    color: #fff;
+    background: var(--el-color-primary);
   }
 
-  .cargo-picker__route-banner-text {
+  .cargo-picker__route-board-body {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .cargo-picker__station {
     flex: 1;
     min-width: 0;
-    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 2px;
+    padding: 10px 12px;
+    background: var(--el-bg-color);
+    border-radius: 8px;
+
+    &.is-from {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    &.is-to {
+      align-items: flex-end;
+      text-align: right;
+    }
+  }
+
+  .cargo-picker__station-province {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--el-text-color-regular);
+  }
+
+  .cargo-picker__station-city {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 17px;
     font-weight: 700;
-    line-height: 1.45;
+    line-height: 1.3;
     color: var(--el-text-color-primary);
-    word-break: break-all;
+  }
+
+  .cargo-picker__route-to {
+    flex-shrink: 0;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--el-text-color-secondary);
   }
 
   .cargo-picker__chip {

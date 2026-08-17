@@ -29,7 +29,7 @@
         :show-overflow-tooltip="true"
         v-model:selections="selections"
         :default-sort="tableDefaultSort"
-        :cache-key="`OperationTaskPool-v2-${pool.key}-${listSubset}`"
+        :cache-key="`OperationTaskPool-v3-${pool.key}`"
         @done="onTableDone"
         @sort-change="onSortChange"
       >
@@ -116,8 +116,32 @@
           </el-tag>
         </template>
 
+        <template #carrier="{ row }">
+          <el-tooltip
+            v-if="carrierPartyName(row)"
+            :content="carrierPartyName(row)"
+            placement="top"
+            :show-after="200"
+          >
+            <el-tag
+              :type="(CARRIER_TYPE_MAP[row.carrierType]?.type as any) || 'info'"
+              size="small"
+            >
+              {{ CARRIER_TYPE_MAP[row.carrierType]?.label || '--' }}
+            </el-tag>
+          </el-tooltip>
+          <el-tag
+            v-else
+            :type="(CARRIER_TYPE_MAP[row.carrierType]?.type as any) || 'info'"
+            size="small"
+          >
+            {{ CARRIER_TYPE_MAP[row.carrierType]?.label || '--' }}
+          </el-tag>
+        </template>
+
         <template #route="{ row }">
           <route-cell
+            :nodes="row.routeNodes"
             :origin="row.origin"
             :destination="row.destination"
             :segment-count="row.segmentCount"
@@ -145,12 +169,10 @@
               {{ row.carrierShortName || row.carrierName || '--' }}
             </template>
             <template v-else-if="row.carrierType === CARRIER_TYPE.SELF">
-              <span class="ele-text-secondary">自有 ·</span>
-              {{ row.mainDriverName || '待派车' }}
+              {{ row.mainDriverName || '—' }}
             </template>
             <template v-else-if="row.carrierType === CARRIER_TYPE.SOCIAL">
-              <span class="ele-text-secondary">社会 ·</span>
-              {{ row.mainDriverName || '--' }}
+              {{ row.mainDriverName || '—' }}
             </template>
             <template v-else>--</template>
           </div>
@@ -468,6 +490,19 @@
     columnTips.value[column?.columnKey ?? ''] ??
     '';
 
+  const carrierPartyName = (row: Task): string => {
+    if (row.carrierType === CARRIER_TYPE.CARRIER) {
+      return (row.carrierShortName || row.carrierName || '').trim();
+    }
+    if (
+      row.carrierType === CARRIER_TYPE.SELF ||
+      row.carrierType === CARRIER_TYPE.SOCIAL
+    ) {
+      return (row.mainDriverName || '').trim();
+    }
+    return '';
+  };
+
   const alertLevel = (row: Task): number => row.alertLevel ?? 0;
 
   const alertTag = (row: Task) =>
@@ -618,6 +653,7 @@
   const onTableDone = (_result: DoneParams<Task>, parent?: Task) => {
     if (parent != null) return;
     emit('syncStats');
+    nextTick(() => tableRef.value?.doLayout?.());
   };
 
   watch(
@@ -674,6 +710,10 @@
 
 <style lang="scss" scoped>
   .task-pool {
+    :deep(.el-table) {
+      width: 100%;
+    }
+
     &__toolbar {
       display: flex;
       align-items: center;

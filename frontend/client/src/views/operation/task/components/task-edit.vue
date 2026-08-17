@@ -106,7 +106,7 @@
             </span>
           </template>
           <div class="waybill-tab-pane">
-            <task-segment-table v-model="form.segments" />
+            <task-route-itinerary v-model="form.segments" />
           </div>
         </el-tab-pane>
 
@@ -157,7 +157,7 @@
   import type { FormInstance } from 'element-plus';
   import { CircleCheck } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
-  import TaskSegmentTable from './task-segment-table.vue';
+  import TaskRouteItinerary from './task-route-itinerary.vue';
   import TaskCargoPicker from './task-cargo-picker.vue';
   import TaskCarrierPicker from './task-carrier-picker.vue';
   import {
@@ -326,19 +326,34 @@
         carrierName: detail.carrierName || '',
         carrierShortName: detail.carrierShortName || ''
       };
-      form.segments = (detail.segments || []).map((s: TaskSegment) => ({
-        segmentNo: s.segmentNo,
-        fromLocation: s.fromLocation,
-        fromCode: s.fromCode,
-        fromRegionId: s.fromRegionId,
-        toLocation: s.toLocation,
-        toCode: s.toCode,
-        toRegionId: s.toRegionId,
-        mileage: s.mileage,
-        plannedLoadTime: s.plannedLoadTime,
-        plannedArriveTime: s.plannedArriveTime,
-        remark: s.remark
-      }));
+      const existing = detail.segments || [];
+      form.segments = existing.length
+        ? existing.map((s: TaskSegment) => ({
+            segmentNo: s.segmentNo,
+            fromLocation: s.fromLocation,
+            fromCode: s.fromCode,
+            fromRegionId: s.fromRegionId,
+            toLocation: s.toLocation,
+            toCode: s.toCode,
+            toRegionId: s.toRegionId,
+            mileage: s.mileage,
+            plannedLoadTime: s.plannedLoadTime,
+            plannedArriveTime: s.plannedArriveTime,
+            remark: s.remark
+          }))
+        : [
+            {
+              segmentNo: 1,
+              fromLocation: detail.origin || '',
+              fromCode: detail.originCode,
+              fromRegionId: detail.originRegionId ?? undefined,
+              toLocation: detail.destination || '',
+              toCode: detail.destinationCode,
+              toRegionId: detail.destinationRegionId ?? undefined,
+              plannedLoadTime: detail.plannedLoadTime,
+              plannedArriveTime: detail.plannedArriveTime
+            }
+          ];
       form.waybillItems = (detail.waybillItems || []).map(
         (w: TaskWaybillItem) =>
           ({
@@ -366,13 +381,13 @@
 
   function validateSegmentsTab(): boolean {
     if (form.segments.length < 1) {
-      EleMessage.warning({ message: '至少需要 1 段运输路线', plain: true });
+      EleMessage.warning({ message: '请先规划至少 1 段运输', plain: true });
       return false;
     }
     for (const s of form.segments) {
       if (!s.fromLocation?.trim() || !s.toLocation?.trim()) {
         EleMessage.warning({
-          message: `第 ${s.segmentNo} 段起点/终点不能为空`,
+          message: `第 ${s.segmentNo} 段还没选齐起点和终点`,
           plain: true
         });
         return false;

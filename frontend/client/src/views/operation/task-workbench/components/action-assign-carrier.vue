@@ -99,9 +99,13 @@
       class="assign-carrier-batch-table"
     >
       <el-table-column prop="taskNo" label="任务单号" min-width="150" />
-      <el-table-column label="运输线路" min-width="200">
+      <el-table-column label="运输线路" min-width="260">
         <template #default="{ row }">
-          {{ row.origin || '--' }} → {{ row.destination || '--' }}
+          <route-cell
+            :nodes="row.routeNodes"
+            :origin="row.origin"
+            :destination="row.destination"
+          />
         </template>
       </el-table-column>
       <el-table-column
@@ -139,6 +143,7 @@
   import { InfoFilled, Right } from '@element-plus/icons-vue';
   import { EleMessage } from 'ele-admin-plus';
   import TaskCarrierPicker from '../../task/components/task-carrier-picker.vue';
+  import RouteCell from './route-cell.vue';
   import {
     batchCompleteCarrierAssignment,
     completeCarrierAssignment,

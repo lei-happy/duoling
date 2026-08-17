@@ -313,6 +313,10 @@ class TaskListItemOut(BaseModel):
     origin: Optional[str] = None
     destination: Optional[str] = None
     segmentCount: int
+    routeNodes: list[str] = Field(
+        default_factory=list,
+        description="规划后的地点链：起点 → 中转… → 终点",
+    )
     totalQuantity: int
     loadedQuantity: int = Field(default=0, description="已装车台数（聚合 item.status>=1）")
     unloadedQuantity: int = Field(default=0, description="已卸车台数（聚合 item.status>=2）")
@@ -362,7 +366,18 @@ class TaskListItemOut(BaseModel):
         unloaded_quantity: int = 0,
         waybill_status_summary: Optional[Mapping] = None,
         alert: Optional[Mapping] = None,
+        route_nodes: Optional[list[str]] = None,
     ) -> "TaskListItemOut":
+        nodes = [n.strip() for n in (route_nodes or []) if (n or "").strip()]
+        if not nodes:
+            nodes = [
+                x
+                for x in (
+                    (m.origin or "").strip(),
+                    (m.destination or "").strip(),
+                )
+                if x
+            ]
         return cls(
             id=m.id,
             taskNo=m.task_no,
@@ -377,6 +392,7 @@ class TaskListItemOut(BaseModel):
             origin=m.origin,
             destination=m.destination,
             segmentCount=m.segment_count,
+            routeNodes=nodes,
             totalQuantity=m.total_quantity,
             loadedQuantity=int(loaded_quantity or 0),
             unloadedQuantity=int(unloaded_quantity or 0),

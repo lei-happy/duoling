@@ -26,6 +26,8 @@ export type WorkbenchColumnId =
   | 'carrierType'
   /** 承运商 / 司机姓名（按 carrierType 分支展示） */
   | 'carrierName'
+  /** 方式标签 + 承运对象（待派车 / 待装车，避免两列重复） */
+  | 'carrier'
   /** 承运车辆 = 车牌（自有车 / 社会运力 / 承运商代填） */
   | 'plateNumber'
   | 'route'
@@ -117,6 +119,7 @@ const COL: Record<WorkbenchColumnId, string> = {
   taskNo: '任务单号',
   carrierType: '承运方式',
   carrierName: '承运方',
+  carrier: '承运',
   plateNumber: '车牌号',
   route: '运输线路',
   carrierResource: '承运运力',
@@ -143,6 +146,7 @@ const COL: Record<WorkbenchColumnId, string> = {
 const COL_TIP: Partial<Record<WorkbenchColumnId, string>> = {
   carrierType: '自有车、社会运力或承运商',
   carrierName: '自有车显示司机，承运商显示承运商名称',
+  carrier: '承运方式；承运商名称、已指定的司机悬停标签可看',
   carrierResource: '自有车、社会运力显示司机与车牌；承运商显示承运商名称',
   waybillCount: '本任务关联的计划单数量',
   totalQuantity: '本任务承运的商品车总台数',
@@ -229,8 +233,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     quantityOpenCargoDetail: true,
     columns: [
       'taskNo',
-      'carrierType',
-      'carrierName',
+      'carrier',
       'route',
       'waybillCount',
       'totalQuantity',
@@ -260,8 +263,7 @@ export const WORKBENCH_POOLS: WorkbenchPool[] = [
     ],
     columns: [
       'taskNo',
-      'carrierType',
-      'carrierName',
+      'carrier',
       'plateNumber',
       'route',
       'totalQuantity',
@@ -418,14 +420,14 @@ export function buildWorkbenchTableColumns(pool: WorkbenchPool): Columns {
         cols.push({ type: 'selection', width: 48, align: 'center' });
         break;
       case 'taskNo':
-        cols.push({ prop: 'taskNo', label: L.taskNo, minWidth: 160 });
+        cols.push({ prop: 'taskNo', label: L.taskNo, width: 168 });
         break;
       case 'carrierType':
         cols.push(
           withTip(id, {
             prop: 'carrierType',
             label: L.carrierType,
-            width: 110,
+            width: 96,
             align: 'center',
             slot: 'carrierType'
           })
@@ -436,8 +438,19 @@ export function buildWorkbenchTableColumns(pool: WorkbenchPool): Columns {
           withTip(id, {
             columnKey: 'carrierName',
             label: L.carrierName,
-            minWidth: 160,
+            width: 168,
             slot: 'carrierName'
+          })
+        );
+        break;
+      case 'carrier':
+        cols.push(
+          withTip(id, {
+            columnKey: 'carrier',
+            label: L.carrier,
+            width: 96,
+            align: 'center',
+            slot: 'carrier'
           })
         );
         break;
@@ -451,10 +464,12 @@ export function buildWorkbenchTableColumns(pool: WorkbenchPool): Columns {
         });
         break;
       case 'route':
+        // 唯一弹性列：只设 minWidth，剩余宽度都给线路，保证各子集表格铺满
         cols.push({
+          prop: 'origin',
           columnKey: 'route',
           label: L.route,
-          minWidth: 200,
+          minWidth: 320,
           showOverflowTooltip: false,
           slot: 'route'
         });
@@ -464,7 +479,7 @@ export function buildWorkbenchTableColumns(pool: WorkbenchPool): Columns {
           withTip(id, {
             columnKey: 'carrierResource',
             label: L.carrierResource,
-            minWidth: 180,
+            width: 180,
             slot: 'carrierResource'
           })
         );

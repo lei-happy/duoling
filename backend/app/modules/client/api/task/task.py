@@ -209,6 +209,7 @@ async def page_tasks(
         db, task_ids,
     )
     alert_map = await TaskAlertService.top_level_map(db, task_ids)
+    route_map = await TaskService.aggregate_route_nodes(db, task_ids)
     rows = []
     for t in items:
         loaded, unloaded = qty_map.get(int(t.id), (0, 0))
@@ -217,6 +218,7 @@ async def page_tasks(
                 t, loaded_quantity=loaded, unloaded_quantity=unloaded,
                 waybill_status_summary=wb_summary_map.get(int(t.id)),
                 alert=alert_map.get(int(t.id)),
+                route_nodes=route_map.get(int(t.id)),
             ).model_dump()
         )
     return success(data={

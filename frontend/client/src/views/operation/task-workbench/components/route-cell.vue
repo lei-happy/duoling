@@ -1,65 +1,54 @@
 <!--
-  工作台运输线路单元格：市/区 → 市/区，悬停看完整省/市/区。
+  工作台运输线路单元格：完整地点链单行展示，超出省略，悬停看省/市/区全称。
 -->
 <template>
   <div class="wb-route-cell" :title="fullTitle || undefined">
-    <span class="wb-route-cell__side">{{ shortOrigin }}</span>
-    <el-icon class="wb-route-cell__arrow"><Right /></el-icon>
-    <span class="wb-route-cell__side">{{ shortDest }}</span>
-    <el-tag
-      v-if="segmentCount > 1"
-      size="small"
-      type="info"
-      effect="plain"
-      class="wb-route-cell__seg"
-    >
-      {{ segmentCount }} 段
-    </el-tag>
+    {{ lineText }}
   </div>
 </template>
 
 <script lang="ts" setup>
   import { computed } from 'vue';
-  import { Right } from '@element-plus/icons-vue';
-  import { formatRouteTitle, shortRegionPath } from '@/utils/region-display';
+  import {
+    formatRouteNodesTitle,
+    formatRouteTitle,
+    shortRegionPath
+  } from '@/utils/region-display';
 
   const props = defineProps<{
+    nodes?: string[] | null;
     origin?: string | null;
     destination?: string | null;
     segmentCount?: number | null;
   }>();
 
-  const shortOrigin = computed(() => shortRegionPath(props.origin));
-  const shortDest = computed(() => shortRegionPath(props.destination));
-  const fullTitle = computed(() =>
-    formatRouteTitle(props.origin, props.destination)
+  const displayNodes = computed(() => {
+    const fromApi = (props.nodes ?? [])
+      .map((n) => (n ?? '').trim())
+      .filter(Boolean);
+    if (fromApi.length >= 2) return fromApi;
+    const fallback = [props.origin, props.destination]
+      .map((n) => (n ?? '').trim())
+      .filter(Boolean);
+    return fallback.length ? fallback : ['--'];
+  });
+
+  const lineText = computed(() =>
+    displayNodes.value.map((n) => shortRegionPath(n)).join(' → ')
   );
-  const segmentCount = computed(() => props.segmentCount ?? 0);
+
+  const fullTitle = computed(() => {
+    const fromApi = formatRouteNodesTitle(props.nodes);
+    if (fromApi) return fromApi;
+    return formatRouteTitle(props.origin, props.destination);
+  });
 </script>
 
 <style lang="scss" scoped>
   .wb-route-cell {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
     min-width: 0;
-
-    &__side {
-      min-width: 0;
-      flex: 1 1 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    &__arrow {
-      flex-shrink: 0;
-      margin: 0 6px;
-    }
-
-    &__seg {
-      flex-shrink: 0;
-      margin-left: 6px;
-    }
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>

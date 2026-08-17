@@ -209,6 +209,8 @@ export interface Task {
   destinationCode?: string;
   destinationRegionId?: number | null;
   segmentCount?: number;
+  /** 规划后的地点链：起点 → 中转… → 终点 */
+  routeNodes?: string[];
   totalQuantity?: number;
   /** 已装车台数（聚合 item.status>=1） */
   loadedQuantity?: number;

@@ -294,38 +294,101 @@ class TaskService:
     # 调令（原"分段"）
     # ------------------------------------------------------------------
     @staticmethod
+    def _apply_dispatch_order_plan(
+        row: TaskDispatchOrder,
+        src: TaskDispatchOrderIn,
+    ) -> None:
+        """只改规划字段，保留执行状态与实际时间。"""
+        row.dispatch_type = int(src.dispatchType or DISPATCH_TYPE_DEFAULT)
+        row.from_location = src.fromLocation
+        row.from_code = src.fromCode
+        row.from_region_id = src.fromRegionId
+        row.to_location = src.toLocation
+        row.to_code = src.toCode
+        row.to_region_id = src.toRegionId
+        row.mileage = src.mileage
+        row.planned_load_time = src.plannedLoadTime
+        row.planned_arrive_time = src.plannedArriveTime
+        row.remark = src.remark
+
+    @staticmethod
+    async def _vacate_dispatch_order_nos(
+        db: AsyncSession,
+        task_id: int,
+        leftovers: List[TaskDispatchOrder],
+    ) -> None:
+        """软删多余调令，并把 order_no 改成未占用的负数，腾出唯一键。
+
+        ``uk_task_dispatch_order`` 是 (task_id, order_no)，不含 is_deleted；
+        只标删除再插入同序号会撞 ``Duplicate entry``。
+        """
+        if not leftovers:
+            return
+        used_r = await db.execute(
+            select(TaskDispatchOrder.order_no).where(
+                TaskDispatchOrder.task_id == task_id,
+            )
+        )
+        used = {int(n) for (n,) in used_r.all() if n is not None}
+        tombstone = -1
+        for row in leftovers:
+            while tombstone in used and tombstone > -32768:
+                tombstone -= 1
+            if tombstone in used:
+                raise BizException("路线调整失败，请稍后重试")
+            row.order_no = tombstone
+            row.is_deleted = 1
+            used.add(tombstone)
+            tombstone -= 1
+
+    @staticmethod
     async def _replace_dispatch_orders(
         db: AsyncSession,
         task: Task,
         orders_in: List[TaskDispatchOrderIn],
     ) -> List[TaskDispatchOrder]:
-        # 软删现有
+        # 按序号原地更新：配载后已有主线路调令（order_no=1），
+        # 软删再插入会撞 uk_task_dispatch_order，也会弄丢装卸记录的调令引用。
         old = await TaskService.list_dispatch_orders(db, task.id)
-        for s in old:
-            s.is_deleted = 1
-        await db.flush()
-
+        old_by_no = {int(s.order_no): s for s in old}
         ordered = sorted(orders_in, key=lambda x: x.orderNo)
+
+        kept_ids: set[int] = set()
         rows: List[TaskDispatchOrder] = []
-        for s in ordered:
+        pending_inserts: List[TaskDispatchOrder] = []
+        for src in ordered:
+            existing = old_by_no.get(int(src.orderNo))
+            if existing:
+                TaskService._apply_dispatch_order_plan(existing, src)
+                kept_ids.add(int(existing.id))
+                rows.append(existing)
+                continue
             row = TaskDispatchOrder(
                 task_id=task.id,
-                order_no=s.orderNo,
-                dispatch_type=int(s.dispatchType or DISPATCH_TYPE_DEFAULT),
-                from_location=s.fromLocation,
-                from_code=s.fromCode,
-                from_region_id=s.fromRegionId,
-                to_location=s.toLocation,
-                to_code=s.toCode,
-                to_region_id=s.toRegionId,
-                mileage=s.mileage,
-                planned_load_time=s.plannedLoadTime,
-                planned_arrive_time=s.plannedArriveTime,
+                order_no=src.orderNo,
+                dispatch_type=int(src.dispatchType or DISPATCH_TYPE_DEFAULT),
+                from_location=src.fromLocation,
+                from_code=src.fromCode,
+                from_region_id=src.fromRegionId,
+                to_location=src.toLocation,
+                to_code=src.toCode,
+                to_region_id=src.toRegionId,
+                mileage=src.mileage,
+                planned_load_time=src.plannedLoadTime,
+                planned_arrive_time=src.plannedArriveTime,
                 status=DISPATCH_PENDING_LOAD,
-                remark=s.remark,
+                remark=src.remark,
             )
-            db.add(row)
+            pending_inserts.append(row)
             rows.append(row)
+
+        leftovers = [s for s in old if int(s.id) not in kept_ids]
+        await TaskService._vacate_dispatch_order_nos(db, task.id, leftovers)
+        if leftovers:
+            await db.flush()
+
+        for row in pending_inserts:
+            db.add(row)
         await db.flush()
 
         # 主表线路冗余 + 调令数
@@ -1473,6 +1536,50 @@ class TaskService:
             tid: (loaded.get(tid, 0), unloaded.get(tid, 0))
             for tid in ids
         }
+
+    @staticmethod
+    async def aggregate_route_nodes(
+        db: AsyncSession,
+        task_ids: List[int],
+    ) -> dict[int, list[str]]:
+        """按调令顺序拼出地点链：起点 → 中转… → 终点。"""
+        if not task_ids:
+            return {}
+        ids = list({int(i) for i in task_ids if i})
+        r = await db.execute(
+            select(
+                TaskDispatchOrder.task_id,
+                TaskDispatchOrder.order_no,
+                TaskDispatchOrder.from_location,
+                TaskDispatchOrder.to_location,
+            )
+            .where(
+                TaskDispatchOrder.task_id.in_(ids),
+                TaskDispatchOrder.is_deleted == 0,
+            )
+            .order_by(
+                TaskDispatchOrder.task_id.asc(),
+                TaskDispatchOrder.order_no.asc(),
+            )
+        )
+        grouped: dict[int, list[tuple[int, Optional[str], Optional[str]]]] = {}
+        for tid, order_no, frm, to in r.all():
+            grouped.setdefault(int(tid), []).append(
+                (int(order_no), frm, to)
+            )
+        result: dict[int, list[str]] = {}
+        for tid, segs in grouped.items():
+            nodes: list[str] = []
+            head = (segs[0][1] or "").strip()
+            if head:
+                nodes.append(head)
+            for _no, _frm, to in segs:
+                tail = (to or "").strip()
+                if tail:
+                    nodes.append(tail)
+            if nodes:
+                result[tid] = nodes
+        return result
 
     @staticmethod
     async def aggregate_waybill_status_summary(
