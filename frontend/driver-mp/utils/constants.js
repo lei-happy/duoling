@@ -22,7 +22,7 @@ function getDriverDisplayStatus(status, accepted) {
       ? { label: '待装车', level: 'default' }
       : { label: '待接收', level: 'warning' };
   }
-  if (status === 4) return { label: '待签收', level: 'info' };
+  if (status === 4) return { label: '已到达', level: 'info' };
   if (status === 5) return { label: '已完成', level: 'success' };
   return getTaskStatusInfo(status);
 }
@@ -33,7 +33,7 @@ const VISIBLE_STATUS_TABS = [
   { label: '待接收', value: 'waitAccept' },
   { label: '待装车', value: 'waitLoad' },
   { label: '在途', value: '3' },
-  { label: '待签收', value: '4' }
+  { label: '已到达', value: '4' }
 ];
 
 const ITEM_STATUS_MAP = {

@@ -55,7 +55,7 @@
 
 .ticket__route {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 20rpx;
   margin: 28rpx 0 8rpx;
 }
@@ -70,9 +70,19 @@
   margin-left: auto;
 }
 
+.ticket__prov {
+  display: block;
+  font-size: 22rpx;
+  color: #94a3b8;
+  margin-bottom: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .ticket__city {
   display: block;
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: 650;
   color: #0f172a;
   overflow: hidden;
@@ -80,16 +90,10 @@
   white-space: nowrap;
 }
 
-.ticket__sub {
-  display: block;
-  font-size: 24rpx;
-  color: #94a3b8;
-  margin-top: 4rpx;
-}
-
 .ticket__arrow {
   flex: 1;
   height: 2rpx;
+  margin-bottom: 16rpx;
   border-top: 3rpx dashed #cbd5e1;
   position: relative;
 }

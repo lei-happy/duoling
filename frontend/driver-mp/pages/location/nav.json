@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "位置与导航",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

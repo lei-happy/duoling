@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "上报异常",
+  "usingComponents": {
+    "mp-cell": "/components/mp-cell/mp-cell"
+  }
+}

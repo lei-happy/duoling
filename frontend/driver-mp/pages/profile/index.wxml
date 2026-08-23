@@ -6,15 +6,21 @@
       <view class="prof__grow">
         <view class="prof__n">{{realName}}</view>
         <view class="prof__s">{{subText}}</view>
+        <view class="pbadges">
+          <text class="pbadge is-gold">金牌司机</text>
+          <text class="pbadge">安全行驶 {{honor.safeDays}} 天</text>
+          <text class="pbadge">准点率 {{honor.ontime}}%</text>
+        </view>
       </view>
       <text class="prof__arr">›</text>
     </view>
   </view>
 
   <view class="overcard honor-card" bindtap="goHonor">
-    <view class="coming coming--tight">
-      <view class="coming__t">成绩单即将上线</view>
-      <view class="coming__s">安全天数、准点率和评分会显示在这里。</view>
+    <view class="honor-stats">
+      <view><b>{{honor.safeDays}}</b><span>安全行驶天</span></view>
+      <view><b>{{honor.ontime}}</b><span>准点率 %</span></view>
+      <view><b>{{honor.score}}</b><span>服务评分</span></view>
     </view>
   </view>
 
@@ -26,18 +32,18 @@
     <view class="sec-title"><text class="sec-title__h">我的资料</text></view>
     <view class="card card--plain">
       <mp-cell icon="user" title="个人信息" subtitle="手机号、紧急联系人、收款卡" bind:tap="goInfo" />
-      <mp-cell icon="truck" tone="amber" title="我的车与证照" subtitle="车辆和证照档案即将上线" bind:tap="goVehicles" />
-      <mp-cell icon="star" tone="green" title="我的成绩单" subtitle="准点率、安全记录" bind:tap="goHonor" />
+      <mp-cell icon="truck" tone="amber" title="我的车与证照" subtitle="苏A·8F236 + 苏A·H7712挂" extra="2 项将到期" bind:tap="goVehicles" />
+      <mp-cell icon="star" tone="green" title="我的成绩单" subtitle="准点率、安全记录、客户评价" bind:tap="goHonor" />
     </view>
 
     <view class="sec-title"><text class="sec-title__h">设置</text></view>
     <view class="card card--plain">
-      <mp-cell icon="settings" title="通用设置" subtitle="字号、缓存、退出登录" bind:tap="goSettings" />
-      <mp-cell icon="bell" title="通知设置" subtitle="派车、到账提醒即将上线" bind:tap="goNotify" />
+      <mp-cell icon="settings" title="通用设置" subtitle="字号、通知、位置、缓存" bind:tap="goSettings" />
+      <mp-cell icon="bell" title="通知设置" subtitle="派车、到账、证照提醒" extra="{{notifyExtra}}" bind:tap="goNotify" />
       <mp-cell icon="info" title="帮助与反馈" subtitle="常见问题、联系公司" bind:tap="openHelp" />
     </view>
 
-    <view class="ver">智途司机端 · {{tenantName}}</view>
+    <view class="ver">智途司机端 v0.1.0 · {{tenantName}}</view>
   </view>
 </view>
 
@@ -51,7 +57,10 @@
     <view class="faq__q">收入对不上？</view>
     <view class="faq__a">先核对应任务的费用单。还对不上，把单号发给企业财务。</view>
     <view class="faq__q">收不到派车通知？</view>
-    <view class="faq__a">微信订阅消息还没接上。有新调令时，打开工作台就能看到。</view>
+    <view class="faq__a">到「通知设置」把派车开关打开。有新调令时，打开工作台也能看到。</view>
   </view>
-  <view class="btn btn--ghost btn--block" bindtap="closeSheet">知道了</view>
+  <view class="btnrow">
+    <view class="btn btn--ghost" bindtap="callDispatch">打调度</view>
+    <view class="btn btn--ghost" bindtap="callFleet">打车管</view>
+  </view>
 </view>

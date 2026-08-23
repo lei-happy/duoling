@@ -18,7 +18,8 @@ Page({
     plannedText: '0.00',
     actualText: '0.00',
     plannedPayText: '-',
-    actualPayText: '-'
+    actualPayText: '-',
+    flow: []
   },
 
   onLoad(query) {
@@ -53,7 +54,12 @@ Page({
         plannedText: formatMoney(doc.plannedAmount),
         actualText: formatMoney(doc.actualAmount != null ? doc.actualAmount : 0),
         plannedPayText: formatDateTime(doc.plannedPayTime),
-        actualPayText: formatDateTime(doc.actualPayTime)
+        actualPayText: formatDateTime(doc.actualPayTime),
+        flow: [
+          { title: '已提交', sub: formatDateTime(doc.createdAt) || '企业已出单' },
+          { title: st.label, sub: formatDateTime(doc.actualPayTime || doc.plannedPayTime) || '按审批进度走' },
+          { title: doc.status === 3 ? '已打到卡上' : '等财务打款', sub: formatDateTime(doc.actualPayTime) || '到账后会通知你' }
+        ]
       });
     } catch (e) {
       /* handled */

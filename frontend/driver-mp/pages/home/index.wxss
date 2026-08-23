@@ -42,13 +42,33 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  position: relative;
 }
 
-.hd__bell-ico {
-  width: 28rpx;
+.hd__badge {
+  position: absolute;
+  top: -6rpx;
+  right: -6rpx;
+  min-width: 32rpx;
   height: 32rpx;
-  border: 4rpx solid #fff;
-  border-radius: 14rpx 14rpx 8rpx 8rpx;
+  padding: 0 8rpx;
+  border-radius: 999rpx;
+  background: #dc2626;
+  color: #fff;
+  font-size: 20rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quick__ico {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hd__strip {
@@ -56,6 +76,10 @@
   margin-top: 30rpx;
   font-size: 25rpx;
   color: rgba(206, 224, 255, 0.72);
+}
+
+.hd__dot {
+  margin: 0 10rpx;
 }
 
 .mt-8 {
@@ -91,12 +115,6 @@
 
 .quick__i:active {
   transform: scale(0.93);
-}
-
-.quick__ico {
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 30rpx;
 }
 
 .q1 {
@@ -136,6 +154,10 @@
   font-size: 26rpx;
   color: #5a6779;
   line-height: 1.55;
+}
+
+.idlecopy__btn {
+  margin-top: 24rpx;
 }
 
 .week-foot {

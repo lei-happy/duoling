@@ -1,0 +1,11 @@
+.station {
+  display: flex;
+  gap: 16rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f0f3f8;
+}
+.station:last-child { border-bottom: none; }
+.st-t { font-size: 30rpx; font-weight: 600; }
+.meta { margin-top: 6rpx; font-size: 24rpx; color: #94a3b8; }
+.st-d { font-size: 26rpx; color: #1d4ed8; font-weight: 600; }
+.grow { flex: 1; }

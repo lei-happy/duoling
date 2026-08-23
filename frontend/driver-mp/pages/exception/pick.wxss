@@ -1,0 +1,53 @@
+.grow { flex: 1; }
+
+.sos__ico {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.type__ico {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16rpx;
+  background: #eaf0ff;
+  color: #1d4ed8;
+}
+
+.type--amber .type__ico {
+  background: #fff5e3;
+  color: #b26b00;
+}
+
+.type--red .type__ico {
+  background: #fdeaea;
+  color: #dc2626;
+}
+
+.type--gold .type__ico {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.type--info .type__ico {
+  background: #e4f4fd;
+  color: #0369a1;
+}
+
+.sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 28rpx 0;
+  font-size: 30rpx;
+  border-bottom: 1rpx solid #eef2f8;
+}

@@ -1,0 +1,14 @@
+<view class="page {{fontClass}}">
+  <view class="pad">
+    <view class="card">
+      <view class="big">距下次保养还有 {{maint.nextKm}} 公里</view>
+      <view class="meta">到了别硬跑，报给车管排期。</view>
+    </view>
+    <view class="sec-title"><text class="sec-title__h">近 6 个月</text></view>
+    <view class="card card--plain">
+      <view wx:for="{{maint.records}}" wx:key="id">
+        <mp-cell icon="wrench" title="{{item.title}}" subtitle="{{item.sub}}" extra="{{item.extra}}" />
+      </view>
+    </view>
+  </view>
+</view>

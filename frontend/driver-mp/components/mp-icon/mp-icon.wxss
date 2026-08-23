@@ -1,0 +1,26 @@
+.mp-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.mp-icon--sm {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.mp-icon--md {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.mp-icon--lg {
+  width: 48rpx;
+  height: 48rpx;
+}

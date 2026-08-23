@@ -24,3 +24,51 @@
 .pad {
   padding: 0 32rpx;
 }
+
+.oil-sub {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  opacity: 0.78;
+}
+
+.oil-btn {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: none;
+}
+
+.mt-12 { margin-top: 24rpx; }
+.mt-16 { margin-top: 32rpx; }
+
+.yen { font-size: 32rpx; margin-right: 6rpx; }
+
+.wallethd.mini {
+  margin-top: 8rpx;
+}
+
+.qrbox {
+  margin: 24rpx auto;
+  width: 280rpx;
+  height: 280rpx;
+  border-radius: 24rpx;
+  background:
+    repeating-linear-gradient(90deg, #0f172a 0 12rpx, transparent 12rpx 24rpx),
+    repeating-linear-gradient(#0f172a 0 12rpx, transparent 12rpx 24rpx);
+  color: #fff;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 16rpx;
+  font-size: 22rpx;
+}
+
+.actionbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: #fff;
+}
+
+.page-with-action { padding-bottom: 180rpx; }

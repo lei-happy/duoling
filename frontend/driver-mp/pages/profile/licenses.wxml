@@ -1,0 +1,45 @@
+<view class="page {{fontClass}}">
+  <view class="pad">
+    <view class="seg">
+      <view class="seg__i {{tab === 'all' ? 'is-on' : ''}}" data-v="all" bindtap="setTab">全部</view>
+      <view class="seg__i {{tab === 'me' ? 'is-on' : ''}}" data-v="me" bindtap="setTab">我的证</view>
+      <view class="seg__i {{tab === 'car' ? 'is-on' : ''}}" data-v="car" bindtap="setTab">车的证</view>
+    </view>
+    <view class="sec-title">
+      <text class="sec-title__h">需要处理</text>
+      <text class="sec-title__n">{{warns.length}} 项</text>
+    </view>
+    <view class="card">
+      <view wx:for="{{warns}}" wx:key="id" class="lic">
+        <view class="grow">
+          <view class="lic-t">{{item.title}}</view>
+          <view class="meta">{{item.sub}}</view>
+          <view class="bar-track"><view class="bar-fill" style="width: {{item.bar}}%;"></view></view>
+        </view>
+        <text class="tag tag--warn">{{item.tag}}</text>
+      </view>
+    </view>
+    <view class="sec-title">
+      <text class="sec-title__h">正常</text>
+      <text class="sec-title__n">{{ok.length}} 项</text>
+    </view>
+    <view class="card">
+      <view wx:for="{{ok}}" wx:key="id" class="lic">
+        <view class="grow">
+          <view class="lic-t">{{item.title}}</view>
+          <view class="meta">{{item.sub}}</view>
+        </view>
+        <text class="tag tag--ok">{{item.tag}}</text>
+      </view>
+    </view>
+    <view class="btn btn--primary btn--block" bindtap="openRenew">提交换证材料</view>
+  </view>
+</view>
+
+<view wx:if="{{sheet}}" class="sheet-mask" bindtap="closeSheet"></view>
+<view wx:if="{{sheet}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">换证材料</view>
+  <view class="sheet-desc">拍正反面就行，车管李敏会帮你对。</view>
+  <view class="btn btn--primary btn--block" bindtap="submit">交给车管</view>
+</view>

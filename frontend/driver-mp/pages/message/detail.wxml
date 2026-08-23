@@ -1,0 +1,23 @@
+<view class="page page-with-action {{fontClass}}" wx:if="{{msg}}">
+  <view class="pad">
+    <view class="card">
+      <view class="ttl">{{msg.title}}</view>
+      <view class="meta">{{msg.time}}</view>
+      <view class="kv" wx:if="{{msg.taskNo}}"><text class="kv__k">任务单号</text><text class="kv__v">{{msg.taskNo}}</text></view>
+      <view class="kv" wx:if="{{msg.route}}"><text class="kv__k">运输线路</text><text class="kv__v">{{msg.route}}</text></view>
+      <view class="kv" wx:if="{{msg.goods}}"><text class="kv__k">商品车</text><text class="kv__v">{{msg.goods}}</text></view>
+      <view class="kv" wx:if="{{msg.loadTime}}"><text class="kv__k">装车时间</text><text class="kv__v">{{msg.loadTime}}</text></view>
+      <view class="kv" wx:if="{{msg.dispatcher}}"><text class="kv__k">派单调度</text><text class="kv__v">{{msg.dispatcher}}</text></view>
+      <view class="body">{{msg.desc}}</view>
+    </view>
+    <mp-notice
+      wx:if="{{msg.kind === 'task' && msg.taskNo}}"
+      title="2 小时内没接收会自动退回调度"
+      desc="跑不了就点拒绝并说明原因，别让它挂着。"
+    />
+  </view>
+  <view class="actionbar" wx:if="{{msg.kind === 'task' && msg.taskNo}}">
+    <view class="btn btn--ghost" bindtap="goTask">去任务里处理</view>
+    <view class="btn btn--primary grow" bindtap="goTask">接收调令</view>
+  </view>
+</view>

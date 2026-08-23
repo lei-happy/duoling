@@ -1,0 +1,36 @@
+<view class="page {{fontClass}}">
+  <view class="pad">
+    <mp-notice
+      wx:if="{{todo.length}}"
+      title="{{todo.length}} 单还没传，涉及结算"
+      desc="回单不传，这一单的钱会卡着。"
+    />
+    <view class="sec-title">
+      <text class="sec-title__h">等你上传</text>
+      <text class="sec-title__n">{{todo.length}} 单</text>
+    </view>
+  </view>
+  <empty-state wx:if="{{!loading && !todo.length && !done.length}}" text="这会儿没有待传的回单" hint="签收完成后会排到这里。" />
+  <view class="card card--plain" wx:if="{{todo.length}}">
+    <view wx:for="{{todo}}" wx:key="id" data-id="{{item.id}}" bindtap="goUpload">
+      <mp-cell
+        icon="camera"
+        tone="{{item.tone}}"
+        title="{{item.title}}"
+        subtitle="{{item.sub}}"
+        extra="{{item.extra}}"
+      />
+    </view>
+  </view>
+  <view class="pad" wx:if="{{done.length}}">
+    <view class="sec-title">
+      <text class="sec-title__h">已上传</text>
+      <text class="sec-title__n">{{done.length}} 单</text>
+    </view>
+  </view>
+  <view class="card card--plain" wx:if="{{done.length}}">
+    <view wx:for="{{done}}" wx:key="id" data-id="{{item.id}}" bindtap="goUpload">
+      <mp-cell icon="check" tone="green" title="{{item.title}}" subtitle="{{item.sub}}" extra="已传" />
+    </view>
+  </view>
+</view>

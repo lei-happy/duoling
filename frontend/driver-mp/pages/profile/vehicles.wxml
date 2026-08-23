@@ -1,6 +1,66 @@
-<view class="page {{fontClass}}">
-  <view class="coming">
-    <view class="coming__t">车辆和证照即将上线</view>
-    <view class="coming__s">车牌、挂车和证照到期提醒会放在这里。现在有证件要更新，先交给车管或调度。</view>
+<view class="page page-with-action {{fontClass}}">
+  <view class="pad">
+    <view class="card rig">
+      <view class="rig__u">
+        <text class="rig__l">牵引车</text>
+        <view class="plate">{{rig.tractor.plate}}</view>
+        <view class="meta">{{rig.tractor.model}} · {{rig.tractor.year}}</view>
+      </view>
+      <view class="rig__u">
+        <text class="rig__l">挂车</text>
+        <view class="plate plate--yellow">{{rig.trailer.plate}}</view>
+        <view class="meta">{{rig.trailer.model}} · {{rig.trailer.spec}}</view>
+      </view>
+      <view class="gauge">
+        <view><text class="g-v">{{rig.km}}</text><text class="g-l">万公里</text></view>
+        <view><text class="g-v">{{rig.fuel}}</text><text class="g-l">百公里油耗 L</text></view>
+        <view><text class="g-v">{{rig.ontime}}%</text><text class="g-l">准点率</text></view>
+      </view>
+    </view>
+
+    <view class="sec-title">
+      <text class="sec-title__h">证照状态</text>
+      <text class="sec-title__more" bindtap="goLic">全部 ›</text>
+    </view>
+    <view class="card">
+      <view wx:for="{{licenses}}" wx:key="id" class="lic">
+        <view class="grow">
+          <view class="lic-t">{{item.title}}</view>
+          <view class="meta">{{item.sub}}</view>
+        </view>
+        <text class="tag tag--{{item.warn ? 'warn' : 'ok'}}">{{item.tag}}</text>
+      </view>
+    </view>
+
+    <view class="sec-title"><text class="sec-title__h">车况</text></view>
+    <view class="card card--plain">
+      <mp-cell icon="wrench" tone="amber" title="保养提醒" subtitle="距下次保养还有 {{maint.nextKm}} 公里" bind:tap="goMaint" />
+      <mp-cell icon="file" title="维修记录" subtitle="近 6 个月 3 次 · 最近 07-28 换胎" bind:tap="goMaint" />
+      <mp-cell icon="warn" tone="red" title="违章记录" subtitle="{{maint.violation}}" extra="1" bind:tap="onViolation" />
+    </view>
+  </view>
+  <view class="actionbar">
+    <view class="btn btn--ghost btn--narrow" bindtap="onCall">
+      <mp-icon name="phone" size="sm" />
+      电话
+    </view>
+    <view class="btn btn--primary grow" bindtap="openRepair">报修 / 申请保养</view>
+  </view>
+</view>
+
+<view wx:if="{{sheet === 'repair'}}" class="sheet-mask" bindtap="closeSheet"></view>
+<view wx:if="{{sheet === 'repair'}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">报修 / 申请保养</view>
+  <view class="chips">
+    <view class="chip {{issue === '保养' ? 'is-on' : ''}}" data-v="保养" bindtap="setIssue">到保养周期</view>
+    <view class="chip {{issue === '轮胎' ? 'is-on' : ''}}" data-v="轮胎" bindtap="setIssue">轮胎</view>
+    <view class="chip {{issue === '制动' ? 'is-on' : ''}}" data-v="制动" bindtap="setIssue">制动</view>
+    <view class="chip {{issue === '其他' ? 'is-on' : ''}}" data-v="其他" bindtap="setIssue">其他</view>
+  </view>
+  <t-textarea placeholder="哪里不舒服，写清楚" value="{{remark}}" bind:change="onRemark" />
+  <view class="btnrow mt-16">
+    <view class="btn btn--ghost" bindtap="closeSheet">取消</view>
+    <view class="btn btn--primary" bindtap="submitRepair">提交</view>
   </view>
 </view>

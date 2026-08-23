@@ -1,0 +1,72 @@
+.navcard {
+  margin: -48rpx 32rpx 0;
+  position: relative;
+  z-index: 2;
+}
+
+.nav-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-top: 8rpx;
+}
+
+.nav-km {
+  font-size: 58rpx;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.t-cap {
+  font-size: 24rpx;
+  color: #94a3b8;
+}
+
+.cell-t {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.meta {
+  font-size: 24rpx;
+  color: #94a3b8;
+  line-height: 1.55;
+}
+
+.switch-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+}
+
+.grow {
+  flex: 1;
+}
+
+.track + .track {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #e7ebf3;
+}
+
+.track__t {
+  font-size: 29rpx;
+  font-weight: 600;
+}
+
+.mt-12 {
+  margin-top: 24rpx;
+}
+
+.mt-card {
+  margin-top: 24rpx;
+}
+
+.sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 28rpx 0;
+  font-size: 30rpx;
+  border-bottom: 1rpx solid #eef2f8;
+}

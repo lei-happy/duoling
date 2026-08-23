@@ -1,5 +1,6 @@
 <view class="page page-with-action">
   <view class="card">
+    <view class="tips">四角齐全 · 签章清楚 · 别拍反光</view>
     <view class="section-title">回单图片（最多 9 张）</view>
     <t-upload
       files="{{fileList}}"

@@ -32,8 +32,14 @@
     </view>
     <view wx:for="{{item.list}}" wx:for-item="task" wx:key="id" class="swipe">
       <view class="swipe__acts">
-        <view class="a-primary" data-dest="{{task.destination.title}}" catchtap="onNav">导航</view>
-        <view class="a-grey" catchtap="onDispatch">找调度</view>
+        <view class="a-primary" data-dest="{{task.destination.title}}" catchtap="onNav">
+          <mp-icon name="nav" size="sm" color="#ffffff" />
+          导航
+        </view>
+        <view class="a-grey" catchtap="onDispatch">
+          <mp-icon name="phone" size="sm" color="#ffffff" />
+          找调度
+        </view>
       </view>
       <view
         class="swipe__body"
@@ -78,6 +84,14 @@
     <view class="seg__i {{filter.carrier === '2' ? 'is-on' : ''}}" data-k="carrier" data-v="2" bindtap="setFilter">承运商</view>
     <view class="seg__i {{filter.carrier === '3' ? 'is-on' : ''}}" data-k="carrier" data-v="3" bindtap="setFilter">社会运力</view>
   </view>
+  <view class="field-l">目的地</view>
+  <view class="chips">
+    <view class="chip {{filter.dest === '' ? 'is-on' : ''}}" data-k="dest" data-v="" bindtap="setFilter">不限</view>
+    <view class="chip {{filter.dest === '杭州' ? 'is-on' : ''}}" data-k="dest" data-v="杭州" bindtap="setFilter">杭州</view>
+    <view class="chip {{filter.dest === '宁波' ? 'is-on' : ''}}" data-k="dest" data-v="宁波" bindtap="setFilter">宁波</view>
+    <view class="chip {{filter.dest === '上海' ? 'is-on' : ''}}" data-k="dest" data-v="上海" bindtap="setFilter">上海</view>
+    <view class="chip {{filter.dest === '常州' ? 'is-on' : ''}}" data-k="dest" data-v="常州" bindtap="setFilter">常州</view>
+  </view>
   <view class="btnrow mt-16">
     <view class="btn btn--ghost" bindtap="clearFilter">清空条件</view>
     <view class="btn btn--primary" bindtap="applyFilter">查看结果</view>
@@ -88,8 +102,17 @@
   <view class="sheet__grab"></view>
   <view class="sheet__title">拒绝调令</view>
   <view class="sheet-desc">拒单后，这单会退回调度重新派。请写清楚原因。</view>
+  <view class="chips">
+    <view
+      wx:for="{{rejectReasons}}"
+      wx:key="*this"
+      class="chip {{rejectPick === item ? 'is-on' : ''}}"
+      data-v="{{item}}"
+      bindtap="pickReject"
+    >{{item}}</view>
+  </view>
   <t-textarea
-    placeholder="请填写拒单原因（必填）"
+    placeholder="补充说明（选「其他」时必填）"
     value="{{rejectReason}}"
     maxlength="{{255}}"
     indicator

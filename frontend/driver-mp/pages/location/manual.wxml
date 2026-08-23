@@ -1,0 +1,32 @@
+<view class="page {{fontClass}}">
+  <view class="pad">
+    <mp-notice theme="info" title="手动报一次，调度立刻能看到" desc="适合信号不好，或者你临时关了自动上报的时候。" />
+    <view class="card">
+      <view class="field-l">当前位置</view>
+      <view class="picker">{{place}}</view>
+      <view class="field-l">现在什么情况</view>
+      <view class="chips">
+        <view
+          wx:for="{{situations}}"
+          wx:key="*this"
+          class="chip {{sit === item ? 'is-on' : ''}}"
+          data-v="{{item}}"
+          bindtap="setSit"
+        >{{item}}</view>
+      </view>
+      <view class="field-l">预计到达</view>
+      <view class="chips">
+        <view
+          wx:for="{{etas}}"
+          wx:key="*this"
+          class="chip {{eta === item ? 'is-on' : ''}}"
+          data-v="{{item}}"
+          bindtap="setEta"
+        >{{item}}</view>
+      </view>
+      <view class="field-l">说明（选填）</view>
+      <t-textarea placeholder="例如：德清收费站前 3 公里排队" value="{{remark}}" bind:change="onRemark" />
+    </view>
+    <view class="btn btn--primary btn--block btn--lg" bindtap="submit">上报当前位置</view>
+  </view>
+</view>

@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "填写上报",
+  "usingComponents": {
+    "mp-notice": "/components/mp-notice/mp-notice"
+  }
+}

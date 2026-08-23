@@ -15,13 +15,13 @@
 
   <view wx:if="{{!idle}}" class="ticket__route">
     <view class="ticket__place">
+      <text wx:if="{{view.origin.province}}" class="ticket__prov">{{view.origin.province}}</text>
       <text class="ticket__city">{{view.origin.title}}</text>
-      <text wx:if="{{view.origin.sub}}" class="ticket__sub">{{view.origin.sub}}</text>
     </view>
     <view class="ticket__arrow"></view>
     <view class="ticket__place is-right">
+      <text wx:if="{{view.destination.province}}" class="ticket__prov">{{view.destination.province}}</text>
       <text class="ticket__city">{{view.destination.title}}</text>
-      <text wx:if="{{view.destination.sub}}" class="ticket__sub">{{view.destination.sub}}</text>
     </view>
   </view>
 

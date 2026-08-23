@@ -1,0 +1,38 @@
+<view class="page {{fontClass}}">
+  <view class="pad">
+    <view class="seg">
+      <view class="seg__i {{tab === 'all' ? 'is-on' : ''}}" data-v="all" bindtap="setTab">全部</view>
+      <view class="seg__i {{tab === 'fuel' ? 'is-on' : ''}}" data-v="fuel" bindtap="setTab">加油</view>
+      <view class="seg__i {{tab === 'recharge' ? 'is-on' : ''}}" data-v="recharge" bindtap="setTab">充值</view>
+      <view class="seg__i {{tab === 'deduct' ? 'is-on' : ''}}" data-v="deduct" bindtap="setTab">扣款</view>
+    </view>
+    <view class="overcard">
+      <view class="stats">
+        <view class="stat"><text class="stat__v">2,000</text><text class="stat__l">本月充值</text></view>
+        <view class="stat is-amber"><text class="stat__v">2,860</text><text class="stat__l">本月消耗</text></view>
+        <view class="stat"><text class="stat__v">1,240</text><text class="stat__l">当前余额</text></view>
+      </view>
+    </view>
+    <view class="sec-title"><text class="sec-title__h">按任务归集</text></view>
+    <view class="card">
+      <view wx:for="{{groups}}" wx:key="title" class="flow">
+        <view class="grow">
+          <view class="fl-t">{{item.title}}</view>
+          <view class="meta">{{item.sub}}</view>
+        </view>
+        <view class="fl-n">{{item.amount}}</view>
+      </view>
+    </view>
+    <view class="sec-title"><text class="sec-title__h">明细</text></view>
+    <view class="card">
+      <view wx:for="{{list}}" wx:key="id" class="flow">
+        <view class="grow">
+          <view class="fl-t">{{item.title}}</view>
+          <view class="meta">{{item.sub}}</view>
+        </view>
+        <view class="fl-n {{item.tone === 'ok' ? 'is-ok' : 'is-bad'}}">{{item.amount}}</view>
+      </view>
+    </view>
+    <view class="center-cap">对某一笔有疑问，长按可以发起复核</view>
+  </view>
+</view>

@@ -1,0 +1,77 @@
+<view class="page page-with-action {{fontClass}}">
+  <view class="pad">
+    <mp-notice
+      wx:if="{{type === 'crash'}}"
+      title="先确认人是否安全，再填表"
+      desc="有人伤先打 120 和 122。系统这边不着急，能补录。"
+    />
+    <view class="card">
+      <view class="cell-t">{{taskNo}}</view>
+      <view class="meta">{{route}}</view>
+    </view>
+
+    <view class="card" wx:if="{{type !== 'crash'}}">
+      <view class="field-l">原因</view>
+      <view class="chips">
+        <view
+          wx:for="{{reasons}}"
+          wx:key="*this"
+          class="chip {{reason === item ? 'is-on' : ''}}"
+          data-v="{{item}}"
+          bindtap="setReason"
+        >{{item}}</view>
+      </view>
+      <block wx:if="{{type === 'delay'}}">
+        <view class="field-l">预计还要多久</view>
+        <view class="chips">
+          <view
+            wx:for="{{delays}}"
+            wx:key="*this"
+            class="chip {{delay === item ? 'is-on' : ''}}"
+            data-v="{{item}}"
+            bindtap="setDelay"
+          >{{item}}</view>
+        </view>
+      </block>
+      <view class="field-l">说明（选填）</view>
+      <t-textarea placeholder="时间、地点、怎么发生的，写清楚就行" value="{{remark}}" bind:change="onRemark" />
+    </view>
+
+    <view class="card" wx:if="{{type === 'crash'}}">
+      <view class="field-l">有没有人受伤</view>
+      <view class="chips">
+        <view class="chip {{hurt === 'no' ? 'is-on' : ''}}" data-k="hurt" data-v="no" bindtap="setKV">没有人受伤</view>
+        <view class="chip {{hurt === 'yes' ? 'is-on' : ''}}" data-k="hurt" data-v="yes" bindtap="setKV">有人受伤，已叫救护车</view>
+      </view>
+      <view class="field-l">车还能不能开</view>
+      <view class="chips">
+        <view class="chip {{drive === 'ok' ? 'is-on' : ''}}" data-k="drive" data-v="ok" bindtap="setKV">能继续开</view>
+        <view class="chip {{drive === 'tow' ? 'is-on' : ''}}" data-k="drive" data-v="tow" bindtap="setKV">要拖车</view>
+        <view class="chip {{drive === 'police' ? 'is-on' : ''}}" data-k="drive" data-v="police" bindtap="setKV">等交警处理</view>
+      </view>
+      <view class="field-l">商品车有没有损伤</view>
+      <view class="chips">
+        <view class="chip {{cargo === 'no' ? 'is-on' : ''}}" data-k="cargo" data-v="no" bindtap="setKV">没有</view>
+        <view class="chip {{cargo === 'one' ? 'is-on' : ''}}" data-k="cargo" data-v="one" bindtap="setKV">有，1 台</view>
+        <view class="chip {{cargo === 'more' ? 'is-on' : ''}}" data-k="cargo" data-v="more" bindtap="setKV">有，多台</view>
+      </view>
+      <view class="field-l">经过说明</view>
+      <t-textarea placeholder="时间、地点、怎么发生的，写清楚就行" value="{{remark}}" bind:change="onRemark" />
+    </view>
+
+    <mp-notice
+      wx:if="{{type === 'delay'}}"
+      theme="info"
+      title="提交后调度和客户都会收到"
+      desc="会改这一单的预计到达。你不用再挨个打电话。"
+    />
+  </view>
+
+  <view class="actionbar">
+    <view class="btn btn--ghost btn--narrow" bindtap="callDispatch">
+      <mp-icon name="phone" size="sm" />
+      电话
+    </view>
+    <view class="btn btn--primary btn--lg grow" bindtap="submit">提交上报</view>
+  </view>
+</view>

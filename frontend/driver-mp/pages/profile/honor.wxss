@@ -1,1 +1,10 @@
-/* 空态页 */
+.head { text-align: center; }
+.gold { font-size: 40rpx; font-weight: 700; color: #b26b00; }
+.meta { margin-top: 8rpx; font-size: 24rpx; color: #94a3b8; }
+.overcard { margin: 0 0 8rpx; }
+.kpi + .kpi { margin-top: 24rpx; }
+.kpi-h { display: flex; justify-content: space-between; font-size: 27rpx; }
+.bar-fill.is-blue { background: #1d4ed8; }
+.rev + .rev { margin-top: 24rpx; padding-top: 24rpx; border-top: 1rpx solid #f0f3f8; }
+.rev-t { font-size: 28rpx; font-weight: 600; }
+.rev-s { margin-top: 8rpx; font-size: 26rpx; color: #5a6779; line-height: 1.55; }

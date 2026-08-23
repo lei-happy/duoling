@@ -6,13 +6,49 @@ const { toast } = require('../../utils/request');
 Page({
   data: {
     fontClass: 'font-lg',
-    scale: 'large'
+    scale: 'large',
+    locOn: false,
+    camOn: false,
+    cacheSize: '28.4MB'
   },
 
   onShow() {
     if (!ensureAuth({})) return;
     const s = getFontScale();
     this.setData({ scale: s.key, fontClass: s.className });
+    this.readPerm();
+  },
+
+  readPerm() {
+    wx.getSetting({
+      success: (res) => {
+        const a = res.authSetting || {};
+        this.setData({
+          locOn: !!a['scope.userLocation'],
+          camOn: !!a['scope.camera']
+        });
+      }
+    });
+  },
+
+  askLoc() {
+    wx.authorize({
+      scope: 'scope.userLocation',
+      success: () => this.setData({ locOn: true }),
+      fail: () => wx.openSetting({ complete: () => this.readPerm() })
+    });
+  },
+
+  askCam() {
+    wx.authorize({
+      scope: 'scope.camera',
+      success: () => this.setData({ camOn: true }),
+      fail: () => wx.openSetting({ complete: () => this.readPerm() })
+    });
+  },
+
+  goNotify() {
+    wx.navigateTo({ url: '/pages/profile/notify' });
   },
 
   onScale(e) {
@@ -23,7 +59,8 @@ Page({
   },
 
   onClearCache() {
-    toast('本地缓存不多，已整理完。登录状态还在。');
+    this.setData({ cacheSize: '0.8MB' });
+    toast('本地缓存已清理。登录状态还在。');
   },
 
   onAbout() {

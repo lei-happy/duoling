@@ -23,7 +23,20 @@
     "pages/profile/settings",
     "pages/profile/vehicles",
     "pages/profile/notify",
-    "pages/message/index"
+    "pages/message/index",
+    "pages/message/detail",
+    "pages/location/nav",
+    "pages/location/manual",
+    "pages/exception/pick",
+    "pages/exception/form",
+    "pages/exception/track",
+    "pages/task/inbox",
+    "pages/task/execute",
+    "pages/task/receipt-ok",
+    "pages/finance/stations",
+    "pages/finance/oil-flow",
+    "pages/profile/licenses",
+    "pages/profile/maint"
   ],
   "window": {
     "navigationBarBackgroundColor": "#1d4ed8",
@@ -85,7 +98,13 @@
     "t-upload": "tdesign-miniprogram/upload/upload",
     "t-image": "tdesign-miniprogram/image/image",
     "t-divider": "tdesign-miniprogram/divider/divider",
-    "t-notice-bar": "tdesign-miniprogram/notice-bar/notice-bar"
+    "t-notice-bar": "tdesign-miniprogram/notice-bar/notice-bar",
+    "mp-icon": "/components/mp-icon/mp-icon"
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于在途位置上报和导航到卸货点"
+    }
   },
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"

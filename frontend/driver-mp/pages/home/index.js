@@ -1,11 +1,14 @@
 const { ensureAuth } = require('../../utils/auth');
 const { getUserInfo, getTenantCode } = require('../../services/session');
-const { listMyTasks, acceptTask, rejectTask, depart, confirmArrive } = require('../../api/task');
+const { listMyTasks, acceptTask, rejectTask } = require('../../api/task');
 const { listMyReceipts } = require('../../api/task-receipt');
 const { toast } = require('../../utils/request');
 const { getCapsuleSafe, greetingByHour } = require('../../utils/nav');
 const { getFontScale } = require('../../utils/font');
 const { buildTicketView, weekDays, isActiveTask } = require('../../utils/task-view');
+const { getWeather } = require('../../services/mock/weather');
+const { getUnreadCount } = require('../../services/mock/message');
+const { goNav, goException, callDispatcher, REJECT_REASONS } = require('../../utils/action');
 
 Page({
   data: {
@@ -18,9 +21,13 @@ Page({
     running: null,
     pending: [],
     receiptHint: null,
-    week: { days: [], rangeText: '', tripCount: 0, sundayRest: false },
+    week: { days: [], rangeText: '', tripCount: 0, kmText: '0', sundayRest: false },
+    weather: getWeather(),
+    unread: 0,
     sheet: '',
     rejectReason: '',
+    rejectPick: '',
+    rejectReasons: REJECT_REASONS,
     rejectId: 0,
     acting: false
   },
@@ -35,7 +42,9 @@ Page({
       padTop: safe.padTop,
       padRight: safe.padRight,
       hello: greetingByHour(name),
-      tenantName: user.tenantName || getTenantCode() || '未选择企业'
+      tenantName: user.tenantName || getTenantCode() || '未选择企业',
+      weather: getWeather(),
+      unread: getUnreadCount()
     });
     this.load();
   },
@@ -117,24 +126,21 @@ Page({
     if (id) wx.navigateTo({ url: `/pages/task/detail?id=${id}` });
   },
 
-  onNavHint() {
-    const dest = this.data.running && this.data.running.destination && this.data.running.destination.title;
-    if (dest && dest !== '-') {
-      wx.setClipboardData({
-        data: dest,
-        success: () => toast('目的地已复制，导航还没接上，先贴到地图里用')
-      });
-      return;
-    }
-    toast('导航还没接上，先到任务详情里看卸货点');
+  onNav() {
+    const run = this.data.running;
+    goNav({
+      taskId: run && run.id,
+      dest: run && run.destination && run.destination.title,
+      taskNo: run && run.taskNo
+    });
+  },
+
+  onCallDispatch() {
+    callDispatcher();
   },
 
   onReceipt() {
-    if (this.data.receiptHint) {
-      this.goReceiptHint();
-      return;
-    }
-    toast('这会儿没有待传的回单');
+    wx.navigateTo({ url: '/pages/task/inbox' });
   },
 
   goReceiptHint() {
@@ -143,22 +149,30 @@ Page({
   },
 
   goFuel() {
-    toast('油卡流水还没接上，先去看资金账户');
     wx.navigateTo({ url: '/pages/finance/fund-account' });
   },
 
   openExcp() {
-    this.setData({ sheet: 'excp' });
+    const run = this.data.running;
+    goException({
+      taskId: run && run.id,
+      taskNo: run && run.taskNo,
+      route: run ? `${run.origin.title} → ${run.destination.title}` : ''
+    });
   },
 
   openReject(e) {
     const id = Number(e.currentTarget.dataset.id);
-    this.setData({ sheet: 'reject', rejectId: id, rejectReason: '' });
+    this.setData({ sheet: 'reject', rejectId: id, rejectReason: '', rejectPick: '' });
   },
 
   closeSheet() {
     if (this.data.acting) return;
     this.setData({ sheet: '', rejectId: 0, rejectReason: '' });
+  },
+
+  pickReject(e) {
+    this.setData({ rejectPick: e.currentTarget.dataset.v });
   },
 
   onRejectReason(e) {
@@ -183,9 +197,11 @@ Page({
   },
 
   async submitReject() {
-    const reason = (this.data.rejectReason || '').trim();
+    const extra = (this.data.rejectReason || '').trim();
+    const pick = this.data.rejectPick;
+    const reason = pick === '其他' || !pick ? extra : (extra ? `${pick}；${extra}` : pick);
     if (!reason) {
-      toast('请填写拒单原因');
+      toast('请选择或填写拒单原因');
       return;
     }
     if (!this.data.rejectId || this.data.acting) return;
@@ -204,37 +220,13 @@ Page({
     }
   },
 
-  async onDepart() {
+  onDepart() {
     const id = this.data.running && this.data.running.id;
-    if (!id || this.data.acting) return;
-    this.setData({ acting: true });
-    wx.showLoading({ title: '正在确认出发，请稍候…', mask: true });
-    try {
-      await depart(id);
-      toast('已确认出发');
-      await this.load();
-    } catch (err) {
-      /* handled */
-    } finally {
-      wx.hideLoading();
-      this.setData({ acting: false });
-    }
+    if (id) wx.navigateTo({ url: `/pages/task/execute?id=${id}&action=depart` });
   },
 
-  async onArrive() {
+  onArrive() {
     const id = this.data.running && this.data.running.id;
-    if (!id || this.data.acting) return;
-    this.setData({ acting: true });
-    wx.showLoading({ title: '正在确认到达，请稍候…', mask: true });
-    try {
-      await confirmArrive(id);
-      toast('已确认到达');
-      await this.load();
-    } catch (err) {
-      /* handled */
-    } finally {
-      wx.hideLoading();
-      this.setData({ acting: false });
-    }
+    if (id) wx.navigateTo({ url: `/pages/task/execute?id=${id}&action=confirm-arrive` });
   }
 });

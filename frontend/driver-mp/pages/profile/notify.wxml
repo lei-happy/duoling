@@ -1,6 +1,26 @@
 <view class="page {{fontClass}}">
-  <view class="coming">
-    <view class="coming__t">订阅消息即将上线</view>
-    <view class="coming__s">派车、到账和证照提醒会走微信通知。上线前请打开工作台查看新调令。</view>
+  <view class="pad">
+    <view class="sec-title"><text class="sec-title__h">微信服务通知</text></view>
+    <view class="card">
+      <view wx:for="{{items}}" wx:key="key" class="subrow">
+        <view class="grow">
+          <view class="sub-t">{{item.title}}</view>
+          <view class="meta">{{item.desc}}</view>
+        </view>
+        <view class="switch {{item.on ? 'is-on' : ''}}" data-k="{{item.key}}" bindtap="toggle"></view>
+      </view>
+    </view>
+    <view class="sec-title"><text class="sec-title__h">免打扰</text></view>
+    <view class="card">
+      <view class="subrow">
+        <view class="grow">
+          <view class="sub-t">夜间免打扰</view>
+          <view class="meta">23:00 – 06:00 只推派车通知，其余次日再发</view>
+        </view>
+        <view class="switch {{quiet ? 'is-on' : ''}}" bindtap="toggleQuiet"></view>
+      </view>
+    </view>
+    <view class="center-cap">派车通知不受免打扰限制。任务是要过夜的，漏了没法补。</view>
+    <view class="btn btn--primary btn--block" bindtap="reauth">重新授权微信通知</view>
   </view>
 </view>

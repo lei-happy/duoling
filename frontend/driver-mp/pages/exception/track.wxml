@@ -1,0 +1,29 @@
+<view class="page {{fontClass}}">
+  <view class="pad" wx:if="{{item}}">
+    <view class="card">
+      <view class="cell-t">{{item.title}}</view>
+      <view class="meta">{{item.taskNo}} · {{item.time}}</view>
+      <view class="tag tag--{{item.status === '已处理' ? 'ok' : 'warn'}} mt-tag">{{item.status}}</view>
+    </view>
+    <view class="card">
+      <view class="kv" wx:if="{{item.oldEta}}"><text class="kv__k">原到达时间</text><text class="kv__v">{{item.oldEta}}</text></view>
+      <view class="kv" wx:if="{{item.newEta}}"><text class="kv__k">新预计到达</text><text class="kv__v">{{item.newEta}}</text></view>
+      <view class="field-l">处理过程</view>
+      <view class="timeline">
+        <view class="tl">
+          <view class="tl__t">你已上报</view>
+          <view class="tl__s">{{item.time}}</view>
+        </view>
+        <view class="tl">
+          <view class="tl__t">调度已收到</view>
+          <view class="tl__s">系统已同步给客户</view>
+        </view>
+        <view class="tl">
+          <view class="tl__t">调度回复</view>
+          <view class="tl__s">{{item.reply}}</view>
+        </view>
+      </view>
+    </view>
+    <view class="btn btn--ghost btn--block" bindtap="callDispatch">打电话给调度</view>
+  </view>
+</view>

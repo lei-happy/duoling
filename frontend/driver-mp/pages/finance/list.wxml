@@ -18,7 +18,7 @@
 
     <view class="sec-title"><text class="sec-title__h">快捷</text></view>
     <view class="card card--plain">
-      <mp-cell icon="fuel" tone="amber" title="资金账户与油卡" subtitle="往来账；油卡流水即将上线" bind:tap="goFund" />
+      <mp-cell icon="fuel" tone="amber" title="资金账户与油卡" subtitle="油卡余额、往来账、附近加油站" bind:tap="goFund" />
       <mp-cell icon="chart" tone="green" title="收入汇总" subtitle="近几个月趋势" bind:tap="goSummary" />
       <mp-cell icon="card" title="我的收款账户" subtitle="{{accountHint}}" bind:tap="goAccount" />
     </view>

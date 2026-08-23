@@ -1,7 +1,7 @@
 <view class="cell" bindtap="onTap">
   <view wx:if="{{initial}}" class="cell__ico is-letter">{{initial}}</view>
   <view wx:elif="{{icon || tone}}" class="cell__ico {{tone ? 'is-' + tone : ''}}">
-    <view class="cell__mark cell__mark--{{icon || 'dot'}}"></view>
+    <mp-icon name="{{icon || 'info'}}" size="md" />
   </view>
   <view class="cell__main">
     <text class="cell__t">{{title}}</text>

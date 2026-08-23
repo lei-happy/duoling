@@ -3,6 +3,7 @@
   "usingComponents": {
     "status-tag": "/components/status-tag/status-tag",
     "ticket-card": "/components/ticket-card/ticket-card",
+    "road-progress": "/components/road-progress/road-progress",
     "bottom-action-bar": "/components/bottom-action-bar/bottom-action-bar"
   }
 }

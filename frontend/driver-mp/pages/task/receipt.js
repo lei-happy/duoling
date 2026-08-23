@@ -106,7 +106,8 @@ Page({
       });
       toast('回单已提交');
       this.setData({ fileList: [], remark: '' });
-      await this.loadReceipts();
+      wx.redirectTo({ url: `/pages/task/receipt-ok?id=${this.data.taskId}` });
+      return;
     } catch (e) {
       /* handled */
     } finally {

@@ -21,7 +21,7 @@
     <view class="auth__sells">
       <view class="auth__sell">
         <view class="auth__sell-ico">
-          <image src="/assets/login/icon-bell.svg" mode="aspectFit" />
+          <mp-icon name="bell" size="md" color="#1d4ed8" />
         </view>
         <view>
           <text class="auth__sell-title">调令直接推到微信</text>
@@ -30,7 +30,7 @@
       </view>
       <view class="auth__sell">
         <view class="auth__sell-ico">
-          <image src="/assets/login/icon-camera.svg" mode="aspectFit" />
+          <mp-icon name="camera" size="md" color="#1d4ed8" />
         </view>
         <view>
           <text class="auth__sell-title">回单拍照就传</text>
@@ -39,7 +39,7 @@
       </view>
       <view class="auth__sell">
         <view class="auth__sell-ico is-accent">
-          <image src="/assets/login/icon-wallet.svg" mode="aspectFit" />
+          <mp-icon name="wallet" size="md" color="#b26b00" />
         </view>
         <view>
           <text class="auth__sell-title">运费自己看得见</text>

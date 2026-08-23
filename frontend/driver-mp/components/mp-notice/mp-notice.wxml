@@ -1,5 +1,5 @@
 <view class="notice notice--{{theme}}" bindtap="onLink">
-  <view class="notice__ico"></view>
+  <mp-icon name="{{iconName}}" size="md" />
   <view class="notice__main">
     <text wx:if="{{title}}" class="notice__t">{{title}}</text>
     <text wx:if="{{desc}}" class="notice__s">{{desc}}</text>

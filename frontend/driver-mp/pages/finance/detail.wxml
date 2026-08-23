@@ -17,6 +17,16 @@
     <view class="kv" wx:if="{{doc.remark}}"><text class="kv__k">备注</text><text class="kv__v">{{doc.remark}}</text></view>
   </view>
 
+  <view class="card">
+    <view class="section-title">审批流转</view>
+    <view class="timeline">
+      <view class="tl" wx:for="{{flow}}" wx:key="title">
+        <view class="tl__t">{{item.title}}</view>
+        <view class="tl__s">{{item.sub}}</view>
+      </view>
+    </view>
+  </view>
+
   <view class="card" wx:if="{{doc.items && doc.items.length}}">
     <view class="section-title">费用明细</view>
     <view class="item" wx:for="{{doc.items}}" wx:key="id">

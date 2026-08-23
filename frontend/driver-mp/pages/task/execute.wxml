@@ -1,0 +1,35 @@
+<view class="page page-with-action {{fontClass}}" wx:if="{{ready}}">
+  <view class="pad">
+    <mp-notice title="{{noticeTitle}}" desc="{{noticeDesc}}" />
+    <view class="card">
+      <view class="cell-t">{{taskNo}}</view>
+      <view class="meta">{{route}}</view>
+    </view>
+    <view class="card">
+      <view class="field-l">当前位置</view>
+      <view class="picker">{{place}}</view>
+      <view class="field-l" wx:if="{{action === 'confirm-load'}}">装车台数</view>
+      <view class="stepper" wx:if="{{action === 'confirm-load'}}">
+        <view class="stepper__b" bindtap="dec">－</view>
+        <text>{{qty}}</text>
+        <view class="stepper__b" bindtap="inc">＋</view>
+      </view>
+      <view class="field-l">{{photoLabel}}（选填，最多 9 张）</view>
+      <t-upload
+        wx:if="{{needPhotos}}"
+        files="{{files}}"
+        media-type="{{mediaType}}"
+        max="{{9}}"
+        request-method="{{uploadPhotos}}"
+        bind:success="onUploadSuccess"
+        bind:remove="onUploadRemove"
+        bind:fail="onUploadFail"
+      />
+      <view class="field-l">备注（选填）</view>
+      <t-textarea placeholder="路上有情况就写一句" value="{{remark}}" bind:change="onRemark" />
+    </view>
+  </view>
+  <view class="actionbar">
+    <view class="btn btn--primary btn--block btn--lg" bindtap="submit">{{submitLabel}}</view>
+  </view>
+</view>

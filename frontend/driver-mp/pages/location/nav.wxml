@@ -1,0 +1,80 @@
+<view class="page page-flush {{fontClass}}">
+  <view wx:if="{{denied}}" class="pad">
+    <empty-state text="还没允许获取位置" hint="开启后，调度能看到你的进度，不用一路打电话问你到哪了。" />
+    <view class="btn btn--primary btn--block" bindtap="askLoc">去开启位置权限</view>
+    <view class="card mt-card">
+      <view class="cell-t">不想开也行</view>
+      <view class="meta">可以在关键节点手动报一次位置，装车、出发、到达各一次就够。</view>
+      <view class="btn btn--ghost btn--block mt-12" bindtap="goManual">改用手动上报</view>
+    </view>
+  </view>
+
+  <block wx:else>
+    <view class="map-box">
+      <view class="map-me"></view>
+      <view class="map-pin">{{nav.destTitle}}</view>
+    </view>
+    <view class="card navcard">
+      <view class="t-cap">距卸货点</view>
+      <view class="nav-row">
+        <text class="nav-km">{{nav.km}}</text>
+        <text class="meta">公里</text>
+        <text class="tag tag--amber">预计 {{nav.eta}} 到达</text>
+      </view>
+      <view class="btnrow mt-12">
+        <view class="btn btn--ghost" bindtap="openMap">
+          <mp-icon name="nav" size="sm" />
+          导航
+        </view>
+        <view class="btn btn--ghost" bindtap="onCallRecv">
+          <mp-icon name="phone" size="sm" />
+          联系收货方
+        </view>
+      </view>
+    </view>
+
+    <view class="pad">
+      <view class="sec-title">
+        <text class="sec-title__h">位置上报</text>
+        <text class="sec-title__n">在途中自动进行</text>
+      </view>
+      <view class="card">
+        <view class="switch-row">
+          <view class="grow">
+            <view class="cell-t">自动上报当前位置</view>
+            <view class="meta">每 10 分钟一次，确认到达后自动停止。只在这一单在途期间采集。</view>
+          </view>
+          <view class="switch {{autoOn ? 'is-on' : ''}}" bindtap="toggleAuto"></view>
+        </view>
+        <view class="meta mt-12">最近一次 {{nav.lastAt}} · {{nav.lastPlace}}</view>
+      </view>
+
+      <view class="sec-title">
+        <text class="sec-title__h">今日轨迹</text>
+        <text class="sec-title__n">自动记录</text>
+      </view>
+      <view class="card">
+        <view wx:for="{{nav.tracks}}" wx:key="title" class="track">
+          <view class="track__t">{{item.title}}</view>
+          <view class="meta">{{item.time}}{{item.desc ? ' · ' + item.desc : ''}}</view>
+        </view>
+      </view>
+      <view class="btn btn--ghost btn--block mt-12" bindtap="goManual">手动报一次位置</view>
+    </view>
+  </block>
+</view>
+
+<view wx:if="{{sheet === 'map'}}" class="sheet-mask" bindtap="closeSheet"></view>
+<view wx:if="{{sheet === 'map'}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">用哪个地图打开</view>
+  <view class="sheet-item" bindtap="openWxMap">
+    <mp-icon name="nav" size="md" color="#1d4ed8" />
+    <text>高德 / 腾讯地图</text>
+  </view>
+  <view class="sheet-item" bindtap="copyDest">
+    <mp-icon name="file" size="md" color="#1d4ed8" />
+    <text>复制地址</text>
+  </view>
+  <view class="btn btn--ghost btn--block" bindtap="closeSheet">取消</view>
+</view>

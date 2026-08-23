@@ -1,5 +1,32 @@
-<view class="page {{fontClass}}">
-  <view class="wallethd">
+<view class="page page-with-action {{fontClass}}">
+  <view class="oilcard">
+    <view class="oilcard__l">{{oil.brand}}油卡余额（元）</view>
+    <view class="oilcard__v"><text class="yen">¥</text>{{oil.balance}}</view>
+    <view class="oil-sub">卡号 {{oil.cardNo}} · 本月已用 ¥{{oil.monthUsed}}</view>
+    <view class="btnrow mt-12">
+      <view class="btn btn--ghost oil-btn" bindtap="openQr">付款码</view>
+      <view class="btn btn--ghost oil-btn" bindtap="goStations">附近加油站</view>
+    </view>
+  </view>
+
+  <view class="pad">
+    <mp-notice title="油卡余额是公司额度，不能提现" desc="低于 300 元时会提醒车管充值，你也可以直接申请。" />
+    <view class="sec-title"><text class="sec-title__h">我的账户</text></view>
+  </view>
+  <view class="card card--plain">
+    <mp-cell icon="fuel" tone="amber" title="油气款账户" subtitle="本月已用 ¥{{oil.monthUsed}} · 公司代付" extra="{{oil.balance}}" bind:tap="goOilFlow" />
+    <mp-cell icon="card" title="往来账" subtitle="借支、罚款、报销的挂账" extra="{{balanceText}}" bind:tap="goOilFlow" />
+    <mp-cell icon="star" tone="green" title="积分账户" subtitle="安全行驶 + 准点率累计" extra="{{oil.points}}" />
+  </view>
+
+  <view class="pad">
+    <view class="sec-title">
+      <text class="sec-title__h">往来账流水</text>
+      <text class="sec-title__more" bindtap="goOilFlow">全部 ›</text>
+    </view>
+  </view>
+
+  <view class="wallethd mini">
     <view class="wallethd__l">可用余额（元）</view>
     <view class="wallethd__v"><small>¥</small>{{balanceText}}</view>
     <view class="wallethd__sp">
@@ -9,16 +36,10 @@
     </view>
   </view>
 
-  <view class="pad">
-    <view class="sec-title"><text class="sec-title__h">流水记录</text></view>
-  </view>
-
   <view class="loading-wrap" wx:if="{{loading && !list.length}}">
     <t-loading theme="circular" size="40rpx" text="正在加载，请稍候…" />
   </view>
-
   <empty-state wx:if="{{!loading && !list.length}}" text="暂无流水" hint="入账和出账会按时间记在这里。" />
-
   <view class="card card--plain" wx:if="{{list.length}}">
     <view wx:for="{{list}}" wx:key="id" class="tx">
       <view>
@@ -28,9 +49,40 @@
       <view class="tx__n">{{item.deltaText}}</view>
     </view>
   </view>
-
   <view class="footer-tip" wx:if="{{list.length}}">
     <t-loading wx:if="{{loadingMore}}" theme="circular" size="32rpx" text="加载中…" />
     <text wx:else>{{finished ? '没有更多了' : '上拉加载更多'}}</text>
+  </view>
+
+  <view class="actionbar">
+    <view class="btn btn--ghost" bindtap="openRecharge">申请充值</view>
+    <view class="btn btn--primary" bindtap="openQr">加油付款码</view>
+  </view>
+</view>
+
+<view wx:if="{{sheet}}" class="sheet-mask" bindtap="closeSheet"></view>
+<view wx:if="{{sheet === 'qr'}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">加油付款码</view>
+  <view class="qrbox">{{oil.cardNo}}</view>
+  <view class="center-cap">给合作加油站扫这个码，扣的是公司油卡</view>
+  <view class="btn btn--ghost btn--block" bindtap="closeSheet">关掉</view>
+</view>
+<view wx:if="{{sheet === 'recharge'}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">申请充值</view>
+  <view class="chips">
+    <view class="chip {{amt === '500' ? 'is-on' : ''}}" data-v="500" bindtap="setAmt">500</view>
+    <view class="chip {{amt === '1000' ? 'is-on' : ''}}" data-v="1000" bindtap="setAmt">1000</view>
+    <view class="chip {{amt === '2000' ? 'is-on' : ''}}" data-v="2000" bindtap="setAmt">2000</view>
+  </view>
+  <view class="field-l">原因</view>
+  <view class="chips">
+    <view class="chip {{why === '长途' ? 'is-on' : ''}}" data-v="长途" bindtap="setWhy">长途在即</view>
+    <view class="chip {{why === '余额低' ? 'is-on' : ''}}" data-v="余额低" bindtap="setWhy">余额偏低</view>
+  </view>
+  <view class="btnrow mt-16">
+    <view class="btn btn--ghost" bindtap="closeSheet">取消</view>
+    <view class="btn btn--primary" bindtap="submitRecharge">提交申请</view>
   </view>
 </view>

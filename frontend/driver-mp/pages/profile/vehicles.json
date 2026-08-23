@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "我的车与证照"
+  "navigationBarTitleText": "我的车与证照",
+  "usingComponents": {
+    "mp-cell": "/components/mp-cell/mp-cell"
+  }
 }

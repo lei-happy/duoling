@@ -41,7 +41,7 @@
 }
 
 .honor-card {
-  padding: 28rpx 16rpx;
+  padding: 28rpx 8rpx 20rpx;
 }
 
 .coming--tight {

@@ -1,0 +1,2 @@
+.big { font-size: 34rpx; font-weight: 650; }
+.meta { margin-top: 8rpx; font-size: 26rpx; color: #5a6779; }

@@ -19,3 +19,29 @@
   font-size: 30rpx;
   font-weight: 600;
 }
+
+.check {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 10rpx;
+  border: 4rpx solid #c7d0dc;
+  flex-shrink: 0;
+}
+
+.check.is-on {
+  border-color: #1d4ed8;
+  background: #1d4ed8;
+}
+
+.actionbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: #fff;
+}
+
+.grow { flex: 1; }
+
+.page-with-action { padding-bottom: 160rpx; }

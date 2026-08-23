@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "手动报位置",
+  "usingComponents": {
+    "mp-notice": "/components/mp-notice/mp-notice"
+  }
+}

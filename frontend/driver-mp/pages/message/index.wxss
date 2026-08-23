@@ -1,1 +1,15 @@
-/* 使用全局 coming 空态 */
+.swipe { position: relative; overflow: hidden; }
+.swipe__acts {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 240rpx; display: flex;
+}
+.a-grey, .a-red {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 26rpx;
+}
+.a-grey { background: #64748b; }
+.a-red { background: #dc2626; }
+.swipe__body { position: relative; background: #fff; transition: transform 0.2s ease; }
+.unread-dot {
+  position: absolute; right: 28rpx; top: 36rpx;
+  width: 14rpx; height: 14rpx; border-radius: 50%; background: #dc2626;
+}

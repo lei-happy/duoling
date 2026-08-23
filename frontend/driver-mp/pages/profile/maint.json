@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "维修保养",
+  "usingComponents": {
+    "mp-cell": "/components/mp-cell/mp-cell"
+  }
+}

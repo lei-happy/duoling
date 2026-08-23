@@ -1,3 +1,9 @@
+.tips {
+  font-size: 24rpx;
+  color: #5a6779;
+  margin-bottom: 16rpx;
+}
+
 .history {
   padding: 20rpx 0;
   border-bottom: 1rpx solid #e2e8f0;

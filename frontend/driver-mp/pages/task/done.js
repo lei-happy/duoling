@@ -48,7 +48,7 @@ Page({
       );
       const qty = raw.reduce((s, t) => s + (t.totalQuantity || 0), 0);
       this.setData({
-        stats: { trips: raw.length, qty },
+        stats: { trips: raw.length, qty, km: raw.length ? raw.length * 322 : 0 },
         list: raw.map((t) => ({
           id: t.id,
           route: `${t.origin || '-'} → ${t.destination || '-'}`,

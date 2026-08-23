@@ -1,0 +1,14 @@
+.overcard { margin: 24rpx 0 0; }
+.flow {
+  display: flex;
+  gap: 16rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid #f0f3f8;
+}
+.flow:last-child { border-bottom: none; }
+.fl-t { font-size: 29rpx; font-weight: 600; }
+.meta { margin-top: 6rpx; font-size: 23rpx; color: #94a3b8; }
+.fl-n { font-weight: 650; }
+.fl-n.is-ok { color: #16a34a; }
+.fl-n.is-bad { color: #dc2626; }
+.grow { flex: 1; }

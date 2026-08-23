@@ -4,6 +4,8 @@ const { getMyProfile } = require('../../api/profile');
 const { getCapsuleSafe } = require('../../utils/nav');
 const { getFontScale } = require('../../utils/font');
 const { maskPhone } = require('../../utils/format');
+const { getHonor } = require('../../services/mock/honor');
+const { callDispatcher, callFleet } = require('../../utils/action');
 
 Page({
   data: {
@@ -14,7 +16,9 @@ Page({
     avatarText: '司',
     subText: '',
     tenantName: '-',
-    sheet: ''
+    sheet: '',
+    honor: getHonor(),
+    notifyExtra: '已开 4 项'
   },
 
   onShow() {
@@ -80,5 +84,15 @@ Page({
 
   closeSheet() {
     this.setData({ sheet: '' });
+  },
+
+  callDispatch() {
+    this.setData({ sheet: '' });
+    callDispatcher();
+  },
+
+  callFleet() {
+    this.setData({ sheet: '' });
+    callFleet();
   }
 });

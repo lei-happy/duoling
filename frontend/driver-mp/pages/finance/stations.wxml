@@ -1,0 +1,18 @@
+<view class="page {{fontClass}}">
+  <view class="pad">
+    <mp-notice theme="info" title="按你当前位置排的" desc="只显示能用公司油卡的合作站点。" />
+    <view class="sec-title">
+      <text class="sec-title__h">沿途站点</text>
+      <text class="sec-title__n">{{list.length}} 座</text>
+    </view>
+    <view class="card">
+      <view wx:for="{{list}}" wx:key="id" class="station">
+        <view class="grow">
+          <view class="st-t">{{item.name}}</view>
+          <view class="meta">{{item.sub}}</view>
+        </view>
+        <view class="st-d">{{item.km}}</view>
+      </view>
+    </view>
+  </view>
+</view>

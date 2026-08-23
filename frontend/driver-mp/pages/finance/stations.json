@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "附近加油站",
+  "usingComponents": {
+    "mp-notice": "/components/mp-notice/mp-notice"
+  }
+}

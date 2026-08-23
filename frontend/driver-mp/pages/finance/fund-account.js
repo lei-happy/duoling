@@ -3,6 +3,8 @@ const { getMyFundAccount, listMyFundTransactions } = require('../../api/finance'
 const { fundBizTypeLabel } = require('../../utils/constants');
 const { formatDateTime, formatMoney } = require('../../utils/format');
 const { getFontScale } = require('../../utils/font');
+const { getOilCard } = require('../../services/mock/oil');
+const { toast } = require('../../utils/request');
 
 Page({
   data: {
@@ -16,7 +18,11 @@ Page({
     pageSize: 20,
     loading: false,
     loadingMore: false,
-    finished: false
+    finished: false,
+    oil: getOilCard(),
+    sheet: '',
+    amt: '1000',
+    why: '长途'
   },
 
   onShow() {
@@ -82,12 +88,46 @@ Page({
       const merged = reset ? mapped : this.data.list.concat(mapped);
       this.setData({
         list: merged,
-        finished: merged.length >= total || mapped.length === 0
+        finished: merged.length >= total || mapped.length === 0,
+        oil: getOilCard()
       });
     } catch (e) {
       if (!reset) this.setData({ page: Math.max(1, this.data.page - 1) });
     } finally {
       this.setData({ loading: false, loadingMore: false });
     }
+  },
+
+  goStations() {
+    wx.navigateTo({ url: '/pages/finance/stations' });
+  },
+
+  goOilFlow() {
+    wx.navigateTo({ url: '/pages/finance/oil-flow' });
+  },
+
+  openQr() {
+    this.setData({ sheet: 'qr' });
+  },
+
+  openRecharge() {
+    this.setData({ sheet: 'recharge' });
+  },
+
+  closeSheet() {
+    this.setData({ sheet: '' });
+  },
+
+  setAmt(e) {
+    this.setData({ amt: e.currentTarget.dataset.v });
+  },
+
+  setWhy(e) {
+    this.setData({ why: e.currentTarget.dataset.v });
+  },
+
+  submitRecharge() {
+    this.setData({ sheet: '' });
+    toast(`已向车管申请充值 ${this.data.amt} 元`);
   }
 });

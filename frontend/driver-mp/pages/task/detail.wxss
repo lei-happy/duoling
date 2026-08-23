@@ -1,3 +1,102 @@
+.sthd {
+  padding: 32rpx 32rpx 40rpx;
+  color: #fff;
+  background: linear-gradient(165deg, #0d1b3e, #16306e);
+}
+
+.sthd__no {
+  font-size: 26rpx;
+  letter-spacing: 0.06em;
+  opacity: 0.78;
+}
+
+.sthd__st {
+  margin-top: 8rpx;
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.sthd__route {
+  display: flex;
+  align-items: flex-end;
+  gap: 16rpx;
+  margin: 16rpx 0 24rpx;
+}
+
+.sthd__place {
+  min-width: 0;
+  max-width: 44%;
+}
+
+.sthd__place.is-right {
+  text-align: right;
+  margin-left: auto;
+}
+
+.sthd__prov {
+  display: block;
+  font-size: 22rpx;
+  opacity: 0.55;
+  margin-bottom: 4rpx;
+}
+
+.sthd__city {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sthd__dash {
+  flex: 1;
+  height: 0;
+  margin-bottom: 16rpx;
+  border-top: 3rpx dashed rgba(255, 255, 255, 0.28);
+}
+
+.sthd__meta {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  opacity: 0.72;
+}
+
+
+.link-row {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12rpx;
+  font-size: 28rpx;
+  color: #1d4ed8;
+}
+
+.actionbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -8rpx 24rpx rgba(15, 23, 42, 0.06);
+  z-index: 20;
+}
+
+.grow { flex: 1; }
+
+.sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 28rpx 0;
+  font-size: 30rpx;
+  border-bottom: 1rpx solid #eef2f8;
+}
+
+.mt-16 { margin-top: 32rpx; }
+
 .detail-ticket {
   padding-top: 24rpx;
 }

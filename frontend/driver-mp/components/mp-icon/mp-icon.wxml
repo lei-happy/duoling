@@ -1,0 +1,5 @@
+<view
+  wx:if="{{src}}"
+  class="mp-icon mp-icon--{{size}}"
+  style="{{color ? 'color:' + color + ';' : ''}}-webkit-mask-image:url({{src}});mask-image:url({{src}});"
+></view>

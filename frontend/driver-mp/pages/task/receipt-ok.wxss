@@ -1,0 +1,2 @@
+.ok { font-size: 36rpx; font-weight: 650; }
+.meta { margin-top: 10rpx; font-size: 26rpx; color: #5a6779; line-height: 1.55; }

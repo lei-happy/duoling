@@ -20,14 +20,31 @@
       <status-tag label="{{item.statusLabel}}" level="{{item.statusLevel}}" />
       <view
         wx:if="{{item.status < 3}}"
+        class="check {{item.picked ? 'is-on' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="toggle"
+      ></view>
+      <view
+        wx:if="{{item.status < 3}}"
         class="btn btn--primary btn--sm"
         data-id="{{item.id}}"
         bindtap="onSignItem"
       >签收</view>
+      <view
+        wx:if="{{item.status < 3}}"
+        class="btn btn--ghost btn--sm"
+        data-id="{{item.id}}"
+        bindtap="onDamage"
+      >报货损</view>
     </view>
   </view>
 
   <empty-state wx:if="{{!itemsView.length}}" text="这单还没有商品车明细" />
+
+  <view class="actionbar">
+    <view class="btn btn--ghost" bindtap="onCallRecv">呼叫收货方</view>
+    <view class="btn btn--primary grow" bindtap="batchSign">批量签收 {{pickedCount}} 台</view>
+  </view>
 </view>
 
 <view class="loading-wrap" wx:else>

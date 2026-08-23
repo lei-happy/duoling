@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "待传回单",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "mp-notice": "/components/mp-notice/mp-notice",
+    "mp-cell": "/components/mp-cell/mp-cell",
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

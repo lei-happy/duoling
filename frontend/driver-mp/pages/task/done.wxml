@@ -14,6 +14,10 @@
           <text class="stat__v">{{stats.qty}}</text>
           <text class="stat__l">运输台数</text>
         </view>
+        <view class="stat">
+          <text class="stat__v">{{stats.km}}</text>
+          <text class="stat__l">公里</text>
+        </view>
       </view>
     </view>
   </view>

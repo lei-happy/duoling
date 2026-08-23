@@ -72,8 +72,10 @@
 .a-grey {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 8rpx;
   color: #fff;
   font-size: 26rpx;
   font-weight: 600;

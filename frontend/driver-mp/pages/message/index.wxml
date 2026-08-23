@@ -1,6 +1,37 @@
 <view class="page {{fontClass}}">
-  <view class="coming">
-    <view class="coming__t">还没有消息</view>
-    <view class="coming__s">派车、到账和证照提醒以后会出现在这里，不用一直进来刷。</view>
+  <view class="pad">
+    <view class="seg">
+      <view class="seg__i {{tab === 'all' ? 'is-on' : ''}}" data-v="all" bindtap="setTab">全部</view>
+      <view class="seg__i {{tab === 'task' ? 'is-on' : ''}}" data-v="task" bindtap="setTab">任务</view>
+      <view class="seg__i {{tab === 'money' ? 'is-on' : ''}}" data-v="money" bindtap="setTab">资金</view>
+      <view class="seg__i {{tab === 'alert' ? 'is-on' : ''}}" data-v="alert" bindtap="setTab">提醒</view>
+    </view>
   </view>
+  <view class="card card--plain">
+    <view wx:for="{{list}}" wx:key="id" class="swipe">
+      <view class="swipe__acts">
+        <view class="a-grey" data-id="{{item.id}}" catchtap="onRead">已读</view>
+        <view class="a-red" data-id="{{item.id}}" catchtap="onDel">删除</view>
+      </view>
+      <view
+        class="swipe__body"
+        style="transform: translateX({{item.offset || 0}}px);"
+        data-id="{{item.id}}"
+        bindtap="goDetail"
+        bindtouchstart="onTouchStart"
+        bindtouchmove="onTouchMove"
+        bindtouchend="onTouchEnd"
+      >
+        <mp-cell
+          icon="{{item.kind === 'money' ? 'wallet' : (item.kind === 'alert' ? 'bell' : 'truck')}}"
+          tone="{{item.kind === 'money' ? 'green' : (item.kind === 'alert' ? 'amber' : '')}}"
+          title="{{item.title}}"
+          subtitle="{{item.desc}}"
+          extra="{{item.time}}"
+        />
+        <view wx:if="{{item.unread}}" class="unread-dot"></view>
+      </view>
+    </view>
+  </view>
+  <view class="center-cap">左滑可以标记已读或删除 · 只保留近 30 天</view>
 </view>

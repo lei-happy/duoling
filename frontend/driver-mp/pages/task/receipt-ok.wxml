@@ -1,0 +1,29 @@
+<view class="page">
+  <view class="pad">
+    <view class="card">
+      <view class="ok">回单已经交上去了</view>
+      <view class="meta">调度审过就会生成结算，钱到账会再通知你。</view>
+    </view>
+    <view class="card">
+      <view class="timeline">
+        <view class="tl">
+          <view class="tl__t">已提交</view>
+          <view class="tl__s">刚才</view>
+        </view>
+        <view class="tl">
+          <view class="tl__t">等审核</view>
+          <view class="tl__s">调度核对签章和照片</view>
+        </view>
+        <view class="tl">
+          <view class="tl__t">生成结算</view>
+          <view class="tl__s">审核通过后自动出单</view>
+        </view>
+        <view class="tl">
+          <view class="tl__t">财务打款</view>
+          <view class="tl__s">到账后会推一条消息</view>
+        </view>
+      </view>
+    </view>
+    <view class="btn btn--primary btn--block" bindtap="goHome">回工作台</view>
+  </view>
+</view>

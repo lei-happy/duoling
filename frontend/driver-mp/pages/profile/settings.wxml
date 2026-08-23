@@ -14,11 +14,35 @@
     </view>
   </view>
 
+  <view class="card">
+    <view class="set-row">
+      <view>
+        <view class="set-t">位置权限</view>
+        <view class="meta">{{locOn ? '已开启，在途会上报位置' : '未开启，可改用手动上报'}}</view>
+      </view>
+      <view class="switch {{locOn ? 'is-on' : ''}}" bindtap="askLoc"></view>
+    </view>
+    <view class="set-row">
+      <view>
+        <view class="set-t">相机权限</view>
+        <view class="meta">{{camOn ? '已开启，回单和装车能拍照' : '未开启，上传照片会受影响'}}</view>
+      </view>
+      <view class="switch {{camOn ? 'is-on' : ''}}" bindtap="askCam"></view>
+    </view>
+    <view class="set-row" bindtap="goNotify">
+      <view>
+        <view class="set-t">通知权限</view>
+        <view class="meta">派车、到账、证照提醒</view>
+      </view>
+      <text class="cell__arr">›</text>
+    </view>
+  </view>
+
   <view class="card card--plain">
     <view class="set-row" bindtap="onClearCache">
       <view>
         <view class="set-t">清理缓存</view>
-        <view class="meta">不影响登录状态</view>
+        <view class="meta">约 {{cacheSize}} · 不影响登录状态</view>
       </view>
       <text class="cell__arr">›</text>
     </view>

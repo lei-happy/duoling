@@ -30,7 +30,7 @@ function getRoadState(status, accepted) {
     { key: 'load', label: '装车', state: '' },
     { key: 'depart', label: '出发', state: '' },
     { key: 'arrive', label: '到达', state: '' },
-    { key: 'sign', label: '签收', state: '' }
+    { key: 'arriveDest', label: '运抵', state: '' }
   ];
   let percent = 0;
   let current = -1;
@@ -113,10 +113,56 @@ function dayLabel(value) {
   return `周${week} · ${md}`;
 }
 
+const SKIP_REGION = { 中国: 1, 中华人民共和国: 1, 市辖区: 1 };
+const PROVINCE_ALIAS = {
+  内蒙古: 1,
+  广西: 1,
+  西藏: 1,
+  宁夏: 1,
+  新疆: 1,
+  内蒙古自治区: 1,
+  广西壮族自治区: 1,
+  西藏自治区: 1,
+  宁夏回族自治区: 1,
+  新疆维吾尔自治区: 1
+};
+
+function adminStem(name) {
+  return name.replace(
+    /(?:特别行政区|维吾尔自治区|壮族自治区|回族自治区|自治区|省|市)$/g,
+    ''
+  );
+}
+
+function isProvinceSegment(name) {
+  return (
+    /(?:省|自治区|特别行政区)$/.test(name) ||
+    !!PROVINCE_ALIAS[name] ||
+    /^(?:北京|天津|上海|重庆)市?$/.test(name)
+  );
+}
+
 function splitPlace(text) {
   const raw = (text || '').trim();
-  if (!raw) return { title: '-', sub: '' };
-  return { title: raw, sub: '' };
+  if (!raw) return { province: '', title: '-', sub: '' };
+  const parts = raw
+    .replace(/[／\\]/g, '/')
+    .split('/')
+    .map((s) => s.trim())
+    .filter((s) => s && !SKIP_REGION[s]);
+  if (!parts.length) return { province: '', title: '-', sub: '' };
+
+  let province = '';
+  let rest = parts;
+  if (isProvinceSegment(parts[0])) {
+    province = parts[0];
+    rest = parts.slice(1);
+    if (rest[0] && adminStem(province) === adminStem(rest[0])) {
+      rest = rest.slice(1);
+    }
+  }
+  const title = rest.slice(0, 2).join('/') || province || '-';
+  return { province, title, sub: '' };
 }
 
 function isActiveTask(task) {
@@ -237,10 +283,12 @@ function weekDays(tasks) {
     });
   }
   const sundayRest = !keys.has(dayKey(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)));
+  const km = hasCount ? hasCount * 368 : 0;
   return {
     days,
     rangeText: `${shortMd(monday)} 至 ${shortMd(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6))}`,
     tripCount: hasCount,
+    kmText: km ? km.toLocaleString('zh-CN') : '0',
     sundayRest
   };
 }
@@ -257,6 +305,7 @@ module.exports = {
   shortTime,
   dayKey,
   dayLabel,
+  splitPlace,
   isActiveTask,
   matchChip,
   apiStatusForChip,

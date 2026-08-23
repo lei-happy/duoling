@@ -1,0 +1,5 @@
+.lic { display: flex; gap: 16rpx; padding: 20rpx 0; border-bottom: 1rpx solid #f0f3f8; }
+.lic:last-child { border-bottom: none; }
+.lic-t { font-size: 29rpx; font-weight: 600; }
+.meta { margin-top: 6rpx; font-size: 23rpx; color: #94a3b8; }
+.grow { flex: 1; }

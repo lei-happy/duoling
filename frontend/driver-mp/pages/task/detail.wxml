@@ -1,6 +1,25 @@
 <view class="page page-with-action" wx:if="{{task}}">
-  <view class="pad detail-ticket">
-    <ticket-card view="{{ticketView}}" bind:action="onTicketAction" />
+  <view class="sthd">
+    <view class="sthd__no">{{task.taskNo}}</view>
+    <view class="sthd__st">{{statusInfo.label}}</view>
+    <view class="sthd__route">
+      <view class="sthd__place">
+        <text wx:if="{{ticketView.origin.province}}" class="sthd__prov">{{ticketView.origin.province}}</text>
+        <text class="sthd__city">{{ticketView.origin.title}}</text>
+      </view>
+      <view class="sthd__dash"></view>
+      <view class="sthd__place is-right">
+        <text wx:if="{{ticketView.destination.province}}" class="sthd__prov">{{ticketView.destination.province}}</text>
+        <text class="sthd__city">{{ticketView.destination.title}}</text>
+      </view>
+    </view>
+    <road-progress
+      theme="dark"
+      percent="{{ticketView.roadPercent}}"
+      stops="{{ticketView.roadStops}}"
+      parked="{{ticketView.status < 2}}"
+    />
+    <view class="sthd__meta">{{itemCount}} 行 / {{task.totalQuantity || 0}} 台 · 要求 {{plannedArriveText}} 前到货</view>
   </view>
 
   <view class="card">
@@ -27,7 +46,7 @@
     </view>
   </view>
 
-  <view class="card" wx:if="{{task.segments && task.segments.length > 1}}">
+  <view class="card" wx:if="{{task.segments && task.segments.length}}">
     <view class="section-title">运输分段</view>
     <view class="segment-row" wx:for="{{task.segments}}" wx:key="id">
       <view class="seg-no">{{item.segmentNo}}</view>
@@ -38,17 +57,22 @@
     </view>
   </view>
 
-  <t-cell-group wx:if="{{task.status >= 3}}" title="回单凭证">
-    <t-cell title="上传 / 查看回单" arrow bind:click="goReceipt" />
-  </t-cell-group>
-
-  <t-cell-group title="承运资源">
-    <t-cell title="主驾" note="{{task.mainDriverName || '-'}}" />
-    <t-cell title="车牌" note="{{task.plateNumber || '-'}}" />
-  </t-cell-group>
+  <view class="card" wx:if="{{task.status >= 3}}" bindtap="goReceipt">
+    <view class="section-title">回单凭证</view>
+    <view class="link-row">上传 / 查看回单 <text>›</text></view>
+  </view>
 
   <view class="card">
-    <view class="section-title">财务概览</view>
+    <view class="section-title">承运资源</view>
+    <view class="kv"><text class="kv__k">主驾</text><text class="kv__v">{{task.mainDriverName || '-'}}</text></view>
+    <view class="kv"><text class="kv__k">牵引车</text><text class="kv__v">{{task.plateNumber || '苏A·8F236'}}</text></view>
+    <view class="kv"><text class="kv__k">挂车</text><text class="kv__v">{{trailerPlate}}</text></view>
+    <view class="kv"><text class="kv__k">承运方式</text><text class="kv__v">{{carrierText}}</text></view>
+    <view class="kv"><text class="kv__k">调度</text><text class="kv__v">{{dispatcherName}}</text></view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">这一单的钱</view>
     <view class="finance-row">
       <view>
         <view class="label">已预付</view>
@@ -58,85 +82,93 @@
         <view class="label">已结算</view>
         <view class="amount">¥{{settledText}}</view>
       </view>
+      <view>
+        <view class="label">待结算</view>
+        <view class="amount">¥{{pendingText}}</view>
+      </view>
     </view>
-    <t-divider />
-    <t-cell title="查看费用单" arrow bind:click="goFinance" />
+    <view class="link-row" bindtap="goFinance">查看费用单 <text>›</text></view>
   </view>
 
-  <bottom-action-bar
-    actions="{{actions}}"
-    loading="{{acting}}"
-    current-key="{{currentAction}}"
-    bind:action="onAction"
-  />
+  <view class="card">
+    <view class="section-title">流转记录</view>
+    <view class="timeline">
+      <view class="tl" wx:for="{{logs}}" wx:key="title">
+        <view class="tl__t">{{item.title}}</view>
+        <view class="tl__s">{{item.sub}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="actionbar">
+    <view class="btn btn--ghost btn--narrow" bindtap="onCall">
+      <mp-icon name="phone" size="sm" />
+      电话
+    </view>
+    <view class="btn btn--ghost btn--narrow" bindtap="openMore">
+      <mp-icon name="more" size="sm" />
+      更多
+    </view>
+    <view
+      wx:if="{{mainAction}}"
+      class="btn {{mainAction.level === 'primary' ? 'btn--accent' : 'btn--primary'}} grow"
+      bindtap="onMain"
+    >{{mainAction.label}}</view>
+  </view>
 </view>
 
 <view class="loading-wrap" wx:else>
   <t-loading theme="circular" size="48rpx" text="正在加载任务，请稍候…" />
 </view>
 
-<!-- 确认操作 -->
-<t-dialog
-  visible="{{confirmVisible}}"
-  title="{{confirmTitle}}"
-  confirm-btn="{{confirmBtn}}"
-  cancel-btn="取消"
-  bind:confirm="submitConfirm"
-  bind:cancel="closeConfirm"
-  bind:close="closeConfirm"
->
-  <view slot="content" class="dialog-body">
-    <view class="dialog-msg">{{confirmMessage}}</view>
-    <view class="photo-block" wx:if="{{needPhotos}}">
-      <view class="form-label">{{photoLabel}}（选填，最多 9 张）</view>
-      <t-upload
-        files="{{confirmFiles}}"
-        media-type="{{mediaType}}"
-        max="{{9}}"
-        request-method="{{uploadConfirmPhotos}}"
-        bind:success="onConfirmUploadSuccess"
-        bind:remove="onConfirmUploadRemove"
-        bind:fail="onUploadFail"
-      />
-    </view>
-    <t-textarea
-      placeholder="备注（选填）"
-      value="{{confirmRemark}}"
-      maxlength="{{255}}"
-      indicator
-      bind:change="onConfirmRemark"
-    />
+<view wx:if="{{sheet === 'more'}}" class="sheet-mask" bindtap="closeSheet"></view>
+<view wx:if="{{sheet === 'more'}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">更多操作</view>
+  <view class="sheet-item" bindtap="onNav">
+    <mp-icon name="nav" size="md" color="#1d4ed8" />
+    <text>导航去卸货点</text>
   </view>
-</t-dialog>
-
-<!-- 拒单 -->
-<t-dialog
-  visible="{{rejectVisible}}"
-  title="拒绝调令"
-  confirm-btn="{{rejectBtn}}"
-  cancel-btn="取消"
-  bind:confirm="submitReject"
-  bind:cancel="closeReject"
-  bind:close="closeReject"
->
-  <view slot="content" class="dialog-body">
-    <view class="dialog-msg">拒单后该任务将退回企业调度台重新派车</view>
-    <t-textarea
-      placeholder="请填写拒单原因（必填）"
-      value="{{rejectReason}}"
-      maxlength="{{255}}"
-      indicator
-      bind:change="onRejectReason"
-    />
+  <view class="sheet-item" bindtap="onCallRecv">
+    <mp-icon name="phone" size="md" color="#1d4ed8" />
+    <text>联系收货方</text>
   </view>
-</t-dialog>
+  <view class="sheet-item" bindtap="onExcp">
+    <mp-icon name="warn" size="md" color="#b26b00" />
+    <text>上报异常</text>
+  </view>
+  <view class="sheet-item" bindtap="onCopy">
+    <mp-icon name="file" size="md" color="#1d4ed8" />
+    <text>复制单号</text>
+  </view>
+  <view class="btn btn--ghost btn--block" bindtap="closeSheet">取消</view>
+</view>
 
-<!-- 交车确认 -->
+<view wx:if="{{sheet === 'reject'}}" class="sheet-mask" bindtap="closeSheet"></view>
+<view wx:if="{{sheet === 'reject'}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">拒绝调令</view>
+  <view class="chips">
+    <view
+      wx:for="{{rejectReasons}}"
+      wx:key="*this"
+      class="chip {{rejectPick === item ? 'is-on' : ''}}"
+      data-v="{{item}}"
+      bindtap="pickReject"
+    >{{item}}</view>
+  </view>
+  <t-textarea placeholder="补充说明" value="{{rejectReason}}" maxlength="{{255}}" bind:change="onRejectReason" />
+  <view class="btnrow mt-16">
+    <view class="btn btn--ghost" bindtap="closeSheet">先不拒</view>
+    <view class="btn btn--danger" bindtap="submitReject">确认拒绝</view>
+  </view>
+</view>
+
 <t-dialog
   visible="{{signVisible}}"
-  title="确认交车"
-  content="确认该计划已完成交车？"
-  confirm-btn="确认交车"
+  title="确认签收"
+  content="确认这台车已经交给接车人？"
+  confirm-btn="确认签收"
   cancel-btn="取消"
   bind:confirm="submitSign"
   bind:cancel="closeSign"

@@ -2,6 +2,7 @@ const { ensureAuth } = require('../../utils/auth');
 const { listMyTasks, acceptTask, rejectTask } = require('../../api/task');
 const { VISIBLE_STATUS_TABS } = require('../../utils/constants');
 const { toast } = require('../../utils/request');
+const { goNav, callDispatcher, REJECT_REASONS } = require('../../utils/action');
 const { getFontScale } = require('../../utils/font');
 const {
   buildTicketView,
@@ -10,7 +11,7 @@ const {
   apiStatusForChip
 } = require('../../utils/task-view');
 
-const EMPTY_FILTER = { range: '15', timeType: 'plannedLoad', carrier: '' };
+const EMPTY_FILTER = { range: '15', timeType: 'plannedLoad', carrier: '', dest: '' };
 
 function withinRange(task, filter) {
   const days = filter.range === '3' ? 3 : filter.range === '7' ? 7 : filter.range === 'month' ? 31 : 15;
@@ -38,6 +39,8 @@ Page({
     filter: { ...EMPTY_FILTER },
     filterOn: false,
     rejectReason: '',
+    rejectPick: '',
+    rejectReasons: REJECT_REASONS,
     rejectId: 0,
     acting: false
   },
@@ -96,6 +99,9 @@ Page({
       list = list.filter((t) => withinRange(t, filter));
       if (filter.carrier) {
         list = list.filter((t) => String(t.carrierType) === String(filter.carrier));
+      }
+      if (filter.dest) {
+        list = list.filter((t) => String(t.destination || '').indexOf(filter.dest) >= 0);
       }
       const views = list.map((t) => ({ ...buildTicketView(t), offset: 0 }));
       this.setData({
@@ -158,19 +164,11 @@ Page({
   },
 
   onNav(e) {
-    const dest = e.currentTarget.dataset.dest;
-    if (dest && dest !== '-') {
-      wx.setClipboardData({
-        data: dest,
-        success: () => toast('目的地已复制，导航还没接上，先贴到地图里用')
-      });
-      return;
-    }
-    toast('导航还没接上，先到任务详情里看卸货点');
+    goNav({ dest: e.currentTarget.dataset.dest });
   },
 
   onDispatch() {
-    toast('调度电话由企业配置后才能拨打');
+    callDispatcher();
   },
 
   onTouchStart(e) {
@@ -232,7 +230,7 @@ Page({
 
   applyFilter() {
     const f = this.data.filter;
-    const on = f.range !== '15' || f.carrier !== '' || f.timeType !== 'plannedLoad';
+    const on = f.range !== '15' || f.carrier !== '' || f.timeType !== 'plannedLoad' || !!f.dest;
     this.setData({ sheet: '', filterOn: on });
     this.reload();
   },
@@ -241,13 +239,18 @@ Page({
     this.setData({
       sheet: 'reject',
       rejectId: Number(e.currentTarget.dataset.id),
-      rejectReason: ''
+      rejectReason: '',
+      rejectPick: ''
     });
   },
 
   closeSheet() {
     if (this.data.acting) return;
     this.setData({ sheet: '', rejectId: 0 });
+  },
+
+  pickReject(e) {
+    this.setData({ rejectPick: e.currentTarget.dataset.v });
   },
 
   onRejectReason(e) {
@@ -272,9 +275,11 @@ Page({
   },
 
   async submitReject() {
-    const reason = (this.data.rejectReason || '').trim();
+    const extra = (this.data.rejectReason || '').trim();
+    const pick = this.data.rejectPick;
+    const reason = pick === '其他' || !pick ? extra : (extra ? `${pick}；${extra}` : pick);
     if (!reason) {
-      toast('请填写拒单原因');
+      toast('请选择或填写拒单原因');
       return;
     }
     if (!this.data.rejectId || this.data.acting) return;

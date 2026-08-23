@@ -1,0 +1,8 @@
+.picker {
+  padding: 22rpx 0;
+  font-size: 30rpx;
+}
+
+.mt-12 {
+  margin-top: 24rpx;
+}

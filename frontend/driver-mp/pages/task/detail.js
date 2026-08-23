@@ -3,12 +3,8 @@ const {
   getTaskDetail,
   acceptTask,
   rejectTask,
-  confirmLoad,
-  depart,
-  confirmArrive,
   signItem
 } = require('../../api/task');
-const { uploadImage } = require('../../api/file');
 const { formatDateTime, formatMoney } = require('../../utils/format');
 const {
   getDriverDisplayStatus,
@@ -17,18 +13,25 @@ const {
 } = require('../../utils/constants');
 const { buildTicketView } = require('../../utils/task-view');
 const { toast } = require('../../utils/request');
-const { UPLOAD_BASE } = require('../../config/env');
+const {
+  goNav,
+  goException,
+  callDispatcher,
+  callReceiver,
+  copyText,
+  REJECT_REASONS
+} = require('../../utils/action');
 
-function resolveUrl(u) {
-  if (!u) return '';
-  if (/^https?:\/\//.test(u)) return u;
-  return UPLOAD_BASE + u;
-}
+const CARRIER = { 1: '自有车', 2: '承运商', 3: '社会运力' };
 
-function collectRemoteUrls(files) {
-  return (files || [])
-    .map((f) => f.remoteUrl || f.url)
-    .filter((u) => u && !/^wxfile:|^http:\/\/tmp|^https:\/\/tmp/i.test(u));
+function buildLogs(task) {
+  const logs = [{ title: '调度已派车', sub: formatDateTime(task.plannedLoadTime) || '待定' }];
+  if (task.accepted || task.acceptedAt) logs.push({ title: '已接收调令', sub: formatDateTime(task.acceptedAt) || '已接收' });
+  if (task.actualLoadTime) logs.push({ title: '已确认装车', sub: formatDateTime(task.actualLoadTime) });
+  if (task.status >= 3) logs.push({ title: '已确认出发', sub: formatDateTime(task.actualLoadTime) || '在途' });
+  if (task.actualArriveTime) logs.push({ title: '已确认到达', sub: formatDateTime(task.actualArriveTime) });
+  if (task.status >= 5) logs.push({ title: '已逐台签收', sub: formatDateTime(task.actualArriveTime) });
+  return logs;
 }
 
 Page({
@@ -36,43 +39,25 @@ Page({
     taskId: 0,
     task: null,
     statusInfo: { label: '', level: 'default' },
-    actions: [],
     itemsView: [],
     ticketView: {},
     itemCount: 0,
-    plannedLoadText: '-',
     plannedArriveText: '-',
     prepaidText: '0.00',
     settledText: '0.00',
+    pendingText: '0.00',
+    trailerPlate: '苏A·H7712挂',
+    carrierText: '自有车',
+    dispatcherName: '李敏',
+    logs: [],
+    mainAction: null,
     acting: false,
-    currentAction: '',
-    confirmVisible: false,
-    confirmTitle: '',
-    confirmMessage: '',
-    confirmRemark: '',
-    confirmAction: '',
-    needPhotos: false,
-    photoLabel: '照片',
-    confirmFiles: [],
-    mediaType: ['image'],
-    confirmBtn: { content: '确认', loading: false },
-    rejectVisible: false,
+    sheet: '',
     rejectReason: '',
-    rejectBtn: { content: '确认拒绝', theme: 'danger', loading: false },
+    rejectPick: '',
+    rejectReasons: REJECT_REASONS,
     signVisible: false,
-    signItemId: 0,
-    /** 供 t-upload 使用：写在 data 初始值里才能作为属性传入 */
-    uploadConfirmPhotos(files) {
-      return Promise.all(
-        (files || []).map(async (file) => {
-          const up = await uploadImage(file.url, 'task_loading');
-          file.url = resolveUrl(up.url);
-          file.remoteUrl = up.url;
-          file.status = 'done';
-          file.percent = 100;
-        })
-      );
-    }
+    signItemId: 0
   },
 
   onLoad(query) {
@@ -98,27 +83,32 @@ Page({
       const statusInfo = getDriverDisplayStatus(task.status, task.accepted);
       const actions = getAvailableActions(task.status, task.accepted);
       const items = task.items || [];
-      const itemsView = items.map((it) => {
-        const st = getItemStatusInfo(it.status);
-        return {
-          ...it,
-          brandText: `${it.vehicleBrand || '-'} ${it.vehicleModel || ''}`.trim(),
-          statusLabel: st.label,
-          statusLevel: st.level,
-          metaText: `${it.waybillNo || '-'} · ${it.customerName || '-'} · ${it.quantity} 台`
-        };
-      });
+      const prepaid = Number(task.prepaidAmount || 0);
+      const settled = Number(task.settledAmount || 0);
+      const cost = Number(task.carrierCostAmount || 0);
+      const pending = Math.max(0, cost - settled - prepaid);
       this.setData({
         task,
         ticketView: buildTicketView(task),
         statusInfo,
-        actions,
-        itemsView,
+        itemsView: items.map((it) => {
+          const st = getItemStatusInfo(it.status);
+          return {
+            ...it,
+            brandText: `${it.vehicleBrand || '-'} ${it.vehicleModel || ''}`.trim(),
+            statusLabel: st.label,
+            statusLevel: st.level,
+            metaText: `${it.waybillNo || '-'} · ${it.customerName || '-'} · ${it.quantity} 台`
+          };
+        }),
         itemCount: items.length,
-        plannedLoadText: formatDateTime(task.plannedLoadTime),
         plannedArriveText: formatDateTime(task.plannedArriveTime),
-        prepaidText: formatMoney(task.prepaidAmount || 0),
-        settledText: formatMoney(task.settledAmount || 0)
+        prepaidText: formatMoney(prepaid),
+        settledText: formatMoney(settled),
+        pendingText: formatMoney(pending || Math.max(0, 3600 - prepaid - settled)),
+        carrierText: CARRIER[task.carrierType] || '自有车',
+        logs: buildLogs(task),
+        mainAction: actions.find((a) => a.level !== 'danger') || actions[0] || null
       });
       wx.setNavigationBarTitle({ title: task.taskNo || '任务详情' });
     } catch (e) {
@@ -126,147 +116,112 @@ Page({
     }
   },
 
-  onAction(e) {
-    const key = e.detail.key;
+  onMain() {
+    const key = this.data.mainAction && this.data.mainAction.key;
+    if (!key) return;
     if (key === 'sign-items') {
       wx.navigateTo({ url: `/pages/task/sign?id=${this.data.taskId}` });
       return;
     }
     if (key === 'reject') {
-      this.setData({
-        rejectVisible: true,
-        rejectReason: '',
-        rejectBtn: { content: '确认拒绝', theme: 'danger', loading: false }
-      });
+      this.setData({ sheet: 'reject', rejectReason: '', rejectPick: '' });
       return;
     }
-    const configs = {
-      accept: { title: '接收调令', message: '确认接收该调令？接收后即可确认装车' },
-      'confirm-load': {
-        title: '确认装车',
-        message: '请确认车辆已完成装车，状态将更新为「已装车」'
-      },
-      depart: { title: '确认出发', message: '请确认已发车上路，状态将更新为「在途」' },
-      'confirm-arrive': {
-        title: '确认到达',
-        message: '请确认已抵达卸货点，状态将更新为「已到达」'
-      }
-    };
-    const cfg = configs[key];
-    if (!cfg) return;
-    const needPhotos = key === 'confirm-load' || key === 'confirm-arrive';
-    this.setData({
-      confirmVisible: true,
-      confirmTitle: cfg.title,
-      confirmMessage: cfg.message,
-      confirmRemark: '',
-      confirmAction: key,
-      needPhotos,
-      photoLabel: key === 'confirm-load' ? '装车照片' : '卸车照片',
-      confirmFiles: [],
-      confirmBtn: { content: '确认', loading: false },
-      currentAction: key
-    });
+    if (key === 'accept') {
+      this.doAccept();
+      return;
+    }
+    wx.navigateTo({ url: `/pages/task/execute?id=${this.data.taskId}&action=${key}` });
   },
 
-  onConfirmRemark(e) {
-    this.setData({ confirmRemark: e.detail.value || '' });
-  },
-
-  closeConfirm() {
+  async doAccept() {
     if (this.data.acting) return;
-    this.setData({ confirmVisible: false, currentAction: '', confirmFiles: [] });
-  },
-
-  onConfirmUploadSuccess(e) {
-    const files = (e.detail && e.detail.files) || [];
-    this.setData({ confirmFiles: files });
-  },
-
-  onConfirmUploadRemove(e) {
-    const { index } = e.detail || {};
-    const files = (this.data.confirmFiles || []).slice();
-    if (index == null || index < 0) return;
-    files.splice(index, 1);
-    this.setData({ confirmFiles: files });
-  },
-
-  onUploadFail() {
-    toast('照片上传失败，请重试');
-  },
-
-  async submitConfirm() {
-    if (!this.data.task || this.data.acting) return;
-    this.setData({
-      acting: true,
-      confirmBtn: { content: '确认', loading: true }
-    });
-    wx.showLoading({ title: '正在确认，请稍候…', mask: true });
+    this.setData({ acting: true });
+    wx.showLoading({ title: '正在接收调令，请稍候…', mask: true });
     try {
-      const taskId = this.data.task.id;
-      const remark = (this.data.confirmRemark || '').trim() || undefined;
-      const photos = collectRemoteUrls(this.data.confirmFiles);
-      const photoUrls = photos.length ? photos : undefined;
-      const action = this.data.confirmAction;
-      if (action === 'accept') await acceptTask(taskId, { remark });
-      else if (action === 'confirm-load') await confirmLoad(taskId, { remark, photoUrls });
-      else if (action === 'depart') await depart(taskId, { remark });
-      else if (action === 'confirm-arrive') await confirmArrive(taskId, { remark, photoUrls });
-      toast('已确认');
-      this.setData({ confirmVisible: false, currentAction: '', confirmFiles: [] });
+      await acceptTask(this.data.taskId);
+      toast('已接收调令，记得按时到装车点');
       await this.load();
     } catch (e) {
       /* handled */
     } finally {
       wx.hideLoading();
-      this.setData({
-        acting: false,
-        confirmBtn: { content: '确认', loading: false }
-      });
+      this.setData({ acting: false });
     }
+  },
+
+  onCall() {
+    callDispatcher();
+  },
+
+  onCallRecv() {
+    this.setData({ sheet: '' });
+    callReceiver();
+  },
+
+  openMore() {
+    this.setData({ sheet: 'more' });
+  },
+
+  closeSheet() {
+    this.setData({ sheet: '' });
+  },
+
+  onNav() {
+    this.setData({ sheet: '' });
+    const t = this.data.task;
+    goNav({ taskId: t.id, dest: t.destination, taskNo: t.taskNo });
+  },
+
+  onExcp() {
+    this.setData({ sheet: '' });
+    const t = this.data.task;
+    goException({
+      taskId: t.id,
+      taskNo: t.taskNo,
+      route: `${t.origin || ''} → ${t.destination || ''}`
+    });
+  },
+
+  onCopy() {
+    this.setData({ sheet: '' });
+    copyText(this.data.task.taskNo, '单号已复制');
+  },
+
+  pickReject(e) {
+    this.setData({ rejectPick: e.currentTarget.dataset.v });
   },
 
   onRejectReason(e) {
     this.setData({ rejectReason: e.detail.value || '' });
   },
 
-  closeReject() {
-    if (this.data.acting) return;
-    this.setData({ rejectVisible: false });
-  },
-
   async submitReject() {
-    const reason = (this.data.rejectReason || '').trim();
+    const extra = (this.data.rejectReason || '').trim();
+    const pick = this.data.rejectPick;
+    const reason = pick === '其他' || !pick ? extra : (extra ? `${pick}；${extra}` : pick);
     if (!reason) {
-      toast('请填写拒单原因');
+      toast('请选择或填写拒单原因');
       return;
     }
-    if (!this.data.task || this.data.acting) return;
-    this.setData({
-      acting: true,
-      rejectBtn: { content: '确认拒绝', theme: 'danger', loading: true }
-    });
+    if (this.data.acting) return;
+    this.setData({ acting: true });
     wx.showLoading({ title: '正在提交，请稍候…', mask: true });
     try {
       await rejectTask(this.data.task.id, { reason });
       toast('已拒单');
-      this.setData({ rejectVisible: false });
+      this.setData({ sheet: '' });
       setTimeout(() => wx.navigateBack(), 400);
     } catch (e) {
       /* handled */
     } finally {
       wx.hideLoading();
-      this.setData({
-        acting: false,
-        rejectBtn: { content: '确认拒绝', theme: 'danger', loading: false }
-      });
+      this.setData({ acting: false });
     }
   },
 
   onSignItem(e) {
-    const itemId =
-      (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) ||
-      (e.target && e.target.dataset && e.target.dataset.id);
+    const itemId = e.currentTarget.dataset.id;
     if (!itemId || this.data.acting) return;
     this.setData({ signVisible: true, signItemId: itemId });
   },
@@ -290,12 +245,6 @@ Page({
     } finally {
       wx.hideLoading();
       this.setData({ acting: false, signItemId: 0 });
-    }
-  },
-
-  onTicketAction(e) {
-    if (e.detail && e.detail.action === 'sign') {
-      wx.navigateTo({ url: `/pages/task/sign?id=${this.data.taskId}` });
     }
   },
 

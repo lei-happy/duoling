@@ -1,6 +1,33 @@
 <view class="page {{fontClass}}">
-  <view class="coming">
-    <view class="coming__t">成绩单即将上线</view>
-    <view class="coming__s">准点率、安全行驶天数和客户评价还没有接到司机端。上线前这里不会写假数字。</view>
+  <view class="pad">
+    <view class="card head">
+      <view class="gold">{{honor.title}}</view>
+      <view class="meta">{{honor.rank}}</view>
+    </view>
+    <view class="overcard">
+      <view class="honor-stats">
+        <view><b>{{honor.safeDays}}</b><span>安全行驶天</span></view>
+        <view><b>{{honor.ontime}}</b><span>准点率 %</span></view>
+        <view><b>{{honor.score}}</b><span>服务评分</span></view>
+      </view>
+    </view>
+    <view class="sec-title"><text class="sec-title__h">本月表现</text></view>
+    <view class="card">
+      <view wx:for="{{honor.kpis}}" wx:key="label" class="kpi">
+        <view class="kpi-h">
+          <text>{{item.label}}</text>
+          <text>{{item.value}}</text>
+        </view>
+        <view class="bar-track"><view class="bar-fill is-blue" style="width: {{item.width}}%;"></view></view>
+      </view>
+    </view>
+    <view class="sec-title"><text class="sec-title__h">客户评价</text></view>
+    <view class="card">
+      <view wx:for="{{honor.reviews}}" wx:key="id" class="rev">
+        <view class="rev-t">{{item.who}}</view>
+        <view class="rev-s">{{item.text}}</view>
+        <view class="meta">{{item.time}}</view>
+      </view>
+    </view>
   </view>
 </view>

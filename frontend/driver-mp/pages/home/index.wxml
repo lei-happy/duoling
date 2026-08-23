@@ -10,10 +10,15 @@
         </view>
       </view>
       <view class="hd__bell" bindtap="goMessage">
-        <view class="hd__bell-ico"></view>
+        <mp-icon name="bell" size="md" color="#ffffff" />
+        <view wx:if="{{unread}}" class="hd__badge">{{unread}}</view>
       </view>
     </view>
-    <view class="hd__strip">天气与限行即将上线</view>
+    <view class="hd__strip">
+      <text>{{weather.strip}}</text>
+      <text class="hd__dot">·</text>
+      <text>{{weather.limit}}</text>
+    </view>
   </view>
 
   <view class="overcard">
@@ -32,7 +37,7 @@
       </view>
       <view class="stat" data-chip="4" bindtap="goTask">
         <text class="stat__v">{{kpi.waitSign}}</text>
-        <text class="stat__l">待签收</text>
+        <text class="stat__l">已到达</text>
       </view>
     </view>
   </view>
@@ -51,7 +56,10 @@
     />
 
     <view wx:if="{{running}}" class="btnrow mt-12">
-      <view class="btn btn--ghost" bindtap="onNavHint">导航去卸货点</view>
+      <view class="btn btn--ghost" bindtap="onNav">
+        <mp-icon name="nav" size="sm" />
+        导航去卸货点
+      </view>
       <view
         wx:if="{{running.canArrive}}"
         class="btn btn--accent"
@@ -68,6 +76,10 @@
       <view slot="idle" class="idlecopy">
         <text class="idlecopy__t">这会儿没有要跑的单</text>
         <text class="idlecopy__s">调度派车后会立刻出现在这里，不用一直进来刷。</text>
+        <view class="btn btn--ghost btn--sm idlecopy__btn" bindtap="onCallDispatch">
+          <mp-icon name="phone" size="sm" />
+          联系调度 李敏
+        </view>
       </view>
     </ticket-card>
 
@@ -75,19 +87,27 @@
     <view class="card card--tight quick-card">
       <view class="quick">
         <view class="quick__i" bindtap="onReceipt">
-          <view class="quick__ico q1"></view>
+          <view class="quick__ico q1">
+            <mp-icon name="camera" size="lg" color="#1d4ed8" />
+          </view>
           <text>上传回单</text>
         </view>
         <view class="quick__i" bindtap="openExcp">
-          <view class="quick__ico q2"></view>
+          <view class="quick__ico q2">
+            <mp-icon name="warn" size="lg" color="#b26b00" />
+          </view>
           <text>异常上报</text>
         </view>
         <view class="quick__i" bindtap="goFinance">
-          <view class="quick__ico q3"></view>
+          <view class="quick__ico q3">
+            <mp-icon name="wallet" size="lg" color="#15803d" />
+          </view>
           <text>我的收入</text>
         </view>
         <view class="quick__i" bindtap="goFuel">
-          <view class="quick__ico q4"></view>
+          <view class="quick__ico q4">
+            <mp-icon name="fuel" size="lg" color="#0369a1" />
+          </view>
           <text>油卡加油</text>
         </view>
       </view>
@@ -132,7 +152,7 @@
         </view>
       </view>
       <view class="week-foot">
-        <text>本周有计划 {{week.tripCount}} 天</text>
+        <text>本周已跑 {{week.tripCount}} 趟 · 累计 {{week.kmText}} 公里</text>
         <text wx:if="{{week.sundayRest}}" class="week-rest">周日休息</text>
       </view>
     </view>
@@ -140,20 +160,20 @@
 </view>
 
 <view wx:if="{{sheet}}" class="sheet-mask" bindtap="closeSheet"></view>
-<view wx:if="{{sheet === 'excp'}}" class="sheet">
-  <view class="sheet__grab"></view>
-  <view class="sheet__title">异常上报</view>
-  <view class="coming">
-    <view class="coming__t">异常上报即将上线</view>
-    <view class="coming__s">车子或货物出问题，先打电话给调度，别在路上干等。</view>
-  </view>
-  <view class="btn btn--ghost btn--block" bindtap="closeSheet">知道了</view>
-</view>
 
 <view wx:if="{{sheet === 'reject'}}" class="sheet">
   <view class="sheet__grab"></view>
   <view class="sheet__title">拒绝调令</view>
   <view class="sheet-desc">拒单后，这单会退回调度重新派。请写清楚原因。</view>
+  <view class="chips">
+    <view
+      wx:for="{{rejectReasons}}"
+      wx:key="*this"
+      class="chip {{rejectPick === item ? 'is-on' : ''}}"
+      data-v="{{item}}"
+      bindtap="pickReject"
+    >{{item}}</view>
+  </view>
   <t-textarea
     placeholder="请填写拒单原因（必填）"
     value="{{rejectReason}}"

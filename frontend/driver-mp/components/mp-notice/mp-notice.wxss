@@ -25,13 +25,8 @@
   color: #15803d;
 }
 
-.notice__ico {
-  width: 12rpx;
-  height: 12rpx;
-  border-radius: 50%;
-  background: currentColor;
-  margin-top: 14rpx;
-  flex-shrink: 0;
+.notice > .mp-icon {
+  margin-top: 4rpx;
 }
 
 .notice__main {
