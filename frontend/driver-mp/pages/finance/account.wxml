@@ -1,0 +1,32 @@
+<view class="page {{fontClass}}">
+  <view class="loading-wrap" wx:if="{{loading && !banks.length && !others.length}}">
+    <t-loading theme="circular" size="40rpx" text="正在加载，请稍候…" />
+  </view>
+
+  <block wx:for="{{banks}}" wx:key="id">
+    <view class="bank-card">
+      <view class="bank-card__l">{{item.accountName}}</view>
+      <view class="bank-card__no">{{item.accountNoMasked}}</view>
+      <view class="bank-card__t">{{item.typeLabel}}</view>
+    </view>
+  </block>
+
+  <view class="sec-title pad" wx:if="{{others.length}}"><text class="sec-title__h">其他账户</text></view>
+  <view class="card card--plain" wx:if="{{others.length}}">
+    <view wx:for="{{others}}" wx:key="id" class="other-row">
+      <view>
+        <view class="other-t">{{item.accountName}}</view>
+        <view class="meta">{{item.typeLabel}} · {{item.accountNoMasked}}</view>
+      </view>
+      <view class="other-v">{{item.balanceText}}</view>
+    </view>
+  </view>
+
+  <empty-state
+    wx:if="{{!loading && !banks.length && !others.length}}"
+    text="还没有收款账户"
+    hint="收款卡由企业维护，有问题找财务或调度。"
+  />
+
+  <view class="hint">收款账户不能自己改。要换卡，请让企业管理员在后台帮你更新。</view>
+</view>

@@ -1,37 +1,57 @@
-<view class="page profile">
-  <view class="user-card">
-    <view class="user-row">
-      <t-avatar size="100rpx" class="avatar">{{avatarText}}</t-avatar>
-      <view class="user-info">
-        <view class="name">{{realName}}</view>
-        <view class="phone">{{phoneMasked}}</view>
+<view class="page page-flush {{fontClass}}">
+  <view class="hd-hero prof" style="padding-top: {{padTop}}px; padding-right: {{padRight}}px; padding-left: 32rpx; padding-bottom: 96rpx;" bindtap="goInfo">
+    <view class="hd-hero__grid"></view>
+    <view class="prof__r">
+      <view class="prof__av">{{avatarText}}</view>
+      <view class="prof__grow">
+        <view class="prof__n">{{realName}}</view>
+        <view class="prof__s">{{subText}}</view>
       </view>
+      <text class="prof__arr">›</text>
     </view>
-    <view class="tenant">当前企业：{{tenantName}}</view>
   </view>
 
-  <t-cell-group>
-    <t-cell title="个人信息" left-icon="user" arrow bind:click="goInfo" />
-    <t-cell title="切换企业" left-icon="swap" arrow bind:click="goSwitchTenant" />
-    <t-cell title="修改密码" left-icon="lock-on" arrow bind:click="goChangePassword" />
-  </t-cell-group>
-
-  <view class="group-gap"></view>
-
-  <t-cell-group>
-    <t-cell title="收入汇总" left-icon="chart-bar" arrow bind:click="goSummary" />
-    <t-cell title="收款账户" left-icon="card" arrow bind:click="goSummary" />
-  </t-cell-group>
-
-  <view class="group-gap"></view>
-
-  <t-cell-group>
-    <t-cell title="关于" left-icon="info-circle" arrow bind:click="onAbout" />
-  </t-cell-group>
-
-  <view class="logout-wrap">
-    <t-button theme="danger" variant="outline" size="large" shape="round" block bind:tap="onLogout">
-      退出登录
-    </t-button>
+  <view class="overcard honor-card" bindtap="goHonor">
+    <view class="coming coming--tight">
+      <view class="coming__t">成绩单即将上线</view>
+      <view class="coming__s">安全天数、准点率和评分会显示在这里。</view>
+    </view>
   </view>
+
+  <view class="pad">
+    <view class="card card--plain">
+      <mp-cell icon="building" title="当前企业" subtitle="{{tenantName}}" extra="切换" bind:tap="goSwitchTenant" />
+    </view>
+
+    <view class="sec-title"><text class="sec-title__h">我的资料</text></view>
+    <view class="card card--plain">
+      <mp-cell icon="user" title="个人信息" subtitle="手机号、紧急联系人、收款卡" bind:tap="goInfo" />
+      <mp-cell icon="truck" tone="amber" title="我的车与证照" subtitle="车辆和证照档案即将上线" bind:tap="goVehicles" />
+      <mp-cell icon="star" tone="green" title="我的成绩单" subtitle="准点率、安全记录" bind:tap="goHonor" />
+    </view>
+
+    <view class="sec-title"><text class="sec-title__h">设置</text></view>
+    <view class="card card--plain">
+      <mp-cell icon="settings" title="通用设置" subtitle="字号、缓存、退出登录" bind:tap="goSettings" />
+      <mp-cell icon="bell" title="通知设置" subtitle="派车、到账提醒即将上线" bind:tap="goNotify" />
+      <mp-cell icon="info" title="帮助与反馈" subtitle="常见问题、联系公司" bind:tap="openHelp" />
+    </view>
+
+    <view class="ver">智途司机端 · {{tenantName}}</view>
+  </view>
+</view>
+
+<view wx:if="{{sheet === 'help'}}" class="sheet-mask" bindtap="closeSheet"></view>
+<view wx:if="{{sheet === 'help'}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">帮助与反馈</view>
+  <view class="faq">
+    <view class="faq__q">调令接错了怎么办？</view>
+    <view class="faq__a">在任务里拒绝并写明原因，调度会重新派。已经装车的单，直接打电话给调度。</view>
+    <view class="faq__q">收入对不上？</view>
+    <view class="faq__a">先核对应任务的费用单。还对不上，把单号发给企业财务。</view>
+    <view class="faq__q">收不到派车通知？</view>
+    <view class="faq__a">微信订阅消息还没接上。有新调令时，打开工作台就能看到。</view>
+  </view>
+  <view class="btn btn--ghost btn--block" bindtap="closeSheet">知道了</view>
 </view>

@@ -1,0 +1,37 @@
+<view class="page {{fontClass}}">
+  <view class="pad">
+    <view class="seg">
+      <view class="seg__i {{range === 'month' ? 'is-on' : ''}}" data-v="month" bindtap="onRange">本月</view>
+      <view class="seg__i {{range === 'prev' ? 'is-on' : ''}}" data-v="prev" bindtap="onRange">上月</view>
+    </view>
+    <view class="overcard stats-card">
+      <view class="stats">
+        <view class="stat">
+          <text class="stat__v">{{stats.trips}}</text>
+          <text class="stat__l">完成趟次</text>
+        </view>
+        <view class="stat">
+          <text class="stat__v">{{stats.qty}}</text>
+          <text class="stat__l">运输台数</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="loading-wrap" wx:if="{{loading && !list.length}}">
+    <t-loading theme="circular" size="40rpx" text="正在加载，请稍候…" />
+  </view>
+  <empty-state wx:if="{{!loading && !list.length}}" text="这个月还没有完成的任务" hint="交车完成后会记在这里。" />
+
+  <view class="card card--plain" wx:if="{{list.length}}">
+    <view wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="onTap">
+      <mp-cell
+        icon="check"
+        tone="green"
+        title="{{item.route}}"
+        subtitle="{{item.sub}}"
+        extra="{{item.qtyText}}"
+      />
+    </view>
+  </view>
+</view>

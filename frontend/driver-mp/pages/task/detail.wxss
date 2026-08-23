@@ -1,3 +1,7 @@
+.detail-ticket {
+  padding-top: 24rpx;
+}
+
 .status-banner {
   padding: 36rpx 32rpx;
   color: #fff;

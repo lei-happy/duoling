@@ -1,0 +1,6 @@
+<view class="page {{fontClass}}">
+  <view class="coming">
+    <view class="coming__t">订阅消息即将上线</view>
+    <view class="coming__s">派车、到账和证照提醒会走微信通知。上线前请打开工作台查看新调令。</view>
+  </view>
+</view>

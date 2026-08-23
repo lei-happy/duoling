@@ -1,26 +1,24 @@
-const { getDriverDisplayStatus } = require('../../utils/constants');
-const { formatDateTime } = require('../../utils/format');
+const { buildTicketView } = require('../../utils/task-view');
 
 Component({
   properties: {
     task: { type: Object, value: {} }
   },
   data: {
-    statusInfo: { label: '', level: 'default' },
-    loadTime: ''
+    view: {}
   },
   observers: {
     task(task) {
       if (!task) return;
-      this.setData({
-        statusInfo: getDriverDisplayStatus(task.status, task.accepted),
-        loadTime: formatDateTime(task.plannedLoadTime)
-      });
+      this.setData({ view: buildTicketView(task) });
     }
   },
   methods: {
-    onTap() {
-      this.triggerEvent('tap', { id: this.data.task.id });
+    onTap(e) {
+      this.triggerEvent('tap', e.detail);
+    },
+    onAction(e) {
+      this.triggerEvent('action', e.detail);
     }
   }
 });

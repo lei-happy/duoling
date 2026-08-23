@@ -1,0 +1,44 @@
+<view class="page {{fontClass}}">
+  <view class="pad">
+    <view class="sec-title"><text class="sec-title__h">显示字号</text></view>
+  </view>
+  <view class="card">
+    <view class="seg">
+      <view class="seg__i {{scale === 'standard' ? 'is-on' : ''}}" data-v="standard" bindtap="onScale">标准</view>
+      <view class="seg__i {{scale === 'large' ? 'is-on' : ''}}" data-v="large" bindtap="onScale">大</view>
+      <view class="seg__i {{scale === 'extra' ? 'is-on' : ''}}" data-v="extra" bindtap="onScale">特大</view>
+    </view>
+    <view class="preview">
+      <view class="preview__t">预览</view>
+      <view class="preview__s">任务单号、卸货点和金额会按这个字号显示。戴手套、强光下建议用「大」。</view>
+    </view>
+  </view>
+
+  <view class="card card--plain">
+    <view class="set-row" bindtap="onClearCache">
+      <view>
+        <view class="set-t">清理缓存</view>
+        <view class="meta">不影响登录状态</view>
+      </view>
+      <text class="cell__arr">›</text>
+    </view>
+    <view class="set-row" bindtap="onAbout">
+      <view>
+        <view class="set-t">关于智途司机端</view>
+        <view class="meta">当前版本 v0.1.0</view>
+      </view>
+      <text class="cell__arr">›</text>
+    </view>
+    <view class="set-row" bindtap="goPassword">
+      <view>
+        <view class="set-t">修改密码</view>
+        <view class="meta">定期更换更安全</view>
+      </view>
+      <text class="cell__arr">›</text>
+    </view>
+  </view>
+
+  <view class="logout-wrap">
+    <view class="btn btn--danger btn--block btn--lg" bindtap="onLogout">退出登录</view>
+  </view>
+</view>

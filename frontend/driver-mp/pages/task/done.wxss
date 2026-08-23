@@ -1,0 +1,7 @@
+.stats-card {
+  margin: 24rpx 0 0;
+}
+
+.pad {
+  padding: 24rpx 32rpx 0;
+}

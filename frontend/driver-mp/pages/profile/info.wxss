@@ -1,1 +1,14 @@
-/* 使用全局 form / cell 样式 */
+.sheet-desc {
+  font-size: 26rpx;
+  color: #5a6779;
+  margin-bottom: 16rpx;
+  line-height: 1.55;
+}
+
+.mt-16 {
+  margin-top: 32rpx;
+}
+
+.pad {
+  padding: 0 32rpx 32rpx;
+}

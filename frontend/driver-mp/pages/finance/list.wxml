@@ -1,77 +1,47 @@
-<view class="page">
-  <view class="summary">
-    <view class="summary-title">本月累计收入</view>
-    <view class="summary-amount">¥ {{totalIncomeText}}</view>
-    <view class="summary-row">
-      <view class="kpi">
-        <view class="kpi-label">预付</view>
-        <view class="kpi-val">¥{{prepaidText}}</view>
-      </view>
-      <view class="kpi">
-        <view class="kpi-label">补款</view>
-        <view class="kpi-val">¥{{supplementText}}</view>
-      </view>
-      <view class="kpi">
-        <view class="kpi-label">结算</view>
-        <view class="kpi-val">¥{{settledText}}</view>
-      </view>
+<view class="page page-flush {{fontClass}}">
+  <view class="wallethd">
+    <view class="wallethd__l">{{monthLabel}}累计收入（元）</view>
+    <view class="wallethd__v"><small>¥</small>{{totalIncomeText}}</view>
+    <view class="wallethd__sp">
+      <view><text class="k">预付</text><text class="v">{{prepaidText}}</text></view>
+      <view><text class="k">补款</text><text class="v">{{supplementText}}</text></view>
+      <view><text class="k">结算</text><text class="v">{{settledText}}</text></view>
     </view>
-    <t-cell
-      class="fund-entry"
-      title="我的资金账户（往来账）"
-      arrow
-      bind:click="goFundAccount"
+  </view>
+
+  <view class="pad income-pad">
+    <mp-notice
+      wx:if="{{unpaidText}}"
+      title="还有 ¥{{unpaidText}} 没到账"
+      desc="待审批和已审批、还没打到账上的费用单会算在这里。"
     />
-  </view>
 
-  <t-tabs
-    value="{{docType}}"
-    theme="tag"
-    space-evenly="{{false}}"
-    swipeable="{{false}}"
-    t-class-content="tabs-panel-hidden"
-    bind:change="onTabsChange"
-  >
-    <t-tab-panel
-      wx:for="{{tabs}}"
-      wx:key="name"
-      label="{{item.title}}"
-      value="{{item.name}}"
-    />
-  </t-tabs>
-
-  <view class="loading-wrap" wx:if="{{loading && !list.length}}">
-    <t-loading theme="circular" size="40rpx" text="正在加载，请稍候…" />
-  </view>
-
-  <empty-state wx:if="{{!loading && !list.length}}" text="暂无费用单" hint="有费用单据时会显示在这里" />
-
-  <view
-    class="finance-card"
-    wx:for="{{list}}"
-    wx:key="id"
-    data-id="{{item.id}}"
-    bindtap="goDetail"
-  >
-    <view class="row-1">
-      <text class="doc-no">{{item.docNo}}</text>
-      <status-tag label="{{item.statusLabel}}" level="{{item.statusLevel}}" />
+    <view class="sec-title"><text class="sec-title__h">快捷</text></view>
+    <view class="card card--plain">
+      <mp-cell icon="fuel" tone="amber" title="资金账户与油卡" subtitle="往来账；油卡流水即将上线" bind:tap="goFund" />
+      <mp-cell icon="chart" tone="green" title="收入汇总" subtitle="近几个月趋势" bind:tap="goSummary" />
+      <mp-cell icon="card" title="我的收款账户" subtitle="{{accountHint}}" bind:tap="goAccount" />
     </view>
-    <view class="row-2">
-      <t-tag theme="primary" variant="light" size="small">{{item.typeLabel}}</t-tag>
-      <text class="task-no">关联任务：{{item.taskNo || item.taskId}}</text>
+
+    <view class="sec-title">
+      <text class="sec-title__h">费用单</text>
+      <text class="sec-title__more" bindtap="goDocs">全部 ›</text>
     </view>
-    <view class="row-3">
-      <view class="amount">
-        <text class="amount-label">实付</text>
-        <text class="amount-val">¥{{item.amountText}}</text>
+    <view class="loading-wrap" wx:if="{{loading && !preview.length}}">
+      <t-loading theme="circular" size="40rpx" text="正在加载，请稍候…" />
+    </view>
+    <empty-state wx:if="{{!loading && !preview.length}}" text="还没有费用单" hint="预付、补款和结算单会按任务记在这里。" />
+    <view class="card card--plain" wx:if="{{preview.length}}">
+      <view wx:for="{{preview}}" wx:key="id" data-id="{{item.id}}" bindtap="goDetail">
+        <mp-cell
+          icon="{{item.icon}}"
+          tone="{{item.tone}}"
+          title="{{item.title}}"
+          subtitle="{{item.subtitle}}"
+          extra="{{item.amountText}}"
+          extra-tone="{{item.extraTone}}"
+        />
       </view>
-      <text class="time">{{item.timeText}}</text>
     </view>
-  </view>
-
-  <view class="footer-tip" wx:if="{{list.length}}">
-    <t-loading wx:if="{{loadingMore}}" theme="circular" size="32rpx" text="加载中…" />
-    <text wx:else>{{finished ? '没有更多了' : '上拉加载更多'}}</text>
   </view>
 </view>

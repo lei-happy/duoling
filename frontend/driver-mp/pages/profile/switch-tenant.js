@@ -2,16 +2,23 @@ const { ensureAuth } = require('../../utils/auth');
 const { getUserTenants, switchTenant } = require('../../api/auth');
 const { applyLoginSuccess, getUserInfo, getTenantCode } = require('../../services/session');
 const { toast } = require('../../utils/request');
+const { getFontScale } = require('../../utils/font');
 
 function pickTenants(list) {
-  return (list || []).map((t) => ({
-    tenantCode: t.tenantCode || t.tenant_code || '',
-    tenantName: t.tenantName || t.tenant_name || ''
-  }));
+  return (list || []).map((t) => {
+    const tenantName = t.tenantName || t.tenant_name || '';
+    const tenantCode = t.tenantCode || t.tenant_code || '';
+    return {
+      tenantCode,
+      tenantName,
+      initial: (tenantName || tenantCode || '企').slice(0, 1)
+    };
+  });
 }
 
 Page({
   data: {
+    fontClass: 'font-lg',
     tenants: [],
     currentCode: '',
     currentName: '',
@@ -20,6 +27,7 @@ Page({
 
   onShow() {
     if (!ensureAuth({})) return;
+    this.setData({ fontClass: getFontScale().className });
     const user = getUserInfo() || {};
     this.setData({
       currentCode: getTenantCode() || user.tenantCode || '',

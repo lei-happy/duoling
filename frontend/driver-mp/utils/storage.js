@@ -6,7 +6,8 @@ const STORAGE_KEYS = {
   USER_INFO: 'user_info',
   TENANT_CODE: 'tenant_code',
   TENANT_LIST: 'tenant_list',
-  PENDING_LOGIN: 'pending_login'
+  PENDING_LOGIN: 'pending_login',
+  FONT_SCALE: 'font_scale'
 };
 
 function setItem(key, value) {

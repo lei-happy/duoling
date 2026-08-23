@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "费用单",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "chip-bar": "/components/chip-bar/chip-bar",
+    "mp-cell": "/components/mp-cell/mp-cell",
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

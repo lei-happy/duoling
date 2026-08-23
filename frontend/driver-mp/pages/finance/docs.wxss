@@ -1,0 +1,7 @@
+.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  background: rgba(244, 246, 251, 0.94);
+  padding: 16rpx 32rpx 12rpx;
+}

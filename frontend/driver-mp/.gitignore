@@ -5,5 +5,8 @@
 node_modules/
 miniprogram_npm/
 
+# 本机局域网 IP，真机调试用，不入库
+config/env.local.js
+
 # 微信开发者工具本地私有覆盖（若含本机 appid 可不提交；默认已提供可共享模板）
 # project.private.config.json

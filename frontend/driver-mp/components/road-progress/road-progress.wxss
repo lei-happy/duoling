@@ -1,0 +1,100 @@
+.road {
+  margin-top: 28rpx;
+}
+
+.road__track {
+  position: relative;
+  height: 32rpx;
+  border-radius: 16rpx;
+  background: #1f2937;
+  overflow: hidden;
+}
+
+.road__track::after {
+  content: "";
+  position: absolute;
+  left: 16rpx;
+  right: 16rpx;
+  top: 50%;
+  height: 4rpx;
+  margin-top: -2rpx;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.55) 0 18rpx,
+    transparent 18rpx 38rpx
+  );
+}
+
+.road__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #1b3ba3, #1d4ed8);
+  border-radius: 16rpx;
+}
+
+.road__truck {
+  position: absolute;
+  top: 50%;
+  width: 52rpx;
+  height: 52rpx;
+  margin-top: -26rpx;
+  margin-left: -26rpx;
+  border-radius: 50%;
+  background: #f5a524;
+  box-shadow: 0 4rpx 16rpx rgba(180, 110, 0, 0.45), 0 0 0 6rpx #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.road__cab {
+  width: 22rpx;
+  height: 16rpx;
+  border: 4rpx solid #3b2500;
+  border-radius: 4rpx 8rpx 4rpx 4rpx;
+  position: relative;
+}
+
+.road__cab::after {
+  content: "";
+  position: absolute;
+  left: -10rpx;
+  bottom: -6rpx;
+  width: 36rpx;
+  height: 8rpx;
+  border-bottom: 4rpx solid #3b2500;
+  border-radius: 0 0 6rpx 6rpx;
+}
+
+.road__stops {
+  display: flex;
+  margin-top: 16rpx;
+}
+
+.road__stops text {
+  flex: 1;
+  font-size: 23rpx;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.road__stops .is-done {
+  color: #5a6779;
+}
+
+.road__stops .is-now {
+  color: #b26b00;
+  font-weight: 600;
+}
+
+.is-parked .road__fill {
+  width: 0 !important;
+}
+
+.is-parked .road__truck {
+  left: 0 !important;
+  margin-left: 0;
+}

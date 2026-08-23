@@ -1,50 +1,102 @@
-<view class="page">
-  <t-tabs
-    value="{{activeStatus}}"
-    theme="tag"
-    space-evenly="{{false}}"
-    swipeable="{{false}}"
-    t-class-content="tabs-panel-hidden"
-    bind:change="onTabsChange"
-  >
-    <t-tab-panel
-      wx:for="{{tabs}}"
-      wx:key="value"
-      label="{{item.label}}"
-      value="{{item.value}}"
-    />
-  </t-tabs>
-
-  <view class="search-wrap">
-    <t-search
-      value="{{keyword}}"
-      placeholder="搜索任务号 / 起终点"
-      shape="round"
-      bind:change="onKeyword"
-      bind:submit="onSearch"
-      bind:clear="onClearKeyword"
-    />
+<view class="page {{fontClass}}">
+  <view class="sticky">
+    <view class="search-row">
+      <view class="searchbar">
+        <input
+          class="searchbar__input"
+          value="{{keyword}}"
+          placeholder="搜任务单号 / 车牌 / 目的地"
+          confirm-type="search"
+          bindinput="onKeyword"
+          bindconfirm="onSearch"
+        />
+      </view>
+      <view class="filter-btn {{filterOn ? 'is-on' : ''}}" bindtap="openFilter">筛</view>
+    </view>
+    <chip-bar items="{{chips}}" value="{{activeChip}}" bind:change="onChipChange" />
   </view>
 
-  <view class="loading-wrap" wx:if="{{loading && !list.length}}">
+  <view class="loading-wrap" wx:if="{{loading && !groups.length}}">
     <t-loading theme="circular" size="40rpx" text="正在加载任务，请稍候…" />
   </view>
 
-  <empty-state
-    wx:if="{{!loading && !list.length}}"
-    text="暂无相关任务"
-    hint="下拉可刷新，或切换上方状态查看"
-  />
+  <view wx:if="{{!loading && !groups.length}}" class="empty-box">
+    <empty-state text="今天还没有派给你的调令" hint="调度派车后会立刻出现在这里。想问下一单，直接联系调度。" />
+  </view>
 
-  <task-card
-    wx:for="{{list}}"
-    wx:key="id"
-    task="{{item}}"
-    bind:tap="onTaskTap"
-  />
+  <view wx:for="{{groups}}" wx:key="key" class="group">
+    <view class="daysep">
+      <text class="daysep__t">{{item.label}}</text>
+      <view class="daysep__line"></view>
+      <text class="daysep__n">{{item.count}} 单</text>
+    </view>
+    <view wx:for="{{item.list}}" wx:for-item="task" wx:key="id" class="swipe">
+      <view class="swipe__acts">
+        <view class="a-primary" data-dest="{{task.destination.title}}" catchtap="onNav">导航</view>
+        <view class="a-grey" catchtap="onDispatch">找调度</view>
+      </view>
+      <view
+        class="swipe__body"
+        style="transform: translateX({{task.offset || 0}}px);"
+        data-gid="{{index}}"
+        data-tid="{{task.id}}"
+        bindtouchstart="onTouchStart"
+        bindtouchmove="onTouchMove"
+        bindtouchend="onTouchEnd"
+      >
+        <ticket-card view="{{task}}" bind:tap="onTaskTap" bind:action="onTicketAction" />
+        <view wx:if="{{task.canAccept}}" class="btnrow card-actions">
+          <view class="btn btn--ghost btn--sm" data-id="{{task.id}}" catchtap="openReject">拒绝</view>
+          <view class="btn btn--primary btn--sm" data-id="{{task.id}}" catchtap="onAccept">接收调令</view>
+        </view>
+      </view>
+    </view>
+  </view>
 
-  <view class="footer-tip" wx:if="{{list.length}}">
-    <t-loading wx:if="{{loadingMore}}" theme="circular" size="32rpx" text="加载中…" />
-    <text wx:else>{{finished ? '没有更多了' : '上拉加载更多'}}</text>
+  <view class="footer-tip" wx:if="{{groups.length}}">— 只显示近 15 天的任务 —</view>
+</view>
+
+<view wx:if="{{sheet}}" class="sheet-mask" bindtap="closeSheet"></view>
+<view wx:if="{{sheet === 'filter'}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">筛选任务</view>
+  <view class="field-l">时间范围</view>
+  <view class="seg">
+    <view class="seg__i {{filter.range === '3' ? 'is-on' : ''}}" data-k="range" data-v="3" bindtap="setFilter">近 3 天</view>
+    <view class="seg__i {{filter.range === '7' ? 'is-on' : ''}}" data-k="range" data-v="7" bindtap="setFilter">近 7 天</view>
+    <view class="seg__i {{filter.range === 'month' ? 'is-on' : ''}}" data-k="range" data-v="month" bindtap="setFilter">本月</view>
+  </view>
+  <view class="field-l">时间类型</view>
+  <view class="seg">
+    <view class="seg__i {{filter.timeType === 'plannedLoad' ? 'is-on' : ''}}" data-k="timeType" data-v="plannedLoad" bindtap="setFilter">计划装车</view>
+    <view class="seg__i {{filter.timeType === 'plannedArrive' ? 'is-on' : ''}}" data-k="timeType" data-v="plannedArrive" bindtap="setFilter">计划到货</view>
+  </view>
+  <view class="field-l">承运方式</view>
+  <view class="seg">
+    <view class="seg__i {{filter.carrier === '' ? 'is-on' : ''}}" data-k="carrier" data-v="" bindtap="setFilter">不限</view>
+    <view class="seg__i {{filter.carrier === '1' ? 'is-on' : ''}}" data-k="carrier" data-v="1" bindtap="setFilter">自有车</view>
+    <view class="seg__i {{filter.carrier === '2' ? 'is-on' : ''}}" data-k="carrier" data-v="2" bindtap="setFilter">承运商</view>
+    <view class="seg__i {{filter.carrier === '3' ? 'is-on' : ''}}" data-k="carrier" data-v="3" bindtap="setFilter">社会运力</view>
+  </view>
+  <view class="btnrow mt-16">
+    <view class="btn btn--ghost" bindtap="clearFilter">清空条件</view>
+    <view class="btn btn--primary" bindtap="applyFilter">查看结果</view>
+  </view>
+</view>
+
+<view wx:if="{{sheet === 'reject'}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">拒绝调令</view>
+  <view class="sheet-desc">拒单后，这单会退回调度重新派。请写清楚原因。</view>
+  <t-textarea
+    placeholder="请填写拒单原因（必填）"
+    value="{{rejectReason}}"
+    maxlength="{{255}}"
+    indicator
+    bind:change="onRejectReason"
+  />
+  <view class="btnrow mt-16">
+    <view class="btn btn--ghost" bindtap="closeSheet">先不拒</view>
+    <view class="btn btn--danger" bindtap="submitReject">确认拒绝</view>
   </view>
 </view>

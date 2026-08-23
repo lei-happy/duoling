@@ -1,0 +1,46 @@
+<view class="page page-with-action {{fontClass}}" wx:if="{{task}}">
+  <view class="pad">
+    <mp-notice
+      theme="info"
+      title="一台一台签，不用等全部到齐"
+      desc="到一台签一台。签完的台数会立刻记到这张调令上。"
+    />
+    <view class="sec-title">
+      <text class="sec-title__h">商品车</text>
+      <text class="sec-title__n">{{pendingCount}} 台待签</text>
+    </view>
+  </view>
+
+  <view class="card card--plain">
+    <view wx:for="{{itemsView}}" wx:key="id" class="sign-row">
+      <view class="sign-main">
+        <view class="sign-brand">{{item.brandText}}</view>
+        <view class="meta">{{item.metaText}}</view>
+      </view>
+      <status-tag label="{{item.statusLabel}}" level="{{item.statusLevel}}" />
+      <view
+        wx:if="{{item.status < 3}}"
+        class="btn btn--primary btn--sm"
+        data-id="{{item.id}}"
+        bindtap="onSignItem"
+      >签收</view>
+    </view>
+  </view>
+
+  <empty-state wx:if="{{!itemsView.length}}" text="这单还没有商品车明细" />
+</view>
+
+<view class="loading-wrap" wx:else>
+  <t-loading theme="circular" size="48rpx" text="正在加载，请稍候…" />
+</view>
+
+<t-dialog
+  visible="{{signVisible}}"
+  title="确认签收"
+  content="确认这台车已经交给接车人？"
+  confirm-btn="确认签收"
+  cancel-btn="取消"
+  bind:confirm="submitSign"
+  bind:cancel="closeSign"
+  bind:close="closeSign"
+/>

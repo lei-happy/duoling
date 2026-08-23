@@ -1,3 +1,8 @@
 {
-  "navigationBarTitleText": "我的"
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#0d1b3e",
+  "usingComponents": {
+    "mp-cell": "/components/mp-cell/mp-cell"
+  }
 }

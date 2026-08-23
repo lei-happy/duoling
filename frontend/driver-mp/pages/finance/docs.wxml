@@ -1,0 +1,28 @@
+<view class="page {{fontClass}}">
+  <view class="sticky">
+    <chip-bar items="{{chips}}" value="{{docType}}" bind:change="onTabsChange" />
+  </view>
+
+  <view class="loading-wrap" wx:if="{{loading && !list.length}}">
+    <t-loading theme="circular" size="40rpx" text="正在加载，请稍候…" />
+  </view>
+  <empty-state wx:if="{{!loading && !list.length}}" text="没有这类费用单" hint="换个类型看看，或者下拉刷新。" />
+
+  <view class="card card--plain" wx:if="{{list.length}}">
+    <view wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="goDetail">
+      <mp-cell
+        icon="{{item.icon}}"
+        tone="{{item.tone}}"
+        title="{{item.title}}"
+        subtitle="{{item.subtitle}}"
+        extra="{{item.amountText}}"
+        extra-tone="{{item.extraTone}}"
+      />
+    </view>
+  </view>
+
+  <view class="footer-tip" wx:if="{{list.length}}">
+    <t-loading wx:if="{{loadingMore}}" theme="circular" size="32rpx" text="加载中…" />
+    <text wx:else>{{finished ? '只显示近 6 个月' : '上拉加载更多'}}</text>
+  </view>
+</view>

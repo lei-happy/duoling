@@ -1,0 +1,53 @@
+<view
+  class="ticket {{idle ? 'is-idle' : ''}}"
+  style="--stub: {{view.stubColor || '#94a3b8'}};"
+  bindtap="onTap"
+>
+  <view class="ticket__stub"></view>
+  <view class="ticket__head">
+    <text class="ticket__no">{{idle ? '暂无调令' : view.taskNo}}</text>
+    <text wx:if="{{view.typeLabel && !idle}}" class="ticket__type">{{view.typeLabel}}</text>
+    <view class="tag tag--{{view.statusLevel === 'info' ? 'info' : (view.statusLevel === 'warning' ? 'amber' : (view.statusLevel === 'success' ? 'ok' : (view.statusLevel === 'primary' ? 'primary' : 'plain')))}} ml-auto">
+      <view wx:if="{{view.showPulse}}" class="dot pulse"></view>
+      {{idle ? '待命' : view.statusLabel}}
+    </view>
+  </view>
+
+  <view wx:if="{{!idle}}" class="ticket__route">
+    <view class="ticket__place">
+      <text class="ticket__city">{{view.origin.title}}</text>
+      <text wx:if="{{view.origin.sub}}" class="ticket__sub">{{view.origin.sub}}</text>
+    </view>
+    <view class="ticket__arrow"></view>
+    <view class="ticket__place is-right">
+      <text class="ticket__city">{{view.destination.title}}</text>
+      <text wx:if="{{view.destination.sub}}" class="ticket__sub">{{view.destination.sub}}</text>
+    </view>
+  </view>
+
+  <road-progress
+    wx:if="{{showRoad && (idle || view.showRoad)}}"
+    percent="{{idle ? 0 : view.roadPercent}}"
+    stops="{{idle || !view.roadStops ? idleStops : view.roadStops}}"
+    parked="{{idle || !view.showRoad}}"
+  />
+
+  <slot name="idle"></slot>
+
+  <view wx:if="{{!idle && (view.qtyText || view.timeMeta)}}" class="ticket__meta">
+    <text wx:if="{{view.qtyText}}">{{view.qtyText}}</text>
+    <text wx:if="{{view.timeMeta}}">{{view.timeMeta}}</text>
+  </view>
+
+  <view wx:if="{{!idle}}" class="ticket__foot">
+    <text wx:if="{{view.plateNumber}}" class="plate">{{view.plateNumber}}</text>
+    <text wx:if="{{view.remain}}" class="tag tag--amber ml-auto">{{view.remain}}</text>
+    <view
+      wx:if="{{view.canSign}}"
+      class="btn btn--primary btn--sm ml-auto"
+      catchtap="onAction"
+      data-action="sign"
+    >去签收{{view.quantity ? view.quantity + ' 台' : ''}}</view>
+    <slot name="foot"></slot>
+  </view>
+</view>

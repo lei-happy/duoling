@@ -2,7 +2,8 @@
   "navigationBarTitleText": "我的收入",
   "enablePullDownRefresh": true,
   "usingComponents": {
-    "status-tag": "/components/status-tag/status-tag",
+    "mp-notice": "/components/mp-notice/mp-notice",
+    "mp-cell": "/components/mp-cell/mp-cell",
     "empty-state": "/components/empty-state/empty-state"
   }
 }

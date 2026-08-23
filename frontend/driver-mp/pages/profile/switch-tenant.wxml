@@ -1,33 +1,32 @@
-<view class="page">
-  <view class="tip card">
-    <view class="tip-title muted">当前企业</view>
-    <view class="current">{{currentName || currentCode || '-'}}</view>
+<view class="page {{fontClass}}">
+  <view class="pad">
+    <mp-notice
+      theme="info"
+      title="任务和收入按企业分开算"
+      desc="切换后看到的都是那家公司的数据，不会串。"
+    />
   </view>
 
-  <t-cell-group wx:if="{{tenants.length}}" title="可选企业">
-    <t-cell
+  <view class="loading-wrap" wx:if="{{loading && !tenants.length}}">
+    <t-loading theme="circular" size="40rpx" text="正在加载，请稍候…" />
+  </view>
+
+  <view class="card card--plain" wx:if="{{tenants.length}}">
+    <view
       wx:for="{{tenants}}"
       wx:key="tenantCode"
-      title="{{item.tenantName || item.tenantCode}}"
-      description="{{item.tenantCode}}"
-      arrow="{{item.tenantCode !== currentCode}}"
-      hover="{{item.tenantCode !== currentCode}}"
       data-code="{{item.tenantCode}}"
-      bind:click="onSelect"
+      bindtap="onSelect"
     >
-      <t-tag
-        wx:if="{{item.tenantCode === currentCode}}"
-        slot="note"
-        theme="primary"
-        variant="light"
-        size="small"
-      >当前</t-tag>
-    </t-cell>
-  </t-cell-group>
-
-  <empty-state wx:if="{{!loading && !tenants.length}}" text="暂无其他企业" />
-
-  <view class="loading-wrap" wx:if="{{loading}}">
-    <t-loading theme="circular" size="40rpx" text="加载中…" />
+      <mp-cell
+        initial="{{item.initial}}"
+        title="{{item.tenantName || item.tenantCode}}"
+        subtitle="{{item.tenantCode}}"
+        extra="{{item.tenantCode === currentCode ? '当前' : '切换'}}"
+        arrow="{{item.tenantCode !== currentCode}}"
+      />
+    </view>
   </view>
+
+  <empty-state wx:if="{{!loading && !tenants.length}}" text="暂无其他企业" hint="需要加入新企业时，请联系调度拿邀请。" />
 </view>

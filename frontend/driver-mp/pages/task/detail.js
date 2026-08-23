@@ -15,6 +15,7 @@ const {
   getItemStatusInfo,
   getAvailableActions
 } = require('../../utils/constants');
+const { buildTicketView } = require('../../utils/task-view');
 const { toast } = require('../../utils/request');
 const { UPLOAD_BASE } = require('../../config/env');
 
@@ -37,6 +38,7 @@ Page({
     statusInfo: { label: '', level: 'default' },
     actions: [],
     itemsView: [],
+    ticketView: {},
     itemCount: 0,
     plannedLoadText: '-',
     plannedArriveText: '-',
@@ -108,6 +110,7 @@ Page({
       });
       this.setData({
         task,
+        ticketView: buildTicketView(task),
         statusInfo,
         actions,
         itemsView,
@@ -126,12 +129,7 @@ Page({
   onAction(e) {
     const key = e.detail.key;
     if (key === 'sign-items') {
-      const next = (this.data.task.items || []).find((it) => it.status < 3);
-      if (next) {
-        this.setData({ signVisible: true, signItemId: next.id });
-      } else {
-        toast('暂无可交车的计划');
-      }
+      wx.navigateTo({ url: `/pages/task/sign?id=${this.data.taskId}` });
       return;
     }
     if (key === 'reject') {
@@ -295,11 +293,17 @@ Page({
     }
   },
 
+  onTicketAction(e) {
+    if (e.detail && e.detail.action === 'sign') {
+      wx.navigateTo({ url: `/pages/task/sign?id=${this.data.taskId}` });
+    }
+  },
+
   goReceipt() {
     wx.navigateTo({ url: `/pages/task/receipt?id=${this.data.taskId}` });
   },
 
   goFinance() {
-    wx.navigateTo({ url: `/pages/finance/list?taskId=${this.data.taskId}` });
+    wx.navigateTo({ url: '/pages/finance/docs' });
   }
 });

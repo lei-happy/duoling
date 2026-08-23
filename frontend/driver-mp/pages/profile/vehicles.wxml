@@ -1,0 +1,6 @@
+<view class="page {{fontClass}}">
+  <view class="coming">
+    <view class="coming__t">车辆和证照即将上线</view>
+    <view class="coming__s">车牌、挂车和证照到期提醒会放在这里。现在有证件要更新，先交给车管或调度。</view>
+  </view>
+</view>

@@ -1,0 +1,47 @@
+.chipbar {
+  white-space: nowrap;
+  width: 100%;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-right: 16rpx;
+  padding: 14rpx 26rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid #e7ebf3;
+  background: #fff;
+  font-size: 27rpx;
+  font-weight: 500;
+  color: #5a6779;
+  vertical-align: middle;
+}
+
+.chip:last-child {
+  margin-right: 0;
+}
+
+.chip:active {
+  transform: scale(0.95);
+}
+
+.chip.is-on {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+}
+
+.chip__n {
+  background: #f0f3f8;
+  color: #5a6779;
+  border-radius: 999rpx;
+  padding: 2rpx 12rpx;
+  font-size: 23rpx;
+  font-weight: 600;
+}
+
+.chip.is-on .chip__n {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}

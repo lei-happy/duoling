@@ -1,0 +1,44 @@
+.preview {
+  margin-top: 24rpx;
+  padding: 24rpx;
+  background: #f5f7fb;
+  border-radius: 20rpx;
+}
+
+.preview__t {
+  font-size: 34rpx;
+  font-weight: 650;
+}
+
+.preview__s {
+  margin-top: 8rpx;
+  font-size: 28rpx;
+  color: #5a6779;
+  line-height: 1.55;
+}
+
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 32rpx;
+  border-bottom: 1rpx solid #f0f3f8;
+}
+
+.set-row:last-child {
+  border-bottom: none;
+}
+
+.set-t {
+  font-size: 31rpx;
+  font-weight: 500;
+}
+
+.cell__arr {
+  font-size: 36rpx;
+  color: #c3ccda;
+}
+
+.logout-wrap {
+  margin: 48rpx 32rpx;
+}

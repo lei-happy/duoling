@@ -1,0 +1,15 @@
+<view class="road {{parked ? 'is-parked' : ''}}">
+  <view class="road__track">
+    <view class="road__fill" style="width: {{percent}}%;"></view>
+    <view class="road__truck" style="left: {{percent}}%;">
+      <view class="road__cab"></view>
+    </view>
+  </view>
+  <view class="road__stops">
+    <text
+      wx:for="{{stops}}"
+      wx:key="key"
+      class="{{item.state}}"
+    >{{item.label}}</text>
+  </view>
+</view>

@@ -295,7 +295,8 @@
     var next = this.screens[id];
     var cur = this.stack[this.stack.length - 1];
     if (!next) return;
-    if (next === cur && this.stack.length === 1) return;
+    var curTab = cur && (cur.dataset.tabAs || cur.dataset.screen);
+    if (curTab === id && this.stack.length === 1) return;
     this.stack.forEach(function (x) { x.classList.remove('is-active', 'is-stacked'); x.style.transform = ''; });
     this.stack = [next];
     next.classList.add('is-active');
@@ -324,8 +325,9 @@
     var isTabRoot = cur.dataset.tabroot != null && depth === 0;
     if (this.tabbar) {
       this.tabbar.style.display = isTabRoot ? '' : 'none';
+      var tabId = cur.dataset.tabAs || cur.dataset.screen;
       this.tabbar.querySelectorAll('[data-tab]').forEach(function (b) {
-        b.setAttribute('aria-selected', b.dataset.tab === cur.dataset.screen ? 'true' : 'false');
+        b.setAttribute('aria-selected', b.dataset.tab === tabId ? 'true' : 'false');
       });
     }
     var chips = document.querySelectorAll('.schip');
@@ -765,7 +767,7 @@
         el.setAttribute('aria-checked', on ? 'false' : 'true');
         return;
       }
-      if ((el = t.closest('.stat[data-tabgo]'))) { app.tab(el.dataset.tabgo); return; }
+      if ((el = t.closest('[data-tabgo]'))) { app.tab(el.dataset.tabgo); return; }
     });
 
     app.scrim.addEventListener('click', function () { app.closeLayer(); });

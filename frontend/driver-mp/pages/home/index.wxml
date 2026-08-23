@@ -1,54 +1,168 @@
-<view class="page home">
-  <view class="hero">
-    <view class="hero-row">
-      <view class="hello-block">
-        <view class="hello">您好，{{realName}}</view>
-        <view class="tenant" bindtap="goSwitchTenant">
-          <text class="tenant-name">{{tenantName}}</text>
-          <t-icon name="swap" size="28rpx" color="#ffffff" />
+<view class="page page-flush home {{fontClass}}">
+  <view class="hd-hero" style="padding-top: {{padTop}}px; padding-right: {{padRight}}px; padding-left: 32rpx; padding-bottom: 88rpx;">
+    <view class="hd-hero__grid"></view>
+    <view class="hd__row">
+      <view class="hd__grow">
+        <view class="hd__hi">{{hello}}</view>
+        <view class="hd__org" bindtap="goSwitchTenant">
+          <text>{{tenantName}}</text>
+          <text class="hd__caret">▾</text>
         </view>
       </view>
-      <t-avatar size="96rpx" class="avatar">{{avatarText}}</t-avatar>
-    </view>
-
-    <view class="kpi-row">
-      <view class="kpi" data-status="1" bindtap="goTask">
-        <view class="kpi-value">{{kpi.waitLoad}}</view>
-        <view class="kpi-label">待装车</view>
-      </view>
-      <view class="kpi" data-status="3" bindtap="goTask">
-        <view class="kpi-value">{{kpi.inTransit}}</view>
-        <view class="kpi-label">在途</view>
-      </view>
-      <view class="kpi" data-status="4" bindtap="goTask">
-        <view class="kpi-value">{{kpi.waitSign}}</view>
-        <view class="kpi-label">待交车</view>
-      </view>
-      <view class="kpi" bindtap="goFinance">
-        <view class="kpi-value money">¥{{monthlyIncomeText}}</view>
-        <view class="kpi-label">本月收入</view>
+      <view class="hd__bell" bindtap="goMessage">
+        <view class="hd__bell-ico"></view>
       </view>
     </view>
+    <view class="hd__strip">天气与限行即将上线</view>
   </view>
 
-  <view class="quick card">
-    <t-grid column="{{4}}" border="{{false}}">
-      <t-grid-item text="我的任务" icon="view-list" data-status="" bind:click="goTask" />
-      <t-grid-item text="我的收入" icon="wallet" bind:click="goFinance" />
-      <t-grid-item text="收款账户" icon="card" bind:click="goSummary" />
-      <t-grid-item text="个人中心" icon="user" bind:click="goProfile" />
-    </t-grid>
+  <view class="overcard">
+    <view class="stats">
+      <view class="stat {{kpi.waitAccept ? 'is-amber' : ''}}" data-chip="waitAccept" bindtap="goTask">
+        <text class="stat__v">{{kpi.waitAccept}}</text>
+        <text class="stat__l">待接收</text>
+      </view>
+      <view class="stat" data-chip="waitLoad" bindtap="goTask">
+        <text class="stat__v">{{kpi.waitLoad}}</text>
+        <text class="stat__l">待装车</text>
+      </view>
+      <view class="stat" data-chip="3" bindtap="goTask">
+        <text class="stat__v">{{kpi.inTransit}}</text>
+        <text class="stat__l">在途</text>
+      </view>
+      <view class="stat" data-chip="4" bindtap="goTask">
+        <text class="stat__v">{{kpi.waitSign}}</text>
+        <text class="stat__l">待签收</text>
+      </view>
+    </view>
   </view>
 
-  <section-header title="近期任务" more="全部" bind:more="goTaskAll" />
-  <view class="loading-wrap" wx:if="{{loading && !recent.length}}">
-    <t-loading theme="circular" size="40rpx" text="正在加载，请稍候…" />
+  <view class="pad">
+    <view class="sec-title">
+      <text class="sec-title__h">正在跑的任务</text>
+      <text class="sec-title__n">{{running ? '1 单' : '0 单'}}</text>
+      <text class="sec-title__more" bindtap="goTaskAll">全部任务 ›</text>
+    </view>
+
+    <ticket-card
+      wx:if="{{running}}"
+      view="{{running}}"
+      bind:tap="onTaskTap"
+    />
+
+    <view wx:if="{{running}}" class="btnrow mt-12">
+      <view class="btn btn--ghost" bindtap="onNavHint">导航去卸货点</view>
+      <view
+        wx:if="{{running.canArrive}}"
+        class="btn btn--accent"
+        bindtap="onArrive"
+      >确认到达</view>
+      <view
+        wx:elif="{{running.canDepart}}"
+        class="btn btn--accent"
+        bindtap="onDepart"
+      >确认出发</view>
+    </view>
+
+    <ticket-card wx:if="{{!running}}" idle show-road>
+      <view slot="idle" class="idlecopy">
+        <text class="idlecopy__t">这会儿没有要跑的单</text>
+        <text class="idlecopy__s">调度派车后会立刻出现在这里，不用一直进来刷。</text>
+      </view>
+    </ticket-card>
+
+    <view class="sec-title"><text class="sec-title__h">常用操作</text></view>
+    <view class="card card--tight quick-card">
+      <view class="quick">
+        <view class="quick__i" bindtap="onReceipt">
+          <view class="quick__ico q1"></view>
+          <text>上传回单</text>
+        </view>
+        <view class="quick__i" bindtap="openExcp">
+          <view class="quick__ico q2"></view>
+          <text>异常上报</text>
+        </view>
+        <view class="quick__i" bindtap="goFinance">
+          <view class="quick__ico q3"></view>
+          <text>我的收入</text>
+        </view>
+        <view class="quick__i" bindtap="goFuel">
+          <view class="quick__ico q4"></view>
+          <text>油卡加油</text>
+        </view>
+      </view>
+    </view>
+
+    <block wx:if="{{pending.length}}">
+      <view class="sec-title">
+        <text class="sec-title__h">要你处理的</text>
+        <text class="sec-title__n">{{pending.length}} 条</text>
+      </view>
+      <view wx:for="{{pending}}" wx:key="id" class="pending-wrap">
+        <ticket-card view="{{item}}" bind:tap="onTaskTap" />
+        <view class="btnrow mt-8">
+          <view class="btn btn--ghost btn--sm" data-id="{{item.id}}" catchtap="openReject">拒绝</view>
+          <view class="btn btn--primary btn--sm" data-id="{{item.id}}" catchtap="onAccept">接收调令</view>
+        </view>
+      </view>
+    </block>
+
+    <mp-notice
+      wx:if="{{receiptHint}}"
+      class="mt-12"
+      title="{{receiptHint.title}}"
+      desc="{{receiptHint.desc}}"
+      link="去补传"
+      bind:link="goReceiptHint"
+    />
+
+    <view class="sec-title">
+      <text class="sec-title__h">本周排班</text>
+      <text class="sec-title__n">{{week.rangeText}}</text>
+    </view>
+    <view class="card card--tight">
+      <view class="minical">
+        <view
+          wx:for="{{week.days}}"
+          wx:key="key"
+          class="minical__d {{item.on ? 'is-on' : ''}} {{item.has ? 'is-has' : ''}}"
+        >
+          <text class="minical__w">{{item.week}}</text>
+          <text class="minical__n">{{item.date}}</text>
+        </view>
+      </view>
+      <view class="week-foot">
+        <text>本周有计划 {{week.tripCount}} 天</text>
+        <text wx:if="{{week.sundayRest}}" class="week-rest">周日休息</text>
+      </view>
+    </view>
   </view>
-  <empty-state wx:if="{{!loading && !recent.length}}" text="暂无任务" hint="有新任务时会显示在这里" />
-  <task-card
-    wx:for="{{recent}}"
-    wx:key="id"
-    task="{{item}}"
-    bind:tap="onTaskTap"
+</view>
+
+<view wx:if="{{sheet}}" class="sheet-mask" bindtap="closeSheet"></view>
+<view wx:if="{{sheet === 'excp'}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">异常上报</view>
+  <view class="coming">
+    <view class="coming__t">异常上报即将上线</view>
+    <view class="coming__s">车子或货物出问题，先打电话给调度，别在路上干等。</view>
+  </view>
+  <view class="btn btn--ghost btn--block" bindtap="closeSheet">知道了</view>
+</view>
+
+<view wx:if="{{sheet === 'reject'}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">拒绝调令</view>
+  <view class="sheet-desc">拒单后，这单会退回调度重新派。请写清楚原因。</view>
+  <t-textarea
+    placeholder="请填写拒单原因（必填）"
+    value="{{rejectReason}}"
+    maxlength="{{255}}"
+    indicator
+    bind:change="onRejectReason"
   />
+  <view class="btnrow mt-16">
+    <view class="btn btn--ghost" bindtap="closeSheet">先不拒</view>
+    <view class="btn btn--danger" bindtap="submitReject">确认拒绝</view>
+  </view>
 </view>

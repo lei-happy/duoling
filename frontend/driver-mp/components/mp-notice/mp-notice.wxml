@@ -1,0 +1,8 @@
+<view class="notice notice--{{theme}}" bindtap="onLink">
+  <view class="notice__ico"></view>
+  <view class="notice__main">
+    <text wx:if="{{title}}" class="notice__t">{{title}}</text>
+    <text wx:if="{{desc}}" class="notice__s">{{desc}}</text>
+    <text wx:if="{{link}}" class="notice__a">{{link}}</text>
+  </view>
+</view>

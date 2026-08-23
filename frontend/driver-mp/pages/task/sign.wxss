@@ -1,0 +1,21 @@
+.sign-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 28rpx 32rpx;
+  border-bottom: 1rpx solid #f0f3f8;
+}
+
+.sign-row:last-child {
+  border-bottom: none;
+}
+
+.sign-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.sign-brand {
+  font-size: 30rpx;
+  font-weight: 600;
+}

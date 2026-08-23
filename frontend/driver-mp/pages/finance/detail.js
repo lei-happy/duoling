@@ -3,9 +3,11 @@ const { getFinanceDetail } = require('../../api/finance');
 const { FINANCE_DOC_TYPE, FINANCE_STATUS, PAY_METHOD } = require('../../utils/constants');
 const { formatDateTime, formatMoney } = require('../../utils/format');
 const { toast } = require('../../utils/request');
+const { getFontScale } = require('../../utils/font');
 
 Page({
   data: {
+    fontClass: 'font-lg',
     docId: 0,
     doc: null,
     statusLabel: '',
@@ -25,6 +27,7 @@ Page({
 
   onShow() {
     if (!ensureAuth({})) return;
+    this.setData({ fontClass: getFontScale().className });
     this.load();
   },
 

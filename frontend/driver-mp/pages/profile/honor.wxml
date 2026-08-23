@@ -1,0 +1,6 @@
+<view class="page {{fontClass}}">
+  <view class="coming">
+    <view class="coming__t">成绩单即将上线</view>
+    <view class="coming__s">准点率、安全行驶天数和客户评价还没有接到司机端。上线前这里不会写假数字。</view>
+  </view>
+</view>

@@ -1,0 +1,12 @@
+<scroll-view class="chipbar" scroll-x show-scrollbar="{{false}}">
+  <view
+    wx:for="{{items}}"
+    wx:key="value"
+    class="chip {{value === item.value ? 'is-on' : ''}}"
+    data-value="{{item.value}}"
+    bindtap="onTap"
+  >
+    <text>{{item.label}}</text>
+    <text wx:if="{{item.count != null}}" class="chip__n">{{item.count}}</text>
+  </view>
+</scroll-view>

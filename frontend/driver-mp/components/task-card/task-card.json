@@ -1,6 +1,6 @@
 {
   "component": true,
   "usingComponents": {
-    "status-tag": "/components/status-tag/status-tag"
+    "ticket-card": "/components/ticket-card/ticket-card"
   }
 }

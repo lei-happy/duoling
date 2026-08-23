@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "已完成任务",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "mp-cell": "/components/mp-cell/mp-cell",
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

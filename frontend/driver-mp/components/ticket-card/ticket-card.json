@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "road-progress": "/components/road-progress/road-progress"
+  }
+}

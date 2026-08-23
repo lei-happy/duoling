@@ -1,49 +1,53 @@
-<view class="page" wx:if="{{loaded}}">
-  <t-cell-group>
-    <t-cell title="姓名" note="{{profile.name || '-'}}" />
-    <t-cell title="司机编号" note="{{profile.driverCode || '-'}}" />
-    <t-cell title="手机号" note="{{profile.phone || '-'}}" />
-    <t-cell title="性别" note="{{genderText}}" />
-    <t-cell title="身份证号" note="{{profile.idCard || '-'}}" />
-  </t-cell-group>
-
+<view class="page {{fontClass}}" wx:if="{{loaded}}">
   <view class="card">
-    <t-input
-      label="紧急联系人"
-      placeholder="请输入"
-      value="{{form.emergencyContact}}"
-      layout="vertical"
-      clearable
-      bind:change="onContact"
-    />
-    <t-input
-      label="联系人电话"
-      type="number"
-      maxlength="{{11}}"
-      placeholder="请输入"
-      value="{{form.emergencyPhone}}"
-      layout="vertical"
-      clearable
-      bind:change="onPhone"
-    />
-    <t-input
-      label="家庭住址"
-      placeholder="请输入"
-      value="{{form.homeAddress}}"
-      layout="vertical"
-      clearable
-      bind:change="onAddress"
-    />
-    <view class="form-actions">
-      <t-button
-        theme="primary"
-        size="large"
-        shape="round"
-        block
-        loading="{{saving}}"
-        disabled="{{saving}}"
-        bind:tap="onSave"
-      >保存修改</t-button>
-    </view>
+    <view class="kv"><text class="kv__k">姓名</text><text class="kv__v">{{profile.name || '-'}}</text></view>
+    <view class="kv"><text class="kv__k">司机编号</text><text class="kv__v">{{profile.driverCode || '-'}}</text></view>
+    <view class="kv"><text class="kv__k">手机号</text><text class="kv__v">{{profile.phone || '-'}}</text></view>
+    <view class="kv"><text class="kv__k">性别</text><text class="kv__v">{{genderText}}</text></view>
+    <view class="kv"><text class="kv__k">身份证号</text><text class="kv__v">{{profile.idCard || '-'}}</text></view>
+    <view class="kv"><text class="kv__k">紧急联系人</text><text class="kv__v">{{profile.emergencyContact || '-'}}</text></view>
+    <view class="kv"><text class="kv__k">联系人电话</text><text class="kv__v">{{profile.emergencyPhone || '-'}}</text></view>
+    <view class="kv"><text class="kv__k">家庭住址</text><text class="kv__v">{{profile.homeAddress || '-'}}</text></view>
+  </view>
+
+  <view class="pad">
+    <view class="btn btn--primary btn--block" bindtap="openChange">提交变更申请</view>
+  </view>
+</view>
+
+<view wx:if="{{sheet}}" class="sheet-mask" bindtap="closeSheet"></view>
+<view wx:if="{{sheet}}" class="sheet">
+  <view class="sheet__grab"></view>
+  <view class="sheet__title">变更紧急联系信息</view>
+  <view class="sheet-desc">姓名、手机号和身份证由企业维护。你只能改紧急联系人和住址。</view>
+  <t-input
+    label="紧急联系人"
+    placeholder="请输入"
+    value="{{form.emergencyContact}}"
+    layout="vertical"
+    clearable
+    bind:change="onContact"
+  />
+  <t-input
+    label="联系人电话"
+    type="number"
+    maxlength="{{11}}"
+    placeholder="请输入"
+    value="{{form.emergencyPhone}}"
+    layout="vertical"
+    clearable
+    bind:change="onPhone"
+  />
+  <t-input
+    label="家庭住址"
+    placeholder="请输入"
+    value="{{form.homeAddress}}"
+    layout="vertical"
+    clearable
+    bind:change="onAddress"
+  />
+  <view class="btnrow mt-16">
+    <view class="btn btn--ghost" bindtap="closeSheet">取消</view>
+    <view class="btn btn--primary" bindtap="onSave">保存</view>
   </view>
 </view>

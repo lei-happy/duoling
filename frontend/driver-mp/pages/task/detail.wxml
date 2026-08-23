@@ -1,25 +1,6 @@
 <view class="page page-with-action" wx:if="{{task}}">
-  <view class="status-banner level-{{statusInfo.level}}">
-    <view class="status-label">{{statusInfo.label}}</view>
-    <view class="task-name">{{task.taskName || task.taskNo}}</view>
-    <view class="task-no">{{task.taskNo}}</view>
-  </view>
-
-  <view class="card route-card">
-    <view class="route-line">
-      <view class="dot from"></view>
-      <view class="route-text">
-        <view class="loc">{{task.origin || '-'}}</view>
-        <view class="time">计划装车：{{plannedLoadText}}</view>
-      </view>
-    </view>
-    <view class="route-line">
-      <view class="dot to"></view>
-      <view class="route-text">
-        <view class="loc">{{task.destination || '-'}}</view>
-        <view class="time">计划到达：{{plannedArriveText}}</view>
-      </view>
-    </view>
+  <view class="pad detail-ticket">
+    <ticket-card view="{{ticketView}}" bind:action="onTicketAction" />
   </view>
 
   <view class="card">
@@ -42,7 +23,7 @@
         loading="{{acting}}"
         data-id="{{item.id}}"
         bind:tap="onSignItem"
-      >交车</t-button>
+      >签收</t-button>
     </view>
   </view>
 

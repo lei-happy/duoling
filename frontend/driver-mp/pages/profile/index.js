@@ -1,25 +1,53 @@
 const { ensureAuth } = require('../../utils/auth');
-const { getUserInfo, getTenantCode, logout } = require('../../services/session');
+const { getUserInfo, getTenantCode } = require('../../services/session');
+const { getMyProfile } = require('../../api/profile');
+const { getCapsuleSafe } = require('../../utils/nav');
+const { getFontScale } = require('../../utils/font');
 const { maskPhone } = require('../../utils/format');
 
 Page({
   data: {
+    fontClass: 'font-lg',
+    padTop: 48,
+    padRight: 96,
     realName: '司机',
     avatarText: '司',
-    phoneMasked: '',
-    tenantName: '-'
+    subText: '',
+    tenantName: '-',
+    sheet: ''
   },
 
   onShow() {
     if (!ensureAuth({})) return;
+    const safe = getCapsuleSafe();
     const user = getUserInfo() || {};
     const name = user.realName || '司机';
     this.setData({
+      fontClass: getFontScale().className,
+      padTop: safe.padTop,
+      padRight: safe.padRight,
       realName: name,
       avatarText: name.slice(0, 1),
-      phoneMasked: maskPhone(user.phone),
-      tenantName: user.tenantName || getTenantCode() || '-'
+      tenantName: user.tenantName || getTenantCode() || '-',
+      subText: maskPhone(user.phone) || ''
     });
+    this.loadProfile();
+  },
+
+  async loadProfile() {
+    try {
+      const p = await getMyProfile();
+      const parts = [];
+      if (p.driverCode) parts.push(`工号 ${p.driverCode}`);
+      if (p.phone) parts.push(maskPhone(p.phone));
+      this.setData({
+        realName: p.name || this.data.realName,
+        avatarText: (p.name || this.data.realName).slice(0, 1),
+        subText: parts.join(' · ')
+      });
+    } catch (e) {
+      /* handled */
+    }
   },
 
   goInfo() {
@@ -30,32 +58,27 @@ Page({
     wx.navigateTo({ url: '/pages/profile/switch-tenant' });
   },
 
-  goChangePassword() {
-    wx.navigateTo({ url: '/pages/profile/change-password' });
+  goHonor() {
+    wx.navigateTo({ url: '/pages/profile/honor' });
   },
 
-  goSummary() {
-    wx.navigateTo({ url: '/pages/finance/summary' });
+  goSettings() {
+    wx.navigateTo({ url: '/pages/profile/settings' });
   },
 
-  onAbout() {
-    wx.showModal({
-      title: '关于智途·司机端',
-      content: '智途驾驶员小程序\n版本 v0.1.0\n\n如有问题请联系企业管理员。',
-      showCancel: false,
-      confirmText: '知道了'
-    });
+  goVehicles() {
+    wx.navigateTo({ url: '/pages/profile/vehicles' });
   },
 
-  onLogout() {
-    wx.showModal({
-      title: '退出登录',
-      content: '确定要退出当前账号吗？',
-      success(res) {
-        if (!res.confirm) return;
-        logout();
-        wx.reLaunch({ url: '/pages/login/login' });
-      }
-    });
+  goNotify() {
+    wx.navigateTo({ url: '/pages/profile/notify' });
+  },
+
+  openHelp() {
+    this.setData({ sheet: 'help' });
+  },
+
+  closeSheet() {
+    this.setData({ sheet: '' });
   }
 });

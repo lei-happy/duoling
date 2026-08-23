@@ -1,0 +1,14 @@
+<view class="cell" bindtap="onTap">
+  <view wx:if="{{initial}}" class="cell__ico is-letter">{{initial}}</view>
+  <view wx:elif="{{icon || tone}}" class="cell__ico {{tone ? 'is-' + tone : ''}}">
+    <view class="cell__mark cell__mark--{{icon || 'dot'}}"></view>
+  </view>
+  <view class="cell__main">
+    <text class="cell__t">{{title}}</text>
+    <text wx:if="{{subtitle}}" class="cell__s">{{subtitle}}</text>
+  </view>
+  <view class="cell__x">
+    <text wx:if="{{extra}}" class="cell__e {{extraTone ? 'is-' + extraTone : ''}}">{{extra}}</text>
+    <text wx:if="{{arrow}}" class="cell__arr">›</text>
+  </view>
+</view>

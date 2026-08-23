@@ -1,127 +1,120 @@
 const { ensureAuth } = require('../../utils/auth');
-const { listMyFinance, getFinanceSummary } = require('../../api/finance');
-const { FINANCE_DOC_TYPE, FINANCE_STATUS } = require('../../utils/constants');
-const { formatDate, formatMoney } = require('../../utils/format');
+const { listMyFinance, getFinanceSummary, listMyAccounts } = require('../../api/finance');
+const { FINANCE_DOC_TYPE, FINANCE_STATUS, ACCOUNT_TYPE } = require('../../utils/constants');
+const { formatMoney, formatDate, maskBankAccount } = require('../../utils/format');
+const { getFontScale } = require('../../utils/font');
 
-const tabs = [
-  { title: '全部', name: 'all' },
-  ...Object.keys(FINANCE_DOC_TYPE).map((k) => ({
-    title: FINANCE_DOC_TYPE[k],
-    name: String(k)
-  }))
-];
-
-function toApiDocType(tabValue) {
-  return !tabValue || tabValue === 'all' ? '' : String(tabValue);
+function mapDoc(d) {
+  const st = FINANCE_STATUS[d.status] || { label: '未知', level: 'default' };
+  const paid = d.status === 3;
+  const revoked = d.status === 4;
+  let icon = 'clock';
+  let tone = 'amber';
+  if (paid) {
+    icon = 'check';
+    tone = 'green';
+  } else if (revoked) {
+    icon = 'info';
+    tone = '';
+  } else if (d.status === 1 || d.status === 2) {
+    icon = 'clock';
+    tone = 'amber';
+  }
+  const amount = d.actualAmount != null ? d.actualAmount : d.plannedAmount;
+  return {
+    id: d.id,
+    icon,
+    tone,
+    title: `${FINANCE_DOC_TYPE[d.docType] || '费用单'} · ${d.taskNo || d.docNo}`,
+    subtitle: paid
+      ? `${formatDate(d.actualPayTime)} 已到账`
+      : revoked
+        ? '已撤销'
+        : st.label,
+    amountText: `${paid ? '+' : ''}${formatMoney(amount)}`,
+    extraTone: paid ? 'ok' : revoked ? 'dim' : '',
+    status: d.status,
+    amount
+  };
 }
 
 Page({
   data: {
-    tabs,
-    docType: 'all',
-    list: [],
-    page: 1,
-    pageSize: 15,
-    loading: false,
-    loadingMore: false,
-    finished: false,
+    fontClass: 'font-lg',
+    monthLabel: '',
     totalIncomeText: '0.00',
     prepaidText: '0.00',
     supplementText: '0.00',
     settledText: '0.00',
-    taskId: ''
-  },
-
-  onLoad(query) {
-    if (query.taskId) this.setData({ taskId: query.taskId });
+    unpaidText: '',
+    accountHint: '由企业侧维护',
+    preview: [],
+    loading: false
   },
 
   onShow() {
     if (!ensureAuth({})) return;
-    this.loadSummary();
-    this.reload();
+    const now = new Date();
+    this.setData({
+      fontClass: getFontScale().className,
+      monthLabel: `${now.getFullYear()} 年 ${now.getMonth() + 1} 月`
+    });
+    this.load();
   },
 
   onPullDownRefresh() {
-    Promise.all([this.loadSummary(), this.reload()]).finally(() => wx.stopPullDownRefresh());
+    this.load().finally(() => wx.stopPullDownRefresh());
   },
 
-  onReachBottom() {
-    this.loadMore();
-  },
-
-  async loadSummary() {
+  async load() {
+    this.setData({ loading: true });
     try {
-      const s = await getFinanceSummary();
+      const [summary, docs, accounts] = await Promise.all([
+        getFinanceSummary(),
+        listMyFinance({ page: 1, pageSize: 8 }),
+        listMyAccounts().catch(() => [])
+      ]);
+      const list = ((docs && docs.list) || []).map(mapDoc);
+      const unpaid = ((docs && docs.list) || [])
+        .filter((d) => d.status === 1 || d.status === 2)
+        .reduce((s, d) => s + Number(d.actualAmount != null ? d.actualAmount : d.plannedAmount || 0), 0);
+      const bank = (accounts || []).find((a) => a.accountType === 1) || (accounts || [])[0];
       this.setData({
-        totalIncomeText: formatMoney(s.totalIncome),
-        prepaidText: formatMoney(s.prepaidAmount),
-        supplementText: formatMoney(s.supplementAmount),
-        settledText: formatMoney(s.settledAmount)
+        totalIncomeText: formatMoney(summary && summary.totalIncome),
+        prepaidText: formatMoney(summary && summary.prepaidAmount),
+        supplementText: formatMoney(summary && summary.supplementAmount),
+        settledText: formatMoney(summary && summary.settledAmount),
+        unpaidText: unpaid > 0 ? formatMoney(unpaid) : '',
+        accountHint: bank
+          ? `${ACCOUNT_TYPE[bank.accountType] || '账户'} ${maskBankAccount(bank.accountNo)}`
+          : '由企业侧维护',
+        preview: list.slice(0, 4)
       });
     } catch (e) {
       /* handled */
-    }
-  },
-
-  onTabsChange(e) {
-    const name = e.detail && e.detail.value;
-    const next = name == null || name === '' ? 'all' : String(name);
-    if (next === this.data.docType) return;
-    this.setData({ docType: next });
-    this.reload();
-  },
-
-  async reload() {
-    this.setData({ page: 1, finished: false, list: [] });
-    await this.fetch(true);
-  },
-
-  async loadMore() {
-    if (this.data.finished || this.data.loading || this.data.loadingMore) return;
-    this.setData({ page: this.data.page + 1 });
-    await this.fetch(false);
-  },
-
-  async fetch(reset) {
-    if (reset) this.setData({ loading: true });
-    else this.setData({ loadingMore: true });
-    try {
-      const params = { page: this.data.page, pageSize: this.data.pageSize };
-      const docType = toApiDocType(this.data.docType);
-      if (docType !== '') params.docType = Number(docType);
-      const res = await listMyFinance(params);
-      const raw = (res && res.list) || [];
-      const mapped = raw.map((d) => {
-        const st = FINANCE_STATUS[d.status] || { label: '未知', level: 'default' };
-        return {
-          ...d,
-          statusLabel: st.label,
-          statusLevel: st.level,
-          typeLabel: FINANCE_DOC_TYPE[d.docType] || '费用单',
-          amountText: formatMoney(d.actualAmount != null ? d.actualAmount : d.plannedAmount),
-          timeText: formatDate(d.actualPayTime || d.plannedPayTime)
-        };
-      });
-      const total = (res && res.total) || 0;
-      const merged = reset ? mapped : this.data.list.concat(mapped);
-      this.setData({
-        list: merged,
-        finished: merged.length >= total || mapped.length === 0
-      });
-    } catch (e) {
-      if (!reset) this.setData({ page: Math.max(1, this.data.page - 1) });
     } finally {
-      this.setData({ loading: false, loadingMore: false });
+      this.setData({ loading: false });
     }
+  },
+
+  goFund() {
+    wx.navigateTo({ url: '/pages/finance/fund-account' });
+  },
+
+  goSummary() {
+    wx.navigateTo({ url: '/pages/finance/summary' });
+  },
+
+  goAccount() {
+    wx.navigateTo({ url: '/pages/finance/account' });
+  },
+
+  goDocs() {
+    wx.navigateTo({ url: '/pages/finance/docs' });
   },
 
   goDetail(e) {
     const id = e.currentTarget.dataset.id;
-    wx.navigateTo({ url: `/pages/finance/detail?id=${id}` });
-  },
-
-  goFundAccount() {
-    wx.navigateTo({ url: '/pages/finance/fund-account' });
+    if (id) wx.navigateTo({ url: `/pages/finance/detail?id=${id}` });
   }
 });

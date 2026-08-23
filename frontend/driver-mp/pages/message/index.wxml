@@ -1,0 +1,6 @@
+<view class="page {{fontClass}}">
+  <view class="coming">
+    <view class="coming__t">还没有消息</view>
+    <view class="coming__s">派车、到账和证照提醒以后会出现在这里，不用一直进来刷。</view>
+  </view>
+</view>

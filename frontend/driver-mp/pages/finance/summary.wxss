@@ -1,43 +1,7 @@
-.head {
-  background: linear-gradient(145deg, #1d4ed8, #3b82f6);
-  color: #fff;
+.stats-card {
+  margin: 24rpx 32rpx 0;
 }
 
-.label {
-  font-size: 26rpx;
-  opacity: 0.9;
-}
-
-.amount {
-  margin-top: 8rpx;
-  font-size: 52rpx;
-  font-weight: 700;
-}
-
-.row {
-  display: flex;
-  margin-top: 28rpx;
-}
-
-.row > view {
-  flex: 1;
-}
-
-.sub-label {
-  font-size: 22rpx;
-  opacity: 0.8;
-}
-
-.sub-val {
-  margin-top: 6rpx;
-  font-size: 28rpx;
-  font-weight: 600;
-}
-
-.section-pad {
-  padding: 24rpx 24rpx 8rpx;
-}
-
-.section-pad .section-title {
-  margin-bottom: 0;
+.stat__v {
+  font-size: 36rpx;
 }

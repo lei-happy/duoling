@@ -2,9 +2,11 @@ const { ensureAuth } = require('../../utils/auth');
 const { getMyFundAccount, listMyFundTransactions } = require('../../api/finance');
 const { fundBizTypeLabel } = require('../../utils/constants');
 const { formatDateTime, formatMoney } = require('../../utils/format');
+const { getFontScale } = require('../../utils/font');
 
 Page({
   data: {
+    fontClass: 'font-lg',
     balanceText: '0.00',
     totalInText: '0.00',
     totalOutText: '0.00',
@@ -19,6 +21,7 @@ Page({
 
   onShow() {
     if (!ensureAuth({})) return;
+    this.setData({ fontClass: getFontScale().className });
     this.loadAccount();
     this.reload();
   },

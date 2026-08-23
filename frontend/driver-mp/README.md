@@ -27,13 +27,21 @@ npm run build:npm
 3. 「导入项目」→ 选择 `frontend/driver-mp`
 4. AppID 可先用测试号；正式环境替换 `project.config.json` 中的 `appid`
 5. 开发阶段建议保持 `project.private.config.json` 里 `urlCheck: false`（不校验合法域名）
-6. 修改 [`config/env.js`](config/env.js) 中的 `API_BASE`：
-   - 模拟器可用 `http://localhost:8000/api/driver`
-   - 真机请改为电脑局域网 IP，例如 `http://192.168.1.8:8000/api/driver`
+6. 真机调试：复制 [`config/env.local.example.js`](config/env.local.example.js) 为 `config/env.local.js`，把地址改成电脑局域网 IP（不要写 `localhost`）
 7. 确保后端已启动（默认 `http://localhost:8000`）
 8. 本地设置请勾选：**将 JS 编译成 ES5**（TDesign 需要）
 
 ## 常见问题
+
+### 模拟器能访问后端，真机调试不行
+
+手机上的 `localhost` 是手机自己，不是你的电脑。
+
+1. 复制 `config/env.local.example.js` → `config/env.local.js`，填电脑局域网 IP（`ipconfig` 看「无线局域网」IPv4）
+2. 手机和电脑连**同一 Wi-Fi**（不要用手机热点的另一段网，也不要用 VPN 的 `10.x` 地址）
+3. 后端必须监听 `0.0.0.0`，例如：`uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
+4. 开发者工具勾选：**不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书**（本仓库 `project.private.config.json` 已设 `urlCheck: false`）
+5. Windows 防火墙放行 8000 端口；改完 `env.local.js` 后重新编译再点真机调试
 
 ### 真机调试报 `Cannot find module 'tslib'`
 

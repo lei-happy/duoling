@@ -28,6 +28,20 @@
   .minical .on span { color: rgba(255,255,255,.75); }
   .minical .has::after { content: ""; display: block; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); margin: 4px auto 0; }
   .minical .on.has::after { background: #fff; }
+
+  /* 无任务：空白调令 + 停在起点的卡车 */
+  .ticket--idle { cursor: default; }
+  .ticket--idle .ticket__no { color: #94a3b8; letter-spacing: .04em; }
+  .idlecopy { margin-top: 16px; text-align: center; }
+  .idlecopy b { display: block; font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+  .idlecopy span { display: block; margin-top: 6px; font-size: 13.5px; color: var(--ink-3); line-height: 1.6; }
+  .road--parked .road__truck {
+    left: 14px;
+    transform: translateY(-50%);
+    background: #8b9bb0;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .16), 0 0 0 3px #fff;
+  }
 </style>
 </head>
 <body>
@@ -45,6 +59,7 @@
         <li>tabBar 只放 4 个：工作台 / 任务 / 收入 / 我的。<span class="new">消息不进 tabBar</span> —— 微信服务通知本身就是推送渠道，重复放一个 tab 是浪费，改为页头铃铛带角标。</li>
         <li>顶部带<b>天气与限行尾号</b>。这是司机每天真实要查的信息，放这里比放天气 App 有用。</li>
         <li>下拉刷新走橡皮筋阻尼 + 动量回弹，松手文案是「正在刷新，请稍候…」。</li>
+        <li><b>无任务不是空白页</b>。调令号空着、公路线停在起点，告诉司机「现在不用跑」，以及下一单从哪来（微信推送 / 问调度）。警示黄收起来——没有「当前任务的下一步」就不点那盏灯。</li>
       </ul>
     </div>
   </section>
@@ -181,6 +196,94 @@
                 <div class="hstack mt-12" style="justify-content:space-between">
                   <span class="t-cap">本周已跑 5 趟 · 累计 1,842 公里</span>
                   <span class="t-cap" style="color:var(--primary)">周日休息</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 无任务 / 待命 -->
+        <section class="screen" data-screen="idle" data-title="无任务" data-tabroot data-tab-as="home"
+                 data-nav-hide="1" data-status-light="1" data-mpbg="#0d1b3e">
+          <div class="scroll is-flush" data-refresh>
+            <header class="hd">
+              <div class="hd__row">
+                <div class="grow">
+                  <div class="hd__hi">王师傅，早上好</div>
+                  <div class="hd__org">远洋汽车物流有限公司 <span data-icon="down"></span></div>
+                </div>
+                <button class="hd__bell" data-push="msg" aria-label="消息"><span data-icon="bell"></span></button>
+              </div>
+              <div class="hd__strip">
+                <i><span data-icon="pin"></span>南京 · 多云 26℃</i>
+                <span class="sepdot"></span>
+                <i class="limit"><span data-icon="warn"></span>今日限行尾号 3 和 8</i>
+              </div>
+            </header>
+
+            <div class="overcard">
+              <div class="stats">
+                <div class="stat" data-tabgo="task"><b>0</b><span>待接收</span></div>
+                <div class="stat" data-tabgo="task"><b>0</b><span>待装车</span></div>
+                <div class="stat" data-tabgo="task"><b>0</b><span>在途</span></div>
+                <div class="stat" data-tabgo="task"><b>0</b><span>待签收</span></div>
+              </div>
+            </div>
+
+            <div class="pad">
+              <div class="sec-title">
+                <h2>正在跑的任务</h2>
+                <span>0 单</span>
+                <span class="more" data-tabgo="task">全部任务 <span data-icon="right"></span></span>
+              </div>
+
+              <article class="ticket ticket--idle" style="--stub:#b7c0ce">
+                <div class="ticket__head">
+                  <span class="ticket__no">暂无调令</span>
+                  <span class="tag ml-auto">待命</span>
+                </div>
+                <div class="road road--parked">
+                  <div class="road__track">
+                    <div class="road__fill" style="--p:0%"></div>
+                    <div class="road__truck" style="--p:0%"><span data-icon="truck"></span></div>
+                  </div>
+                  <div class="road__stops">
+                    <span>装车</span><span>出发</span><span>到达</span><span>签收</span>
+                  </div>
+                </div>
+                <div class="idlecopy">
+                  <b>这会儿没有要跑的单</b>
+                  <span>调度派车后会立刻推到你的微信，不用一直进来刷。想问下一单什么时候，直接打给调度。</span>
+                </div>
+                <div class="ticket__foot">
+                  <button class="btn btn--ghost grow" data-toast="正在呼叫调度员 李敏"><span data-icon="phone"></span>联系调度 李敏</button>
+                </div>
+              </article>
+
+              <div class="sec-title"><h2>常用操作</h2></div>
+              <div class="card card--tight">
+                <div class="quick">
+                  <button data-toast="这会儿没有待传的回单"><i class="q1"><span data-icon="camera"></span></i>上传回单</button>
+                  <button data-toast="没有在跑的任务。车子出问题的话，直接给调度打电话"><i class="q2"><span data-icon="warn"></span></i>异常上报</button>
+                  <button data-tabgo="income"><i class="q3"><span data-icon="wallet"></span></i>我的收入</button>
+                  <button data-toast="油卡余额 1,240 元，可在附近 6 座合作加油站使用"><i class="q4"><span data-icon="fuel"></span></i>油卡加油</button>
+                </div>
+              </div>
+
+              <div class="sec-title"><h2>本周排班</h2><span>08-05 至 08-11</span></div>
+              <div class="card card--tight">
+                <div class="minical">
+                  <div class="has"><span>一</span><b>5</b></div>
+                  <div class="has"><span>二</span><b>6</b></div>
+                  <div><span>三</span><b>7</b></div>
+                  <div class="has"><span>四</span><b>8</b></div>
+                  <div class="on"><span>五</span><b>9</b></div>
+                  <div><span>六</span><b>10</b></div>
+                  <div><span>日</span><b>11</b></div>
+                </div>
+                <div class="hstack mt-12" style="justify-content:space-between">
+                  <span class="t-cap">本周已跑 4 趟 · 累计 1,486 公里</span>
+                  <span class="t-cap" style="color:var(--primary)">今天待命</span>
                 </div>
               </div>
             </div>

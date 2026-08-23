@@ -19,26 +19,28 @@ function getTaskStatusInfo(status) {
 function getDriverDisplayStatus(status, accepted) {
   if (status === 1) {
     return accepted
-      ? { label: '待装车', level: 'primary' }
+      ? { label: '待装车', level: 'default' }
       : { label: '待接收', level: 'warning' };
   }
+  if (status === 4) return { label: '待签收', level: 'info' };
+  if (status === 5) return { label: '已完成', level: 'success' };
   return getTaskStatusInfo(status);
 }
 
+/** 进行中任务筛选（已完成单独成页） */
 const VISIBLE_STATUS_TABS = [
-  { label: '全部', value: '' },
-  { label: '待接收', value: '1' },
-  { label: '已装车', value: '2' },
+  { label: '全部', value: 'all' },
+  { label: '待接收', value: 'waitAccept' },
+  { label: '待装车', value: 'waitLoad' },
   { label: '在途', value: '3' },
-  { label: '已到达', value: '4' },
-  { label: '已交车', value: '5' }
+  { label: '待签收', value: '4' }
 ];
 
 const ITEM_STATUS_MAP = {
   0: { label: '待装车', level: 'warning' },
   1: { label: '已装车', level: 'primary' },
   2: { label: '已卸车', level: 'info' },
-  3: { label: '已交车', level: 'success' }
+  3: { label: '已签收', level: 'success' }
 };
 
 function getItemStatusInfo(status) {
@@ -59,7 +61,7 @@ function getAvailableActions(status, accepted) {
     case 3:
       return [{ key: 'confirm-arrive', label: '确认到达', level: 'primary' }];
     case 4:
-      return [{ key: 'sign-items', label: '逐台交车', level: 'success' }];
+      return [{ key: 'sign-items', label: '去签收', level: 'success' }];
     default:
       return [];
   }

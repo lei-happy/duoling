@@ -1,32 +1,30 @@
-.head .row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.head {
+  text-align: center;
+  padding: 48rpx 32rpx 40rpx;
 }
 
-.doc-no {
-  font-size: 32rpx;
-  font-weight: 600;
+.type {
+  font-size: 26rpx;
+  color: #5a6779;
 }
 
 .amount {
-  margin-top: 20rpx;
-  font-size: 52rpx;
-  font-weight: 700;
+  margin: 16rpx 0 20rpx;
+  font-size: 76rpx;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
   color: #0f172a;
 }
 
-.meta {
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  color: #94a3b8;
+.amount.is-ok {
+  color: #16a34a;
 }
 
 .item {
   display: flex;
   justify-content: space-between;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #e2e8f0;
+  border-bottom: 1rpx solid #f0f3f8;
 }
 
 .item:last-child {
@@ -40,4 +38,9 @@
 .item-amt {
   font-size: 28rpx;
   font-weight: 600;
+}
+
+.tag--plain {
+  background: #f0f3f8;
+  color: #5a6779;
 }

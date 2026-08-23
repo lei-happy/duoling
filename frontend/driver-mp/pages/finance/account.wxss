@@ -1,0 +1,58 @@
+.bank-card {
+  margin: 24rpx 32rpx 0;
+  padding: 40rpx 36rpx;
+  border-radius: 32rpx;
+  color: #fff;
+  background: linear-gradient(150deg, #1e3a8a, #1d4ed8);
+  box-shadow: 0 24rpx 48rpx -28rpx rgba(29, 78, 216, 0.7);
+}
+
+.bank-card__l {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.bank-card__no {
+  margin-top: 20rpx;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 40rpx;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
+
+.bank-card__t {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+.other-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28rpx 32rpx;
+  border-bottom: 1rpx solid #f0f3f8;
+}
+
+.other-row:last-child {
+  border-bottom: none;
+}
+
+.other-t {
+  font-size: 31rpx;
+  font-weight: 500;
+}
+
+.other-v {
+  font-size: 31rpx;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.hint {
+  margin: 32rpx;
+  font-size: 24rpx;
+  color: #94a3b8;
+  line-height: 1.55;
+  text-align: center;
+}

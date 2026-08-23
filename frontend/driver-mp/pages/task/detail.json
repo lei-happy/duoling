@@ -2,6 +2,7 @@
   "navigationBarTitleText": "任务详情",
   "usingComponents": {
     "status-tag": "/components/status-tag/status-tag",
+    "ticket-card": "/components/ticket-card/ticket-card",
     "bottom-action-bar": "/components/bottom-action-bar/bottom-action-bar"
   }
 }

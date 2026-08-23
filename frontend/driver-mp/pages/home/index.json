@@ -1,9 +1,11 @@
 {
-  "navigationBarTitleText": "工作台",
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#0d1b3e",
   "enablePullDownRefresh": true,
   "usingComponents": {
-    "task-card": "/components/task-card/task-card",
-    "section-header": "/components/section-header/section-header",
+    "ticket-card": "/components/ticket-card/ticket-card",
+    "mp-notice": "/components/mp-notice/mp-notice",
     "empty-state": "/components/empty-state/empty-state"
   }
 }

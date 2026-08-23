@@ -1,6 +1,7 @@
-/** 智途驾驶员小程序全局样式 + TDesign 主题 */
+@import "./styles/mp.wxss";
+
+/** 智途驾驶员小程序全局样式 + TDesign 主题（对齐原型 DESIGN.md） */
 page {
-  /* TDesign 主题色（对齐原品牌蓝 #1d4ed8） */
   --td-brand-color: #1d4ed8;
   --td-brand-color-active: #1e40af;
   --td-brand-color-disabled: #93c5fd;
@@ -11,14 +12,22 @@ page {
   --brand-primary-deep: #1b3ba3;
   --brand-primary-light: #3b82f6;
   --brand-primary-soft: #eaf0ff;
+  --brand-primary-line: #c7d7fe;
   --brand-accent: #f5a524;
   --brand-accent-deep: #b26b00;
   --brand-accent-soft: #fff5e3;
   --brand-success: #16a34a;
+  --brand-success-soft: #e7f6ec;
   --brand-warning: #f59e0b;
+  --brand-warning-soft: #fef3e2;
   --brand-danger: #dc2626;
+  --brand-danger-soft: #fdeaea;
   --brand-info: #0ea5e9;
+  --brand-info-soft: #e4f4fd;
   --hero-navy: #0d1b3e;
+  --hero-navy-mid: #16306e;
+  --hero-navy-deep: #12275a;
+  --road: #1f2937;
   --ink: #0f172a;
   --ink-2: #5a6779;
   --ink-3: #94a3b8;
@@ -28,15 +37,19 @@ page {
   --bg-page: #f4f6fb;
   --bg-card: #ffffff;
   --border-color: #e7ebf3;
+  --line-soft: #f0f3f8;
   --radius-sm: 12rpx;
-  --radius-md: 20rpx;
-  --radius-lg: 28rpx;
+  --radius-md: 32rpx;
+  --radius-lg: 40rpx;
   --radius-ctl: 20rpx;
   --shadow-card: 0 2rpx 4rpx rgba(15, 23, 42, 0.04), 0 12rpx 32rpx -16rpx rgba(15, 23, 42, 0.1);
+  --shadow-float: 0 4rpx 12rpx rgba(15, 23, 42, 0.06), 0 32rpx 64rpx -24rpx rgba(15, 23, 42, 0.16);
+  --pad: 32rpx;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   background: var(--bg-page);
   color: var(--text-primary);
-  font-size: 28rpx;
+  font-size: 32rpx;
   line-height: 1.5;
   box-sizing: border-box;
 }
@@ -57,18 +70,57 @@ textarea {
   padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
 }
 
+.page-flush {
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+}
+
 .card {
   background: var(--bg-card);
   border-radius: var(--radius-md);
-  margin: 24rpx;
-  padding: 28rpx;
+  margin: 24rpx 32rpx;
+  padding: 32rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.card--plain {
+  padding: 0;
+  overflow: hidden;
+}
+
+.card--tight {
+  padding: 24rpx 28rpx;
 }
 
 .section-title {
-  font-size: 30rpx;
-  font-weight: 600;
+  font-size: 32rpx;
+  font-weight: 650;
   color: var(--text-primary);
   margin-bottom: 20rpx;
+}
+
+.sec-title {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+  margin: 44rpx 4rpx 20rpx;
+}
+
+.sec-title__h {
+  font-size: 32rpx;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.sec-title__n {
+  font-size: 25rpx;
+  color: var(--ink-3);
+}
+
+.sec-title__more {
+  margin-left: auto;
+  font-size: 26rpx;
+  font-weight: 500;
+  color: var(--brand-primary);
 }
 
 .meta {
@@ -103,4 +155,44 @@ textarea {
   text-align: center;
   font-size: 24rpx;
   color: var(--text-muted);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.pad {
+  padding: 0 32rpx;
+}
+
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 64rpx 0;
+}
+
+.footer-tip {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24rpx;
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+
+.ml-auto {
+  margin-left: auto;
+}
+
+/* 字号三档（通用设置写入，页面根节点挂 class） */
+.font-std {
+  font-size: 30rpx;
+}
+
+.font-lg {
+  font-size: 32rpx;
+}
+
+.font-xl {
+  font-size: 36rpx;
 }

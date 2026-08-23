@@ -1,21 +1,21 @@
-<view class="page" wx:if="{{doc}}">
+<view class="page {{fontClass}}" wx:if="{{doc}}">
   <view class="card head">
-    <view class="row">
-      <text class="doc-no">{{doc.docNo}}</text>
-      <status-tag label="{{statusLabel}}" level="{{statusLevel}}" />
-    </view>
-    <view class="amount">¥{{amountText}}</view>
-    <view class="meta">{{typeLabel}} · {{payMethodText}}</view>
+    <view class="type">{{typeLabel}}</view>
+    <view class="amount {{statusLevel === 'success' ? 'is-ok' : ''}}">¥{{amountText}}</view>
+    <view class="tag tag--{{statusLevel === 'success' ? 'ok' : (statusLevel === 'warning' ? 'warn' : (statusLevel === 'info' ? 'info' : 'plain'))}} tag--lg">{{statusLabel}}</view>
   </view>
 
-  <t-cell-group>
-    <t-cell title="关联任务" note="{{doc.taskNo || doc.taskId || '-'}}" />
-    <t-cell title="计划金额" note="¥{{plannedText}}" />
-    <t-cell title="实付金额" note="¥{{actualText}}" />
-    <t-cell title="计划付款" note="{{plannedPayText}}" />
-    <t-cell title="实际付款" note="{{actualPayText}}" />
-    <t-cell wx:if="{{doc.remark}}" title="备注" note="{{doc.remark}}" />
-  </t-cell-group>
+  <view class="card">
+    <view class="kv"><text class="kv__k">单据编号</text><text class="kv__v">{{doc.docNo}}</text></view>
+    <view class="kv"><text class="kv__k">关联任务</text><text class="kv__v">{{doc.taskNo || doc.taskId || '-'}}</text></view>
+    <view class="kv"><text class="kv__k">收款人</text><text class="kv__v">{{doc.payeeName || '-'}}</text></view>
+    <view class="kv"><text class="kv__k">支付方式</text><text class="kv__v">{{payMethodText}}</text></view>
+    <view class="kv"><text class="kv__k">计划金额</text><text class="kv__v">¥{{plannedText}}</text></view>
+    <view class="kv"><text class="kv__k">实付金额</text><text class="kv__v">¥{{actualText}}</text></view>
+    <view class="kv"><text class="kv__k">计划付款</text><text class="kv__v">{{plannedPayText}}</text></view>
+    <view class="kv"><text class="kv__k">实际付款</text><text class="kv__v">{{actualPayText}}</text></view>
+    <view class="kv" wx:if="{{doc.remark}}"><text class="kv__k">备注</text><text class="kv__v">{{doc.remark}}</text></view>
+  </view>
 
   <view class="card" wx:if="{{doc.items && doc.items.length}}">
     <view class="section-title">费用明细</view>

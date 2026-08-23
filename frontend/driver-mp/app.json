@@ -9,12 +9,21 @@
     "pages/tenant-select/tenant-select",
     "pages/task/detail",
     "pages/task/receipt",
+    "pages/task/done",
+    "pages/task/sign",
+    "pages/finance/docs",
     "pages/finance/detail",
     "pages/finance/summary",
+    "pages/finance/account",
     "pages/finance/fund-account",
     "pages/profile/info",
     "pages/profile/switch-tenant",
-    "pages/profile/change-password"
+    "pages/profile/change-password",
+    "pages/profile/honor",
+    "pages/profile/settings",
+    "pages/profile/vehicles",
+    "pages/profile/notify",
+    "pages/message/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#1d4ed8",

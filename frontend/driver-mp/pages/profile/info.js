@@ -1,6 +1,7 @@
 const { ensureAuth } = require('../../utils/auth');
 const { getMyProfile, updateMyProfile } = require('../../api/profile');
 const { toast } = require('../../utils/request');
+const { getFontScale } = require('../../utils/font');
 
 function genderLabel(g) {
   return { 0: '未知', 1: '男', 2: '女' }[g == null ? 0 : g] || '未知';
@@ -8,6 +9,7 @@ function genderLabel(g) {
 
 Page({
   data: {
+    fontClass: 'font-lg',
     loaded: false,
     profile: {},
     genderText: '-',
@@ -16,11 +18,13 @@ Page({
       emergencyPhone: '',
       homeAddress: ''
     },
-    saving: false
+    saving: false,
+    sheet: false
   },
 
   onShow() {
     if (!ensureAuth({})) return;
+    this.setData({ fontClass: getFontScale().className });
     this.load();
   },
 
@@ -42,6 +46,15 @@ Page({
     }
   },
 
+  openChange() {
+    this.setData({ sheet: true });
+  },
+
+  closeSheet() {
+    if (this.data.saving) return;
+    this.setData({ sheet: false });
+  },
+
   onContact(e) {
     this.setData({ 'form.emergencyContact': e.detail.value || '' });
   },
@@ -58,7 +71,7 @@ Page({
     wx.showLoading({ title: '正在保存，请稍候…', mask: true });
     try {
       const profile = await updateMyProfile({ ...this.data.form });
-      this.setData({ profile });
+      this.setData({ profile, sheet: false });
       toast('已保存');
     } catch (e) {
       /* handled */

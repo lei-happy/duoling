@@ -4,13 +4,21 @@
  * - trial：体验版
  * - release：正式版
  *
- * 开发时请把 API_BASE 改成可访问的后端地址（本机需用局域网 IP，不能写 localhost 给真机用）
+ * 模拟器可以用 localhost；真机必须走电脑局域网 IP。
+ * 本机 IP 写在 env.local.js（不入库），复制 env.local.example.js 即可。
  */
+let local = {};
+try {
+  local = require('./env.local');
+} catch (e) {
+  local = {};
+}
+
 const ENV_MAP = {
   develop: {
-    API_BASE: 'http://localhost:8000/api/driver',
-    OPEN_BASE: 'http://localhost:8000/api/open',
-    UPLOAD_BASE: 'http://localhost:8000'
+    API_BASE: local.API_BASE || 'http://localhost:8000/api/driver',
+    OPEN_BASE: local.OPEN_BASE || 'http://localhost:8000/api/open',
+    UPLOAD_BASE: local.UPLOAD_BASE || 'http://localhost:8000'
   },
   trial: {
     API_BASE: 'https://api.example.com/api/driver',
