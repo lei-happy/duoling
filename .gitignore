@@ -50,6 +50,9 @@ Thumbs.db
 .env.*.local
 !.env.example
 
+# ---- SSL 私钥（证书 .pem 可入库；私钥仅本机 / 服务器保留） ----
+*.key
+
 # ---- 日志 ----
 logs/
 *.log
