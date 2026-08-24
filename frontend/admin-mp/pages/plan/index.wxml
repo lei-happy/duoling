@@ -1,0 +1,30 @@
+<view class="page">
+  <view class="seg">
+    <button class="{{tab===0?'is-on':''}}" data-tab="0" bindtap="onTab">待确认</button>
+    <button class="{{tab===1?'is-on':''}}" data-tab="1" bindtap="onTab">已确认</button>
+    <button class="{{tab===2?'is-on':''}}" data-tab="2" bindtap="onTab">全部</button>
+  </view>
+  <view class="section">
+    <text class="section__t">计划</text>
+    <text wx:if="{{tab===0}}" class="section__more" bindtap="togglePick">{{pickMode ? '取消批量' : '批量确认'}}</text>
+  </view>
+  <view class="card" style="padding:8rpx 24rpx">
+    <view wx:if="{{!list.length}}" class="empty-wrap"><t-empty description="没有待确认的计划" /></view>
+    <view wx:for="{{list}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="onItem">
+      <view class="row__t">
+        <text wx:if="{{pickMode}}" class="chk {{picked[item.id] ? 'is-on' : ''}}"></text>
+        <text class="row__no">{{item.no}}</text>
+        <text wx:if="{{item.blocked}}" class="tag tag--warn">有问题</text>
+      </view>
+      <view class="row__m">{{item.route}}</view>
+      <view class="row__f">
+        <text>{{item.qty}} 台</text>
+        <text>{{item.customer}}</text>
+        <text wx:if="{{item.time}}">要求 {{item.time}} 到</text>
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{pickMode}}" class="actionbar">
+    <button class="btn-primary" disabled="{{pickCount===0}}" bindtap="onBatch">确认所选 {{pickCount}} 条</button>
+  </view>
+</view>

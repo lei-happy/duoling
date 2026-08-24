@@ -1,0 +1,26 @@
+<view class="page">
+  <view class="intro">
+    <view class="t-h1">切换企业</view>
+    <view class="dim" style="margin-top:12rpx">数据完全隔离。切过去后，待办和工作台都会换成这家的。</view>
+  </view>
+  <view
+    wx:for="{{tenants}}"
+    wx:key="tenantCode"
+    class="org {{picked===item.tenantCode ? 'is-on' : ''}}"
+    data-code="{{item.tenantCode}}"
+    bindtap="onPick"
+  >
+    <view class="org__l">{{item.tenantName[0] || '企'}}</view>
+    <view class="grow">
+      <view class="org__n">{{item.tenantName}}</view>
+      <view class="dim">{{item.tenantCode}}</view>
+    </view>
+    <view wx:if="{{item.tenantCode===current}}" class="tag tag--primary">当前</view>
+  </view>
+  <view wx:if="{{!tenants.length}}" class="empty-wrap">
+    <t-empty description="没有可切换的企业" />
+  </view>
+  <view class="actionbar">
+    <button class="btn-primary" loading="{{loading}}" bindtap="onEnter">进入所选企业</button>
+  </view>
+</view>

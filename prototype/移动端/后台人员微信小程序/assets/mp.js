@@ -829,7 +829,18 @@
         }
         return;
       }
-      /* 角色切换：老板 / 调度 / 财务三视图 */
+      /* 登录页：验证码 / 密码 */
+      if ((el = t.closest('.login-tabs button'))) {
+        var tabs = el.closest('.login-tabs');
+        tabs.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-selected', b === el ? 'true' : 'false'); });
+        var loginRole = el.dataset.role;
+        var loginHost = el.closest('.screen') || document;
+        loginHost.querySelectorAll('[data-role-panel]').forEach(function (p) {
+          p.hidden = p.dataset.rolePanel !== loginRole;
+        });
+        return;
+      }
+      /* 角色切换：调度 / 老板 / 财务 / 车队长 */
       if ((el = t.closest('.roles button'))) {
         var grp = el.closest('.roles');
         grp.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-selected', b === el ? 'true' : 'false'); });

@@ -1,34 +1,38 @@
-/** 智途管理员小程序全局样式 + TDesign 主题 */
 page {
-  /* TDesign 主题色（与品牌蓝对齐） */
-  --td-brand-color: #0052d9;
-  --td-brand-color-active: #003cab;
-  --td-brand-color-disabled: #b5c7ff;
-  --td-brand-color-focus: #d9e1ff;
-  --td-brand-color-light: #f2f3ff;
+  --td-brand-color: #2f54eb;
+  --td-brand-color-active: #1f3bc4;
+  --td-brand-color-disabled: #c7d2fe;
+  --td-brand-color-focus: #eef2ff;
+  --td-brand-color-light: #eef2ff;
 
-  --brand-primary: #0052d9;
-  --text-primary: rgba(0, 0, 0, 0.9);
-  --text-secondary: rgba(0, 0, 0, 0.6);
-  --text-muted: rgba(0, 0, 0, 0.4);
-  --bg-page: #f3f3f3;
-  --bg-card: #ffffff;
-  --border-color: #e7e7e7;
-  --radius-md: 16rpx;
+  --primary: #2f54eb;
+  --primary-deep: #1f3bc4;
+  --primary-soft: #eef2ff;
+  --accent: #fa8c16;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --info: #0ea5e9;
+  --ink: #0f172a;
+  --ink-2: #5a6779;
+  --ink-3: #94a3b8;
+  --line: #e5e9f2;
+  --bg: #f1f4f9;
+  --card: #ffffff;
+  --s0: #8c8cf0;
+  --s1: #2f54eb;
+  --s2: #0ea5e9;
+  --s3: #14b8a6;
+  --s4: #16a34a;
 
-  background: var(--bg-page);
-  color: var(--text-primary);
+  background: var(--bg);
+  color: var(--ink);
   font-size: 28rpx;
   line-height: 1.5;
   box-sizing: border-box;
 }
 
-view,
-text,
-input,
-textarea {
-  box-sizing: border-box;
-}
+view, text, input, textarea { box-sizing: border-box; }
 
 .page {
   min-height: 100vh;
@@ -36,19 +40,182 @@ textarea {
 }
 
 .card {
-  background: var(--bg-card);
-  border-radius: var(--radius-md);
+  background: var(--card);
+  border-radius: 32rpx;
   margin: 24rpx;
   padding: 28rpx;
+  box-shadow: 0 2rpx 4rpx rgba(15, 23, 42, 0.04), 0 12rpx 32rpx -16rpx rgba(15, 23, 42, 0.1);
 }
 
-.section-title {
-  font-size: 30rpx;
+.section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 32rpx 32rpx 16rpx;
+}
+
+.section__t { font-size: 30rpx; font-weight: 600; color: var(--ink); }
+.section__s { font-size: 24rpx; color: var(--ink-3); }
+.section__more { font-size: 24rpx; color: var(--primary); }
+
+.muted { color: var(--ink-2); }
+.dim { color: var(--ink-3); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.danger { color: var(--danger); }
+.ok { color: var(--success); }
+
+.notice {
+  margin: 0 32rpx 16rpx;
+  padding: 20rpx 22rpx;
+  border-radius: 24rpx;
+  background: #fff4e6;
+  color: #ad4e00;
+  font-size: 24rpx;
+  line-height: 1.55;
+}
+.notice--danger { background: #fdeaea; color: #b91c1c; }
+.notice--info { background: #eef2ff; color: #1f3bc4; }
+
+.row {
+  display: block;
+  width: 100%;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid var(--line);
+  background: transparent;
+  text-align: left;
+}
+.row:last-child { border-bottom: 0; }
+.row__t { display: flex; align-items: center; gap: 12rpx; }
+.row__no { font-size: 22rpx; color: var(--ink-3); font-family: ui-monospace, Menlo, Consolas, monospace; }
+.row__m { margin-top: 8rpx; font-size: 30rpx; font-weight: 600; color: var(--ink); }
+.row__f { margin-top: 10rpx; display: flex; flex-wrap: wrap; gap: 16rpx; font-size: 22rpx; color: var(--ink-3); }
+.row__money { margin-left: auto; font-weight: 700; color: var(--ink); }
+
+.tag {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  background: #eef2f7;
+  color: var(--ink-2);
+}
+.tag--danger { background: #fdeaea; color: #dc2626; }
+.tag--warn { background: #fff4e6; color: #ad4e00; }
+.tag--ok { background: #e7f6ec; color: #16a34a; }
+.tag--info { background: #e4f4fd; color: #0369a1; }
+.tag--primary { background: #eef2ff; color: #2f54eb; }
+
+.kpis {
+  display: flex;
+  gap: 8rpx;
+}
+.kpi {
+  flex: 1;
+  text-align: center;
+}
+.kpi b,
+.kpi .kpi__v {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.kpi span,
+.kpi .kpi__l { font-size: 20rpx; color: var(--ink-3); }
+.kpi.is-alert b,
+.kpi.is-alert .kpi__v { color: var(--danger); }
+
+.band {
+  display: flex;
+  gap: 12rpx;
+  padding: 0 32rpx;
+  overflow-x: auto;
+}
+.bcard {
+  flex: none;
+  width: 168rpx;
+  padding: 18rpx 16rpx;
+  border-radius: 24rpx;
+  background: #fff;
+  border-left: 8rpx solid var(--c, var(--primary));
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.06);
+}
+.bcard[aria-selected="true"] { background: var(--primary); color: #fff; }
+.bcard[aria-selected="true"] .bcard__w { color: rgba(255,255,255,.78); }
+.bcard__l { font-size: 22rpx; }
+.bcard__n { display: block; margin-top: 8rpx; font-size: 36rpx; font-weight: 700; }
+.bcard__w { display: block; margin-top: 6rpx; font-size: 20rpx; color: var(--ink-3); }
+
+.btn-primary {
+  height: 88rpx;
+  border: 0;
+  border-radius: 24rpx;
+  background: var(--primary);
+  color: #fff;
+  font-size: 32rpx;
   font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 20rpx;
+}
+.btn-ghost {
+  height: 88rpx;
+  border: 2rpx solid var(--line);
+  border-radius: 24rpx;
+  background: #fff;
+  color: var(--ink);
+  font-size: 30rpx;
 }
 
-.muted {
-  color: var(--text-secondary);
+.actionbar {
+  position: sticky;
+  bottom: 0;
+  padding: 16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -8rpx 24rpx rgba(15, 23, 42, 0.06);
 }
+
+.empty-wrap { padding: 80rpx 32rpx; }
+
+.hd {
+  padding: 32rpx 32rpx 80rpx;
+  color: #fff;
+  background: linear-gradient(180deg, #0b132e 0%, #14205a 70%, #0e1740 100%);
+}
+.hd__hi { font-size: 40rpx; font-weight: 700; }
+.hd__org { margin-top: 8rpx; font-size: 24rpx; color: rgba(210,222,255,.76); }
+.hd__row { display: flex; align-items: flex-start; }
+.roles { display: inline-flex; gap: 6rpx; padding: 6rpx; margin-top: 24rpx; border-radius: 22rpx; background: rgba(255,255,255,.14); }
+.roles button {
+  height: 52rpx;
+  padding: 0 20rpx;
+  border: 0;
+  border-radius: 18rpx;
+  background: transparent;
+  color: rgba(219,227,255,.78);
+  font-size: 24rpx;
+}
+.roles button.is-on { background: #fff; color: var(--primary); font-weight: 600; }
+
+.overcard {
+  margin: -56rpx 32rpx 0;
+  padding: 28rpx 12rpx;
+  border-radius: 32rpx;
+  background: #fff;
+  box-shadow: 0 8rpx 32rpx -12rpx rgba(15, 23, 42, 0.16);
+}
+
+.seg {
+  display: flex;
+  margin: 16rpx 32rpx;
+  padding: 6rpx;
+  border-radius: 20rpx;
+  background: #eef2f7;
+}
+.seg button {
+  flex: 1;
+  height: 64rpx;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 26rpx;
+  border-radius: 16rpx;
+}
+.seg button.is-on { background: #fff; color: var(--ink); font-weight: 600; }

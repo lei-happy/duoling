@@ -1,0 +1,18 @@
+<view class="page" wx:if="{{detail}}">
+  <view class="card">
+    <view class="row__no">{{detail.instanceNo}}</view>
+    <view class="row__m">{{detail.title || '审批详情'}}</view>
+    <view class="dim" style="margin-top:12rpx">{{detail.bizType}} · {{detail.bizNo}}</view>
+  </view>
+  <view class="section"><text class="section__t">审批链</text></view>
+  <view class="card">
+    <view wx:for="{{chain}}" wx:key="id" class="dim" style="padding:8rpx 0">
+      {{item.nodeName || item.assigneeName || '节点'}} · {{item.statusLabel || item.status || ''}}
+    </view>
+    <view wx:if="{{!chain.length}}" class="dim">暂无节点信息</view>
+  </view>
+  <view wx:if="{{taskId}}" class="actionbar" style="display:flex;gap:16rpx">
+    <button class="btn-ghost" style="flex:1" bindtap="onReject">驳回</button>
+    <button class="btn-primary" style="flex:1" bindtap="onAgree">通过</button>
+  </view>
+</view>

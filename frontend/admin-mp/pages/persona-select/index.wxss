@@ -1,0 +1,8 @@
+.intro { padding: 24rpx 32rpx 8rpx; }
+.t-h1 { font-size: 40rpx; font-weight: 700; }
+.rolecard {
+  margin: 16rpx 32rpx; padding: 28rpx 24rpx;
+  background: #fff; border-radius: 28rpx; border: 3rpx solid #e5e9f2;
+}
+.rolecard.is-on { border-color: #2f54eb; background: #eef2ff; }
+.rolecard__t { font-size: 32rpx; font-weight: 600; margin-bottom: 8rpx; }

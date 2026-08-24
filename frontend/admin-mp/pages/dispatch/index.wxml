@@ -1,0 +1,52 @@
+<view class="page">
+  <view class="sticky">
+    <t-search value="{{keyword}}" placeholder="搜任务号、车牌、客户" bind:change="onSearch" />
+    <view class="tools">
+      <text class="section__s">点档位切列表</text>
+      <text class="section__more" bindtap="togglePick">{{pickMode ? '取消批量' : '批量'}}</text>
+    </view>
+    <view class="band">
+      <view
+        wx:for="{{stages}}"
+        wx:key="key"
+        class="bcard"
+        style="--c: {{item.color}}"
+        aria-selected="{{stage===item.key}}"
+        data-key="{{item.key}}"
+        bindtap="onStage"
+      >
+        <text class="bcard__l">{{item.label}}</text>
+        <text class="bcard__n">{{counts[item.totalKey] || 0}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card" style="padding: 8rpx 24rpx">
+    <view wx:if="{{!list.length}}" class="empty-wrap">
+      <t-empty description="这一档暂时没有任务" />
+    </view>
+    <view
+      wx:for="{{list}}"
+      wx:key="id"
+      class="row"
+      data-id="{{item.id}}"
+      bindtap="onItem"
+    >
+      <view class="row__t">
+        <text wx:if="{{pickMode}}" class="chk {{picked[item.id] ? 'is-on' : ''}}"></text>
+        <text class="row__no">{{item.taskNo}}</text>
+        <text wx:if="{{item.alert}}" class="tag tag--danger">{{item.alert}}</text>
+      </view>
+      <view class="row__m">{{item.route}}</view>
+      <view class="row__f">
+        <text>{{item.qty}} 台</text>
+        <text wx:if="{{item.plate}}">{{item.plate}} {{item.driver}}</text>
+        <text wx:if="{{item.time}}">{{item.time}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{pickMode}}" class="actionbar">
+    <button class="btn-primary" disabled="{{pickCount===0}}" bindtap="onBatchAssign">已选 {{pickCount}} 单，去派车</button>
+  </view>
+</view>

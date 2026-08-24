@@ -1,0 +1,21 @@
+<view class="page">
+  <view class="seg">
+    <button class="{{tab===0?'is-on':''}}" data-tab="0" bindtap="onTab">待我批</button>
+    <button class="{{tab===1?'is-on':''}}" data-tab="1" bindtap="onTab">我发起的</button>
+    <button class="{{tab===2?'is-on':''}}" data-tab="2" bindtap="onTab">已处理</button>
+  </view>
+  <view class="card" style="padding:8rpx 24rpx">
+    <view wx:if="{{!list.length}}" class="empty-wrap"><t-empty description="没有待批单据" /></view>
+    <view wx:for="{{list}}" wx:key="taskId" class="row tone-{{item.tone}}" data-id="{{item.taskId}}" data-iid="{{item.instanceId}}" bindtap="onItem">
+      <view class="row__t">
+        <text class="row__no">{{item.instanceNo || item.bizNo}}</text>
+        <text class="tag {{item.tone==='warn'?'tag--warn':''}}">{{item.bizType || '审批'}}</text>
+      </view>
+      <view class="row__m">{{item.title || '待审批'}}<text wx:if="{{item.amountText}}" class="row__money">¥{{item.amountText}}</text></view>
+      <view wx:if="{{tab===0}}" class="acts">
+        <text class="link" data-id="{{item.taskId}}" catchtap="onReject">驳回</text>
+        <text class="link primary" data-id="{{item.taskId}}" catchtap="onAgree">通过</text>
+      </view>
+    </view>
+  </view>
+</view>

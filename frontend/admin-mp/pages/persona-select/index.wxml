@@ -1,0 +1,22 @@
+<view class="page">
+  <view class="intro">
+    <view class="t-h1">{{name}}，你有 {{cards.length}} 个岗位视图</view>
+    <view class="dim" style="margin-top:12rpx">选一个作为默认首页。权限不受影响，随时能在工作台顶部切换。</view>
+  </view>
+  <view
+    wx:for="{{cards}}"
+    wx:key="value"
+    class="rolecard {{picked===item.value ? 'is-on' : ''}}"
+    data-value="{{item.value}}"
+    bindtap="onPick"
+  >
+    <view class="grow">
+      <view class="rolecard__t">{{item.label}}视图</view>
+      <view class="dim">{{item.desc}}</view>
+    </view>
+  </view>
+  <view class="notice notice--info">视图只决定先看到什么，不放大权限。</view>
+  <view class="actionbar">
+    <button class="btn-primary" loading="{{loading}}" bindtap="onEnter">以该视图进入</button>
+  </view>
+</view>

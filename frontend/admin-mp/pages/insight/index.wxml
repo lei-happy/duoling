@@ -1,0 +1,22 @@
+<view class="page">
+  <view class="hero">
+    <view class="dim" style="color:rgba(255,255,255,.7)">今日计划运费</view>
+    <view class="hero__n">{{kpi.revenueWan || '--'}}<text>万</text></view>
+    <view class="dim" style="color:rgba(255,255,255,.7)">口径与电脑端驾驶舱一致</view>
+  </view>
+  <view class="overcard">
+    <view class="kpis">
+      <view class="kpi"><text class="kpi__v">{{kpi.waybills || 0}}</text><text class="kpi__l">今日计划</text></view>
+      <view class="kpi"><text class="kpi__v">{{kpi.vehicles || 0}}</text><text class="kpi__l">商品车</text></view>
+      <view class="kpi"><text class="kpi__v">{{kpi.customers || 0}}</text><text class="kpi__l">客户</text></view>
+    </view>
+  </view>
+  <view class="section"><text class="section__t">客户贡献 Top5</text><text class="section__more" bindtap="goOps">运营看板 ›</text></view>
+  <view class="card" style="padding:8rpx 24rpx">
+    <view wx:for="{{rank}}" wx:key="customerId" class="row">
+      <view class="row__m">{{item.customerName}}<text class="row__money">{{item.shareText}}</text></view>
+      <view class="dim">{{item.waybillCount}} 单</view>
+    </view>
+    <view wx:if="{{!rank.length}}" class="empty-wrap"><t-empty description="还没有排行数据" /></view>
+  </view>
+</view>

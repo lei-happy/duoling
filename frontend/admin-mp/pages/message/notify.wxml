@@ -1,0 +1,9 @@
+<view class="page">
+  <view class="notice notice--info">免打扰按角色给默认值，开关为示意，不会存到服务器。微信服务通知模板尚未接通。</view>
+  <view class="card" style="padding:0">
+    <t-cell title="超额审批" note="老板默认开" />
+    <t-cell title="在途预警" note="调度默认开" />
+    <t-cell title="逾期未付" note="财务默认开" />
+    <t-cell title="状态变更" note="默认关，避免刷屏" />
+  </view>
+</view>

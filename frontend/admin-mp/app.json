@@ -1,28 +1,70 @@
 {
   "pages": [
     "pages/home/index",
+    "pages/dispatch/index",
+    "pages/insight/index",
+    "pages/message/index",
     "pages/profile/index",
-    "pages/login/login"
+    "pages/login/login",
+    "pages/tenant-select/index",
+    "pages/persona-select/index",
+    "pages/dispatch/assign",
+    "pages/dispatch/detail",
+    "pages/plan/index",
+    "pages/plan/detail",
+    "pages/track/index",
+    "pages/track/detail",
+    "pages/receipt/index",
+    "pages/receipt/review",
+    "pages/fee/index",
+    "pages/fee/detail",
+    "pages/approval/index",
+    "pages/approval/detail",
+    "pages/lookup/index",
+    "pages/lookup/card",
+    "pages/profile/switch-tenant",
+    "pages/profile/password",
+    "pages/profile/roles",
+    "pages/insight/ops",
+    "pages/message/notify"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#0052d9",
+    "navigationBarBackgroundColor": "#2F54EB",
     "navigationBarTitleText": "智途管理",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#f3f3f3",
+    "backgroundColor": "#F1F4F9",
     "backgroundTextStyle": "dark",
     "handleWebviewPreload": "auto"
   },
   "tabBar": {
-    "color": "#8c8c8c",
-    "selectedColor": "#0052d9",
+    "color": "#94A3B8",
+    "selectedColor": "#2F54EB",
     "backgroundColor": "#ffffff",
-    "borderStyle": "black",
+    "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/home/index",
         "text": "工作台",
         "iconPath": "assets/icons/home.png",
         "selectedIconPath": "assets/icons/home-active.png"
+      },
+      {
+        "pagePath": "pages/dispatch/index",
+        "text": "调度",
+        "iconPath": "assets/icons/dispatch.png",
+        "selectedIconPath": "assets/icons/dispatch-active.png"
+      },
+      {
+        "pagePath": "pages/insight/index",
+        "text": "数据",
+        "iconPath": "assets/icons/insight.png",
+        "selectedIconPath": "assets/icons/insight-active.png"
+      },
+      {
+        "pagePath": "pages/message/index",
+        "text": "消息",
+        "iconPath": "assets/icons/message.png",
+        "selectedIconPath": "assets/icons/message-active.png"
       },
       {
         "pagePath": "pages/profile/index",
@@ -40,7 +82,10 @@
     "t-empty": "tdesign-miniprogram/empty/empty",
     "t-tag": "tdesign-miniprogram/tag/tag",
     "t-icon": "tdesign-miniprogram/icon/icon",
-    "t-loading": "tdesign-miniprogram/loading/loading"
+    "t-loading": "tdesign-miniprogram/loading/loading",
+    "t-dialog": "tdesign-miniprogram/dialog/dialog",
+    "t-textarea": "tdesign-miniprogram/textarea/textarea",
+    "t-search": "tdesign-miniprogram/search/search"
   },
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"

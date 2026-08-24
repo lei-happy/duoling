@@ -1,0 +1,5 @@
+.thumbs { display: flex; gap: 8rpx; margin-top: 12rpx; }
+.thumb { width: 120rpx; height: 120rpx; border-radius: 12rpx; background: #eef2f7; }
+.acts { display: flex; gap: 24rpx; margin-top: 12rpx; }
+.link { color: #5a6779; font-size: 26rpx; }
+.link.primary { color: #2f54eb; font-weight: 600; }

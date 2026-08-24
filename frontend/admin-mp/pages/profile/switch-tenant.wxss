@@ -1,0 +1,15 @@
+.intro { padding: 24rpx 32rpx 8rpx; }
+.t-h1 { font-size: 40rpx; font-weight: 700; }
+.org {
+  display: flex; align-items: center; gap: 20rpx;
+  margin: 20rpx 32rpx; padding: 28rpx 24rpx;
+  background: #fff; border-radius: 28rpx; border: 3rpx solid transparent;
+}
+.org.is-on { border-color: #2f54eb; background: #eef2ff; }
+.org__l {
+  width: 80rpx; height: 80rpx; border-radius: 24rpx;
+  background: linear-gradient(145deg,#4a6cf5,#2f54eb);
+  color: #fff; font-weight: 600; display: flex; align-items: center; justify-content: center;
+}
+.org__n { font-size: 30rpx; font-weight: 600; }
+.grow { flex: 1; }

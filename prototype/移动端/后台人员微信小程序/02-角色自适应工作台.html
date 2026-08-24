@@ -19,9 +19,9 @@
     <div class="stage__notes">
       <h3>设计说明</h3>
       <ul>
-        <li>顶部<b>角色切换器</b>可实时切三个视图（点一下看效果）。多角色的人（比如运营主管兼调度）不用退出重登。</li>
+        <li>顶部<b>角色切换器</b>可实时切四个视图（点一下看效果）：调度 / 老板 / 财务 / 车队长。多角色的人不用退出重登。</li>
         <li>调度视图的<b>五阶段泳道卡带</b>是后台端的记忆点：待分配 / 待派车 / 待装车 / 在途 / 待签收 横向滑动，选中档位下方列表跟着换，超时数缓慢呼吸。</li>
-        <li>每个视图<b>只有一个强调色动作</b>：调度是「去派车」，老板是「批」，财务是「标记支付」。</li>
+        <li>每个视图<b>只有一个强调色动作</b>：调度是「去派车」，老板是「批」，财务是「标记支付」，车队长是「催司机」。</li>
         <li>KPI 口径与 PC 驾驶舱一致：<b>计划运费、计划数、商品车数量、服务客户数、毛利率</b>，不在手机上另造一套指标。</li>
         <li>财务视图对没有权限的人<b>连数字都不显示</b>，而不是显示后再报错。</li>
       </ul>
@@ -52,6 +52,7 @@
                   <button data-role="disp" aria-selected="true">调度</button>
                   <button data-role="boss" aria-selected="false">老板</button>
                   <button data-role="fin" aria-selected="false">财务</button>
+                  <button data-role="cap" aria-selected="false">车队长</button>
                 </div>
               </div>
             </header>
@@ -387,6 +388,58 @@
                   <button class="todo" data-push="approve"><i style="background:var(--accent-soft);color:var(--accent-deep)"><span data-icon="fuel"></span></i><div><b>5</b><span>预付单</span></div></button>
                   <button class="todo" data-push="approve"><i style="background:var(--info-soft);color:#0369a1"><span data-icon="plus"></span></i><div><b>3</b><span>补款单</span></div></button>
                   <button class="todo" data-push="fee"><i style="background:var(--success-soft);color:var(--success)"><span data-icon="checkc"></span></i><div><b>28</b><span>今日已付</span></div></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== 车队长视图 ===== -->
+            <div data-role-panel="cap" hidden>
+              <div class="overcard">
+                <div class="stats">
+                  <div class="stat"><b data-count-to="23">0</b><span>在途车辆</span></div>
+                  <div class="stat is-alert"><b data-count-to="3">0</b><span>证照临期</span></div>
+                  <div class="stat"><b data-count-to="6">0</b><span>今日可派</span></div>
+                  <div class="stat is-amber"><b data-count-to="2">0</b><span>待催司机</span></div>
+                </div>
+              </div>
+
+              <div class="pad" style="margin-top:16px">
+                <div class="notice notice--danger">
+                  <span data-icon="warn"></span>
+                  <div><b>苏B·2K901 行驶证 9 天后到期</b><br>刘强这台车明天还有装车任务，先催他把证照办了。</div>
+                </div>
+
+                <div class="sec-title"><h2>该催的司机</h2><span>2 人</span></div>
+                <div class="card card--plain">
+                  <button class="row" data-toast="已向刘强发送催促，请稍候…">
+                    <div class="row__t"><span class="row__no">苏B·2K901</span><span class="tag tag--danger ml-auto">失联 4 小时</span></div>
+                    <div class="row__m"><b>刘强 · 南京 → 苏州</b></div>
+                    <div class="row__f"><em><span data-icon="phone"></span>催位置</em><em class="late"><span data-icon="warn"></span>客户已问过两次</em></div>
+                  </button>
+                  <button class="row" data-toast="已向王建国发送催促，请稍候…">
+                    <div class="row__t"><span class="row__no">苏A·8F236</span><span class="tag tag--warn ml-auto">装车将到</span></div>
+                    <div class="row__m"><b>王建国 · 仪征 → 合肥</b></div>
+                    <div class="row__f"><em><span data-icon="clock"></span>16:00 装车</em><em><span data-icon="pin"></span>距装车点 38 km</em></div>
+                  </button>
+                </div>
+
+                <div class="sec-title"><h2>自有运力</h2><span>32 台</span></div>
+                <div class="card">
+                  <div class="bars">
+                    <div>
+                      <div class="bar__top"><span>在途中</span><span class="strong">23 台</span></div>
+                      <div class="bar__track"><i class="bar__fill" style="--v:72%"></i></div>
+                    </div>
+                    <div>
+                      <div class="bar__top"><span>今日可派</span><span class="strong" style="color:var(--success)">6 台</span></div>
+                      <div class="bar__track"><i class="bar__fill" style="--v:19%;background:var(--success)"></i></div>
+                    </div>
+                    <div>
+                      <div class="bar__top"><span>维修 / 证照停用</span><span class="strong">3 台</span></div>
+                      <div class="bar__track"><i class="bar__fill" style="--v:9%;background:#94a3b8"></i></div>
+                    </div>
+                  </div>
+                  <p class="t-cap" style="margin:12px 0 0">可派只剩 6 台。缺车时请调度走承运商，不要硬派临期证照的车。</p>
                 </div>
               </div>
             </div>

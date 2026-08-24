@@ -1,0 +1,16 @@
+<view class="page">
+  <view class="cats">
+    <view class="cat {{tab==='todo'?'is-on':''}}" data-tab="todo" bindtap="onTab">要我处理 {{counts.todo}}</view>
+    <view class="cat {{tab==='alert'?'is-on':''}}" data-tab="alert" bindtap="onTab">异常预警 {{counts.alert}}</view>
+    <view class="cat {{tab==='act'?'is-on':''}}" data-tab="act" bindtap="onTab">状态变更</view>
+    <view class="cat {{tab==='notice'?'is-on':''}}" data-tab="notice" bindtap="onTab">公告</view>
+  </view>
+  <view class="card" style="padding:8rpx 24rpx">
+    <view wx:if="{{!items.length}}" class="empty-wrap"><t-empty description="这一类暂时没有消息" /></view>
+    <view wx:for="{{items}}" wx:key="id" class="row" data-url="{{item.url}}" bindtap="onOpen">
+      <view class="row__m">{{item.title}}</view>
+      <view class="row__f"><text>{{item.sub}}</text><text wx:if="{{item.action}}" class="link">{{item.action}}</text></view>
+    </view>
+  </view>
+  <view class="section"><text class="section__more" bindtap="goNotify">通知设置（示意） ›</text></view>
+</view>

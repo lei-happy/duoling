@@ -950,6 +950,25 @@ class WaybillService:
         return waybill
 
     @staticmethod
+    async def batch_update_status(
+        db: AsyncSession,
+        ids: list[int],
+        data: WaybillStatusUpdate,
+    ) -> dict:
+        """批量变更状态。逐条复用 update_status，失败不阻塞其他。"""
+        if not ids:
+            return {"success": 0, "failed": 0, "failures": []}
+        ok = 0
+        failures: list[dict] = []
+        for waybill_id in ids:
+            try:
+                await WaybillService.update_status(db, int(waybill_id), data)
+                ok += 1
+            except Exception as e:  # noqa: BLE001
+                failures.append({"id": int(waybill_id), "error": str(e)})
+        return {"success": ok, "failed": len(failures), "failures": failures}
+
+    @staticmethod
     async def delete_waybill(db: AsyncSession, waybill_id: int) -> None:
         """删除计划：仅允许待调度/草稿/已关闭，且不能存在活跃挂接。"""
         from app.modules.client.services.waybill.waybill_status_aggregator import (

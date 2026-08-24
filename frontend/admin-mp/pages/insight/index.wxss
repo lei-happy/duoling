@@ -1,0 +1,7 @@
+.hero {
+  padding: 48rpx 32rpx 80rpx;
+  color: #fff;
+  background: linear-gradient(180deg, #16226b, #2f54eb);
+}
+.hero__n { font-size: 80rpx; font-weight: 700; letter-spacing: -0.04em; }
+.hero__n text { font-size: 28rpx; font-weight: 500; margin-left: 8rpx; }

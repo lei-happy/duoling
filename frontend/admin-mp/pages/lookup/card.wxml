@@ -1,0 +1,12 @@
+<view class="page">
+  <view class="card">
+    <view class="row__m">{{item.title}}</view>
+    <view class="dim">{{item.subtitle}}</view>
+    <view wx:if="{{item.phone}}" class="phone">{{item.phone}}</view>
+  </view>
+  <view class="notice">档案维护请回电脑端。这里只读、打电话、复制。</view>
+  <view class="actionbar" style="display:flex;gap:16rpx">
+    <button class="btn-ghost" style="flex:1" bindtap="onCopy">复制</button>
+    <button class="btn-primary" style="flex:1" bindtap="onCall">打电话</button>
+  </view>
+</view>

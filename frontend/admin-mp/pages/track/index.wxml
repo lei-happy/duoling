@@ -1,0 +1,24 @@
+<view class="page">
+  <view class="map-hint dim">地图作入口示意。判断请看下面列表：车在哪、哪些要出事。</view>
+  <view class="seg">
+    <button class="{{tab==='all'?'is-on':''}}" data-tab="all" bindtap="onTab">全部在途</button>
+    <button class="{{tab==='late'?'is-on':''}}" data-tab="late" bindtap="onTab">已超时</button>
+    <button class="{{tab==='warn'?'is-on':''}}" data-tab="warn" bindtap="onTab">有预警</button>
+  </view>
+  <view class="card" style="padding:8rpx 24rpx">
+    <view wx:if="{{!list.length}}" class="empty-wrap"><t-empty description="这一档没有在途任务" /></view>
+    <view wx:for="{{list}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="onItem">
+      <view class="row__t">
+        <text class="row__no">{{item.no}}</text>
+        <text class="tag {{item.alert==='已超时'?'tag--danger':(item.alert==='临期'?'tag--warn':'tag--info')}}">{{item.alert}}</text>
+      </view>
+      <view class="row__m">{{item.route}}</view>
+      <view class="row__f"><text>{{item.plate}} {{item.driver}}</text></view>
+      <view class="acts" catchtap="noop">
+        <text class="link" data-id="{{item.id}}" catchtap="onUrge">催位置</text>
+        <text class="link" data-phone="{{item.phone}}" catchtap="onCall">打电话</text>
+        <text class="link primary" data-copy="{{item.copy}}" catchtap="onCopy">告知客户</text>
+      </view>
+    </view>
+  </view>
+</view>

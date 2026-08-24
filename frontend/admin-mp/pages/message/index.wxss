@@ -1,0 +1,4 @@
+.cats { display: flex; flex-wrap: wrap; gap: 12rpx; padding: 16rpx 32rpx; }
+.cat { padding: 12rpx 20rpx; border-radius: 999rpx; background: #fff; font-size: 24rpx; color: #5a6779; }
+.cat.is-on { background: #eef2ff; color: #2f54eb; font-weight: 600; }
+.link { color: #2f54eb; }

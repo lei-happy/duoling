@@ -1,0 +1,4 @@
+.map-hint { padding: 16rpx 32rpx 0; }
+.acts { display: flex; gap: 24rpx; margin-top: 12rpx; }
+.link { color: #5a6779; font-size: 26rpx; }
+.link.primary { color: #2f54eb; font-weight: 600; }

@@ -1,0 +1,21 @@
+<view class="page">
+  <view class="notice notice--info">这里只读。改角色、改菜单请到电脑端「组织管理」。岗位视图只决定手机首页先看什么，不单独鉴权。</view>
+  <view class="card">
+    <view class="section__t">角色</view>
+    <view class="tags">
+      <t-tag wx:for="{{roles}}" wx:key="*this" theme="primary" variant="light" size="small">{{item}}</t-tag>
+    </view>
+  </view>
+  <view class="card">
+    <view class="section__t">岗位视图</view>
+    <view wx:if="{{personas.length}}" class="tags">
+      <t-tag wx:for="{{personas}}" wx:key="*this" theme="success" variant="light" size="small">{{item}}</t-tag>
+    </view>
+    <view wx:else class="dim" style="margin-top:12rpx">还没有岗位视图，请让管理员在角色里勾选。</view>
+  </view>
+  <view class="card">
+    <view class="section__t">已开通能力</view>
+    <view wx:if="{{features.length}}" class="dim" style="margin-top:12rpx">共 {{features.length}} 项，与电脑端菜单一致。</view>
+    <view wx:else class="dim" style="margin-top:12rpx">没有单独的功能清单。能进电脑端哪些菜单，手机端就按同样权限。</view>
+  </view>
+</view>

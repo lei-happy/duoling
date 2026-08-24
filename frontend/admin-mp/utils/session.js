@@ -69,8 +69,10 @@ function mergeUserInfo(info) {
     roles: Array.isArray(info.roles) ? info.roles : current.roles || [],
     personas: Array.isArray(info.personas) ? info.personas : [],
     authorities: Array.isArray(info.authorities) ? info.authorities : [],
+    features: Array.isArray(info.features) ? info.features : current.features || [],
     workplaceConfig: info.workplaceConfig || current.workplaceConfig || {},
-    tenantName: info.tenantName || current.tenantName || ''
+    tenantName: info.tenantName || current.tenantName || '',
+    tenantCode: info.tenantCode || current.tenantCode || getItem(STORAGE_KEYS.TENANT_CODE, '') || ''
   };
   setItem(STORAGE_KEYS.USER_INFO, merged);
   const app = getApp();

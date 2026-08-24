@@ -1,0 +1,27 @@
+<view class="page">
+  <view class="search-wrap">
+    <t-search value="{{keyword}}" placeholder="车牌 / 司机 / 客户 / 承运商" bind:change="onInput" bind:submit="onSearch" />
+  </view>
+  <view wx:if="{{!items.length && recent.length}}" class="section"><text class="section__t">最近查过</text></view>
+  <view class="card" style="padding:8rpx 24rpx">
+    <block wx:if="{{items.length}}">
+      <view wx:for="{{items}}" wx:key="id" class="row" data-idx="{{index}}" bindtap="onOpen">
+        <view class="row__t">
+          <text class="tag tag--primary">{{item.typeLabel}}</text>
+          <text class="row__m" style="margin:0">{{item.title}}</text>
+        </view>
+        <view class="row__f">
+          <text>{{item.subtitle}}</text>
+          <text wx:if="{{item.phone}}" class="link" data-phone="{{item.phone}}" catchtap="onCall">拨打</text>
+        </view>
+      </view>
+    </block>
+    <block wx:elif="{{recent.length}}">
+      <view wx:for="{{recent}}" wx:key="id" class="row" data-idx="{{index}}" bindtap="onOpen">
+        <view class="row__m">{{item.title}}</view>
+        <view class="dim">{{item.subtitle}}</view>
+      </view>
+    </block>
+    <view wx:else class="empty-wrap"><t-empty description="搜车牌、人名、公司名都能命中" /></view>
+  </view>
+</view>

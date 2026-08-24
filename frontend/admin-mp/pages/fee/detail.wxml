@@ -1,0 +1,16 @@
+<view class="page" wx:if="{{doc}}">
+  <view class="card">
+    <view class="row__no">{{doc.docNo}}</view>
+    <view class="row__m">{{doc.payeeName}}<text class="row__money">¥{{doc.amountText}}</text></view>
+  </view>
+  <view wx:if="{{doc.status===2}}" class="card">
+    <view class="dim">实付金额</view>
+    <input type="digit" value="{{actual}}" bindinput="onActual" placeholder="与应付不一致时必须写原因" />
+    <view class="dim" style="margin-top:16rpx">说明</view>
+    <input value="{{remark}}" bindinput="onRemark" placeholder="选填，对不上账时必填" />
+  </view>
+  <view class="actionbar">
+    <button wx:if="{{doc.status===1}}" class="btn-primary" loading="{{loading}}" bindtap="onApprove">审批通过</button>
+    <button wx:if="{{doc.status===2}}" class="btn-primary" loading="{{loading}}" bindtap="onPay">标记已支付</button>
+  </view>
+</view>

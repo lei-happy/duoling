@@ -25,6 +25,7 @@ from app.modules.client.schemas.waybill.waybill import (
     WaybillCreate,
     WaybillUpdate,
     WaybillStatusUpdate,
+    WaybillBatchStatusRequest,
 )
 from app.modules.client.schemas.waybill.waybill_receipt import (
     WaybillReceiptConfirm,
@@ -217,6 +218,22 @@ async def update_waybill(
     )
     out = await WaybillService.waybill_to_out(db, waybill)
     return success(data=out.model_dump())
+
+
+@router.post("/batch-status")
+@operation_log(module="计划管理", action="批量状态变更", description="批量变更计划状态")
+async def batch_update_waybill_status(
+    request: Request,
+    data: WaybillBatchStatusRequest,
+    db: AsyncSession = Depends(get_tenant_db),
+    current_user: TokenData = Depends(get_current_user),
+    _: None = Depends(ensure_biz_company_activity_table),
+):
+    """手机端批量确认：一次把多条待确认计划推到目标状态。失败不阻塞其余。"""
+    _require_tenant_for_activity(current_user)
+    payload = WaybillStatusUpdate(status=data.status)
+    result = await WaybillService.batch_update_status(db, data.ids, payload)
+    return success(data=result)
 
 
 @router.put("/{waybill_id}/status")

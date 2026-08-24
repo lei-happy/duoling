@@ -2,7 +2,7 @@
 运单 Schemas
 """
 
-from typing import Optional
+from typing import List, Optional
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -149,6 +149,13 @@ class WaybillUpdate(BaseModel):
 
 
 class WaybillStatusUpdate(BaseModel):
+    status: int
+
+
+class WaybillBatchStatusRequest(BaseModel):
+    """批量变更计划状态（手机端一次确认多条待确认计划）"""
+
+    ids: List[int] = Field(min_length=1, max_length=50)
     status: int
 
 

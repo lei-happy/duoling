@@ -1,45 +1,68 @@
 <view class="page home">
-  <view class="hero">
-    <view class="hello">{{hello}}，{{realName}}</view>
-    <view class="sub muted-on-dark">{{sub}}</view>
-    <view wx:if="{{showSwitcher}}" class="roles" role="tablist">
-      <view
-        wx:for="{{switchers}}"
-        wx:key="value"
-        class="role-tab {{item.selected ? 'is-on' : ''}}"
-        data-persona="{{item.value}}"
-        bindtap="onSwitch"
-      >{{item.label}}</view>
-    </view>
-  </view>
-
-  <view wx:if="{{emptyHint}}" class="card hint-card">
-    <view class="hint-text">{{emptyHint}}</view>
-  </view>
-
-  <view wx:if="{{comingSoon}}" class="card hint-card">
-    <view class="hint-text">车队长视图即将上线，先用现有入口了解待办方向。</view>
-  </view>
-
-  <view class="card">
-    <view class="section-title">{{currentLabel}}速览</view>
-    <view class="kpi-row">
-      <view class="kpi" wx:for="{{kpis}}" wx:key="label">
-        <view class="kpi-value">{{item.value}}</view>
-        <view class="kpi-label">{{item.label}}</view>
+  <view class="hd" style="padding-top: {{statusBarHeight + 12}}px">
+    <view class="hd__row">
+      <view class="grow">
+        <view class="hd__hi">{{realName}}，{{greet}}</view>
+        <view class="hd__org" bindtap="onOrg">{{tenantName || '当前企业'}} ›</view>
+      </view>
+      <view class="bell" bindtap="onBell">
+        <t-icon name="notification" size="44rpx" color="#fff" />
+        <view wx:if="{{inboxCount}}" class="bell__n">{{inboxCount}}</view>
       </view>
     </view>
-    <view class="kpi-tip muted">数据接口将在后续迭代接入</view>
+    <view wx:if="{{showSwitcher}}" class="roles">
+      <button
+        wx:for="{{switchers}}"
+        wx:key="value"
+        class="{{item.selected ? 'is-on' : ''}}"
+        data-persona="{{item.value}}"
+        bindtap="onSwitch"
+      >{{item.label}}</button>
+    </view>
   </view>
 
-  <view class="card">
-    <view class="section-title">高频入口</view>
-    <t-cell
-      wx:for="{{entries}}"
-      wx:key="title"
-      title="{{item.title}}"
-      note="{{item.note}}"
-      arrow
-    />
+  <view class="overcard">
+    <view wx:if="{{kpis.length}}" class="kpis">
+      <view wx:for="{{kpis}}" wx:key="label" class="kpi {{item.alert ? 'is-alert' : ''}}">
+        <text class="kpi__v">{{item.value}}<text wx:if="{{item.suffix}}" class="kpi__s">{{item.suffix}}</text></text>
+        <text class="kpi__l">{{item.label}}</text>
+      </view>
+    </view>
+    <view wx:else class="dim" style="text-align:center;padding:12rpx 0">{{loading ? '正在加载，请稍候…' : '暂无统计'}}</view>
+  </view>
+
+  <view wx:if="{{notice}}" class="notice {{currentPersona==='finance' || currentPersona==='dispatch' ? 'notice--danger' : ''}}">{{notice}}</view>
+  <view wx:if="{{emptyHint}}" class="notice notice--info">{{emptyHint}}</view>
+
+  <view wx:if="{{primary}}" class="pad">
+    <button class="btn-primary" bindtap="onPrimary">{{primary.label}}</button>
+  </view>
+
+  <view class="section"><text class="section__t">快捷入口</text></view>
+  <view class="card" style="padding:0 24rpx">
+    <view wx:if="{{currentPersona==='dispatch'}}">
+      <t-cell title="调度工作台" note="五阶段任务池" arrow bind:click="goDispatch" />
+      <t-cell title="计划确认" note="客户计划点头后进调度" arrow bind:click="goPlan" />
+      <t-cell title="在途盯梢" note="超时与失联" arrow bind:click="goTrack" />
+      <t-cell title="回单签收" note="确认回单才能结算" arrow bind:click="goReceipt" />
+    </view>
+    <view wx:elif="{{currentPersona==='boss'}}">
+      <t-cell title="经营驾驶舱" note="这个月做了多少" arrow bind:click="goInsight" />
+      <t-cell title="审批放行" note="离位也能批" arrow bind:click="goApproval" />
+      <t-cell title="在途预警" note="哪些单要出事" arrow bind:click="goTrack" />
+    </view>
+    <view wx:elif="{{currentPersona==='finance'}}">
+      <t-cell title="费用工作台" note="别让该付的逾期" arrow bind:click="goFee" />
+      <t-cell title="待我审批" note="结算单 / 预付 / 补款" arrow bind:click="goApproval" />
+    </view>
+    <view wx:elif="{{currentPersona==='captain'}}">
+      <t-cell title="在途车辆" note="催位置、打电话" arrow bind:click="goTrack" />
+      <t-cell title="资源速查" note="车牌 / 司机 / 承运商" arrow bind:click="goLookup" />
+    </view>
+    <view wx:else>
+      <t-cell title="调度待办" arrow bind:click="goDispatch" />
+      <t-cell title="计划确认" arrow bind:click="goPlan" />
+      <t-cell title="经营报表" arrow bind:click="goInsight" />
+    </view>
   </view>
 </view>

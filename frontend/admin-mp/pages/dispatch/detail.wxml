@@ -1,0 +1,15 @@
+<view class="page" wx:if="{{task}}">
+  <view class="card">
+    <view class="row__no">{{task.taskNo}}</view>
+    <view class="row__m">{{task.route}}</view>
+    <view class="row__f">
+      <text>{{task.totalQuantity}} 台</text>
+      <text>{{task.plateNumber}} {{task.mainDriverName}}</text>
+    </view>
+    <view class="dim" style="margin-top:16rpx">装车 {{task.loadTime || '未排'}} · 到货 {{task.arriveTime || '未排'}}</view>
+  </view>
+  <view class="actionbar" style="display:flex;gap:16rpx">
+    <button class="btn-ghost" style="flex:1" bindtap="onCall">打电话</button>
+    <button class="btn-primary" style="flex:1" bindtap="onAssign">派车 / 换车</button>
+  </view>
+</view>

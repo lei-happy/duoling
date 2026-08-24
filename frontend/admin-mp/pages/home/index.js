@@ -1,147 +1,124 @@
 const { ensureAuth } = require('../../utils/auth');
 const { STORAGE_KEYS, getItem } = require('../../utils/storage');
 const { PERSONA_OPTIONS, personaLabel, resolvePersona } = require('../../utils/persona');
-const { saveDefaultPersona } = require('../../api/auth');
+const { saveDefaultPersona, canSeeFinance } = require('../../api/auth');
+const { homeSummary } = require('../../api/workbench');
 const { toast } = require('../../utils/request');
-
-const VIEW_COPY = {
-  dispatch: {
-    hello: '调度工作台',
-    sub: '先看待派与在途，权限仍按企业授权。',
-    kpis: [
-      { value: '--', label: '待派车' },
-      { value: '--', label: '在途' },
-      { value: '--', label: '超时' }
-    ],
-    entries: [
-      { title: '去派车', note: '即将上线' },
-      { title: '在途盯梢', note: '即将上线' },
-      { title: '回单签收', note: '即将上线' }
-    ]
-  },
-  boss: {
-    hello: '老板工作台',
-    sub: '先看经营水位与待批，看不到的数字是权限没开。',
-    kpis: [
-      { value: '--', label: '今日运单' },
-      { value: '--', label: '待批' },
-      { value: '--', label: '异常' }
-    ],
-    entries: [
-      { title: '经营报表', note: '即将上线' },
-      { title: '审批放行', note: '即将上线' },
-      { title: '异常预警', note: '即将上线' }
-    ]
-  },
-  finance: {
-    hello: '财务工作台',
-    sub: '先看待确认与待支付，金额以授权为准。',
-    kpis: [
-      { value: '--', label: '待审批' },
-      { value: '--', label: '待支付' },
-      { value: '--', label: '逾期' }
-    ],
-    entries: [
-      { title: '费用确认', note: '即将上线' },
-      { title: '标记支付', note: '即将上线' },
-      { title: '对账工作台', note: '即将上线' }
-    ]
-  },
-  captain: {
-    hello: '车队长工作台',
-    sub: '运力与证照视图即将上线。',
-    kpis: [
-      { value: '--', label: '在途车辆' },
-      { value: '--', label: '证照预警' },
-      { value: '--', label: '待催司机' }
-    ],
-    entries: [
-      { title: '运力列表', note: '即将上线' },
-      { title: '证照预警', note: '即将上线' },
-      { title: '催司机', note: '即将上线' }
-    ],
-    comingSoon: true
-  },
-  generic: {
-    hello: '工作台',
-    sub: '还没设置岗位视图，先用通用首页。',
-    kpis: [
-      { value: '--', label: '今日运单' },
-      { value: '--', label: '在途车辆' },
-      { value: '--', label: '待调度' }
-    ],
-    entries: [
-      { title: '调度待办', note: '即将上线' },
-      { title: '财务确认', note: '即将上线' },
-      { title: '经营报表', note: '即将上线' }
-    ],
-    emptyHint: '请让管理员在「组织管理 → 角色」里补上岗位视图。'
-  }
-};
-
-function buildHomeState(user) {
-  const personas = (user && user.personas) || [];
-  const current = resolvePersona(user);
-  const view = VIEW_COPY[current] || VIEW_COPY.generic;
-  const switchers = PERSONA_OPTIONS.filter((item) => personas.indexOf(item.value) >= 0).map(
-    (item) => ({
-      ...item,
-      selected: item.value === current
-    })
-  );
-  return {
-    realName: (user && (user.realName || user.nickname)) || '管理员',
-    currentPersona: current,
-    currentLabel: personaLabel(current) || '通用',
-    switchers,
-    showSwitcher: switchers.length > 1,
-    hello: view.hello,
-    sub: view.sub,
-    kpis: view.kpis,
-    entries: view.entries,
-    comingSoon: !!view.comingSoon,
-    emptyHint: view.emptyHint || ''
-  };
-}
+const { greet } = require('../../utils/format');
 
 Page({
   data: {
     realName: '管理员',
+    tenantName: '',
     currentPersona: '',
-    currentLabel: '通用',
     switchers: [],
     showSwitcher: false,
-    hello: '工作台',
-    sub: '',
     kpis: [],
-    entries: [],
-    comingSoon: false,
+    notice: '',
+    primary: null,
+    inboxCount: 0,
+    canSeeAmount: true,
     emptyHint: '',
-    saving: false
+    loading: false,
+    statusBarHeight: 20
+  },
+
+  onLoad() {
+    const sys = wx.getSystemInfoSync();
+    this.setData({ statusBarHeight: sys.statusBarHeight || 20 });
   },
 
   onShow() {
     if (!ensureAuth()) return;
+    this.refresh();
+  },
+
+  onPullDownRefresh() {
+    this.refresh().finally(() => wx.stopPullDownRefresh());
+  },
+
+  async refresh() {
     const user = getItem(STORAGE_KEYS.USER_INFO, null) || getApp().globalData.userInfo || {};
-    this.setData(buildHomeState(user));
+    const personas = user.personas || [];
+    const current = resolvePersona(user);
+    const switchers = PERSONA_OPTIONS.filter((x) => personas.indexOf(x.value) >= 0).map((x) => ({
+      ...x,
+      selected: x.value === current
+    }));
+    const financeOk = canSeeFinance(user);
+    this.setData({
+      realName: user.realName || user.nickname || '管理员',
+      tenantName: user.tenantName || '',
+      currentPersona: current,
+      switchers,
+      showSwitcher: switchers.length > 1,
+      greet: greet(),
+      canSeeAmount: current !== 'finance' || financeOk,
+      emptyHint: personas.length ? '' : '请让管理员在「组织管理 → 角色」里补上岗位视图。'
+    });
+    if (!current) return;
+    if (current === 'finance' && !financeOk) {
+      this.setData({
+        kpis: [],
+        notice: '',
+        primary: null,
+        emptyHint: '没有资金权限，金额不会显示。请在电脑端找管理员开通。'
+      });
+      return;
+    }
+    this.setData({ loading: true });
+    try {
+      const data = await homeSummary(current);
+      this.setData({
+        kpis: data.kpis || [],
+        notice: data.notice || '',
+        primary: data.primaryAction || null,
+        inboxCount: data.inboxCount || 0
+      });
+      const app = getApp();
+      if (app) app.globalData.inboxCount = data.inboxCount || 0;
+    } catch (e) {
+      /* toast 已处理 */
+    } finally {
+      this.setData({ loading: false });
+    }
   },
 
   async onSwitch(e) {
     const persona = e.currentTarget.dataset.persona;
-    if (!persona || persona === this.data.currentPersona || this.data.saving) return;
-    const user = getItem(STORAGE_KEYS.USER_INFO, {}) || {};
-    const personas = user.personas || [];
-    if (personas.indexOf(persona) < 0) return;
-
-    this.setData({ saving: true });
+    if (!persona || persona === this.data.currentPersona) return;
     try {
       await saveDefaultPersona(persona);
-      const next = getItem(STORAGE_KEYS.USER_INFO, {}) || user;
-      this.setData(buildHomeState(next));
-    } catch (err) {
+      this.refresh();
+    } catch (e) {
       toast('切换视图失败，请重试');
-    } finally {
-      this.setData({ saving: false });
     }
-  }
+  },
+
+  onBell() {
+    wx.switchTab({ url: '/pages/message/index' });
+  },
+
+  onOrg() {
+    wx.navigateTo({ url: '/pages/profile/switch-tenant' });
+  },
+
+  onPrimary() {
+    const p = this.data.primary;
+    if (!p || !p.path) return;
+    if (p.path.indexOf('/pages/dispatch/index') === 0 || p.path.indexOf('/pages/insight/index') === 0) {
+      wx.switchTab({ url: p.path.split('?')[0] });
+      return;
+    }
+    wx.navigateTo({ url: p.path });
+  },
+
+  goDispatch() { wx.switchTab({ url: '/pages/dispatch/index' }); },
+  goPlan() { wx.navigateTo({ url: '/pages/plan/index' }); },
+  goTrack() { wx.navigateTo({ url: '/pages/track/index' }); },
+  goReceipt() { wx.navigateTo({ url: '/pages/receipt/index' }); },
+  goFee() { wx.navigateTo({ url: '/pages/fee/index' }); },
+  goApproval() { wx.navigateTo({ url: '/pages/approval/index' }); },
+  goInsight() { wx.switchTab({ url: '/pages/insight/index' }); },
+  goLookup() { wx.navigateTo({ url: '/pages/lookup/index' }); }
 });

@@ -1,0 +1,29 @@
+<view class="page">
+  <view wx:if="{{!allowed}}" class="empty-wrap">
+    <t-empty description="没有资金权限，金额不会显示。请在电脑端找管理员开通。" />
+  </view>
+  <block wx:else>
+    <view class="overcard" style="margin-top:24rpx">
+      <view class="kpis">
+        <view class="kpi is-alert"><text class="kpi__v">{{pendingPayWan}}</text><text class="kpi__l">待付 万</text></view>
+        <view class="kpi"><text class="kpi__v">{{totals.pendingReview || 0}}</text><text class="kpi__l">待审批</text></view>
+        <view class="kpi"><text class="kpi__v">{{totals.pendingPay || 0}}</text><text class="kpi__l">待付张数</text></view>
+      </view>
+    </view>
+    <view class="seg">
+      <button class="{{tab===2?'is-on':''}}" data-tab="2" bindtap="onTab">待支付</button>
+      <button class="{{tab===1?'is-on':''}}" data-tab="1" bindtap="onTab">待审批</button>
+      <button class="{{tab===3?'is-on':''}}" data-tab="3" bindtap="onTab">已支付</button>
+    </view>
+    <view class="card" style="padding:8rpx 24rpx">
+      <view wx:if="{{!list.length}}" class="empty-wrap"><t-empty description="这一档没有单据" /></view>
+      <view wx:for="{{list}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="onItem">
+        <view class="row__t">
+          <text class="row__no">{{item.docNo}}</text>
+          <text wx:if="{{item.time}}" class="tag">{{item.time}}</text>
+        </view>
+        <view class="row__m">{{item.payeeName || '未填收款方'}}<text class="row__money">¥{{item.amountText}}</text></view>
+      </view>
+    </view>
+  </block>
+</view>

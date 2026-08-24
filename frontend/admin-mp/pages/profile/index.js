@@ -1,32 +1,21 @@
 const { ensureAuth } = require('../../utils/auth');
 const { STORAGE_KEYS, getItem, clearSession } = require('../../utils/storage');
 const { personaLabel } = require('../../utils/persona');
-
-function maskPhone(phone) {
-  if (!phone || phone.length < 7) return phone || '-';
-  return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
-}
+const { maskPhone } = require('../../utils/format');
 
 function roleLabels(user) {
   const roles = (user && user.roles) || [];
   const names = roles
-    .map((item) => {
-      if (typeof item === 'string') return item;
-      return item.roleName || '';
-    })
+    .map((item) => (typeof item === 'string' ? item : item.roleName || ''))
     .filter(Boolean);
-  if (names.length) return names;
-  return ['管理员'];
-}
-
-function personaTags(user) {
-  return ((user && user.personas) || []).map(personaLabel).filter(Boolean);
+  return names.length ? names : ['管理员'];
 }
 
 Page({
   data: {
     realName: '',
     phoneMasked: '',
+    tenantName: '',
     roles: [],
     personas: []
   },
@@ -35,12 +24,19 @@ Page({
     if (!ensureAuth()) return;
     const user = getItem(STORAGE_KEYS.USER_INFO, null) || {};
     this.setData({
-      realName: user.realName || user.nickname || user.name || '管理员',
+      realName: user.realName || user.nickname || '管理员',
       phoneMasked: maskPhone(user.phone),
+      tenantName: user.tenantName || '',
       roles: roleLabels(user),
-      personas: personaTags(user)
+      personas: ((user.personas) || []).map(personaLabel).filter(Boolean)
     });
   },
+
+  goSwitch() { wx.navigateTo({ url: '/pages/profile/switch-tenant' }); },
+  goRoles() { wx.navigateTo({ url: '/pages/profile/roles' }); },
+  goPassword() { wx.navigateTo({ url: '/pages/profile/password' }); },
+  goLookup() { wx.navigateTo({ url: '/pages/lookup/index' }); },
+  goNotify() { wx.navigateTo({ url: '/pages/message/notify' }); },
 
   onAbout() {
     wx.showModal({
@@ -53,7 +49,7 @@ Page({
   onLogout() {
     wx.showModal({
       title: '退出登录',
-      content: '确定退出当前账号吗？',
+      content: '退出后将收不到服务通知。确定退出吗？',
       success(res) {
         if (!res.confirm) return;
         clearSession();

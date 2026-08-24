@@ -1,0 +1,16 @@
+<view class="page" wx:if="{{item}}">
+  <view class="card">
+    <view class="row__no">{{item.waybillNo}}</view>
+    <view class="row__m">{{item.route}}</view>
+    <view class="row__f"><text>{{item.quantity}} 台</text><text>{{item.customerName}}</text></view>
+    <view class="dim" style="margin-top:12rpx">要求到货 {{item.time || '未填'}}</view>
+  </view>
+  <view class="section"><text class="section__t">车架号</text></view>
+  <view class="card">
+    <view wx:for="{{item.cargoes}}" wx:key="id" class="mono" style="padding:8rpx 0">{{item.vin || '未填 VIN'}} · {{item.vehicleBrand}} {{item.vehicleModel}}</view>
+    <view wx:if="{{!item.cargoes.length}}" class="dim">没有货物明细</view>
+  </view>
+  <view wx:if="{{item.status===0}}" class="actionbar">
+    <button class="btn-primary" loading="{{loading}}" bindtap="onConfirm">确认计划</button>
+  </view>
+</view>

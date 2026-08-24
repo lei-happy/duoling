@@ -1,55 +1,49 @@
 <view class="page login-page">
-  <view class="hero">
-    <view class="brand">智途管理</view>
-    <view class="slogan">经营数据与高频操作，随时掌握</view>
+  <view class="hero" style="padding-top: {{statusBarHeight + 24}}px">
+    <view class="brand-mark">智</view>
+    <view class="brand">智途移动调度台</view>
+    <view class="slogan">人不在工位，事也不能等</view>
+    <view class="lanes">
+      <view class="lane"><view class="lane__bar" style="background:#8c8cf0"></view><text>待分配</text></view>
+      <view class="lane"><view class="lane__bar" style="background:#2f54eb"></view><text>待派车</text></view>
+      <view class="lane"><view class="lane__bar" style="background:#0ea5e9"></view><text>待装车</text></view>
+      <view class="lane"><view class="lane__bar" style="background:#14b8a6"></view><text>在途</text></view>
+      <view class="lane"><view class="lane__bar" style="background:#16a34a"></view><text>待签收</text></view>
+    </view>
   </view>
 
-  <view class="form card">
-    <t-input
-      label="手机号"
-      type="number"
-      maxlength="{{11}}"
-      placeholder="请输入手机号"
-      value="{{phone}}"
-      layout="vertical"
-      clearable
-      bind:change="onPhone"
-    />
-    <t-input
-      label="密码"
-      type="password"
-      placeholder="请输入密码"
-      value="{{password}}"
-      layout="vertical"
-      clearable
-      bind:change="onPassword"
-    />
-
-    <view class="actions">
-      <t-button
-        theme="primary"
-        size="large"
-        shape="round"
-        block
-        loading="{{loading}}"
-        disabled="{{loading}}"
-        bind:tap="onSubmit"
-      >进入工作台</t-button>
+  <view class="panel">
+    <view class="tabs">
+      <view class="tab {{mode==='sms' ? 'is-on' : ''}}" data-mode="sms" bindtap="onSwitch">验证码登录</view>
+      <view class="tab {{mode==='pwd' ? 'is-on' : ''}}" data-mode="pwd" bindtap="onSwitch">密码登录</view>
     </view>
 
-    <view class="hint muted">使用企业员工账号登录，权限与电脑端一致</view>
-  </view>
-
-  <view wx:if="{{selectingTenant}}" class="card tenant-card">
-    <view class="section-title">选择企业</view>
-    <view class="tenant-hint muted">这个手机号关联了多家企业，请选择要进入的一家。</view>
-    <view
-      wx:for="{{tenants}}"
-      wx:key="tenantCode"
-      data-code="{{item.tenantCode}}"
-      bindtap="onPickTenant"
-    >
-      <t-cell title="{{item.tenantName}}" note="{{item.tenantCode}}" arrow />
+    <view class="field">
+      <text class="label">手机号</text>
+      <input type="number" maxlength="11" placeholder="请输入企业员工手机号" value="{{phone}}" bindinput="onPhone" />
     </view>
+
+    <view wx:if="{{mode==='sms'}}" class="field code-row">
+      <view class="grow">
+        <text class="label">验证码</text>
+        <input type="number" maxlength="6" placeholder="6 位验证码" value="{{code}}" bindinput="onCode" />
+      </view>
+      <view class="code-btn" bindtap="onSendCode">{{counting ? counting + 's' : '获取验证码'}}</view>
+    </view>
+
+    <view wx:else class="field">
+      <text class="label">密码</text>
+      <input password placeholder="请输入密码" value="{{password}}" bindinput="onPassword" />
+    </view>
+
+    <button class="btn-primary submit" loading="{{loading}}" disabled="{{loading}}" bindtap="onSubmit">登录</button>
+
+    <view class="agree" bindtap="onToggleAgree">
+      <view class="check {{agreed ? 'is-on' : ''}}"></view>
+      <text>已阅读并同意服务协议与隐私政策。手机号仅用于匹配你在企业里的员工账号</text>
+    </view>
+
+    <view class="notice notice--info" style="margin: 24rpx 0 0">手机端只做盯进度、派车、审批、看数。运价配置请在电脑上操作。</view>
+    <view class="help" bindtap="onHelp">登录遇到问题</view>
   </view>
 </view>

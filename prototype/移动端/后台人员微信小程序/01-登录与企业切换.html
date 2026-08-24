@@ -41,13 +41,22 @@
     background: #fff; border-radius: 24px 24px 0 0; padding: 24px 22px 0;
     display: flex; flex-direction: column;
   }
-  .wx-btn {
-    height: 48px; border: 0; border-radius: 13px; width: 100%;
-    background: #07c160; color: #fff; font: 600 16px/1 var(--font);
-    display: flex; align-items: center; justify-content: center; gap: 9px; cursor: pointer;
-    box-shadow: 0 6px 18px -6px rgba(7,193,96,.6); transition: transform .1s ease-out;
+  .login-tabs { display: flex; gap: 0; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .login-tabs button {
+    flex: 1; height: 42px; border: 0; background: none; font: 600 15px/1 var(--font);
+    color: var(--ink-3); position: relative; cursor: pointer;
   }
-  .wx-btn:active { transform: scale(.975); }
+  .login-tabs button[aria-selected="true"] { color: var(--primary); }
+  .login-tabs button[aria-selected="true"]::after {
+    content: ""; position: absolute; left: 22%; right: 22%; bottom: -1px; height: 2.5px;
+    border-radius: 99px; background: var(--primary);
+  }
+  .code-row { display: flex; gap: 10px; align-items: flex-end; }
+  .code-row .field { flex: 1; }
+  .code-btn {
+    flex: none; height: 42px; padding: 0 12px; border: 0; border-radius: 10px;
+    background: var(--primary-soft); color: var(--primary); font: 600 13px/1 var(--font); cursor: pointer;
+  }
   .agree { display: flex; gap: 9px; align-items: flex-start; margin-top: 16px; font-size: 12px; color: var(--ink-3); line-height: 1.6; }
   .agree i { width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid #cbd5e1; flex: none; margin-top: 1px; display: grid; place-items: center; cursor: pointer; }
   .agree i[aria-checked="true"] { background: var(--primary); border-color: var(--primary); }
@@ -80,9 +89,9 @@
     <div class="stage__notes">
       <h3>设计说明</h3>
       <ul>
-        <li>手机号快捷登录反查<b>员工档案</b>（user_type=2）。PC 端的账号密码保留为备用入口，手机上不做主路径。</li>
-        <li>一个人可能在<b>多家租户</b>下有账号（集团 / 子公司 / 代运营）。企业选择页给出角色与今日待办数，选错的成本很高。</li>
-        <li>角色不是自己挑的，是<b>后台授的</b>。这一页只在一人多角色时出现，用来决定进哪个默认工作台，不改变权限。</li>
+        <li>不走微信授权。主路径是<b>手机号 + 短信验证码</b>，账号密码作备用。手机号用来匹配员工档案，权限与电脑端一致。</li>
+        <li>一个人可能在<b>多家租户</b>下有账号（集团 / 子公司 / 代运营）。选企业只展示企业名，待办数进入工作台后再看——跨租户查待办成本高、也容易选错。</li>
+        <li>角色不是自己挑的，是<b>后台授的</b>。这一页只在一人多岗位视图时出现，用来决定进哪个默认工作台，不改变权限。</li>
         <li>登录页底部就出现<b>五阶段泳道条</b>，把后台端的核心心智模型提前建立起来。</li>
       </ul>
     </div>
@@ -96,7 +105,7 @@
       <div class="mp__body">
 
         <!-- 登录 -->
-        <section class="screen login" data-screen="welcome" data-title="授权登录" data-nav-hide="1"
+        <section class="screen login" data-screen="welcome" data-title="登录" data-nav-hide="1"
                  data-status-light="1" data-mpbg="#0b132e" data-start>
           <div class="login__hero">
             <div class="brand">
@@ -136,10 +145,38 @@
             </div>
           </div>
           <div class="login__panel">
-            <button class="wx-btn" data-dialog="wxphone">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.2 3C5 3 1.6 5.9 1.6 9.5c0 2 1.1 3.8 2.9 5l-.7 2.2 2.6-1.3c.9.2 1.8.4 2.8.4h.6a5.7 5.7 0 0 1-.2-1.5c0-3.4 3.3-6.1 7.4-6.1h.6C17.1 5.2 13.6 3 9.2 3Zm-2.5 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm5 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/><path d="M22.4 14.3c0-2.9-2.8-5.2-6.3-5.2s-6.3 2.3-6.3 5.2 2.8 5.2 6.3 5.2c.8 0 1.5-.1 2.2-.3l2.1 1.1-.6-1.8c1.6-1 2.6-2.5 2.6-4.2Zm-8.3-1.6a.85.85 0 1 1 0 1.7.85.85 0 0 1 0-1.7Zm4.1 0a.85.85 0 1 1 0 1.7.85.85 0 0 1 0-1.7Z"/></svg>
-              微信手机号快捷登录
-            </button>
+            <div class="login-tabs" role="tablist">
+              <button data-role="sms" aria-selected="true">验证码登录</button>
+              <button data-role="pwd" aria-selected="false">密码登录</button>
+            </div>
+
+            <div data-role-panel="sms">
+              <div class="field">
+                <div class="field__l">手机号</div>
+                <input class="input" type="tel" maxlength="11" placeholder="请输入企业员工手机号" value="13755805580">
+              </div>
+              <div class="code-row">
+                <div class="field">
+                  <div class="field__l">验证码</div>
+                  <input class="input" type="tel" maxlength="6" placeholder="6 位验证码">
+                </div>
+                <button class="code-btn" data-toast="验证码已发送，请查收短信">获取验证码</button>
+              </div>
+              <button class="btn btn--primary btn--lg" style="width:100%;margin-top:18px" data-push="org">登录</button>
+            </div>
+
+            <div data-role-panel="pwd" hidden>
+              <div class="field">
+                <div class="field__l">手机号</div>
+                <input class="input" type="tel" maxlength="11" placeholder="请输入企业员工手机号" value="13755805580">
+              </div>
+              <div class="field">
+                <div class="field__l">密码</div>
+                <input class="input" type="password" placeholder="请输入密码">
+              </div>
+              <button class="btn btn--primary btn--lg" style="width:100%;margin-top:18px" data-push="org">登录</button>
+            </div>
+
             <div class="agree">
               <i role="checkbox" aria-checked="true" tabindex="0"></i>
               <span>已阅读并同意 <a>服务协议</a> 与 <a>隐私政策</a>。手机号仅用于匹配你在企业里的员工账号</span>
@@ -149,7 +186,6 @@
               <div>手机端只做<b>盯进度、派车、审批、看数</b>。运价配置、审批流设计、批量档案维护请在电脑上操作。</div>
             </div>
             <div class="altrow">
-              <span data-toast="账号密码登录仅作备用，建议用手机号">账号密码登录</span>
               <span data-toast="联系企业管理员在「组织与权限」里添加你">登录遇到问题</span>
             </div>
           </div>
@@ -167,7 +203,7 @@
               <div class="org__l" style="background:linear-gradient(145deg,#4a6cf5,#2f54eb)">远</div>
               <div class="grow">
                 <b style="font-size:15.5px;letter-spacing:-.01em">远洋汽车物流有限公司</b>
-                <div class="t-cap" style="margin-top:5px">调度 / 运营主管 · 今日 12 件待办</div>
+                <div class="t-cap" style="margin-top:5px">常用企业 · 进入后再看待办</div>
               </div>
               <span class="tag tag--primary">常用</span>
             </div>
@@ -176,7 +212,7 @@
               <div class="org__l" style="background:linear-gradient(145deg,#0ea5e9,#0369a1)">远</div>
               <div class="grow">
                 <b style="font-size:15.5px;letter-spacing:-.01em">远洋物流（华南）分公司</b>
-                <div class="t-cap" style="margin-top:5px">只读 · 今日 0 件待办</div>
+                <div class="t-cap" style="margin-top:5px">华南分公司</div>
               </div>
               <span data-icon="right" style="color:#c3ccda;display:flex"></span>
             </div>
@@ -224,6 +260,15 @@
               <span class="tag tag--warn">4 待批</span>
             </div>
 
+            <div class="rolecard" role="radio" aria-checked="false">
+              <i style="background:#eef2f9;color:#64748b"><span data-icon="truck"></span></i>
+              <div class="grow">
+                <b>车队长视图</b>
+                <span>自有运力、证照预警、催司机回位。<br>今日 3 台证照临期。</span>
+              </div>
+              <span class="tag tag--warn">3 临期</span>
+            </div>
+
             <div class="rolecard" role="radio" aria-checked="false" style="opacity:.55">
               <i style="background:#eef2f9;color:#8d9bb0"><span data-icon="wallet"></span></i>
               <div class="grow">
@@ -247,24 +292,6 @@
 
       <nav class="mp__tab" style="display:none"></nav>
       <div class="mp__home"><i></i></div>
-
-      <div class="dialog" data-dialog-id="wxphone" style="width:312px">
-        <div class="auth__app">
-          <div class="auth__logo" style="background:linear-gradient(140deg,#4a6cf5,#2f54eb)">智</div>
-          <div><b>智图移动调度台</b><span>申请获取你的手机号</span></div>
-        </div>
-        <div class="auth__req">
-          <p>用于匹配你在企业里的员工账号与角色权限。</p>
-          <div class="pick">
-            <span class="t-mono">137****5580</span>
-            <span class="tag tag--primary">微信绑定号</span>
-          </div>
-        </div>
-        <div class="dialog__acts">
-          <button data-sheet-close>拒绝</button>
-          <button class="is-main" data-sheet-close data-then="org">允许</button>
-        </div>
-      </div>
 
     </div>
   </div>

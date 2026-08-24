@@ -2,6 +2,7 @@
   <view class="user card">
     <view class="name">{{realName}}</view>
     <view class="phone muted">{{phoneMasked}}</view>
+    <view class="muted" style="margin-top:8rpx">{{tenantName}}</view>
     <view class="tags">
       <t-tag wx:for="{{roles}}" wx:key="*this" theme="primary" variant="light" size="small">{{item}}</t-tag>
       <t-tag wx:for="{{personas}}" wx:key="*this" theme="success" variant="light" size="small">{{item}}视图</t-tag>
@@ -9,8 +10,12 @@
   </view>
 
   <t-cell-group>
-    <t-cell title="账号与企业" note="后续开放" arrow />
-    <t-cell title="关于智途管理" note="v0.1.0" arrow bind:click="onAbout" />
+    <t-cell title="切换企业" note="{{tenantName}}" arrow bind:click="goSwitch" />
+    <t-cell title="角色与权限" note="只读" arrow bind:click="goRoles" />
+    <t-cell title="修改密码" arrow bind:click="goPassword" />
+    <t-cell title="资源速查" arrow bind:click="goLookup" />
+    <t-cell title="通知设置" note="示意" arrow bind:click="goNotify" />
+    <t-cell title="关于智途管理" note="v0.2.0" arrow bind:click="onAbout" />
   </t-cell-group>
 
   <view class="logout-wrap">

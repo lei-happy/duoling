@@ -1,0 +1,4 @@
+.sum { margin: 24rpx 32rpx; padding: 24rpx; background: #0b132e; color: #fff; border-radius: 24rpx; }
+.cap { padding: 24rpx 0; border-bottom: 1rpx solid #eef2f7; }
+.cap.is-on { background: #eef2ff; margin: 0 -24rpx; padding: 24rpx; border-radius: 16rpx; }
+.margin__v { font-size: 48rpx; font-weight: 700; color: #16a34a; margin: 8rpx 0; }

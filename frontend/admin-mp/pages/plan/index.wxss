@@ -1,0 +1,2 @@
+.chk { width: 32rpx; height: 32rpx; border-radius: 50%; border: 3rpx solid #cbd5e1; margin-right: 8rpx; }
+.chk.is-on { background: #2f54eb; border-color: #2f54eb; }

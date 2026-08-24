@@ -1,0 +1,16 @@
+<view class="page" wx:if="{{task}}">
+  <view class="card">
+    <view class="row__no">{{task.taskNo}}</view>
+    <view class="row__m">{{task.route}}</view>
+    <view class="row__f"><text>{{task.plateNumber}} {{task.mainDriverName}}</text></view>
+  </view>
+  <view class="card">
+    <view class="dim">告知客户（示意话术，复制即可）</view>
+    <view style="margin-top:12rpx;line-height:1.6">{{copy}}</view>
+  </view>
+  <view class="actionbar" style="display:flex;gap:12rpx">
+    <button class="btn-ghost" style="flex:1" bindtap="onUrge">催位置</button>
+    <button class="btn-ghost" style="flex:1" bindtap="onCall">打电话</button>
+    <button class="btn-primary" style="flex:1" bindtap="onCopy">告知客户</button>
+  </view>
+</view>
