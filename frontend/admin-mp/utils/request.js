@@ -71,5 +71,6 @@ module.exports = {
   request,
   toast,
   get: (url, options = {}) => request({ ...options, url, method: 'GET' }),
-  post: (url, data, options = {}) => request({ ...options, url, method: 'POST', data })
+  post: (url, data, options = {}) => request({ ...options, url, method: 'POST', data }),
+  put: (url, data, options = {}) => request({ ...options, url, method: 'PUT', data })
 };

@@ -1,6 +1,6 @@
 {
   "description": "本地私有配置，勿提交敏感信息",
-  "projectname": "zhitu-admin-mp",
+  "projectname": "admin-mp",
   "setting": {
     "urlCheck": false,
     "coverView": true,
@@ -9,6 +9,16 @@
     "preloadBackgroundData": false,
     "autoAudits": false,
     "showShadowRootInWxmlPanel": true,
-    "compileHotReLoad": true
-  }
+    "compileHotReLoad": true,
+    "useApiHook": true,
+    "useStaticServer": false,
+    "useLanDebug": false,
+    "showES6CompileOption": false,
+    "checkInvalidKey": true,
+    "ignoreDevUnusedFiles": true,
+    "bigPackageSizeSupport": false,
+    "useIsolateContext": true
+  },
+  "libVersion": "3.7.12",
+  "condition": {}
 }

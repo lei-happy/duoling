@@ -334,6 +334,7 @@ def step7_seed_tenant_data():
             BizRole(
                 role_code="admin",
                 role_name="管理员",
+                personas=["boss"],
                 sort_order=0,
                 status=1,
                 remark="拥有系统全部的操作权限",

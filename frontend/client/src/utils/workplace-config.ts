@@ -93,6 +93,16 @@ export function mergeWorkplaceConfig(
     merged.showModuleOverview = base.showModuleOverview;
   }
 
+  const defaultPersona =
+    typeof patch.defaultPersona === 'string'
+      ? patch.defaultPersona
+      : typeof base.defaultPersona === 'string'
+        ? base.defaultPersona
+        : undefined;
+  if (defaultPersona) {
+    merged.defaultPersona = defaultPersona;
+  }
+
   return merged;
 }
 

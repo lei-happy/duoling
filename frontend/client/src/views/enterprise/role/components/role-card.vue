@@ -5,6 +5,17 @@
       <h3 class="role-card__name" :title="data.roleName">
         {{ data.roleName || '—' }}
       </h3>
+      <div class="role-card__personas">
+        <span
+          v-if="!personaTags.length"
+          class="role-card__persona is-empty"
+        >未设置</span>
+        <span
+          v-for="item in personaTags"
+          :key="item"
+          class="role-card__persona"
+        >{{ item }}</span>
+      </div>
     </header>
 
     <el-tooltip
@@ -45,7 +56,7 @@
 
 <script lang="ts" setup>
   import { computed, nextTick, onMounted, ref, watch } from 'vue';
-  import type { Role } from '@/api/system/role/model';
+  import { formatPersonaLabels, type Role } from '@/api/system/role/model';
 
   const props = defineProps<{
     data: Role;
@@ -60,6 +71,8 @@
 
   const descRef = ref<HTMLElement | null>(null);
   const showDescTooltip = ref(false);
+
+  const personaTags = computed(() => formatPersonaLabels(props.data.personas));
 
   const descText = computed(() =>
     props.data.comments?.trim() ? props.data.comments : '暂无描述'
@@ -102,7 +115,34 @@
   }
 
   .role-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     min-width: 0;
+  }
+
+  .role-card__personas {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+    max-width: 58%;
+  }
+
+  .role-card__persona {
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    line-height: 20px;
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+  }
+
+  .role-card__persona.is-empty {
+    color: var(--el-text-color-secondary);
+    background: var(--el-fill-color);
   }
 
   .role-card__name {
@@ -111,6 +151,8 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
+    min-width: 0;
     font-size: 16px;
     font-weight: 600;
     line-height: 1.35;

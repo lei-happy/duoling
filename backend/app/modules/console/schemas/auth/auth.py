@@ -106,6 +106,10 @@ class UserRoleOut(BaseModel):
     roleId: int = Field(description="角色ID")
     roleCode: str = Field(description="角色编码")
     roleName: str = Field(description="角色名称")
+    personas: List[str] = Field(
+        default_factory=list,
+        description="该角色的小程序岗位视图 dispatch/boss/finance/captain，不参与鉴权",
+    )
 
 
 class UserInfoOut(BaseModel):
@@ -135,6 +139,10 @@ class UserInfoOut(BaseModel):
         description="菜单版本戳：客户端缓存后用于与 /auth/menu-version 比对，若不一致需重新拉取菜单",
     )
     roles: List[UserRoleOut] = Field(default_factory=list, description="角色列表")
+    personas: List[str] = Field(
+        default_factory=list,
+        description="当前用户可切换的小程序岗位视图并集（user_type=1 为全部）",
+    )
     authorities: List[UserMenuOut] = Field(default_factory=list, description="菜单/权限列表")
     features: List[str] = Field(
         default_factory=list,

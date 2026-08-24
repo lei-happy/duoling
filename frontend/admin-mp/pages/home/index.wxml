@@ -1,23 +1,32 @@
 <view class="page home">
   <view class="hero">
-    <view class="hello">您好，{{realName}}</view>
-    <view class="sub muted-on-dark">今天也关心一下经营与调度吧</view>
+    <view class="hello">{{hello}}，{{realName}}</view>
+    <view class="sub muted-on-dark">{{sub}}</view>
+    <view wx:if="{{showSwitcher}}" class="roles" role="tablist">
+      <view
+        wx:for="{{switchers}}"
+        wx:key="value"
+        class="role-tab {{item.selected ? 'is-on' : ''}}"
+        data-persona="{{item.value}}"
+        bindtap="onSwitch"
+      >{{item.label}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{emptyHint}}" class="card hint-card">
+    <view class="hint-text">{{emptyHint}}</view>
+  </view>
+
+  <view wx:if="{{comingSoon}}" class="card hint-card">
+    <view class="hint-text">车队长视图即将上线，先用现有入口了解待办方向。</view>
   </view>
 
   <view class="card">
-    <view class="section-title">经营速览</view>
+    <view class="section-title">{{currentLabel}}速览</view>
     <view class="kpi-row">
-      <view class="kpi">
-        <view class="kpi-value">--</view>
-        <view class="kpi-label">今日运单</view>
-      </view>
-      <view class="kpi">
-        <view class="kpi-value">--</view>
-        <view class="kpi-label">在途车辆</view>
-      </view>
-      <view class="kpi">
-        <view class="kpi-value">--</view>
-        <view class="kpi-label">待调度</view>
+      <view class="kpi" wx:for="{{kpis}}" wx:key="label">
+        <view class="kpi-value">{{item.value}}</view>
+        <view class="kpi-label">{{item.label}}</view>
       </view>
     </view>
     <view class="kpi-tip muted">数据接口将在后续迭代接入</view>
@@ -25,12 +34,12 @@
 
   <view class="card">
     <view class="section-title">高频入口</view>
-    <t-cell title="调度待办" note="即将上线" arrow />
-    <t-cell title="财务确认" note="即将上线" arrow />
-    <t-cell title="经营报表" note="即将上线" arrow />
-  </view>
-
-  <view class="card">
-    <t-empty description="业务页面搭建中" />
+    <t-cell
+      wx:for="{{entries}}"
+      wx:key="title"
+      title="{{item.title}}"
+      note="{{item.note}}"
+      arrow
+    />
   </view>
 </view>

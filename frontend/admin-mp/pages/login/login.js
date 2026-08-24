@@ -1,12 +1,14 @@
 const { ensureAuth } = require('../../utils/auth');
-const { demoLogin } = require('../../api/auth');
+const { loginByPassword, completeLogin, isMultiTenant } = require('../../api/auth');
 const { toast } = require('../../utils/request');
 
 Page({
   data: {
     phone: '',
     password: '',
-    loading: false
+    loading: false,
+    tenants: [],
+    selectingTenant: false
   },
 
   onShow() {
@@ -32,11 +34,29 @@ Page({
       toast('请输入密码');
       return;
     }
+    await this.doLogin();
+  },
 
+  async onPickTenant(e) {
+    const tenantCode = e.currentTarget.dataset.code;
+    if (!tenantCode || this.data.loading) return;
+    await this.doLogin(tenantCode);
+  },
+
+  async doLogin(tenantCode) {
+    const { phone, password } = this.data;
     this.setData({ loading: true });
     wx.showLoading({ title: '正在进入，请稍候…', mask: true });
     try {
-      await demoLogin({ phone, password });
+      const result = await loginByPassword({ phone, password, tenantCode });
+      if (isMultiTenant(result)) {
+        this.setData({
+          tenants: result.tenants || [],
+          selectingTenant: true
+        });
+        return;
+      }
+      await completeLogin(result);
       wx.switchTab({ url: '/pages/home/index' });
     } catch (e) {
       /* toast 已处理 */

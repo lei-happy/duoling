@@ -1,7 +1,9 @@
 const STORAGE_KEYS = {
   TOKEN: 'admin_mp_token',
+  REFRESH_TOKEN: 'admin_mp_refresh_token',
   USER_INFO: 'admin_mp_user_info',
-  TENANT_CODE: 'admin_mp_tenant_code'
+  TENANT_CODE: 'admin_mp_tenant_code',
+  PENDING_TENANTS: 'admin_mp_pending_tenants'
 };
 
 function getItem(key, fallback) {
@@ -27,8 +29,10 @@ function removeItem(key) {
 
 function clearSession() {
   removeItem(STORAGE_KEYS.TOKEN);
+  removeItem(STORAGE_KEYS.REFRESH_TOKEN);
   removeItem(STORAGE_KEYS.USER_INFO);
   removeItem(STORAGE_KEYS.TENANT_CODE);
+  removeItem(STORAGE_KEYS.PENDING_TENANTS);
 }
 
 module.exports = {

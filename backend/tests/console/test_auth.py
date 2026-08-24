@@ -21,6 +21,7 @@ from app.core.security import (
     decode_refresh_token,
 )
 from app.modules.console.services.auth.auth_service import AuthService
+from app.common.enums import normalize_role_personas
 from app.common.exceptions import AuthException, BizException
 
 
@@ -80,6 +81,42 @@ class TestAuthPureLogic:
     def test_workplace_config_empty_item_rejected(self):
         with pytest.raises(BizException):
             AuthService._validate_workplace_config({"quickActions": ["", " "]})
+
+    def test_workplace_config_default_persona_ok(self):
+        AuthService._validate_workplace_config(
+            {"version": 1, "defaultPersona": "dispatch"}
+        )
+
+    def test_workplace_config_default_persona_invalid(self):
+        with pytest.raises(BizException, match="岗位视图"):
+            AuthService._validate_workplace_config({"defaultPersona": "ceo"})
+
+    def test_biz_role_code_from_mirrored(self):
+        assert (
+            AuthService._biz_role_code_from_mirrored("1001_operator", "1001")
+            == "operator"
+        )
+        assert AuthService._biz_role_code_from_mirrored("admin", "1001") == "admin"
+
+    def test_ordered_personas(self):
+        assert AuthService._ordered_personas(["finance", "dispatch", "x"]) == [
+            "dispatch",
+            "finance",
+        ]
+
+    def test_normalize_role_personas(self):
+        assert normalize_role_personas("boss") == ["boss"]
+        assert normalize_role_personas(["finance", "dispatch", "ceo"]) == [
+            "dispatch",
+            "finance",
+        ]
+
+    async def test_admin_user_gets_all_personas(self):
+        personas, mapping = await AuthService._get_user_role_personas(
+            "1001", "13800000000", 1
+        )
+        assert personas == ["dispatch", "boss", "finance", "captain"]
+        assert mapping == {}
 
 
 # =====================================================================

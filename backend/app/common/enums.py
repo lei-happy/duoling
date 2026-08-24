@@ -3,6 +3,7 @@
 """
 
 from enum import IntEnum, Enum
+from typing import Iterable, List, Optional, Sequence, Union
 
 
 class StatusEnum(IntEnum):
@@ -25,6 +26,46 @@ class UserTypeEnum(IntEnum):
     TENANT_ADMIN = 1     # 租户管理员
     TENANT_USER = 2      # 租户普通用户
     DRIVER = 3           # 驾驶员
+
+
+class RolePersonaEnum(str, Enum):
+    """小程序岗位视图。挂在 biz_role 上，只决定首页先看什么，不参与鉴权。"""
+
+    DISPATCH = "dispatch"
+    BOSS = "boss"
+    FINANCE = "finance"
+    CAPTAIN = "captain"
+
+
+ROLE_PERSONA_VALUES = frozenset(item.value for item in RolePersonaEnum)
+ROLE_PERSONA_ORDER = tuple(item.value for item in RolePersonaEnum)
+ROLE_PERSONA_LABELS = {
+    RolePersonaEnum.DISPATCH.value: "调度",
+    RolePersonaEnum.BOSS.value: "老板",
+    RolePersonaEnum.FINANCE.value: "财务",
+    RolePersonaEnum.CAPTAIN.value: "车队长",
+}
+ADMIN_DEFAULT_PERSONA = RolePersonaEnum.BOSS.value
+
+
+def normalize_role_personas(
+    raw: Optional[Union[str, Sequence[object]]],
+) -> List[str]:
+    """把角色上的岗位字段收成有序去重列表；非法值丢弃。"""
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        values: Iterable[object] = [raw]
+    elif isinstance(raw, (list, tuple)):
+        values = raw
+    else:
+        return []
+    seen = {
+        item
+        for item in values
+        if isinstance(item, str) and item in ROLE_PERSONA_VALUES
+    }
+    return [key for key in ROLE_PERSONA_ORDER if key in seen]
 
 
 class GenderEnum(IntEnum):

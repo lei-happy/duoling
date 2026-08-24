@@ -19,6 +19,8 @@ export interface WorkplaceConfig {
    * 侧栏「总览」入口始终保留，与本字段无关。
    */
   showModuleOverviewByModule?: Record<string, boolean>;
+  /** 小程序默认打开的岗位视图 */
+  defaultPersona?: string;
 }
 
 export interface QuickActionConfig {

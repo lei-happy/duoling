@@ -208,5 +208,10 @@ async def update_user_workplace_config(
     db: AsyncSession = Depends(get_platform_db),
 ):
     """保存当前登录用户的工作台个性化配置"""
-    await AuthService.update_workplace_config(db, current_user.user_id, request)
+    await AuthService.update_workplace_config(
+        db,
+        current_user.user_id,
+        request,
+        tenant_code=current_user.tenant_code,
+    )
     return success(message="保存成功")

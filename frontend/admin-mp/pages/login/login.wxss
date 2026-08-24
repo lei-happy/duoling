@@ -37,3 +37,12 @@
   font-size: 24rpx;
   text-align: center;
 }
+
+.tenant-card {
+  margin-top: 8rpx;
+}
+
+.tenant-hint {
+  margin-bottom: 16rpx;
+  font-size: 24rpx;
+}

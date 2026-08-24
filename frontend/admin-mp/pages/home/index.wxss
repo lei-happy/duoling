@@ -47,3 +47,32 @@
   margin-top: 20rpx;
   font-size: 24rpx;
 }
+
+.roles {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 28rpx;
+}
+
+.role-tab {
+  padding: 8rpx 22rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.role-tab.is-on {
+  color: #0052d9;
+  background: #fff;
+  font-weight: 600;
+}
+
+.hint-card {
+  padding: 24rpx 28rpx;
+}
+
+.hint-text {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+}

@@ -4,6 +4,7 @@
     <view class="phone muted">{{phoneMasked}}</view>
     <view class="tags">
       <t-tag wx:for="{{roles}}" wx:key="*this" theme="primary" variant="light" size="small">{{item}}</t-tag>
+      <t-tag wx:for="{{personas}}" wx:key="*this" theme="success" variant="light" size="small">{{item}}视图</t-tag>
     </view>
   </view>
 

@@ -1,26 +1,48 @@
-/**
- * 登录相关接口占位。
- * 后续对接租户端鉴权（与 Web client 对齐），首版先走本地演示登录。
- */
-const { setItem, STORAGE_KEYS } = require('../utils/storage');
+const { get, post, put } = require('../utils/request');
+const { STORAGE_KEYS, getItem } = require('../utils/storage');
+const {
+  normalizeLoginResponse,
+  isMultiTenant,
+  applyLoginSuccess,
+  mergeUserInfo,
+  patchWorkplaceConfig
+} = require('../utils/session');
 
-async function demoLogin({ phone }) {
-  const userInfo = {
-    realName: '演示管理员',
-    phone,
-    roles: ['老板']
-  };
-  setItem(STORAGE_KEYS.TOKEN, 'demo-token');
-  setItem(STORAGE_KEYS.USER_INFO, userInfo);
-  setItem(STORAGE_KEYS.TENANT_CODE, 'demo');
-  const app = getApp();
-  if (app) {
-    app.globalData.userInfo = userInfo;
-    app.globalData.tenantCode = 'demo';
+async function loginByPassword({ phone, password, tenantCode }) {
+  const payload = { phone, password };
+  if (tenantCode) {
+    payload.tenant_code = tenantCode;
   }
-  return userInfo;
+  const raw = await post('/auth/login', payload);
+  return normalizeLoginResponse(raw);
+}
+
+async function fetchUserInfo() {
+  const info = await get('/auth/user-info');
+  return mergeUserInfo(info || {});
+}
+
+async function saveDefaultPersona(persona) {
+  const user = getItem(STORAGE_KEYS.USER_INFO, {}) || {};
+  const current =
+    user.workplaceConfig && typeof user.workplaceConfig === 'object'
+      ? user.workplaceConfig
+      : {};
+  const workplaceConfig = { ...current, defaultPersona: persona };
+  await put('/auth/user-workplace-config', { workplaceConfig });
+  patchWorkplaceConfig({ defaultPersona: persona });
+  return workplaceConfig;
+}
+
+async function completeLogin(result) {
+  applyLoginSuccess(result);
+  return fetchUserInfo();
 }
 
 module.exports = {
-  demoLogin
+  loginByPassword,
+  fetchUserInfo,
+  saveDefaultPersona,
+  completeLogin,
+  isMultiTenant
 };

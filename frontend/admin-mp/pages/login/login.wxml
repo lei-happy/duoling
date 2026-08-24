@@ -37,6 +37,19 @@
       >进入工作台</t-button>
     </view>
 
-    <view class="hint muted">当前为脚手架演示登录，后续对接租户账号体系</view>
+    <view class="hint muted">使用企业员工账号登录，权限与电脑端一致</view>
+  </view>
+
+  <view wx:if="{{selectingTenant}}" class="card tenant-card">
+    <view class="section-title">选择企业</view>
+    <view class="tenant-hint muted">这个手机号关联了多家企业，请选择要进入的一家。</view>
+    <view
+      wx:for="{{tenants}}"
+      wx:key="tenantCode"
+      data-code="{{item.tenantCode}}"
+      bindtap="onPickTenant"
+    >
+      <t-cell title="{{item.tenantName}}" note="{{item.tenantCode}}" arrow />
+    </view>
   </view>
 </view>

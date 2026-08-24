@@ -22266,6 +22266,15 @@
           "comment": "是否删除 0-否 1-是"
         },
         {
+          "name": "personas",
+          "type": "JSON",
+          "nullable": true,
+          "primary_key": false,
+          "autoincrement": null,
+          "server_default": null,
+          "comment": "小程序岗位视图列表 dispatch/boss/finance/captain，不参与鉴权"
+        },
+        {
           "name": "remark",
           "type": "TEXT",
           "nullable": true,

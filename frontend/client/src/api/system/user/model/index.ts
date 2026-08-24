@@ -56,6 +56,8 @@ export interface User {
   themeConfig?: Record<string, any>;
   /** 工作台个性化配置 */
   workplaceConfig?: Record<string, any>;
+  /** 当前用户可切换的小程序岗位视图并集 */
+  personas?: string[];
   /** 菜单版本戳：与 /auth/menu-version 比对，不一致需重新拉取菜单 */
   menuVersion?: number;
   /** 当前租户已启用的产品功能码（仅 client 端有值） */

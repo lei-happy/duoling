@@ -4,7 +4,7 @@
 """
 
 from datetime import datetime, timedelta
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Tuple
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +13,11 @@ from loguru import logger
 from app.core.config import get_settings
 from app.core.security import TokenData, create_access_token, create_refresh_token, decode_refresh_token
 from app.common.utils import verify_password, hash_password
+from app.common.enums import (
+    ROLE_PERSONA_ORDER,
+    ROLE_PERSONA_VALUES,
+    normalize_role_personas,
+)
 from app.common.exceptions import AuthException, BizException
 from app.modules.console.models.system.user import User
 from app.modules.console.models.system.user_tenant import UserTenant
@@ -671,6 +676,8 @@ class AuthService:
         # 供审批中心解析"发起人部门负责人 / 逐级上级"的起点（见 04.组织模型扩展依赖 §2.3）
         organization_id = None
         organization_name = None
+        personas: List[str] = []
+        persona_by_role_code: Dict[str, List[str]] = {}
         if app_type == "client" and tenant_code:
             try:
                 organization_id, organization_name = (
@@ -681,6 +688,17 @@ class AuthService:
             except Exception as e:
                 logger.exception(
                     f"[get_user_info] 获取用户部门失败 "
+                    f"tenant_code={tenant_code} user_id={user_id} err={e!r}"
+                )
+            try:
+                personas, persona_by_role_code = (
+                    await AuthService._get_user_role_personas(
+                        tenant_code, user.phone, user_type
+                    )
+                )
+            except Exception as e:
+                logger.exception(
+                    f"[get_user_info] 获取岗位视图失败 "
                     f"tenant_code={tenant_code} user_id={user_id} err={e!r}"
                 )
 
@@ -706,9 +724,17 @@ class AuthService:
                     roleId=r.id,
                     roleCode=r.role_code,
                     roleName=r.role_name,
+                    personas=persona_by_role_code.get(
+                        AuthService._biz_role_code_from_mirrored(
+                            r.role_code, tenant_code
+                        )
+                        or "",
+                        [],
+                    ),
                 )
                 for r in roles
             ],
+            personas=personas,
             authorities=[
                 UserMenuOut(
                     menuId=m.id,
@@ -756,6 +782,75 @@ class AuthService:
             )
             return dept_id, name_row.scalar()
         return None, None
+
+    @staticmethod
+    def _biz_role_code_from_mirrored(
+        role_code: str, tenant_code: Optional[str]
+    ) -> Optional[str]:
+        """平台镜像角色编码 {tenant_code}_{biz_role_code} → 租户 role_code。"""
+        if not role_code:
+            return None
+        if not tenant_code:
+            return role_code
+        prefix = f"{tenant_code}_"
+        if role_code.startswith(prefix):
+            return role_code[len(prefix):]
+        return role_code
+
+    @staticmethod
+    def _ordered_personas(values) -> List[str]:
+        seen = {v for v in values if v in ROLE_PERSONA_VALUES}
+        return [key for key in ROLE_PERSONA_ORDER if key in seen]
+
+    @staticmethod
+    async def _get_user_role_personas(
+        tenant_code: str,
+        phone: str,
+        user_type: Optional[int],
+    ) -> Tuple[List[str], Dict[str, List[str]]]:
+        """
+        从租户库读取用户角色上的岗位视图。
+        租户管理员（user_type=1）直接拥有全部视图；其余用户按已打标角色取并集。
+        """
+        if user_type == 1:
+            return list(ROLE_PERSONA_ORDER), {}
+
+        from app.core.database import db_manager
+        from app.modules.client.models.role.biz_role import BizRole
+        from app.modules.client.models.user.biz_user import BizUser
+        from app.modules.client.models.user.biz_user_role import BizUserRole
+
+        async for tenant_db in db_manager.get_tenant_session(tenant_code):
+            uid_row = await tenant_db.execute(
+                select(BizUser.id).where(
+                    BizUser.phone == phone,
+                    BizUser.is_deleted == 0,
+                )
+            )
+            user_id = uid_row.scalar()
+            if not user_id:
+                return [], {}
+            rows = await tenant_db.execute(
+                select(BizRole.role_code, BizRole.personas)
+                .join(
+                    BizUserRole,
+                    (BizUserRole.role_id == BizRole.id)
+                    & (BizUserRole.is_deleted == 0),
+                )
+                .where(
+                    BizUserRole.user_id == user_id,
+                    BizRole.is_deleted == 0,
+                )
+            )
+            mapping: Dict[str, List[str]] = {}
+            collected: List[str] = []
+            for role_code, raw in rows.all():
+                items = normalize_role_personas(raw)
+                if items:
+                    mapping[role_code] = items
+                    collected.extend(items)
+            return AuthService._ordered_personas(collected), mapping
+        return [], {}
 
     @staticmethod
     async def _get_user_menus(
@@ -989,6 +1084,13 @@ class AuthService:
                     raise BizException("模块总览偏好格式无效")
                 if not isinstance(enabled, bool):
                     raise BizException("模块总览偏好格式无效")
+        default_persona = config.get("defaultPersona")
+        if default_persona is not None:
+            if (
+                not isinstance(default_persona, str)
+                or default_persona not in ROLE_PERSONA_VALUES
+            ):
+                raise BizException("请选择有效的岗位视图")
         quick_actions = config.get("quickActions")
         if quick_actions is None:
             return
@@ -1004,7 +1106,10 @@ class AuthService:
 
     @staticmethod
     async def update_workplace_config(
-        db: AsyncSession, user_id: int, request: UpdateWorkplaceConfigRequest
+        db: AsyncSession,
+        user_id: int,
+        request: UpdateWorkplaceConfigRequest,
+        tenant_code: Optional[str] = None,
     ) -> None:
         """更新用户工作台个性化配置"""
         AuthService._validate_workplace_config(request.workplaceConfig)
@@ -1014,6 +1119,22 @@ class AuthService:
         user = result.scalar_one_or_none()
         if not user:
             raise AuthException("用户不存在")
+
+        config = request.workplaceConfig
+        default_persona = config.get("defaultPersona") if isinstance(config, dict) else None
+        if default_persona and tenant_code:
+            ut_result = await db.execute(
+                select(UserTenant.user_type).where(
+                    UserTenant.user_id == user_id,
+                    UserTenant.tenant_code == tenant_code,
+                    UserTenant.is_deleted == 0,
+                )
+            )
+            personas, _ = await AuthService._get_user_role_personas(
+                tenant_code, user.phone, ut_result.scalar()
+            )
+            if default_persona not in personas:
+                raise BizException("所选岗位视图不在你当前的角色范围内，请重新选择")
 
         user.workplace_config = request.workplaceConfig
         await db.commit()

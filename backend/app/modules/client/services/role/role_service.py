@@ -8,6 +8,7 @@ from typing import Optional, List, Dict
 from sqlalchemy import select, func, asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.enums import ROLE_PERSONA_VALUES, normalize_role_personas
 from app.common.exceptions import BizException
 from app.modules.client.models.role.biz_role import BizRole
 from app.modules.client.models.role.biz_role_menu import BizRoleMenu
@@ -23,6 +24,20 @@ _ROLE_SORT_COLUMNS = {
     "createTime": BizRole.created_at,
     "roleId": BizRole.id,
 }
+
+
+def _parse_personas(value: Optional[List[str]], *, required: bool) -> Optional[List[str]]:
+    """校验岗位视图列表。新建至少一项；编辑未传则不改。"""
+    if value is None:
+        if required:
+            raise BizException("请选择岗位视图")
+        return None
+    if any(not isinstance(item, str) or item not in ROLE_PERSONA_VALUES for item in value):
+        raise BizException("请选择有效的岗位视图")
+    personas = normalize_role_personas(value)
+    if required and not personas:
+        raise BizException("请选择岗位视图")
+    return personas
 
 
 def _role_list_order_clauses(sort: Optional[str], order: Optional[str]):
@@ -191,6 +206,7 @@ class BizRoleService:
         role = BizRole(
             role_code=role_code,
             role_name=data.roleName,
+            personas=_parse_personas(data.personas, required=True),
             sort_order=0,
             remark=data.comments,
         )
@@ -217,6 +233,8 @@ class BizRoleService:
             role.role_name = data.roleName
         if data.comments is not None:
             role.remark = data.comments
+        if data.personas is not None:
+            role.personas = _parse_personas(data.personas, required=False)
 
         await db.flush()
         await db.refresh(role)
