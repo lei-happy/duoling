@@ -95,6 +95,24 @@ function getTenantCode() {
   return getItem(STORAGE_KEYS.TENANT_CODE, '');
 }
 
+function isRealTenantName(name) {
+  const s = String(name || '').trim();
+  if (!s) return false;
+  if (/^\d+$/.test(s)) return false;
+  const code = getTenantCode();
+  if (code && s === String(code)) return false;
+  return true;
+}
+
+function updateUserInfo(patch) {
+  const cur = getUserInfo() || {};
+  const next = Object.assign({}, cur, patch || {});
+  setItem(STORAGE_KEYS.USER_INFO, next);
+  const app = getApp();
+  if (app) app.globalData.userInfo = next;
+  return next;
+}
+
 /** 登录成功后的统一跳转 */
 function navigateAfterLogin(user) {
   wx.showToast({ title: '登录成功', icon: 'success', duration: 1200 });
@@ -117,5 +135,7 @@ module.exports = {
   logout,
   getUserInfo,
   getTenantCode,
+  isRealTenantName,
+  updateUserInfo,
   navigateAfterLogin
 };

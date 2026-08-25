@@ -48,7 +48,7 @@
   },
   "tabBar": {
     "color": "#94a3b8",
-    "selectedColor": "#1d4ed8",
+    "selectedColor": "#0065ff",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [
@@ -60,19 +60,19 @@
       },
       {
         "pagePath": "pages/task/list",
-        "text": "任务",
+        "text": "我的任务",
         "iconPath": "assets/icons/task.png",
         "selectedIconPath": "assets/icons/task-active.png"
       },
       {
         "pagePath": "pages/finance/list",
-        "text": "收入",
+        "text": "收入明细",
         "iconPath": "assets/icons/finance.png",
         "selectedIconPath": "assets/icons/finance-active.png"
       },
       {
         "pagePath": "pages/profile/index",
-        "text": "我的",
+        "text": "个人中心",
         "iconPath": "assets/icons/profile.png",
         "selectedIconPath": "assets/icons/profile-active.png"
       }

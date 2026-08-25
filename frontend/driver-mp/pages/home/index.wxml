@@ -1,76 +1,59 @@
 <view class="page page-flush home {{fontClass}}">
-  <view class="hd-hero" style="padding-top: {{padTop}}px; padding-right: {{padRight}}px; padding-left: 32rpx; padding-bottom: 88rpx;">
-    <view class="hd-hero__grid"></view>
-    <view class="hd__row">
-      <view class="hd__grow">
-        <view class="hd__hi">{{hello}}</view>
-        <view class="hd__org" bindtap="goSwitchTenant">
-          <text>{{tenantName}}</text>
-          <text class="hd__caret">▾</text>
+  <view class="hd-hero home-hero" style="padding-top: {{padTop}}px; padding-bottom: 96rpx;">
+    <view class="home-hero__fill"></view>
+    <view class="home-wx" style="padding-right: {{padRight}}px;">
+      <mp-icon name="pin" size="sm" color="rgba(255,255,255,0.88)" />
+      <text>{{weather.strip}}</text>
+    </view>
+    <view class="home-who">
+      <view class="home-who__main">
+        <view class="home-who__line">
+          <text class="home-who__name">{{displayName}}</text>
+          <text wx:if="{{plateText}}" class="home-who__div"></text>
+          <text wx:if="{{plateText}}" class="home-who__plate">{{plateText}}</text>
+        </view>
+        <view class="home-who__org" bindtap="goSwitchTenant">
+          <text class="home-who__org-t">{{tenantName}}</text>
+          <text class="home-who__caret">›</text>
+        </view>
+        <view class="home-who__limit">
+          <mp-icon name="truck" size="sm" color="rgba(255,255,255,0.8)" />
+          <text>{{weather.limit}}</text>
         </view>
       </view>
-      <view class="hd__bell" bindtap="goMessage">
-        <mp-icon name="bell" size="md" color="#ffffff" />
-        <view wx:if="{{unread}}" class="hd__badge">{{unread}}</view>
-      </view>
-    </view>
-    <view class="hd__strip">
-      <text>{{weather.strip}}</text>
-      <text class="hd__dot">·</text>
-      <text>{{weather.limit}}</text>
-    </view>
-  </view>
-
-  <view class="overcard">
-    <view class="stats">
-      <view class="stat {{kpi.waitAccept ? 'is-amber' : ''}}" data-chip="waitAccept" bindtap="goTask">
-        <text class="stat__v">{{kpi.waitAccept}}</text>
-        <text class="stat__l">待接收</text>
-      </view>
-      <view class="stat" data-chip="waitLoad" bindtap="goTask">
-        <text class="stat__v">{{kpi.waitLoad}}</text>
-        <text class="stat__l">待装车</text>
-      </view>
-      <view class="stat" data-chip="3" bindtap="goTask">
-        <text class="stat__v">{{kpi.inTransit}}</text>
-        <text class="stat__l">在途</text>
-      </view>
-      <view class="stat" data-chip="4" bindtap="goTask">
-        <text class="stat__v">{{kpi.waitSign}}</text>
-        <text class="stat__l">已到达</text>
+      <view class="home-av" bindtap="goProfile">
+        <image wx:if="{{avatar}}" class="home-av__img" src="{{avatar}}" mode="aspectFill" />
+        <view wx:else class="home-av__fallback">{{avatarText}}</view>
       </view>
     </view>
   </view>
 
-  <view class="pad">
-    <view class="sec-title">
-      <text class="sec-title__h">正在跑的任务</text>
-      <text class="sec-title__n">{{running ? '1 单' : '0 单'}}</text>
-      <text class="sec-title__more" bindtap="goTaskAll">全部任务 ›</text>
+  <view class="home-kpi">
+    <view class="stat {{kpi.waitAccept ? 'is-amber' : ''}}" data-chip="waitAccept" bindtap="goTask">
+      <text class="stat__v">{{kpi.waitAccept}}</text>
+      <text class="stat__l">待接收</text>
     </view>
+    <view class="stat" data-chip="waitLoad" bindtap="goTask">
+      <text class="stat__v">{{kpi.waitLoad}}</text>
+      <text class="stat__l">待装车</text>
+    </view>
+    <view class="stat" data-chip="3" bindtap="goTask">
+      <text class="stat__v">{{kpi.inTransit}}</text>
+      <text class="stat__l">在途中</text>
+    </view>
+    <view class="stat" data-chip="4" bindtap="goTask">
+      <text class="stat__v">{{kpi.waitSign}}</text>
+      <text class="stat__l">待签收</text>
+    </view>
+  </view>
 
-    <ticket-card
+  <view class="home-body">
+    <workbench-task-card
       wx:if="{{running}}"
       view="{{running}}"
       bind:tap="onTaskTap"
+      bind:action="onCardAction"
     />
-
-    <view wx:if="{{running}}" class="btnrow mt-12">
-      <view class="btn btn--ghost" bindtap="onNav">
-        <mp-icon name="nav" size="sm" />
-        导航去卸货点
-      </view>
-      <view
-        wx:if="{{running.canArrive}}"
-        class="btn btn--accent"
-        bindtap="onArrive"
-      >确认到达</view>
-      <view
-        wx:elif="{{running.canDepart}}"
-        class="btn btn--accent"
-        bindtap="onDepart"
-      >确认出发</view>
-    </view>
 
     <ticket-card wx:if="{{!running}}" idle show-road>
       <view slot="idle" class="idlecopy">
@@ -83,64 +66,66 @@
       </view>
     </ticket-card>
 
-    <view class="sec-title"><text class="sec-title__h">常用操作</text></view>
-    <view class="card card--tight quick-card">
+    <view class="home-card home-quick">
+      <text class="home-card__h">常用操作</text>
       <view class="quick">
         <view class="quick__i" bindtap="onReceipt">
           <view class="quick__ico q1">
-            <mp-icon name="camera" size="lg" color="#1d4ed8" />
+            <mp-icon name="camera" size="lg" color="#ffffff" />
           </view>
           <text>上传回单</text>
         </view>
-        <view class="quick__i" bindtap="openExcp">
+        <view class="quick__i" bindtap="goFuel">
           <view class="quick__ico q2">
-            <mp-icon name="warn" size="lg" color="#b26b00" />
+            <mp-icon name="fuel" size="lg" color="#ffffff" />
           </view>
-          <text>异常上报</text>
+          <text>油卡加油</text>
         </view>
         <view class="quick__i" bindtap="goFinance">
           <view class="quick__ico q3">
-            <mp-icon name="wallet" size="lg" color="#15803d" />
+            <mp-icon name="wallet" size="lg" color="#ffffff" />
           </view>
           <text>我的收入</text>
         </view>
-        <view class="quick__i" bindtap="goFuel">
+        <view class="quick__i" bindtap="openExcp">
           <view class="quick__ico q4">
-            <mp-icon name="fuel" size="lg" color="#0369a1" />
+            <mp-icon name="warn" size="lg" color="#ffffff" />
           </view>
-          <text>油卡加油</text>
+          <text>异常上报</text>
         </view>
       </view>
     </view>
 
     <block wx:if="{{pending.length}}">
-      <view class="sec-title">
-        <text class="sec-title__h">要你处理的</text>
-        <text class="sec-title__n">{{pending.length}} 条</text>
+      <view class="home-sec">
+        <text class="home-sec__h">待处理任务</text>
+        <text class="home-sec__n">{{pending.length}} 条</text>
       </view>
-      <view wx:for="{{pending}}" wx:key="id" class="pending-wrap">
-        <ticket-card view="{{item}}" bind:tap="onTaskTap" />
-        <view class="btnrow mt-8">
-          <view class="btn btn--ghost btn--sm" data-id="{{item.id}}" catchtap="openReject">拒绝</view>
-          <view class="btn btn--primary btn--sm" data-id="{{item.id}}" catchtap="onAccept">接收调令</view>
-        </view>
+      <view wx:for="{{pending}}" wx:key="id" class="home-pending">
+        <workbench-task-card
+          view="{{item}}"
+          bind:tap="onTaskTap"
+          bind:action="onCardAction"
+        />
       </view>
     </block>
 
-    <mp-notice
-      wx:if="{{receiptHint}}"
-      class="mt-12"
-      title="{{receiptHint.title}}"
-      desc="{{receiptHint.desc}}"
-      link="去补传"
-      bind:link="goReceiptHint"
-    />
-
-    <view class="sec-title">
-      <text class="sec-title__h">本周排班</text>
-      <text class="sec-title__n">{{week.rangeText}}</text>
+    <view wx:if="{{receiptHint}}" class="home-receipt" bindtap="goReceiptHint">
+      <view class="home-receipt__ico">
+        <mp-icon name="warn" size="sm" color="#ef7c00" />
+      </view>
+      <view class="home-receipt__txt">
+        <text class="home-receipt__t">{{receiptHint.title}}</text>
+        <text class="home-receipt__d">{{receiptHint.desc}}</text>
+      </view>
+      <view class="home-receipt__btn" catchtap="goReceiptHint">补传</view>
     </view>
-    <view class="card card--tight">
+
+    <view class="home-card home-week">
+      <view class="home-week__hd">
+        <text class="home-card__h">本周排班</text>
+        <text class="home-week__range">{{week.rangeText}}</text>
+      </view>
       <view class="minical">
         <view
           wx:for="{{week.days}}"

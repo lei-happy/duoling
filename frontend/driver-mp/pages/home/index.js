@@ -1,13 +1,13 @@
 const { ensureAuth } = require('../../utils/auth');
-const { getUserInfo, getTenantCode } = require('../../services/session');
+const { getUserInfo, getTenantCode, isRealTenantName, updateUserInfo } = require('../../services/session');
+const { getUserInfoApi, getUserTenants } = require('../../api/auth');
 const { listMyTasks, acceptTask, rejectTask } = require('../../api/task');
 const { listMyReceipts } = require('../../api/task-receipt');
 const { toast } = require('../../utils/request');
-const { getCapsuleSafe, greetingByHour } = require('../../utils/nav');
+const { getCapsuleSafe } = require('../../utils/nav');
 const { getFontScale } = require('../../utils/font');
-const { buildTicketView, weekDays, isActiveTask } = require('../../utils/task-view');
+const { buildWorkbenchView, weekDays, isActiveTask, shortTime } = require('../../utils/task-view');
 const { getWeather } = require('../../services/mock/weather');
-const { getUnreadCount } = require('../../services/mock/message');
 const { goNav, goException, callDispatcher, REJECT_REASONS } = require('../../utils/action');
 
 Page({
@@ -15,7 +15,10 @@ Page({
     fontClass: 'font-lg',
     padTop: 48,
     padRight: 96,
-    hello: '师傅，你好',
+    displayName: '师傅',
+    plateText: '',
+    avatar: '',
+    avatarText: '司',
     tenantName: '',
     kpi: { waitAccept: 0, waitLoad: 0, inTransit: 0, waitSign: 0 },
     running: null,
@@ -23,7 +26,6 @@ Page({
     receiptHint: null,
     week: { days: [], rangeText: '', tripCount: 0, kmText: '0', sundayRest: false },
     weather: getWeather(),
-    unread: 0,
     sheet: '',
     rejectReason: '',
     rejectPick: '',
@@ -41,12 +43,54 @@ Page({
       fontClass: getFontScale().className,
       padTop: safe.padTop,
       padRight: safe.padRight,
-      hello: greetingByHour(name),
-      tenantName: user.tenantName || getTenantCode() || '未选择企业',
-      weather: getWeather(),
-      unread: getUnreadCount()
+      displayName: name,
+      avatar: user.avatar || '',
+      avatarText: name.slice(0, 1),
+      tenantName: isRealTenantName(user.tenantName) ? user.tenantName : '当前企业',
+      weather: getWeather()
     });
+    this.refreshIdentity(user);
     this.load();
+  },
+
+  async refreshIdentity(user) {
+    const code = (user && user.tenantCode) || getTenantCode();
+    let tenantName = user && user.tenantName;
+    let avatar = (user && user.avatar) || '';
+    let displayName = (user && user.realName) || this.data.displayName;
+    try {
+      const info = await getUserInfoApi();
+      if (info) {
+        if (isRealTenantName(info.tenantName)) tenantName = info.tenantName;
+        if (info.avatar) avatar = info.avatar;
+        if (info.realName) displayName = info.realName;
+      }
+    } catch (e) {
+      /* handled */
+    }
+    if (!isRealTenantName(tenantName) && code) {
+      try {
+        const raw = await getUserTenants();
+        const list = Array.isArray(raw) ? raw : (raw && raw.list) || [];
+        const hit = list.find((t) => (t.tenantCode || t.tenant_code) === code);
+        const n = hit && (hit.tenantName || hit.tenant_name);
+        if (isRealTenantName(n)) tenantName = n;
+      } catch (e) {
+        /* handled */
+      }
+    }
+    const nextName = isRealTenantName(tenantName) ? tenantName : '当前企业';
+    updateUserInfo({
+      tenantName: nextName === '当前企业' ? user.tenantName : nextName,
+      avatar,
+      realName: displayName
+    });
+    this.setData({
+      tenantName: nextName,
+      avatar,
+      displayName,
+      avatarText: String(displayName || '司').slice(0, 1)
+    });
   },
 
   onPullDownRefresh() {
@@ -80,13 +124,19 @@ Page({
           inTransit: (transit && transit.total) || inTransit.length,
           waitSign: (arrived && arrived.total) || waitSign.length
         },
-        running: runningTask ? buildTicketView(runningTask) : null,
-        pending: waitAccept.slice(0, 3).map(buildTicketView),
+        running: runningTask ? buildWorkbenchView(runningTask) : null,
+        pending: waitAccept.slice(0, 3).map(buildWorkbenchView),
+        plateText:
+          (runningTask && runningTask.plateNumber) ||
+          (all.find((t) => t.plateNumber) || {}).plateNumber ||
+          '',
         receiptHint: needReceipt
           ? {
               id: needReceipt.id,
               title: `${needReceipt.taskNo} 的回单还没传`,
-              desc: '回单不传，这一单的结算就卡着。'
+              desc: needReceipt.actualArriveTime
+                ? `${shortTime(needReceipt.actualArriveTime)} 已签收，去上传回单即可结算。`
+                : '签收后记得上传回单，才能结算。'
             }
           : null,
         week: weekDays(all.filter(isActiveTask).concat(all.filter((t) => t.status === 5)))
@@ -117,13 +167,24 @@ Page({
     wx.navigateTo({ url: '/pages/profile/switch-tenant' });
   },
 
-  goMessage() {
-    wx.navigateTo({ url: '/pages/message/index' });
+  goProfile() {
+    wx.switchTab({ url: '/pages/profile/index' });
   },
 
   onTaskTap(e) {
     const id = e.detail && e.detail.id;
     if (id) wx.navigateTo({ url: `/pages/task/detail?id=${id}` });
+  },
+
+  onCardAction(e) {
+    const detail = e.detail || {};
+    const action = detail.action;
+    const id = Number(detail.id);
+    if (action === 'nav') this.onNav();
+    else if (action === 'arrive') this.onArrive();
+    else if (action === 'depart') this.onDepart();
+    else if (action === 'reject') this.openReject({ currentTarget: { dataset: { id } } });
+    else if (action === 'accept') this.onAccept({ currentTarget: { dataset: { id } } });
   },
 
   onNav() {

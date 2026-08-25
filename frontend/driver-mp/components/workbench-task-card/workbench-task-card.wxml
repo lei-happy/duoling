@@ -1,0 +1,96 @@
+<view class="wb-wrap {{view.mode === 'running' ? 'is-stack' : ''}}" bindtap="onTap">
+  <view wx:if="{{view.mode === 'running'}}" class="wb-wrap__s2"></view>
+  <view wx:if="{{view.mode === 'running'}}" class="wb-wrap__s1"></view>
+  <view class="wb wb--{{view.mode || 'running'}}">
+  <view class="wb__head">
+    <view class="wb__status">
+      <mp-icon wx:if="{{view.mode !== 'pending'}}" name="truck" size="sm" color="#1d2129" />
+      <text class="wb__status-t {{view.mode === 'pending' ? 'is-new' : ''}}">{{view.wbStatus}}</text>
+    </view>
+    <text wx:if="{{view.taskNo}}" class="wb__no">{{view.taskNo}}</text>
+    <view wx:if="{{view.taskNo}}" class="wb__copy" catchtap="onCopy">复制</view>
+    <view class="wb__head-r">
+      <text wx:if="{{view.typeLabel}}" class="wb__type">{{view.typeLabel}}</text>
+      <text wx:if="{{view.remain}}" class="wb__km">{{view.remain}}</text>
+    </view>
+  </view>
+
+  <view class="wb__route">
+    <view class="wb__axis">
+      <view class="wb__dot is-load"><text>装</text></view>
+      <view class="wb__rail"></view>
+      <view class="wb__dot is-unload"><text>卸</text></view>
+    </view>
+    <view class="wb__places">
+      <view class="wb__place">
+        <text class="wb__name">{{view.originName}}</text>
+        <text wx:if="{{view.originAddr}}" class="wb__addr">{{view.originAddr}}</text>
+      </view>
+      <view class="wb__place">
+        <text class="wb__name">{{view.destName}}</text>
+        <text wx:if="{{view.destAddr}}" class="wb__addr">{{view.destAddr}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{view.showProgress}}" class="wb-road">
+    <view class="wb-road__lane">
+      <view class="wb-road__track"></view>
+      <view class="wb-road__fill" style="width: {{view.roadPercent}}%;"></view>
+      <view class="wb-road__car" style="left: {{view.roadPercent}}%;">
+        <mp-icon name="truck-side" size="sm" color="#1673ff" />
+      </view>
+    </view>
+    <view class="wb-road__labs">
+      <text
+        wx:for="{{view.roadStops}}"
+        wx:key="key"
+        class="{{item.state}}"
+      >{{item.label}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{view.showMeta}}" class="wb__meta">
+    <view wx:if="{{view.cargoText}}" class="wb__meta-row">
+      <text class="wb__meta-k">货品：</text>
+      <text class="wb__meta-v">{{view.cargoText}}</text>
+    </view>
+    <view wx:if="{{view.timePrefix}}" class="wb__meta-row">
+      <text class="wb__meta-k">{{view.timeLabel}}：</text>
+      <text class="wb__meta-v">{{view.timePrefix}}</text>
+      <text wx:if="{{view.timeAccent}}" class="wb__meta-acc">{{view.timeAccent}}</text>
+      <text wx:if="{{view.timeSuffix}}" class="wb__meta-v">{{view.timeSuffix}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{view.mode === 'running'}}" class="wb__btns">
+    <view class="wb-btn wb-btn--ghost" catchtap="onAction" data-action="nav">
+      <mp-icon name="nav" size="sm" color="#0065ff" />
+      导航去卸货
+    </view>
+    <view
+      wx:if="{{view.canArrive}}"
+      class="wb-btn wb-btn--primary"
+      catchtap="onAction"
+      data-action="arrive"
+    >确认到达</view>
+    <view
+      wx:elif="{{view.canDepart}}"
+      class="wb-btn wb-btn--primary"
+      catchtap="onAction"
+      data-action="depart"
+    >确认出发</view>
+  </view>
+
+  <view wx:if="{{view.mode === 'pending'}}" class="wb__foot">
+    <view class="wb__mile">
+      <mp-icon wx:if="{{view.remain}}" name="pin" size="sm" color="#5d6570" />
+      <text wx:if="{{view.remain}}">{{view.remain}}</text>
+    </view>
+    <view class="wb__btns wb__btns--end">
+      <view class="wb-btn wb-btn--plain" catchtap="onAction" data-action="reject">拒绝</view>
+      <view class="wb-btn wb-btn--primary wb-btn--sm" catchtap="onAction" data-action="accept">接收调令</view>
+    </view>
+  </view>
+  </view>
+</view>

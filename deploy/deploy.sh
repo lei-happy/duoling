@@ -245,24 +245,34 @@ setup_ssl() {
     mkdir -p "$SSL_DIR"
 
     local ALL_DOMAINS="zhitu.me console.zhitu.me wuliu.zhitu.me driver.zhitu.me api.zhitu.me"
-    local missing=0
+    local generated=0
+    local broken=0
 
     for domain in $ALL_DOMAINS; do
-        if [ -f "$SSL_DIR/$domain.pem" ] && [ -f "$SSL_DIR/$domain.key" ]; then
+        local pem="$SSL_DIR/$domain.pem"
+        local key="$SSL_DIR/$domain.key"
+        if [ -f "$pem" ] && [ -f "$key" ]; then
             log_info "SSL 证书已就绪: $domain"
+        elif [ -f "$pem" ] && [ ! -f "$key" ]; then
+            # 只缺私钥时绝不能 openssl 重签：会覆盖已有 .pem，且新密钥与旧证书不配对
+            log_error "$domain 有证书但缺少私钥: $key"
+            broken=$((broken + 1))
+        elif [ ! -f "$pem" ] && [ -f "$key" ]; then
+            log_error "$domain 有私钥但缺少证书: $pem"
+            broken=$((broken + 1))
         else
             log_warn "$domain 证书未找到，生成临时自签名证书（浏览器会提示不安全）"
             openssl req -x509 -nodes -newkey rsa:2048 -days 30 \
-                -keyout "$SSL_DIR/$domain.key" \
-                -out "$SSL_DIR/$domain.pem" \
+                -keyout "$key" \
+                -out "$pem" \
                 -subj "/CN=$domain" 2>/dev/null
-            missing=$((missing + 1))
+            generated=$((generated + 1))
         fi
     done
 
-    if [ $missing -gt 0 ]; then
+    if [ $generated -gt 0 ]; then
         echo ""
-        log_warn "有 $missing 个域名使用临时证书，请上传阿里云购买的证书到 $SSL_DIR/"
+        log_warn "有 $generated 个域名使用临时证书，请上传阿里云购买的证书到 $SSL_DIR/"
         log_info "证书文件命名规则:"
         echo "  $SSL_DIR/zhitu.me.pem          + zhitu.me.key"
         echo "  $SSL_DIR/console.zhitu.me.pem  + console.zhitu.me.key"
@@ -271,6 +281,16 @@ setup_ssl() {
         echo "  $SSL_DIR/api.zhitu.me.pem      + api.zhitu.me.key"
         echo ""
         log_info "上传后执行: docker exec zhitu-nginx nginx -s reload"
+    fi
+
+    if [ $broken -gt 0 ]; then
+        echo ""
+        log_error "有 $broken 个域名的证书/私钥不完整，nginx 无法启动（会进入重启循环）"
+        log_info "请把匹配的 .key / .pem 放到 $SSL_DIR/ 后再继续。"
+        log_info "若私钥曾在仓库 ssl/ 目录、被 git pull 删掉，可从历史恢复且不会重新入库："
+        echo "  git -C $PROJECT_DIR show 094dd09a^:ssl/<域名>.key > $SSL_DIR/<域名>.key"
+        echo "  chmod 600 $SSL_DIR/*.key"
+        return 1
     fi
 }
 
@@ -848,6 +868,13 @@ cmd_update() {
         exit 1
     fi
     log_info "代码已更新"
+
+    # git pull 会按新树删除已不再跟踪的文件。ssl/*.key 一旦从仓库移除，
+    # /opt/zhitu/ssl（与仓库 ssl/ 同目录）上的私钥会被删掉，nginx 随即重启循环。
+    if ! setup_ssl; then
+        log_error "SSL 证书不完整，已中止部署"
+        return 1
+    fi
 
     # 重新构建并启动
     cd "$DEPLOY_DIR"

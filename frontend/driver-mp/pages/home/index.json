@@ -1,11 +1,10 @@
 {
   "navigationStyle": "custom",
   "navigationBarTextStyle": "white",
-  "backgroundColor": "#0d1b3e",
+  "backgroundColor": "#eff4fa",
   "enablePullDownRefresh": true,
   "usingComponents": {
     "ticket-card": "/components/ticket-card/ticket-card",
-    "mp-notice": "/components/mp-notice/mp-notice",
-    "empty-state": "/components/empty-state/empty-state"
+    "workbench-task-card": "/components/workbench-task-card/workbench-task-card"
   }
 }

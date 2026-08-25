@@ -2,11 +2,26 @@
   "description": "智途驾驶员微信小程序",
   "packOptions": {
     "ignore": [
-      { "type": "folder", "value": "node_modules" },
-      { "type": "folder", "value": "scripts" },
-      { "type": "file", "value": "package-lock.json" },
-      { "type": "file", "value": ".gitignore" },
-      { "type": "glob", "value": "**/*.md" }
+      {
+        "type": "folder",
+        "value": "node_modules"
+      },
+      {
+        "type": "folder",
+        "value": "scripts"
+      },
+      {
+        "type": "file",
+        "value": "package-lock.json"
+      },
+      {
+        "type": "file",
+        "value": ".gitignore"
+      },
+      {
+        "type": "glob",
+        "value": "**/*.md"
+      }
     ],
     "include": []
   },
@@ -59,12 +74,13 @@
   },
   "compileType": "miniprogram",
   "libVersion": "3.7.12",
-  "appid": "wxedb8666b33201704",
+  "appid": "wx2cbe6aab4bc4c884",
   "projectname": "zhitu-driver-mp",
   "condition": {},
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
-  "simulatorPluginLibVersion": {}
+  "simulatorPluginLibVersion": {},
+  "isGameTourist": false
 }

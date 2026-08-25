@@ -238,6 +238,80 @@ function buildTicketView(task) {
   };
 }
 
+function pad2(n) {
+  return `${n}`.padStart(2, '0');
+}
+
+function placeLine(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return { name: '-', addr: '' };
+  const parts = raw
+    .replace(/[／\\]/g, '/')
+    .split('/')
+    .map((s) => s.trim())
+    .filter((s) => s && !SKIP_REGION[s]);
+  if (parts.length >= 2) {
+    return { name: parts[parts.length - 1], addr: parts.slice(0, -1).join(' ') };
+  }
+  return { name: raw, addr: '' };
+}
+
+function workbenchStatusLabel(status, accepted) {
+  if (status === 1 && !accepted) return '新调令';
+  if (status === 2) return '待出发';
+  if (status === 3) return '在途中';
+  if (status === 4) return '待签收';
+  return getDriverDisplayStatus(status, accepted).label;
+}
+
+function buildWorkbenchView(task) {
+  const base = buildTicketView(task);
+  const t = task || {};
+  const origin = placeLine(t.origin);
+  const dest = placeLine(t.destination);
+  const qty = t.totalQuantity || 0;
+  const road = getRoadState(t.status, t.accepted);
+  const stops = road.stops.map((s) =>
+    s.key === 'arriveDest' ? Object.assign({}, s, { label: '签收' }) : s
+  );
+
+  let timeLabel = '送达时间';
+  let timePrefix = '';
+  let timeAccent = '';
+  let timeSuffix = '';
+  if (t.status === 1 && t.plannedLoadTime) {
+    timeLabel = '装车时间';
+    timePrefix = shortTime(t.plannedLoadTime);
+  } else if (t.plannedArriveTime) {
+    const d = new Date(t.plannedArriveTime);
+    if (!Number.isNaN(d.getTime())) {
+      timePrefix = `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} `;
+      timeAccent = `(${pad2(d.getHours())}:${pad2(d.getMinutes())}前)`;
+      timeSuffix = '到货';
+    }
+  } else if (t.plannedLoadTime) {
+    timeLabel = '装车时间';
+    timePrefix = shortTime(t.plannedLoadTime);
+  }
+
+  return Object.assign({}, base, {
+    wbStatus: workbenchStatusLabel(t.status, t.accepted),
+    originName: origin.name,
+    originAddr: origin.addr,
+    destName: dest.name,
+    destAddr: dest.addr,
+    cargoText: qty ? `${qty}台` : '',
+    timeLabel,
+    timePrefix,
+    timeAccent,
+    timeSuffix,
+    showMeta: !!(qty || timePrefix),
+    showProgress: t.status >= 2 && t.status <= 4,
+    roadStops: stops,
+    mode: t.status === 1 && !t.accepted ? 'pending' : 'running'
+  });
+}
+
 function groupByDay(views) {
   const map = {};
   const order = [];
@@ -310,6 +384,7 @@ module.exports = {
   matchChip,
   apiStatusForChip,
   buildTicketView,
+  buildWorkbenchView,
   groupByDay,
   weekDays,
   formatDateTime,
