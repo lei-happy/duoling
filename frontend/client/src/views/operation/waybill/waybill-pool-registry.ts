@@ -9,8 +9,8 @@
  *   1 待调度 / 2 调度中 / 3 运输中 / 4 待交车 / 5 已交车 / 6 已回单 / 7 已关闭
  *
  * 4 待交车 / 5 已交车 与 task.status 解耦，强调"客户视角的票据流转"：
- *   - 4 待交车 = 全量货物已到达，等交付客户
- *   - 5 已交车 = 全量货物已交车，计划对客户层面已闭环
+ *   - 4 待交车 = 全量商品车已到达，等交付客户
+ *   - 5 已交车 = 全量商品车已交车，计划对客户层面已闭环
  *   - 6 已回单 = 交车回单返还货主（人工动作，回单台账在「回单签收」页操作）
  *   - 7 已关闭 = 终态（原 6 后移）
  */
@@ -517,7 +517,7 @@ export function buildWaybillTableColumns(pool: WaybillPool): Columns {
         cols.push({
           prop: 'isLocked',
           label: L.isLocked,
-          width: 64,
+          width: 96,
           align: 'center',
           slot: 'isLocked'
         });

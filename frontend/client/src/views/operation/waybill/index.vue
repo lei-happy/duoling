@@ -63,6 +63,7 @@
     <waybill-freight-detail
       v-model:visible="freightDetailVisible"
       :waybill-id="freightDetailWaybillId"
+      :waybill-no="freightDetailWaybillNo"
       @sync-list="reloadAfterMutation"
     />
     <waybill-detail
@@ -219,6 +220,7 @@
   const taskItemsDetailWaybill = ref<Waybill | null>(null);
   const freightDetailVisible = ref(false);
   const freightDetailWaybillId = ref<number | null>(null);
+  const freightDetailWaybillNo = ref('');
   const detailVisible = ref(false);
   const detailWaybillId = ref<number | null>(null);
 
@@ -245,6 +247,7 @@
   const openFreightDetail = (row: Waybill) => {
     if (!row.id) return;
     freightDetailWaybillId.value = row.id;
+    freightDetailWaybillNo.value = row.waybillNo?.trim() || '';
     freightDetailVisible.value = true;
   };
 

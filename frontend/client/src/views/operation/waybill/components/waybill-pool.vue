@@ -194,6 +194,7 @@
             :type="isWaybillLocked(row) ? 'danger' : 'success'"
             size="small"
             effect="light"
+            class="waybill-lock-tag"
           >
             {{ isWaybillLocked(row) ? '已锁定' : '未锁定' }}
           </el-tag>
@@ -805,6 +806,10 @@
   .waybill-qty-tag {
     cursor: pointer;
     user-select: none;
+  }
+
+  .waybill-lock-tag {
+    white-space: nowrap;
   }
 
   .waybill-qty-tag:hover {

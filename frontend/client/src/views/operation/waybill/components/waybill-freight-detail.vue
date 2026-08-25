@@ -1,85 +1,79 @@
 <template>
-  <el-drawer
-    class="waybill-freight-drawer"
-    title="运费计算明细"
-    :model-value="visible"
-    direction="rtl"
-    size="920px"
-    @update:model-value="updateVisible"
+  <inspect-dialog
+    :visible="visible"
+    title="计算明细"
+    :subtitle="waybillNo || ''"
+    :copyable-subtitle="!!waybillNo"
+    copy-subtitle-success="已复制计划号"
+    copy-subtitle-empty="无可复制的计划号"
+    copy-subtitle-label="复制计划号"
+    width="920px"
+    :loading="loading"
+    dialog-class="wbi-dialog--freight"
+    @update:visible="updateVisible"
   >
-    <div v-if="loading" class="empty-block" v-loading="loading"></div>
-    <div v-else-if="!result" class="empty-block">
-      <el-empty description="暂无计算结果" />
-    </div>
-    <div v-else class="freight-drawer-content">
-      <el-card shadow="never" class="freight-meta-card">
-        <template #header>
-          <div class="freight-meta-card__header">
-            <span class="freight-meta-card__title">计算摘要</span>
-            <el-tag
-              :type="statusType(result.calcStatus)"
-              effect="light"
-              size="small"
-            >
-              {{ calcStatusLabel(result.calcStatus) }}
-            </el-tag>
+    <template #header-extra>
+      <el-tag
+        v-if="result"
+        :type="statusType(result.calcStatus)"
+        effect="light"
+        size="small"
+      >
+        {{ calcStatusLabel(result.calcStatus) }}
+      </el-tag>
+    </template>
+
+    <div v-if="result" class="wbf">
+      <section class="wbi-hero wbi-hero--freight" aria-label="运费摘要">
+        <div class="wbi-hero__who">运费结果</div>
+        <div class="wbi-hero__amount-row">
+          <div>
+            <span class="wbi-hero__kicker">总运费</span>
+            <div class="wbi-hero__amount">
+              ¥ {{ formatAmount(result.totalAmount) }}
+            </div>
           </div>
-        </template>
-        <el-row :gutter="[16, 14]">
-          <el-col :xs="24" :sm="12" :md="8">
-            <div class="kv">
-              <span class="kv__l">结果 ID</span>
-              <span class="kv__v">#{{ result.id }}</span>
-            </div>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="8">
-            <div class="kv">
-              <span class="kv__l">计划版本</span>
-              <span class="kv__v">{{ result.waybillVersion }}</span>
-            </div>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="8">
-            <div class="kv">
-              <span class="kv__l">计算引擎</span>
-              <span class="kv__v">{{ result.calcEngineVersion || '--' }}</span>
-            </div>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="8">
-            <div class="kv">
-              <span class="kv__l">计算时间</span>
-              <span class="kv__v">{{ formatCalcTime(result.calcTime) }}</span>
-            </div>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="8">
-            <div class="kv">
-              <span class="kv__l">触发方式</span>
-              <span class="kv__v">{{
-                triggeredByLabel(result.triggeredBy)
-              }}</span>
-            </div>
-          </el-col>
-        </el-row>
-        <div class="freight-total-banner">
-          <span class="freight-total-banner__label">总运费</span>
-          <span class="freight-total-banner__amt"
-            >¥ {{ formatAmount(result.totalAmount) }}</span
-          >
         </div>
-      </el-card>
+      </section>
+
+      <section class="wbi-section">
+        <h3 class="wbi-section__title">计算信息</h3>
+        <div class="wbi-group">
+          <div class="wbi-row">
+            <span class="wbi-row__label">计划版本</span>
+            <span class="wbi-row__value">{{ result.waybillVersion }}</span>
+          </div>
+          <div class="wbi-row">
+            <span class="wbi-row__label">计价版本</span>
+            <span class="wbi-row__value">{{
+              result.calcEngineVersion || '—'
+            }}</span>
+          </div>
+          <div class="wbi-row">
+            <span class="wbi-row__label">计算时间</span>
+            <span class="wbi-row__value">{{
+              formatCalcTime(result.calcTime)
+            }}</span>
+          </div>
+          <div class="wbi-row">
+            <span class="wbi-row__label">触发原因</span>
+            <span class="wbi-row__value">{{
+              triggeredByLabel(result.triggeredBy)
+            }}</span>
+          </div>
+        </div>
+      </section>
 
       <el-alert
         v-if="showExceptionNotice"
         type="warning"
         show-icon
         :closable="false"
-        class="freight-exception-alert"
+        class="wbf-alert"
       >
-        <div class="freight-exception-alert__body">
-          <p class="freight-exception-alert__text">{{ displayErrorMessage }}</p>
-          <div
-            v-if="hasAbnormalDetailRows"
-            class="freight-exception-alert__actions"
-          >
+        <div class="wbf-alert__body">
+          <p class="wbf-alert__text">{{ displayErrorMessage }}</p>
+          <div v-if="hasAbnormalDetailRows" class="wbf-alert__actions">
             <el-button
               type="primary"
               size="small"
@@ -92,117 +86,122 @@
         </div>
       </el-alert>
 
-      <el-card shadow="never" class="freight-table-card">
-        <template #header>
-          <div class="freight-table-card__head">
-            <span class="freight-table-card__title">货物明细</span>
-            <el-text v-if="exceptionOnly" size="small" type="info">
-              已筛选 {{ displayDetails.length }} 条
-            </el-text>
-          </div>
-        </template>
-        <el-table
-          v-if="displayDetails.length"
-          :data="displayDetails"
-          border
-          stripe
-          size="small"
-          class="freight-detail-table"
-          max-height="420"
-          :row-class-name="detailRowClassName"
-        >
-          <el-table-column type="expand">
-            <template #default="{ row }">
-              <div class="trace-block">
-                <div class="trace-cap">匹配过程留痕</div>
-                <pre class="trace-json">{{
-                  formatJson(row.matchTraceJson)
-                }}</pre>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column label="车型" min-width="160">
-            <template #default="{ row }">
-              {{ row.vehicleBrand || '--' }} / {{ row.vehicleModel || '--' }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="quantity"
-            label="数量"
-            width="64"
-            align="center"
-          />
-          <el-table-column label="命中规则" min-width="120">
-            <template #default="{ row }">
-              <span v-if="row.matchedRuleId">
-                规则 #{{ row.matchedRuleId }}
-                <el-tag size="small" type="info"
-                  >v{{ row.matchedRuleVersion }}</el-tag
-                >
-              </span>
-              <el-tag v-else type="danger" size="small">未命中</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="合同" width="80" align="center">
-            <template #default="{ row }">
-              <span v-if="row.matchedContractId"
-                >#{{ row.matchedContractId }}</span
-              >
-              <span v-else>--</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="车型匹配" width="92" align="center">
-            <template #default="{ row }">
-              <el-tag size="small" :type="modelMatchType(row.modelMatchType)">
-                {{ modelMatchText(row.modelMatchType) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="方向" width="72" align="center">
-            <template #default="{ row }">
-              <el-tag
-                size="small"
-                :type="
-                  isReverseDirection(row.direction) ? 'warning' : 'primary'
-                "
-              >
-                {{ directionLabel(row.direction) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="评分" width="72" align="center">
-            <template #default="{ row }">
-              <el-tag size="small" type="success">{{
-                row.matchScore ?? 0
-              }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="unitPrice"
-            label="单价"
-            width="92"
-            align="right"
+      <section class="wbi-section">
+        <div class="wbf-table-head">
+          <h3 class="wbi-section__title">商品车明细</h3>
+          <el-text v-if="exceptionOnly" size="small" type="info">
+            已筛选 {{ displayDetails.length }} 条
+          </el-text>
+        </div>
+        <div class="wbi-group wbf-table-wrap">
+          <el-table
+            v-if="displayDetails.length"
+            :data="displayDetails"
+            border
+            stripe
+            size="small"
+            class="wbf-table"
+            max-height="420"
+            :row-class-name="detailRowClassName"
           >
-            <template #default="{ row }">
-              {{ formatAmount(row.unitPrice) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="amount" label="金额" width="100" align="right">
-            <template #default="{ row }">
-              <strong>{{ formatAmount(row.amount) }}</strong>
-            </template>
-          </el-table-column>
-          <el-table-column label="状态" width="88" align="center">
-            <template #default="{ row }">
-              <el-tag size="small" :type="detailStatusType(row.calcStatus)">
-                {{ detailCalcStatusLabel(row.calcStatus) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
-        <el-empty v-else description="当前筛选下无明细" />
-      </el-card>
+            <el-table-column type="expand">
+              <template #default="{ row }">
+                <div class="wbf-trace">
+                  <div class="wbf-trace__cap">匹配过程留痕</div>
+                  <pre class="wbf-trace__json">{{
+                    formatJson(row.matchTraceJson)
+                  }}</pre>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="车型" min-width="160">
+              <template #default="{ row }">
+                {{ row.vehicleBrand || '—' }} / {{ row.vehicleModel || '—' }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="quantity"
+              label="台数"
+              width="64"
+              align="center"
+            />
+            <el-table-column label="命中规则" min-width="120">
+              <template #default="{ row }">
+                <span v-if="row.matchedRuleId">
+                  规则 #{{ row.matchedRuleId }}
+                  <el-tag size="small" type="info"
+                    >v{{ row.matchedRuleVersion }}</el-tag
+                  >
+                </span>
+                <el-tag v-else type="danger" size="small">未命中</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="合同" width="80" align="center">
+              <template #default="{ row }">
+                <span v-if="row.matchedContractId"
+                  >#{{ row.matchedContractId }}</span
+                >
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="车型匹配" width="92" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" :type="modelMatchType(row.modelMatchType)">
+                  {{ modelMatchText(row.modelMatchType) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="方向" width="72" align="center">
+              <template #default="{ row }">
+                <el-tag
+                  size="small"
+                  :type="
+                    isReverseDirection(row.direction) ? 'warning' : 'primary'
+                  "
+                >
+                  {{ directionLabel(row.direction) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="评分" width="72" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" type="success">{{
+                  row.matchScore ?? 0
+                }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="unitPrice"
+              label="单价"
+              width="92"
+              align="right"
+            >
+              <template #default="{ row }">
+                {{ formatAmount(row.unitPrice) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="amount" label="金额" width="100" align="right">
+              <template #default="{ row }">
+                <strong>{{ formatAmount(row.amount) }}</strong>
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" width="88" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" :type="detailStatusType(row.calcStatus)">
+                  {{ detailCalcStatusLabel(row.calcStatus) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else description="当前筛选下无明细" :image-size="72" />
+        </div>
+      </section>
     </div>
+    <el-empty
+      v-else-if="!loading"
+      description="暂无计算结果"
+      :image-size="80"
+    />
 
     <template #footer>
       <el-button @click="updateVisible(false)">关闭</el-button>
@@ -210,7 +209,7 @@
         立即重算
       </el-button>
     </template>
-  </el-drawer>
+  </inspect-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -218,6 +217,9 @@
   import { EleMessage } from 'ele-admin-plus';
   import { getWaybillFreightResult, recalculateWaybill } from '@/api/waybill';
   import { formatDateTime } from '@/utils/date-util';
+  import InspectDialog from '@/components/InspectDialog/index.vue';
+
+  defineOptions({ name: 'WaybillFreightDetail' });
 
   interface FreightDetail {
     id: number;
@@ -254,6 +256,7 @@
   const props = defineProps<{
     visible: boolean;
     waybillId: number | null;
+    waybillNo?: string | null;
   }>();
 
   const emit = defineEmits<{
@@ -262,7 +265,7 @@
   }>();
 
   const FREIGHT_RECALC_SUBMIT_MSG =
-    '已提交运费重新计算，请稍候在本抽屉查看结果；列表中的计算状态也会更新。';
+    '已提交运费重新计算，请稍候在本弹框查看结果；列表中的计算状态也会更新。';
 
   const loading = ref(false);
   const result = ref<FreightResult | null>(null);
@@ -271,16 +274,16 @@
   const updateVisible = (val: boolean) => emit('update:visible', val);
 
   const formatAmount = (v?: number | null) =>
-    v == null ? '--' : Number(v).toFixed(2);
+    v == null ? '—' : Number(v).toFixed(2);
 
   const formatCalcTime = (t?: string | null) => {
-    if (!t) return '--';
+    if (!t) return '—';
     const d = formatDateTime(t);
     return d && d !== '--' ? d : t;
   };
 
   const formatJson = (val: unknown): string => {
-    if (val == null) return '--';
+    if (val == null) return '—';
     try {
       const obj = typeof val === 'string' ? JSON.parse(val) : val;
       return JSON.stringify(obj, null, 2);
@@ -298,7 +301,7 @@
   };
 
   const triggeredByLabel = (v?: string | null) => {
-    if (v == null || v === '') return '--';
+    if (v == null || v === '') return '—';
     return TRIGGERED_BY_MAP[v] ?? v;
   };
 
@@ -312,12 +315,12 @@
   };
 
   const calcStatusLabel = (s?: string | null) => {
-    if (s == null || s === '') return '--';
+    if (s == null || s === '') return '—';
     return CALC_STATUS_MAP[s] ?? s;
   };
 
   const detailCalcStatusLabel = (s?: string | null) => {
-    if (s == null || s === '') return '--';
+    if (s == null || s === '') return '—';
     if (s === 'success') return '成功';
     return CALC_STATUS_MAP[s] ?? s;
   };
@@ -346,7 +349,7 @@
     if (t === 'series') return '车系';
     if (t === 'brand') return '品牌';
     if (t === 'general') return '通用';
-    return t || '--';
+    return t || '—';
   };
 
   const isReverseDirection = (d?: string | null) =>
@@ -366,7 +369,7 @@
     const raw = result.value?.errorMessage?.trim();
     if (raw) {
       if (/result_detail/i.test(raw)) {
-        return '存在异常或未完全成功的明细行，对应数据在下方「货物明细」表中（即计算结果明细表）。可使用「仅看异常/未成功明细」快速筛选。';
+        return '存在异常或未完全成功的明细行，对应数据在下方「商品车明细」中。可使用「仅看异常/未成功明细」快速筛选。';
       }
       return raw;
     }
@@ -393,7 +396,7 @@
   });
 
   const detailRowClassName = ({ row }: { row: FreightDetail }) =>
-    row.calcStatus !== 'success' ? 'freight-detail-row--warn' : '';
+    row.calcStatus !== 'success' ? 'wbf-row--warn' : '';
 
   const load = async () => {
     if (!props.waybillId) return;
@@ -442,166 +445,65 @@
 </script>
 
 <style scoped lang="scss">
-  .empty-block {
-    padding: 32px 0;
-    text-align: center;
-    min-height: 200px;
-  }
-
-  .freight-drawer-content {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding-bottom: 8px;
-  }
-
-  .freight-meta-card {
-    border-radius: 10px;
-    border: 1px solid var(--el-border-color-lighter);
-    background: linear-gradient(
-      180deg,
-      var(--el-fill-color-blank) 0%,
-      var(--el-fill-color-extra-light) 100%
-    );
-
-    :deep(.el-card__header) {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--el-border-color-lighter);
-    }
-
-    :deep(.el-card__body) {
-      padding: 16px;
-    }
-  }
-
-  .freight-meta-card__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .freight-meta-card__title {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-  }
-
-  .kv {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-height: 44px;
-  }
-
-  .kv__l {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-
-  .kv__v {
-    font-size: 14px;
-    color: var(--el-text-color-primary);
-    word-break: break-all;
-  }
-
-  .freight-total-banner {
+  .wbf-alert {
     margin-top: 16px;
-    padding: 12px 16px;
-    border-radius: 8px;
-    background: var(--el-color-primary-light-9);
-    border: 1px solid var(--el-color-primary-light-7);
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .freight-total-banner__label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--el-text-color-regular);
-  }
-
-  .freight-total-banner__amt {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--el-color-primary);
-    letter-spacing: 0.02em;
-  }
-
-  .freight-exception-alert {
-    border-radius: 8px;
+    border-radius: 10px;
 
     :deep(.el-alert__content) {
       width: 100%;
     }
   }
 
-  .freight-exception-alert__body {
+  .wbf-alert__body {
     display: flex;
     flex-direction: column;
     gap: 10px;
   }
 
-  .freight-exception-alert__text {
+  .wbf-alert__text {
     margin: 0;
     font-size: 13px;
     line-height: 1.55;
     color: var(--el-text-color-regular);
   }
 
-  .freight-exception-alert__actions {
+  .wbf-alert__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
   }
 
-  .freight-table-card {
-    border-radius: 10px;
-    border: 1px solid var(--el-border-color-lighter);
-
-    :deep(.el-card__header) {
-      padding: 10px 16px;
-    }
-
-    :deep(.el-card__body) {
-      padding: 0 16px 16px;
-    }
-  }
-
-  .freight-table-card__head {
+  .wbf-table-head {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
     gap: 12px;
   }
 
-  .freight-table-card__title {
-    font-size: 14px;
-    font-weight: 600;
+  .wbf-table-wrap {
+    overflow: hidden;
   }
 
-  .freight-detail-table {
+  .wbf-table {
     width: 100%;
   }
 
-  :deep(.freight-detail-row--warn) > td {
+  :deep(.wbf-row--warn) > td {
     background-color: var(--el-color-danger-light-9) !important;
   }
 
-  .trace-block {
+  .wbf-trace {
     padding: 8px 16px;
   }
 
-  .trace-cap {
+  .wbf-trace__cap {
     font-size: 12px;
     font-weight: 500;
     color: var(--el-text-color-secondary);
     margin-bottom: 6px;
   }
 
-  .trace-json {
+  .wbf-trace__json {
     background: var(--el-fill-color-light);
     border-radius: 6px;
     padding: 8px;
@@ -612,24 +514,5 @@
     word-break: break-all;
     max-height: 320px;
     overflow: auto;
-  }
-</style>
-
-<style lang="scss">
-  .waybill-freight-drawer.el-drawer {
-    .el-drawer__header {
-      margin-bottom: 0;
-      padding: 16px 20px 12px;
-      border-bottom: 1px solid var(--el-border-color-lighter);
-    }
-
-    .el-drawer__body {
-      padding: 16px 20px 12px;
-    }
-
-    .el-drawer__footer {
-      border-top: 1px solid var(--el-border-color-lighter);
-      padding: 12px 20px;
-    }
   }
 </style>
